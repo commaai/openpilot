@@ -14,10 +14,6 @@
 
 #include "selfdrive/modeld/thneed/include/msm_kgsl.h"
 
-#define THNEED_RECORD 1
-#define THNEED_DEBUG 2
-#define THNEED_VERBOSE_DEBUG 4
-
 using namespace std;
 
 namespace json11 {
@@ -44,6 +40,7 @@ class CLQueuedKernel {
                    const size_t *_global_work_size,
                    const size_t *_local_work_size);
     cl_int exec();
+    uint64_t benchmark();
     void debug_print(bool verbose);
     int get_arg_num(const char *search_arg_name);
     cl_program program;
@@ -97,6 +94,7 @@ class Thneed {
     void execute(float **finputs, float *foutput, bool slow=false);
     void wait();
     int optimize();
+    bool run_optimizer = false;
 
     vector<cl_mem> input_clmem;
     vector<void *> inputs;
@@ -109,7 +107,8 @@ class Thneed {
     int context_id;
 
     // protected?
-    int record;
+    bool record = false;
+    int debug;
     int timestamp;
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedIoctl> > cmds;

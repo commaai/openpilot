@@ -5,8 +5,11 @@ export NOBOARD="1"
 export SIMULATION="1"
 export FINGERPRINT="HONDA CIVIC 2016"
 
-# TODO: remove this once the bridge uses visionipc
-export BLOCK="loggerd"
+export BLOCK="camerad,loggerd,encoderd"
+if [[ "$CI" ]]; then
+  # TODO: offscreen UI should work
+  export BLOCK="${BLOCK},ui"
+fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-cd ../../selfdrive/manager && ./manager.py
+cd ../../selfdrive/manager && exec ./manager.py

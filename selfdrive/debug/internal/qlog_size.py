@@ -25,7 +25,7 @@ def make_pie(msgs, typ):
   print()
 
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
-  sizes_large += [('other', sum([sz for (_, sz) in sizes if sz < total * MIN_SIZE / 100]))]
+  sizes_large += [('other', sum(sz for (_, sz) in sizes if sz < total * MIN_SIZE / 100))]
 
   labels, sizes = zip(*sizes_large)
 

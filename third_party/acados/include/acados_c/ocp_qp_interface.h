@@ -105,7 +105,7 @@ typedef enum {
 typedef struct
 {
     ocp_qp_solver_t qp_solver;
-} ocp_qp_solver_plan;
+} ocp_qp_solver_plan_t;
 
 
 /// Linear ocp configuration.
@@ -127,7 +127,7 @@ void ocp_qp_xcond_solver_config_initialize_from_plan(
 /// Constructs a qp solver config and Initializes with default values.
 ///
 /// \param plan The qp solver plan struct.
-ocp_qp_xcond_solver_config *ocp_qp_xcond_solver_config_create(ocp_qp_solver_plan plan);
+ocp_qp_xcond_solver_config *ocp_qp_xcond_solver_config_create(ocp_qp_solver_plan_t plan);
 
 /// Destructor for config struct, frees memory.
 ///

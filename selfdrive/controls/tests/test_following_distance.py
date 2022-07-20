@@ -21,7 +21,7 @@ def run_following_distance_simulation(v_lead, t_end=100.0):
 
 
 class TestFollowingDistance(unittest.TestCase):
-  def test_following_distanc(self):
+  def test_following_distance(self):
     for speed in np.arange(0, 40, 5):
       print(f'Testing {speed} m/s')
       v_lead = float(speed)
@@ -29,7 +29,7 @@ class TestFollowingDistance(unittest.TestCase):
       simulation_steady_state = run_following_distance_simulation(v_lead)
       correct_steady_state = desired_follow_distance(v_lead, v_lead)
 
-      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=(correct_steady_state*.1 + .3))
+      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=(correct_steady_state*.1 + .5))
 
 
 if __name__ == "__main__":

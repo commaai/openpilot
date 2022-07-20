@@ -5,35 +5,40 @@ import signal
 import subprocess
 import sys
 import traceback
+from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
-import selfdrive.crash as crash
+import selfdrive.sentry as sentry
 from common.basedir import BASEDIR
 from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, PC
+from system.hardware import HARDWARE, PC
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
-                              terms_version, training_version, comma_remote, \
-                              get_git_branch, get_git_remote
+from system.swaglog import cloudlog, add_file_handler
+from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
+                              terms_version, training_version, is_tested_branch
+
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
-def manager_init():
 
+def manager_init() -> None:
   # update system time from panda
   set_time(cloudlog)
+
+  # save boot log
+  subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
 
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
-  default_params = [
+  default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
+    ("DisengageOnAccelerator", "1"),
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
   ]
@@ -53,7 +58,7 @@ def manager_init():
 
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
-    params.put_bool("Passive", bool(int(os.getenv("PASSIVE"))))
+    params.put_bool("Passive", bool(int(os.getenv("PASSIVE", "0"))))
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
@@ -67,12 +72,13 @@ def manager_init():
     print("WARNING: failed to make /dev/shm")
 
   # set version params
-  params.put("Version", version)
+  params.put("Version", get_version())
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
-  params.put("GitCommit", get_git_commit(default=""))
-  params.put("GitBranch", get_git_branch(default=""))
-  params.put("GitRemote", get_git_remote(default=""))
+  params.put("GitCommit", get_commit(default=""))
+  params.put("GitBranch", get_short_branch(default=""))
+  params.put("GitRemote", get_origin(default=""))
+  params.put_bool("IsTestedBranch", is_tested_branch())
 
   # set dongle id
   reg_res = register(show_spinner=True)
@@ -83,74 +89,59 @@ def manager_init():
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
 
-  if not dirty:
+  if not is_dirty():
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
+  # init logging
+  sentry.init(sentry.SentryProject.SELFDRIVE)
+  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=is_dirty(),
                        device=HARDWARE.get_device_type())
 
-  if comma_remote and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
-    crash.init()
-  crash.bind_user(id=dongle_id)
-  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
-                   device=HARDWARE.get_device_type())
 
-
-def manager_prepare():
+def manager_prepare() -> None:
   for p in managed_processes.values():
     p.prepare()
 
 
-def manager_cleanup():
+def manager_cleanup() -> None:
+  # send signals to kill all procs
   for p in managed_processes.values():
-    p.stop()
+    p.stop(block=False)
+
+  # ensure all are killed
+  for p in managed_processes.values():
+    p.stop(block=True)
 
   cloudlog.info("everything is dead")
 
 
-def manager_thread():
+def manager_thread() -> None:
+  cloudlog.bind(daemon="manager")
   cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
-  # save boot log
-  subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"))
-
   params = Params()
 
-  ignore = []
-  if params.get("DongleId", encoding='utf8') == UNREGISTERED_DONGLE_ID:
+  ignore: List[str] = []
+  if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
-  if os.getenv("BLOCK") is not None:
-    ignore += os.getenv("BLOCK").split(",")
+  ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  ensure_running(managed_processes.values(), started=False, not_run=ignore)
-
-  started_prev = False
-  sm = messaging.SubMaster(['deviceState'])
+  sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
+
+  ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   while True:
     sm.update()
-    not_run = ignore[:]
-
-    if sm['deviceState'].freeSpacePercent < 5:
-      not_run.append("loggerd")
 
     started = sm['deviceState'].started
-    driverview = params.get_bool("IsDriverViewEnabled")
-    ensure_running(managed_processes.values(), started, driverview, not_run)
+    ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
-    # trigger an update after going offroad
-    if started_prev and not started and 'updated' in managed_processes:
-      os.sync()
-      managed_processes['updated'].signal(signal.SIGHUP)
-
-    started_prev = started
-
-    running = ' '.join(["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
-                       for p in managed_processes.values() if p.proc])
+    running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+                       for p in managed_processes.values() if p.proc)
     print(running)
     cloudlog.debug(running)
 
@@ -163,14 +154,15 @@ def manager_thread():
     shutdown = False
     for param in ("DoUninstall", "DoShutdown", "DoReboot"):
       if params.get_bool(param):
-        cloudlog.warning(f"Shutting down manager - {param} set")
         shutdown = True
+        params.put("LastManagerExitReason", param)
+        cloudlog.warning(f"Shutting down manager - {param} set")
 
     if shutdown:
       break
 
 
-def main():
+def main() -> None:
   prepare_only = os.getenv("PREPAREONLY") is not None
 
   manager_init()
@@ -191,7 +183,7 @@ def main():
     manager_thread()
   except Exception:
     traceback.print_exc()
-    crash.capture_exception()
+    sentry.capture_exception()
   finally:
     manager_cleanup()
 
@@ -215,6 +207,11 @@ if __name__ == "__main__":
   except Exception:
     add_file_handler(cloudlog)
     cloudlog.exception("Manager failed to start")
+
+    try:
+      managed_processes['ui'].stop()
+    except Exception:
+      pass
 
     # Show last 3 lines of traceback
     error = traceback.format_exc(-3)

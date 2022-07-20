@@ -19,7 +19,7 @@ QFrame *horizontal_line(QWidget *parent) {
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-  
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
@@ -45,21 +45,23 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   main_layout->addLayout(hlayout);
 
   // description
-  if (!desc.isEmpty()) {
-    description = new QLabel(desc);
-    description->setContentsMargins(40, 20, 40, 20);
-    description->setStyleSheet("font-size: 40px; color: grey");
-    description->setWordWrap(true);
-    description->setVisible(false);
-    main_layout->addWidget(description);
+  description = new QLabel(desc);
+  description->setContentsMargins(40, 20, 40, 20);
+  description->setStyleSheet("font-size: 40px; color: grey");
+  description->setWordWrap(true);
+  description->setVisible(false);
+  main_layout->addWidget(description);
 
-    connect(title_label, &QPushButton::clicked, [=]() {
-      if (!description->isVisible()) {
-        emit showDescription();
-      }
+  connect(title_label, &QPushButton::clicked, [=]() {
+    if (!description->isVisible()) {
+      emit showDescription();
+    }
+
+    if (!description->text().isEmpty()) {
       description->setVisible(!description->isVisible());
-    });
-  }
+    }
+  });
+
   main_layout->addStretch();
 }
 
@@ -120,4 +122,20 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
   QStyleOption opt;
   opt.initFrom(this);
   style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText_, foregroundRole());
+}
+
+ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
+
+void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
+  if (rect().contains(event->pos())) {
+    emit clicked();
+  }
+}
+
+// Fix stylesheets
+void ClickableWidget::paintEvent(QPaintEvent *) {
+  QStyleOption opt;
+  opt.init(this);
+  QPainter p(this);
+  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

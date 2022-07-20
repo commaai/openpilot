@@ -28,6 +28,7 @@ class Plant():
     self.distance = 0.
     self.speed = speed
     self.acceleration = 0.0
+    self.speeds = []
 
     # lead car
     self.distance_lead = distance_lead
@@ -42,8 +43,7 @@ class Plant():
 
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
-    self.CP = CarInterface.get_params(CAR.CIVIC)
-    self.planner = Planner(self.CP, init_v=self.speed)
+    self.planner = Planner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
 
   def current_time(self):
     return float(self.rk.frame) / self.rate
@@ -87,19 +87,19 @@ class Plant():
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
-
     control.controlsState.longControlState = LongCtrlState.pid
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
-
+    car_state.carState.standstill = self.speed < 0.01
 
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
           'controlsState': control.controlsState}
-    self.planner.update(sm, self.CP)
-    self.speed = self.planner.v_desired
+    self.planner.update(sm)
+    self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
+    self.speeds = self.planner.v_desired_trajectory.tolist()
     fcw = self.planner.fcw
     self.distance_lead = self.distance_lead + v_lead * self.ts
 
@@ -131,6 +131,7 @@ class Plant():
       "distance": self.distance,
       "speed": self.speed,
       "acceleration": self.acceleration,
+      "speeds": self.speeds,
       "distance_lead": self.distance_lead,
       "fcw": fcw,
     }

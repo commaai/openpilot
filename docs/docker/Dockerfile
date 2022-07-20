@@ -30,10 +30,12 @@ COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal
 COPY ./panda ${OPENPILOT_PATH}/panda
 COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
+COPY ./system ${OPENPILOT_PATH}/system
 COPY ./*.md ${OPENPILOT_PATH}/
 
 RUN scons -j$(nproc)
 
+RUN apt update && apt install doxygen -y
 COPY ./docs ${OPENPILOT_PATH}/docs
 RUN git init .
 WORKDIR ${OPENPILOT_PATH}/docs

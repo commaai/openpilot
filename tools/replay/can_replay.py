@@ -2,6 +2,7 @@
 import os
 import time
 import threading
+import multiprocessing
 from tqdm import tqdm
 
 os.environ['FILEREADER_CACHE'] = '1'
@@ -9,12 +10,16 @@ os.environ['FILEREADER_CACHE'] = '1'
 from common.basedir import BASEDIR
 from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
-from tools.lib.logreader import LogReader
+from tools.plotjuggler.juggle import load_segment
 from panda import Panda
+
 try:
-  from panda_jungle import PandaJungle  # pylint: disable=import-error
-except Exception:
-  PandaJungle = None  # type: ignore
+  # this bool can be replaced when mypy understands this pattern
+  panda_jungle_imported = True
+  from panda_jungle import PandaJungle  # pylint: disable=import-error  # type: ignore
+except ImportError:
+  PandaJungle = None
+  panda_jungle_imported = False
 
 
 def send_thread(s, flock):
@@ -82,7 +87,7 @@ def connect():
 
 
 if __name__ == "__main__":
-  if PandaJungle is None:
+  if not panda_jungle_imported:
     print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
@@ -90,11 +95,10 @@ if __name__ == "__main__":
   ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
   REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
   CAN_MSGS = []
-  for i in tqdm(REPLAY_SEGS):
-    log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
-    lr = LogReader(log_url)
-    CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
-
+  logs = [f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2" for i in REPLAY_SEGS]
+  with multiprocessing.Pool(24) as pool:
+    for lr in tqdm(pool.map(load_segment, logs)):
+      CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
   # set both to cycle ignition
   IGN_ON = int(os.getenv("ON", "0"))

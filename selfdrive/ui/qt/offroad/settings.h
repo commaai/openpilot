@@ -19,12 +19,10 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
 
 protected:
-  void hideEvent(QHideEvent *event) override;
   void showEvent(QShowEvent *event) override;
 
 signals:
   void closeSettings();
-  void offroadTransition(bool offroad);
   void reviewTrainingGuide();
   void showDriverView();
 
@@ -38,10 +36,18 @@ private:
 class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit DevicePanel(QWidget* parent = nullptr);
+  explicit DevicePanel(SettingsWindow *parent);
 signals:
   void reviewTrainingGuide();
   void showDriverView();
+
+private slots:
+  void poweroff();
+  void reboot();
+  void updateCalibDescription();
+
+private:
+  Params params;
 };
 
 class TogglesPanel : public ListWidget {
@@ -65,6 +71,7 @@ private:
   LabelControl *versionLbl;
   LabelControl *lastUpdateLbl;
   ButtonControl *updateBtn;
+  ButtonControl *branchSwitcherBtn;
 
   Params params;
   QFileSystemWatcher *fs_watch;

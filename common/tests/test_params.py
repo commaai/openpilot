@@ -24,14 +24,6 @@ class TestParams(unittest.TestCase):
     self.params.put("CarParams", st)
     assert self.params.get("CarParams") == st
 
-  def test_params_get_cleared_panda_disconnect(self):
-    self.params.put("CarParams", "test")
-    self.params.put("DongleId", "cb38263377b873ee")
-    assert self.params.get("CarParams") == b"test"
-    self.params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
-    assert self.params.get("CarParams") is None
-    assert self.params.get("DongleId") is not None
-
   def test_params_get_cleared_manager_start(self):
     self.params.put("CarParams", "test")
     self.params.put("DongleId", "cb38263377b873ee")

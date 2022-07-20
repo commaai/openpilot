@@ -1,22 +1,19 @@
 Import('env', 'arch', 'common', 'cereal', 'messaging')
 
-if arch == "aarch64":
-  env.Program('_sensord', 'sensors_qcom.cc', LIBS=['hardware', common, cereal, messaging, 'capnp', 'zmq', 'kj'])
-else:
-  sensors = [
-    'sensors/file_sensor.cc',
-    'sensors/i2c_sensor.cc',
-    'sensors/light_sensor.cc',
-    'sensors/bmx055_accel.cc',
-    'sensors/bmx055_gyro.cc',
-    'sensors/bmx055_magn.cc',
-    'sensors/bmx055_temp.cc',
-    'sensors/lsm6ds3_accel.cc',
-    'sensors/lsm6ds3_gyro.cc',
-    'sensors/lsm6ds3_temp.cc',
-    'sensors/mmc5603nj_magn.cc',
-  ]
-  libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj']
-  if arch == "larch64":
-    libs.append('i2c')
-  env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)
+sensors = [
+  'sensors/file_sensor.cc',
+  'sensors/i2c_sensor.cc',
+  'sensors/light_sensor.cc',
+  'sensors/bmx055_accel.cc',
+  'sensors/bmx055_gyro.cc',
+  'sensors/bmx055_magn.cc',
+  'sensors/bmx055_temp.cc',
+  'sensors/lsm6ds3_accel.cc',
+  'sensors/lsm6ds3_gyro.cc',
+  'sensors/lsm6ds3_temp.cc',
+  'sensors/mmc5603nj_magn.cc',
+]
+libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj']
+if arch == "larch64":
+  libs.append('i2c')
+env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)

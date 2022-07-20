@@ -10,8 +10,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
                                            tici_f_frame_size, tici_f_focal_length,
                                            get_view_frame_from_calib_frame)
-from selfdrive.config import UIParams as UP
-from selfdrive.config import RADAR_TO_CAMERA
+from selfdrive.controls.lib.radar_helpers import RADAR_TO_CAMERA
 
 
 RED = (255, 0, 0)
@@ -23,6 +22,15 @@ WHITE = (255, 255, 255)
 
 _FULL_FRAME_SIZE = {
 }
+
+class UIParams:
+  lidar_x, lidar_y, lidar_zoom = 384, 960, 6
+  lidar_car_x, lidar_car_y = lidar_x / 2., lidar_y / 1.1
+  car_hwidth = 1.7272 / 2 * lidar_zoom
+  car_front = 2.6924 * lidar_zoom
+  car_back = 1.8796 * lidar_zoom
+  car_color = 110
+UP = UIParams
 
 _BB_TO_FULL_FRAME = {}
 _CALIB_BB_TO_FULL = {}
@@ -152,7 +160,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       plots.append(plot)
       idxs.append(name_to_arr_idx[item])
       plot_select.append(i)
-    axs[i].set_title(", ".join("%s (%s)" % (nm, cl)
+    axs[i].set_title(", ".join(f"{nm} ({cl})"
                                for (nm, cl) in zip(pl_list, plot_colors[i])), fontsize=10)
     axs[i].tick_params(axis="x", colors="white")
     axs[i].tick_params(axis="y", colors="white")
@@ -185,12 +193,12 @@ def plot_model(m, img, calibration, top_down):
   if calibration is None or top_down is None:
     return
 
-  for lead in m.leads:
+  for lead in m.leadsV3:
     if lead.prob < 0.5:
       continue
 
-    x, y, _, _ = lead.xyva
-    x_std, _, _, _ = lead.xyvaStd
+    x, y = lead.x[0], lead.y[0]
+    x_std = lead.xStd[0]
     x -= RADAR_TO_CAMERA
 
     _, py_top = to_topdown_pt(x + x_std, y)

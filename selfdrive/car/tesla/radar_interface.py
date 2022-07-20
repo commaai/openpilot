@@ -11,9 +11,9 @@ NUM_POINTS = len(RADAR_MSGS_A)
 def get_radar_can_parser(CP):
   # Status messages
   signals = [
-    ('RADC_HWFail', 'TeslaRadarSguInfo', 0),
-    ('RADC_SGUFail', 'TeslaRadarSguInfo', 0),
-    ('RADC_SensorDirty', 'TeslaRadarSguInfo', 0),
+    ('RADC_HWFail', 'TeslaRadarSguInfo'),
+    ('RADC_SGUFail', 'TeslaRadarSguInfo'),
+    ('RADC_SensorDirty', 'TeslaRadarSguInfo'),
   ]
 
   checks = [
@@ -29,16 +29,16 @@ def get_radar_can_parser(CP):
     # There is a bunch more info in the messages,
     # but these are the only things actually used in openpilot
     signals.extend([
-      ('LongDist', msg_id_a, 255),
-      ('LongSpeed', msg_id_a, 0),
-      ('LatDist', msg_id_a, 0),
-      ('LongAccel', msg_id_a, 0),
-      ('Meas', msg_id_a, 0),
-      ('Tracked', msg_id_a, 0),
-      ('Index', msg_id_a, 0),
+      ('LongDist', msg_id_a),
+      ('LongSpeed', msg_id_a),
+      ('LatDist', msg_id_a),
+      ('LongAccel', msg_id_a),
+      ('Meas', msg_id_a),
+      ('Tracked', msg_id_a),
+      ('Index', msg_id_a),
 
-      ('LatSpeed', msg_id_b, 0),
-      ('Index2', msg_id_b, 0),
+      ('LatSpeed', msg_id_b),
+      ('Index2', msg_id_b),
     ])
 
     checks.extend([

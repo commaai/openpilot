@@ -13,39 +13,17 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
+#include "panda/board/health.h"
 
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
-#define USBPACKET_MAX_SIZE  (0x40U)
+#define USBPACKET_MAX_SIZE  (0x40)
 #define CANPACKET_HEAD_SIZE 5U
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
-
-// copied from panda/board/main.c
-struct __attribute__((packed)) health_t {
-  uint32_t uptime;
-  uint32_t voltage;
-  uint32_t current;
-  uint32_t can_rx_errs;
-  uint32_t can_send_errs;
-  uint32_t can_fwd_errs;
-  uint32_t gmlan_send_errs;
-  uint32_t faults;
-  uint8_t ignition_line;
-  uint8_t ignition_can;
-  uint8_t controls_allowed;
-  uint8_t gas_interceptor_detected;
-  uint8_t car_harness_status;
-  uint8_t usb_power_mode;
-  uint8_t safety_model;
-  int16_t safety_param;
-  uint8_t fault_status;
-  uint8_t power_save_enabled;
-  uint8_t heartbeat_lost;
-};
 
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
@@ -69,7 +47,7 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
-  std::vector<uint8_t> send;
+  std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -95,23 +73,23 @@ class Panda {
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
-  void set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param=0);
-  void set_unsafe_mode(uint16_t unsafe_mode);
+  void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
+  void set_alternative_experience(uint16_t alternative_experience);
   void set_rtc(struct tm sys_time);
   struct tm get_rtc();
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
-  health_t get_state();
+  std::optional<health_t> get_state();
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
+  void enable_deepsleep();
   void set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode);
-  void send_heartbeat();
+  void send_heartbeat(bool engaged);
   void set_can_speed_kbps(uint16_t bus, uint16_t speed);
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);
-  uint8_t len_to_dlc(uint8_t len);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
 

@@ -61,6 +61,7 @@ void sgemm_(char *ta, char *tb, int *m, int *n, int *k, float *alpha, float *A, 
 void ssyrk_(char *uplo, char *trans, int *n, int *k, float *alpha, float *A, int *lda, float *beta, float *C, int *ldc);
 void strmm_(char *side, char *uplo, char *transa, char *diag, int *m, int *n, float *alpha, float *A, int *lda, float *B, int *ldb);
 void strsm_(char *side, char *uplo, char *transa, char *diag, int *m, int *n, float *alpha, float *A, int *lda, float *B, int *ldb);
+void ssyr2k_(char *uplo, char *trans, int *n, int *k, float *alpha, float *A, int *lda, float *B, int *ldb, float *beta, float *C, int *ldc);
 
 // lapack
 void spotrf_(char *uplo, int *m, float *A, int *lda, int *info);

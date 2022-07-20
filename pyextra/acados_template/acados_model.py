@@ -78,6 +78,13 @@ class AcadosModel():
         self.dyn_disc_fun_jac = None  #: name of function discrete dyanamics + jacobian; Default: :code:`None`
         self.dyn_disc_fun = None  #: name of function discrete dyanamics; Default: :code:`None`
 
+        # for GNSF models
+        self.gnsf = {'nontrivial_f_LO': 1, 'purely_linear': 0}
+        """
+        dictionary containing information on GNSF structure needed when rendering templates.
+        Contains integers `nontrivial_f_LO`, `purely_linear`.
+        """
+
         ## for OCP
         # constraints
         self.con_h_expr = None  #: CasADi expression for the constraint :math:`h`; Default: :code:`None`

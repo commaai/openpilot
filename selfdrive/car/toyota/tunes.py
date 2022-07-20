@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 from enum import Enum
-from selfdrive.car.toyota.values import MIN_ACC_SPEED, PEDAL_HYST_GAP
-
 
 class LongTunes(Enum):
   PEDAL = 0
@@ -29,15 +27,8 @@ class LatTunes(Enum):
 
 ###### LONG ######
 def set_long_tune(tune, name):
-  if name == LongTunes.PEDAL:
-    tune.deadzoneBP = [0.]
-    tune.deadzoneV = [0.]
-    tune.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
-    tune.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
-    tune.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
-    tune.kiV = [0.18, 0.165, 0.489, 0.36]
   # Improved longitudinal tune
-  elif name == LongTunes.TSS2:
+  if name == LongTunes.TSS2 or name == LongTunes.PEDAL:
     tune.deadzoneBP = [0., 8.05]
     tune.deadzoneV = [.0, .14]
     tune.kpBP = [0., 5., 20.]
@@ -57,30 +48,8 @@ def set_long_tune(tune, name):
 
 
 ###### LAT ######
-def set_lat_tune(tune, name):
-  if name == LatTunes.INDI_PRIUS:
-    tune.init('indi')
-    tune.indi.innerLoopGainBP = [0.]
-    tune.indi.innerLoopGainV = [4.0]
-    tune.indi.outerLoopGainBP = [0.]
-    tune.indi.outerLoopGainV = [3.0]
-    tune.indi.timeConstantBP = [0.]
-    tune.indi.timeConstantV = [1.0]
-    tune.indi.actuatorEffectivenessBP = [0.]
-    tune.indi.actuatorEffectivenessV = [1.0]
-
-  elif name == LatTunes.LQR_RAV4:
-    tune.init('lqr')
-    tune.lqr.scale = 1500.0
-    tune.lqr.ki = 0.05
-    tune.lqr.a = [0., 1., -0.22619643, 1.21822268]
-    tune.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-    tune.lqr.c = [1., 0.]
-    tune.lqr.k = [-110.73572306, 451.22718255]
-    tune.lqr.l = [0.3233671, 0.3185757]
-    tune.lqr.dcGain = 0.002237852961363602
-
-  elif 'PID' in str(name):
+def set_lat_tune(tune, name, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+  if 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
     tune.pid.kpBP = [0.0]
@@ -88,10 +57,6 @@ def set_lat_tune(tune, name):
       tune.pid.kpV = [0.2]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00003
-    elif name == LatTunes.PID_B:
-      tune.pid.kpV = [0.6]
-      tune.pid.kiV = [0.05]
-      tune.pid.kf = 0.00006
     elif name == LatTunes.PID_C:
       tune.pid.kpV = [0.6]
       tune.pid.kiV = [0.1]
@@ -99,10 +64,6 @@ def set_lat_tune(tune, name):
     elif name == LatTunes.PID_D:
       tune.pid.kpV = [0.6]
       tune.pid.kiV = [0.1]
-      tune.pid.kf = 0.00007818594
-    elif name == LatTunes.PID_E:
-      tune.pid.kpV = [0.6]
-      tune.pid.kiV = [0.15]
       tune.pid.kf = 0.00007818594
     elif name == LatTunes.PID_F:
       tune.pid.kpV = [0.723]

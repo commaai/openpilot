@@ -8,21 +8,16 @@ import traceback
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
+from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
-from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
-from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
-from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
-from selfdrive.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
-from selfdrive.car.mazda.values import FW_VERSIONS as MAZDA_FW_VERSIONS
 
 
 NO_API = "NO_API" in os.environ
-SUPPORTED_CARS = set(interface_names['toyota'])
-SUPPORTED_CARS |= set(interface_names['honda'])
-SUPPORTED_CARS |= set(interface_names['hyundai'])
-SUPPORTED_CARS |= set(interface_names['volkswagen'])
-SUPPORTED_CARS |= set(interface_names['mazda'])
+VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
+SUPPORTED_BRANDS = VERSIONS.keys()
+SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
+UNKNOWN_BRAND = "unknown"
 
 try:
   from xx.pipeline.c.CarState import migration
@@ -70,25 +65,28 @@ if __name__ == "__main__":
       lr = LogReader(qlog_path)
       dongles.append(dongle_id)
 
+      CP = None
       for msg in lr:
         if msg.which() == "pandaStates":
-          if msg.pandaStates[0].pandaType not in ['uno', 'blackPanda', 'dos']:
+          if msg.pandaStates[0].pandaType not in ('uno', 'blackPanda', 'dos'):
+            print("wrong panda type")
             break
 
         elif msg.which() == "carParams":
-          bts = msg.carParams.as_builder().to_bytes()
-
-          car_fw = msg.carParams.carFw
+          CP = msg.carParams
+          car_fw = CP.carFw
           if len(car_fw) == 0:
+            print("no fw")
             break
 
-          live_fingerprint = msg.carParams.carFingerprint
+          live_fingerprint = CP.carFingerprint
           live_fingerprint = migration.get(live_fingerprint, live_fingerprint)
 
           if args.car is not None:
             live_fingerprint = args.car
 
           if live_fingerprint not in SUPPORTED_CARS:
+            print("not in supported cars")
             break
 
           fw_versions_dict = build_fw_dict(car_fw)
@@ -110,22 +108,26 @@ if __name__ == "__main__":
             break
 
           print(f"{dongle_id}|{time}")
-          print("Old style:", live_fingerprint, "Vin", msg.carParams.carVin)
+          print("Old style:", live_fingerprint, "Vin", CP.carVin)
           print("New style (exact):", exact_matches)
           print("New style (fuzzy):", fuzzy_matches)
 
-          for version in car_fw:
+          padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
+          for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False
-          for car_fws in [TOYOTA_FW_VERSIONS, HONDA_FW_VERSIONS, HYUNDAI_FW_VERSIONS, VW_FW_VERSIONS, MAZDA_FW_VERSIONS]:
+          for brand in SUPPORTED_BRANDS:
+            car_fws = VERSIONS[brand]
             if live_fingerprint in car_fws:
               found = True
               expected = car_fws[live_fingerprint]
               for (_, expected_addr, expected_sub_addr), v in expected.items():
                 for version in car_fw:
+                  if version.brand != brand and len(version.brand):
+                    continue
                   sub_addr = None if version.subAddress == 0 else version.subAddress
                   addr = version.address
 
@@ -158,6 +160,9 @@ if __name__ == "__main__":
               print("Fuzzy match wrong! Fuzzy:", fuzzy_matches, "Live:", live_fingerprint)
 
           break
+
+      if CP is None:
+        print("no CarParams in logs")
     except Exception:
       traceback.print_exc()
     except KeyboardInterrupt:

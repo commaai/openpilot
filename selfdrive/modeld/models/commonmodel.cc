@@ -5,9 +5,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/mat.h"
-#include "selfdrive/common/timing.h"
+#include "common/clutil.h"
+#include "common/mat.h"
+#include "common/timing.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   input_frames = std::make_unique<float[]>(buf_size);
@@ -22,9 +22,9 @@ ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
-float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, const mat3 &projection, cl_mem *output) {
+float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection, cl_mem *output) {
   transform_queue(&this->transform, q,
-                  yuv_cl, frame_width, frame_height,
+                  yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
 
   if (output == NULL) {
@@ -69,8 +69,4 @@ void softmax(const float* input, float* output, size_t len) {
 
 float sigmoid(float input) {
   return 1 / (1 + expf(-input));
-}
-
-float softplus(float input) {
-  return log1p(expf(input));
 }

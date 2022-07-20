@@ -3,13 +3,14 @@ import os
 import unittest
 
 from common.params import Params
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
 # TODO: make new FCW tests
 maneuvers = [
   Maneuver(
-    'approach stopped car at 20m/s',
+    'approach stopped car at 20m/s, initial distance: 120m',
     duration=20.,
     initial_speed=25.,
     lead_relevancy=True,
@@ -18,7 +19,7 @@ maneuvers = [
     breakpoints=[0., 1.],
   ),
   Maneuver(
-    'approach stopped car at 20m/s',
+    'approach stopped car at 20m/s, initial distance 90m',
     duration=20.,
     initial_speed=20.,
     lead_relevancy=True,
@@ -65,7 +66,7 @@ maneuvers = [
     breakpoints=[2., 2.01, 8.8],
   ),
   Maneuver(
-    "approach stopped car at 20m/s",
+    "approach stopped car at 20m/s, with prob_lead_values",
     duration=30.,
     initial_speed=20.,
     lead_relevancy=True,
@@ -106,6 +107,17 @@ maneuvers = [
     breakpoints=[1., 1.01, 11.],
     cruise_values=[float("nan"), 15., 15.],
   ),
+  # controls relies on planner commanding to move for stock-ACC resume spamming
+  Maneuver(
+    "resume from a stop",
+    duration=20.,
+    initial_speed=0.,
+    lead_relevancy=True,
+    initial_distance_lead=STOP_DISTANCE,
+    speed_lead_values=[0., 0., 2.],
+    breakpoints=[1., 10., 15.],
+    ensure_start=True,
+  ),
 ]
 
 
@@ -120,7 +132,6 @@ class LongitudinalControl(unittest.TestCase):
     params.clear_all()
     params.put_bool("Passive", bool(os.getenv("PASSIVE")))
     params.put_bool("OpenpilotEnabledToggle", True)
-    params.put_bool("CommunityFeaturesToggle", True)
 
   # hack
   def test_longitudinal_setup(self):

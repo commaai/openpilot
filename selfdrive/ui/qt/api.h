@@ -5,7 +5,7 @@
 #include <QString>
 #include <QTimer>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 namespace CommaApi {
 
@@ -27,23 +27,21 @@ public:
 
   explicit HttpRequest(QObject* parent, bool create_jwt = true, int timeout = 20000);
   void sendRequest(const QString &requestURL, const Method method = Method::GET);
-  bool active();
+  bool active() const;
+  bool timeout() const;
+
+signals:
+  void requestDone(const QString &response, bool success, QNetworkReply::NetworkError error);
 
 protected:
   QNetworkReply *reply = nullptr;
 
 private:
-  QNetworkAccessManager *networkAccessManager = nullptr;
+  static QNetworkAccessManager *nam();
   QTimer *networkTimer = nullptr;
   bool create_jwt;
 
 private slots:
   void requestTimeout();
   void requestFinished();
-
-signals:
-  void requestDone(bool success);
-  void receivedResponse(const QString &response);
-  void failedResponse(const QString &errorString);
-  void timeoutResponse(const QString &errorString);
 };

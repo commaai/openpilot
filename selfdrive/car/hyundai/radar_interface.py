@@ -20,11 +20,11 @@ def get_radar_can_parser(CP):
   for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
     msg = f"RADAR_TRACK_{addr:x}"
     signals += [
-      ("STATE", msg, 0),
-      ("AZIMUTH", msg, 0),
-      ("LONG_DIST", msg, 0),
-      ("REL_ACCEL", msg, 0),
-      ("REL_SPEED", msg, 0),
+      ("STATE", msg),
+      ("AZIMUTH", msg),
+      ("LONG_DIST", msg),
+      ("REL_ACCEL", msg),
+      ("REL_SPEED", msg),
     ]
     checks += [(msg, 50)]
   return CANParser(DBC[CP.carFingerprint]['radar'], signals, checks, 1)
@@ -74,14 +74,14 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[addr].trackId = self.track_id
         self.track_id += 1
 
-      valid = msg['STATE'] in [3, 4]
+      valid = msg['STATE'] in (3, 4)
       if valid:
         azimuth = math.radians(msg['AZIMUTH'])
         self.pts[addr].measured = True
         self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
         self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
         self.pts[addr].vRel = msg['REL_SPEED']
-        self.pts[addr].aRel = msg['REL_ACCEL'] 
+        self.pts[addr].aRel = msg['REL_ACCEL']
         self.pts[addr].yvRel = float('nan')
 
       else:

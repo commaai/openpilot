@@ -8,7 +8,7 @@
 #include <ctime>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/locationd/generated/gps.h"
 #include "selfdrive/locationd/generated/ubx.h"
 
@@ -22,11 +22,6 @@ namespace ublox {
   const int UBLOX_HEADER_SIZE = 6;
   const int UBLOX_CHECKSUM_SIZE = 2;
   const int UBLOX_MAX_MSG_SIZE = 65536;
-
-  // Boardd still uses these:
-  const uint8_t CLASS_NAV = 0x01;
-  const uint8_t CLASS_RXM = 0x02;
-  const uint8_t CLASS_MON = 0x0A;
 
   struct ubx_mga_ini_time_utc_t {
     uint8_t type;

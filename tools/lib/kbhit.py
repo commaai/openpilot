@@ -22,7 +22,7 @@ class KBHit:
     self.new_term = self.old_term.copy()
 
     # New terminal setting unbuffered
-    self.new_term[3] &= ~(termios.ICANON | termios.ECHO)  # type: ignore
+    self.new_term[3] &= ~(termios.ICANON | termios.ECHO)
     termios.tcsetattr(STDIN_FD, termios.TCSAFLUSH, self.new_term)
 
     # Support normal-terminal reset at exit

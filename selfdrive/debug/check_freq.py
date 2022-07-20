@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# type: ignore
-
 import argparse
 import numpy as np
 from collections import defaultdict, deque
+from typing import DefaultDict, Deque
+
 from common.realtime import sec_since_boot
 import cereal.messaging as messaging
 
@@ -19,8 +19,8 @@ if __name__ == "__main__":
   socket_names = args.socket
   sockets = {}
 
-  rcv_times = defaultdict(lambda: deque(maxlen=100))
-  valids = defaultdict(lambda: deque(maxlen=100))
+  rcv_times: DefaultDict[str, Deque[float]] = defaultdict(lambda: deque(maxlen=100))
+  valids: DefaultDict[str, Deque[bool]] = defaultdict(lambda: deque(maxlen=100))
 
   t = sec_since_boot()
   for name in socket_names:
@@ -31,6 +31,9 @@ if __name__ == "__main__":
   while True:
     for socket in poller.poll(100):
       msg = messaging.recv_one(socket)
+      if msg is None:
+        continue
+
       name = msg.which()
 
       t = sec_since_boot()
@@ -42,6 +45,6 @@ if __name__ == "__main__":
       for name in socket_names:
         dts = np.diff(rcv_times[name])
         mean = np.mean(dts)
-        print("%s: Freq %.2f Hz, Min %.2f%%, Max %.2f%%, valid " % (name, 1.0 / mean, np.min(dts) / mean * 100, np.max(dts) / mean * 100), all(valids[name]))
+        print(f"{name}: Freq {1.0 / mean:.2f} Hz, Min {np.min(dts) / mean * 100:.2f}%, Max {np.max(dts) / mean * 100:.2f}%, valid ", all(valids[name]))
 
       prev_print = t

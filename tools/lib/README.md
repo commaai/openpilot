@@ -31,3 +31,21 @@ for msg in lr:
   if msg.which() == "carState":
     print(msg.carState.steeringAngleDeg)
 ```
+
+### MultiLogIterator
+
+`MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
+
+```python
+from tools.lib.route import Route
+from tools.lib.logreader import MultiLogIterator
+
+# setup a MultiLogIterator to read all the logs in the route
+r = Route("4cf7a6ad03080c90|2021-09-29--13-46-36")
+lr = MultiLogIterator(r.log_paths())
+
+# print all the steering angles values from all the logs in the route
+for msg in lr:
+  if msg.which() == "carState":
+    print(msg.carState.steeringAngleDeg)
+```
