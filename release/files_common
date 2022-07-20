@@ -422,7 +422,7 @@ third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
 
-third_party/qt5/bin/**
+third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
