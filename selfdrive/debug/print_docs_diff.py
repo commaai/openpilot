@@ -5,24 +5,24 @@ import difflib
 import pickle
 
 from selfdrive.car.docs import get_all_car_info
-from selfdrive.car.docs_definitions import Column, StarColumns
+from selfdrive.car.docs_definitions import Column
 
 STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
-COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * len(StarColumns)))
+COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|"
 ARROW_SYMBOL = "➡️"
 
 
-def match_cars(old_cars, new_cars):
+def match_cars(base_cars, new_cars):
   changes = []
   additions = []
   for new in new_cars:
-    closest_match = difflib.get_close_matches(new.name, [c.name for c in old_cars])[0]
+    closest_match = difflib.get_close_matches(new.name, [base.name for base in base_cars])[0]
     if closest_match not in [i[1].name for i in changes]:
-      changes.append((new, next(car for car in old_cars if car.name == closest_match)))
+      changes.append((new, next(car for car in base_cars if car.name == closest_match)))
     else:
       additions.append(new)
-  removals = [i for i in old_cars if i.name not in [k[1].name for k in changes]]
+  removals = [i for i in base_cars if i.name not in [k[1].name for k in changes]]
   return changes, additions, removals
 
 
