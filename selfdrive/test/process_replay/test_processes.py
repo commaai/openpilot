@@ -30,6 +30,7 @@ original_segments = [
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
+  ("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.PASSAT_NMS
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dascamOnly is no longer set
@@ -51,6 +52,7 @@ segments = [
   ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
   ("NISSAN", "regenCA0B0DC946E|2022-07-14--18-10-17--0"),
   ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
+  ("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),
   ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
 ]
 
