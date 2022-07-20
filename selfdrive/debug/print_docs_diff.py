@@ -14,6 +14,7 @@ ARROW_SYMBOL = "➡️"
 
 
 def match_cars(base_cars, new_cars):
+  """Matches CarInfo by name similarity and finds additions and removals"""
   changes = []
   additions = []
   for new in new_cars:
