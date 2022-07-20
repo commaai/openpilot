@@ -163,6 +163,7 @@ class Controls:
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
+    self.v_cruise_cluster_kph = 255
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
@@ -454,11 +455,14 @@ class Controls:
     if not self.CP.pcmCruise:
       self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
                                           self.button_timers, self.enabled, self.is_metric)
+      self.v_cruise_cluster_kph = self.v_cruise_kph
     else:
       if CS.cruiseState.available:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
       else:
         self.v_cruise_kph = 0
+        self.v_cruise_cluster_kph = 0
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -538,6 +542,7 @@ class Controls:
           self.current_alert_types.append(ET.ENABLE)
           if not self.CP.pcmCruise:
             self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
+            self.v_cruise_cluster_kph = self.v_cruise_kph
 
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
@@ -752,6 +757,7 @@ class Controls:
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
+    controlsState.vCruiseCluster = float(self.v_cruise_cluster_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
