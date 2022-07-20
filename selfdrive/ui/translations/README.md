@@ -28,11 +28,11 @@ Follow step 3. above, you can review existing translations and add missing ones.
 
 ### Updating the UI
 
-Any time you edit source code in the UI, you need to update and compile the translations to ensure the line numbers and contexts are up to date (last step above).
+Any time you edit source code in the UI, you need to update the translations to ensure the line numbers and contexts are up to date (first step above).
 
 ### Testing
 
-openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker.
+openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
 
 Tests translation files up to date:
 
