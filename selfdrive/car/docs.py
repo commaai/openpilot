@@ -51,14 +51,14 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_co
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   cols = list(Column)
+  hide_cols = set(StarColumns) - set(TierColumns)
   if only_tier_cols:
-    hide_cols = set(StarColumns) - set(TierColumns)
     cols = [c for c in cols if c not in hide_cols]
     for car in all_car_info:
       for c in hide_cols:
         del car.row[c]
 
-  footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
+  footnotes = [fn.value.text for fn in ALL_FOOTNOTES if fn.value.column not in hide_cols]
   cars_md: str = template.render(all_car_info=all_car_info,
                                  footnotes=footnotes, Star=Star, Column=cols, star_descriptions=STAR_DESCRIPTIONS)
   return cars_md
