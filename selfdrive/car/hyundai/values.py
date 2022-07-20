@@ -971,10 +971,12 @@ FW_VERSIONS = {
       b'\xf1\x8799110Q4600\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x8799110Q4600\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x8799110Q4600\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4000         ',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105',
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4100\x00 4DEEC105',
+      b'\xf1\x00DE  MDPS C 1.00 1.04 56310Q4100\x00 4DEEC104',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.00 99211-Q4100 200706',
@@ -982,6 +984,7 @@ FW_VERSIONS = {
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.00 99211-Q4000 191211',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.01 99211-Q4500 210428',
+      b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.03 95740-Q4000 180821',
     ],
   },
   CAR.KIA_NIRO_HEV: {
