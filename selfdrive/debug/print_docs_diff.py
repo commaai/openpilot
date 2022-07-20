@@ -61,10 +61,6 @@ def print_car_info_diff(path):
   for car in get_all_car_info():
     new_car_info[car.car_fingerprint].append(car)
 
-  # Create empty lists so we can check additions and removals in one pass
-  base_car_info.update({f: [] for f in new_car_info if f not in base_car_info})
-  new_car_info.update({f: [] for f in base_car_info if f not in new_car_info})
-
   changes = defaultdict(list)
   for base_car_model, base_cars in base_car_info.items():
     # Match car info changes, and get additions and removals
