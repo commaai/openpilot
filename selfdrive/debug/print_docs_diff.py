@@ -31,7 +31,11 @@ def load_base_car_info(path):
 
 
 def get_star_diff(base_car, new_car):
-  return [column for column, value in base_car.row.items() if value != new_car.row[column]]
+  # print(base_car.row)
+  # print(new_car.row)
+  # print([base_car.get_column(i, STAR_ICON, "{}") for i in Column])
+  return [column for column in Column if base_car.get_column(column, STAR_ICON, "{}") != new_car.get_column(column, STAR_ICON, "{}")]
+  # return [column for column, value in base_car.row.items() if value != new_car.row[column]]
 
 
 def format_row(builder):
@@ -63,36 +67,37 @@ def print_car_info_diff(path):
 
     new_cars = new_car_info[base_car_model]
 
-    # print(base_cars, new_cars)
-    matches = match_cars(base_cars, new_cars)
-    print(matches)
-    continue
-    # changes = get_column_changes()
-
-
-    # Tier changes
-    if base_car.tier != new_car.tier:
-      tier_changes.append(f"- Tier for {base_car.make} {base_car.model} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
-
-    # Year changes
-
-
-    # Star changes
-    diff = get_star_diff(base_car, new_car)
-    if not len(diff):
+    if not any(['RAV4' in i.name for i in base_cars]):
       continue
 
-    row_builder = []
-    for column in list(Column):
-      if column not in diff:
-        row_builder.append(new_car.get_column(column, STAR_ICON, "{}"))
-      else:
-        row_builder.append(base_car.get_column(column, STAR_ICON, "{}") + ARROW_SYMBOL + new_car.get_column(column, STAR_ICON, "{}"))
+    # print(base_cars, new_cars)
+    matches = match_cars(base_cars, new_cars)
+    # print(matches)
+    # changes = get_column_changes()
 
-    star_changes.append(format_row(row_builder))
+    # Tier changes
+    for base_car, new_car in matches:
+      if base_car.tier != new_car.tier:
+        tier_changes.append(f"- Tier for {base_car.make} {base_car.model} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
+
+      # Star changes
+      print(base_car, new_car)
+      diff = get_star_diff(base_car, new_car)
+      print('Diff', diff)
+      if not len(diff):
+        continue
+
+      # TODO: combine with above get_star_diff
+      row_builder = []
+      for column in list(Column):
+        if column not in diff:
+          row_builder.append(new_car.get_column(column, STAR_ICON, "{}"))
+        else:
+          row_builder.append(base_car.get_column(column, STAR_ICON, "{}") + ARROW_SYMBOL + new_car.get_column(column, STAR_ICON, "{}"))
+
+      star_changes.append(format_row(row_builder))
 
   # Removals
-  print('jhere')
   for model in set(base_car_info) - set(new_car_info):
     car_info = base_car_info[model]
     removals.append(format_row([car_info.get_column(column, STAR_ICON, "{}") for column in Column]))
