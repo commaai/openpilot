@@ -7,10 +7,9 @@ from natsort import natsorted
 from typing import Dict, List
 
 from common.basedir import BASEDIR
-from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, CarInfo, Column, Star, Tier
+from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, StarColumns, TierColumns, CarInfo, Column, Star
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
-from selfdrive.car.tests.routes import non_tested_cars
 
 
 def get_all_footnotes() -> Dict[Enum, int]:
@@ -40,32 +39,28 @@ def get_all_car_info() -> List[CarInfo]:
       car_info = (car_info,)
 
     for _car_info in car_info:
-      all_car_info.append(_car_info.init(CP, non_tested_cars, ALL_FOOTNOTES))
+      all_car_info.append(_car_info.init(CP, ALL_FOOTNOTES))
 
   # Sort cars by make and model + year
-  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: (car.make + car.model).lower())
+  sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
   return sorted_cars
 
 
-def sort_by_tier(all_car_info: List[CarInfo]) -> Dict[Tier, List[CarInfo]]:
-  tier_car_info: Dict[Tier, List[CarInfo]] = {tier: [] for tier in Tier}
-  for car_info in all_car_info:
-    tier_car_info[car_info.tier].append(car_info)
-
-  # Sort cars by make and model + year
-  for tier, cars in tier_car_info.items():
-    tier_car_info[tier] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
-
-  return tier_car_info
-
-
-def generate_cars_md(all_car_info: List[CarInfo], template_fn: str) -> str:
+def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_cols: bool) -> str:
   with open(template_fn, "r") as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
-  footnotes = [fn.value.text for fn in ALL_FOOTNOTES]
-  cars_md: str = template.render(tiers=sort_by_tier(all_car_info), all_car_info=all_car_info,
-                                 footnotes=footnotes, Star=Star, Column=Column, star_descriptions=STAR_DESCRIPTIONS)
+  cols = list(Column)
+  if only_tier_cols:
+    hide_cols = set(StarColumns) - set(TierColumns)
+    cols = [c for c in cols if c not in hide_cols]
+    for car in all_car_info:
+      for c in hide_cols:
+        del car.row[c]
+
+  footnotes = [fn.value.text for fn in ALL_FOOTNOTES if fn.value.column in cols]
+  cars_md: str = template.render(all_car_info=all_car_info,
+                                 footnotes=footnotes, Star=Star, Column=cols, star_descriptions=STAR_DESCRIPTIONS)
   return cars_md
 
 
@@ -73,10 +68,11 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Auto generates supported cars documentation",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+  parser.add_argument("--tier-columns", action="store_true", help="Include only columns that count in the tier")
   parser.add_argument("--template", default=CARS_MD_TEMPLATE, help="Override default template filename")
   parser.add_argument("--out", default=CARS_MD_OUT, help="Override default generated filename")
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_info(), args.template))
+    f.write(generate_cars_md(get_all_car_info(), args.template, args.tier_columns))
   print(f"Generated and written to {args.out}")
