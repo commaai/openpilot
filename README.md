@@ -4,7 +4,7 @@ Table of Contents
 =======================
 
 * [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-in-a-car)
+* [Running in a car](#running-on-a-dedicated-device-in-a-car)
 * [Running on PC](#running-on-pc)
 * [Community and Contributing](#community-and-contributing)
 * [User Data and comma Account](#user-data-and-comma-account)
