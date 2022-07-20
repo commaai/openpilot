@@ -7,6 +7,7 @@ import pickle
 from selfdrive.car.docs import get_all_car_info
 from selfdrive.car.docs_definitions import Column
 
+FOOTNOTE_TAG = "<sup>{}</sup>"
 STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|"
@@ -37,8 +38,8 @@ def match_cars(base_cars, new_cars):
 def build_column_diff(base_car, new_car):
   row_builder = []
   for column in Column:
-    base_column = base_car.get_column(column, STAR_ICON, "{}")
-    new_column = new_car.get_column(column, STAR_ICON, "{}")
+    base_column = base_car.get_column(column, STAR_ICON, FOOTNOTE_TAG)
+    new_column = new_car.get_column(column, STAR_ICON, FOOTNOTE_TAG)
 
     if base_column != new_column:
       row_builder.append(f"{base_column} {ARROW_SYMBOL} {new_column}")
@@ -69,11 +70,11 @@ def print_car_info_diff(path):
 
     # Removals
     for car_info in car_removals:
-      changes["removals"].append(format_row([car_info.get_column(column, STAR_ICON, "{}") for column in Column]))
+      changes["removals"].append(format_row([car_info.get_column(column, STAR_ICON, FOOTNOTE_TAG) for column in Column]))
 
     # Additions
     for car_info in car_additions:
-      changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, "{}") for column in Column]))
+      changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, FOOTNOTE_TAG) for column in Column]))
 
     for new_car, base_car in car_changes:
       # Tier changes
