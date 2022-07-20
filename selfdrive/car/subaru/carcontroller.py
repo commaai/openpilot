@@ -49,7 +49,7 @@ class CarController:
     # *** alerts and pcm cancel ***
 
     if self.CP.carFingerprint in PREGLOBAL_CARS:
-      if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
+      if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
         if pcm_cancel_cmd:
@@ -66,16 +66,16 @@ class CarController:
         self.cruise_button_prev = cruise_button
 
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
-        self.es_distance_cnt = CS.es_distance_msg["Counter"]
+        self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
     else:
-      if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
+      if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
-        self.es_distance_cnt = CS.es_distance_msg["Counter"]
+        self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
-      if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
+      if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert, hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
-        self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
+        self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
