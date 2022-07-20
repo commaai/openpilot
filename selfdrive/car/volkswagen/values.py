@@ -29,7 +29,7 @@ class CarControllerParams:
   # FIXME: test hack for PQ torque tuning, need a mechanism to set this for torque tuning only if accepted
   STEER_DELTA_UP = 10            # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
   STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
-  STEER_DRIVER_ALLOWANCE = 80
+  STEER_DRIVER_ALLOWANCE = 60
   STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1        # from dbc
 
