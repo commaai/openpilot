@@ -17,14 +17,14 @@ openpilot provides a few tools to help contributors manage their translations an
    ```shell
    linguist selfdrive/ui/translations/your_language_file.ts
    ```
-4. SCons compiles the translation files into a format useable by the Qt UI. Run:
+4. View your finished translations by compiling and starting the UI, then find it in the language selector:
    ```shell
-   scons -j
+   scons selfdrive/ui && selfdrive/ui/ui
    ```
 
 ### Improving an Existing Language
 
-Follow the steps above, omitting steps 1. and 2. Any time you edit translations you'll want to make sure to compile them.
+Follow step 3. above, you can review existing translations and add missing ones. Once you're done, just open a pull request to openpilot.
 
 ### Updating the UI
 
