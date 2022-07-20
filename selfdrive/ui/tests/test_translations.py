@@ -23,8 +23,8 @@ class TestTranslations(unittest.TestCase):
     shutil.rmtree(TMP_TRANSLATIONS_DIR, ignore_errors=True)
 
   @staticmethod
-  def _read_translation_file(path, file, file_ext):
-    tr_file = os.path.join(path, f"{file}.{file_ext}")
+  def _read_translation_file(path, file):
+    tr_file = os.path.join(path, f"{file}.ts")
     with open(tr_file, "rb") as f:
       # fix relative path depth
       return f.read().replace(b"filename=\"../../", b"filename=\"../")
@@ -35,9 +35,8 @@ class TestTranslations(unittest.TestCase):
         if not len(file):
           self.skipTest(f"{name} translation has no defined file")
 
-        if not (os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")) and
-                os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.qm"))):
-          self.fail(f"{name} is missing translation files, run selfdrive/ui/update_translations.py")
+        self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")),
+                        f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
     update_translations(translations_dir=TMP_TRANSLATIONS_DIR)
@@ -47,18 +46,14 @@ class TestTranslations(unittest.TestCase):
         if not len(file):
           self.skipTest(f"{name} translation has no defined file")
 
-        for file_ext in ["ts", "qm"]:
-          with self.subTest(file_ext=file_ext):
+        # caught by test_missing_translation_files
+        if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")):
+          self.skipTest(f"{name} missing translation file")
 
-            # caught by test_missing_translation_files
-            if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.{file_ext}")):
-              self.skipTest(f"{name} missing translation file")
-
-            cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file, file_ext)
-            new_translations = self._read_translation_file(TMP_TRANSLATIONS_DIR, file, file_ext)
-
-            self.assertEqual(cur_translations, new_translations,
-                             f"{file} ({name}) {file_ext.upper()} translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
+        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
+        new_translations = self._read_translation_file(TMP_TRANSLATIONS_DIR, file)
+        self.assertEqual(cur_translations, new_translations,
+                         f"{file} ({name}) XML translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files")
 
   @unittest.skip("Only test unfinished translations before going to release")
   def test_unfinished_translations(self):
@@ -67,7 +62,7 @@ class TestTranslations(unittest.TestCase):
         if not len(file):
           raise self.skipTest(f"{name} translation has no defined file")
 
-        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file, "ts")
+        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
         self.assertTrue(b"<translation type=\"unfinished\">" not in cur_translations,
                         f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
 
