@@ -13,23 +13,25 @@ COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|"
 ARROW_SYMBOL = "➡️"
 
 
+def load_base_car_info(path):
+  with open(path, "rb") as f:
+    return pickle.load(f)
+
+
 def match_cars(base_cars, new_cars):
   """Matches CarInfo by name similarity and finds additions and removals"""
   changes = []
   additions = []
   for new in new_cars:
     closest_match = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)[0]
+
     if closest_match not in [c[1].name for c in changes]:
       changes.append((new, next(car for car in base_cars if car.name == closest_match)))
     else:
       additions.append(new)
+
   removals = [b for b in base_cars if b.name not in [c[1].name for c in changes]]
   return changes, additions, removals
-
-
-def load_base_car_info(path):
-  with open(path, "rb") as f:
-    return pickle.load(f)
 
 
 def build_column_diff(base_car, new_car):
@@ -37,6 +39,7 @@ def build_column_diff(base_car, new_car):
   for column in Column:
     base_column = base_car.get_column(column, STAR_ICON, "{}")
     new_column = new_car.get_column(column, STAR_ICON, "{}")
+
     if base_column != new_column:
       row_builder.append(f"{base_column} {ARROW_SYMBOL} {new_column}")
     else:
