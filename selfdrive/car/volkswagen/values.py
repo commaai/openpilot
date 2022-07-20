@@ -19,6 +19,8 @@ class CarControllerParams:
   MQB_LDW_STEP = 10              # LDW_02 message frequency 10Hz on MQB
   PQ_LDW_STEP = 5                # LDW_1 message frequency 20Hz on PQ35/PQ46/NMS
   GRA_ACC_STEP = 3               # GRA_ACC_01/GRA_Neu message frequency 33Hz
+  ACC_CONTROL_STEP = 2           # ACC_System frequency 50Hz
+  ACC_HUD_STEP = 4               # ACC_GRA_Anziege frequency 25Hz
 
   # Observed documented MQB limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
   # Limiting rate-of-change based on real-world testing and Comma's safety
