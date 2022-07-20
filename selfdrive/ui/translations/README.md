@@ -19,7 +19,7 @@ openpilot provides a few tools to help contributors manage their translations an
    ```
 4. View your finished translations by compiling and starting the UI, then find it in the language selector:
    ```shell
-   scons selfdrive/ui && selfdrive/ui/ui
+   scons scons -j$(nproc) selfdrive/ui && selfdrive/ui/ui
    ```
 
 ### Improving an Existing Language
