@@ -5,11 +5,11 @@ import difflib
 import pickle
 
 from selfdrive.car.docs import get_all_car_info
-from selfdrive.car.docs_definitions import Column
+from selfdrive.car.docs_definitions import Column, StarColumns
 
 STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
-COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|"
+COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * len(StarColumns)))
 ARROW_SYMBOL = "➡️"
 
 
@@ -101,8 +101,8 @@ def print_car_info_diff(path):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--path", required=True)
-  args = parser.parse_args()
-  # path = '/home/batman/base_car_info'
-  print_car_info_diff(args.path)
+  # parser = argparse.ArgumentParser()
+  # parser.add_argument("--path", required=True)
+  # args = parser.parse_args()
+  path = '/home/batman/base_car_info'
+  print_car_info_diff(path)
