@@ -17,12 +17,12 @@ def match_cars(base_cars, new_cars):
   changes = []
   additions = []
   for new in new_cars:
-    closest_match = difflib.get_close_matches(new.name, [base.name for base in base_cars])[0]
-    if closest_match not in [i[1].name for i in changes]:
+    closest_match = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)[0]
+    if closest_match not in [c[1].name for c in changes]:
       changes.append((new, next(car for car in base_cars if car.name == closest_match)))
     else:
       additions.append(new)
-  removals = [i for i in base_cars if i.name not in [k[1].name for k in changes]]
+  removals = [b for b in base_cars if b.name not in [c[1].name for c in changes]]
   return changes, additions, removals
 
 
