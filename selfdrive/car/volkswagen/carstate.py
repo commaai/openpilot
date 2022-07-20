@@ -248,8 +248,8 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = 0
 
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
-    ret.leftBlinker = bool(pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"])
-    ret.rightBlinker = bool(pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_re"])
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(300, pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_li"],
+                                                                            pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_re"])
     self.gra_stock_values = pt_cp.vl["GRA_Neu"]
     buttonEvents = []
     for button in PQ_BUTTONS:
