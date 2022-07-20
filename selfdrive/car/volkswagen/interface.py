@@ -94,7 +94,8 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.PASSAT_NMS:
       ret.mass = 1503 + STD_CARGO_KG
       ret.wheelbase = 2.80
-      ret.minSteerSpeed = 50 * CV.KPH_TO_MS  # FIXME: may be lower depending on model-year/EPS FW
+      ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
 
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
