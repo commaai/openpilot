@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import argparse
+from collections import defaultdict
+import difflib
 import pickle
 
 from selfdrive.car.docs import get_all_car_info
@@ -10,6 +12,18 @@ COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|:---:|:---:|:---:|:---:|:---:|"
 ARROW_SYMBOL = "➡️"
 
+
+def match_cars(old_cars, new_cars):
+  changes = []
+  for new in new_cars:
+    closest_match = difflib.get_close_matches(new.name, [c.name for c in old_cars])[0]
+    if closest_match not in [i[1].name for i in changes]:
+      changes.append((new, next(car for car in old_cars if car.name == closest_match)))
+      # changes[new.name] = next(car for car in old_cars if car.name == closest_match)
+    # else:
+    #   additions.append(new.name)
+    # print(new, difflib.get_close_matches(new, old_cars))
+  return changes  #  , additions
 
 def load_base_car_info(path):
   with open(path, "rb") as f:
@@ -25,24 +39,43 @@ def format_row(builder):
 
 
 def print_car_info_diff(path):
-  base_car_info = {f"{i.make} {i.model}": i for i in load_base_car_info(path)}
-  new_car_info = {f"{i.make} {i.model}": i for i in get_all_car_info()}
+  # base_car_info = {f"{i.make} {i.model}": i for i in load_base_car_info(path)}
+  # new_car_info = {f"{i.make} {i.model}": i for i in get_all_car_info()}
+
+  base_car_info = defaultdict(list)
+  new_car_info = defaultdict(list)
+
+  for car in load_base_car_info(path):
+    base_car_info[car.car_fingerprint].append(car)
+
+  for car in get_all_car_info():
+    new_car_info[car.car_fingerprint].append(car)
 
   tier_changes = []
-  star_changes = []
+  star_changes = []  # TODO: rename column changes?
   removals = []
   additions = []
 
-  # Changes (tier + stars)
-  for base_car_model, base_car in base_car_info.items():
+  # Changes (tier + columns)
+  for base_car_model, base_cars in base_car_info.items():
     if base_car_model not in new_car_info:
       continue
 
-    new_car = new_car_info[base_car_model]
+    new_cars = new_car_info[base_car_model]
+
+    # print(base_cars, new_cars)
+    matches = match_cars(base_cars, new_cars)
+    print(matches)
+    continue
+    # changes = get_column_changes()
+
 
     # Tier changes
     if base_car.tier != new_car.tier:
       tier_changes.append(f"- Tier for {base_car.make} {base_car.model} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
+
+    # Year changes
+
 
     # Star changes
     diff = get_star_diff(base_car, new_car)
@@ -59,6 +92,7 @@ def print_car_info_diff(path):
     star_changes.append(format_row(row_builder))
 
   # Removals
+  print('jhere')
   for model in set(base_car_info) - set(new_car_info):
     car_info = base_car_info[model]
     removals.append(format_row([car_info.get_column(column, STAR_ICON, "{}") for column in Column]))
