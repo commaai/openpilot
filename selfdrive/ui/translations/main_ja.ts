@@ -406,7 +406,7 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
         <source>Try the Navigation Beta</source>
-        <translation>ベータ版ﾅﾋﾞｹﾞｰｼｮﾝを試し</translation>
+        <translation>β版ﾅﾋﾞｹﾞｰｼｮﾝを試す</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
@@ -567,7 +567,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai でプライム会員に登録できます</translation>
+        <translation>connect.comma.ai でﾌﾟﾗｲﾑ会員に登録できます</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="199"/>
