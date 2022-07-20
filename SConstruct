@@ -76,6 +76,7 @@ rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "larch64":
   lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
+  lenv['PATH'] += ':third_party/qt5/larch64/bin'
 
   cpppath = [
     "#third_party/opencl/include",
