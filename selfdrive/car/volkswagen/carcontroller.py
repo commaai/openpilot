@@ -80,6 +80,11 @@ class CarController:
       idx = (self.frame / P.HCA_STEP) % 16
       can_sends.append(self.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
 
+    # **** Acceleration Controls ******************************************** #
+
+    if self.frame % P.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
+      pass
+
     # **** HUD Controls ***************************************************** #
 
     if self.frame % self.ldw_step == 0:

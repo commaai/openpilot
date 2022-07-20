@@ -27,3 +27,26 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   values["GRA_Recall"] = resume
 
   return packer.make_can_msg("GRA_Neu", bus, values, idx)
+
+def create_acc_accel_control(packer, bus, enabled, accel, idx):
+  values = {
+    "ACS_Sta_ADR": 2 if not enabled else 1,  # FIXME: probably affected by mainswitch
+    "ACS_StSt_Info": not enabled,
+    "ACS_Typ_ACC": 0,  # TODO: this is ACC "basic", find a way to detect FtS support (1)
+    "ACS_Sollbeschl": accel if enabled else 3.01,
+    "ACS_zul_Regelabw": 0.2 if enabled else 1.27,
+    "ACS_max_AendGrad": 0.2 if enabled else 1.27,
+  }
+
+  return packer.make_can_msg("ACC_System", bus, values, idx)
+
+def create_acc_hud_control(packer, bus, enabled, set_speed, lead_visible, idx):
+  values = {
+    "ACA_StaACC": 3 if enabled else 2,  # FIXME: probably affected by mainswitch, also gas override and overrun
+    "ACA_Zeitluecke": 2,
+    "ACA_V_Wunsch": set_speed,
+    "ACC_gemZeitl": 8 if lead_visible else 0,
+  }
+  # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
+
+  return packer.make_can_msg("ACC_GRA_Anziege", bus, values, idx)
