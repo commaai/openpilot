@@ -105,8 +105,7 @@ def print_car_info_diff(path):
 
 
 if __name__ == "__main__":
-  # parser = argparse.ArgumentParser()
-  # parser.add_argument("--path", required=True)
-  # args = parser.parse_args()
-  path = '/home/batman/base_car_info'
-  print_car_info_diff(path)
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--path", required=True)
+  args = parser.parse_args()
+  print_car_info_diff(args.path)
