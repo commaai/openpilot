@@ -44,7 +44,6 @@ def format_row(builder):
 def print_car_info_diff(path):
   base_car_info = defaultdict(list)
   new_car_info = defaultdict(list)
-
   for car in load_base_car_info(path):
     base_car_info[car.car_fingerprint].append(car)
   for car in get_all_car_info():
@@ -60,9 +59,6 @@ def print_car_info_diff(path):
   additions = []
 
   for base_car_model, base_cars in base_car_info.items():
-    if base_car_model not in new_car_info:
-      continue
-
     # Match car info changes, and get additions and removals
     new_cars = new_car_info[base_car_model]
     car_changes, car_additions, car_removals = match_cars(base_cars, new_cars)
@@ -81,9 +77,7 @@ def print_car_info_diff(path):
         tier_changes.append(f"- Tier for {base_car.make} {base_car.model} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
 
       # Column changes
-      # print(base_car, new_car)
       diff = get_column_diff(base_car, new_car)
-      # print('Diff', diff)
       if not len(diff):
         continue
 
