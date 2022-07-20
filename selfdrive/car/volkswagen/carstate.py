@@ -10,6 +10,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.button_states = {button.event_type: False for button in MQB_BUTTONS}
+    self.frame = 0
 
     if CP.carFingerprint in PQ_CARS:
       can_define = CANDefine(DBC_FILES.pq)
@@ -169,8 +170,8 @@ class CarState(CarStateBase):
 
     # Verify EPS readiness to accept steering commands
     hca_status = self.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultPermanent = hca_status in ["DISABLED", "FAULT"]
-    ret.steerFaultTemporary = hca_status in ["INITIALIZING", "REJECTED"]
+    ret.steerFaultPermanent = hca_status in ["DISABLED", "FAULT"] and self.frame > 300
+    ret.steerFaultTemporary = hca_status in ["INITIALIZING", "REJECTED"] and self.frame > 300
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_3"]["Fahrpedal_Rohsignal"] / 100.0
@@ -265,6 +266,7 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
 
+    self.frame += 1
     return ret
 
   @staticmethod
