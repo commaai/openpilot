@@ -8,7 +8,7 @@ Before getting started, make sure you have set up the openpilot Ubuntu developme
 
 openpilot provides a few tools to help contributors manage their translations and to ensure quality. To get started:
 
-1. Add your new language to [languages.json](/selfdrive/ui/translations/languages.json) with the appropriate [language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) and the localized language name (Simplified Chinese is `中文（繁體）`).
+1. Add your new language to [languages.json](/selfdrive/ui/translations/languages.json) with the appropriate [language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) and the localized language name (Traditional Chinese is `中文（繁體）`).
 2. Generate the XML translation file (`*.ts`):
    ```shell
    selfdrive/ui/update_translations.py
