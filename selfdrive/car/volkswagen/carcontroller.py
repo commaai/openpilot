@@ -90,9 +90,15 @@ class CarController:
 
     if self.CP.openpilotLongitudinalControl:
       if self.frame % P.ACC_CONTROL_STEP:
+        if CC.longActive:
+          adr_status = 1
+        elif CS.cruiseState.available:
+          adr_status = 2
+        else:
+          adr_status = 0
         accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if CC.longActive else 0
         idx = (self.frame / P.ACC_CONTROL_STEP) % 16
-        can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, CC.longActive, accel, idx))
+        can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, adr_status, accel, idx))
       if self.frame % P.ACC_HUD_STEP:
         if CC.longActive:
           acc_status = 3

@@ -28,14 +28,14 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
 
   return packer.make_can_msg("GRA_Neu", bus, values, idx)
 
-def create_acc_accel_control(packer, bus, active, accel, idx):
+def create_acc_accel_control(packer, bus, adr_status, accel, idx):
   values = {
-    "ACS_Sta_ADR": 2 if not active else 1,  # FIXME: probably affected by mainswitch
-    "ACS_StSt_Info": not active,
+    "ACS_Sta_ADR": adr_status,
+    "ACS_StSt_Info": adr_status != 1,
     "ACS_Typ_ACC": 0,  # TODO: this is ACC "basic", find a way to detect FtS support (1)
-    "ACS_Sollbeschl": accel if active else 3.01,
-    "ACS_zul_Regelabw": 0.2 if active else 1.27,
-    "ACS_max_AendGrad": 0.2 if active else 1.27,
+    "ACS_Sollbeschl": accel if adr_status == 1 else 3.01,
+    "ACS_zul_Regelabw": 0.2 if adr_status == 1 else 1.27,
+    "ACS_max_AendGrad": 0.2 if adr_status == 1 else 1.27,
   }
 
   return packer.make_can_msg("ACC_System", bus, values, idx)
