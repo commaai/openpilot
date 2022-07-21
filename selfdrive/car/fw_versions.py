@@ -476,6 +476,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               assert uds.get_rx_addr_for_tx_addr(addr[0], r.rx_offset) == rx_addr
               f.request = r.request
               f.brand = r.brand
+              f.bus = r.bus
 
               if addr[1] is not None:
                 f.subAddress = addr[1]
@@ -531,7 +532,7 @@ if __name__ == "__main__":
   padding = max([len(fw.brand) for fw in fw_vers] or [0])
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-    print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+    print(f"  Brand: {version.brand:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
 
   print()
