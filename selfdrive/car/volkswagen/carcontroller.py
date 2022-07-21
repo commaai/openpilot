@@ -92,7 +92,7 @@ class CarController:
       if self.frame % P.ACC_CONTROL_STEP:
         if CC.longActive:
           adr_status = 1
-        elif CS.cruiseState.available:
+        elif CS.out.cruiseState.available:
           adr_status = 2
         else:
           adr_status = 0
@@ -102,7 +102,7 @@ class CarController:
       if self.frame % P.ACC_HUD_STEP:
         if CC.longActive:
           acc_status = 3
-        elif CS.cruiseState.available:
+        elif CS.out.cruiseState.available:
           acc_status = 2
         elif CS.accFaulted:
           acc_status = 6
