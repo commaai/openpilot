@@ -39,7 +39,7 @@ Although they're not upstream, the community has openpilot running on other make
 **openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
 If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. We don't have a roadmap for car support, and in fact, most car support comes from users like you!
 
-### Which cars are able to supported?
+### Which cars are able to be supported?
 
 openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering) and [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control), then it almost certainly has these interfaces. These interfaces generally started shipping on cars around 2016.
 
@@ -52,7 +52,7 @@ If your car has the following packages or features, then it's a good candidate f
 | Subaru | Any car with EyeSight will work. EyeSight comes standard on many newer models. |
 | Nissan | Any car with ProPILOT will likely work. |
 | Toyota & Lexus | Any car that has Toyota/Lexus Safety Sense with "Lane Departure Alert with Steering Assist (LDA w/SA)" and/or "Lane Tracing Assist (LTA)" will work. Note that LDA without Steering Assist will not work. These features come standard on most newer models. |
-| Hyundai, Kia, & Genesis | Any car with Smart Cruise Control (SCC) and Lane Following Assist (LFA) or Lane Keeping Assist (LKAS) will work. LKAS/LFA come standard on most newer models. Any form of SCC will work, such as NSCC. |
+| Hyundai, Kia, & Genesis | Any car with Smart Cruise Control (SCC) and Lane Following Assist (LFA) or Lane Keeping Assist (LKAS) will work. LKAS/LFA comes standard on most newer models. Any form of SCC will work, such as NSCC. |
 | Chrysler, Jeep, & Ram | Any car with LaneSense and Adaptive Cruise Control will likely work. These come standard on many newer models. |
 
 ### FlexRay
