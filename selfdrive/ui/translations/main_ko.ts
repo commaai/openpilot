@@ -488,30 +488,30 @@ location set</source>
 <context>
     <name>NvgWindow</name>
     <message>
-        <location filename="../qt/onroad.cc" line="208"/>
+        <location filename="../qt/onroad.cc" line="212"/>
         <source>km/h</source>
         <translation>km/h</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="208"/>
+        <location filename="../qt/onroad.cc" line="212"/>
         <source>mph</source>
         <translation>mph</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="275"/>
-        <location filename="../qt/onroad.cc" line="278"/>
+        <location filename="../qt/onroad.cc" line="279"/>
+        <location filename="../qt/onroad.cc" line="282"/>
         <source>MAX</source>
         <translation>MAX</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="322"/>
-        <location filename="../qt/onroad.cc" line="325"/>
+        <location filename="../qt/onroad.cc" line="326"/>
+        <location filename="../qt/onroad.cc" line="329"/>
         <source>SPEED</source>
         <translation>SPEED</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="328"/>
-        <location filename="../qt/onroad.cc" line="331"/>
+        <location filename="../qt/onroad.cc" line="332"/>
+        <location filename="../qt/onroad.cc" line="335"/>
         <source>LIMIT</source>
         <translation>LIMIT</translation>
     </message>
