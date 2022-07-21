@@ -112,7 +112,7 @@ class Request:
   response: List[bytes]
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = DEFAULT_RX_OFFSET
-  bus: int = 1
+  buses: List[int] = field(default_factory=lambda: [0, 2])
 
 
 REQUESTS: List[Request] = [
@@ -198,7 +198,7 @@ REQUESTS: List[Request] = [
     "body",
     [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
-    bus=0,
+    buses=[0],
   ),
   # Chrysler / FCA / Stellantis
   Request(
@@ -217,14 +217,6 @@ REQUESTS: List[Request] = [
     "ford",
     [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine],
-  ),
-  Request(
-    "ford",
-    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
-    bus=0,
-    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
   ),
 ]
 
@@ -366,18 +358,19 @@ def get_present_ecus(logcan, sendcan):
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          a = (addr, sub_addr, r.bus)
-          # Build set of queries
-          if sub_addr is None:
-            if a not in parallel_queries:
-              parallel_queries.append(a)
-          else:  # subaddresses must be queried one by one
-            if [a] not in queries:
-              queries.append([a])
+          for bus in r.buses:
+            a = (addr, sub_addr, bus)
+            # Build set of queries
+            if sub_addr is None:
+              if a not in parallel_queries:
+                parallel_queries.append(a)
+            else:  # subaddresses must be queried one by one
+              if [a] not in queries:
+                queries.append([a])
 
-          # Build set of expected responses to filter
-          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
-          responses.add((response_addr, sub_addr, r.bus))
+            # Build set of expected responses to filter
+            response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+            responses.add((response_addr, sub_addr, bus))
 
   queries.insert(0, parallel_queries)
 
@@ -463,22 +456,23 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
-            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (addr, rx_addr), version in query.get_data(timeout).items():
-              f = car.CarParams.CarFw.new_message()
+            for bus in r.buses:
+              query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
+              for (addr, rx_addr), version in query.get_data(timeout).items():
+                f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types[(r.brand, addr[0], addr[1])]
-              f.fwVersion = version
-              f.address = addr[0]
-              f.responseAddress = rx_addr
-              f.request = r.request
-              f.brand = r.brand
-              f.bus = r.bus
+                f.ecu = ecu_types[(r.brand, addr[0], addr[1])]
+                f.fwVersion = version
+                f.address = addr[0]
+                f.responseAddress = rx_addr
+                f.request = r.request
+                f.brand = r.brand
+                f.bus = bus
 
-              if addr[1] is not None:
-                f.subAddress = addr[1]
+                if addr[1] is not None:
+                  f.subAddress = addr[1]
 
-              car_fw.append(f)
+                car_fw.append(f)
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
