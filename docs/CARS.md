@@ -13,7 +13,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 - <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - No steering control below certain speeds. See your car's manual for the minimum speed.
 
 ### Steering Torque
-- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque to comfortably take highway turns.
+- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque to comfortably take most highway turns.
 - <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Limited ability to make tighter turns.
 
 

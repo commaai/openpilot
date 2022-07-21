@@ -182,7 +182,7 @@ STAR_DESCRIPTIONS = {
       [Star.EMPTY.value, "No steering control below certain speeds. See your car's manual for the minimum speed."],
     ],
     Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to comfortably take highway turns."],
+      [Star.FULL.value, "Car has enough steering torque to comfortably take most highway turns."],
       [Star.EMPTY.value, "Limited ability to make tighter turns."],
     ],
   },
