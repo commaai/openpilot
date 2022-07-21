@@ -132,10 +132,9 @@ class Footnote(Enum):
   PASSAT = CarFootnote(
     "Refers only to the MQB-based European B8 Passat, not including the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  # TODO: Enable this footnote and add to CAR.PASSAT_NMS prior to releasing PQ from dashcamOnly mode
-  # PASSAT_NMS = CarFootnote(
-  #  "Refers only to the NMS Passat in the USA/China/Mideast markets, not including the MQB-based European B8 Passat.",
-  #  Column.MODEL)
+  PASSAT_NMS = CarFootnote(
+    "Refers only to the NMS Passat in the USA/China/Mideast markets, not including the MQB-based European B8 Passat.",
+    Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
     "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
