@@ -85,7 +85,7 @@ QString timeAgo(const QDateTime &date) {
     s = QObject::tr("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
   } else if (diff < 3600 * 24 * 7) {
     int days = diff / (60 * 60 * 24);
-    s = QObject::tr("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : ""); // %2 "s" show In other languages, this is not normal
+    s = QObject::tr("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
   } else {
     s = date.date().toString();
   }
