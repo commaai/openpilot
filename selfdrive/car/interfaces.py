@@ -162,6 +162,12 @@ class CarInterfaceBase(ABC):
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
+    if ret.vEgoCluster == 0.0:
+      ret.vEgoCluster = ret.vEgo
+
+    if ret.cruiseState.speedCluster == 0:
+      ret.cruiseState.speedCluster = ret.cruiseState.speed
+
     # copy back for next iteration
     reader = ret.as_reader()
     if self.CS is not None:
