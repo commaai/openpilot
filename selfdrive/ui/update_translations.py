@@ -26,9 +26,6 @@ def update_translations(vanish=False, translations_dir=TRANSLATIONS_DIR):
     ret = os.system(args)
     assert ret == 0
 
-    ret = os.system(f"lrelease {tr_file}")
-    assert ret == 0
-
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Update translation files for UI",
