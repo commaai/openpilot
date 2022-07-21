@@ -75,6 +75,8 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
     "HDA_Active": 1 if hda_set_speed else 0,
     "HDA_Icon_State": 2 if hda_set_speed else 0,
     "HDA_VSetReq": hda_set_speed,
+    "LFA_USM": 2,
+    "HDA_USM": 2,
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
