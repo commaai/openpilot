@@ -9,7 +9,7 @@ Before getting started, make sure you have set up the openpilot Ubuntu developme
 openpilot provides a few tools to help contributors manage their translations and to ensure quality. To get started:
 
 1. Add your new language to [languages.json](/selfdrive/ui/translations/languages.json) with the appropriate [language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) and the localized language name (Simplified Chinese is `中文（繁體）`).
-2. Generate the translation file (`*.ts`):
+2. Generate the XML translation file (`*.ts`):
    ```shell
    selfdrive/ui/update_translations.py
    ```
@@ -17,22 +17,22 @@ openpilot provides a few tools to help contributors manage their translations an
    ```shell
    linguist selfdrive/ui/translations/your_language_file.ts
    ```
-4. Save your file and generate the compiled QM file used by the Qt UI:
+4. View your finished translations by compiling and starting the UI, then find it in the language selector:
    ```shell
-   selfdrive/ui/update_translations.py --release
+   scons -j$(nproc) selfdrive/ui && selfdrive/ui/ui
    ```
 
 ### Improving an Existing Language
 
-Follow the steps above, omitting steps 1. and 2. Any time you edit translations you'll want to make sure to compile them.
+Follow step 3. above, you can review existing translations and add missing ones. Once you're done, just open a pull request to openpilot.
 
 ### Updating the UI
 
-Any time you edit source code in the UI, you need to update and compile the translations to ensure the line numbers and contexts are up to date (last step above).
+Any time you edit source code in the UI, you need to update the translations to ensure the line numbers and contexts are up to date (first step above).
 
 ### Testing
 
-openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker.
+openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
 
 Tests translation files up to date:
 
