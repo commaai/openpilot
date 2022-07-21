@@ -224,23 +224,11 @@ class CarState(CarStateBase):
     ret.stockAeb = False
 
     # Update ACC radar status.
-    accStatus = ext_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"]
-    if accStatus == 2:
-      # ACC okay and enabled, but not currently engaged
-      ret.cruiseState.available = True
-      ret.cruiseState.enabled = False
-    elif accStatus in [3, 4, 5]:
-      # ACC okay and enabled, currently engaged and regulating speed (3) or engaged with driver accelerating (4) or overrun (5)
-      # Verify against Motor_2 to keep in lockstep with Panda safety
-      ret.cruiseState.available = True
-      if pt_cp.vl["Motor_2"]["GRA_Status"] in [1, 2]:
-        ret.cruiseState.enabled = True
-      else:
-        ret.cruiseState.enabled = False
-    else:
-      # ACC okay but disabled (1), or a radar visibility or other fault/disruption (6 or 7)
-      ret.cruiseState.available = False
-      ret.cruiseState.enabled = False
+    ret.cruiseState.available = pt_cp.vl["Motor_5"]["GRA_Hauptschalter"]
+    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"]
+    if self.CP.pcmCruise:
+      ret.accFaulted = pt_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"] in (6, 7)
+    # TODO: update opendbc with PQ TSK state for OP long accFaulted
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
@@ -414,6 +402,7 @@ class CarState(CarStateBase):
       ("Vorzeichen_Bremsdruck", "Bremse_5"),     # Brake pressure applied sign (???)
       ("Fahrpedal_Rohsignal", "Motor_3"),        # Accelerator pedal value
       ("ESP_Passiv_getastet", "Bremse_1"),       # Stability control disabled
+      ("GRA_Hauptschalter", "Motor_5"),          # ACC main switch
       ("GRA_Status", "Motor_2"),                 # ACC engagement status
       ("GK1_Fa_Tuerkont", "Gate_Komf_1"),        # Door open, driver
       ("BSK_BT_geoeffnet", "Gate_Komf_1"),       # Door open, passenger
@@ -450,6 +439,7 @@ class CarState(CarStateBase):
       ("GRA_Neu", 50),      # From J??? steering wheel control buttons
       ("Kombi_1", 50),      # From J285 Instrument cluster
       ("Motor_2", 50),      # From J623 Engine control module
+      ("Motor_5", 50),      # From J623 Engine control module
       ("Lenkhilfe_2", 20),  # From J500 Steering Assist with integrated sensors
       ("Gate_Komf_1", 10),  # From J533 CAN gateway
     ]

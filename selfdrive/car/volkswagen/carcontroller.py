@@ -94,9 +94,17 @@ class CarController:
         idx = (self.frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, CC.longActive, accel, idx))
       if self.frame % P.ACC_HUD_STEP:
-        set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates
+        if CC.longActive:
+          acc_status = 3
+        elif CS.cruiseState.available:
+          acc_status = 2
+        elif CS.accFaulted:
+          acc_status = 6
+        else:
+          acc_status = 0
+        set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
         idx = (self.frame / P.ACC_HUD_STEP) % 16
-        can_sends.append(self.create_acc_hud_control(self.packer_pt, CANBUS.pt, CC.longActive, set_speed,
+        can_sends.append(self.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_status, set_speed,
                                                      hud_control.leadVisible, idx))
 
     # **** HUD Controls ***************************************************** #

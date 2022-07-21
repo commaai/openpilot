@@ -40,9 +40,9 @@ def create_acc_accel_control(packer, bus, active, accel, idx):
 
   return packer.make_can_msg("ACC_System", bus, values, idx)
 
-def create_acc_hud_control(packer, bus, active, set_speed, lead_visible, idx):
+def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, idx):
   values = {
-    "ACA_StaACC": 3 if active else 2,  # FIXME: probably affected by mainswitch, also gas override and overrun
+    "ACA_StaACC": acc_status,
     "ACA_Zeitluecke": 2,
     "ACA_V_Wunsch": set_speed,
     "ACC_gemZeitl": 8 if lead_visible else 0,
