@@ -60,7 +60,6 @@ MQB_BUTTONS = [
 ]
 
 
-# TODO: for OP long, PQ may need special handling for the separate up/down short/long press signals
 PQ_BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_Neu", "GRA_Neu_Setzen", [1]),
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_Neu", "GRA_Recall", [1]),
