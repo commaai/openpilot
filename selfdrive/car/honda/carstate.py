@@ -24,6 +24,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE"),
     ("STEER_TORQUE_SENSOR", "STEER_STATUS"),
     ("IMPERIAL_UNIT", "CAR_SPEED"),
+    ("ROUGH_CAR_SPEED_2", "CAR_SPEED"),
     ("LEFT_BLINKER", "SCM_FEEDBACK"),
     ("RIGHT_BLINKER", "SCM_FEEDBACK"),
     ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS"),
@@ -93,13 +94,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
         ("ACC_HUD", 10),
         ("ACC_CONTROL", 50),
       ]
-
-    signals += [
-      ("CAR_SPEED", "CAR_SPEED"),
-      ("IMPERIAL_UNIT", "CAR_SPEED"),
-    ]
-    checks += [("CAR_SPEED", 10)]
-
   else:  # Nidec signals
     signals += [("CRUISE_SPEED_PCM", "CRUISE"),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS")]
@@ -211,7 +205,7 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      conversion = CV.MPH_TO_MS if cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"] else CV.KPH_TO_MS
+      conversion = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
       ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * conversion
 
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
