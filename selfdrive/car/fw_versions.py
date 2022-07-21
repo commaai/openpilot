@@ -472,8 +472,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               f.fwVersion = version
               f.address = addr[0]
               f.responseAddress = rx_addr
-              print(f'calc rx addr: {uds.get_rx_addr_for_tx_addr(addr[0], r.rx_offset)}, actual rx addr: {rx_addr}')
-              assert uds.get_rx_addr_for_tx_addr(addr[0], r.rx_offset) == rx_addr
               f.request = r.request
               f.brand = r.brand
               f.bus = r.bus
