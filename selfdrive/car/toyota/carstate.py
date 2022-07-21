@@ -94,6 +94,9 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
+    # TODO: where is the metric/imperial bit?
+    ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * CV.MPH_TO_MS
+
     if self.CP.carFingerprint in RADAR_ACC_CAR:
       self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp.vl["ACC_HUD"]["FCW"])
@@ -154,6 +157,7 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "PCM_CRUISE"),
       ("CRUISE_STATE", "PCM_CRUISE"),
       ("GAS_RELEASED", "PCM_CRUISE"),
+      ("UI_SET_SPEED", "PCM_CRUISE_SM"),
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR"),
       ("STEER_ANGLE", "STEER_TORQUE_SENSOR"),
@@ -174,6 +178,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
+      ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
