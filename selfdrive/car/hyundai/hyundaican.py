@@ -75,6 +75,8 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
     "HDA_Active": 1 if hda_set_speed else 0,
     "HDA_Icon_State": 2 if hda_set_speed else 0,
     "HDA_VSetReq": hda_set_speed,
+    # Some cars only set LFA_USM, while other cars only set HDA_USM, so use superset.
+    # 2 should be inactive and avoids LFA error (LFA_SysWarning=3)
     "LFA_USM": 2,
     "HDA_USM": 2,
   }
