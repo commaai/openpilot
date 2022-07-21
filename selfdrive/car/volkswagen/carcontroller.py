@@ -1,5 +1,7 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
+from common.numpy_fast import clip
+from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan, pqcan
 from selfdrive.car.volkswagen.values import PQ_CARS, DBC_FILES, CANBUS, MQB_LDW_MESSAGES, PQ_LDW_MESSAGES, CarControllerParams as P
@@ -17,6 +19,8 @@ class CarController:
       self.create_steering_control = pqcan.create_steering_control
       self.create_lka_hud_control = pqcan.create_lka_hud_control
       self.create_acc_buttons_control = pqcan.create_acc_buttons_control
+      self.create_acc_accel_control = pqcan.create_acc_accel_control
+      self.create_acc_hud_control = pqcan.create_acc_hud_control
       self.packer_pt = CANPacker(DBC_FILES.pq)
       self.ldw_step = P.PQ_LDW_STEP
       self.ldw_messages = PQ_LDW_MESSAGES
@@ -24,6 +28,8 @@ class CarController:
       self.create_steering_control = volkswagencan.create_steering_control
       self.create_lka_hud_control = volkswagencan.create_lka_hud_control
       self.create_acc_buttons_control = volkswagencan.create_acc_buttons_control
+      self.create_acc_accel_control = None
+      self.create_acc_hud_control = None
       self.packer_pt = CANPacker(DBC_FILES.mqb)
       self.ldw_step = P.MQB_LDW_STEP
       self.ldw_messages = MQB_LDW_MESSAGES
@@ -82,8 +88,16 @@ class CarController:
 
     # **** Acceleration Controls ******************************************** #
 
-    if self.frame % P.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      pass
+    if self.CP.openpilotLongitudinalControl:
+      if self.frame % P.ACC_CONTROL_STEP:
+        accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if CC.longActive else 0
+        idx = (self.frame / P.ACC_CONTROL_STEP) % 16
+        can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, CC.longActive, accel, idx))
+      if self.frame % P.ACC_HUD_STEP:
+        set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates
+        idx = (self.frame / P.ACC_HUD_STEP) % 16
+        can_sends.append(self.create_acc_hud_control(self.packer_pt, CANBUS.pt, CC.longActive, set_speed,
+                                                     hud_control.leadVisible, idx))
 
     # **** HUD Controls ***************************************************** #
 
