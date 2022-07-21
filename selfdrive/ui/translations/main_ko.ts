@@ -638,17 +638,17 @@ location set</source>
     <message>
         <location filename="../qt/util.cc" line="82"/>
         <source>%1 minute%2 ago</source>
-        <translation>%1 분%2 전</translation>
+        <translation>%1 분전</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="85"/>
         <source>%1 hour%2 ago</source>
-        <translation>%1 시간%2 전</translation>
+        <translation>%1 시간전</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="88"/>
         <source>%1 day%2 ago</source>
-        <translation>%1 일%2 전</translation>
+        <translation>%1 일전</translation>
     </message>
 </context>
 <context>
@@ -1017,23 +1017,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>브랜치 변경</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>입력하세요</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 업데이트 프로그램이 실행될 때 새 브랜치가 적용됩니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>브랜치명 입력</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="272"/>
@@ -1043,7 +1043,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="272"/>
         <source>Uninstall %1</source>
-        <translation>제거 %1</translation>
+        <translation>%1 제거</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="274"/>
@@ -1217,12 +1217,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="77"/>
         <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
+        <translation>UI 왼쪽에 지도 표시</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="78"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
+        <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="90"/>
