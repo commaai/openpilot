@@ -172,18 +172,18 @@ class Harness(Enum):
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
     Column.FSR_LONGITUDINAL.value: [
-      [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
-      [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
+      [Star.FULL.value, "openpilot operates down to 0 mph."],
+      [Star.EMPTY.value, "openpilot operates only above a minimum speed. See your car's manual for the minimum speed."],
     ],
   },
   "Steering": {
     Column.FSR_STEERING.value: [
       [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
-      [Star.EMPTY.value, "No steering control below certain speeds."],
+      [Star.EMPTY.value, "No steering control below certain speeds. See your car's manual for the minimum speed."],
     ],
     Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to take tight turns."],
-      [Star.EMPTY.value, "Limited ability to make turns."],
+      [Star.FULL.value, "Car has enough steering torque to comfortably take most highway turns."],
+      [Star.EMPTY.value, "Limited ability to make tighter turns."],
     ],
   },
 }

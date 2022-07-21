@@ -5,16 +5,16 @@ A supported vehicle is one that just works when you install a comma device. Ever
 ## How We Rate The Cars
 
 ### Stop and Go
-- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Adaptive Cruise Control (ACC) operates down to 0 mph.
-- <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
+- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - openpilot operates down to 0 mph.
+- <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - openpilot operates only above a minimum speed. See your car's manual for the minimum speed.
 
 ### Steer to 0
 - <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - openpilot can control the steering wheel down to 0 mph.
-- <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - No steering control below certain speeds.
+- <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - No steering control below certain speeds. See your car's manual for the minimum speed.
 
 ### Steering Torque
-- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque to take tight turns.
-- <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Limited ability to make turns.
+- <a href="##"><img valign="top" src="assets/icon-star-full.svg" width="22" /></a> - Car has enough steering torque to comfortably take most highway turns.
+- <a href="##"><img valign="top" src="assets/icon-star-empty.svg" width="22" /></a> - Limited ability to make tighter turns.
 
 
 # 196 Supported Cars
