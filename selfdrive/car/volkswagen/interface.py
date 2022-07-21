@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
 
       if Params().get_bool("DisableRadar") and ret.networkLocation == NetworkLocation.gateway:
         ret.openpilotLongitudinalControl = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_PQ_LONG
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
 
     else:
       # Set global MQB parameters

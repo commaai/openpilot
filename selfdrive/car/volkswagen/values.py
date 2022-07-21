@@ -46,9 +46,6 @@ class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
   pq = "vw_golf_mk4"  # Used for all cars with PQ-style (legacy) CAN messaging
 
-# FIXME: PlotJuggler will assume wrong DBC for PQ, redo this and replace current handling of CANPacker/CANDefine
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
-
 
 MQB_BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
@@ -122,7 +119,14 @@ class CAR:
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"         # Chassis 3V/NP, Mk3 Skoda Superb and variants
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
+
 PQ_CARS = {CAR.PASSAT_NMS}
+
+
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
+for car_type in PQ_CARS:
+  DBC[car_type] = dbc_dict(DBC_FILES.pq, None)
+
 
 class Footnote(Enum):
   KAMIQ = CarFootnote(

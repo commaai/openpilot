@@ -4,7 +4,7 @@ from common.numpy_fast import clip
 from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan, pqcan
-from selfdrive.car.volkswagen.values import PQ_CARS, DBC_FILES, CANBUS, MQB_LDW_MESSAGES, PQ_LDW_MESSAGES, CarControllerParams as P
+from selfdrive.car.volkswagen.values import PQ_CARS, CANBUS, MQB_LDW_MESSAGES, PQ_LDW_MESSAGES, CarControllerParams as P
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -14,6 +14,7 @@ class CarController:
     self.CP = CP
     self.apply_steer_last = 0
     self.frame = 0
+    self.packer_pt = CANPacker(dbc_name)
 
     if CP.carFingerprint in PQ_CARS:
       self.create_steering_control = pqcan.create_steering_control
@@ -21,7 +22,6 @@ class CarController:
       self.create_acc_buttons_control = pqcan.create_acc_buttons_control
       self.create_acc_accel_control = pqcan.create_acc_accel_control
       self.create_acc_hud_control = pqcan.create_acc_hud_control
-      self.packer_pt = CANPacker(DBC_FILES.pq)
       self.ldw_step = P.PQ_LDW_STEP
       self.ldw_messages = PQ_LDW_MESSAGES
     else:
@@ -30,7 +30,6 @@ class CarController:
       self.create_acc_buttons_control = volkswagencan.create_acc_buttons_control
       self.create_acc_accel_control = None
       self.create_acc_hud_control = None
-      self.packer_pt = CANPacker(DBC_FILES.mqb)
       self.ldw_step = P.MQB_LDW_STEP
       self.ldw_messages = MQB_LDW_MESSAGES
 
