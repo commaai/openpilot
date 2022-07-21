@@ -36,11 +36,11 @@ class MazdaCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
-  CAR.CX5: MazdaCarInfo("Mazda CX-5 2017, 2019"),  # TODO: verify years and torque for first 4
-  CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-17"),
-  CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017"),
-  CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017"),
-  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-22"),
+  CAR.CX5: MazdaCarInfo("Mazda CX-5 2017-2021"),  # TODO: verify years and torque for first 4
+  CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-2020"),
+  CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017-2018"),
+  CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017-2020"),
+  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-2022"),
   CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022"),
 }
 
