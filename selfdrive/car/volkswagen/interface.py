@@ -222,7 +222,7 @@ class CarInterface(CarInterfaceBase):
         if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
           events.add(EventName.buttonEnable)
         # Disable on rising edge of cancel
-        if b.type is ButtonType.cancel and b.pressed:
+        if b.type == ButtonType.cancel and b.pressed:
           events.add(EventName.buttonCancel)
 
     ret.events = events.to_msg()
