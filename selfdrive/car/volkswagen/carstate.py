@@ -224,8 +224,8 @@ class CarState(CarStateBase):
     ret.stockAeb = False
 
     # Update ACC radar status.
-    ret.cruiseState.available = pt_cp.vl["Motor_5"]["GRA_Hauptschalter"]
-    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"]
+    ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
+    ret.cruiseState.enabled = bool(pt_cp.vl["Motor_2"]["GRA_Status"])
     if self.CP.pcmCruise:
       ret.accFaulted = pt_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"] in (6, 7)
     # TODO: update opendbc with PQ TSK state for OP long accFaulted
