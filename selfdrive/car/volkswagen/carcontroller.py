@@ -104,7 +104,7 @@ class CarController:
           acc_status = 3
         elif CS.out.cruiseState.available:
           acc_status = 2
-        elif CS.accFaulted:
+        elif CS.out.accFaulted:
           acc_status = 6
         else:
           acc_status = 0
