@@ -1303,6 +1303,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TXM-A070\x00\x00',
+      b'36802-TXM-A080\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TXM-A050\x00\x00',
@@ -1341,6 +1342,7 @@ FW_VERSIONS = {
       b'36161-T7A-A140\x00\x00',
       b'36161-T7A-A240\x00\x00',
       b'36161-T7A-C440\x00\x00',
+      b'36161-T7A-A040\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-T7A-A230\x00\x00',
@@ -1351,6 +1353,7 @@ FW_VERSIONS = {
       b'78109-THX-A210\x00\x00',
       b'78109-THX-A220\x00\x00',
       b'78109-THX-C220\x00\x00',
+      b'78109-THW-A110\x00\x00',
     ],
   },
   CAR.ACURA_ILX: {
