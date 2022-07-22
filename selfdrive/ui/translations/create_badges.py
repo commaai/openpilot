@@ -40,4 +40,4 @@ if __name__ == "__main__":
     assert r.status_code == 200, "Error downloading badge"
 
     with open(os.path.join(BASEDIR, TRANSLATION_BADGE.format(file)), "wb") as f:
-      f.write(r.content)
+      f.write(bytes(r.content))
