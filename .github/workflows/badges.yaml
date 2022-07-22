@@ -1,5 +1,6 @@
 on:
-  push:
+#  push:
+  pull_request:
 
 jobs:
   test:
@@ -65,5 +66,4 @@ jobs:
       uses: ad-m/github-push-action@master
       if: ${{ success() }}
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ steps.coverage.outputs.branch }}
+        branch: badges
