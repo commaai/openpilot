@@ -131,8 +131,7 @@ class CarInfo:
 
     footnotes = get_footnotes(self.footnotes, column)
     if footnotes is not None:
-      for fn in footnotes:
-        item += footnote_tag.format(self.all_footnotes[fn])
+      item += f"{', '.join(footnote_tag.format(self.all_footnotes[fn]) for fn in footnotes)}"
 
     return item
 
