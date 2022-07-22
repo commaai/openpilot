@@ -1,6 +1,8 @@
 # Multilanguage
 
-![translations](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)
+![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)
+![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHS.svg)
+![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHT.svg)
 
 ## Contributing
 
