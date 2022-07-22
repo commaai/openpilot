@@ -36,7 +36,7 @@ if __name__ == "__main__":
     percent_finished = int(100 - (unfinished_translations / total_translations * 100.))
     color = "green" if percent_finished == 100 else "orange" if percent_finished >= 70 else "red"
 
-    r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-FINISHED: {percent_finished}%25-{color}")
+    r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-{percent_finished}%25 complete-{color}")
     assert r.status_code == 200, "Error downloading badge"
 
     with open(os.path.join(BASEDIR, TRANSLATION_BADGE.format(file)), "wb") as badge_f:
