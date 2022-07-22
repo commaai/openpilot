@@ -1,6 +1,6 @@
 # Multilanguage
 
-[![Python](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)](https://badge.fury.io/py/tensorflow)
+![translations](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)
 
 ## Contributing
 
