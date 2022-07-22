@@ -20,17 +20,18 @@ def load_base_car_info(path):
 
 
 def match_cars(base_cars, new_cars):
-  """Matches CarInfo by name similarity and finds additions and removals"""
   changes = []
   additions = []
   for new in new_cars:
-    matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.) or [None]
-
-    if matches[0] is not None and matches[0] not in [c[1].name for c in changes]:
-      changes.append((new, next(car for car in base_cars if car.name == matches[0])))
-    else:
+    # Addition if no close matches or already matched
+    # Change if close match and not already added
+    matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)
+    if not len(matches) or matches[0] in [c[1].name for c in changes]:
       additions.append(new)
+    else:
+      changes.append((new, next(car for car in base_cars if car.name == matches[0])))
 
+  # Removal if base car not in changes
   removals = [b for b in base_cars if b.name not in [c[1].name for c in changes]]
   return changes, additions, removals
 
