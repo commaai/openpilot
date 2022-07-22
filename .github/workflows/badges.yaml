@@ -39,20 +39,15 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
 
-    - name: Get finished translations and commit badge
-      id: create_badges
+    - name: Push badges
       run: |
         if ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"; then
-          echo ::set-output name=success::true
-
           git checkout --orphan badges
           git rm -rf --cached .
-          git config --global user.email "badge-researcher@comma.ai"
-          git config --global user.name "Badge Researcher"
+          git config user.email "badge-researcher@comma.ai"
+          git config user.name "Badge Researcher"
 
           git add translation_badge_*.svg
           git commit -m "Add/Update badges"
           git push -f origin HEAD
-        else
-          echo ::set-output name=success::false
         fi
