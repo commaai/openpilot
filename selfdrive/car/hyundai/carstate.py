@@ -56,7 +56,7 @@ class CarState(CarStateBase):
       cp.vl["WHL_SPD11"]["WHL_SPD_RR"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] if metric else cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"]
+    ret.vEgoCluster = (cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS) if metric else (cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * CV.MPH_TO_MS)
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
     ret.standstill = ret.vEgoRaw < 0.1
