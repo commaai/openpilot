@@ -4,7 +4,7 @@ import os
 import requests
 
 from common.basedir import BASEDIR
-from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE
+from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
 TRANSLATION_TAG = "<translation"
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""
