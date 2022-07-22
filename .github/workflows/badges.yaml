@@ -1,8 +1,7 @@
 on:
-#  push:
-#    branches:
-#      - master
-  pull_request:
+  push:
+    branches:
+      - master
 
 env:
   BASE_IMAGE: openpilot-base
