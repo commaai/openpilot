@@ -2,6 +2,8 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+  pull_request:
 
 env:
   BASE_IMAGE: openpilot-base
