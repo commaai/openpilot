@@ -65,7 +65,7 @@ All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wi
 
 Specific new Toyota models are shipping with a new message authentication method that openpilot does not yet support.
 So far, this list includes:
-* Toyota Rav4 Prime 2021+
+* Toyota RAV4 Prime 2021+
 * Toyota Sienna 2021+
 * Toyota Venza 2021+
 * Toyota Sequoia 2023+
