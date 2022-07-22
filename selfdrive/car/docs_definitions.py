@@ -37,12 +37,10 @@ TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TOR
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
-def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:
-  # Returns applicable footnote given current column
+def get_footnotes(footnotes: Optional[List[Enum]], column: Column) -> Optional[List[Enum]]:
+  # Returns applicable footnotes given current column
   if footnotes is not None:
-    for fn in footnotes:
-      if fn.value.column == column:
-        return fn
+    return [fn for fn in footnotes if fn.value.column == column]
   return None
 
 
@@ -106,9 +104,11 @@ class CarInfo:
     self.all_footnotes = all_footnotes
     for column in StarColumns:
       # Demote if footnote specifies a star
-      footnote = get_footnote(self.footnotes, column)
-      if footnote is not None and footnote.value.star is not None:
-        self.row[column] = footnote.value.star
+      footnotes = get_footnotes(self.footnotes, column)
+      if footnotes is not None:
+        for fn in footnotes:
+          if fn.value.star is not None:
+            self.row[column] = fn.value.star
 
     # openpilot ACC star doesn't count for tiers
     full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
@@ -129,9 +129,10 @@ class CarInfo:
     elif column == Column.MODEL and len(self.years):
       item += f" {self.years}"
 
-    footnote = get_footnote(self.footnotes, column)
-    if footnote is not None:
-      item += footnote_tag.format(self.all_footnotes[footnote])
+    footnotes = get_footnotes(self.footnotes, column)
+    if footnotes is not None:
+      for fn in footnotes:
+        item += footnote_tag.format(self.all_footnotes[fn])
 
     return item
 
