@@ -41,20 +41,16 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
 
-    - name: Get finished translations
-      id: finished_translations
+    - name: Get finished translations and commit badge
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-        output=$(${{ env.RUN }} "python selfdrive/ui/translations/finished_translations.py")
-        echo "::set-output name=finished::$output"
-        echo "Translations finished $output%"
+        percent=$(${{ env.RUN }} "python selfdrive/ui/translations/finished_translations.py")
+        echo "Translations finished $percent%"
 
-    - name: Download and commit badge
-      run: |
         git switch --orphan badges
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: ${{ steps.finished_translations.outputs.finished }}%25-green"
+        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: $percent%25-green"
         git add translation_badge.svg
         git commit -m "Add/Update badge"
 
