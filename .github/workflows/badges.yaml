@@ -61,7 +61,7 @@ jobs:
         sudo chown -R $USER:$USER ${{ github.workspace }}
 
     - name: checkout badges branch
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
       with:
         ref: badges
 
