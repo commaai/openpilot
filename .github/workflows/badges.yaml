@@ -47,9 +47,6 @@ jobs:
 
           git checkout --orphan badges
           git rm -rf --cached .
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
           git add translation_badge_*.svg
           git commit -m "Add/Update badges"
         else
