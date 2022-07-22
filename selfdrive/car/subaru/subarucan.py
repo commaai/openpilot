@@ -3,7 +3,7 @@ from cereal import car
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-def create_steering_control(packer, apply_steer, frame, steer_step):
+def create_steering_control(packer, apply_steer):
   values = {
     "LKAS_Output": apply_steer,
     "LKAS_Request": 1 if apply_steer != 0 else 0,
@@ -11,7 +11,7 @@ def create_steering_control(packer, apply_steer, frame, steer_step):
   }
   return packer.make_can_msg("ES_LKAS", 0, values)
 
-def create_steering_status(packer, apply_steer, frame, steer_step):
+def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
 def create_es_distance(packer, es_distance_msg, pcm_cancel_cmd):
@@ -62,7 +62,7 @@ def subaru_preglobal_checksum(packer, values, addr):
   dat = packer.make_can_msg(addr, 0, values)[2]
   return (sum(dat[:7])) % 256
 
-def create_preglobal_steering_control(packer, apply_steer, frame, steer_step):
+def create_preglobal_steering_control(packer, apply_steer):
   values = {
     "LKAS_Command": apply_steer,
     "LKAS_Active": 1 if apply_steer != 0 else 0
