@@ -70,8 +70,7 @@ class CarController:
       self.steer_rate_limited = new_steer != apply_steer
       self.apply_steer_last = apply_steer
 
-      idx = self.frame // 2
-      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, idx))
+      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
     self.frame += 1
     if not lkas_control_bit and self.lkas_control_bit_prev:
