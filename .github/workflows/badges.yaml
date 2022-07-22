@@ -1,26 +1,18 @@
 on:
 #  push:
+#    branches:
+#      - master
   pull_request:
 
 env:
   BASE_IMAGE: openpilot-base
-  CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
-  AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
-  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
-
-  BUILD_CL: |
-      docker pull $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
-  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
-
-  UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
   test:
@@ -57,85 +49,20 @@ jobs:
         echo "::set-output name=finished::$output"
         echo "Translations finished $output%"
 
-        # Hack to allow subsequent checkouts
-        sudo chown -R $USER:$USER ${{ github.workspace }}
-
-    - name: checkout badges branch
-      uses: actions/checkout@v3
-      with:
-        ref: badges
-
     - name: Download and commit badge
       run: |
+        git checkout --orphan -b badges
+        git rm -rf .
+
         wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: ${{ steps.finished_translations.outputs.finished }}%25-green"
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add translation_badge.svg
         git commit -m "Add/Update badge"
 
-
-
-
-#    # Get current banch name to use it as dest directory
-#    - name: Extract branch name
-#      shell: bash
-#      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-#      id: extract_branch
-#
-#    - name: Prepare environment
-#      id: coverage
-#      run: |
-#        # Generates a GitHub Workflow output named `lines` with a coverage value
-#        echo "##[set-output name=lines;]${COVERAGE}"
-#
-#        echo ${{ steps.extract_branch.outputs.branch }}/test-badge.svg
-#        # Output values to be used by other steps
-#        echo "##[set-output name=path;]${BADGE_PATH}"
-#        echo "##[set-output name=branch;]${BRANCH}"
-#      env:
-#        COVERAGE: 53.5%
-#        BADGE_PATH: ${{ steps.extract_branch.outputs.branch }}/test-badge.svg
-#        BRANCH: badges
-##
-#    - uses: actions/checkout@v3
-#      with:
-#        ref: badges
-##
-##    # Create the directory where badges will be saved, if needed
-##    - name: Create destination directory
-##      env:
-##        BADGE_PATH: ${{ steps.coverage.outputs.path }}
-##      run: mkdir -p "${BADGE_PATH%/*}"
-##
-#    # Use the output from the `coverage` step
-#    - name: Generate the badge SVG image
-#      uses: emibcn/badge-action@v1.2.4
-#      id: badge
-#      with:
-#        label: 'Test coverage'
-#        status: ${{ steps.coverage.outputs.lines }}
-#        color: 'blue,555,daf'
-#        path: ${{ steps.coverage.outputs.path }}
-##
-##    - name: Upload badge as artifact
-##      uses: actions/upload-artifact@v3
-##      with:
-##        name: badge
-##        path: ${{ steps.coverage.outputs.path }}
-##        if-no-files-found: error
-#
-#    - name: Commit badge
-#      continue-on-error: true
-#      env:
-#        BADGE: ${{ steps.coverage.outputs.path }}
-#      run: |
-#        git config --local user.email "action@github.com"
-#        git config --local user.name "GitHub Action"
-#        touch test
-#        git add test
-#        git commit -m "Add/Update badge"
     - name: Push badge commit
       uses: ad-m/github-push-action@master
       if: ${{ success() }}
       with:
         branch: badges
+        force: true
