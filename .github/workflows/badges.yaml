@@ -53,7 +53,7 @@ jobs:
       id: unfinished_translations
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-        output=$(${{ env.RUN }} "python selfdrive/ui/translations/unfinished_translations.py)
+        output=$(${{ env.RUN }} "python selfdrive/ui/translations/unfinished_translations.py")
         echo "::set-output name=finished::$output"
         echo "Translations finished $output%"
 
