@@ -1015,23 +1015,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>切换分支</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>输入</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>分支将在更新服务下次启动时自动切换。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>输入分支名称</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="272"/>
@@ -1215,12 +1215,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="77"/>
         <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
+        <translation>在介面左侧显示地图</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="78"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
+        <translation>在分屏模式中，将地图置于屏幕左侧。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="90"/>
