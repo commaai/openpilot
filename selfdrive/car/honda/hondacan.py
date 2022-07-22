@@ -20,7 +20,7 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   return 0
 
 
-def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -45,7 +45,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", bus, values)
 
 
-def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
@@ -81,7 +81,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_
   return commands
 
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, radar_disabled):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_disabled):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
@@ -90,7 +90,7 @@ def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, i
   return packer.make_can_msg("STEERING_CONTROL", bus, values)
 
 
-def create_bosch_supplemental_1(packer, car_fingerprint, idx):
+def create_bosch_supplemental_1(packer, car_fingerprint):
   # non-active params
   values = {
     "SET_ME_X04": 0x04,
@@ -101,7 +101,7 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values)
 
 
-def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, stock_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
@@ -164,7 +164,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stoc
   return commands
 
 
-def spam_buttons_command(packer, button_val, idx, car_fingerprint):
+def spam_buttons_command(packer, button_val, car_fingerprint):
   values = {
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
