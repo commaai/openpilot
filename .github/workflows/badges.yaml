@@ -48,8 +48,8 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
 
-        git add translation_badge_*.svg
-        git commit -m "Add/Update badges" || true
+        git add translation_badge_*.svg || true
+        git commit -m "Add/Update badges"
 
     - name: Push badge commit
       uses: ad-m/github-push-action@master
