@@ -22,6 +22,8 @@ env:
 
   UNIT_TEST: coverage run --append -m unittest discover
 
+  OPENPILOT_DOCKER: ghcr.io/commaai/openpilot-prebuilt:latest
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -37,7 +39,7 @@ jobs:
       id: unfinished_translations
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-        output=$(${{ env.RUN }} "python selfdrive/ui/translations/unfinished_translations.py)
+        output=$(docker run -v $GITHUB_WORKSPACE:/tmp/web2 -e HOME=/home/batman $OPENPILOT_DOCKER python selfdrive/ui/translations/unfinished_translations.py)
         echo "::set-output name=finished::$output"
         echo "Translations finished $output%"
 
