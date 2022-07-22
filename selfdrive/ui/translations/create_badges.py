@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # TODO: just edit a local badge svg
     r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-FINISHED: {percent_finished}%25-{color}")
-    assert r.status_code == 200, "Error downloading badge"
+    assert r.status_code != 200, "Error downloading badge"
 
     with open(os.path.join(BASEDIR, f"translation_badge_{file}.svg"), "wb") as f:
       f.write(r.content)
