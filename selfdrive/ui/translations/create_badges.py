@@ -30,12 +30,7 @@ if __name__ == "__main__":
 
     percent_finished = (1 - unfinished_translations / total_translations) * 100.
     percent_finished = int(percent_finished * 10) / 10  # round down (99.99% shouldn't be 100%)
-    if percent_finished == 100:
-      color = "green"
-    elif percent_finished >= 70:
-      color = "yellow"
-    else:
-      color = "red"
+    color = "green" if percent_finished == 100 else "yellow" if percent_finished >= 70 else "red"
 
     # TODO: just edit a local badge svg
     r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-FINISHED: {percent_finished}%25-{color}")
