@@ -39,9 +39,9 @@ class CarController:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, self.frame, self.p.STEER_STEP))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, self.frame, self.p.STEER_STEP))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer))
 
       self.apply_steer_last = apply_steer
 
@@ -74,7 +74,9 @@ class CarController:
         self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
       if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
-        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert, hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
+                                                  hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                  hud_control.leftLaneDepart, hud_control.rightLaneDepart))
         self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
 
     new_actuators = actuators.copy()
