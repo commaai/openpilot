@@ -40,20 +40,25 @@ jobs:
       run: eval "$BUILD"
 
     - name: Get finished translations and commit badge
+      id: create_badges
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py" || true
+        if ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"; then
+          echo ::set-output name=success::true
 
-        git checkout --orphan badges
-        git rm -rf --cached .
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+          git checkout --orphan badges
+          git rm -rf --cached .
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-        git add translation_badge_*.svg || true
-        git commit -m "Add/Update badges" || true
+          git add translation_badge_*.svg
+          git commit -m "Add/Update badges"
+        else
+          echo ::set-output name=success::false
+        fi
 
     - name: Push badge commit
       uses: ad-m/github-push-action@master
-      if: ${{ success() }}
+      if: ${{ steps.create_badges.outputs.success == 'true' }}
       with:
         branch: badges
         force: true
