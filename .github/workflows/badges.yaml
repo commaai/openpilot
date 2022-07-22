@@ -43,21 +43,15 @@ jobs:
 
     - name: Get finished translations and commit badge
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
         ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"
-        main_zh_CHS=$(${{ env.RUN }} "python selfdrive/ui/translations/finished_translations.py --file main_zh-CHS")
-        main_zh_CHT=$(${{ env.RUN }} "python selfdrive/ui/translations/finished_translations.py --file main_zh-CHT")
-        main_ko=$(${{ env.RUN }} "python selfdrive/ui/translations/finished_translations.py --file main_ko")
 
-        git switch --orphan badges
+        git checkout --orphan badges
+        git rm -rf --cached .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
 
-        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: $percent%25-green"
-        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: $percent%25-green"
-        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: $percent%25-green"
-        git add translation_badge.svg
-        git commit -m "Add/Update badge"
+        git add translation_badge_*.svg
+        git commit -m "Add/Update badges"
 
     - name: Push badge commit
       uses: ad-m/github-push-action@master
