@@ -58,6 +58,7 @@ jobs:
       env:
         BADGE: ${{ steps.coverage.outputs.path }}
       run: |
+        git pull --rebase upstream/HEAD
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add "${BADGE}"
