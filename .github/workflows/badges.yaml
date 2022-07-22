@@ -51,12 +51,10 @@ jobs:
 
     - name: Download and commit badge
       run: |
-        git checkout --orphan -b badges
-        git rm -rf .
-
-        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: ${{ steps.finished_translations.outputs.finished }}%25-green"
+        git switch --orphan badges
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: ${{ steps.finished_translations.outputs.finished }}%25-green"
         git add translation_badge.svg
         git commit -m "Add/Update badge"
 
