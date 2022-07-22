@@ -49,11 +49,11 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
 
-    - name: Get unfinished translations
-      id: unfinished_translations
+    - name: Get finished translations
+      id: finished_translations
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-        output=$(${{ env.RUN }} "python selfdrive/ui/translations/unfinished_translations.py")
+        output=$(${{ env.RUN }} "python selfdrive/ui/translations/finished_translations.py")
         echo "::set-output name=finished::$output"
         echo "Translations finished $output%"
 
@@ -67,7 +67,7 @@ jobs:
 
     - name: Download and commit badge
       run: |
-        wget -O translation_badge.svg https://img.shields.io/badge/Translations-finished%3A%2097.5%25-green
+        wget -O translation_badge.svg "https://img.shields.io/badge/Translations-finished: ${{ steps.finished_translations.outputs.finished }}%25-green"
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add translation_badge.svg
