@@ -8,17 +8,21 @@ from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
 TRANSLATION_TAG = "<translation"
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""
+TRANSLATION_BADGE = "translation_badge_{}.svg"
 
 if __name__ == "__main__":
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
+  print("Copy into selfdrive/ui/translations/README.md:\n")
   for name, file in translation_files.items():
     if not len(file):
       continue
 
     with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as f:
       tr_file = f.read()
+
+    print(f"[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/{TRANSLATION_BADGE.format(file)})]({file}.ts)")
 
     total_translations = 0
     unfinished_translations = 0
@@ -35,5 +39,5 @@ if __name__ == "__main__":
     r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-FINISHED: {percent_finished}%25-{color}")
     assert r.status_code == 200, "Error downloading badge"
 
-    with open(os.path.join(BASEDIR, f"translation_badge_{file}.svg"), "wb") as f:
+    with open(os.path.join(BASEDIR, TRANSLATION_BADGE.format(file)), "wb") as f:
       f.write(r.content)
