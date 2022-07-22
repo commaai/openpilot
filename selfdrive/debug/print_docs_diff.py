@@ -24,10 +24,10 @@ def match_cars(base_cars, new_cars):
   changes = []
   additions = []
   for new in new_cars:
-    closest_match = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)[0]
+    matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.) or [None]
 
-    if closest_match not in [c[1].name for c in changes]:
-      changes.append((new, next(car for car in base_cars if car.name == closest_match)))
+    if matches[0] is not None and matches[0] not in [c[1].name for c in changes]:
+      changes.append((new, next(car for car in base_cars if car.name == matches[0])))
     else:
       additions.append(new)
 
@@ -61,6 +61,9 @@ def print_car_info_diff(path):
     base_car_info[car.car_fingerprint].append(car)
   for car in get_all_car_info():
     new_car_info[car.car_fingerprint].append(car)
+
+  # Add new platforms to base cars so we can detect additions and removals in one pass
+  base_car_info.update({car: [] for car in new_car_info if car not in base_car_info})
 
   changes = defaultdict(list)
   for base_car_model, base_cars in base_car_info.items():
