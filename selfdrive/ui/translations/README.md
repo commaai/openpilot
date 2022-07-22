@@ -1,8 +1,8 @@
 # Multilanguage
 
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHT.svg)](main_zh-CHT.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHS.svg)](main_zh-CHS.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](main_ko.ts)
+[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHT.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHT.ts)
+[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHS.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHS.ts)
+[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ko.ts)
 
 ## Contributing
 

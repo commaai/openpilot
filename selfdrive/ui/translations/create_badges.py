@@ -9,6 +9,7 @@ from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 TRANSLATION_TAG = "<translation"
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""
 TRANSLATION_BADGE = "translation_badge_{}.svg"
+TRANSLATION_LINK = "https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/{}"
 
 if __name__ == "__main__":
   with open(LANGUAGES_FILE, "r") as f:
@@ -22,7 +23,7 @@ if __name__ == "__main__":
     with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as tr_f:
       tr_file = tr_f.read()
 
-    print(f"[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/{TRANSLATION_BADGE.format(file)})]({file}.ts)")
+    print(f"[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/{TRANSLATION_BADGE.format(file)})]({TRANSLATION_LINK.format(file)}.ts)")
 
     total_translations = 0
     unfinished_translations = 0
