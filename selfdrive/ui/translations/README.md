@@ -1,5 +1,7 @@
 # Multilanguage
 
+[![Python](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)](https://badge.fury.io/py/tensorflow)
+
 ## Contributing
 
 Before getting started, make sure you have set up the openpilot Ubuntu development environment by reading the [tools README.md](/tools/README.md).
