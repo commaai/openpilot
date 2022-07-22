@@ -20,17 +20,18 @@ def load_base_car_info(path):
 
 
 def match_cars(base_cars, new_cars):
-  """Matches CarInfo by name similarity and finds additions and removals"""
   changes = []
   additions = []
   for new in new_cars:
-    closest_match = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)[0]
-
-    if closest_match not in [c[1].name for c in changes]:
-      changes.append((new, next(car for car in base_cars if car.name == closest_match)))
-    else:
+    # Addition if no close matches or close match already used
+    # Change if close match and not already used
+    matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)
+    if not len(matches) or matches[0] in [c[1].name for c in changes]:
       additions.append(new)
+    else:
+      changes.append((new, next(car for car in base_cars if car.name == matches[0])))
 
+  # Removal if base car not in changes
   removals = [b for b in base_cars if b.name not in [c[1].name for c in changes]]
   return changes, additions, removals
 
@@ -61,6 +62,9 @@ def print_car_info_diff(path):
     base_car_info[car.car_fingerprint].append(car)
   for car in get_all_car_info():
     new_car_info[car.car_fingerprint].append(car)
+
+  # Add new platforms to base cars so we can detect additions and removals in one pass
+  base_car_info.update({car: [] for car in new_car_info if car not in base_car_info})
 
   changes = defaultdict(list)
   for base_car_model, base_cars in base_car_info.items():
