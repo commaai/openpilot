@@ -1020,7 +1020,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>ENTER</source>
-        <translation>确认</translation>
+        <translation>输入</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
