@@ -17,10 +17,8 @@ env:
 jobs:
   badges:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
-    - name: checkout openpilot
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
       with:
         submodules: true
 
@@ -42,7 +40,7 @@ jobs:
 
     - name: Get finished translations and commit badge
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"
+        ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py" || true
 
         git checkout --orphan badges
         git rm -rf --cached .
