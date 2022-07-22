@@ -8,11 +8,11 @@ jobs:
     name: A job to test this action
     steps:
 
-#    # Get current banch name to use it as dest directory
-#    - name: Extract branch name
-#      shell: bash
-#      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-#      id: extract_branch
+    # Get current banch name to use it as dest directory
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
 
     - name: Prepare environment
       id: coverage
