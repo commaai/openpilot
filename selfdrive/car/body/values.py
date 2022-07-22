@@ -8,6 +8,7 @@ from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQuerie
 Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
+RAW_ANGLE_TO_DEGREES = 0.021972656 # 14 bit reading from angle sensor
 
 
 class CarControllerParams:
@@ -39,11 +40,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
 FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
-      b'0.0.01',
-      b'02/27/2022'
+      b'0.0.02',
+      b'ELECTRIC1'
     ],
     (Ecu.debug, 0x721, None): [
-      b'166bd860' # git hash of the firmware used
+      b'70ca68dc' # git hash of the firmware used
     ],
   },
 }
