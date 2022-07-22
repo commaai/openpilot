@@ -204,9 +204,8 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (1. - v_weight) * cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor + v_weight * v_wheel
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
-    if self.CP.carFingerprint in HONDA_BOSCH:
-      conversion = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-      ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * conversion
+    conversion = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
+    ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * conversion
 
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
