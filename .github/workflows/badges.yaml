@@ -44,8 +44,12 @@ jobs:
       run: |
         if ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"; then
           echo ::set-output name=success::true
+
           git checkout --orphan badges
           git rm -rf --cached .
+          git config --local user.email "action@github.com"
+          git config --local user.name "Badge Researcher"
+
           git add translation_badge_*.svg
           git commit -m "Add/Update badges"
         else
