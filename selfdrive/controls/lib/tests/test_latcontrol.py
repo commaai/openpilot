@@ -26,7 +26,6 @@ class TestLatControl(unittest.TestCase):
 
     controller = controller(CP, CI)
 
-
     CS = car.CarState.new_message()
     CS.vEgo = 30
 
@@ -35,7 +34,7 @@ class TestLatControl(unittest.TestCase):
     params = log.LiveParametersData.new_message()
 
     for _ in range(1000):
-      _, _, lac_log = controller.update(True, CS, CP, VM, params, last_actuators, 1, 0)
+      _, _, lac_log = controller.update(True, CS, CP, VM, params, last_actuators, True, 1, 0)
 
     self.assertTrue(lac_log.saturated)
 
