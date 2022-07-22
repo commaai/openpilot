@@ -2,7 +2,7 @@ import re
 
 from cereal import car
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union, no_type_check
 
@@ -37,11 +37,9 @@ TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TOR
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
-def get_footnotes(footnotes: Optional[List[Enum]], column: Column) -> Optional[List[Enum]]:
+def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
   # Returns applicable footnotes given current column
-  if footnotes is not None:
-    return [fn for fn in footnotes if fn.value.column == column]
-  return None
+  return [fn for fn in footnotes if fn.value.column == column]
 
 
 def split_name(name: str) -> Tuple[str, str, str]:
@@ -59,7 +57,7 @@ class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
-  footnotes: Optional[List[Enum]] = None
+  footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   harness: Optional[Enum] = None
@@ -104,11 +102,9 @@ class CarInfo:
     self.all_footnotes = all_footnotes
     for column in StarColumns:
       # Demote if footnote specifies a star
-      footnotes = get_footnotes(self.footnotes, column)
-      if footnotes is not None:
-        for fn in footnotes:
-          if fn.value.star is not None:
-            self.row[column] = fn.value.star
+      for fn in get_footnotes(self.footnotes, column):
+        if fn.value.star is not None:
+          self.row[column] = fn.value.star
 
     # openpilot ACC star doesn't count for tiers
     full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
@@ -130,7 +126,7 @@ class CarInfo:
       item += f" {self.years}"
 
     footnotes = get_footnotes(self.footnotes, column)
-    if footnotes is not None:
+    if len(footnotes):
       item += footnote_tag.format(",".join([str(self.all_footnotes[fn]) for fn in footnotes]))
 
     return item
