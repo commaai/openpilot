@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
 import requests
 
 from common.basedir import BASEDIR
