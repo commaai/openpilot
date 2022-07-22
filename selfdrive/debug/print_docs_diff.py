@@ -23,8 +23,8 @@ def match_cars(base_cars, new_cars):
   changes = []
   additions = []
   for new in new_cars:
-    # Addition if no close matches or already matched
-    # Change if close match and not already added
+    # Addition if no close matches or close match already used
+    # Change if close match and not already used
     matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)
     if not len(matches) or matches[0] in [c[1].name for c in changes]:
       additions.append(new)
