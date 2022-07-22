@@ -57,6 +57,24 @@ jobs:
         echo "::set-output name=finished::$output"
         echo "Translations finished $output%"
 
+        # Hack to allow subsequent checkouts
+        sudo chown -R $USER:$USER ${{ github.workspace }}
+
+    - name: checkout badges branch
+    - uses: actions/checkout@v3
+      with:
+        ref: badges
+
+    - name: Download and commit badge
+      run: |
+        wget -O translation_badge.svg https://img.shields.io/badge/Translations-finished%3A%2097.5%25-green
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add translation_badge.svg
+        git commit -m "Add/Update badge"
+
+
+
 
 #    # Get current banch name to use it as dest directory
 #    - name: Extract branch name
@@ -116,8 +134,8 @@ jobs:
 #        touch test
 #        git add test
 #        git commit -m "Add/Update badge"
-#    - name: Push badge commit
-#      uses: ad-m/github-push-action@master
-#      if: ${{ success() }}
-#      with:
-#        branch: badges
+    - name: Push badge commit
+      uses: ad-m/github-push-action@master
+      if: ${{ success() }}
+      with:
+        branch: badges
