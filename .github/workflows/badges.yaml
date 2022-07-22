@@ -47,16 +47,12 @@ jobs:
 
           git checkout --orphan badges
           git rm -rf --cached .
+          git config --local user.email "action@github.com"
+          git config --local user.name "Badge Researcher"
+
+          git add translation_badge_*.svg
+          git commit -m "Add/Update badges"
+          git push -f origin HEAD
         else
           echo ::set-output name=success::false
         fi
-
-    - name: Push badge commit
-      uses: EndBug/add-and-commit@22a51482393942b57dc262947d3b289c1c209825
-      if: ${{ steps.create_badges.outputs.success == 'true' }}
-      with:
-        add: translation_badge_*.svg
-        author_name: Badge Researcher
-        author_email: badge-researcher@comma.ai
-        message: Add/Update badges
-        push: -f origin HEAD
