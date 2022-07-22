@@ -51,7 +51,7 @@ jobs:
           git config user.name "Badge Researcher"
 
           git add translation_badge_*.svg
-          git commit -m "Add/Update badges" --author "Badge Researcher <badge-researcher@comma.ai>"
+          git commit -m "Add/Update badges"
           git push -f origin HEAD
         else
           echo ::set-output name=success::false
