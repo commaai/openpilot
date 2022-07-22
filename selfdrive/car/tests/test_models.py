@@ -43,6 +43,10 @@ for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
+
+print(NUM_JOBS, JOB_ID)
+print(test_cases)
+
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
