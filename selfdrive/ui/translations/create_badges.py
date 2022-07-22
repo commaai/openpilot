@@ -19,8 +19,8 @@ if __name__ == "__main__":
     if not len(file):
       continue
 
-    with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as f:
-      tr_file = f.read()
+    with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as tr_f:
+      tr_file = tr_f.read()
 
     print(f"[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/{TRANSLATION_BADGE.format(file)})]({file}.ts)")
 
@@ -39,5 +39,5 @@ if __name__ == "__main__":
     r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-FINISHED: {percent_finished}%25-{color}")
     assert r.status_code == 200, "Error downloading badge"
 
-    with open(os.path.join(BASEDIR, TRANSLATION_BADGE.format(file)), "wb") as f:
-      f.write(bytes(r.content))
+    with open(os.path.join(BASEDIR, TRANSLATION_BADGE.format(file)), "wb") as badge_f:
+      badge_f.write(r.content)
