@@ -44,7 +44,6 @@ jobs:
       run: |
         if ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"; then
           echo ::set-output name=success::true
-
           git checkout --orphan badges
           git rm -rf --cached .
           git add translation_badge_*.svg
