@@ -1,7 +1,5 @@
 ![](https://i.imgur.com/b0ZyIx5.jpg)
 
-![.github/workflows/badges.yml](https://raw.githubusercontent.com/sshane/openpilot/badges/master/test-badge.svg)
-
 Table of Contents
 =======================
 
