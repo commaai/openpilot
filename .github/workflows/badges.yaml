@@ -16,6 +16,7 @@ env:
 
 jobs:
   badges:
+    name: create badges
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -48,7 +49,7 @@ jobs:
         git config --local user.name "GitHub Action"
 
         git add translation_badge_*.svg
-        git commit -m "Add/Update badges"
+        git commit -m "Add/Update badges" || true
 
     - name: Push badge commit
       uses: ad-m/github-push-action@master
