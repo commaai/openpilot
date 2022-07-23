@@ -132,9 +132,9 @@ class CarController:
       knee_torque_r = int(np.clip(self.torque_knee_r_filtered, -MAX_KNEE_TORQUE_RIGHT, MAX_KNEE_TORQUE_RIGHT))
 
       # Extra safety for when training stands attached:
-      if knee_angle_measured_left<=30 and torque_knee_l > 0:
+      if knee_angle_measured_left<=30 and knee_torque_l > 0:
         torque_knee_l = 0
-      elif knee_angle_measured_left >= 330 and torque_knee_l < 0:
+      elif knee_angle_measured_left >= 330 and knee_torque_l < 0:
         torque_knee_l = 0
 
       can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
