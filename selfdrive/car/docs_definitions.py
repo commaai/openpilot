@@ -5,6 +5,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union, no_type_check
+from selfdrive.car.interfaces import get_interface_attr
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
@@ -42,6 +43,13 @@ def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
   return [fn for fn in footnotes if fn.value.column == column]
 
 
+def get_all_footnotes(hide_cols) -> Dict[Enum, int]:
+  all_footnotes = []
+  for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
+    all_footnotes.extend([fn for fn in footnotes if fn not in hide_cols])
+  return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
+
+
 def split_name(name: str) -> Tuple[str, str, str]:
   make, model = name.split(" ", 1)
   years = ""
@@ -62,7 +70,7 @@ class CarInfo:
   min_enable_speed: Optional[float] = None
   harness: Optional[Enum] = None
 
-  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
+  def init(self, CP: car.CarParams, hide_cols, all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
@@ -105,6 +113,9 @@ class CarInfo:
       for fn in get_footnotes(self.footnotes, column):
         if fn.value.star is not None:
           self.row[column] = fn.value.star
+
+    # Remove hidden columns
+    self.row = {c: self.row[c] for c in self.row if c not in hide_cols}
 
     # openpilot ACC star doesn't count for tiers
     full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
