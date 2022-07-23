@@ -1,7 +1,7 @@
 from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.body.values import DBC, RAW_ANGLE_TO_DEGREES
+from selfdrive.car.body.values import CAR, DBC, KNEE_RAW_ANGLE_TO_DEGREES
 
 STARTUP_TICKS = 100
 
@@ -12,8 +12,9 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.fl = cp.vl['MOTORS_DATA']['SPEED_L']
     ret.wheelSpeeds.fr = cp.vl['MOTORS_DATA']['SPEED_R']
 
-    self.knee_angle_l = cp.vl['KNEE_MOTORS_ANGLE']['LEFT_ANGLE_SENSOR'] * RAW_ANGLE_TO_DEGREES
-    self.knee_angle_r = cp.vl['KNEE_MOTORS_ANGLE']['RIGHT_ANGLE_SENSOR'] * RAW_ANGLE_TO_DEGREES
+    if self.CP.carFingerprint == CAR.BODY_KNEE:
+      self.knee_angle_l = cp.vl['KNEE_MOTORS_ANGLE']['LEFT_ANGLE_SENSOR'] * KNEE_RAW_ANGLE_TO_DEGREES
+      self.knee_angle_r = cp.vl['KNEE_MOTORS_ANGLE']['RIGHT_ANGLE_SENSOR'] * KNEE_RAW_ANGLE_TO_DEGREES
 
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
@@ -50,22 +51,27 @@ class CarState(CarStateBase):
       ("BATT_VOLTAGE", "BODY_DATA"),
       ("BATT_PERCENTAGE", "BODY_DATA"),
       ("CHARGER_CONNECTED", "BODY_DATA"),
-
-      ("SPEED_L", "KNEE_MOTORS_DATA"),
-      ("SPEED_R", "KNEE_MOTORS_DATA"),
-      ("COUNTER", "KNEE_MOTORS_DATA"),
-      ("CHECKSUM", "KNEE_MOTORS_DATA"),
-      ("LEFT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
-      ("RIGHT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
     ]
 
     checks = [
       ("MOTORS_DATA", 100),
       ("VAR_VALUES", 10),
       ("BODY_DATA", 1),
-
-      ("KNEE_MOTORS_DATA", 100),
-      ("KNEE_MOTORS_ANGLE", 100),
     ]
+
+    if CP.carFingerprint == CAR.BODY_KNEE:
+      signals += [
+        ("SPEED_L", "KNEE_MOTORS_DATA"),
+        ("SPEED_R", "KNEE_MOTORS_DATA"),
+        ("COUNTER", "KNEE_MOTORS_DATA"),
+        ("CHECKSUM", "KNEE_MOTORS_DATA"),
+        ("LEFT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
+        ("RIGHT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
+      ]
+
+      checks += [
+        ("KNEE_MOTORS_DATA", 100),
+        ("KNEE_MOTORS_ANGLE", 100),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)

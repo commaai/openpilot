@@ -19,6 +19,7 @@ FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
 
 # No steering wheel
 COMMA BODY: [.nan, 1000, .nan]
+COMMA BODY WITH KNEE: [.nan, 1000, .nan]
 
 # Totally new cars
 KIA EV6 2022: [3.5, 2.5, 0.0]

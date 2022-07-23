@@ -8,7 +8,7 @@ from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQuerie
 Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
-RAW_ANGLE_TO_DEGREES = 0.021972656 # 14 bit reading from angle sensor
+KNEE_RAW_ANGLE_TO_DEGREES = 0.021972656 # 14 bit reading from angle sensor
 
 
 class CarControllerParams:
@@ -21,10 +21,12 @@ class CarControllerParams:
 
 class CAR:
   BODY = "COMMA BODY"
+  BODY_KNEE = "COMMA BODY WITH KNEE"
 
 
 CAR_INFO: Dict[str, CarInfo] = {
   CAR.BODY: CarInfo("comma body", package="All"),
+  CAR.BODY_KNEE: CarInfo("comma body + knee", package="All"),
 }
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -41,6 +43,15 @@ FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
       b'0.0.02',
+      b'ELECTRIC0'
+    ],
+    (Ecu.debug, 0x721, None): [
+      b'70ca68dc' # git hash of the firmware used
+    ],
+  },
+  CAR.BODY_KNEE: {
+    (Ecu.engine, 0x720, None): [
+      b'0.0.02',
       b'ELECTRIC1'
     ],
     (Ecu.debug, 0x721, None): [
@@ -51,4 +62,5 @@ FW_VERSIONS = {
 
 DBC = {
   CAR.BODY: dbc_dict('comma_body', None),
+  CAR.BODY_KNEE: dbc_dict('comma_body', None),
 }

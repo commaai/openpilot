@@ -627,8 +627,8 @@ class Controls:
           actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
         # TODO: body knee extra axes, make nice check? hacky..
-        actuators.bodyKneeAngle = (clip(self.sm['testJoystick'].axes[2], -1, 1) + 1) * 180
-        actuators.bodyHipAngle = (clip(self.sm['testJoystick'].axes[3], -1, 1) + 1) * 180
+        actuators.bodyKneeAngle = clip(self.sm['testJoystick'].axes[3], 0, 360)
+        actuators.bodyHipAngle = clip(self.sm['testJoystick'].axes[2], 0, 360)
 
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
