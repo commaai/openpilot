@@ -59,7 +59,8 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_co
       for c in hide_cols:
         del car.row[c]
 
-  cars_md: str = template.render(all_car_info=all_car_info, footnotes=get_all_footnotes(only_tier_cols),
+  footnotes = [fn.value.text for fn in get_all_footnotes(only_tier_cols)]
+  cars_md: str = template.render(all_car_info=all_car_info, footnotes=footnotes,
                                  Star=Star, Column=cols, star_descriptions=STAR_DESCRIPTIONS)
   return cars_md
 
