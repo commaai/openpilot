@@ -128,7 +128,8 @@ class CarInfo:
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
       sups = sorted([self.all_footnotes[fn] for fn in footnotes])
-      item += footnote_tag.format(f'{",".join(map(str, sups))}')
+      item += footnote_tag.format(f'[{",".join(map(str, sups))}]')
+      # item += footnote_tag.format(",".join([f"[{s}]" for s in sups]))
 
     return item
 
