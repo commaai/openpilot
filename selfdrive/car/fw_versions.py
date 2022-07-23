@@ -112,7 +112,7 @@ class Request:
   response: List[bytes]
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = DEFAULT_RX_OFFSET
-  bus: int = 1
+  bus: int = 0
 
 
 REQUESTS: List[Request] = [
@@ -198,7 +198,6 @@ REQUESTS: List[Request] = [
     "body",
     [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
-    bus=0,
   ),
   # Chrysler / FCA / Stellantis
   Request(
@@ -217,14 +216,6 @@ REQUESTS: List[Request] = [
     "ford",
     [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine],
-  ),
-  Request(
-    "ford",
-    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
-    bus=0,
-    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
   ),
 ]
 
