@@ -127,7 +127,7 @@ class CarInfo:
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
-      item += footnote_tag.format(",".join(sorted([str(self.all_footnotes[fn]) for fn in footnotes])))
+      item += footnote_tag.format(",".join(map(str, sorted([self.all_footnotes[fn] for fn in footnotes]))))
 
     return item
 
