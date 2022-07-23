@@ -57,6 +57,8 @@ class CarController:
     knee_angle_measured_left = 0
     knee_angle_measured_right = 0
 
+    torque_knee_l = 0
+
     llk_valid = len(CC.orientationNED) > 0 and len(CC.angularVelocity) > 0
     if CC.enabled and llk_valid:
       # Read these from the joystick
