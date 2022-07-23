@@ -105,12 +105,11 @@ class CarController:
 
     # Knee angle controls
     if CC.enabled:
+      knee_angle_desired_left = CC.actuators.bodyKneeAngle
+      knee_angle_desired_right = CC.actuators.bodyHipAngle
+
       knee_angle_measured_left = CS.knee_angle_l
       knee_angle_measured_right = CS.knee_angle_r
-
-      # TODO: add joystick support
-      knee_angle_desired_left = 180
-      knee_angle_desired_right = knee_angle_measured_left
 
       knee_angle_error_left = knee_angle_desired_left - knee_angle_measured_left
       knee_angle_error_right = knee_angle_desired_right - knee_angle_measured_right
@@ -138,9 +137,15 @@ class CarController:
     torque_l = torque_r = 0
     can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
-    print(knee_torque_l, knee_angle_measured_left)
+    # print(knee_torque_l, knee_angle_measured_left)
     # knee_torque_l = 0
     # knee_torque_r = 11
+
+    # Extra safety for when training stands attached:
+    if knee_angle_measured_left<=30 and torque_knee_l > 0:
+      torque_knee_l = 0
+    elif knee_angle_measured_left >= 330 and torque_knee_l < 0:
+      torque_knee_l = 0
     
     can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
 

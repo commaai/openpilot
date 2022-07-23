@@ -626,6 +626,10 @@ class Controls:
           # max angle is 45 for angle-based cars
           actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
+        # TODO: body knee extra axes, make nice check? hacky..
+        actuators.bodyKneeAngle = (clip(self.sm['testJoystick'].axes[2], -1, 1) + 1) * 180
+        actuators.bodyHipAngle = (clip(self.sm['testJoystick'].axes[3], -1, 1) + 1) * 180
+
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
         lac_log.output = actuators.steer
