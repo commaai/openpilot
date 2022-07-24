@@ -179,8 +179,22 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   return vs, p
 
 
+def migrate_carparams(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() == 'carParams':
+      CP = messaging.new_message('carParams')
+      CP.carParams = msg.carParams.as_builder()
+      for car_fw in CP.carParams.carFw:
+        car_fw.brand = CP.carParams.carName
+      msg = CP.as_reader()
+    all_msgs.append(msg)
+
+  return all_msgs
+
+
 def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
-  lr = list(lr)
+  lr = migrate_carparams(list(lr))
   if frs is None:
     frs = dict()
 
@@ -249,7 +263,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
   if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
-    raise Exception(f"Route never enabled: {segment}")
+    raise Exception(f"Route did not engage for long enough: {segment}")
 
   return seg_path
 

@@ -69,9 +69,7 @@ class CarController:
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      idx = (self.frame / P.HCA_STEP) % 16
-      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
-                                                                 idx, hcaEnabled))
+      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hcaEnabled))
 
     # **** HUD Controls ***************************************************** #
 
@@ -96,9 +94,8 @@ class CarController:
           # Cancel ACC if it's engaged with OP disengaged.
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["cancel"] = True
-        elif CC.enabled and CS.out.cruiseState.standstill:
-          # Blip the Resume button if we're engaged at standstill.
-          # FIXME: This is a naive implementation, improve with visiond or radar input.
+        elif CC.cruiseControl.resume:
+          # Send Resume button when planner wants car to move
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["resumeCruise"] = True
 
