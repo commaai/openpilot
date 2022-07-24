@@ -133,9 +133,9 @@ class CarController:
 
       # Extra safety for when training stands attached:
       if knee_angle_measured_left<=30 and knee_torque_l > 0:
-        torque_knee_l = 0
+        knee_torque_l = 0
       elif knee_angle_measured_left >= 330 and knee_torque_l < 0:
-        torque_knee_l = 0
+        knee_torque_l = 0
 
       can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
 
