@@ -88,8 +88,8 @@ class CarState(CarStateBase):
   @staticmethod
   def parse_gear_shifter(gear: str) -> car.CarState.GearShifter:
     d: Dict[str, car.CarState.GearShifter] = {
-        'Park': GearShifter.park, 'Reverse': GearShifter.reverse, 'Neutral': GearShifter.neutral,
-        'Manual': GearShifter.manumatic, 'Drive': GearShifter.drive,
+        'PARK': GearShifter.park, 'REVERSE': GearShifter.reverse, 'NEUTRAL': GearShifter.neutral,
+        'MANUAL': GearShifter.manumatic, 'DRIVE': GearShifter.drive,
     }
     return d.get(gear, GearShifter.unknown)
 
