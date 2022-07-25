@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car.chrysler.values import CAR
+from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car.chrysler.values import CAR, DBC, RAM_CARS
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -10,7 +11,11 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+
+    ret.radarOffCan = DBC[candidate]['radar'] is None
+
+    param = Panda.FLAG_CHRYSLER_RAM_DT if candidate in RAM_CARS else None
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
@@ -39,6 +44,21 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
       ret.lateralTuning.pid.kf = 0.00006
 
+    # Ram
+    elif candidate == CAR.RAM_1500:
+      ret.steerActuatorDelay = 0.2
+
+      ret.wheelbase = 3.88
+      ret.steerRatio = 16.3
+      ret.mass = 2493. + STD_CARGO_KG
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+      ret.minSteerSpeed = 14.5
+      if car_fw is not None:
+        for fw in car_fw:
+          if fw.ecu == 'eps' and fw.fwVersion in (b"68312176AE", b"68312176AG", b"68273275AG"):
+            ret.minSteerSpeed = 0.
+
     else:
       raise ValueError(f"Unsupported car: {candidate}")
 
@@ -58,15 +78,13 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
     # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
+    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):
       self.low_speed_alert = True
-    elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
+    elif ret.vEgo > (self.CP.minSteerSpeed + 1.):
       self.low_speed_alert = False
     if self.low_speed_alert:
       events.add(car.CarEvent.EventName.belowSteerSpeed)

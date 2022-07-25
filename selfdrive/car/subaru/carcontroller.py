@@ -1,27 +1,30 @@
+from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, PREGLOBAL_CARS, CarControllerParams
-from opendbc.can.packer import CANPacker
 
 
-class CarController():
+class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.apply_steer_last = 0
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
     self.cruise_button_prev = 0
-    self.steer_rate_limited = False
+    self.frame = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
-  def update(self, c, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
+  def update(self, CC, CS):
+    actuators = CC.actuators
+    hud_control = CC.hudControl
+    pcm_cancel_cmd = CC.cruiseControl.cancel
 
     can_sends = []
 
     # *** steering ***
-    if (frame % self.p.STEER_STEP) == 0:
+    if (self.frame % self.p.STEER_STEP) == 0:
 
       apply_steer = int(round(actuators.steer * self.p.STEER_MAX))
 
@@ -29,15 +32,14 @@ class CarController():
 
       new_steer = int(round(apply_steer))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
-      self.steer_rate_limited = new_steer != apply_steer
 
-      if not c.latActive:
+      if not CC.latActive:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, frame, self.p.STEER_STEP))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, frame, self.p.STEER_STEP))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer))
 
       self.apply_steer_last = apply_steer
 
@@ -45,7 +47,7 @@ class CarController():
     # *** alerts and pcm cancel ***
 
     if self.CP.carFingerprint in PREGLOBAL_CARS:
-      if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
+      if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
         if pcm_cancel_cmd:
@@ -62,18 +64,21 @@ class CarController():
         self.cruise_button_prev = cruise_button
 
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
-        self.es_distance_cnt = CS.es_distance_msg["Counter"]
+        self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
     else:
-      if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
+      if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
-        self.es_distance_cnt = CS.es_distance_msg["Counter"]
+        self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
-      if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
-        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, c.enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart))
-        self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
+      if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
+        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
+                                                  hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                  hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+        self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
 
+    self.frame += 1
     return new_actuators, can_sends

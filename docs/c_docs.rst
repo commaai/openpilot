@@ -30,8 +30,6 @@ camerad
 .. autodoxygenindex::
    :project: system_camerad_cameras
 .. autodoxygenindex::
-   :project: system_camerad_transforms
-.. autodoxygenindex::
    :project: system_camerad_imgproc
 
 locationd
@@ -54,7 +52,7 @@ soundd
 replay
 """"""
 .. autodoxygenindex::
-   :project: selfdrive_ui_replay
+   :project: tools_replay
 
 qt
 ""

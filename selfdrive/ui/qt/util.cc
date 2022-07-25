@@ -1,6 +1,9 @@
 #include "selfdrive/ui/qt/util.h"
 
 #include <QApplication>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLayoutItem>
 #include <QStyleOption>
 #include <QPainterPath>
@@ -15,7 +18,7 @@ QString getVersion() {
 }
 
 QString getBrand() {
-  return Params().getBool("Passive") ? "dashcam" : "openpilot";
+  return Params().getBool("Passive") ? QObject::tr("dashcam") : QObject::tr("openpilot");
 }
 
 QString getBrandVersion() {
@@ -34,6 +37,19 @@ std::optional<QString> getDongleId() {
   } else {
     return {};
   }
+}
+
+QMap<QString, QString> getSupportedLanguages() {
+  QFile f("translations/languages.json");
+  f.open(QIODevice::ReadOnly | QIODevice::Text);
+  QString val = f.readAll();
+
+  QJsonObject obj = QJsonDocument::fromJson(val.toUtf8()).object();
+  QMap<QString, QString> map;
+  for (auto key : obj.keys()) {
+    map[key] = obj[key].toString();
+  }
+  return map;
 }
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
@@ -63,13 +79,13 @@ QString timeAgo(const QDateTime &date) {
     s = "now";
   } else if (diff < 60 * 60) {
     int minutes = diff / 60;
-    s = QString("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
+    s = QObject::tr("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
   } else if (diff < 60 * 60 * 24) {
     int hours = diff / (60 * 60);
-    s = QString("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
+    s = QObject::tr("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
   } else if (diff < 3600 * 24 * 7) {
     int days = diff / (60 * 60 * 24);
-    s = QString("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
+    s = QObject::tr("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
   } else {
     s = date.date().toString();
   }
