@@ -1,4 +1,4 @@
-def create_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
+def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   values = {
     "LM_Offset": abs(apply_steer),
     "LM_OffSign": 1 if apply_steer < 0 else 0,
@@ -6,7 +6,7 @@ def create_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
     "Vib_Freq": 16,
   }
 
-  return packer.make_can_msg("HCA_1", bus, values, idx)
+  return packer.make_can_msg("HCA_1", bus, values)
 
 def create_lka_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
                           ldw_stock_values, left_lane_depart, right_lane_depart):
@@ -23,12 +23,13 @@ def create_lka_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
 def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
   values = gra_stock_values.copy()
 
+  values["COUNTER"] = idx
   values["GRA_Abbrechen"] = cancel
   values["GRA_Recall"] = resume
 
-  return packer.make_can_msg("GRA_Neu", bus, values, idx)
+  return packer.make_can_msg("GRA_Neu", bus, values)
 
-def create_acc_accel_control(packer, bus, adr_status, accel, idx):
+def create_acc_accel_control(packer, bus, adr_status, accel):
   values = {
     "ACS_Sta_ADR": adr_status,
     "ACS_StSt_Info": adr_status != 1,
@@ -38,9 +39,9 @@ def create_acc_accel_control(packer, bus, adr_status, accel, idx):
     "ACS_max_AendGrad": 3.0 if adr_status == 1 else 5.08,
   }
 
-  return packer.make_can_msg("ACC_System", bus, values, idx)
+  return packer.make_can_msg("ACC_System", bus, values)
 
-def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, idx):
+def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible):
   values = {
     "ACA_StaACC": acc_status,
     "ACA_Zeitluecke": 2,
@@ -49,4 +50,4 @@ def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, idx
   }
   # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
 
-  return packer.make_can_msg("ACC_GRA_Anziege", bus, values, idx)
+  return packer.make_can_msg("ACC_GRA_Anziege", bus, values)
