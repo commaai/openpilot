@@ -3,6 +3,7 @@
 
 import os
 import time
+import numpy as np
 from cffi import FFI
 
 from common.ffi_wrapper import suffix
@@ -40,17 +41,16 @@ def wait_ready(lib, renderer):
 
 def get_image(lib, renderer):
   buf = lib.map_renderer_get_image(renderer)
-  r = list(buf[0:3 * WIDTH * HEIGHT])
+  r = list(buf[0:WIDTH * HEIGHT])
   lib.map_renderer_free_image(renderer, buf)
 
   # Convert to numpy
   r = np.asarray(r)
-  return r.reshape((WIDTH, HEIGHT, 3))
+  return r.reshape((WIDTH, HEIGHT))
 
 
 if __name__ == "__main__":
   import matplotlib.pyplot as plt
-  import numpy as np
 
   ffi, lib = get_ffi()
   renderer = lib.map_renderer_init()
