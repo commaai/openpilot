@@ -12,6 +12,7 @@ CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
 
 
 class TestFwFingerprint(unittest.TestCase):
@@ -20,14 +21,16 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  @parameterized.expand([(k, v) for k, v in FW_VERSIONS.items()])
-  def test_fw_fingerprint(self, car_model, ecus):
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_fw_fingerprint(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
     for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
+        if not len(fw_versions):
+          raise unittest.SkipTest("Car model has no FW versions")
         ecu_name, addr, sub_addr = ecu
-        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions),
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw)
@@ -60,10 +63,9 @@ class TestFwFingerprint(unittest.TestCase):
   def test_fw_request_ecu_whitelist(self):
     passed = True
     brands = set(r.brand for r in REQUESTS)
-    versions = get_interface_attr('FW_VERSIONS')
     for brand in brands:
       whitelisted_ecus = [ecu for r in REQUESTS for ecu in r.whitelist_ecus if r.brand == brand]
-      brand_ecus = set([fw[0] for car_fw in versions[brand].values() for fw in car_fw])
+      brand_ecus = set([fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw])
 
       # each ecu in brand's fw versions needs to be whitelisted at least once
       ecus_not_whitelisted = set(brand_ecus) - set(whitelisted_ecus)

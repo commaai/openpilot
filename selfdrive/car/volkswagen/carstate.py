@@ -4,18 +4,19 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, NetworkLocation, TransmissionType, GearShifter, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
+                                            CarControllerParams, MQB_BUTTONS
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.button_states = {button.event_type: False for button in MQB_BUTTONS}
     can_define = CANDefine(DBC_FILES.mqb)
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
     elif CP.transmissionType == TransmissionType.direct:
       self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
     self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
-    self.buttonStates = BUTTON_STATES.copy()
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
     ret = car.CarState.new_message()
@@ -114,26 +115,20 @@ class CarState(CarStateBase):
       if ret.cruiseState.speed > 90:
         ret.cruiseState.speed = 0
 
-    # Update control button states for turn signals and ACC controls.
-    self.buttonStates["accelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Hoch"])
-    self.buttonStates["decelCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Runter"])
-    self.buttonStates["cancel"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Abbrechen"])
-    self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Setzen"])
-    self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Wiederaufnahme"])
-    self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"])
+    # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
     ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
-
-    # Read ACC hardware button type configuration info that has to pass thru
-    # to the radar. Ends up being different for steering wheel buttons vs
-    # third stalk type controls.
-    self.graHauptschalter = pt_cp.vl["GRA_ACC_01"]["GRA_Hauptschalter"]
-    self.graTypHauptschalter = pt_cp.vl["GRA_ACC_01"]["GRA_Typ_Hauptschalter"]
-    self.graButtonTypeInfo = pt_cp.vl["GRA_ACC_01"]["GRA_ButtonTypeInfo"]
-    self.graTipStufe2 = pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Stufe_2"]
-    # Pick up the GRA_ACC_01 CAN message counter so we can sync to it for
-    # later cruise-control button spamming.
-    self.graMsgBusCounter = pt_cp.vl["GRA_ACC_01"]["COUNTER"]
+    self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
+    buttonEvents = []
+    for button in MQB_BUTTONS:
+      state = pt_cp.vl[button.can_addr][button.can_msg] in button.values
+      if self.button_states[button.event_type] != state:
+        event = car.CarState.ButtonEvent.new_message()
+        event.type = button.event_type
+        event.pressed = state
+        buttonEvents.append(event)
+      self.button_states[button.event_type] = state
+    ret.buttonEvents = buttonEvents
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
@@ -181,6 +176,7 @@ class CarState(CarStateBase):
       ("GRA_Tip_Wiederaufnahme", "GRA_ACC_01"),  # ACC button, resume
       ("GRA_Verstellung_Zeitluecke", "GRA_ACC_01"),  # ACC button, time gap adj
       ("GRA_Typ_Hauptschalter", "GRA_ACC_01"),   # ACC main button type
+      ("GRA_Codierung", "GRA_ACC_01"),           # ACC button configuration/coding
       ("GRA_Tip_Stufe_2", "GRA_ACC_01"),         # unknown related to stalk type
       ("GRA_ButtonTypeInfo", "GRA_ACC_01"),      # unknown related to stalk type
       ("COUNTER", "GRA_ACC_01"),                 # GRA_ACC_01 CAN message counter
