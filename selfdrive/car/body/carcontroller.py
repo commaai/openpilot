@@ -139,9 +139,6 @@ class CarController:
 
       can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
 
-    # TODO: remove!
-    torque_l = torque_r = 0
-
     can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
     new_actuators = CC.actuators.copy()
