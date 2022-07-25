@@ -32,19 +32,11 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
   })
   return packer.make_can_msg("LDW_02", bus, values)
 
-def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
-  values = {
-    "COUNTER": idx,
-    "GRA_Hauptschalter": CS.graHauptschalter,
-    "GRA_Abbrechen": buttonStatesToSend["cancel"],
-    "GRA_Tip_Setzen": buttonStatesToSend["setCruise"],
-    "GRA_Tip_Hoch": buttonStatesToSend["accelCruise"],
-    "GRA_Tip_Runter": buttonStatesToSend["decelCruise"],
-    "GRA_Tip_Wiederaufnahme": buttonStatesToSend["resumeCruise"],
-    "GRA_Verstellung_Zeitluecke": 3 if buttonStatesToSend["gapAdjustCruise"] else 0,
-    "GRA_Typ_Hauptschalter": CS.graTypHauptschalter,
-    "GRA_Codierung": 2,
-    "GRA_Tip_Stufe_2": CS.graTipStufe2,
-    "GRA_ButtonTypeInfo": CS.graButtonTypeInfo
-  }
+def create_mqb_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
+  values = gra_stock_values.copy()
+
+  values["COUNTER"] = idx
+  values["GRA_Abbrechen"] = cancel
+  values["GRA_Tip_Wiederaufnahme"] = resume
+
   return packer.make_can_msg("GRA_ACC_01", bus, values)
