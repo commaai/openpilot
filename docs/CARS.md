@@ -78,7 +78,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Hyundai|Kona 2020|SCC + LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Kona Electric 2018-21|SCC + LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Kona Hybrid 2020|SCC + LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Palisade 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Hyundai|Palisade 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Santa Fe 2019-20|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Santa Fe 2021-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Santa Fe Hybrid 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
