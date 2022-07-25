@@ -319,6 +319,9 @@ class CarStateBase(ABC):
 
   @staticmethod
   def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
+    if gear is None:
+      return GearShifter.unknown
+    
     d: Dict[str, car.CarState.GearShifter] = {
         'P': GearShifter.park, 'PARK': GearShifter.park,
         'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
@@ -330,7 +333,7 @@ class CarStateBase(ABC):
         'L': GearShifter.low, 'LOW': GearShifter.low,
         'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
     }
-    return d.get(gear.upper(), GearShifter.unknown) if gear is not None else GearShifter.unknown
+    return d.get(gear.upper(), GearShifter.unknown)
 
   @staticmethod
   def get_cam_can_parser(CP):
