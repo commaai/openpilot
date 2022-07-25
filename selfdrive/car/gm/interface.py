@@ -66,9 +66,7 @@ class CarInterface(CarInterfaceBase):
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
-    ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
+    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
 
     ret.longitudinalTuning.kpBP = [5., 35.]
@@ -89,12 +87,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
       tire_stiffness_factor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
       ret.centerToFront = ret.wheelbase * 0.45  # Volt Gen 1, TODO corner weigh
-
-      ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.17]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.MALIBU:
@@ -116,7 +108,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.86
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
@@ -136,9 +127,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.49
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
-      ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
     # TODO: get actual value, for now starting with reasonable value for
