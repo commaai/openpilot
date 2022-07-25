@@ -19,11 +19,9 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
+    self.gear_msg_can_fd = "GEAR" if CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else "ACCELERATOR"
     if CP.carFingerprint in CANFD_CAR:
-      if CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ):
-        self.shifter_values = can_define.dv["GEAR"]["GEAR"]
-      else:
-        self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
+      self.shifter_values = can_define.dv[self.gear_msg_can_fd]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -141,7 +139,6 @@ class CarState(CarStateBase):
 
     gas_scale = 1022. if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else 255.
     cruise_info_bus = cp_cam if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else cp
-    gear_msg = "GEAR" if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else "ACCELERATOR"
 
     ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
     ret.gasPressed = ret.gas > 1e-3
@@ -150,7 +147,7 @@ class CarState(CarStateBase):
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl[gear_msg]["GEAR"]
+    gear = cp.vl[self.gear_msg_can_fd]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
