@@ -35,7 +35,7 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
 def create_mqb_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
   values = gra_stock_values.copy()
 
-  values["COUNTER"] = idx,
+  values["COUNTER"] = idx
   values["GRA_Abbrechen"] = cancel
   values["GRA_Tip_Wiederaufnahme"] = resume
 
