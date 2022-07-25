@@ -198,7 +198,6 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
                                        pcm_enable=not self.CS.CP.openpilotLongitudinalControl)
@@ -226,6 +225,7 @@ class CarInterface(CarInterfaceBase):
           events.add(EventName.buttonCancel)
 
     ret.events = events.to_msg()
+
     return ret
 
   def apply(self, c):

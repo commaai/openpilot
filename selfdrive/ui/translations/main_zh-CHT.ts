@@ -135,7 +135,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="112"/>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>預覽駕駛員監控鏡頭畫面，以確保其具有良好視野。僅在熄火時可用。</translation>
+        <translation>預覽駕駛員監控鏡頭畫面，以確保其具有良好視野。（僅在熄火時可用）</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="116"/>
@@ -340,7 +340,7 @@
     <message>
         <location filename="../qt/maps/map.cc" line="622"/>
         <source>eta</source>
-        <translation>埃塔</translation>
+        <translation>抵達</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="632"/>
@@ -440,7 +440,7 @@ location set</source>
     <message>
         <location filename="../qt/maps/map.cc" line="178"/>
         <source>Map Loading</source>
-        <translation>地圖加載</translation>
+        <translation>地圖加載中</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="195"/>
@@ -488,30 +488,30 @@ location set</source>
 <context>
     <name>NvgWindow</name>
     <message>
-        <location filename="../qt/onroad.cc" line="208"/>
+        <location filename="../qt/onroad.cc" line="212"/>
         <source>km/h</source>
         <translation>km/h</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="208"/>
+        <location filename="../qt/onroad.cc" line="212"/>
         <source>mph</source>
         <translation>mph</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="275"/>
-        <location filename="../qt/onroad.cc" line="278"/>
+        <location filename="../qt/onroad.cc" line="279"/>
+        <location filename="../qt/onroad.cc" line="282"/>
         <source>MAX</source>
         <translation>最高</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="322"/>
-        <location filename="../qt/onroad.cc" line="325"/>
+        <location filename="../qt/onroad.cc" line="326"/>
+        <location filename="../qt/onroad.cc" line="329"/>
         <source>SPEED</source>
         <translation>速度</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="328"/>
-        <location filename="../qt/onroad.cc" line="331"/>
+        <location filename="../qt/onroad.cc" line="332"/>
+        <location filename="../qt/onroad.cc" line="335"/>
         <source>LIMIT</source>
         <translation>速限</translation>
     </message>
@@ -1020,23 +1020,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>切換分支</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>切換</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>新的分支將會在下次檢查更新時切換過去。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>輸入分支名稱</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="272"/>
@@ -1220,12 +1220,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="77"/>
         <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
+        <translation>將地圖顯示在畫面的左側</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="78"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
+        <translation>進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="90"/>

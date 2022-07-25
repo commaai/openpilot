@@ -131,7 +131,7 @@ class CarState(CarStateBase):
     self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
     buttonEvents = []
     for button in MQB_BUTTONS:
-      state = (pt_cp.vl[button.can_addr][button.can_msg] in button.values)
+      state = pt_cp.vl[button.can_addr][button.can_msg] in button.values
       if self.button_states[button.event_type] != state:
         event = car.CarState.ButtonEvent.new_message()
         event.type = button.event_type

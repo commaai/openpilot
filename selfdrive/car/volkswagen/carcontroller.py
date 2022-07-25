@@ -35,7 +35,6 @@ class CarController:
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
-    self.steer_rate_limited = False
 
   def update(self, CC, CS, ext_bus):
     actuators = CC.actuators
@@ -59,7 +58,6 @@ class CarController:
       if CC.latActive:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
-        self.steer_rate_limited = new_steer != apply_steer
         if apply_steer == 0:
           hcaEnabled = False
           self.hcaEnabledFrameCount = 0
@@ -82,8 +80,7 @@ class CarController:
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      idx = (self.frame / P.HCA_STEP) % 16
-      can_sends.append(self.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, idx, hcaEnabled))
+      can_sends.append(self.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hcaEnabled))
 
     # **** Acceleration Controls ******************************************** #
 
@@ -96,8 +93,7 @@ class CarController:
         else:
           adr_status = 0
         accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if CC.longActive else 0
-        idx = (self.frame / P.ACC_CONTROL_STEP) % 16
-        can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, adr_status, accel, idx))
+        can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, adr_status, accel))
       if self.frame % P.ACC_HUD_STEP:
         if CC.longActive:
           acc_status = 3
@@ -108,9 +104,8 @@ class CarController:
         else:
           acc_status = 0
         set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
-        idx = (self.frame / P.ACC_HUD_STEP) % 16
         can_sends.append(self.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_status, set_speed,
-                                                     hud_control.leadVisible, idx))
+                                                     hud_control.leadVisible))
 
     # **** HUD Controls ***************************************************** #
 

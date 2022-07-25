@@ -2,7 +2,7 @@ import re
 
 from cereal import car
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union, no_type_check
 
@@ -37,13 +37,9 @@ TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TOR
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
-def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:
-  # Returns applicable footnote given current column
-  if footnotes is not None:
-    for fn in footnotes:
-      if fn.value.column == column:
-        return fn
-  return None
+def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
+  # Returns applicable footnotes given current column
+  return [fn for fn in footnotes if fn.value.column == column]
 
 
 def split_name(name: str) -> Tuple[str, str, str]:
@@ -61,7 +57,7 @@ class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
-  footnotes: Optional[List[Enum]] = None
+  footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   harness: Optional[Enum] = None
@@ -106,9 +102,9 @@ class CarInfo:
     self.all_footnotes = all_footnotes
     for column in StarColumns:
       # Demote if footnote specifies a star
-      footnote = get_footnote(self.footnotes, column)
-      if footnote is not None and footnote.value.star is not None:
-        self.row[column] = footnote.value.star
+      for fn in get_footnotes(self.footnotes, column):
+        if fn.value.star is not None:
+          self.row[column] = fn.value.star
 
     # openpilot ACC star doesn't count for tiers
     full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
@@ -129,9 +125,10 @@ class CarInfo:
     elif column == Column.MODEL and len(self.years):
       item += f" {self.years}"
 
-    footnote = get_footnote(self.footnotes, column)
-    if footnote is not None:
-      item += footnote_tag.format(self.all_footnotes[footnote])
+    footnotes = get_footnotes(self.footnotes, column)
+    if len(footnotes):
+      sups = sorted([self.all_footnotes[fn] for fn in footnotes])
+      item += footnote_tag.format(f'{",".join(map(str, sups))}')
 
     return item
 
@@ -172,18 +169,18 @@ class Harness(Enum):
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
     Column.FSR_LONGITUDINAL.value: [
-      [Star.FULL.value, "Adaptive Cruise Control (ACC) operates down to 0 mph."],
-      [Star.EMPTY.value, "Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed."],
+      [Star.FULL.value, "openpilot operates down to 0 mph."],
+      [Star.EMPTY.value, "openpilot operates only above a minimum speed. See your car's manual for the minimum speed."],
     ],
   },
   "Steering": {
     Column.FSR_STEERING.value: [
       [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
-      [Star.EMPTY.value, "No steering control below certain speeds."],
+      [Star.EMPTY.value, "No steering control below certain speeds. See your car's manual for the minimum speed."],
     ],
     Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to take tight turns."],
-      [Star.EMPTY.value, "Limited ability to make turns."],
+      [Star.FULL.value, "Car has enough steering torque to comfortably take most highway turns."],
+      [Star.EMPTY.value, "Limited ability to make tighter turns."],
     ],
   },
 }
