@@ -5,7 +5,7 @@ import os
 import sys
 from collections import defaultdict
 from tqdm import tqdm
-from typing import Any, Dict
+from typing import Any, DefaultDict, Dict
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
@@ -105,7 +105,7 @@ def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore
     return str(e), log_msgs
 
 
-def format_diff(results, ref_commit):
+def format_diff(results, log_paths, ref_commit):
   diff1, diff2 = "", ""
   diff2 += f"***** tested against commit {ref_commit} *****\n"
 
@@ -115,13 +115,22 @@ def format_diff(results, ref_commit):
     diff2 += f"***** differences for segment {segment} *****\n"
 
     for proc, diff in list(result.items()):
-      diff1 += f"\t{proc}\n"
+      # long diff
       diff2 += f"*** process: {proc} ***\n"
+      diff2 += f"\tref: {log_paths[segment]['ref']}\n\n"
+      diff2 += f"\tnew: {log_paths[segment]['new']}\n\n"
 
+      # short diff
+      diff1 += f"    {proc}\n"
       if isinstance(diff, str):
-        diff1 += f"\t\t{diff}\n"
+        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        {diff}\n"
         failed = True
       elif len(diff):
+        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+
         cnt: Dict[str, int] = {}
         for d in diff:
           diff2 += f"\t{str(d)}\n"
@@ -130,7 +139,7 @@ def format_diff(results, ref_commit):
           cnt[k] = 1 if k not in cnt else cnt[k] + 1
 
         for k, v in sorted(cnt.items()):
-          diff1 += f"\t\t{k}: {v}\n"
+          diff1 += f"        {k}: {v}\n"
         failed = True
   return diff1, diff2, failed
 
@@ -187,6 +196,8 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
+
+  log_paths: DefaultDict[str, Dict[str, str]] = defaultdict(dict)
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]
@@ -214,13 +225,16 @@ if __name__ == "__main__":
         dat = None if args.upload_only else log_data[segment]
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
+        log_paths[segment]['ref'] = ref_log_path
+        log_paths[segment]['new'] = cur_log_fn
+
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
     for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       if not args.upload_only:
         results[segment][proc + subtest_name] = result
 
-  diff1, diff2, failed = format_diff(results, ref_commit)
+  diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
   if not upload:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff2)

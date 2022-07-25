@@ -12,20 +12,21 @@ from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 
 
-def get_all_footnotes() -> Dict[Enum, int]:
+def get_all_footnotes(only_tier_cols: bool = False) -> Dict[Enum, int]:
   all_footnotes = []
+  hide_cols = set(StarColumns) - set(TierColumns) if only_tier_cols else []
   for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
-    all_footnotes += footnotes
+    all_footnotes.extend([fn for fn in footnotes if fn.value.column not in hide_cols])
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
 
 
-ALL_FOOTNOTES: Dict[Enum, int] = get_all_footnotes()
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_all_car_info() -> List[CarInfo]:
+def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
+  footnotes = get_all_footnotes(only_tier_cols)
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
     # Hyundai exception: those with radar have openpilot longitudinal
     fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
@@ -39,7 +40,7 @@ def get_all_car_info() -> List[CarInfo]:
       car_info = (car_info,)
 
     for _car_info in car_info:
-      all_car_info.append(_car_info.init(CP, ALL_FOOTNOTES))
+      all_car_info.append(_car_info.init(CP, footnotes))
 
   # Sort cars by make and model + year
   sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
@@ -58,7 +59,7 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_co
       for c in hide_cols:
         del car.row[c]
 
-  footnotes = [fn.value.text for fn in ALL_FOOTNOTES if fn.value.column in cols]
+  footnotes = [fn.value.text for fn in get_all_footnotes(only_tier_cols)]
   cars_md: str = template.render(all_car_info=all_car_info,
                                  footnotes=footnotes, Star=Star, Column=cols, star_descriptions=STAR_DESCRIPTIONS)
   return cars_md
@@ -74,5 +75,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_info(), args.template, args.tier_columns))
+    f.write(generate_cars_md(get_all_car_info(args.tier_columns), args.template, args.tier_columns))
   print(f"Generated and written to {args.out}")
