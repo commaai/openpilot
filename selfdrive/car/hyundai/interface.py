@@ -163,6 +163,14 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.TUCSON_HYBRID_4TH_GEN:
+      ret.mass = 1680. + STD_CARGO_KG  # average of the 3 trims https://www.hyundaiusa.com/us/en/vehicles/tucson-hybrid/compare-specs
+      ret.wheelbase = 2.756
+      ret.steerRatio = 16.
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
+                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
+      tire_stiffness_factor = 0.385
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
@@ -287,6 +295,8 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
+      if candidate == CAR.TUCSON_HYBRID_4TH_GEN:
+        ret.safetyConfigs[1].safetyParam = Panda.FLAG_HYUNDAI_TUCSON_HEV_2022
     else:
       if candidate in LEGACY_SAFETY_MODE_CAR:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
