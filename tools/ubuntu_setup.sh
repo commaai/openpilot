@@ -69,7 +69,7 @@ function install_ubuntu_common_requirements() {
 }
 
 # Install Ubuntu 22.04 LTS packages
-function install_ubuntu_latest_requirements() {
+function install_ubuntu_jammy_requirements() {
   install_ubuntu_common_requirements
 
   sudo apt-get install -y --no-install-recommends \
@@ -81,7 +81,7 @@ function install_ubuntu_latest_requirements() {
 }
 
 # Install Ubuntu 20.04 packages
-function install_ubuntu_lts_requirements() {
+function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
 
   sudo apt-get install -y --no-install-recommends \
@@ -93,12 +93,12 @@ function install_ubuntu_lts_requirements() {
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
-  case "$ID $VERSION_ID" in
-    "ubuntu 22.04")
-      install_ubuntu_latest_requirements
+  case "$VERSION_CODENAME" in
+    "jammy")
+      install_ubuntu_jammy_requirements
       ;;
-    "ubuntu 20.04")
-      install_ubuntu_lts_requirements
+    "focal")
+      install_ubuntu_focal_requirements
       ;;
     *)
       echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
@@ -107,7 +107,7 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      install_ubuntu_lts_requirements
+      install_ubuntu_focal_requirements
   esac
 else
   echo "No /etc/os-release in the system"
