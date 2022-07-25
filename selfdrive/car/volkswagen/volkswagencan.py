@@ -1,7 +1,7 @@
-# CAN controls for MQB platform Volkswagen, Audi, Skoda and SEAT.
+# CAN controls for MQB platform Volkswagen, Audi, Skoda, and SEAT.
 # PQ35/PQ46/NMS, and any future MLB, to come later.
 
-def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
+def create_mqb_steering_control(packer, bus, apply_steer, lkas_enabled):
   values = {
     "SET_ME_0X3": 0x3,
     "Assist_Torque": abs(apply_steer),
@@ -13,7 +13,7 @@ def create_mqb_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
     "SET_ME_0XFE": 0xFE,
     "SET_ME_0X07": 0x07,
   }
-  return packer.make_can_msg("HCA_01", bus, values, idx)
+  return packer.make_can_msg("HCA_01", bus, values)
 
 def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, left_lane_visible, right_lane_visible,
                            ldw_stock_values, left_lane_depart, right_lane_depart):
@@ -35,7 +35,8 @@ def create_mqb_hud_control(packer, bus, enabled, steering_pressed, hud_alert, le
 def create_mqb_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
   values = gra_stock_values.copy()
 
+  values["COUNTER"] = idx,
   values["GRA_Abbrechen"] = cancel
   values["GRA_Tip_Wiederaufnahme"] = resume
 
-  return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
+  return packer.make_can_msg("GRA_ACC_01", bus, values)

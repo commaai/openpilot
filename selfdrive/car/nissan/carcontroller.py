@@ -33,7 +33,7 @@ class CarController:
     steer_hud_alert = 1 if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
     if CC.latActive:
-      # # windup slower
+      # windup slower
       if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
         angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
       else:
@@ -60,7 +60,7 @@ class CarController:
     self.last_angle = apply_angle
 
     if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA) and pcm_cancel_cmd:
-      can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, self.frame))
+      can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg))
 
     # TODO: Find better way to cancel!
     # For some reason spamming the cancel button is unreliable on the Leaf

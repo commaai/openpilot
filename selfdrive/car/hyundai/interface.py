@@ -78,8 +78,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.90
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
@@ -315,7 +314,6 @@ class CarInterface(CarInterfaceBase):
 
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons

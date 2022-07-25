@@ -17,7 +17,6 @@ class CarController:
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
-    self.steer_rate_limited = False
 
   def update(self, CC, CS, ext_bus):
     actuators = CC.actuators
@@ -41,7 +40,6 @@ class CarController:
       if CC.latActive:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
-        self.steer_rate_limited = new_steer != apply_steer
         if apply_steer == 0:
           hcaEnabled = False
           self.hcaEnabledFrameCount = 0
@@ -64,9 +62,7 @@ class CarController:
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      idx = (self.frame / P.HCA_STEP) % 16
-      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
-                                                                 idx, hcaEnabled))
+      can_sends.append(volkswagencan.create_mqb_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hcaEnabled))
 
     # **** HUD Controls ***************************************************** #
 

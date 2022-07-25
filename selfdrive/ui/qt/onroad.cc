@@ -184,13 +184,17 @@ void NvgWindow::updateState(const UIState &s) {
 
   const auto cs = sm["controlsState"].getControlsState();
 
-  float set_speed = cs_alive ? cs.getVCruise() : SET_SPEED_NA;
+  // Handle older routes where vCruiseCluster is not set
+  float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
+  float set_speed = cs_alive ? v_cruise : SET_SPEED_NA;
   bool cruise_set = set_speed > 0 && (int)set_speed != SET_SPEED_NA;
   if (cruise_set && !s.scene.is_metric) {
     set_speed *= KM_TO_MILE;
   }
 
-  float cur_speed = cs_alive ? std::max<float>(0.0, sm["carState"].getCarState().getVEgo()) : 0.0;
+  // Handle older routes where vEgoCluster is not set
+  float v_ego = sm["carState"].getCarState().getVEgoCluster() == 0.0 ? sm["carState"].getCarState().getVEgo() : sm["carState"].getCarState().getVEgoCluster();
+  float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
   cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
