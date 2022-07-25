@@ -73,6 +73,6 @@ if __name__ == "__main__":
     print(f"{pos} took {time.time() - t:.2f} s")
 
     plt.subplot(2, 2, i + 1)
-    plt.imshow(get_image(lib, renderer))
+    plt.imshow(get_image(lib, renderer), cmap='gray')
 
   plt.show()
