@@ -7,17 +7,16 @@ A supported vehicle is one that just works when you install a comma device. Ever
 ## How We Rate The Cars
 
 ### Stop and Go
-- [![star](assets/icon-star-full.svg)](##) - Adaptive Cruise Control (ACC) operates down to 0 mph.
-- [![star](assets/icon-star-empty.svg)](##) - Adaptive Cruise Control (ACC) available only above certain speeds. See your car's manual for the minimum speed.
+- [![star](assets/icon-star-full.svg)](##) - openpilot operates down to 0 mph.
+- [![star](assets/icon-star-empty.svg)](##) - openpilot operates only above a minimum speed. See your car's manual for the minimum speed.
 
 ### Steer to 0
 - [![star](assets/icon-star-full.svg)](##) - openpilot can control the steering wheel down to 0 mph.
-- [![star](assets/icon-star-empty.svg)](##) - No steering control below certain speeds.
+- [![star](assets/icon-star-empty.svg)](##) - No steering control below certain speeds. See your car's manual for the minimum speed.
 
 ### Steering Torque
-- [![star](assets/icon-star-full.svg)](##) - Car has enough steering torque to take tighter turns.
-- [![star](assets/icon-star-half.svg)](##) - Car has enough steering torque for comfortable highway driving.
-- [![star](assets/icon-star-empty.svg)](##) - Limited ability to make turns.
+- [![star](assets/icon-star-full.svg)](##) - Car has enough steering torque to comfortably take most highway turns.
+- [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
 
 
 # 196 Supported Cars
