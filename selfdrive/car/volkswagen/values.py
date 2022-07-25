@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
@@ -11,15 +11,13 @@ Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
+Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
   LDW_STEP = 10                  # LDW_02 message frequency 10Hz
   GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
-
-  GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
-  GRA_VBP_COUNT = 16             # Send VBP messages for ~0.5s (GRA_ACC_STEP * 16)
 
   # Observed documented MQB limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
   # Limiting rate-of-change based on real-world testing and Comma's safety
@@ -43,14 +41,16 @@ class DBC_FILES:
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
 
-BUTTON_STATES = {
-  "accelCruise": False,
-  "decelCruise": False,
-  "cancel": False,
-  "setCruise": False,
-  "resumeCruise": False,
-  "gapAdjustCruise": False
-}
+
+MQB_BUTTONS = [
+  Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+  Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+  Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+  Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+  Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+  Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+]
+
 
 MQB_LDW_MESSAGES = {
   "none": 0,                            # Nothing to display
