@@ -57,6 +57,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
     self._POSE_OFFSET_MAX_COUNT = int(360 / self._DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
 
+    self._WHEELPOS_CALIB_MIN_SPEED = 5
     self._WHEELPOS_THRESHOLD = 0.5
     self._WHEELPOS_FILTER_MIN_COUNT = int(5 / self._DT_DMON) # allow 5 seconds to converge wheel side
 
@@ -229,7 +230,7 @@ class DriverStatus():
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
     rhd_pred = driver_state.wheelOnRightProb
     # calibrates only when there's movement and either face detected
-    if car_speed > 0.01 and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
+    if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
                                           driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
       self.wheelpos_learner.push_and_update(rhd_pred)
     if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
