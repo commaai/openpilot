@@ -103,8 +103,8 @@ class CarController:
 
     # Knee angle controls
     if self.CP.carFingerprint == CAR.BODY_KNEE and CC.enabled:
-      knee_angle_desired_left = CC.actuators.bodyKneeAngle
-      knee_angle_desired_right = CC.actuators.bodyHipAngle
+      knee_angle_desired_left = CC.actuators.gas
+      knee_angle_desired_right = CC.actuators.brake
 
       knee_angle_measured_left = CS.knee_angle_l
       knee_angle_measured_right = CS.knee_angle_r
