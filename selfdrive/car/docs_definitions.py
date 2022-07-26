@@ -11,9 +11,9 @@ MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
 class Tier(Enum):
-  GOLD = 0
-  SILVER = 1
-  BRONZE = 2
+  GOLD = "The best openpilot experience. Great highway driving and beyond."
+  SILVER = "A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future."
+  BRONZE = "A good highway experience, but may have limited performance in traffic and on sharp turns."
 
 
 class Column(Enum):
