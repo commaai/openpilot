@@ -913,7 +913,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/sidebar.cc" line="67"/>
         <source>OFFLINE</source>
-        <translation>DESCONECTADO</translation>
+        <translation>DESCONEC</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="69"/>
@@ -931,7 +931,7 @@ trabalho definido</translation>
         <location filename="../qt/sidebar.cc" line="76"/>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>TEMP</source>
-        <translation>TEMP</translation>
+        <translation type="unfinished">TEMP</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
@@ -941,7 +941,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/sidebar.cc" line="76"/>
         <source>GOOD</source>
-        <translation>BOM</translation>
+        <translation>BOA</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="78"/>
@@ -1054,23 +1054,23 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Trocar Ramo</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>INSERIR</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>O novo ramo será aplicado na próxima execução do atualizador.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="261"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserir o nome do ramo</translation>
     </message>
     <message>
         <source>Uninstall </source>
@@ -1258,12 +1258,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="77"/>
         <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibir Mapa no Lado Esquerdo</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="78"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
+        <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="90"/>
