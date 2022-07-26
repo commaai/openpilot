@@ -46,6 +46,7 @@ tabulate = "*"
 
 [packages]
 atomicwrites = "*"
+cantools = "*"
 casadi = {version = "*", markers="platform_system != 'Darwin'"}
 cffi = "*"
 crcmod = "*"
@@ -62,6 +63,7 @@ libusb1 = "*"
 nose = "*"
 numpy = "*"
 protobuf = "==3.20.1"
+python-can = "*"
 onnx = "*"
 onnxruntime-gpu = {version = "*", markers="platform_system != 'Darwin'"}
 pillow = "*"

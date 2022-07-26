@@ -1,0 +1,236 @@
+VERSION ""
+
+CM_ "From Odrive https://github.com/odriverobotics/ODrive/blob/master/tools/odrive-cansimple.dbc";
+CM_ "See https://docs.odriverobotics.com/v/latest/can-guide.html#dbc-files";
+
+CM_ "To work with the cansimple of the odrive, this file assumes:";
+CM_ "The left axis has a node_id of 0 (commands a appended with _L)";
+CM_ "The right axis has a node_id is 1 (commands a appended with _R) (signal_id offset of 1 << 5 = 32)";
+
+
+BO_ 1 Heartbeat_L: 8 Vector__XXX
+ SG_ Controller_Flags : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Encoder_Flags : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Motor_Flags : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Axis_State : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Axis_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 2 Estop_L: 0 Vector__XXX
+
+BO_ 3 Get_Motor_Error_L: 8 Vector__XXX
+ SG_ Motor_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 4 Get_Encoder_Error_L: 8 Vector__XXX
+ SG_ Encoder_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 5 Get_Sensorless_Error_L: 8 Vector__XXX
+ SG_ Sensorless_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 6 Set_Axis_Node_ID_L: 8 Vector__XXX
+ SG_ Axis_Node_ID : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 7 Set_Axis_State_L: 8 Vector__XXX
+ SG_ Axis_Requested_State : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 9 Get_Encoder_Estimates_L: 8 Vector__XXX
+ SG_ Vel_Estimate : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Pos_Estimate : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 10 Get_Encoder_Count_L: 8 Vector__XXX
+ SG_ Count_in_CPR : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Shadow_Count : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 11 Set_Controller_Mode_L: 8 Vector__XXX
+ SG_ Input_Mode : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Control_Mode : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 12 Set_Input_Pos_L: 8 Vector__XXX
+ SG_ Torque_FF : 48|16@1- (0.001,0) [0|0] "" Vector__XXX
+ SG_ Vel_FF : 32|16@1- (0.001,0) [0|0] "" Vector__XXX
+ SG_ Input_Pos : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 13 Set_Input_Vel_L: 8 Vector__XXX
+ SG_ Input_Torque_FF : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Input_Vel : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 14 Set_Input_Torque_L: 8 Vector__XXX
+ SG_ Input_Torque : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 15 Set_Limits_L: 8 Vector__XXX
+ SG_ Current_Limit : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Velocity_Limit : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 16 Start_Anticogging_L: 0 Vector__XXX
+
+BO_ 17 Set_Traj_Vel_Limit_L: 8 Vector__XXX
+ SG_ Traj_Vel_Limit : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 18 Set_Traj_Accel_Limits_L: 8 Vector__XXX
+ SG_ Traj_Decel_Limit : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Traj_Accel_Limit : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 19 Set_Traj_Inertia_L: 8 Vector__XXX
+ SG_ Traj_Inertia : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 20 Get_Iq_L: 8 Vector__XXX
+ SG_ Iq_Measured : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Iq_Setpoint : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 21 Get_Sensorless_Estimates_L: 8 Vector__XXX
+ SG_ Sensorless_Vel_Estimate : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Sensorless_Pos_Estimate : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 22 Reboot_L: 0 Vector__XXX
+
+BO_ 23 Get_Vbus_Voltage_L: 8 Vector__XXX
+ SG_ Vbus_Voltage : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 24 Clear_Errors_L: 0 Vector__XXX
+
+BO_ 25 Set_Linear_Count_L: 8 Vector__XXX
+ SG_ Position : 0|32@1- (1,0) [0|0] "" Vector__XXX
+
+BO_ 26 Set_Pos_Gain_L: 8 Vector__XXX
+ SG_ Pos_Gain : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 27 Set_Vel_gains_L: 8 Vector__XXX
+ SG_ Vel_Integrator_Gain : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vel_Gain : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+
+
+BO_ 33 Heartbeat_R: 8 Vector__XXX
+ SG_ Controller_Flags : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Encoder_Flags : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Motor_Flags : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Axis_State : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Axis_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 34 Estop_R: 0 Vector__XXX
+
+BO_ 35 Get_Motor_Error_R: 8 Vector__XXX
+ SG_ Motor_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 36 Get_Encoder_Error_R: 8 Vector__XXX
+ SG_ Encoder_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 37 Get_Sensorless_Error_R: 8 Vector__XXX
+ SG_ Sensorless_Error : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 38 Set_Axis_Node_ID_R: 8 Vector__XXX
+ SG_ Axis_Node_ID : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 39 Set_Axis_State_R: 8 Vector__XXX
+ SG_ Axis_Requested_State : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 41 Get_Encoder_Estimates_R: 8 Vector__XXX
+ SG_ Vel_Estimate : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Pos_Estimate : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 42 Get_Encoder_Count_R: 8 Vector__XXX
+ SG_ Count_in_CPR : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Shadow_Count : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 43 Set_Controller_Mode_R: 8 Vector__XXX
+ SG_ Input_Mode : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Control_Mode : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 44 Set_Input_Pos_R: 8 Vector__XXX
+ SG_ Torque_FF : 48|16@1- (0.001,0) [0|0] "" Vector__XXX
+ SG_ Vel_FF : 32|16@1- (0.001,0) [0|0] "" Vector__XXX
+ SG_ Input_Pos : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 45 Set_Input_Vel_R: 8 Vector__XXX
+ SG_ Input_Torque_FF : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Input_Vel : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 46 Set_Input_Torque_R: 8 Vector__XXX
+ SG_ Input_Torque : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 47 Set_Limits_R: 8 Vector__XXX
+ SG_ Current_Limit : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Velocity_Limit : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 48 Start_Anticogging_R: 0 Vector__XXX
+
+BO_ 49 Set_Traj_Vel_Limit_R: 8 Vector__XXX
+ SG_ Traj_Vel_Limit : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 50 Set_Traj_Accel_Limits_R: 8 Vector__XXX
+ SG_ Traj_Decel_Limit : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Traj_Accel_Limit : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 51 Set_Traj_Inertia_R: 8 Vector__XXX
+ SG_ Traj_Inertia : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 52 Get_Iq_R: 8 Vector__XXX
+ SG_ Iq_Measured : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Iq_Setpoint : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 53 Get_Sensorless_Estimates_R: 8 Vector__XXX
+ SG_ Sensorless_Vel_Estimate : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Sensorless_Pos_Estimate : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 54 Reboot_R: 0 Vector__XXX
+
+BO_ 55 Get_Vbus_Voltage_R: 8 Vector__XXX
+ SG_ Vbus_Voltage : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 56 Clear_Errors_R: 0 Vector__XXX
+
+BO_ 57 Set_Linear_Count_R: 8 Vector__XXX
+ SG_ Position : 0|32@1- (1,0) [0|0] "" Vector__XXX
+
+BO_ 58 Set_Pos_Gain_R: 8 Vector__XXX
+ SG_ Pos_Gain : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 59 Set_Vel_gains_R: 8 Vector__XXX
+ SG_ Vel_Integrator_Gain : 32|32@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vel_Gain : 0|32@1+ (1,0) [0|0] "" Vector__XXX
+
+
+
+
+CM_ "Set signal type to float";
+
+SIG_VALTYPE_ 9 Pos_Estimate : 1;
+SIG_VALTYPE_ 9 Vel_Estimate : 1;
+SIG_VALTYPE_ 12 Input_Pos : 1;
+SIG_VALTYPE_ 13 Input_Vel : 1;
+SIG_VALTYPE_ 13 Input_Torque_FF : 1;
+SIG_VALTYPE_ 14 Input_Torque : 1;
+SIG_VALTYPE_ 15 Velocity_Limit : 1;
+SIG_VALTYPE_ 15 Current_Limit : 1;
+SIG_VALTYPE_ 17 Traj_Vel_Limit : 1;
+SIG_VALTYPE_ 18 Traj_Accel_Limit : 1;
+SIG_VALTYPE_ 18 Traj_Decel_Limit : 1;
+SIG_VALTYPE_ 19 Traj_Inertia : 1;
+SIG_VALTYPE_ 20 Iq_Setpoint : 1;
+SIG_VALTYPE_ 20 Iq_Measured : 1;
+SIG_VALTYPE_ 21 Sensorless_Pos_Estimate : 1;
+SIG_VALTYPE_ 21 Sensorless_Vel_Estimate : 1;
+SIG_VALTYPE_ 23 Vbus_Voltage : 1;
+SIG_VALTYPE_ 26 Pos_Gain : 1;
+SIG_VALTYPE_ 27 Vel_Gain : 1;
+SIG_VALTYPE_ 27 Vel_Integrator_Gain : 1;
+
+SIG_VALTYPE_ 41 Pos_Estimate : 1;
+SIG_VALTYPE_ 41 Vel_Estimate : 1;
+SIG_VALTYPE_ 44 Input_Pos : 1;
+SIG_VALTYPE_ 45 Input_Vel : 1;
+SIG_VALTYPE_ 45 Input_Torque_FF : 1;
+SIG_VALTYPE_ 46 Input_Torque : 1;
+SIG_VALTYPE_ 47 Velocity_Limit : 1;
+SIG_VALTYPE_ 47 Current_Limit : 1;
+SIG_VALTYPE_ 49 Traj_Vel_Limit : 1;
+SIG_VALTYPE_ 50 Traj_Accel_Limit : 1;
+SIG_VALTYPE_ 50 Traj_Decel_Limit : 1;
+SIG_VALTYPE_ 51 Traj_Inertia : 1;
+SIG_VALTYPE_ 52 Iq_Setpoint : 1;
+SIG_VALTYPE_ 52 Iq_Measured : 1;
+SIG_VALTYPE_ 53 Sensorless_Pos_Estimate : 1;
+SIG_VALTYPE_ 53 Sensorless_Vel_Estimate : 1;
+SIG_VALTYPE_ 55 Vbus_Voltage : 1;
+SIG_VALTYPE_ 58 Pos_Gain : 1;
+SIG_VALTYPE_ 59 Vel_Gain : 1;
+SIG_VALTYPE_ 59 Vel_Integrator_Gain : 1;

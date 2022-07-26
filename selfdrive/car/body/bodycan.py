@@ -1,7 +1,5 @@
 def create_control(packer, torque_l, torque_r):
-  values = {
-    "TORQUE_L": torque_l,
-    "TORQUE_R": torque_r,
-  }
+  left_package = packer.make_can_msg("Set_Input_Torque_L", 0, {"Input_Torque": torque_l})
+  right_package = packer.make_can_msg("Set_Input_Torque_R", 0, {"Input_Torque": torque_r})
 
-  return packer.make_can_msg("TORQUE_CMD", 0, values)
+  return left_package, right_package
