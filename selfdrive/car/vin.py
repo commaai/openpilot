@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import struct
 import traceback
 
@@ -15,6 +16,11 @@ UDS_VIN_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + struct.pac
 UDS_VIN_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + struct.pack("!H", uds.DATA_IDENTIFIER_TYPE.VIN)
 
 VIN_UNKNOWN = "0" * 17
+VIN_RE = "[A-HJ-NPR-Z0-9]{17}"
+
+
+def is_valid_vin(vin: str):
+  return re.fullmatch(VIN_RE, vin) is not None
 
 
 def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):

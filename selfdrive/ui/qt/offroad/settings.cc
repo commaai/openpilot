@@ -24,6 +24,7 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -70,6 +71,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Show ETA in 24h format"),
       tr("Use 24h format instead of am/pm"),
       "../assets/offroad/icon_metric.png",
+    },
+    {
+      "NavSettingLeftSide",
+      tr("Show Map on Left Side of UI"),
+      tr("Show map on left side when in split screen view."),
+      "../assets/offroad/icon_road.png",
     },
 #endif
 
@@ -247,7 +254,20 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     }
     std::system("pkill -1 -f selfdrive.updated");
   });
+  connect(uiState(), &UIState::offroadTransition, updateBtn, &QPushButton::setEnabled);
 
+  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"), tr("The new branch will be pulled the next time the updater runs."));
+  connect(branchSwitcherBtn, &ButtonControl::clicked, [=]() {
+    QString branch = InputDialog::getText(tr("Enter branch name"), this, tr("The new branch will be pulled the next time the updater runs."),
+                                          false, -1, QString::fromStdString(params.get("SwitchToBranch")));
+    if (branch.isEmpty()) {
+      params.remove("SwitchToBranch");
+    } else {
+      params.put("SwitchToBranch", branch.toStdString());
+    }
+    std::system("pkill -1 -f selfdrive.updated");
+  });
+  connect(uiState(), &UIState::offroadTransition, branchSwitcherBtn, &QPushButton::setEnabled);
 
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
@@ -257,8 +277,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
   connect(uiState(), &UIState::offroadTransition, uninstallBtn, &QPushButton::setEnabled);
 
-  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
+  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, branchSwitcherBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
   for (QWidget* w : widgets) {
+    if (w == branchSwitcherBtn && params.getBool("IsTestedBranch")) {
+      continue;
+    }
     addItem(w);
   }
 
