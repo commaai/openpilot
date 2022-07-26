@@ -96,7 +96,6 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
 def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
   count = 0
-  registered_count = 0
   prev_hw_state = None
 
   modem_version = None
@@ -133,16 +132,6 @@ def hw_state_thread(end_event, hw_queue):
           hw_queue.put_nowait(hw_state)
         except queue.Full:
           pass
-
-        if AGNOS and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
-          registered_count += 1
-        else:
-          registered_count = 0
-
-        if registered_count > 10:
-          cloudlog.warning(f"Modem stuck in registered state {hw_state.network_info}. nmcli conn up lte")
-          os.system("nmcli conn up lte")
-          registered_count = 0
 
         # TODO: remove this once the config is in AGNOS
         if not modem_configured and len(HARDWARE.get_sim_info().get('sim_id', '')) > 0:
