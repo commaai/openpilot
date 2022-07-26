@@ -52,3 +52,9 @@ class CarInterface(CarInterfaceBase):
 
   def apply(self, c):
     return self.CC.update(c, self.CS)
+
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    # do update
+    pass
