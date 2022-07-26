@@ -59,7 +59,7 @@ class DRIVER_MONITOR_SETTINGS():
 
     self._WHEELPOS_CALIB_MIN_SPEED = 5
     self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_FILTER_MIN_COUNT = int(5 / self._DT_DMON) # allow 5 seconds to converge wheel side
+    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON) # allow 15 seconds to converge wheel side
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
     self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
