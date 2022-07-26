@@ -467,7 +467,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
             for (addr, rx_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types[(r.brand, addr[0], addr[1])]
+              f.ecu = ecu_types.get((r.brand, addr[0], addr[1]), Ecu.unknown)
               f.fwVersion = version
               f.address = addr[0]
               f.responseAddress = rx_addr
