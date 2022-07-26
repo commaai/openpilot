@@ -176,8 +176,9 @@ if __name__ == "__main__":
       # TODO this tolerence is absurdly large
       tolerance = 5e-1 if PC else None
       results: Any = {TEST_ROUTE: {}}
+      log_paths: Any = {TEST_ROUTE: {'ref': BASE_URL + log_fn, 'new': log_fn}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, ref_commit)
+      diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
 
       print(diff2)
       print('-------------\n'*5)

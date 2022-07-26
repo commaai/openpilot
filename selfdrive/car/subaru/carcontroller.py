@@ -11,7 +11,6 @@ class CarController:
     self.es_distance_cnt = -1
     self.es_lkas_cnt = -1
     self.cruise_button_prev = 0
-    self.steer_rate_limited = False
     self.frame = 0
 
     self.p = CarControllerParams(CP)
@@ -33,7 +32,6 @@ class CarController:
 
       new_steer = int(round(apply_steer))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
-      self.steer_rate_limited = new_steer != apply_steer
 
       if not CC.latActive:
         apply_steer = 0

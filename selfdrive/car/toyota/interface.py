@@ -243,8 +243,6 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
     # events
     events = self.create_common_events(ret)
 
