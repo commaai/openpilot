@@ -84,7 +84,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
 
   // icon
   const int img_offset = 60;
-  const int img_x = is_rhd ? rect().right() - img_offset : rect().left() + img_offset;
+  const int img_x = is_rhd ? rect().right() - 140 - img_offset : rect().left() + img_offset;
   const int img_y = rect().bottom() - FACE_IMG_SIZE - img_offset;
   p.setOpacity(face_detected ? 1.0 : 0.2);
   p.drawPixmap(img_x, img_y, face_img);
