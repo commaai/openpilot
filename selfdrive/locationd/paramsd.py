@@ -16,7 +16,7 @@ from system.swaglog import cloudlog
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
-LATERAL_ACC_SENSOR_THRESHOLD = 2.0
+LATERAL_ACC_SENSOR_THRESHOLD = 4.0
 
 
 class ParamsLearner:
