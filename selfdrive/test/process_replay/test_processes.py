@@ -16,7 +16,7 @@ from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
 original_segments = [
-  ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
+  # ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("HYUNDAI", "d824e27e8c60172c|2022-08-19--17-58-07--2"),     # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
