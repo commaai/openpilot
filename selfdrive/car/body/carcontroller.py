@@ -10,8 +10,8 @@ from selfdrive.controls.lib.pid import PIDController
 MAX_TORQUE = 700
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = np.radians(7)
-MAX_POS_INTEGRATOR = 0.2   # meters
-MAX_TURN_INTEGRATOR = 0.2  # meters
+MAX_POS_INTEGRATOR = 10.0   # meters
+MAX_TURN_INTEGRATOR = 10.0  # meters
 
 MAX_KNEE_TORQUE_LEFT = 300 # knee motor
 MAX_KNEE_TORQUE_RIGHT = 100 # hip motor
@@ -30,7 +30,7 @@ class CarController:
       self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)
       self.balance_pid = PIDController(1300, k_i=0, k_d=280, rate=1/DT_CTRL)
     else:
-      self.speed_pid = PIDController(0.025, k_i=0.11, rate=1/DT_CTRL)
+      self.speed_pid = PIDController(2e-2, k_i=8e-2, rate=1/DT_CTRL)
       self.balance_pid = PIDController(2400, k_i=0, k_d=180, rate=1/DT_CTRL)
     self.turn_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
 
@@ -52,7 +52,6 @@ class CarController:
     return torque
 
   def update(self, CC, CS):
-
     torque_l = 0
     torque_r = 0
 
@@ -72,9 +71,9 @@ class CarController:
                            (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
       angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
-      knee_error = 0
       if self.CP.carFingerprint == CAR.BODY_KNEE:
         knee_error = (np.radians(CS.knee_angle_r - CS.knee_angle_r))
+        knee_error = 0 # Ignore knee angle error for now
        # Clip angle error, this is enough to get up from stands
       angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint + knee_error, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
       angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
@@ -140,6 +139,7 @@ class CarController:
       can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
 
     can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
+    # can_sends.append(bodycan.create_rpm_limit(self.packer,500,500)) # Increase speed limit to ~5m/s
 
     new_actuators = CC.actuators.copy()
     new_actuators.accel = torque_l
