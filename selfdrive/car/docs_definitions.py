@@ -1,6 +1,7 @@
 import re
 
 from cereal import car
+from common.conversions import Conversions as CV
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -64,6 +65,7 @@ class CarInfo:
   harness: Optional[Enum] = None
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
+    self.CP = CP
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
@@ -122,12 +124,30 @@ class CarInfo:
 
     return self
 
+  @property
+  def detail_sentence(self):
+    sentence_builder = "openpilot upgrades your {car_model} with hands-free lane centering {steer_speed}, and adaptive cruise control {acc_speed}."
+    if self.CP.minSteerSpeed == 0:
+      steer_speed = "at all speeds"
+    else:
+      steer_speed = f"above {self.CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph"
+
+    if self.CP.minEnableSpeed == -1:
+      acc_speed = "that automatically resumes from a stop"
+    else:
+      acc_speed = f"while driving above {self.CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph"
+
+    if self.row[Column.STEERING_TORQUE] != Star.FULL:
+      sentence_builder += " This car may not be able to take tight turns on its own."
+
+    return sentence_builder.format(car_model=self.name, steer_speed=steer_speed, acc_speed=acc_speed)
+
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str, add_years: bool = True) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
-    elif column == Column.MODEL and len(self.years):
+    elif column == Column.MODEL and len(self.years) and add_years:
       item += f" {self.years}"
 
     footnotes = get_footnotes(self.footnotes, column)
