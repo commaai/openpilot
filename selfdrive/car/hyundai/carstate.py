@@ -39,6 +39,7 @@ class CarState(CarStateBase):
       return self.update_canfd(cp, cp_cam)
 
     metric = not cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"]
+    speed_conv = CV.KPH_TO_MS if metric else CV.MPH_TO_MS
 
     ret = car.CarState.new_message()
 
@@ -56,7 +57,8 @@ class CarState(CarStateBase):
       cp.vl["WHL_SPD11"]["WHL_SPD_RR"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    ret.vEgoCluster = (cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS) if metric else (cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * CV.MPH_TO_MS)
+    # ret.vEgoCluster = (cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS) if metric else (cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * CV.MPH_TO_MS)
+    ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * speed_conv
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
     ret.standstill = ret.vEgoRaw < 0.1
@@ -81,7 +83,6 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
       ret.cruiseState.standstill = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 4.
-      speed_conv = CV.KPH_TO_MS if metric else CV.MPH_TO_MS
       ret.cruiseState.speed = cp_cruise.vl["SCC11"]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
