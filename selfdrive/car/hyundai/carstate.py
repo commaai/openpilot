@@ -5,7 +5,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams, CAR
+from selfdrive.car.hyundai.values import HyundaiFlags, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams, CAR
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -19,9 +19,10 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
-    self.gear_msg_can_fd = "GEAR" if CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else "ACCELERATOR"
+    self.gear_msg_canfd = "ACCELERATOR" if CP.flags & HyundaiFlags.CANFD_HDA2 else "GEAR"
     if CP.carFingerprint in CANFD_CAR:
-      self.shifter_values = can_define.dv[self.gear_msg_can_fd]["GEAR"]
+      # TODO: find something in common with the EV6
+      self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -137,8 +138,9 @@ class CarState(CarStateBase):
   def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    gas_scale = 1022. if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else 255.
-    cruise_info_bus = cp_cam if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else cp
+    # TODO: find something common with EV6
+    gas_scale = 1022. # if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else 255.
+    cruise_info_bus = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
 
     ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
     ret.gasPressed = ret.gas > 1e-3
@@ -147,7 +149,8 @@ class CarState(CarStateBase):
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl[self.gear_msg_can_fd]["GEAR"]
+    gear_msg = "ACCELERATOR" if self.CP.flags & HyundaiFlags.CANFD_HDA2 else "GEAR"
+    gear = cp.vl[gear_msg]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -182,7 +185,7 @@ class CarState(CarStateBase):
     self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
     self.cruise_buttons_copy = copy.copy(cp.vl["CRUISE_BUTTONS"])
 
-    if self.CP.carFingerprint in (CANFD_CAR and not (CAR.TUCSON_HYBRID_4TH_GEN, )):
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
     return ret
@@ -325,12 +328,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     if CP.carFingerprint in CANFD_CAR:
-      if CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ):
-        return CarState.get_cam_can_parser_can_fd(CP)
-      else:
-        signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
-        checks = [("CAM_0x2a4", 20)]
-        return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
+      return CarState.get_cam_can_parser_canfd(CP)
 
     signals = [
       # signal_name, signal_address
@@ -424,28 +422,32 @@ class CarState(CarStateBase):
       ("DOORS_SEATBELTS", 4),
     ]
 
-    if CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ):
-      signals.append(("GEAR", "GEAR"))
-      checks.append(("GEAR", 100))
-    else:
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
       signals += [
+        ("GEAR", "ACCELERATOR"),
         ("SET_SPEED", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
       ]
       checks.append(("CRUISE_INFO", 50))
+    else:
+      signals.append(("GEAR", "GEAR"))
+      checks.append(("GEAR", 100))
 
-    bus = 4 if CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else 5
-
+    bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
-  def get_cam_can_parser_can_fd(CP):
-    signals = [
-      ("SET_SPEED", "CRUISE_INFO"),
-      ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-    ]
-    checks = [
-      ("CRUISE_INFO", 50),
-    ]
+  def get_cam_can_parser_canfd(CP):
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
+      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks = [("CAM_0x2a4", 20)]
+    else:
+      signals = [
+        ("SET_SPEED", "CRUISE_INFO"),
+        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+      ]
+      checks = [
+        ("CRUISE_INFO", 50),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)

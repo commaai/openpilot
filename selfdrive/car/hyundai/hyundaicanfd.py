@@ -1,7 +1,7 @@
-from selfdrive.car.hyundai.values import CAR, HDA2_CAR
+from selfdrive.car.hyundai.values import HyundaiFlags
 
 
-def create_lkas(packer, car_fingerprint, enabled, lat_active, apply_steer):
+def create_lkas(packer, CP, enabled, lat_active, apply_steer):
   values = {
     "LKA_MODE": 2,
     "LKA_ICON": 2 if enabled else 1,
@@ -13,8 +13,8 @@ def create_lkas(packer, car_fingerprint, enabled, lat_active, apply_steer):
     "NEW_SIGNAL_1": 0,
     "NEW_SIGNAL_2": 0,
   }
-  msg = "LKAS" if car_fingerprint in HDA2_CAR else "LFA"
 
+  msg = "LKAS" if CP.flags & HyundaiFlags.CANFD_HDA2 else "LFA"
   return packer.make_can_msg(msg, 4, values)
 
 def create_cam_0x2a4(packer, camera_values):
@@ -23,16 +23,16 @@ def create_cam_0x2a4(packer, camera_values):
   })
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
 
-def create_buttons(packer, car_fingerprint, cruise_buttons_copy, cnt, btn):
+def create_buttons(packer, CP, cruise_buttons_copy, cnt, btn):
   values = cruise_buttons_copy
   values["COUNTER"] = cnt
   values["CRUISE_BUTTONS"] = btn
-  if car_fingerprint in (CAR.TUCSON_HEV_2022, ):
+  if CP.flags & HyundaiFlags.CANFD_HDA2:
+    bus = 4
     values["SET_ME_1"] = 1
     values["SET_ME_2"] = 5
-  elif car_fingerprint in HDA2_CAR:
+  else:
+    bus = 5
     values["SET_ME_1"] = 1
-
-  bus = 5 if car_fingerprint in HDA2_CAR else 4
 
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)

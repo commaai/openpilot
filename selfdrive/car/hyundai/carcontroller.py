@@ -71,7 +71,7 @@ class CarController:
 
     if self.car_fingerprint in CANFD_CAR:
       # steering control
-      can_sends.append(hyundaicanfd.create_lkas(self.packer, self.car_fingerprint, CC.enabled, CC.latActive, apply_steer))
+      can_sends.append(hyundaicanfd.create_lkas(self.packer, self.CP, CC.enabled, CC.latActive, apply_steer))
 
       if self.frame % 5 == 0 and self.car_fingerprint not in (CAR.TUCSON_HYBRID_4TH_GEN, ):
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
@@ -80,12 +80,12 @@ class CarController:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         if CC.cruiseControl.cancel:
           for _ in range(20):
-            can_sends.append(hyundaicanfd.create_buttons(self.packer, self.car_fingerprint, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.CANCEL))
+            can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.CANCEL))
           self.last_button_frame = self.frame
 
         # cruise standstill resume
         elif CC.cruiseControl.resume:
-          can_sends.append(hyundaicanfd.create_buttons(self.packer, self.car_fingerprint, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.RES_ACCEL))
+          can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.RES_ACCEL))
           self.last_button_frame = self.frame
     else:
 

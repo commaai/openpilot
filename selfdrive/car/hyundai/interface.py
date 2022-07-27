@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -167,8 +167,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1680. + STD_CARGO_KG  # average of the 3 trims https://www.hyundaiusa.com/us/en/vehicles/tucson-hybrid/compare-specs
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
       tire_stiffness_factor = 0.385
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -295,9 +293,18 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
+
       if candidate == CAR.TUCSON_HYBRID_4TH_GEN:
         ret.safetyConfigs[1].safetyParam = Panda.FLAG_HYUNDAI_TUCSON_HEV_2022
+
+      # detect HDA2 with LKAS message
+      if 0x50 in fingerprint[6]:
+        ret.flags |= HyundaiFlags.CANFD_HDA2.value
+        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
     else:
+      ret.enableBsm = 0x58b in fingerprint[0]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
+
       if candidate in LEGACY_SAFETY_MODE_CAR:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
@@ -326,8 +333,6 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
-    ret.enableBsm = 0x58b in fingerprint[0]
 
     return ret
 

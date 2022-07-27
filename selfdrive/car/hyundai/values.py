@@ -1,3 +1,4 @@
+from enum import IntFlag
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
@@ -38,6 +39,10 @@ class CarControllerParams:
       self.STEER_MAX = 384
 
 
+class HyundaiFlags(IntFlag):
+  CANFD_HDA2 = 1
+
+
 class CAR:
   # Hyundai
   ELANTRA = "HYUNDAI ELANTRA 2017"
@@ -66,7 +71,7 @@ class CAR:
   VELOSTER = "HYUNDAI VELOSTER 2019"
   SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
   IONIQ_5 = "HYUNDAI IONIQ 5 2022"
-  TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 2022"
+  TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 4TH GEN"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
