@@ -99,11 +99,14 @@ cdef class Params:
     cdef string key_bytes = ensure_bytes(key)
     return self.p.getParamPath(key_bytes).decode("utf-8")
 
-def put_nonblocking(key, val, d=""):
+def put_nonblocking(key, val, d="", is_bool=False):
   def f(key, val):
     params = Params(d)
     cdef string k = ensure_bytes(key)
-    params.put(k, val)
+    if is_bool:
+      params.put_bool(k, val)
+    else:
+      params.put(k, val)
 
   t = threading.Thread(target=f, args=(key, val))
   t.start()
