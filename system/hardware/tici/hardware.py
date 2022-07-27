@@ -18,6 +18,7 @@ NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
 NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
+NM_DEV_STATS = NM + '.Device.Statistics'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
 
@@ -142,6 +143,10 @@ class Tici(HardwareBase):
   def get_wlan(self):
     wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
     return self.bus.get_object(NM, wlan_path)
+
+  def get_wwan(self):
+    wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
+    return self.bus.get_object(NM, wwan_path)
 
   def get_sim_info(self):
     modem = self.get_modem()
@@ -504,13 +509,21 @@ class Tici(HardwareBase):
 
     return r
 
+  def get_modem_data_usage(self):
+    try:
+      wwan = self.get_wwan()
+      tx = wwan.Get(NM_DEV_STATS, 'TxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      rx = wwan.Get(NM_DEV_STATS, 'RxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      return tx, rx
+    except Exception:
+      return -1, -1
+
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
 
     gpio_set(GPIO.STM_RST_N, 1)
     time.sleep(2)
     gpio_set(GPIO.STM_RST_N, 0)
-
 
   def recover_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)

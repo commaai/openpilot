@@ -119,6 +119,9 @@ def hw_state_thread(end_event, hw_queue):
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
 
+        tx, rx = HARDWARE.get_modem_data_usage()
+        print("wwan data usage", tx, rx)
+
         hw_state = HardwareState(
           network_type=network_type,
           network_metered=HARDWARE.get_network_metered(network_type),
@@ -340,7 +343,7 @@ def thermald_thread(end_event, hw_queue):
     current_power_draw = HARDWARE.get_current_power_draw()
     statlog.sample("power_draw", current_power_draw)
     msg.deviceState.powerDrawW = current_power_draw
-    
+
     som_power_draw = HARDWARE.get_som_power_draw()
     statlog.sample("som_power_draw", som_power_draw)
     msg.deviceState.somPowerDrawW = som_power_draw
