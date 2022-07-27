@@ -11,9 +11,9 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   # values["CF_Lkas_LdwsSysState"] = sys_state
   # values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
-  values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
-  values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
-  values["CR_Lkas_StrToqReq"] = apply_steer
+  # values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
+  # values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
+  values["CR_Lkas_StrToqReq"] = 0  # apply_steer
   values["CF_Lkas_ActToi"] = steer_req
   values["CF_Lkas_MsgCount"] = frame % 0x10
 
@@ -78,7 +78,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
     "HDA_VSetReq": hda_set_speed,
     # Some cars only set LFA_USM, while other cars only set HDA_USM, so use superset.
     # 2 should be inactive and avoids LFA error (LFA_SysWarning=3)
-    "LFA_USM": 2,
+    # "LFA_USM": 2,
     # "HDA_USM": 2,
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
