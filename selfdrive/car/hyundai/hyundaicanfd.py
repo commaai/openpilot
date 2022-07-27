@@ -1,4 +1,4 @@
-from selfdrive.car.hyundai.values import HDA2_CAR
+from selfdrive.car.hyundai.values import CAR, HDA2_CAR
 
 
 def create_lkas(packer, car_fingerprint, enabled, lat_active, apply_steer):
@@ -27,7 +27,10 @@ def create_buttons(packer, car_fingerprint, cruise_buttons_copy, cnt, btn):
   values = cruise_buttons_copy
   values["COUNTER"] = cnt
   values["CRUISE_BUTTONS"] = btn
-  if car_fingerprint in HDA2_CAR:
+  if car_fingerprint in (CAR.TUCSON_HEV_2022, ):
+    values["SET_ME_1"] = 1
+    values["SET_ME_2"] = 5
+  elif car_fingerprint in HDA2_CAR:
     values["SET_ME_1"] = 1
 
   bus = 5 if car_fingerprint in HDA2_CAR else 4
