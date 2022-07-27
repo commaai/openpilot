@@ -2,6 +2,7 @@
 import math
 import os
 import threading
+from collections import deque
 
 import requests
 import numpy as np
@@ -12,6 +13,7 @@ from common.api import Api
 from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.coordinates import ecef2geodetic
+from common.conversions import Conversions as CV
 from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
@@ -21,6 +23,8 @@ from system.swaglog import cloudlog
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 VALID_POS_STD = 50.0
+
+VALHALLA_HOST = "http://localhost:8002"
 
 
 class RouteEngine:
@@ -46,6 +50,7 @@ class RouteEngine:
     self.recompute_countdown = 0
 
     self.ui_pid = None
+    self.last_positions = deque(maxlen=25)
 
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
@@ -90,6 +95,10 @@ class RouteEngine:
       geodetic = ecef2geodetic(laikad.positionECEF.value)
       self.last_position = Coordinate(geodetic[0], geodetic[1])
       self.last_bearing = None
+
+    if self.last_position is not None:
+      if not self.last_positions or (self.last_positions[-1].distance_to(self.last_position) > 50):
+        self.last_positions.append(self.last_position)
 
   def recompute_route(self):
     if self.last_position is None:
@@ -181,6 +190,29 @@ class RouteEngine:
 
     if self.step_idx is None:
       msg.valid = False
+
+      coords = [{"lat": c.latitude, "lon": c.longitude} for c in self.last_positions]
+      dat = {
+        "shape": coords,
+        "costing": "auto",
+        "shape_match": "walk_or_snap",
+        "filters": {
+          "attributes": ["edge.id", "edge.way_id", "edge.speed_limit"],
+          "action": "include"
+        },
+      }
+
+      r = requests.post(f"{VALHALLA_HOST}/trace_attributes", json=dat)
+      if r.status_code == 200:
+        edges = r.json()['edges']
+        if edges:
+          last_edge = edges[-1]
+          if 'speed_limit' in last_edge:
+            msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.mutcd
+            msg.navInstruction.speedLimit = last_edge['speed_limit'] * CV.KPH_TO_MS
+          else:
+            cloudlog.info(f"no speed limit for way_id: {last_edge['way_id']}")
+
       self.pm.send('navInstruction', msg)
       return
 
@@ -218,7 +250,6 @@ class RouteEngine:
 
     if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
-
     # Speed limit sign type
     if 'speedLimitSign' in step:
       if step['speedLimitSign'] == 'mutcd':

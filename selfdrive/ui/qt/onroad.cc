@@ -180,7 +180,7 @@ void NvgWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
   const bool cs_alive = sm.alive("controlsState");
-  const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
+  const bool nav_alive = sm.alive("navInstruction");
 
   const auto cs = sm["controlsState"].getControlsState();
 
@@ -202,8 +202,8 @@ void NvgWindow::updateState(const UIState &s) {
   speed_limit *= (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
 
   setProperty("speedLimit", speed_limit);
-  setProperty("has_us_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
-  setProperty("has_eu_speed_limit", nav_alive && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
+  setProperty("has_us_speed_limit", nav_alive && speed_limit > 0 && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::MUTCD);
+  setProperty("has_eu_speed_limit", nav_alive && speed_limit > 0 && speed_limit_sign == cereal::NavInstruction::SpeedLimitSign::VIENNA);
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("is_metric", s.scene.is_metric);
