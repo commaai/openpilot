@@ -83,7 +83,7 @@ def main() -> NoReturn:
   pub_types = ['qcomGnss']
   unpack_position, _ = dict_unpacker(position_report)
   log_types.append(LOG_GNSS_POSITION_REPORT)
-  pub_types.append("gpsLocationQcom")
+  pub_types.append("gpsLocation")
 
   # connect to modem
   diag = ModemDiag()
@@ -204,8 +204,8 @@ def main() -> NoReturn:
       vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
 
-      msg = messaging.new_message('gpsLocationQcom')
-      gps = msg.gpsLocationQcom
+      msg = messaging.new_message('gpsLocation')
+      gps = msg.gpsLocation
       gps.flags = 1
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
@@ -220,7 +220,7 @@ def main() -> NoReturn:
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
 
-      pm.send('gpsLocationQcom', msg)
+      pm.send('gpsLocation', msg)
 
     if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')
