@@ -443,8 +443,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
-  } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal());
+  } else if (log.isGpsLocation()) {
+    this->handle_gps(t, log.getGpsLocation());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -490,11 +490,11 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
-  const std::initializer_list<const char *> service_list = {"gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  const std::initializer_list<const char *> service_list = {"gpsLocation", "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"gpsLocationExternal", "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"gpsLocation", "carParams"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
