@@ -33,6 +33,7 @@ class RouteEngine:
     self.pm = pm
 
     self.params = Params()
+    self.metric = self.params.get_bool("IsMetric")
 
     # Get last gps position from params
     self.last_position = coordinate_from_param("LastGPSPosition", self.params)
@@ -50,7 +51,9 @@ class RouteEngine:
     self.recompute_countdown = 0
 
     self.ui_pid = None
+
     self.last_positions = deque(maxlen=25)
+    self.speed_limit = None
 
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
@@ -75,6 +78,7 @@ class RouteEngine:
         self.ui_pid = ui_pid[0]
 
     self.update_location()
+    self.update_speed_limit()
     self.recompute_route()
     self.send_instruction()
 
@@ -185,33 +189,38 @@ class RouteEngine:
 
     self.send_route()
 
+  def update_speed_limit(self):
+    self.speed_limit = None
+    coords = [{"lat": c.latitude, "lon": c.longitude} for c in self.last_positions]
+    dat = {
+      "shape": coords,
+      "costing": "auto",
+      "shape_match": "walk_or_snap",
+      "filters": {
+        "attributes": ["edge.id", "edge.way_id", "edge.speed_limit"],
+        "action": "include"
+      },
+    }
+
+    r = requests.post(f"{VALHALLA_HOST}/trace_attributes", json=dat)
+    if r.status_code == 200:
+      edges = r.json()['edges']
+      if edges:
+        last_edge = edges[-1]
+        if 'speed_limit' in last_edge:
+          self.speed_limit = last_edge['speed_limit'] * CV.KPH_TO_MS
+        else:
+          cloudlog.info(f"no speed limit for way_id: {last_edge['way_id']}")
+
   def send_instruction(self):
     msg = messaging.new_message('navInstruction')
 
     if self.step_idx is None:
       msg.valid = False
 
-      coords = [{"lat": c.latitude, "lon": c.longitude} for c in self.last_positions]
-      dat = {
-        "shape": coords,
-        "costing": "auto",
-        "shape_match": "walk_or_snap",
-        "filters": {
-          "attributes": ["edge.id", "edge.way_id", "edge.speed_limit"],
-          "action": "include"
-        },
-      }
-
-      r = requests.post(f"{VALHALLA_HOST}/trace_attributes", json=dat)
-      if r.status_code == 200:
-        edges = r.json()['edges']
-        if edges:
-          last_edge = edges[-1]
-          if 'speed_limit' in last_edge:
-            msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.mutcd
-            msg.navInstruction.speedLimit = last_edge['speed_limit'] * CV.KPH_TO_MS
-          else:
-            cloudlog.info(f"no speed limit for way_id: {last_edge['way_id']}")
+      if self.speed_limit is not None:
+        msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.vienna if self.metric else log.NavInstruction.SpeedLimitSign.mutcd
+        msg.navInstruction.speedLimit = self.speed_limit
 
       self.pm.send('navInstruction', msg)
       return
