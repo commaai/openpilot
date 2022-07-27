@@ -24,7 +24,7 @@ REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 VALID_POS_STD = 50.0
 
-VALHALLA_HOST = "http://localhost:8002"
+VALHALLA_HOST = "http://valhalla1.openstreetmap.de/"
 
 
 class RouteEngine:
