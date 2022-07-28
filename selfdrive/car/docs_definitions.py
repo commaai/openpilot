@@ -12,16 +12,16 @@ MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
 class Tier(Enum):
-  GOLD = "The best openpilot experience. Great highway driving and beyond."
-  SILVER = "A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future."
-  BRONZE = "A good highway experience, but may have limited performance in traffic and on sharp turns."
+  GOLD = 0
+  SILVER = 1
+  BRONZE = 2
 
 
 class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
-  LONGITUDINAL = "openpilot Adaptive Cruise Control (ACC)"
+  LONGITUDINAL = "openpilot ACC"
   FSR_LONGITUDINAL = "Stop and Go"
   FSR_STEERING = "Steer to 0"
   STEERING_TORQUE = "Steering Torque"
@@ -83,7 +83,6 @@ class CarInfo:
   harness: Optional[Enum] = None
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
-    self.CP = CP
     # TODO: set all the min steer speeds in carParams and remove this
     min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
@@ -137,21 +136,21 @@ class CarInfo:
       self.tier = Tier.BRONZE
 
     self.year_list = get_year_list(self.years)
+    self.detail_sentence = self.get_detail_sentence(CP)
 
     return self
 
-  @property
-  def detail_sentence(self):
+  def get_detail_sentence(self, CP):
     sentence_builder = "openpilot upgrades your {car_model} with hands-free lane centering {steer_speed}, and adaptive cruise control {acc_speed}."
-    if self.CP.minSteerSpeed == 0:
+    if CP.minSteerSpeed == 0:
       steer_speed = "at all speeds"
     else:
-      steer_speed = f"above {self.CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph"
+      steer_speed = f"above {CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph"
 
-    if self.CP.minEnableSpeed == -1:
+    if CP.minEnableSpeed == -1:
       acc_speed = "that automatically resumes from a stop"
     else:
-      acc_speed = f"while driving above {self.CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph"
+      acc_speed = f"while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph"
 
     if self.row[Column.STEERING_TORQUE] != Star.FULL:
       sentence_builder += " This car may not be able to take tight turns on its own."
