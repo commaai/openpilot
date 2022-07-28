@@ -2,7 +2,7 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.ford.values import TransmissionType, CAR
+from selfdrive.car.ford.values import CAR, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -59,7 +59,6 @@ class CarInterface(CarInterfaceBase):
     # LCA can steer down to zero
     ret.minSteerSpeed = 0.
 
-    ret.steerRateCost = 1.0
     ret.centerToFront = ret.wheelbase * 0.44
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -71,14 +70,10 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
-    events = self.create_common_events(ret)
+    events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS, self.frame)
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS)

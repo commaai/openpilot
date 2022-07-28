@@ -41,14 +41,16 @@ class SubaruCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
-  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-20", "All"),
+  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
+    SubaruCarInfo("Subaru XV 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
   ],
   CAR.IMPREZA_2020: [
-    SubaruCarInfo("Subaru Impreza 2020-21"),
+    SubaruCarInfo("Subaru Impreza 2020-22"),
     SubaruCarInfo("Subaru Crosstrek 2020-21"),
+    SubaruCarInfo("Subaru XV 2020-21"),
   ],
   CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
   CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
@@ -112,6 +114,7 @@ FW_VERSIONS = {
       b'z\xc0\x04\x00',
       b'z\xc0\x00\x00',
       b'\x8a\xc0\x10\x00',
+      b'z\xc0\n\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00\x64\xb5\x1f\x40\x20\x0e',

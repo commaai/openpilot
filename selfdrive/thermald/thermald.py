@@ -17,13 +17,13 @@ from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE, TICI, AGNOS
+from system.hardware import HARDWARE, TICI, AGNOS
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.thermald.fan_controller import TiciFanController
-from selfdrive.version import terms_version, training_version
+from system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -96,7 +96,6 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
 def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
   count = 0
-  registered_count = 0
   prev_hw_state = None
 
   modem_version = None
@@ -133,16 +132,6 @@ def hw_state_thread(end_event, hw_queue):
           hw_queue.put_nowait(hw_state)
         except queue.Full:
           pass
-
-        if AGNOS and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
-          registered_count += 1
-        else:
-          registered_count = 0
-
-        if registered_count > 10:
-          cloudlog.warning(f"Modem stuck in registered state {hw_state.network_info}. nmcli conn up lte")
-          os.system("nmcli conn up lte")
-          registered_count = 0
 
         # TODO: remove this once the config is in AGNOS
         if not modem_configured and len(HARDWARE.get_sim_info().get('sim_id', '')) > 0:
@@ -220,7 +209,7 @@ def thermald_thread(end_event, hw_queue):
         if TICI:
           fan_controller = TiciFanController()
 
-    elif (sec_since_boot() - sm.rcv_time['pandaStates']/1e9) > DISCONNECT_TIMEOUT:
+    elif (sec_since_boot() - sm.rcv_time['pandaStates']) > DISCONNECT_TIMEOUT:
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
@@ -249,7 +238,7 @@ def thermald_thread(end_event, hw_queue):
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
     max_comp_temp = temp_filter.update(
-      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC), max(msg.deviceState.pmicTempC))
+      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
     )
 
     if fan_controller is not None:
@@ -348,12 +337,13 @@ def thermald_thread(end_event, hw_queue):
     power_monitor.calculate(peripheralState, onroad_conditions["ignition"])
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
-    current_power_draw = HARDWARE.get_current_power_draw()  # pylint: disable=assignment-from-none
-    if current_power_draw is not None:
-      statlog.sample("power_draw", current_power_draw)
-      msg.deviceState.powerDrawW = current_power_draw
-    else:
-      msg.deviceState.powerDrawW = 0
+    current_power_draw = HARDWARE.get_current_power_draw()
+    statlog.sample("power_draw", current_power_draw)
+    msg.deviceState.powerDrawW = current_power_draw
+    
+    som_power_draw = HARDWARE.get_som_power_draw()
+    statlog.sample("som_power_draw", som_power_draw)
+    msg.deviceState.somPowerDrawW = som_power_draw
 
     # Check if we need to disable charging (handled by boardd)
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(onroad_conditions["ignition"], in_car, off_ts)

@@ -2,17 +2,17 @@ import copy
 import crcmod
 from selfdrive.car.nissan.values import CAR
 
+# TODO: add this checksum to the CANPacker
 nissan_checksum = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)
 
 
 def create_steering_control(packer, apply_steer, frame, steer_on, lkas_max_torque):
-  idx = (frame % 16)
   values = {
+    "COUNTER": frame % 0x10,
     "DESIRED_ANGLE": apply_steer,
     "SET_0x80_2": 0x80,
     "SET_0x80": 0x80,
     "MAX_TORQUE": lkas_max_torque if steer_on else 0,
-    "COUNTER": idx,
     "LKA_ACTIVE": steer_on,
   }
 
@@ -22,7 +22,7 @@ def create_steering_control(packer, apply_steer, frame, steer_on, lkas_max_torqu
   return packer.make_can_msg("LKAS", 0, values)
 
 
-def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg, frame):
+def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
   values = copy.copy(cruise_throttle_msg)
   can_bus = 2
 
@@ -35,7 +35,6 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg, frame):
   values["SET_BUTTON"] = 0
   values["RES_BUTTON"] = 0
   values["FOLLOW_DISTANCE_BUTTON"] = 0
-  values["COUNTER"] = (frame % 4)
 
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
 

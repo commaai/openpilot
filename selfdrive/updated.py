@@ -37,10 +37,10 @@ from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.hardware import AGNOS, HARDWARE
-from selfdrive.swaglog import cloudlog
+from system.hardware import AGNOS, HARDWARE
+from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.version import is_tested_branch
+from system.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -265,7 +265,7 @@ def finalize_update(wait_helper: WaitTimeHelper) -> None:
 
 
 def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
-  from selfdrive.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
+  from system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
@@ -281,7 +281,7 @@ def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
   set_offroad_alert("Offroad_NeosUpdate", True)
 
-  manifest_path = os.path.join(OVERLAY_MERGED, "selfdrive/hardware/tici/agnos.json")
+  manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
   target_slot_number = get_target_slot_number()
   flash_agnos_update(manifest_path, target_slot_number, cloudlog)
   set_offroad_alert("Offroad_NeosUpdate", False)
@@ -314,18 +314,26 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   new_version: bool = cur_hash != upstream_hash
   git_fetch_result = check_git_fetch_result(git_fetch_output)
 
+  new_branch = Params().get("SwitchToBranch", encoding='utf8')
+  if new_branch is not None:
+    new_version = True
+
   cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
   if new_version or git_fetch_result:
     cloudlog.info("Running update")
 
     if new_version:
       cloudlog.info("git reset in progress")
-      r = [
-        run(["git", "reset", "--hard", "@{u}"], OVERLAY_MERGED, low_priority=True),
-        run(["git", "clean", "-xdf"], OVERLAY_MERGED, low_priority=True ),
-        run(["git", "submodule", "init"], OVERLAY_MERGED, low_priority=True),
-        run(["git", "submodule", "update"], OVERLAY_MERGED, low_priority=True),
+      cmds = [
+        ["git", "reset", "--hard", "@{u}"],
+        ["git", "clean", "-xdf"],
+        ["git", "submodule", "init"],
+        ["git", "submodule", "update"],
       ]
+      if new_branch is not None:
+        cloudlog.info(f"switching to branch {repr(new_branch)}")
+        cmds.insert(0, ["git", "checkout", "-f", new_branch])
+      r = [run(cmd, OVERLAY_MERGED, low_priority=True) for cmd in cmds]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
       if AGNOS:

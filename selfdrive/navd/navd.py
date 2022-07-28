@@ -4,20 +4,23 @@ import os
 import threading
 
 import requests
+import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
 from common.api import Api
 from common.params import Params
 from common.realtime import Ratekeeper
+from common.transformations.coordinates import ecef2geodetic
 from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
+VALID_POS_STD = 50.0
 
 
 class RouteEngine:
@@ -32,6 +35,7 @@ class RouteEngine:
     self.last_bearing = None
 
     self.gps_ok = False
+    self.localizer_valid = False
 
     self.nav_destination = None
     self.step_idx = None
@@ -71,13 +75,21 @@ class RouteEngine:
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
-    self.gps_ok = location.gpsOK
+    laikad = self.sm['gnssMeasurements']
 
-    localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
+    locationd_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
+    laikad_valid = laikad.positionECEF.valid and np.linalg.norm(laikad.positionECEF.std) < VALID_POS_STD
 
-    if localizer_valid:
+    self.localizer_valid = locationd_valid or laikad_valid
+    self.gps_ok = location.gpsOK or laikad_valid
+
+    if locationd_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
       self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
+    elif laikad_valid:
+      geodetic = ecef2geodetic(laikad.positionECEF.value)
+      self.last_position = Coordinate(geodetic[0], geodetic[1])
+      self.last_bearing = None
 
   def recompute_route(self):
     if self.last_position is None:
@@ -142,8 +154,10 @@ class RouteEngine:
             coord = Coordinate.from_mapbox_tuple(c)
 
             # Last step does not have maxspeed
-            if (maxspeed_idx < len(maxspeeds)) and ('unknown' not in maxspeeds[maxspeed_idx]):
-              coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeeds[maxspeed_idx])
+            if (maxspeed_idx < len(maxspeeds)):
+              maxspeed = maxspeeds[maxspeed_idx]
+              if ('unknown' not in maxspeed) and ('none' not in maxspeed):
+                coord.annotations['maxspeed'] = maxspeed_to_ms(maxspeed)
 
             coords.append(coord)
             maxspeed_idx += 1
@@ -202,7 +216,7 @@ class RouteEngine:
       if along_geometry < distance_along_geometry(geometry, geometry[closest_idx]):
         closest = geometry[closest_idx - 1]
 
-    if 'maxspeed' in closest.annotations:
+    if ('maxspeed' in closest.annotations) and self.localizer_valid:
       msg.navInstruction.speedLimit = closest.annotations['maxspeed']
 
     # Speed limit sign type
@@ -273,7 +287,7 @@ class RouteEngine:
 
 def main(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
+    sm = messaging.SubMaster(['liveLocationKalman', 'gnssMeasurements', 'managerState'])
   if pm is None:
     pm = messaging.PubMaster(['navInstruction', 'navRoute'])
 

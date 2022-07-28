@@ -28,6 +28,7 @@ class Plant():
     self.distance = 0.
     self.speed = speed
     self.acceleration = 0.0
+    self.speeds = []
 
     # lead car
     self.distance_lead = distance_lead
@@ -98,6 +99,7 @@ class Plant():
     self.planner.update(sm)
     self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
+    self.speeds = self.planner.v_desired_trajectory.tolist()
     fcw = self.planner.fcw
     self.distance_lead = self.distance_lead + v_lead * self.ts
 
@@ -129,6 +131,7 @@ class Plant():
       "distance": self.distance,
       "speed": self.speed,
       "acceleration": self.acceleration,
+      "speeds": self.speeds,
       "distance_lead": self.distance_lead,
       "fcw": fcw,
     }

@@ -57,6 +57,11 @@ class TestCarModelBase(unittest.TestCase):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
+    if 'FILTER' in os.environ:
+      print(tuple(os.environ.get('FILTER').split(', ')))
+      if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
+        raise unittest.SkipTest
+
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -121,7 +126,6 @@ class TestCarModelBase(unittest.TestCase):
 
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
-    self.assertGreater(self.CP.steerRateCost, 1e-3)
 
     if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
@@ -222,6 +226,7 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
