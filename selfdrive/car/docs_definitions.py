@@ -238,19 +238,19 @@ class Package(Enum):
 
 STAR_DESCRIPTIONS = {
   "Gas & Brakes": {  # icon and row name
-    Column.FSR_LONGITUDINAL: {
-      Star.FULL: "openpilot operates down to 0 mph.",
-      Star.EMPTY: "openpilot operates only above a minimum speed. See your car's manual for the minimum speed.",
-    },
+    Column.FSR_LONGITUDINAL.value: [
+      [Star.FULL.value, "openpilot operates down to 0 mph."],
+      [Star.EMPTY.value, "openpilot operates only above a minimum speed. See your car's manual for the minimum speed."],
+    ],
   },
   "Steering": {
-    Column.FSR_STEERING: {
-      Star.FULL: "openpilot can control the steering wheel down to 0 mph.",
-      Star.EMPTY: "No steering control below certain speeds. See your car's manual for the minimum speed.",
-    },
-    Column.STEERING_TORQUE: {
-      Star.FULL: "Car has enough steering torque to comfortably take most highway turns.",
-      Star.EMPTY: "Limited ability to make tighter turns.",
-    },
+    Column.FSR_STEERING.value: [
+      [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
+      [Star.EMPTY.value, "No steering control below certain speeds. See your car's manual for the minimum speed."],
+    ],
+    Column.STEERING_TORQUE.value: [
+      [Star.FULL.value, "Car has enough steering torque to comfortably take most highway turns."],
+      [Star.EMPTY.value, "Limited ability to make tighter turns."],
+    ],
   },
 }

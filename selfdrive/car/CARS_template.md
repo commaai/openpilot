@@ -11,9 +11,9 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 {% for star_row in STAR_DESCRIPTIONS.values() %}
 {% for name, stars in star_row.items() %}
-### {{name.value}}
-{% for star, description in stars.items() %}
-- {{star_icon.format(star.value)}} - {{description}}
+### {{name}}
+{% for star, description in stars %}
+- {{star_icon.format(star)}} - {{description}}
 {% endfor %}
 
 {% endfor %}
