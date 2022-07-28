@@ -118,7 +118,7 @@ class Laikad:
         if self.auto_fetch_orbits:
           self.fetch_orbits(latest_msg_t, block)
 
-      new_meas = read_raw_ublox(report)
+      new_meas = read_raw_qcom(report)
       # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
       new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
 
@@ -319,7 +319,7 @@ def main(sm=None, pm=None):
     sm.update()
 
     if sm.updated['qcomGnss']:
-      gnss_msg = sm['qcomnss']
+      gnss_msg = sm['qcomGnss']
       msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime['qcomGnss'], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
