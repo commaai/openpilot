@@ -119,7 +119,7 @@ class GNSSKalman():
     clock_error_drift = 100.0 if erratic_clock else 0.1
     self.Q = np.diag([0.03**2, 0.03**2, 0.03**2,
                       3**2, 3**2, 3**2,
-                      (clock_error_drift)**2, (10)**2, (0.005)**2,
+                      (clock_error_drift)**2, (0)**2, (0.005)**2,
                       .1**2, (.01)**2])
 
     self.dim_state = self.x_initial.shape[0]
