@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, CarPackage, Harness
 from cereal import car
 
 Ecu = car.CarParams.Ecu
@@ -34,14 +34,19 @@ class CAR:
   OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
 
 
+class Package(Enum):
+  ALL = CarPackage("All", "All")
+  ES = CarPackage("EyeSight", "EyeSight Driver Assist Technology")
+
+
 @dataclass
 class SubaruCarInfo(CarInfo):
-  package: str = "EyeSight"
+  package: Enum = Package.ES
   harness: Enum = Harness.subaru
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
-  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
+  CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", Package.ALL),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -52,7 +57,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
     SubaruCarInfo("Subaru Crosstrek 2020-21"),
     SubaruCarInfo("Subaru XV 2020-21"),
   ],
-  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
+  CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", Package.ALL),
   CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
   CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),

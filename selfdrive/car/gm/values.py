@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPackage, Column, Harness
 Ecu = car.CarParams.Ecu
 
 
@@ -65,9 +65,15 @@ class Footnote(Enum):
     Column.MODEL)
 
 
+class Package(Enum):
+  ALL = CarPackage("All", "All")
+  ACC = CarPackage("Adaptive Cruise", "Adaptive Cruise Control")
+  ACC_LKAS = CarPackage("ACC + LKAS", "Adaptive Cruise Control (ACC) & LKAS")
+
+
 @dataclass
 class GMCarInfo(CarInfo):
-  package: str = "Adaptive Cruise"
+  package: Enum = Package.ACC
   harness: Enum = Harness.none
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.OBD_II])
 
@@ -79,7 +85,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", harness=Harness.custom),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
-  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS"),
+  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", Package.ACC_LKAS),  # TODO: can probably just be ACC?
 }
 
 

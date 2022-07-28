@@ -1,9 +1,10 @@
 from collections import namedtuple
+from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, CarPackage
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
@@ -35,9 +36,13 @@ class CAR:
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
 
 
+class Package(Enum):
+  NA = CarPackage("NA", "NA")
+
+
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ESCAPE_MK4: CarInfo("Ford Escape", "NA"),
-  CAR.FOCUS_MK4: CarInfo("Ford Focus", "NA"),
+  CAR.ESCAPE_MK4: CarInfo("Ford Escape", Package.NA),
+  CAR.FOCUS_MK4: CarInfo("Ford Focus", Package.NA),
 }
 
 

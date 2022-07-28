@@ -1,11 +1,13 @@
+from enum import Enum
 from typing import Dict
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, CarPackage, Harness
 Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
+
 
 class CarControllerParams:
   ANGLE_DELTA_BP = [0., 5., 15.]
@@ -14,11 +16,17 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
+
 class CAR:
   BODY = "COMMA BODY"
 
+
+class Package(Enum):
+  ALL = CarPackage("All", "All")
+
+
 CAR_INFO: Dict[str, CarInfo] = {
-  CAR.BODY: CarInfo("comma body", package="All", harness=Harness.none),
+  CAR.BODY: CarInfo("comma body", package=Package.ALL, harness=Harness.none),
 }
 
 FW_VERSIONS = {

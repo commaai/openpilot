@@ -36,6 +36,7 @@ class Star(Enum):
 StarColumns = list(Column)[3:]
 TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
+CarPackage = namedtuple("CarPackage", ["short", "full"])
 MaintainedFootnote = CarFootnote("Low user count, community maintained, harness hardware not sold by comma.", Column.MODEL)
 
 
@@ -57,7 +58,7 @@ def split_name(name: str) -> Tuple[str, str, str]:
 @dataclass
 class CarInfo:
   name: str
-  package: str
+  package: Enum
   video_link: Optional[str] = None
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
@@ -149,6 +150,8 @@ class CarInfo:
       item = star_icon.format(item.value)
     elif column == Column.MODEL and len(self.years) and add_years:
       item += f" {self.years}"
+    elif column == Column.PACKAGE:
+      item = item.value.short
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):

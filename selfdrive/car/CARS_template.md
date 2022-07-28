@@ -21,7 +21,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 # {{all_car_info | length}} Supported Cars
 
-|{{Column | `map(`attribute='value') | join('|') | replace("openpilot Adaptive Cruise Control (ACC)", "openpilot ACC")}}|
+|{{Column | map(attribute='value') | join('|') | replace("openpilot Adaptive Cruise Control (ACC)", "openpilot ACC")}}|
 |---|---|---|:---:|:---:|:---:|:---:|
 {% for car_info in all_car_info %}
 |{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}

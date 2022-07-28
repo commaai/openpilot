@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, CarPackage, Harness
 Ecu = car.CarParams.Ecu
 
 
@@ -36,14 +36,17 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
 
-STEER_THRESHOLD = 120
 
-RAM_CARS = {CAR.RAM_1500, }
+class Package(Enum):
+  ALL = CarPackage("All", "All")
+  ACC = CarPackage("Adaptive Cruise", "Adaptive Cruise Control with Stop and Go")
+
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise"
+  package: Enum = Package.ACC
   harness: Enum = Harness.fca
+
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
@@ -52,7 +55,7 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
   CAR.PACIFICA_2020: [
     ChryslerCarInfo("Chrysler Pacifica 2019-20"),
-    ChryslerCarInfo("Chrysler Pacifica 2021", package="All"),
+    ChryslerCarInfo("Chrysler Pacifica 2021", package=Package.ALL),
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
@@ -174,6 +177,9 @@ FW_VERSIONS = {
     ],
   },
 }
+
+STEER_THRESHOLD = 120
+RAM_CARS = {CAR.RAM_1500, }
 
 DBC = {
   CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
