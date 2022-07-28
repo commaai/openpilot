@@ -123,7 +123,7 @@ class Laikad:
       tow = report.gpsMilliseconds / 1000.0
       new_meas = read_raw_qcom(report)
     else:
-      report = gnss_msg.MeasurementReport
+      report = gnss_msg.measurementReport
       week = report.gpsweek
       tow = report.rcvTow
       new_meas = read_raw_ublox(report)
