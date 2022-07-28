@@ -34,7 +34,7 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 PANDA_STATES_TIMEOUT = int(1000 * 1.5 * DT_TRML)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
-HardwareState = namedtuple("HardwareState", ['network_type', 'network_metered', 'network_strength', 'network_info', 'nvme_temps', 'modem_temps'])
+HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats', 'network_metered', 'nvme_temps', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -120,13 +120,13 @@ def hw_state_thread(end_event, hw_queue):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
 
         tx, rx = HARDWARE.get_modem_data_usage()
-        print("wwan data usage", tx, rx)
 
         hw_state = HardwareState(
           network_type=network_type,
-          network_metered=HARDWARE.get_network_metered(network_type),
-          network_strength=HARDWARE.get_network_strength(network_type),
           network_info=HARDWARE.get_network_info(),
+          network_strength=HARDWARE.get_network_strength(network_type),
+          network_stats={'wwanTx': tx, 'wwanRx': rx},
+          network_metered=HARDWARE.get_network_metered(network_type),
           nvme_temps=HARDWARE.get_nvme_temperatures(),
           modem_temps=modem_temps,
         )
@@ -169,9 +169,10 @@ def thermald_thread(end_event, hw_queue):
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
+    network_info=None,
     network_metered=False,
     network_strength=NetworkStrength.unknown,
-    network_info=None,
+    network_stats={'wwanTx': -1, 'wwanRx': -1},
     nvme_temps=[],
     modem_temps=[],
   )
@@ -230,6 +231,7 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.networkType = last_hw_state.network_type
     msg.deviceState.networkMetered = last_hw_state.network_metered
     msg.deviceState.networkStrength = last_hw_state.network_strength
+    msg.deviceState.networkStats = last_hw_state.network_stats
     if last_hw_state.network_info is not None:
       msg.deviceState.networkInfo = last_hw_state.network_info
 
