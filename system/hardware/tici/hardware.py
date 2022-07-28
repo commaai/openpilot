@@ -514,7 +514,7 @@ class Tici(HardwareBase):
       wwan = self.get_wwan()
       tx = wwan.Get(NM_DEV_STATS, 'TxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       rx = wwan.Get(NM_DEV_STATS, 'RxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      return tx, rx
+      return int(tx), int(rx)
     except Exception:
       return -1, -1
 
