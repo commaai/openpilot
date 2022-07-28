@@ -31,7 +31,7 @@ class CAR:
 
 @dataclass
 class MazdaCarInfo(CarInfo):
-  package: str = Package.all
+  package: Enum = Package.all
   harness: Enum = Harness.mazda
 
 

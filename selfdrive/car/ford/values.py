@@ -1,5 +1,4 @@
 from collections import namedtuple
-from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car

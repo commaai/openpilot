@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Dict
 
 from cereal import car
