@@ -124,7 +124,7 @@ class Laikad:
       new_meas = read_raw_qcom(report)
     else:
       report = gnss_msg.measurementReport
-      week = report.gpsweek
+      week = report.gpsWeek
       tow = report.rcvTow
       new_meas = read_raw_ublox(report)
     return week, tow, new_meas
