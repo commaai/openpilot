@@ -37,12 +37,29 @@ StarColumns = list(Column)[3:]
 TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 CarPackage = namedtuple("CarPackage", ["short", "full"])
-MaintainedFootnote = CarFootnote("Low user count, community maintained, harness hardware not sold by comma.", Column.MODEL)
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
   # Returns applicable footnotes given current column
   return [fn for fn in footnotes if fn.value.column == column]
+
+
+# TODO: clean this up or just make cars store list of years
+def get_year_list(years):
+  years_list = []
+  if len(years) == 0:
+    return years_list
+
+  for year in years.split(','):
+    year = year.strip()
+    if len(year) == 4:
+      years_list.append(str(year))
+    elif "-" in year:
+      start, end = year.split("-")
+      years_list.extend(map(str, range(int(start), int(f"20{end}"))))
+    else:
+      raise Exception(f"Malformed year string: {years}")
+  return years_list
 
 
 def split_name(name: str) -> Tuple[str, str, str]:
@@ -103,10 +120,6 @@ class CarInfo:
       for col in StarColumns:
         self.row[col] = Star.FULL
 
-    # TODO: add this
-    # if self.row[Column.MAINTAINED] == Star.EMPTY:
-    #   all_footnotes.append(MaintainedFootnote)
-
     self.all_footnotes = all_footnotes
     for column in StarColumns:
       # Demote if footnote specifies a star
@@ -122,6 +135,8 @@ class CarInfo:
       self.tier = Tier.SILVER
     else:
       self.tier = Tier.BRONZE
+
+    self.year_list = get_year_list(self.years)
 
     return self
 
