@@ -1,10 +1,11 @@
+from enum import Enum
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 Ecu = car.CarParams.Ecu
 
 
@@ -86,6 +87,12 @@ class CAR:
   GENESIS_G90 = "GENESIS G90 2017"
 
 
+class Footnote(Enum):
+  CANFD = CarFootnote(
+    "Requires a <a href='https://comma.ai/shop/products/panda'>red panda</a> and additional <a href='https://comma.ai/shop/products/harness-box'>harness box.</a>",
+    Column.MODEL)
+
+
 @dataclass
 class HyundaiCarInfo(CarInfo):
   # TODO: we can probably remove LKAS. LKAS is standard on many
@@ -153,7 +160,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
-  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p),
+  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p, footnotes=[Footnote.CANFD,]),
 
   # Genesis
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
