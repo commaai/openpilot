@@ -155,7 +155,7 @@ class CarInfo:
     if self.row[Column.STEERING_TORQUE] != Star.FULL:
       sentence_builder += " This car may not be able to take tight turns on its own."
 
-    return sentence_builder.format(car_model=self.name, steer_speed=steer_speed, acc_speed=acc_speed)
+    return sentence_builder.format(car_model=f"{self.make} {self.model}", steer_speed=steer_speed, acc_speed=acc_speed)
 
   @no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str, add_years: bool = True) -> str:
