@@ -50,6 +50,7 @@ class NMMetered(IntEnum):
   NM_METERED_GUESS_NO = 4
 
 TIMEOUT = 0.1
+REFRESH_RATE_MS = 1000
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -512,6 +513,13 @@ class Tici(HardwareBase):
   def get_modem_data_usage(self):
     try:
       wwan = self.get_wwan()
+
+      # Ensure refresh rate is set so values don't go stale
+      refresh_rate = wwan.Get(NM_DEV_STATS, 'RefreshRateMs', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if refresh_rate != REFRESH_RATE_MS:
+        u = type(refresh_rate)
+        wwan.Set(NM_DEV_STATS, 'RefreshRateMs', u(REFRESH_RATE_MS), dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
       tx = wwan.Get(NM_DEV_STATS, 'TxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       rx = wwan.Get(NM_DEV_STATS, 'RxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       return int(tx), int(rx)
