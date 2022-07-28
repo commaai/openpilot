@@ -177,7 +177,8 @@ def main(sm=None, pm=None):
 
       angle_offset_average = clip(math.degrees(x[States.ANGLE_OFFSET]), angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
       angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET] + x[States.ANGLE_OFFSET_FAST]), angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
-      sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] - learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      # Account for the opposite signs of the yaw rates
+      sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
 
       msg = messaging.new_message('liveParameters')
 
