@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPackage, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Package
 Ecu = car.CarParams.Ecu
 
 
@@ -93,18 +93,11 @@ class Footnote(Enum):
     Column.MODEL)
 
 
-class Package(Enum):
-  SCC_LKAS = CarPackage("SCC + LKAS", "Smart Cruise Control (SCC) & LKAS")
-  SCC_LFA = CarPackage("SCC + LFA", "Smart Cruise Control (SCC) & LFA")
-  SCC = CarPackage("SCC", "Smart Cruise Control (SCC)")
-  ALL = CarPackage("All", "All")
-
-
 @dataclass
 class HyundaiCarInfo(CarInfo):
   # TODO: we can probably remove LKAS. LKAS is standard on many
   # HKG and for others, it's likely packaged together with SCC
-  package: Enum = Package.SCC_LKAS
+  package: Enum = Package.hyundai_scc_lkas
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
@@ -114,7 +107,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.ELANTRA_GT_I30: None,  # dashcamOnly and same platform as CAR.ELANTRA
   CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_j),
   CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", harness=Harness.hyundai_c),
-  CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", Package.SCC_LFA, harness=Harness.hyundai_h),
+  CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", Package.hyundai_scc_lfa, harness=Harness.hyundai_h),
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", harness=Harness.hyundai_c),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", harness=Harness.hyundai_c),
@@ -122,33 +115,33 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", harness=Harness.hyundai_g),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo", harness=Harness.hyundai_i),
-  CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", Package.ALL, harness=Harness.hyundai_d),
-  CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", Package.ALL, harness=Harness.hyundai_l),
-  CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", Package.ALL, harness=Harness.hyundai_l),
-  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", Package.ALL, harness=Harness.hyundai_l),
-  CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", Package.ALL, video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw", harness=Harness.hyundai_a),
+  CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", Package.all, harness=Harness.hyundai_d),
+  CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", Package.all, harness=Harness.hyundai_l),
+  CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", Package.all, harness=Harness.hyundai_l),
+  CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", Package.all, harness=Harness.hyundai_l),
+  CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", Package.all, video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw", harness=Harness.hyundai_a),
   CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19", harness=Harness.hyundai_e),
   CAR.TUCSON: [
     HyundaiCarInfo("Hyundai Tucson 2021", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_l),
     HyundaiCarInfo("Hyundai Tucson Diesel 2019", harness=Harness.hyundai_l),
   ],
   CAR.PALISADE: [
-    HyundaiCarInfo("Hyundai Palisade 2020-22", Package.ALL, video_link="https://youtu.be/TAnDqjF4fDY?t=456", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Hyundai Palisade 2020-22", Package.all, video_link="https://youtu.be/TAnDqjF4fDY?t=456", harness=Harness.hyundai_h),
     HyundaiCarInfo("Kia Telluride 2020", harness=Harness.hyundai_h),
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
-  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", Package.ALL, harness=Harness.hyundai_a),
+  CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", Package.all, harness=Harness.hyundai_a),
 
   # Kia
   CAR.KIA_FORTE: [
     HyundaiCarInfo("Kia Forte 2018", harness=Harness.hyundai_b),
     HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
   ],
-  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", Package.SCC, harness=Harness.hyundai_a),
+  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", Package.hyundai_scc, harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
-    HyundaiCarInfo("Kia Niro Electric 2019-20", Package.ALL, video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
-    HyundaiCarInfo("Kia Niro Electric 2021", Package.ALL, video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
-    HyundaiCarInfo("Kia Niro Electric 2022", Package.ALL, video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro Electric 2019-20", Package.all, video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
+    HyundaiCarInfo("Kia Niro Electric 2021", Package.all, video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
+    HyundaiCarInfo("Kia Niro Electric 2022", Package.all, video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
   ],
   CAR.KIA_NIRO_HEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
   CAR.KIA_NIRO_HEV_2021: [
@@ -167,13 +160,13 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
-  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", Package.ALL, harness=Harness.hyundai_p, footnotes=[Footnote.CANFD,]),
+  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", Package.all, harness=Harness.hyundai_p, footnotes=[Footnote.CANFD,]),
 
   # Genesis
-  CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", Package.ALL, harness=Harness.hyundai_f),
-  CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", Package.ALL, harness=Harness.hyundai_f),
-  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2017-19", Package.ALL, harness=Harness.hyundai_h),
-  CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", Package.ALL, harness=Harness.hyundai_c),
+  CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", Package.all, harness=Harness.hyundai_f),
+  CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", Package.all, harness=Harness.hyundai_f),
+  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2017-19", Package.all, harness=Harness.hyundai_h),
+  CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", Package.all, harness=Harness.hyundai_c),
 }
 
 

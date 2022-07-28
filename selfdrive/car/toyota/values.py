@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPackage, Column, Harness, Star
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Package, Star
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -95,15 +95,9 @@ class Footnote(Enum):
     Column.FSR_LONGITUDINAL)
 
 
-class Package(Enum):
-  ALL = CarPackage("All", "All")
-  TSSP = CarPackage("TSS-P", "Toyota Safety Sense P")
-  LSS = CarPackage("LSS", "Lexus Safety System+")
-
-
 @dataclass
 class ToyotaCarInfo(CarInfo):
-  package: Enum = Package.ALL
+  package: Enum = Package.all
   harness: Enum = Harness.toyota
 
 
@@ -112,7 +106,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.ALPHARD_TSS2: ToyotaCarInfo("Toyota Alphard 2019-20"),
   CAR.ALPHARDH_TSS2: ToyotaCarInfo("Toyota Alphard Hybrid 2021"),
   CAR.AVALON: [
-    ToyotaCarInfo("Toyota Avalon 2016", Package.TSSP, footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Avalon 2016", Package.toyota_tssp, footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota Avalon 2017-18", footnotes=[Footnote.DSU]),
   ],
   CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", footnotes=[Footnote.DSU]),
@@ -141,21 +135,21 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", footnotes=[Footnote.DSU]),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
   CAR.PRIUS: [
-    ToyotaCarInfo("Toyota Prius 2016", Package.TSSP, video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Prius 2016", Package.toyota_tssp, video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
   ],
-  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", Package.TSSP, min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU]),
+  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", Package.toyota_tssp, min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU]),
   CAR.PRIUS_TSS2: [
     ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
     ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
   ],
   CAR.RAV4: [
-    ToyotaCarInfo("Toyota RAV4 2016", Package.TSSP, footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota RAV4 2016", Package.toyota_tssp, footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota RAV4 2017-18", footnotes=[Footnote.DSU])
   ],
   CAR.RAV4H: [
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", Package.TSSP, video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", Package.toyota_tssp, video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU])
   ],
   CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
@@ -166,8 +160,8 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU]),
 
   # Lexus
-  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", Package.LSS, footnotes=[Footnote.DSU]),
-  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", Package.LSS, footnotes=[Footnote.DSU]),
+  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", Package.toyota_lss, footnotes=[Footnote.DSU]),
+  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", Package.toyota_lss, footnotes=[Footnote.DSU]),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
   CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-22", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),

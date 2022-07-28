@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPackage, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, Package
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -29,13 +29,9 @@ class CAR:
   CX5_2022 = "MAZDA CX-5 2022"
 
 
-class Package(Enum):
-  ALL = CarPackage("All", "All")
-
-
 @dataclass
 class MazdaCarInfo(CarInfo):
-  package: str = Package.ALL
+  package: str = Package.all
   harness: Enum = Harness.mazda
 
 

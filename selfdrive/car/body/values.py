@@ -3,7 +3,7 @@ from typing import Dict
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPackage, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, Package
 Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
@@ -21,12 +21,8 @@ class CAR:
   BODY = "COMMA BODY"
 
 
-class Package(Enum):
-  ALL = CarPackage("All", "All")
-
-
 CAR_INFO: Dict[str, CarInfo] = {
-  CAR.BODY: CarInfo("comma body", package=Package.ALL, harness=Harness.none),
+  CAR.BODY: CarInfo("comma body", package=Package.all, harness=Harness.none),
 }
 
 FW_VERSIONS = {
