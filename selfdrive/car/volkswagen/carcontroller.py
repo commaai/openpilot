@@ -2,7 +2,7 @@ from cereal import car
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
-from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
+from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, MQB_LDW_MESSAGES, CarControllerParams as P
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -17,10 +17,6 @@ class CarController:
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
-    self.graButtonStatesToSend = None
-    self.graMsgSentCount = 0
-    self.graMsgStartFramePrev = 0
-    self.graMsgBusCounterPrev = 0
 
   def update(self, CC, CS, ext_bus):
     actuators = CC.actuators
@@ -83,30 +79,12 @@ class CarController:
 
     # **** ACC Button Controls ********************************************** #
 
-    # FIXME: this entire section is in desperate need of refactoring
-
-    if self.CP.pcmCruise:
-      if self.frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
-        if CC.cruiseControl.cancel:
-          # Cancel ACC if it's engaged with OP disengaged.
-          self.graButtonStatesToSend = BUTTON_STATES.copy()
-          self.graButtonStatesToSend["cancel"] = True
-        elif CC.cruiseControl.resume:
-          # Send Resume button when planner wants car to move
-          self.graButtonStatesToSend = BUTTON_STATES.copy()
-          self.graButtonStatesToSend["resumeCruise"] = True
-
-      if CS.graMsgBusCounter != self.graMsgBusCounterPrev:
-        self.graMsgBusCounterPrev = CS.graMsgBusCounter
-        if self.graButtonStatesToSend is not None:
-          if self.graMsgSentCount == 0:
-            self.graMsgStartFramePrev = self.frame
-          idx = (CS.graMsgBusCounter + 1) % 16
-          can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, self.graButtonStatesToSend, CS, idx))
-          self.graMsgSentCount += 1
-          if self.graMsgSentCount >= P.GRA_VBP_COUNT:
-            self.graButtonStatesToSend = None
-            self.graMsgSentCount = 0
+    if self.CP.pcmCruise and self.frame % P.GRA_ACC_STEP == 0:
+      idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
+      if CC.cruiseControl.cancel:
+        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, cancel=True))
+      elif CC.cruiseControl.resume:
+        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, resume=True))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / P.STEER_MAX

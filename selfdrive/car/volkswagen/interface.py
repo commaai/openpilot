@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
+from selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -9,8 +9,6 @@ EventName = car.CarEvent.EventName
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
-
-    self.buttonStatesPrev = BUTTON_STATES.copy()
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       self.ext_bus = CANBUS.pt
@@ -160,18 +158,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c):
-    buttonEvents = []
-
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
-
-    # Check for and process state-change events (button press or release) from
-    # the turn stalk switch or ACC steering wheel/control stalk buttons.
-    for button in self.CS.buttonStates:
-      if self.CS.buttonStates[button] != self.buttonStatesPrev[button]:
-        be = car.CarState.ButtonEvent.new_message()
-        be.type = button
-        be.pressed = self.CS.buttonStates[button]
-        buttonEvents.append(be)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
 
@@ -184,10 +171,6 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
-    ret.buttonEvents = buttonEvents
-
-    # update previous car states
-    self.buttonStatesPrev = self.CS.buttonStates.copy()
 
     return ret
 
