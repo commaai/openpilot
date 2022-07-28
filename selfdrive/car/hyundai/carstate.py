@@ -40,7 +40,7 @@ class CarState(CarStateBase):
 
     ret = car.CarState.new_message()
 
-    scc_fca = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
+    cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
                         cp.vl["CGW2"]["CF_Gway_RLDrSw"], cp.vl["CGW2"]["CF_Gway_RRDrSw"]])
@@ -75,11 +75,11 @@ class CarState(CarStateBase):
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
     else:
-      ret.cruiseState.available = scc_fca.vl["SCC11"]["MainMode_ACC"] == 1
-      ret.cruiseState.enabled = scc_fca.vl["SCC12"]["ACCMode"] != 0
-      ret.cruiseState.standstill = scc_fca.vl["SCC11"]["SCCInfoDisplay"] == 4.
+      ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
+      ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
+      ret.cruiseState.standstill = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 4.
       speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
-      ret.cruiseState.speed = scc_fca.vl["SCC11"]["VSetDis"] * speed_conv
+      ret.cruiseState.speed = cp_cruise.vl["SCC11"]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
     ret.brake = 0
@@ -112,11 +112,11 @@ class CarState(CarStateBase):
 
     if not self.CP.openpilotLongitudinalControl:
       if self.CP.carFingerprint in FEATURES["use_fca"]:
-        ret.stockAeb = scc_fca.vl["FCA11"]["FCA_CmdAct"] != 0
-        ret.stockFcw = scc_fca.vl["FCA11"]["CF_VSM_Warn"] == 2
+        ret.stockAeb = cp_cruise.vl["FCA11"]["FCA_CmdAct"] != 0
+        ret.stockFcw = cp_cruise.vl["FCA11"]["CF_VSM_Warn"] == 2
       else:
-        ret.stockAeb = scc_fca.vl["SCC12"]["AEB_CmdAct"] != 0
-        ret.stockFcw = scc_fca.vl["SCC12"]["CF_VSM_Warn"] == 2
+        ret.stockAeb = cp_cruise.vl["SCC12"]["AEB_CmdAct"] != 0
+        ret.stockFcw = cp_cruise.vl["SCC12"]["CF_VSM_Warn"] == 2
 
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
