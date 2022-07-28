@@ -3,7 +3,7 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
-from common.params import Params, put_nonblocking
+from common.params import Params, put_bool_nonblocking
 from common.realtime import set_realtime_priority
 from selfdrive.controls.lib.events import Events
 from selfdrive.locationd.calibrationd import Calibration
@@ -87,7 +87,7 @@ def dmonitoringd_thread(sm=None, pm=None):
     if (sm['driverStateV2'].frameId % 6000 == 0 and
      driver_status.wheelpos_learner.filtered_stat.n > driver_status.settings._WHEELPOS_FILTER_MIN_COUNT and
      driver_status.wheel_on_right == (driver_status.wheelpos_learner.filtered_stat.M > driver_status.settings._WHEELPOS_THRESHOLD)):
-      put_nonblocking("IsRhdDetected", str(int(driver_status.wheel_on_right)))
+      put_bool_nonblocking("IsRhdDetected", driver_status.wheel_on_right)
 
 def main(sm=None, pm=None):
   dmonitoringd_thread(sm, pm)
