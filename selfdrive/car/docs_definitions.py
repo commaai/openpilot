@@ -142,12 +142,12 @@ class CarInfo:
 
   def get_detail_sentence(self, CP):
     sentence_builder = "openpilot upgrades your {car_model} with hands-free lane centering {steer_speed}, and adaptive cruise control {acc_speed}."
-    if CP.minSteerSpeed == 0:
+    if CP.minSteerSpeed <= 0:
       steer_speed = "at all speeds"
     else:
       steer_speed = f"above {CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph"
 
-    if CP.minEnableSpeed == -1:
+    if CP.minEnableSpeed <= 0:
       acc_speed = "that automatically resumes from a stop"
     else:
       acc_speed = f"while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph"
