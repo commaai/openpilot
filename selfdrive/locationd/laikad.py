@@ -36,7 +36,7 @@ POS_FIX_RESIDUAL_THRESHOLD = 100.0
 class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_orbits=True, auto_update=False,
                valid_ephem_types=(EphemerisType.ULTRA_RAPID_ORBIT, EphemerisType.NAV),
-               save_ephemeris=False):
+               save_ephemeris=False, use_qcom=False):
     """
     valid_const: GNSS constellation which can be used
     auto_fetch_orbits: If true fetch orbits from internet when needed
@@ -61,6 +61,7 @@ class Laikad:
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
+    self.use_qcom = use_qcom
 
   def load_cache(self):
     if not self.save_ephemeris:
@@ -105,20 +106,40 @@ class Laikad:
           cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
     return self.last_pos_fix
 
-  def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
-    if gnss_msg.which == 'drMeasurementReport':
+  def is_good_report(self, gnss_msg):
+    if gnss_msg.which == 'drMeasurementReport' and self.use_qcom:
+      constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
+      # TODO support GLONASS
+      return constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
+    elif gnss_msg.which == 'measurementReport' and not self.use_qcom:
+      return True
+    else:
+      return False
+
+  def read_report(self, gnss_msg):
+    if self.use_qcom:
       report = gnss_msg.drMeasurementReport
-      constellation_id = ConstellationId.from_qcom_source(report.source)
-      if constellation_id not in [ConstellationId.GPS, ConstellationId.SBAS]:
-        return
+      week = report.gpsWeek
+      tow = report.gpsMilliseconds / 1000.0
+      new_meas = read_raw_qcom(report)
+    else:
+      report = gnss_msg.MeasurementReport
+      week = report.gpsweek
+      tow = report.rcvTow
+      new_meas = read_raw_ublox(report)
+    return week, tow, new_meas
+
+  def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
+    if self.is_good_report(gnss_msg):
+      week, tow, new_meas = self.read_report(gnss_msg)
+
       t = gnss_mono_time * 1e-9
-      if report.gpsWeek > 0:
+      if week > 0:
         self.got_first_gnss_msg = True
-        latest_msg_t = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+        latest_msg_t = GPSTime(week, tow)
         if self.auto_fetch_orbits:
           self.fetch_orbits(latest_msg_t, block)
 
-      new_meas = read_raw_qcom(report)
       # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
       new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
 
@@ -142,8 +163,8 @@ class Laikad:
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
       dat.gnssMeasurements = {
-        "gpsWeek": report.gpsWeek,
-        "gpsTimeOfWeek": report.gpsMilliseconds / 1000.0,
+        "gpsWeek": week,
+        "gpsTimeOfWeek": tow,
         "positionECEF": measurement_msg(value=ecef_pos.tolist(), std=pos_std.tolist(), valid=kf_valid),
         "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=kf_valid),
         "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
@@ -151,11 +172,12 @@ class Laikad:
         "correctedMeasurements": meas_msgs
       }
       return dat
-    #elif ublox_msg.which == 'ephemeris':
-    #  ephem = convert_ublox_ephem(ublox_msg.ephemeris)
-    #  self.astro_dog.add_navs({ephem.prn: [ephem]})
-    #  self.cache_ephemeris(t=ephem.epoch)
-    # elif ublox_msg.which == 'ionoData':
+    # TODO this only works on GLONASS, qcom needs live ephemeris parsing too
+    elif gnss_msg.which == 'ephemeris':
+      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
+      self.astro_dog.add_navs({ephem.prn: [ephem]})
+      self.cache_ephemeris(t=ephem.epoch)
+    #elif gnss_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
@@ -306,21 +328,27 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
+  use_qcom = os.path.isfile("/persist/comma/use-quectel-rawgps")
+  if use_qcom:
+    raw_gnss_socket = "qcomGnss"
+  else:
+    raw_gnss_socket = "ubloxGnss"
+
   if sm is None:
-    sm = messaging.SubMaster(['qcomGnss', 'clocks'])
+    sm = messaging.SubMaster([raw_gnss_socket, 'clocks'])
   if pm is None:
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
-  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet)
+  laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet, use_qcom=use_qcom)
 
   while True:
     sm.update()
 
-    if sm.updated['qcomGnss']:
-      gnss_msg = sm['qcomGnss']
-      msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime['qcomGnss'], block=replay)
+    if sm.updated[raw_gnss_socket]:
+      gnss_msg = sm[raw_gnss_socket]
+      msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
