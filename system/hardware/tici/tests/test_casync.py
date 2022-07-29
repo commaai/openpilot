@@ -13,7 +13,6 @@ class TestCasync(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.tmpdir = tempfile.TemporaryDirectory()
-    print(cls.tmpdir.name)
 
     # Build example contents
     chunk_a = [i % 256 for i in range(1024)] * 512
@@ -40,18 +39,21 @@ class TestCasync(unittest.TestCase):
     assert len(hashes) > len(set(hashes))
 
   def setUp(self):
+    # Clear target_lo
     if LOOPBACK is not None:
       self.target_lo = LOOPBACK
       with open(self.target_lo, 'wb') as f:
         f.write(b"0" * len(self.contents))
 
     self.target_fn = os.path.join(self.tmpdir.name, next(tempfile._get_candidate_names()))
+    self.seed_fn = os.path.join(self.tmpdir.name, next(tempfile._get_candidate_names()))
 
   def tearDown(self):
-    try:
-      os.unlink(self.target_fn)
-    except FileNotFoundError:
-      pass
+    for fn in [self.target_fn, self.seed_fn]:
+      try:
+        os.unlink(fn)
+      except FileNotFoundError:
+        pass
 
   def test_simple_extract(self):
     target = casync.parse_caibx(self.manifest_fn)
@@ -62,6 +64,22 @@ class TestCasync(unittest.TestCase):
       self.assertEqual(target_f.read(), self.contents)
 
     self.assertEqual(stats['remote'], len(self.contents))
+
+  def test_seed(self):
+    # Populate seed with half of the target contents
+    with open(self.seed_fn, 'wb') as seed_f:
+      seed_f.write(self.contents[:len(self.contents) // 2])
+
+    target = casync.parse_caibx(self.manifest_fn)
+    sources = [('seed', casync.FileChunkReader(self.seed_fn), casync.build_chunk_dict(target))]
+    sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
+    stats = casync.extract(target, sources, self.target_fn)
+
+    with open(self.target_fn, 'rb') as target_f:
+      self.assertEqual(target_f.read(), self.contents)
+
+    self.assertGreater(stats['seed'], 0)
+    self.assertLess(stats['remote'], len(self.contents))
 
   @unittest.skipUnless(LOOPBACK, "requires loopback device")
   def test_lo_already_done(self):
