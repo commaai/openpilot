@@ -166,7 +166,7 @@ class CarInfo:
     elif column == Column.MODEL and len(self.years) and add_years:
       item += f" {self.years}"
     elif column == Column.PACKAGE:
-      item = item.value.short
+      item = item.value.full
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
