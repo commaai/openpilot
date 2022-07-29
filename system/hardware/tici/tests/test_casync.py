@@ -60,6 +60,7 @@ class TestCasync(unittest.TestCase):
 
   def test_simple_extract(self):
     target = casync.parse_caibx(self.manifest_fn)
+
     sources = [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
     stats = casync.extract(target, sources, self.target_fn)
 
@@ -69,11 +70,12 @@ class TestCasync(unittest.TestCase):
     self.assertEqual(stats['remote'], len(self.contents))
 
   def test_seed(self):
+    target = casync.parse_caibx(self.manifest_fn)
+
     # Populate seed with half of the target contents
     with open(self.seed_fn, 'wb') as seed_f:
       seed_f.write(self.contents[:len(self.contents) // 2])
 
-    target = casync.parse_caibx(self.manifest_fn)
     sources = [('seed', casync.FileChunkReader(self.seed_fn), casync.build_chunk_dict(target))]
     sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
     stats = casync.extract(target, sources, self.target_fn)
@@ -88,12 +90,11 @@ class TestCasync(unittest.TestCase):
   def test_lo_already_done(self):
     """Test that an already flashed target doesn't download any chunks"""
     target = casync.parse_caibx(self.manifest_fn)
-    sources = []
 
     with open(self.target_lo, 'wb') as f:
       f.write(self.contents)
 
-    sources += [('target', casync.FileChunkReader(self.target_lo), casync.build_chunk_dict(target))]
+    sources = [('target', casync.FileChunkReader(self.target_lo), casync.build_chunk_dict(target))]
     sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
 
     stats = casync.extract(target, sources, self.target_lo)
@@ -107,9 +108,8 @@ class TestCasync(unittest.TestCase):
   def test_lo_chunk_reuse(self):
     """Test that chunks that are reused are only downloaded once"""
     target = casync.parse_caibx(self.manifest_fn)
-    sources = []
 
-    sources += [('target', casync.FileChunkReader(self.target_lo), casync.build_chunk_dict(target))]
+    sources = [('target', casync.FileChunkReader(self.target_lo), casync.build_chunk_dict(target))]
     sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
 
     stats = casync.extract(target, sources, self.target_lo)
