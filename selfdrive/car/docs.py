@@ -5,7 +5,7 @@ import jinja2
 import os
 from enum import Enum
 from natsort import natsorted
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from common.basedir import BASEDIR
 from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, StarColumns, TierColumns, CarInfo, Column, Star
@@ -48,7 +48,7 @@ def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
   return sorted_cars
 
 
-def group_by_make(all_car_info: List[CarInfo]) -> Dict[Any, List[CarInfo]]:
+def group_by_make(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
   sorted_car_info = defaultdict(list)
   for car_info in all_car_info:
     sorted_car_info[car_info.make].append(car_info)

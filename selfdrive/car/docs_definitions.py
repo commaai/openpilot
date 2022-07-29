@@ -162,11 +162,11 @@ class CarInfo:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
   @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str, add_years: bool = True) -> str:
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if column in StarColumns:
       item = star_icon.format(item.value)
-    elif column == Column.MODEL and len(self.years) and add_years:
+    elif column == Column.MODEL and len(self.years):
       item += f" {self.years}"
 
     footnotes = get_footnotes(self.footnotes, column)
