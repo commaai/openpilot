@@ -75,7 +75,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.steerRatio = 17           # learned, 14 stock
+      ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 

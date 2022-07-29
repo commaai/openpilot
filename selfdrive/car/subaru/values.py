@@ -18,10 +18,12 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
 
-    if CP.carFingerprint in (CAR.OUTBACK, CAR.IMPREZA_2020):
+    if CP.carFingerprint in GLOBAL_GEN2:
       self.STEER_MAX = 1100
       self.STEER_DELTA_UP = 40
       self.STEER_DELTA_DOWN = 40
+    elif CP.carFingerprint == CAR.IMPREZA_2020:
+      self.STEER_MAX = 1439
     else:
       self.STEER_MAX = 2047
 
