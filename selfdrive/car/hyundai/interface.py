@@ -242,6 +242,14 @@ class CarInterface(CarInterfaceBase):
                            get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
       tire_stiffness_factor = 0.65
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif candidate == CAR.IONIQ_5:
+      ret.mass = 2012 + STD_CARGO_KG
+      ret.wheelbase = 3.0
+      ret.steerRatio = 16.
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
+                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
+      tire_stiffness_factor = 0.65
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
