@@ -908,7 +908,7 @@ trabalho definido</translation>
         <location filename="../qt/sidebar.cc" line="67"/>
         <location filename="../qt/sidebar.cc" line="69"/>
         <source>CONNECT</source>
-        <translation>CONECTAR</translation>
+        <translation>CONEXÃO</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="67"/>
@@ -931,7 +931,7 @@ trabalho definido</translation>
         <location filename="../qt/sidebar.cc" line="76"/>
         <location filename="../qt/sidebar.cc" line="78"/>
         <source>TEMP</source>
-        <translation type="unfinished">TEMP</translation>
+        <translation>TEMP</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.cc" line="73"/>
