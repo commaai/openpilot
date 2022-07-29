@@ -6,6 +6,9 @@ import subprocess
 
 import system.hardware.tici.casync as casync
 
+# dd if=/dev/zero of=/tmp/img.raw bs=1M count=2
+# sudo losetup -f /tmp/img.raw
+# losetup -a | grep img.raw
 LOOPBACK = os.environ.get('LOOPBACK', None)
 
 
