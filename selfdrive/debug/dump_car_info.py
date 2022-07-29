@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import pickle
+import dill
 
 from selfdrive.car.docs import get_all_car_info
 
 
 def dump_car_info(path):
   with open(path, 'wb') as f:
-    pickle.dump(get_all_car_info(), f)
+    dill.dump(get_all_car_info(), f)
   print(f'Dumping car info to {path}')
 
 

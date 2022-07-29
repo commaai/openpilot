@@ -2,7 +2,7 @@
 import argparse
 from collections import defaultdict
 import difflib
-import pickle
+import dill
 
 from selfdrive.car.docs import get_all_car_info
 from selfdrive.car.docs_definitions import Column
@@ -16,7 +16,7 @@ ARROW_SYMBOL = "➡️"
 
 def load_base_car_info(path):
   with open(path, "rb") as f:
-    return pickle.load(f)
+    return dill.load(f)
 
 
 def match_cars(base_cars, new_cars):
