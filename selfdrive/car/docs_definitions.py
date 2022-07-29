@@ -36,7 +36,6 @@ class Star(Enum):
 StarColumns = list(Column)[3:]
 TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
-CarPackage = namedtuple("CarPackage", ["short", "full"])
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
@@ -75,7 +74,7 @@ def split_name(name: str) -> Tuple[str, str, str]:
 @dataclass
 class CarInfo:
   name: str
-  package: Enum
+  package: str
   video_link: Optional[str] = None
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
@@ -165,8 +164,6 @@ class CarInfo:
       item = star_icon.format(item.value)
     elif column == Column.MODEL and len(self.years) and add_years:
       item += f" {self.years}"
-    elif column == Column.PACKAGE:
-      item = item.value.full
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
@@ -207,34 +204,6 @@ class Harness(Enum):
   nissan_b = "Nissan B"
   mazda = "Mazda"
   none = "None"
-
-
-class Package(Enum):
-  all = CarPackage("All", "All")
-  na = CarPackage("NA", "NA")
-
-  toyota_tssp = CarPackage("TSS-P", "Toyota Safety Sense P")
-  toyota_lss = CarPackage("LSS", "Lexus Safety System+")
-
-  hyundai_scc_lkas = CarPackage("SCC + LKAS", "Smart Cruise Control (SCC) & LKAS")
-  hyundai_scc_lfa = CarPackage("SCC + LFA", "Smart Cruise Control (SCC) & LFA")
-  hyundai_scc = CarPackage("SCC", "Smart Cruise Control (SCC)")
-
-  chrysler_acc = CarPackage("Adaptive Cruise", "Adaptive Cruise Control with Stop and Go")
-
-  gm_acc = CarPackage("Adaptive Cruise", "Adaptive Cruise Control")
-  gm_acc_lkas = CarPackage("ACC + LKAS", "Adaptive Cruise Control (ACC) & LKAS")
-
-  vw_da = CarPackage("Driver Assistance", "Driver Assistance")
-  vw_acc_la = CarPackage("ACC + Lane Assist", "ACC + Lane Assist")
-
-  subaru_es = CarPackage("EyeSight", "EyeSight Driver Assist Technology")
-
-  nissan_propilot = CarPackage("ProPILOT", "ProPILOT Assist")
-
-  honda_sensing = CarPackage("Honda Sensing", "Honda Sensing")
-  honda_acurawatch = CarPackage("AcuraWatch Plus", "AcuraWatch Plus")
-  honda_touring = CarPackage("Touring", "Touring")
 
 
 STAR_DESCRIPTIONS = {

@@ -2,7 +2,7 @@ from collections import namedtuple
 from typing import Dict, List, Union
 
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Package
+from selfdrive.car.docs_definitions import CarInfo
 from cereal import car
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
@@ -15,8 +15,8 @@ class CAR:
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", Package.all),
-  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", Package.all),
+  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "Package"),
+  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "Package"),
 }
 
 FINGERPRINTS = {

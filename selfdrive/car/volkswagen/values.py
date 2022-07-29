@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Package
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -113,9 +113,10 @@ class Footnote(Enum):
     "Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.)",
     Column.MODEL)
 
+
 @dataclass
 class VWCarInfo(CarInfo):
-  package: Enum = Package.vw_da
+  package: str = "Driver Assistance"
   harness: Enum = Harness.vw
 
 
@@ -166,13 +167,13 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.AUDI_A3_MK3: [
-    VWCarInfo("Audi A3 2014-19", Package.vw_acc_la),
-    VWCarInfo("Audi A3 Sportback e-tron 2017-18", Package.vw_acc_la),
-    VWCarInfo("Audi RS3 2018", Package.vw_acc_la),
-    VWCarInfo("Audi S3 2015-17", Package.vw_acc_la),
+    VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
+    VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
+    VWCarInfo("Audi RS3 2018", "ACC + Lane Assist"),
+    VWCarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
   ],
-  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018", Package.vw_acc_la),
-  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21", Package.vw_acc_la),
+  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018", "ACC + Lane Assist"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),

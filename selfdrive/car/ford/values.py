@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Package
+from selfdrive.car.docs_definitions import CarInfo
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
@@ -36,8 +36,8 @@ class CAR:
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ESCAPE_MK4: CarInfo("Ford Escape", Package.na),
-  CAR.FOCUS_MK4: CarInfo("Ford Focus", Package.na),
+  CAR.ESCAPE_MK4: CarInfo("Ford Escape", "NA"),
+  CAR.FOCUS_MK4: CarInfo("Ford Focus", "NA"),
 }
 
 
