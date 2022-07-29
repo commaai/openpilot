@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import unittest
 
-from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking
+from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -88,6 +88,15 @@ class TestParams(unittest.TestCase):
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
+
+  def test_put_bool_non_blocking_with_get_block(self):
+    q = Params(self.tmpdir)
+    def _delayed_writer():
+      time.sleep(0.1)
+      put_bool_nonblocking("CarParams", True, self.tmpdir)
+    threading.Thread(target=_delayed_writer).start()
+    assert q.get("CarParams") is None
+    assert q.get("CarParams", True) == b"1"
 
 
 if __name__ == "__main__":
