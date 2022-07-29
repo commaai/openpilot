@@ -141,21 +141,22 @@ class CarInfo:
     return self
 
   def get_detail_sentence(self, CP):
-    sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with hands-free lane centering <strong>{steer_speed}</strong>, and adaptive cruise control <strong>{acc_speed}</strong>."
-    if CP.minSteerSpeed <= 0:
-      steer_speed = "at all speeds"
+    if CP.notCar:
+      return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
     else:
-      steer_speed = f"above {CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph"
+      sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control <strong>{acc}</strong>."
 
-    if CP.minEnableSpeed <= 0:
-      acc_speed = "that automatically resumes from a stop"
-    else:
-      acc_speed = f"while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph"
+      if CP.minSteerSpeed > CP.minEnableSpeed:
+        alc = f" <strong>above {CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph</strong>," if CP.minSteerSpeed > 0 else " <strong>at all speeds</strong>,"
+      else:
+        alc = ""
 
-    if self.row[Column.STEERING_TORQUE] != Star.FULL:
-      sentence_builder += " This car may not be able to take tight turns on its own."
+      acc = f"while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph" if CP.minEnableSpeed > 0 else "that automatically resumes from a stop"
 
-    return sentence_builder.format(car_model=f"{self.make} {self.model}", steer_speed=steer_speed, acc_speed=acc_speed)
+      if self.row[Column.STEERING_TORQUE] != Star.FULL:
+        sentence_builder += " This car may not be able to take tight turns on its own."
+
+      return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
   @no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str, add_years: bool = True) -> str:
