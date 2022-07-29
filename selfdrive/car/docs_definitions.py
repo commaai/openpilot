@@ -141,14 +141,18 @@ class CarInfo:
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
-      sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control <strong>{acc}</strong>."
+      sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
 
       if CP.minSteerSpeed > CP.minEnableSpeed:
         alc = f" <strong>above {CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph</strong>," if CP.minSteerSpeed > 0 else " <strong>at all speeds</strong>,"
       else:
         alc = ""
 
-      acc = f"while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph" if CP.minEnableSpeed > 0 else "that automatically resumes from a stop"
+      # Exception for Nissan and Subaru which do not auto-resume yet
+      if CP.carName not in ("nissan", "subaru"):
+        acc = f" <strong>while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph</strong>" if CP.minEnableSpeed > 0 else " <strong>that automatically resumes from a stop</strong>"
+      else:
+        acc = ""
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
         sentence_builder += " This car may not be able to take tight turns on its own."
