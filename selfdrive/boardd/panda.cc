@@ -383,7 +383,7 @@ int Panda::hw_bulk_write(unsigned char endpoint, unsigned char* data, int length
 }
 
 int Panda::hw_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  int err;
+  int err, max_len;
   int transferred = 0;
 
   if (!connected) {
@@ -394,9 +394,14 @@ int Panda::hw_bulk_read(unsigned char endpoint, unsigned char* data, int length,
 
   do {
     if (spi_comms) {
-      err = spi_transfer(endpoint, NULL, 0, (uint8_t *) data + transferred, std::min(length - transferred, SPI_BUF_SIZE - 1));
-      if (err > 0) {
-        transferred += err;
+      max_len = std::min(length, SPI_BUF_SIZE - 1);
+      transferred = spi_transfer(endpoint, NULL, 0, (uint8_t *) data + transferred, max_len);
+
+      if (transferred < 0) {
+        err = transferred;
+      } else if(transferred <= max_len) {
+        // read all currently available
+        err = 0;
       }
 
       // TODO: handle error
@@ -412,7 +417,7 @@ int Panda::hw_bulk_read(unsigned char endpoint, unsigned char* data, int length,
         handle_usb_issue(err, __func__);
       }
     }
-  } while(err != 0 && connected && length > transferred);
+  } while(err != 0 && connected);
 
   return transferred;
 }
@@ -593,6 +598,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t data[RECV_SIZE];
   int recv = hw_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
+  LOGD("can recv %d", recv);
   if (!comms_healthy) {
     return false;
   }
@@ -606,8 +612,9 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
   recv_buf.clear();
   for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
+    // TODO: fix this!
     if (data[i] != i / USBPACKET_MAX_SIZE) {
-      LOGE("CAN: MALFORMED USB RECV PACKET");
+      LOGE("CAN: MALFORMED USB RECV PACKET %d %d", data[i], i / USBPACKET_MAX_SIZE);
       comms_healthy = false;
       return false;
     }
