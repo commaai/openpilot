@@ -149,8 +149,8 @@ class Controls:
 
     self.initialized = False
     self.state = State.disabled
-    self.enabled = False
-    self.active = False
+    self.enabled = True
+    self.active = True
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
@@ -518,6 +518,7 @@ class Controls:
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
     self.active = self.state in ACTIVE_STATES
+    self.active =True
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
@@ -779,10 +780,10 @@ class Controls:
     self.update_events(CS)
     cloudlog.timestamp("Events updated")
 
-    if not self.read_only and self.initialized:
+    # if not self.read_only and self.initialized:
       # Update control state
-      self.state_transition(CS)
-      self.prof.checkpoint("State transition")
+    self.state_transition(CS)
+    self.prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
