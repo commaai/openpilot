@@ -678,7 +678,7 @@ location set</source>
     <message>
         <location filename="../qt/util.cc" line="88"/>
         <source>%1 day%2 ago</source>
-        <translation>vor %1 Tagy%2</translation>
+        <translation>vor %1 Tag%2</translation>
     </message>
 </context>
 <context>
