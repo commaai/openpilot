@@ -55,7 +55,7 @@ mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -111,6 +111,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // TODO: path planner timeout?
     sm.update(0);
     int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    bool is_rhd = ((bool)sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
     if (sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
@@ -146,7 +147,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, prepare_only);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
