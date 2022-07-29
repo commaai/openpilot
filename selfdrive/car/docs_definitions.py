@@ -56,7 +56,7 @@ def get_year_list(years):
       years_list.append(str(year))
     elif "-" in year:
       start, end = year.split("-")
-      years_list.extend(map(str, range(int(start), int(f"20{end}"))))
+      years_list.extend(map(str, range(int(start), int(f"20{end}") + 1)))
     else:
       raise Exception(f"Malformed year string: {years}")
   return years_list
