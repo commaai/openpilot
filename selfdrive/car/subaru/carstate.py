@@ -47,6 +47,7 @@ class CarState(CarStateBase):
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
+    ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.car_fingerprint]
 
     ret.cruiseState.enabled = cp.vl["CruiseControl"]["Cruise_Activated"] != 0
@@ -80,6 +81,7 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("Steer_Torque_Sensor", "Steering_Torque"),
+      ("Steer_Torque_Output", "Steering_Torque"),
       ("Steering_Angle", "Steering_Torque"),
       ("Steer_Error_1", "Steering_Torque"),
       ("Cruise_On", "CruiseControl"),
@@ -173,7 +175,7 @@ class CarState(CarStateBase):
         ("Standstill_2", "ES_Distance"),
         ("Cruise_Fault", "ES_Distance"),
         ("Signal5", "ES_Distance"),
-        ("Counter", "ES_Distance"),
+        ("COUNTER", "ES_Distance"),
         ("Signal6", "ES_Distance"),
         ("Cruise_Button", "ES_Distance"),
         ("Signal7", "ES_Distance"),
@@ -188,7 +190,7 @@ class CarState(CarStateBase):
         ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Conventional_Cruise", "ES_DashStatus"),
 
-        ("Counter", "ES_Distance"),
+        ("COUNTER", "ES_Distance"),
         ("Signal1", "ES_Distance"),
         ("Cruise_Fault", "ES_Distance"),
         ("Cruise_Throttle", "ES_Distance"),
@@ -206,7 +208,7 @@ class CarState(CarStateBase):
         ("Cruise_Resume", "ES_Distance"),
         ("Signal6", "ES_Distance"),
 
-        ("Counter", "ES_LKAS_State"),
+        ("COUNTER", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),

@@ -443,6 +443,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
+  } else if (log.isGpsLocation()) {
+    this->handle_gps(t, log.getGpsLocation());
   } else if (log.isGpsLocationExternal()) {
     this->handle_gps(t, log.getGpsLocationExternal());
   } else if (log.isCarState()) {
@@ -490,11 +492,17 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
-  const std::initializer_list<const char *> service_list = {"gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  const char* gps_location_socket;
+  if (util::file_exists("/persist/comma/use-quectel-rawgps")) {
+    gps_location_socket = "gpsLocation";
+  } else {
+    gps_location_socket = "gpsLocationExternal";
+  }
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"gpsLocationExternal", "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
