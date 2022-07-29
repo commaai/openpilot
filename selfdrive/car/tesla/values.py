@@ -15,8 +15,8 @@ class CAR:
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "Package"),
-  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "Package"),
+  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
+  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
 }
 
 FINGERPRINTS = {

@@ -43,7 +43,7 @@ def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
   return [fn for fn in footnotes if fn.value.column == column]
 
 
-# TODO: clean this up or just make cars store list of years
+# TODO: store years as a list
 def get_year_list(years):
   years_list = []
   if len(years) == 0:
@@ -53,7 +53,7 @@ def get_year_list(years):
     year = year.strip()
     if len(year) == 4:
       years_list.append(str(year))
-    elif "-" in year:
+    elif "-" in year and len(year) == 7:
       start, end = year.split("-")
       years_list.extend(map(str, range(int(start), int(f"20{end}") + 1)))
     else:
