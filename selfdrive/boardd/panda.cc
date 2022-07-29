@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <vector>
 
+#include <sys/ioctl.h>
+#include <linux/spi/spidev.h>
+
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
 #include "common/gpio.h"
@@ -32,47 +35,73 @@ static int init_usb_ctx(libusb_context **context) {
 
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // init libusb
-  ssize_t num_devices;
+  int ret, err;
   libusb_device **dev_list = NULL;
-  int err = init_usb_ctx(&ctx);
-  if (err != 0) { goto fail; }
 
-  // connect by serial
-  num_devices = libusb_get_device_list(ctx, &dev_list);
-  if (num_devices < 0) { goto fail; }
-  for (size_t i = 0; i < num_devices; ++i) {
-    libusb_device_descriptor desc;
-    libusb_get_device_descriptor(dev_list[i], &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      int ret = libusb_open(dev_list[i], &dev_handle);
-      if (dev_handle == NULL || ret < 0) { goto fail; }
+  if (serial.find("spidev") != std::string::npos) {
+    spi_comms = true;
+    hw_serial = serial;
 
-      unsigned char desc_serial[26] = { 0 };
-      ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      if (ret < 0) { goto fail; }
+    LOGD("opening SPI panda: %s", serial.c_str());
+    spi_fd = open(serial.c_str(), O_RDWR);
 
-      hw_serial = std::string((char *)desc_serial, ret).c_str();
-      if (serial.empty() || serial == hw_serial) {
-        break;
+    // SPI settings
+    uint32_t spi_mode = SPI_MODE_0;
+    err = ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode);
+    if (err < 0) { LOGE("failed setting SPI mode"); goto fail; }
+
+    uint32_t spi_speed = 30000000;
+    err = ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
+    if (err < 0) { LOGE("failed setting SPI speed"); goto fail; }
+
+    uint8_t spi_bits_per_word = 8;
+    err = ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bits_per_word);
+    if (err < 0) { LOGE("failed setting SPI bits per word"); goto fail; }
+   
+  } else {
+    spi_comms = false;
+
+    // init libusb
+    ssize_t num_devices;
+    err = init_usb_ctx(&ctx);
+    if (err != 0) { goto fail; }
+
+    // connect by serial
+    num_devices = libusb_get_device_list(ctx, &dev_list);
+    if (num_devices < 0) { goto fail; }
+    for (size_t i = 0; i < num_devices; ++i) {
+      libusb_device_descriptor desc;
+      libusb_get_device_descriptor(dev_list[i], &desc);
+      if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+        ret = libusb_open(dev_list[i], &dev_handle);
+        if (dev_handle == NULL || ret < 0) { goto fail; }
+
+        unsigned char desc_serial[26] = { 0 };
+        ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+        if (ret < 0) { goto fail; }
+
+        hw_serial = std::string((char *)desc_serial, ret).c_str();
+        if (serial.empty() || serial == hw_serial) {
+          break;
+        }
+        libusb_close(dev_handle);
+        dev_handle = NULL;
       }
-      libusb_close(dev_handle);
-      dev_handle = NULL;
     }
+    if (dev_handle == NULL) goto fail;
+    libusb_free_device_list(dev_list, 1);
+    dev_list = nullptr;
+
+    if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+      libusb_detach_kernel_driver(dev_handle, 0);
+    }
+
+    err = libusb_set_configuration(dev_handle, 1);
+    if (err != 0) { goto fail; }
+
+    err = libusb_claim_interface(dev_handle, 0);
+    if (err != 0) { goto fail; }
   }
-  if (dev_handle == NULL) goto fail;
-  libusb_free_device_list(dev_list, 1);
-  dev_list = nullptr;
-
-  if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
-    libusb_detach_kernel_driver(dev_handle, 0);
-  }
-
-  err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) { goto fail; }
-
-  err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) { goto fail; }
 
   hw_type = get_hw_type();
 
@@ -93,12 +122,17 @@ fail:
 }
 
 Panda::~Panda() {
-  std::lock_guard lk(usb_lock);
+  std::lock_guard lk(hw_lock);
   cleanup();
   connected = false;
 }
 
 void Panda::cleanup() {
+  if (spi_fd != -1) {
+    close(spi_fd);
+    spi_fd = -1;
+  }
+
   if (dev_handle) {
     libusb_release_interface(dev_handle, 0);
     libusb_close(dev_handle);
@@ -152,6 +186,103 @@ finish:
   return serials;
 }
 
+void add_checksum(uint8_t *data, int data_len) {
+  data[data_len] = SPI_CHECKSUM_START;
+  for (int i=0; i < data_len; i++) {
+    data[data_len] ^= data[i];
+  }
+}
+
+int Panda::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len) {
+  int ret = 0, rx_data_len, i = 0;
+  uint8_t tx_buf[SPI_BUF_SIZE], rx_buf[SPI_BUF_SIZE];
+
+  // needs to be less, since we need to have space for the checksum
+  assert(tx_len < SPI_BUF_SIZE);
+  assert(max_rx_len < SPI_BUF_SIZE);
+
+  spi_header header = {
+    .sync = SPI_SYNC,
+    .endpoint = endpoint,
+    .tx_len = tx_len,
+    .max_rx_len = max_rx_len
+  };
+
+  spi_ioc_transfer transfer = {
+    .tx_buf = (uint64_t) tx_buf,
+    .rx_buf = (uint64_t) rx_buf
+  };
+
+  // Send header
+  memcpy(tx_buf, &header, sizeof(header));
+  add_checksum(tx_buf, sizeof(header));
+  transfer.len = sizeof(header) + 1;
+  ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  if (ret < 0) { LOGE("SPI: failed to send header"); goto transfer_fail; }
+
+  // Wait for (N)ACK
+  tx_buf[0] = 0x12;
+  transfer.len = 1;
+  while (true) {
+    ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+    if (ret < 0) { LOGE("SPI: failed to send ACK request"); goto transfer_fail; }
+
+    if (rx_buf[0] == SPI_HACK) {
+      break;
+    } else if (rx_buf[0] == SPI_NACK) {
+      LOGW("SPI: got header NACK");
+      goto transfer_fail;
+    }
+  }
+
+  // Send data
+  if (tx_data != NULL) {
+    memcpy(tx_buf, tx_data, tx_len);
+  }
+  add_checksum(tx_buf, tx_len);
+  transfer.len = tx_len + 1;
+  ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  if (ret < 0) { LOGE("SPI: failed to send data"); goto transfer_fail; }
+
+  // Wait for (N)ACK
+  tx_buf[0] = 0xab;
+  transfer.len = 1;
+  while (true) {
+    ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+    if (ret < 0) { LOGE("SPI: failed to send ACK request"); goto transfer_fail; }
+
+    i++;
+
+    if (rx_buf[0] == SPI_DACK) {
+      break;
+    } else if (rx_buf[0] == SPI_NACK) {
+      LOGW("SPI: got data NACK");
+      goto transfer_fail;
+    }
+  }
+
+  // Read data len
+  transfer.len = 2;
+  ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  if (ret < 0) { LOGE("SPI: failed to read rx data len"); goto transfer_fail; }
+  rx_data_len = *(uint16_t *)rx_buf;
+  assert(rx_data_len < SPI_BUF_SIZE);
+
+  // Read data
+  transfer.len = rx_data_len + 1;
+  ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  if (ret < 0) { LOGE("SPI: failed to read rx data"); goto transfer_fail; }
+  // TODO: check checksum
+
+  if (rx_data != NULL) {
+    memcpy(rx_data, rx_buf, rx_data_len);
+  }
+  ret = rx_data_len;
+
+transfer_fail:
+  return ret;
+}
+
 void Panda::handle_usb_issue(int err, const char func[]) {
   LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
   if (err == LIBUSB_ERROR_NO_DEVICE) {
@@ -169,10 +300,23 @@ int Panda::hw_control_write(uint8_t request, uint16_t param1, uint16_t param2, u
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  std::lock_guard lk(usb_lock);
+  std::lock_guard lk(hw_lock);
   do {
-    err = libusb_control_transfer(dev_handle, bmRequestType, request, param1, param2, NULL, 0, timeout);
-    if (err < 0) handle_usb_issue(err, __func__);
+    if (spi_comms) {
+      spi_control_packet packet = {
+        .request = request,
+        .param1 = param1,
+        .param2 = param2,
+        .length = 0
+      };
+
+      err = spi_transfer(0, (uint8_t *) &packet, sizeof(packet), NULL, 0);
+      // TODO: handle error
+
+    } else {
+      err = libusb_control_transfer(dev_handle, bmRequestType, request, param1, param2, NULL, 0, timeout);
+      if (err < 0) handle_usb_issue(err, __func__);
+    }
   } while (err < 0 && connected);
 
   return err;
@@ -186,10 +330,23 @@ int Panda::hw_control_read(uint8_t request, uint16_t param1, uint16_t param2, un
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  std::lock_guard lk(usb_lock);
+  std::lock_guard lk(hw_lock);
   do {
-    err = libusb_control_transfer(dev_handle, bmRequestType, request, param1, param2, data, length, timeout);
-    if (err < 0) handle_usb_issue(err, __func__);
+    if (spi_comms) {
+      spi_control_packet packet = {
+        .request = request,
+        .param1 = param1,
+        .param2 = param2,
+        .length = length
+      };
+
+      err = spi_transfer(0, (uint8_t *) &packet, sizeof(packet), data, length);
+      // TODO: handle error
+
+    } else {
+      err = libusb_control_transfer(dev_handle, bmRequestType, request, param1, param2, data, length, timeout);
+      if (err < 0) handle_usb_issue(err, __func__);
+    }
   } while (err < 0 && connected);
 
   return err;
@@ -203,17 +360,22 @@ int Panda::hw_bulk_write(unsigned char endpoint, unsigned char* data, int length
     return 0;
   }
 
-  std::lock_guard lk(usb_lock);
+  std::lock_guard lk(hw_lock);
   do {
-    // Try sending can messages. If the receive buffer on the panda is full it will NAK
-    // and libusb will try again. After 5ms, it will time out. We will drop the messages.
-    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+    if (spi_comms) {
+      err = spi_transfer(endpoint, (uint8_t *) data, length, NULL, 0);
+      // TODO: handle error
+    } else {
+      // Try sending can messages. If the receive buffer on the panda is full it will NAK
+      // and libusb will try again. After 5ms, it will time out. We will drop the messages.
+      err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
 
-    if (err == LIBUSB_ERROR_TIMEOUT) {
-      LOGW("Transmit buffer full");
-      break;
-    } else if (err != 0 || length != transferred) {
-      handle_usb_issue(err, __func__);
+      if (err == LIBUSB_ERROR_TIMEOUT) {
+        LOGW("Transmit buffer full");
+        break;
+      } else if (err != 0 || length != transferred) {
+        handle_usb_issue(err, __func__);
+      }
     }
   } while(err != 0 && connected);
 
@@ -228,21 +390,29 @@ int Panda::hw_bulk_read(unsigned char endpoint, unsigned char* data, int length,
     return 0;
   }
 
-  std::lock_guard lk(usb_lock);
+  std::lock_guard lk(hw_lock);
 
   do {
-    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+    if (spi_comms) {
+      err = spi_transfer(endpoint, NULL, 0, (uint8_t *) data + transferred, std::min(length - transferred, SPI_BUF_SIZE - 1));
+      if (err > 0) {
+        transferred += err;
+      }
 
-    if (err == LIBUSB_ERROR_TIMEOUT) {
-      break; // timeout is okay to exit, recv still happened
-    } else if (err == LIBUSB_ERROR_OVERFLOW) {
-      comms_healthy = false;
-      LOGE_100("overflow got 0x%x", transferred);
-    } else if (err != 0) {
-      handle_usb_issue(err, __func__);
+      // TODO: handle error
+    } else {
+      err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+
+      if (err == LIBUSB_ERROR_TIMEOUT) {
+        break; // timeout is okay to exit, recv still happened
+      } else if (err == LIBUSB_ERROR_OVERFLOW) {
+        comms_healthy = false;
+        LOGE_100("overflow got 0x%x", transferred);
+      } else if (err != 0) {
+        handle_usb_issue(err, __func__);
+      }
     }
-
-  } while(err != 0 && connected);
+  } while(err != 0 && connected && length > transferred);
 
   return transferred;
 }
