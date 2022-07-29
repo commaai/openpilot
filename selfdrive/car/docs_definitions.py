@@ -1,11 +1,11 @@
 import re
-
-from cereal import car
-from common.conversions import Conversions as CV
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union, no_type_check
+
+from cereal import car
+from common.conversions import Conversions as CV
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
@@ -140,9 +140,7 @@ class CarInfo:
     return self
 
   def get_detail_sentence(self, CP):
-    if CP.notCar:
-      return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
-    else:
+    if not CP.notCar:
       sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control <strong>{acc}</strong>."
 
       if CP.minSteerSpeed > CP.minEnableSpeed:
@@ -156,6 +154,12 @@ class CarInfo:
         sentence_builder += " This car may not be able to take tight turns on its own."
 
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
+
+    else:
+      if CP.carFingerprint == "COMMA BODY":
+        return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
+      else:
+        raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
   @no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str, add_years: bool = True) -> str:
