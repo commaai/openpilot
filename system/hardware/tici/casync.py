@@ -40,9 +40,11 @@ class ChunkReader(ABC):
 class FileChunkReader(ChunkReader):
   """Reads chunks from a local file"""
   def __init__(self, fn: str) -> None:
-
     super().__init__()
     self.f = open(fn, 'rb')
+
+  def __del__(self):
+    self.f.close()
 
   def read(self, chunk: Chunk) -> bytes:
     self.f.seek(chunk.offset)
@@ -125,6 +127,7 @@ def parse_caibx(caibx_path: str) -> List[Chunk]:
     chunks.append(Chunk(sha, offset, length))
     offset = new_offset
 
+  caibx.close()
   return chunks
 
 
