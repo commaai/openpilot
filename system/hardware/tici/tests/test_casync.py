@@ -86,23 +86,52 @@ class TestCasync(unittest.TestCase):
     self.assertGreater(stats['seed'], 0)
     self.assertLess(stats['remote'], len(self.contents))
 
-  @unittest.skipUnless(LOOPBACK, "requires loopback device")
-  def test_lo_already_done(self):
+  def test_already_done(self):
     """Test that an already flashed target doesn't download any chunks"""
     target = casync.parse_caibx(self.manifest_fn)
 
-    with open(self.target_lo, 'wb') as f:
+    with open(self.target_fn, 'wb') as f:
       f.write(self.contents)
 
-    sources = [('target', casync.FileChunkReader(self.target_lo), casync.build_chunk_dict(target))]
+    sources = [('target', casync.FileChunkReader(self.target_fn), casync.build_chunk_dict(target))]
     sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
+
+    stats = casync.extract(target, sources, self.target_fn)
+
+    with open(self.target_fn, 'rb') as f:
+      self.assertEqual(f.read(), self.contents)
+
+    self.assertEqual(stats['target'], len(self.contents))
+
+  def test_chunk_reuse(self):
+    """Test that chunks that are reused are only downloaded once"""
+    target = casync.parse_caibx(self.manifest_fn)
+
+    # Ensure target exists
+    with open(self.target_fn, 'wb'):
+      pass
+
+    sources = [('target', casync.FileChunkReader(self.target_fn), casync.build_chunk_dict(target))]
+    sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
+
+    stats = casync.extract(target, sources, self.target_fn)
+
+    with open(self.target_fn, 'rb') as f:
+      self.assertEqual(f.read(), self.contents)
+
+    self.assertLess(stats['remote'], len(self.contents))
+
+  @unittest.skipUnless(LOOPBACK, "requires loopback device")
+  def test_lo_simple_extract(self):
+    target = casync.parse_caibx(self.manifest_fn)
+    sources = [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
 
     stats = casync.extract(target, sources, self.target_lo)
 
-    with open(self.target_lo, 'rb') as f:
-      self.assertEqual(f.read(len(self.contents)), self.contents)
+    with open(self.target_lo, 'rb') as target_f:
+      self.assertEqual(target_f.read(len(self.contents)), self.contents)
 
-    self.assertEqual(stats['target'], len(self.contents))
+    self.assertEqual(stats['remote'], len(self.contents))
 
   @unittest.skipUnless(LOOPBACK, "requires loopback device")
   def test_lo_chunk_reuse(self):

@@ -147,7 +147,8 @@ def extract(target: List[Chunk],
             progress: Optional[Callable[[int], None]] = None):
   stats: Dict[str, int] = defaultdict(int)
 
-  with open(out_path, 'wb') as out:
+  mode = 'rb+' if os.path.exists(out_path) else 'wb'
+  with open(out_path, mode) as out:
     for cur_chunk in target:
 
       # Find source for desired chunk
