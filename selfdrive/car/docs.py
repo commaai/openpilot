@@ -48,19 +48,10 @@ def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
   return sorted_cars
 
 
-def sort_car_info(all_car_info: List[CarInfo]) -> Dict[Any, List[CarInfo]]:
-  """tier sorts car info by tier, make sorts car info by market-standard vehicle make"""
+def group_by_make(all_car_info: List[CarInfo]) -> Dict[Any, List[CarInfo]]:
   sorted_car_info = defaultdict(list)
-
   for car_info in all_car_info:
     sorted_car_info[car_info.make].append(car_info)
-
-  # Sort cars by model + year
-  for key, cars in sorted_car_info.items():
-    sorted_car_info[key] = natsorted(cars, key=lambda car: (car.make + car.model).lower())
-
-  sorted_car_info = natsorted(sorted_car_info.items(), key=lambda i: i[0].lower())
-
   return dict(sorted_car_info)
 
 
@@ -77,7 +68,7 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_co
         del car.row[c]
 
   footnotes = [fn.value.text for fn in get_all_footnotes(only_tier_cols)]
-  cars_md: str = template.render(all_car_info=all_car_info, sort_car_info=sort_car_info,
+  cars_md: str = template.render(all_car_info=all_car_info, group_by_make=group_by_make,
                                  footnotes=footnotes, Star=Star, Column=cols, STAR_DESCRIPTIONS=STAR_DESCRIPTIONS)
   return cars_md
 
