@@ -134,7 +134,12 @@
     </message>
     <message>
         <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation>Vorschau der Fahrerkamera einblenden um die Geräteposition für die beste Fahreraufmerksamkeitsüberwachung zu justieren. (Fahrzeug muss ausgeschaltet sein)</translation>
+        <translation type="vanished">Vorschau der Fahrerkamera einblenden um die Geräteposition für die beste Fahreraufmerksamkeitsüberwachung zu justieren. (Fahrzeug muss ausgeschaltet sein)</translation>
+    </message>
+    <message>
+        <location filename="../qt/offroad/settings.cc" line="106"/>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
