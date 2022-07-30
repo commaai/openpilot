@@ -144,16 +144,19 @@ REQUESTS: List[Request] = [
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
+    bus=0,
   ),
   Request(
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
+    bus=0,
   ),
   Request(
     "toyota",
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
+    bus=0,
   ),
   # Volkswagen
   Request(
@@ -467,7 +470,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
             for (addr, rx_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types[(r.brand, addr[0], addr[1])]
+              f.ecu = ecu_types.get((r.brand, addr[0], addr[1]), Ecu.unknown)
               f.fwVersion = version
               f.address = addr[0]
               f.responseAddress = rx_addr

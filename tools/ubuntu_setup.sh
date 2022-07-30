@@ -14,6 +14,7 @@ function install_ubuntu_common_requirements() {
     autoconf \
     build-essential \
     ca-certificates \
+    casync \
     clang \
     cmake \
     make \
