@@ -11,23 +11,32 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   def __init__(self, CP):
-    if CP.carFingerprint == CAR.IMPREZA_2020:
-      self.STEER_MAX = 1439
-    else:
-      self.STEER_MAX = 2047
     self.STEER_STEP = 2                # how often we update the steer cmd
     self.STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70         # torque decrease per refresh
     self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-    self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
+    self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
+
+    if CP.carFingerprint in GLOBAL_GEN2:
+      self.STEER_MAX = 1000
+      self.STEER_DELTA_UP = 40
+      self.STEER_DELTA_DOWN = 40
+    elif CP.carFingerprint == CAR.IMPREZA_2020:
+      self.STEER_MAX = 1439
+    else:
+      self.STEER_MAX = 2047
 
 
 class CAR:
+  # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
+  OUTBACK = "SUBARU OUTBACK 6TH GEN"
+
+  # Pre-global
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
   OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
@@ -42,6 +51,7 @@ class SubaruCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
+  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All"),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -396,6 +406,47 @@ FW_VERSIONS = {
       b'\xbb\xfb\xe0`\000',
     ],
   },
+  CAR.OUTBACK: {
+    (Ecu.esp, 0x7b0, None): [
+      b'\xa1  \x06\x01',
+      b'\xa1  \a\x00',
+      b'\xa1  \b\001',
+      b'\xa1  \x06\x00',
+      b'\xa1 "\t\x01',
+      b'\xa1  \x08\x02',
+      b'\xa1 \x06\x02',
+      b'\xa1  \x08\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x9b\xc0\x10\x00',
+      b'\x9b\xc0\x20\x00',
+      b'\x1b\xc0\x10\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00eJ\x00\x1f@ \x19\x00',
+      b'\000\000e\x80\000\037@ \031\000',
+      b'\x00\x00e\x9a\x00\x1f@ 1\x00',
+      b'\x00\x00eJ\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xbc,\xa0q\x07',
+      b'\xbc\"`@\a',
+      b'\xde"`0\a',
+      b'\xf1\x82\xbc,\xa0q\a',
+      b'\xf1\x82\xe3,\xa0@\x07',
+      b'\xe2"`p\x07',
+      b'\xf1\x82\xe2,\xa0@\x07',
+      b'\xbc"`q\x07',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xa5\xfe\xf7@\x00',
+      b'\xa5\xf6D@\x00',
+      b'\xa5\xfe\xf6@\x00',
+      b'\xa7\x8e\xf40\x00',
+      b'\xf1\x82\xa7\xf6D@\x00',
+      b'\xa7\xfe\xf4@\x00',
+    ],
+  },
 }
 
 STEER_THRESHOLD = {
@@ -403,6 +454,7 @@ STEER_THRESHOLD = {
   CAR.IMPREZA: 80,
   CAR.IMPREZA_2020: 80,
   CAR.FORESTER: 80,
+  CAR.OUTBACK: 80,
   CAR.FORESTER_PREGLOBAL: 75,
   CAR.LEGACY_PREGLOBAL: 75,
   CAR.OUTBACK_PREGLOBAL: 75,
@@ -414,10 +466,12 @@ DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
+  CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-PREGLOBAL_CARS = [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]
+GLOBAL_GEN2 = (CAR.OUTBACK, )
+PREGLOBAL_CARS = (CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018)
