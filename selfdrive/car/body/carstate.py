@@ -53,7 +53,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    dbc = dbc_dict('../selfdrive/car/body/odrive_comma_body', None)["pt"]
+    dbc = dbc_dict('../odrivebody/odrive_comma_body', None)["pt"]
 
     signals = [
         # sig_name, sig_address

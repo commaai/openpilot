@@ -9,7 +9,7 @@ from selfdrive.canseriald.panda_emulator import emulate_panda
 from util import create_periodic_task
 from typing import List
 
-dbcPath = '../../selfdrive/car/body/odrive_comma_body.dbc'
+dbcPath = '../../odrivebody/odrive_comma_body.dbc'
 db = cantools.database.load_file(dbcPath)
 
 odrive0_node_id = 0
@@ -24,16 +24,13 @@ async def run_main():
 
   # pylint: disable=abstract-class-instantiated
   with can.interface.Bus(bustype='slcan', channel='/dev/ttyACM0', bitrate=250000) as bus:
-    can.Notifier(bus, [handle_recieved_can_message],
-                 loop=asyncio.get_running_loop())
+    can.Notifier(bus, [handle_recieved_can_message], loop=asyncio.get_running_loop())
     # cleanup with notifier.stop()
 
     await asyncio.gather(
         create_periodic_task(lambda: emulate_panda(pm), 0.5),
-        create_periodic_task(
-            lambda: can_send_messages(sm, bus), frequency=500),
-        create_periodic_task(
-            lambda: publish_recieved_messages(pm), frequency=500),
+        create_periodic_task(lambda: can_send_messages(sm, bus), frequency=500),
+        create_periodic_task(lambda: publish_recieved_messages(pm), frequency=500),
         create_periodic_task(lambda: request_speed(bus), frequency=90),
         create_periodic_task(lambda: request_battery(bus), frequency=2)
         # create_periodic_task(lambda: log_original_can_messages(sm), frequency=100)

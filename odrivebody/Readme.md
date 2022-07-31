@@ -7,7 +7,8 @@ The following processes are disabled in the manager and have to be started manua
 `export SKIP_FW_QUERY=1 && export FINGERPRINT="COMMA BODY" && python selfdrive/controls/controlsd.py`
 
 ## Start canseriald
-`python selfdrive/canseriald/canseriald.py`
+`cd selfdrive/canseriald`
+`python canseriald.py`
 
-## If Permission denied: 
-`/dev/ttyACM0: sudo chmod 666 /dev/ttyACM0`
+## If Permission denied on /dev/ttyACM0: 
+`sudo chmod 666 /dev/ttyACM0`

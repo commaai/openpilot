@@ -8,7 +8,7 @@ import can
 from can.notifier import MessageRecipient
 
 
-db = cantools.database.load_file('../car/body/odrive_comma_body.dbc')
+db = cantools.database.load_file('../../odrivebody/odrive_comma_body.dbc')
 
 odrive0_node_id = 0
 odrive1_node_id = 1
