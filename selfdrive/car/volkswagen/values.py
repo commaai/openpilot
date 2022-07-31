@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
@@ -11,15 +11,13 @@ Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
+Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
   LDW_STEP = 10                  # LDW_02 message frequency 10Hz
   GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
-
-  GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
-  GRA_VBP_COUNT = 16             # Send VBP messages for ~0.5s (GRA_ACC_STEP * 16)
 
   # Observed documented MQB limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
   # Limiting rate-of-change based on real-world testing and Comma's safety
@@ -43,14 +41,16 @@ class DBC_FILES:
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
 
-BUTTON_STATES = {
-  "accelCruise": False,
-  "decelCruise": False,
-  "cancel": False,
-  "setCruise": False,
-  "resumeCruise": False,
-  "gapAdjustCruise": False
-}
+
+MQB_BUTTONS = [
+  Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+  Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+  Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+  Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+  Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+  Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+]
+
 
 MQB_LDW_MESSAGES = {
   "none": 0,                            # Nothing to display
@@ -177,7 +177,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
-  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019"),
+  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-18"),
@@ -226,6 +226,7 @@ FW_VERSIONS = {
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
+      b'\xf1\x8703H906026AJ\xf1\x890638',
       b'\xf1\x8703H906026AT\xf1\x891922',
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
@@ -237,6 +238,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158A \xf1\x893387',
       b'\xf1\x8709G927158DR\xf1\x893536',
+      b'\xf1\x8709G927158DR\xf1\x893742',
       b'\xf1\x8709G927158FT\xf1\x893835',
     ],
     (Ecu.srs, 0x715, None): [
@@ -251,6 +253,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820528B6090105',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
       b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572J \xf1\x890654',
@@ -821,18 +824,23 @@ FW_VERSIONS = {
   CAR.SKODA_KAROQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018P \xf1\x896020',
+      b'\xf1\x8705L906022BS\xf1\x890913',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300041S \xf1\x891615',
+      b'\xf1\x870GC300014L \xf1\x892802',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655BH\xf1\x890712\xf1\x82\0161213001211001101131122012100',
+      b'\xf1\x873Q0959655DE\xf1\x890731\xf1\x82\x0e1213001211001101131121012J00',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567T6100500',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100700',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572M \xf1\x890233',
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.SKODA_KODIAQ_MK1: {

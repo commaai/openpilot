@@ -42,12 +42,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_warning.png",
     },
     {
-      "IsRHD",
-      tr("Enable Right-Hand Drive"),
-      tr("Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat."),
-      "../assets/offroad/icon_openpilot_mirrored.png",
-    },
-    {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
