@@ -42,10 +42,10 @@ class CarState(CarStateBase):
     ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
-    # To handle cars without factory Lane Assist, treat FAULT like INITIALIZING for three seconds after startup
+    # For cars without Lane Assist, treat FAULT like INITIALIZING for worst likely controls init and EPS recovery time
     hca_status = self.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
-    ret.steerFaultPermanent = hca_status == "DISABLED" or (hca_status == "FAULT" and self.frame >= 300)
-    ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED") or (hca_status == "FAULT" and self.frame < 300)
+    ret.steerFaultPermanent = hca_status == "DISABLED" or (hca_status == "FAULT" and self.frame >= 600)
+    ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED") or (hca_status == "FAULT" and self.frame < 600)
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_20"]["MO_Fahrpedalrohwert_01"] / 100.0
