@@ -10,6 +10,7 @@ from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, NetworkLocation, 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.frame = 0
     self.button_states = {button.event_type: False for button in MQB_BUTTONS}
     can_define = CANDefine(DBC_FILES.mqb)
     if CP.transmissionType == TransmissionType.automatic:
@@ -42,8 +43,8 @@ class CarState(CarStateBase):
 
     # Verify EPS readiness to accept steering commands
     hca_status = self.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
-    ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
-    ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+    ret.steerFaultPermanent = hca_status == "DISABLED" or (hca_status == "FAULT" and self.frame >= 300)
+    ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED") or (hca_status == "FAULT" and self.frame < 300)
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_20"]["MO_Fahrpedalrohwert_01"] / 100.0
@@ -133,6 +134,7 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
 
+    self.frame += 1
     return ret
 
   @staticmethod
