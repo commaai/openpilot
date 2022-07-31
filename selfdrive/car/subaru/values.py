@@ -467,18 +467,6 @@ FW_VERSIONS = {
   },
 }
 
-STEER_THRESHOLD = {
-  CAR.ASCENT: 80,
-  CAR.IMPREZA: 80,
-  CAR.IMPREZA_2020: 80,
-  CAR.FORESTER: 80,
-  CAR.OUTBACK: 80,
-  CAR.FORESTER_PREGLOBAL: 75,
-  CAR.LEGACY_PREGLOBAL: 75,
-  CAR.OUTBACK_PREGLOBAL: 75,
-  CAR.OUTBACK_PREGLOBAL_2018: 75,
-}
-
 DBC = {
   CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
