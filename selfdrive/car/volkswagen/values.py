@@ -42,11 +42,6 @@ class CANBUS:
   cam = 2
 
 
-class DBC_FILES:
-  mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
-  pq = "vw_golf_mk4"  # Used for all cars with PQ-style (legacy) CAN messaging
-
-
 MQB_BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
@@ -123,9 +118,9 @@ class CAR:
 PQ_CARS = {CAR.PASSAT_NMS}
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
 for car_type in PQ_CARS:
-  DBC[car_type] = dbc_dict(DBC_FILES.pq, None)
+  DBC[car_type] = dbc_dict("vw_golf_mk4", None)
 
 
 class Footnote(Enum):

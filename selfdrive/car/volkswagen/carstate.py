@@ -4,21 +4,21 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
+from selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
                                             CarControllerParams, PQ_CARS, PQ_BUTTONS, MQB_BUTTONS
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.button_states = {button.event_type: False for button in MQB_BUTTONS}
     self.frame = 0
 
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.carFingerprint in PQ_CARS:
-      can_define = CANDefine(DBC_FILES.pq)
+      self.button_states = {button.event_type: False for button in PQ_BUTTONS}
       self.hca_status_values = can_define.dv["Lenkhilfe_2"]["LH2_Sta_HCA"]
       if CP.transmissionType == TransmissionType.automatic:
         self.shifter_values = can_define.dv["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"]
     else:
-      can_define = CANDefine(DBC_FILES.mqb)
+      self.button_states = {button.event_type: False for button in MQB_BUTTONS}
       self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
       if CP.transmissionType == TransmissionType.automatic:
         self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
@@ -343,7 +343,7 @@ class CarState(CarStateBase):
         signals += MqbExtraSignals.bsm_radar_signals
         checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -374,7 +374,7 @@ class CarState(CarStateBase):
         signals += MqbExtraSignals.bsm_radar_signals
         checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
 
   @staticmethod
   def get_can_parser_pq(CP):
@@ -460,7 +460,7 @@ class CarState(CarStateBase):
         signals += PqExtraSignals.bsm_radar_signals
         checks += PqExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC_FILES.pq, signals, checks, CANBUS.pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser_pq(CP):
@@ -490,7 +490,7 @@ class CarState(CarStateBase):
         signals += PqExtraSignals.bsm_radar_signals
         checks += PqExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC_FILES.pq, signals, checks, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
 
 
 class MqbExtraSignals:
