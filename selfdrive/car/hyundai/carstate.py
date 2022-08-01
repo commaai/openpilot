@@ -33,6 +33,8 @@ class CarState(CarStateBase):
     self.brake_error = False
     self.park_brake = False
     self.buttons_counter = 0
+    self.buttons_set_me_1 = 0
+    self.buttons_set_me_2 = 0
 
     self.params = CarControllerParams(CP)
 
@@ -187,6 +189,9 @@ class CarState(CarStateBase):
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
+    else:
+      self.buttons_set_me_1 = cp.vl["CRUISE_BUTTONS"]["SET_ME_1"]
+      self.buttons_set_me_2 = cp.vl["CRUISE_BUTTONS"]["SET_ME_2"]
 
     return ret
 
@@ -430,7 +435,11 @@ class CarState(CarStateBase):
       ]
       checks.append(("CRUISE_INFO", 50))
     else:
-      signals.append(("GEAR", "GEAR"))
+      signals += [
+        ("GEAR", "GEAR"),
+        ("SET_ME_1", "CRUISE_BUTTONS"),
+        ("SET_ME_2", "CRUISE_BUTTONS"),
+      ]
       checks.append(("GEAR", 100))
 
     bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
