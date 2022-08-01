@@ -124,7 +124,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
     HondaCarInfo("Honda Civic Hatchback 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
-  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring", harness=Harness.nidec),
+  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", harness=Harness.nidec),
   CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", harness=Harness.bosch_a),
   CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
   CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch_a),
