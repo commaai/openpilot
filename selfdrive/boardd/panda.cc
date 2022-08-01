@@ -5,6 +5,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <vector>
+#include <queue>
 
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
@@ -369,22 +370,11 @@ static uint8_t len_to_dlc(uint8_t len) {
   }
 }
 
-static void write_packet(uint8_t *dest, int *write_pos, const uint8_t *src, size_t size) {
-  for (int i = 0, &pos = *write_pos; i < size; ++i, ++pos) {
-    // Insert counter every 64 bytes (first byte of 64 bytes USB packet)
-    if (pos % USBPACKET_MAX_SIZE == 0) {
-      dest[pos] = pos / USBPACKET_MAX_SIZE;
-      pos++;
-    }
-    dest[pos] = src[i];
-  }
-}
-
 void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                             std::function<void(uint8_t *, size_t)> write_func) {
-  int32_t pos = 0;
-  uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
 
+  // fill tx queue
+  std::queue<std::vector<uint8_t>> tx_queue;
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
@@ -402,16 +392,68 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     header.data_len_code = data_len_code;
     header.bus = bus - bus_offset;
 
-    write_packet(send_buf, &pos, (uint8_t *)&header, sizeof(can_header));
-    write_packet(send_buf, &pos, (uint8_t *)can_data.begin(), can_data.size());
-    if (pos >= USB_TX_SOFT_LIMIT) {
-      write_func(send_buf, pos);
-      pos = 0;
+    std::vector<uint8_t> msg_data(sizeof(can_header) + can_data.size());
+    memcpy(&msg_data[0], &header, sizeof(can_header));
+    memcpy(&msg_data[sizeof(can_header)], can_data.begin(), can_data.size());
+    tx_queue.push(msg_data);
+  }
+
+  // create chunks
+  int i = 0;
+  uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
+  can_chunk_header *header = (can_chunk_header *) &send_buf[0];
+  header->counter = can_tx_counter++;
+  header->overflow_len = 0;
+  i += sizeof(can_chunk_header);
+
+  while (tx_queue.size() > 0) {
+    std::vector<uint8_t> msg = tx_queue.front();
+    tx_queue.pop();
+
+    if ((i + msg.size()) / USBPACKET_MAX_SIZE > (i / USBPACKET_MAX_SIZE)) {
+      int overflow_len = msg.size() - ((i + msg.size()) / USBPACKET_MAX_SIZE) * USBPACKET_MAX_SIZE;
+
+      // crossing chunk boundary! filling in last header size
+      header = (can_chunk_header *) &send_buf[(i / USBPACKET_MAX_SIZE)];
+      header->chunk_data_len = USBPACKET_MAX_SIZE;
+      
+      // copy in partial data, new header and overflow data
+      memcpy(&send_buf[i], (uint8_t *) &msg[0], msg.size() - overflow_len);
+      i += msg.size() - overflow_len;
+      header = (can_chunk_header *) &send_buf[i];
+      header->counter = can_tx_counter++;
+      header->overflow_len = overflow_len;
+      i += sizeof(can_chunk_header);
+      memcpy(&send_buf[i], (uint8_t *) &msg[0] + (msg.size() - overflow_len), overflow_len);
+    } else {
+      memcpy(&send_buf[i], (uint8_t *) &msg[0], msg.size());
+      i += msg.size();
+
+      // check if we want to already send
+      if (i >= USB_TX_SOFT_LIMIT) {
+        // finish up last header
+        header->chunk_data_len = i - USBPACKET_MAX_SIZE * (i / USBPACKET_MAX_SIZE);
+
+        // send out
+        write_func(send_buf, i);
+        
+        // reset state
+        i = 0;
+        header = (can_chunk_header *) &send_buf[i];
+        header->counter = can_tx_counter++;
+        header->overflow_len = 0;
+        i += sizeof(can_chunk_header);
+      }
     }
   }
 
-  // send remaining packets
-  if (pos > 0) write_func(send_buf, pos);
+  if (i > sizeof(can_chunk_header)) {
+    // finish up last header
+    header->chunk_data_len = i - USBPACKET_MAX_SIZE * (i / USBPACKET_MAX_SIZE);
+
+    // send out
+    write_func(send_buf, i);
+  }
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {

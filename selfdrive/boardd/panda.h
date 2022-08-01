@@ -20,7 +20,6 @@
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
 #define USBPACKET_MAX_SIZE  (0x40)
-#define CANPACKET_HEAD_SIZE 5U
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
@@ -54,6 +53,7 @@ class Panda {
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
   uint8_t can_rx_counter = 0U;
+  uint8_t can_tx_counter = 0U;
   std::vector<uint8_t> can_rx_buf;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
