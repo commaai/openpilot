@@ -25,11 +25,19 @@ def create_lfa(packer, enabled, frame, lat_active, apply_steer):
     "LKA_ASSIST": 0,
     "STEER_REQ": 1 if lat_active else 0,
     "STEER_MODE": 0,
-    "SET_ME_1": 0,
-    "NEW_SIGNAL_1": 0,
+    "SET_ME_1": 1 if enabled else 0,
+    "NEW_SIGNAL_1": 3 if enabled else 0,
     "NEW_SIGNAL_2": 0,
   }
   return packer.make_can_msg("LFA", 4, values, frame % 255)
+
+def create_lfa_icon(packer, enabled, frame, gray, yellow):
+  values = {
+    "HDA": 1 if enabled else 0,
+    "LFA_GREY": 1 if gray else 0,
+    "LFA_YELLOW": 1 if yellow else 0,
+  }
+  return packer.make_can_msg("NEW_MSG_1", 4, values, frame % 255)
 
 def create_cam_0x2a4(packer, frame, camera_values):
   camera_values.update({
