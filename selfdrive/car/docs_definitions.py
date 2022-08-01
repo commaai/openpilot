@@ -83,17 +83,16 @@ class CarInfo:
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
-    min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
-      min_steer_speed = self.min_steer_speed
       assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+    else:
+      self.min_steer_speed = CP.minSteerSpeed
 
     assert self.harness is not None, f"{CP.carFingerprint}: Need to specify car harness"
 
     # TODO: set all the min enable speeds in carParams correctly and remove this
-    min_enable_speed = CP.minEnableSpeed
-    if self.min_enable_speed is not None:
-      min_enable_speed = self.min_enable_speed
+    if self.min_enable_speed is None:
+      self.min_enable_speed = CP.minEnableSpeed
 
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
@@ -104,8 +103,8 @@ class CarInfo:
       Column.PACKAGE: self.package,
       # StarColumns
       Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
-      Column.FSR_LONGITUDINAL: Star.FULL if min_enable_speed <= 0. else Star.EMPTY,
-      Column.FSR_STEERING: Star.FULL if min_steer_speed <= 0. else Star.EMPTY,
+      Column.FSR_LONGITUDINAL: Star.FULL if self.min_enable_speed <= 0. else Star.EMPTY,
+      Column.FSR_STEERING: Star.FULL if self.min_steer_speed <= 0. else Star.EMPTY,
       Column.STEERING_TORQUE: Star.EMPTY,
     }
 
@@ -143,14 +142,14 @@ class CarInfo:
     if not CP.notCar:
       sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
 
-      if CP.minSteerSpeed > CP.minEnableSpeed:
-        alc = f" <strong>above {CP.minSteerSpeed * CV.MS_TO_MPH:.0f} mph</strong>," if CP.minSteerSpeed > 0 else " <strong>at all speeds</strong>,"
+      if self.min_steer_speed > self.min_enable_speed:
+        alc = f" <strong>above {self.min_steer_speed * CV.MS_TO_MPH:.0f} mph</strong>," if self.min_steer_speed > 0 else " <strong>at all speeds</strong>,"
       else:
         alc = ""
 
       # Exception for Nissan and Subaru which do not auto-resume yet
       if CP.carName not in ("nissan", "subaru"):
-        acc = f" <strong>while driving above {CP.minEnableSpeed * CV.MS_TO_MPH:.0f} mph</strong>" if CP.minEnableSpeed > 0 else " <strong>that automatically resumes from a stop</strong>"
+        acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>" if self.min_enable_speed > 0 else " <strong>that automatically resumes from a stop</strong>"
       else:
         acc = ""
 
