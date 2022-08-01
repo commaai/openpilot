@@ -9,7 +9,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 ## How We Rate The Cars
 
-{% for star_row in star_descriptions.values() %}
+{% for star_row in STAR_DESCRIPTIONS.values() %}
 {% for name, stars in star_row.items() %}
 ### {{name}}
 {% for star, description in stars %}

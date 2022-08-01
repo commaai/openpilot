@@ -45,7 +45,7 @@ class CAR:
 
 @dataclass
 class SubaruCarInfo(CarInfo):
-  package: str = "EyeSight"
+  package: str = "EyeSight Driver Assistance"
   harness: Enum = Harness.subaru
 
 
