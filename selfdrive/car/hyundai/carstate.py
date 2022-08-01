@@ -330,7 +330,6 @@ class CarState(CarStateBase):
       ("CF_Lkas_LdwsRHWarning", "LKAS11"),
       ("CF_Lkas_HbaLamp", "LKAS11"),
       ("CF_Lkas_FcwBasReq", "LKAS11"),
-      ("CF_Lkas_ToiFlt", "LKAS11"),
       ("CF_Lkas_HbaSysState", "LKAS11"),
       ("CF_Lkas_FcwOpt", "LKAS11"),
       ("CF_Lkas_HbaOpt", "LKAS11"),
