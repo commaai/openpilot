@@ -84,28 +84,15 @@ class CarController:
 
     # **** Acceleration Controls ******************************************** #
 
-    if self.CP.openpilotLongitudinalControl:
-      if self.frame % P.ACC_CONTROL_STEP:
-        if CC.longActive:
-          adr_status = 1
-        elif CS.out.cruiseState.available:
-          adr_status = 2
-        else:
-          adr_status = 0
-        accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if CC.longActive else 0
-        can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, adr_status, accel))
-      if self.frame % P.ACC_HUD_STEP:
-        if CC.longActive:
-          acc_status = 3
-        elif CS.out.cruiseState.available:
-          acc_status = 2
-        elif CS.out.accFaulted:
-          acc_status = 6
-        else:
-          acc_status = 0
-        set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
-        can_sends.append(self.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_status, set_speed,
-                                                     hud_control.leadVisible))
+    if self.frame % P.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
+      if CC.longActive:
+        adr_status = 1
+      elif CS.out.cruiseState.available:
+        adr_status = 2
+      else:
+        adr_status = 0
+      accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if CC.longActive else 0
+      can_sends.append(self.create_acc_accel_control(self.packer_pt, CANBUS.pt, adr_status, accel))
 
     # **** HUD Controls ***************************************************** #
 
@@ -118,7 +105,20 @@ class CarController:
                                                    hud_alert, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                    CS.ldw_stock_values, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
-    # **** ACC Button Controls ********************************************** #
+    if self.frame % P.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
+      if CC.longActive:
+        acc_status = 3
+      elif CS.out.cruiseState.available:
+        acc_status = 2
+      elif CS.out.accFaulted:
+        acc_status = 6
+      else:
+        acc_status = 0
+      set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
+      can_sends.append(self.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_status, set_speed,
+                                                   hud_control.leadVisible))
+
+    # **** Stock ACC Button Controls **************************************** #
 
     if self.CP.pcmCruise and self.frame % P.GRA_ACC_STEP == 0:
       idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
