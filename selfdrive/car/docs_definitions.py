@@ -147,8 +147,8 @@ class CarInfo:
       else:
         alc = ""
 
-      # Exception for Nissan and Subaru which do not auto-resume yet
-      if CP.carName not in ("nissan", "subaru"):
+      # Exception for Nissan, Subaru, and 2022 RAV4 which do not auto-resume yet
+      if CP.carName not in ("nissan", "subaru") and CP.carFingerprint not in ("TOYOTA RAV4 HYBRID 2022", "TOYOTA RAV4 2022"):
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>" if self.min_enable_speed > 0 else " <strong>that automatically resumes from a stop</strong>"
       else:
         acc = ""
