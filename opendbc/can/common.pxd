@@ -19,6 +19,7 @@ cdef extern from "common_dbc.h":
     TOYOTA_CHECKSUM,
     PEDAL_CHECKSUM,
     VOLKSWAGEN_MQB_CHECKSUM,
+    XOR_CHECKSUM,
     SUBARU_CHECKSUM,
     CHRYSLER_CHECKSUM
     HKG_CAN_FD_CHECKSUM,
@@ -81,4 +82,4 @@ cdef extern from "common.h":
 
   cdef cppclass CANPacker:
    CANPacker(string)
-   vector[uint8_t] pack(uint32_t, vector[SignalPackValue], int counter)
+   vector[uint8_t] pack(uint32_t, vector[SignalPackValue])

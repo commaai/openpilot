@@ -3,6 +3,7 @@ import ftplib
 import hatanaka
 import os
 import urllib.request
+import urllib.error
 import pycurl
 import re
 import time
@@ -22,6 +23,9 @@ from .helpers import ConstellationId
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+class DownloadFailed(Exception):
+  pass
+
 
 def retryable(f):
   """
@@ -37,10 +41,10 @@ def retryable(f):
     for url_base in url_bases:
       try:
         return f(url_base, *args, **kwargs)
-      except IOError as e:
+      except DownloadFailed as e:
         print(e)
     # none of them succeeded
-    raise IOError("Multiple URL failures attempting to pull file(s)")
+    raise DownloadFailed("Multiple URL failures attempting to pull file(s)")
   return wrapped
 
 
@@ -52,11 +56,11 @@ def ftp_connect(url):
     ftp = ftplib.FTP(domain, timeout=10)
     ftp.login()
   except (OSError, ftplib.error_perm):
-    raise IOError("Could not connect/auth to: " + domain)
+    raise DownloadFailed("Could not connect/auth to: " + domain)
   try:
     ftp.cwd(parsed.path)
   except ftplib.error_perm:
-    raise IOError("Permission failure with folder: " + url)
+    raise DownloadFailed("Permission failure with folder: " + url)
   return ftp
 
 
@@ -68,7 +72,7 @@ def list_dir(url):
       ftp = ftp_connect(url)
       return ftp.nlst()
     except ftplib.error_perm:
-      raise IOError("Permission failure listing folder: " + url)
+      raise DownloadFailed("Permission failure listing folder: " + url)
   else:
     # just connect and do simple url parsing
     listing = https_download_file(url)
@@ -101,9 +105,9 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames):
       try:
         ftp.retrbinary('RETR ' + filename, open(filepath, 'wb').write)
       except (ftplib.error_perm):
-        raise IOError("Could not download file from: " + url_base + folder_path + filename)
+        raise DownloadFailed("Could not download file from: " + url_base + folder_path + filename)
       except (socket.timeout):
-        raise IOError("Read timed out from: " + url_base + folder_path + filename)
+        raise DownloadFailed("Read timed out from: " + url_base + folder_path + filename)
       filepaths.append(filepath)
     else:
       filepaths.append(filepath)
@@ -189,7 +193,7 @@ def https_download_file(url):
       f.flush()
       netrc_path = f.name
     except KeyError:
-      raise IOError('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in enviroment for urs.earthdata.nasa.gov authentication')
+      raise DownloadFailed('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in environment for urs.earthdata.nasa.gov authentication')
 
   crl = pycurl.Curl()
   crl.setopt(crl.CAINFO, certifi.where())
@@ -211,15 +215,18 @@ def https_download_file(url):
     f.close()
 
   if response != 200:
-    raise IOError('HTTPS error ' + str(response))
+    raise DownloadFailed('HTTPS error ' + str(response))
   return buf.getvalue()
 
 
 def ftp_download_file(url):
-  urlf = urllib.request.urlopen(url, timeout=10)
-  data_zipped = urlf.read()
-  urlf.close()
-  return data_zipped
+  try:
+    urlf = urllib.request.urlopen(url, timeout=10)
+    data_zipped = urlf.read()
+    urlf.close()
+    return data_zipped
+  except urllib.error.URLError as e:
+    raise DownloadFailed(e)
 
 
 @retryable
@@ -248,7 +255,7 @@ def download_and_cache_file_return_first_success(url_bases, folder_and_file_name
     try:
       file = download_and_cache_file(url_bases, folder_path, cache_dir, filename, compression, overwrite)
       return file
-    except IOError as e:
+    except DownloadFailed as e:
       last_error = e
 
   if last_error and raise_error:
@@ -266,15 +273,16 @@ def download_and_cache_file(url_base, folder_path: str, cache_dir: str, filename
     with open(filepath_attempt, 'r') as rf:
       last_attempt_time = float(rf.read())
     if time.time() - last_attempt_time < SECS_IN_HR:
-      raise IOError(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
+      raise DownloadFailed(f"Too soon to try downloading {folder_path + filename_zipped} from {url_base} again since last attempt")
   if not os.path.isfile(filepath) or overwrite:
     try:
       data_zipped = download_file(url_base, folder_path, filename_zipped)
-    except (IOError, pycurl.error, socket.timeout):
+    except (DownloadFailed, pycurl.error, socket.timeout):
       unix_time = time.time()
-      with atomic_write(filepath_attempt, mode='w') as wf:
+      os.makedirs(folder_path_abs, exist_ok=True)
+      with atomic_write(filepath_attempt, mode='w', overwrite=True) as wf:
         wf.write(str(unix_time))
-      raise IOError(f"Could not download {folder_path + filename_zipped} from {url_base} ")
+      raise DownloadFailed(f"Could not download {folder_path + filename_zipped} from {url_base} ")
 
     os.makedirs(folder_path_abs, exist_ok=True)
     ephem_bytes = hatanaka.decompress(data_zipped)
@@ -312,7 +320,7 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
       folder_path = t.strftime('%Y/%j/')
       compression = '.gz' if folder_path >= '2020/336/' else '.Z'
       return download_and_cache_file(url_base, folder_path, cache_dir+'hourly_nav/', filename, compression)
-  except IOError:
+  except DownloadFailed:
     pass
 
 
@@ -449,6 +457,6 @@ def download_cors_station(time, station_name, cache_dir):
   try:
     filepath = download_and_cache_file(url_bases, folder_path, cache_dir+'cors_obs/', filename, compression='.gz')
     return filepath
-  except IOError:
+  except DownloadFailed:
     print("File not downloaded, check availability on server.")
     return None

@@ -200,6 +200,8 @@ class Panda:
 
   FLAG_CHRYSLER_RAM_DT = 1
 
+  FLAG_SUBARU_GEN2 = 1
+
   def __init__(self, serial: Optional[str] = None, claim: bool = True):
     self._serial = serial
     self._handle = None

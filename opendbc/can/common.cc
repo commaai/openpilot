@@ -188,6 +188,20 @@ unsigned int volkswagen_mqb_checksum(uint32_t address, const Signal &sig, const 
   return crc ^ 0xFF; // Return after standard final XOR for CRC8 8H2F/AUTOSAR
 }
 
+unsigned int xor_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
+  uint8_t checksum = 0;
+  int checksum_byte = sig.start_bit / 8;
+
+  // Simple XOR over the payload, except for the byte where the checksum lives.
+  for (int i = 0; i < d.size(); i++) {
+    if (i != checksum_byte) {
+      checksum ^= d[i];
+    }
+  }
+
+  return checksum;
+}
+
 unsigned int pedal_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   uint8_t crc = 0xFF;
   uint8_t poly = 0xD5; // standard crc8

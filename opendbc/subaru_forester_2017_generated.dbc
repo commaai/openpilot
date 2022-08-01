@@ -42,7 +42,7 @@ BU_: XXX X
 
 BO_ 2 Steering: 8 XXX
  SG_ Steering_Angle : 7|16@0- (0.1,0) [-500|500] "degree" XXX
- SG_ Counter : 27|3@0+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 27|3@0+ (1,0) [0|7] "" XXX
  SG_ Checksum : 39|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 208 G_Sensor: 8 XXX
@@ -65,7 +65,7 @@ BO_ 211 Brake_Type: 8 XXX
  SG_ Speed_Counter : 32|8@1+ (1,0) [0|255] "" XXX
  SG_ Brake_Cruise_On : 42|1@1+ (1,0) [0|1] "" XXX
  SG_ Brake_Pedal_On : 46|1@1+ (1,0) [0|1] "" XXX
- SG_ Counter : 48|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 48|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 212 Wheel_Speeds: 8 XXX
  SG_ FL : 0|16@1+ (0.0592,0) [0|255] "KPH" XXX
@@ -75,7 +75,7 @@ BO_ 212 Wheel_Speeds: 8 XXX
 
 BO_ 320 Throttle: 8 XXX
  SG_ Throttle_Pedal : 0|8@1+ (0.392157,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|2@1+ (1,0) [0|7] "" XXX
  SG_ Not_Full_Throttle : 14|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 15|1@1+ (1,0) [0|1] "" XXX
@@ -105,7 +105,7 @@ BO_ 324 CruiseControl: 8 XXX
 
 BO_ 328 Transmission: 8 XXX
  SG_ Manual_Gear : 4|4@1+ (1,0) [0|15] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Transmission_Engine : 16|15@1+ (1,0) [0|65535] "" XXX
  SG_ Gear : 48|4@1+ (1,0) [0|15] "" XXX
  SG_ Gear_2 : 52|4@1+ (1,0) [0|15] "" XXX
@@ -118,7 +118,7 @@ BO_ 336 Brake_Pressure: 8 XXX
  SG_ Brake_Pressure_Left : 8|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 338 Stalk: 8 XXX
- SG_ Counter : 12|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ Brake_Light : 52|1@1+ (1,0) [0|1] "" XXX
  SG_ Runlights : 58|1@1+ (1,0) [0|1] "" XXX
  SG_ Headlights : 59|1@1+ (1,0) [0|1] "" XXX
@@ -131,7 +131,7 @@ BO_ 352 ES_Brake: 8 XXX
  SG_ Cruise_Fault : 21|1@1+ (1,0) [0|1] "" XXX
  SG_ Brake_On : 22|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 23|1@1+ (1,0) [0|1] "" XXX
- SG_ Counter : 48|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 48|3@1+ (1,0) [0|7] "" XXX
  SG_ Checksum : 56|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 353 ES_Distance: 8 XXX
@@ -143,12 +143,12 @@ BO_ 353 ES_Distance: 8 XXX
  SG_ Distance_Swap : 21|1@1+ (1,0) [0|1] "" XXX
  SG_ Standstill : 22|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal3 : 23|1@1+ (1,0) [0|1] "" XXX
- SG_ Close_Distance : 24|8@1+ (0.0196,0) [0|255] "m" XXX
+ SG_ Close_Distance : 24|8@1+ (0.019607,0) [0|5] "m" XXX
  SG_ Signal4 : 32|9@1+ (1,0) [0|255] "" XXX
  SG_ Standstill_2 : 41|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Fault : 42|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal5 : 43|1@1+ (1,0) [0|1] "" XXX
- SG_ Counter : 44|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 44|3@1+ (1,0) [0|7] "" XXX
  SG_ Signal6 : 47|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Button : 48|3@1+ (1,0) [0|7] "" XXX
  SG_ Signal7 : 51|5@1+ (1,0) [0|31] "" XXX
@@ -159,10 +159,10 @@ BO_ 354 ES_RPM: 8 XXX
  SG_ Cruise_Activated : 9|1@1+ (1,0) [0|1] "" XXX
  SG_ RPM : 16|16@1+ (1,0) [0|65535] "" XXX
  SG_ Checksum : 32|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 48|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 48|3@1+ (1,0) [0|7] "" XXX
 
 BO_ 356 ES_LKAS: 8 XXX
- SG_ Counter : 0|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 0|3@1+ (1,0) [0|7] "" XXX
  SG_ LKAS_Command : 8|13@1- (-1,0) [-4096|4096] "" XXX
  SG_ LKAS_Active : 24|1@1+ (1,0) [0|1] "" XXX
  SG_ Checksum : 56|8@1+ (1,0) [0|255] "" XXX
@@ -182,7 +182,7 @@ BO_ 359 ES_LDW: 8 XXX
  SG_ Sig3All_Depart : 52|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 604 BSD_RCTA: 8 XXX
- SG_ Counter : 0|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 0|3@1+ (1,0) [0|7] "" XXX
  SG_ State : 5|1@1+ (1,0) [0|1] "" XXX
  SG_ R_ADJACENT : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ L_ADJACENT : 33|1@1+ (1,0) [0|1] "" XXX
@@ -192,7 +192,7 @@ BO_ 604 BSD_RCTA: 8 XXX
  SG_ L_RCTA : 47|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 642 Dashlights: 8 XXX
- SG_ Counter : 12|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ SEATBELT_FL : 40|1@1+ (1,0) [0|1] "" XXX
  SG_ LEFT_BLINKER : 44|1@1+ (1,0) [0|1] "" XXX
  SG_ RIGHT_BLINKER : 45|1@1+ (1,0) [0|1] "" XXX
@@ -200,7 +200,7 @@ BO_ 642 Dashlights: 8 XXX
 BO_ 880 Steering_Torque_2: 8 XXX
  SG_ Steering_Voltage_Flat : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ Steer_Torque_Sensor : 29|11@1- (-1,0) [-1000|1000] "" XXX
- SG_ Counter : 40|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 40|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 884 BodyInfo: 8 XXX
  SG_ DOOR_OPEN_FR : 24|1@1+ (1,0) [0|1] "" XXX
@@ -240,7 +240,7 @@ CM_ SG_ 604 R_APPROACHING "Faster car approaching in far right lane";
 CM_ SG_ 604 L_APPROACHING "Faster car approaching in far left lane";
 CM_ SG_ 604 R_RCTA "Rear cross traffic alert, only when in R gear";
 CM_ SG_ 604 L_RCTA "Rear cross traffic alert, only when in R gear";
-CM_ SG_ 642 Counter "Affected by signals";
+CM_ SG_ 642 COUNTER "Affected by signals";
 CM_ SG_ 642 SEATBELT_FL "Driver seatbelt";
 CM_ SG_ 880 Steering_Voltage_Flat "receives later than 371";
 CM_ SG_ 977 UNITS "0 = Metric, 1 = Imperial";
@@ -254,10 +254,10 @@ BO_ 355 ES_DashStatus: 8 XXX
  SG_ Cruise_On : 16|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 17|1@0+ (1,0) [0|1] "" XXX
  SG_ Cruise_Set_Speed : 24|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 40|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 40|3@1+ (1,0) [0|7] "" XXX
  SG_ Brake : 43|1@1+ (1,0) [0|1] "" XXX
  SG_ Car_Follow : 54|1@1+ (1,0) [0|1] "" XXX
- SG_ Far_Distance : 56|4@1+ (1,0) [0|1] "" XXX
+ SG_ Far_Distance : 56|4@1+ (5,0) [0|75] "m" XXX
 
 BO_ 881 Steering_Torque: 8 XXX
  SG_ Steering_Motor_Flat : 0|10@1+ (32,0) [0|1000] "" XXX

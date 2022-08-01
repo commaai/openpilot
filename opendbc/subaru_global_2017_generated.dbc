@@ -42,12 +42,12 @@ BU_: XXX X
 
 BO_ 2 Steering: 8 XXX
  SG_ Steering_Angle : 7|16@0- (0.1,0) [0|65535] "" XXX
- SG_ Counter : 25|3@1+ (1,0) [0|7] "" XXX
+ SG_ COUNTER : 25|3@1+ (1,0) [0|7] "" XXX
  SG_ CHECKSUM : 32|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 64 Throttle: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ Engine_RPM : 16|12@1+ (1,0) [0|4095] "" XXX
  SG_ Signal2 : 28|4@1+ (1,0) [0|15] "" XXX
@@ -59,7 +59,7 @@ BO_ 64 Throttle: 8 XXX
 
 BO_ 316 Brake_Status: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|46@1+ (1,0) [0|1] "" XXX
  SG_ ES_Brake : 58|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 59|3@1+ (1,0) [0|1] "" XXX
@@ -68,7 +68,7 @@ BO_ 316 Brake_Status: 8 XXX
 
 BO_ 326 Cruise_Buttons: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|30@1+ (1,0) [0|1073741823] "" XXX
  SG_ Main : 42|1@1+ (1,0) [0|1] "" XXX
  SG_ Set : 43|1@1+ (1,0) [0|1] "" XXX
@@ -81,7 +81,7 @@ BO_ 315 G_Sensor: 8 XXX
 
 BO_ 314 Wheel_Speeds: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ FR : 12|13@1+ (0.057,0) [0|255] "kph" XXX
  SG_ RR : 25|13@1+ (0.057,0) [0|255] "kph" XXX
  SG_ FL : 51|13@1+ (0.057,0) [0|255] "kph" XXX
@@ -89,28 +89,28 @@ BO_ 314 Wheel_Speeds: 8 XXX
 
 BO_ 280 STOP_START: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ State : 63|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 281 Steering_Torque: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Steer_Error_1 : 12|1@0+ (1,0) [0|1] "" XXX
  SG_ Steer_Torque_Sensor : 16|11@1- (-1,0) [-1000|1000] "" XXX
  SG_ Steer_Error_2 : 28|1@1+ (1,0) [0|1] "" XXX
  SG_ Steer_Warning : 29|1@1+ (1,0) [0|1] "" XXX
  SG_ Steering_Angle : 32|16@1- (-0.0217,0) [-600|600] "" X
- SG_ Steer_Torque_Output : 48|11@1- (-1,0) [-1000|1000] "" XXX
+ SG_ Steer_Torque_Output : 48|11@1- (-10,0) [-1000|1000] "" XXX
 
 BO_ 312 Brake_Pressure_L_R: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Brake_1 : 48|8@1+ (1,0) [0|255] "" XXX
  SG_ Brake_2 : 56|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 313 Brake_Pedal: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ Speed : 16|12@1+ (0.05625,0) [0|255] "kph" XXX
  SG_ Signal2 : 28|6@1+ (1,0) [0|63] "" XXX
@@ -120,20 +120,20 @@ BO_ 313 Brake_Pedal: 8 XXX
  SG_ Signal4 : 48|16@1+ (1,0) [0|65535] "" XXX
 
 BO_ 372 Engine_Stop_Start: 8 XXX
-  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
-  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
-  SG_ STOP_START_STATE : 39|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ STOP_START_STATE : 39|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 290 ES_LKAS: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ SET_1 : 12|1@0+ (1,0) [0|1] "" XXX
  SG_ LKAS_Output : 16|13@1- (-1,0) [-8191|8191] "" XXX
  SG_ LKAS_Request : 29|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 544 ES_Brake: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ Brake_Pressure : 16|16@1+ (1,0) [0|65535] "" XXX
  SG_ Signal2 : 32|4@1+ (1,0) [0|15] "" XXX
@@ -145,14 +145,14 @@ BO_ 544 ES_Brake: 8 XXX
 
 BO_ 577 Cruise_Status: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Cruise_On : 54|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 55|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Active : 57|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 552 BSD_RCTA: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ R_ADJACENT : 48|1@1+ (1,0) [0|1] "" XXX
  SG_ L_ADJACENT : 49|1@1+ (1,0) [0|1] "" XXX
  SG_ R_APPROACHING : 58|1@1+ (1,0) [0|1] "" XXX
@@ -160,7 +160,7 @@ BO_ 552 BSD_RCTA: 8 XXX
 
 BO_ 912 Dashlights: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ UNITS : 24|1@1+ (1,0) [0|1] "" XXX
  SG_ ICY_ROAD : 32|2@1+ (1,0) [0|3] "" XXX
  SG_ SEATBELT_FL : 48|1@1+ (1,0) [0|1] "" XXX
@@ -170,7 +170,7 @@ BO_ 912 Dashlights: 8 XXX
 
 BO_ 940 BodyInfo: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ DOOR_OPEN_FL : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ DOOR_OPEN_FR : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ DOOR_OPEN_RL : 34|1@1+ (1,0) [0|1] "" XXX
@@ -185,7 +185,7 @@ BO_ 940 BodyInfo: 8 XXX
 
 BO_ 801 ES_DashStatus: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ PCB_Off : 12|1@1+ (1,0) [0|1] "" XXX
  SG_ LDW_Off : 13|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal1 : 14|2@1+ (1,0) [0|3] "" XXX
@@ -209,12 +209,12 @@ BO_ 801 ES_DashStatus: 8 XXX
  SG_ Brake_Lights : 51|1@1+ (1,0) [0|1] "" XXX
  SG_ Car_Follow : 52|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal7 : 53|3@1+ (1,0) [0|1] "" XXX
- SG_ Far_Distance : 56|4@1+ (1,0) [0|15] "" XXX
+ SG_ Far_Distance : 56|4@1+ (5,0) [0|75] "m" XXX
  SG_ Cruise_State : 60|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 802 ES_LKAS_State: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ LKAS_Alert_Msg : 12|3@1+ (1,0) [0|7] "" XXX
  SG_ Signal1 : 15|2@1+ (1,0) [0|3] "" XXX
  SG_ LKAS_ACTIVE : 17|1@1+ (1,0) [0|1] "" XXX
@@ -232,13 +232,13 @@ BO_ 802 ES_LKAS_State: 8 XXX
 
 BO_ 722 AC_State: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ AC_Mode : 37|3@1+ (1,0) [0|1] "" XXX
  SG_ AC_ON : 24|2@1+ (1,0) [0|1] "" XXX
 
 BO_ 1677 Dash_State: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Units : 29|3@1+ (1,0) [0|7] "" XXX
 
 CM_ SG_ 64 Throttle_Combo "Throttle Cruise + Pedal";
@@ -265,29 +265,31 @@ CM_ "subaru_global_2017.dbc starts here";
 
 BO_ 72 Transmission: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Gear : 24|8@1+ (1,0) [0|255] "" XXX
  SG_ RPM : 40|16@1+ (1,0) [0|65535] "" XXX
 
 BO_ 73 CVT: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ CVT_Gear : 24|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 545 ES_Distance: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|3@1+ (1,0) [0|7] "" XXX
  SG_ Cruise_Fault : 15|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Throttle : 16|12@1+ (1,0) [0|4095] "" XXX
  SG_ Signal2 : 28|4@1+ (1,0) [0|15] "" XXX
  SG_ Car_Follow : 32|1@1+ (1,0) [0|1] "" XXX
- SG_ Signal3 : 33|3@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 33|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Soft_Disable : 34|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal7 : 35|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Brake_Active : 36|1@1+ (1,0) [0|1] "" XXX
  SG_ Distance_Swap : 37|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_EPB : 38|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal4 : 39|1@0+ (1,0) [0|1] "" XXX
- SG_ Close_Distance : 40|8@1+ (1,0) [0|1] "" XXX
+ SG_ Close_Distance : 40|8@1+ (0.019607,0) [0|5] "m" XXX
  SG_ Signal5 : 48|8@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Cancel : 56|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Set : 57|1@1+ (1,0) [0|1] "" XXX
@@ -296,7 +298,7 @@ BO_ 545 ES_Distance: 8 XXX
 
 BO_ 546 ES_Status: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|3@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Fault : 15|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_RPM : 16|12@1+ (1,0) [0|4095] "" XXX
@@ -308,7 +310,7 @@ BO_ 546 ES_Status: 8 XXX
 
 BO_ 576 CruiseControl: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|28@1+ (1,0) [0|268435455] "" XXX
  SG_ Cruise_On : 40|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 41|1@1+ (1,0) [0|1] "" XXX
@@ -317,6 +319,7 @@ BO_ 576 CruiseControl: 8 XXX
 CM_ SG_ 545 Cruise_Throttle "RPM-like output signal";
 CM_ SG_ 545 Cruise_EPB "1 = Electric Parking Brake set";
 CM_ SG_ 545 Distance_Swap "Switch from Close to Far distance";
+CM_ SG_ 545 Cruise_Soft_Disable "Eyesight Temporary disable, sets CruiseControl Activated = 0";
 CM_ SG_ 546 Cruise_RPM "ES RPM output for ECM and TCM";
 CM_ SG_ 546 Signal3 "0 when cruise_activated = 1";
 VAL_ 72 Gear 2 "N" 3 "R" 4 "P" 121 "D" 137 "1" 145 "2" 153 "3" 161 "4" 169 "5" 177 "6";

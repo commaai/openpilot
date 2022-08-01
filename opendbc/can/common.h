@@ -27,6 +27,7 @@ unsigned int toyota_checksum(uint32_t address, const Signal &sig, const std::vec
 unsigned int subaru_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int chrysler_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int volkswagen_mqb_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
+unsigned int xor_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int hkg_can_fd_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int pedal_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 
@@ -86,9 +87,10 @@ private:
   const DBC *dbc = NULL;
   std::map<std::pair<uint32_t, std::string>, Signal> signal_lookup;
   std::map<uint32_t, Msg> message_lookup;
+  std::map<uint32_t, uint32_t> counters;
 
 public:
   CANPacker(const std::string& dbc_name);
-  std::vector<uint8_t> pack(uint32_t address, const std::vector<SignalPackValue> &values, int counter);
+  std::vector<uint8_t> pack(uint32_t address, const std::vector<SignalPackValue> &values);
   Msg* lookup_message(uint32_t address);
 };

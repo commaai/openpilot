@@ -1,3 +1,6 @@
+const CanMsg BODY_TX_MSGS[] = {{0x250, 0, 8}, {0x250, 0, 6}, {0x251, 0, 5},  // body
+                               {0x350, 0, 8}, {0x350, 0, 6}, {0x351, 0, 5}}; // knee
+
 AddrCheckStruct body_addr_checks[] = {
   {.msg = {{0x201, 0, 8, .check_checksum = false, .max_counter = 0U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
 };
@@ -24,7 +27,12 @@ static int body_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
     tx = 1;
   }
 
-  if ((addr == 0x250) && controls_allowed) {
+  if (msg_allowed(to_send, BODY_TX_MSGS, sizeof(BODY_TX_MSGS)/sizeof(BODY_TX_MSGS[0])) && controls_allowed) {
+    tx = 1;
+  }
+  
+  // Allow going into CAN flashing mode even if controls are not allowed 
+  if (!controls_allowed && ((uint32_t)GET_BYTES_04(to_send) == 0xdeadfaceU) && ((uint32_t)GET_BYTES_48(to_send) == 0x0ab00b1eU)) {
     tx = 1;
   }
 

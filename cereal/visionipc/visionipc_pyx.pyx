@@ -16,13 +16,10 @@ from .visionipc cimport VisionBuf as cppVisionBuf
 from .visionipc cimport VisionIpcBufExtra
 
 cpdef enum VisionStreamType:
-  VISION_STREAM_RGB_ROAD
-  VISION_STREAM_RGB_DRIVER
-  VISION_STREAM_RGB_WIDE_ROAD
   VISION_STREAM_ROAD
   VISION_STREAM_DRIVER
   VISION_STREAM_WIDE_ROAD
-  VISION_STREAM_RGB_MAP
+  VISION_STREAM_MAP
 
 
 cdef class VisionIpcServer:

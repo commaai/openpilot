@@ -41,6 +41,7 @@ services = {
   "longitudinalPlan": (True, 20., 5),
   "procLog": (True, 0.5),
   "gpsLocationExternal": (True, 10., 10),
+  "gpsLocation": (True, 1., 1),
   "ubloxGnss": (True, 10.),
   "qcomGnss": (True, 2.),
   "gnssMeasurements": (True, 10., 10),
