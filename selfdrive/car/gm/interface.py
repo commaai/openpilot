@@ -166,8 +166,8 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low,
-                                                           GearShifter.eco, GearShifter.manumatic],
+    events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
+                                                         GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
