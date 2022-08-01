@@ -41,7 +41,9 @@ def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
       car_info = (car_info,)
 
     for _car_info in car_info:
-      all_car_info.append(_car_info.init(CP, footnotes))
+      if not hasattr(_car_info, "row"):
+        _car_info.init(CP, footnotes)
+      all_car_info.append(_car_info)
 
   # Sort cars by make and model + year
   sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
