@@ -50,7 +50,6 @@ struct LogCameraInfo {
   int bitrate;
   bool is_h265;
   bool has_qcamera;
-  bool enable;
   bool record;
 };
 
@@ -63,7 +62,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = true,
-    .enable = true,
     .record = true,
     .frame_width = 1928,
     .frame_height = 1208,
@@ -76,7 +74,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .enable = true,
     .record = Params().getBool("RecordFront"),
     .frame_width = 1928,
     .frame_height = 1208,
@@ -89,7 +86,6 @@ const LogCameraInfo cameras_logged[] = {
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
     .has_qcamera = false,
-    .enable = true,
     .record = true,
     .frame_width = 1928,
     .frame_height = 1208,
@@ -100,7 +96,6 @@ const LogCameraInfo qcam_info = {
   .fps = MAIN_FPS,
   .bitrate = 256000,
   .is_h265 = false,
-  .enable = true,
   .record = true,
   .frame_width = 526,
   .frame_height = 330,

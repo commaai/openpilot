@@ -12,7 +12,6 @@ class CarController:
     self.CP = CP
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_name)
-    self.steer_rate_limited = False
     self.brake_counter = 0
     self.frame = 0
 
@@ -20,21 +19,12 @@ class CarController:
     can_sends = []
 
     apply_steer = 0
-    self.steer_rate_limited = False
 
     if CC.latActive:
       # calculate steer and also set limits due to driver torque
       new_steer = int(round(CC.actuators.steer * CarControllerParams.STEER_MAX))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
                                                   CS.out.steeringTorque, CarControllerParams)
-      self.steer_rate_limited = new_steer != apply_steer
-
-    if CC.enabled:
-      if CS.out.standstill and self.frame % 5 == 0:
-        # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
-        # Send Resume button at 20hz if we're engaged at standstill to support full stop and go!
-        # TODO: improve the resume trigger logic by looking at actual radar data
-        can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP.carFingerprint, CS.crz_btns_counter, Buttons.RESUME))
 
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid
@@ -48,6 +38,10 @@ class CarController:
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP.carFingerprint, CS.crz_btns_counter, Buttons.CANCEL))
     else:
       self.brake_counter = 0
+      if CC.cruiseControl.resume and self.frame % 5 == 0:
+        # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
+        # Send Resume button when planner wants car to move
+        can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP.carFingerprint, CS.crz_btns_counter, Buttons.RESUME))
 
     self.apply_steer_last = apply_steer
 

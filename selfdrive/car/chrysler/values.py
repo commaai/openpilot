@@ -2,17 +2,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union
 
+from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
 Ecu = car.CarParams.Ecu
-
-
-class CarControllerParams:
-  STEER_MAX = 261         # 262 faults
-  STEER_DELTA_UP = 3      # 3 is stock. 100 is fine. 200 is too much it seems
-  STEER_DELTA_DOWN = 3    # no faults on the way down it seems
-  STEER_ERROR_MAX = 80
 
 
 class CAR:
@@ -20,28 +13,50 @@ class CAR:
   PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
   PACIFICA_2018_HYBRID = "CHRYSLER PACIFICA HYBRID 2018"
   PACIFICA_2019_HYBRID = "CHRYSLER PACIFICA HYBRID 2019"
-  PACIFICA_2018 = "CHRYSLER PACIFICA 2018"  # includes 2017 Pacifica
+  PACIFICA_2018 = "CHRYSLER PACIFICA 2018"
   PACIFICA_2020 = "CHRYSLER PACIFICA 2020"
 
   # Jeep
-  JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"  # includes 2017 Trailhawk
-  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019"  # includes 2020 Trailhawk
+  JEEP_CHEROKEE = "JEEP GRAND CHEROKEE V6 2018"   # includes 2017 Trailhawk
+  JEEP_CHEROKEE_2019 = "JEEP GRAND CHEROKEE 2019" # includes 2020 Trailhawk
 
+  # Ram
+  RAM_1500 = "RAM 1500 5TH GEN"
+
+
+class CarControllerParams:
+  def __init__(self, CP):
+    self.STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
+    self.STEER_ERROR_MAX = 80
+
+    if CP.carFingerprint in RAM_CARS:
+      self.STEER_DELTA_UP = 6
+      self.STEER_DELTA_DOWN = 6
+    else:
+      self.STEER_DELTA_UP = 3
+      self.STEER_DELTA_DOWN = 3
+
+STEER_THRESHOLD = 120
+
+RAM_CARS = {CAR.RAM_1500, }
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise"
+  package: str = "Adaptive Cruise Control"
   harness: Enum = Harness.fca
-
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
   CAR.PACIFICA_2018_HYBRID: None,  # same platforms
   CAR.PACIFICA_2019_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-22"),
   CAR.PACIFICA_2018: ChryslerCarInfo("Chrysler Pacifica 2017-18"),
-  CAR.PACIFICA_2020: ChryslerCarInfo("Chrysler Pacifica 2019-20"),
+  CAR.PACIFICA_2020: [
+    ChryslerCarInfo("Chrysler Pacifica 2019-20"),
+    ChryslerCarInfo("Chrysler Pacifica 2021", package="All"),
+  ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
-  CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-20", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+  CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.none),
 }
 
 # Unique CAN messages:
@@ -99,15 +114,74 @@ FINGERPRINTS = {
   }],
 }
 
-
-DBC = {
-  CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2018: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2020: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2018_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.PACIFICA_2019_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
-  CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+FW_VERSIONS = {
+  CAR.RAM_1500: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68294063AH',
+      b'68294063AG',
+      b'68434860AC',
+      b'68527375AD',
+      b'68453503AC',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68441329AB',
+      b'68490898AA',
+      b'68428609AB',
+      b'68500728AA',
+    ],
+    (Ecu.esp, 0x747, None): [
+      b'68432418AD',
+      b'68432418AB',
+      b'68436004AE',
+      b'68438454AD',
+      b'68436004AD',
+      b'68535469AB',
+      b'68438454AC',
+    ],
+    (Ecu.fwdCamera, 0x753, None): [
+      b'68320950AL',
+      b'68320950AJ',
+      b'68454268AB',
+      b'68475160AG',
+      b'04672892AB',
+      b'68475160AE',
+    ],
+    (Ecu.eps, 0x75A, None): [
+      b'68273275AG',
+      b'68469901AA',
+      b'68552788AA',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'68448163AJ',
+      b'68500630AD',
+      b'68539650AD',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'68360078AL',
+      b'68384328AD',
+      b'68360085AL',
+      b'68360081AM',
+      b'68502994AD',
+      b'68445533AB',
+      b'68540431AB',
+      b'68484467AC',
+    ],
+    (Ecu.gateway, 0x18DACBF1, None): [
+      b'68402660AB',
+      b'68445283AB',
+      b'68533631AB',
+      b'68500483AB',
+    ],
+  },
 }
 
-STEER_THRESHOLD = 120
+DBC = {
+  CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2018: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2020: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2018_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.PACIFICA_2019_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
+  CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
+}
