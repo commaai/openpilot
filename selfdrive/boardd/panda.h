@@ -35,6 +35,12 @@ struct __attribute__((packed)) can_header {
   uint32_t addr : 29;
 };
 
+struct __attribute__((packed)) can_chunk_header {
+  uint8_t counter;
+  uint8_t overflow_len;
+  uint16_t chunk_data_len;
+};
+
 struct can_frame {
 	long address;
 	std::string dat;
@@ -47,7 +53,8 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
-  std::vector<uint8_t> recv_buf;
+  uint8_t can_rx_counter = 0U;
+  std::vector<uint8_t> can_rx_buf;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 

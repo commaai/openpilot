@@ -434,21 +434,48 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
-  recv_buf.clear();
-  for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
-    if (data[i] != i / USBPACKET_MAX_SIZE) {
-      LOGE("CAN: MALFORMED USB RECV PACKET");
-      comms_healthy = false;
-      return false;
+  int skip_len, i = 0;
+  can_chunk_header *chunk_header;
+
+  // unpacking all the chunks into one continuous buffer
+  while(i <= size - sizeof(can_chunk_header)) {
+    chunk_header = (can_chunk_header *) &data[i];
+
+    // if the counter is not what we expect, something went wrong!
+    skip_len = 0;
+    if (chunk_header->counter != can_rx_counter) {
+      if (i == 0) {
+        // if this is the first chunk, just reset our state and skip the overflow data
+        if (can_rx_buf.size() != 0) {
+          LOGW("CAN: discarding rx tail %d %d", chunk_header->counter, can_rx_counter);
+          can_rx_buf.clear();
+        }
+        can_rx_counter = chunk_header->counter;
+        skip_len = chunk_header->overflow_len;
+      } else {
+        // if this is not the first chunk, something went wrong!
+        LOGE("CAN: MALFORMED RECV PACKET");
+        comms_healthy = false;
+        return false;
+      }
     }
-    int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));
-    recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
+    i += sizeof(can_chunk_header);
+
+    // unpack this chunk
+    can_rx_buf.insert(can_rx_buf.end(), &data[i + skip_len], &data[i + chunk_header->chunk_data_len]);
+    i += chunk_header->chunk_data_len;
+
+    // increment expected counter for next chunk
+    can_rx_counter++;
   }
 
+  // unpack the CAN messages in this buffer
   int pos = 0;
-  while (pos < recv_buf.size()) {
+  while (pos <= can_rx_buf.size() - sizeof(can_header)) {
     can_header header;
-    memcpy(&header, &recv_buf[pos], CANPACKET_HEAD_SIZE);
+    memcpy(&header, &can_rx_buf[pos], sizeof(can_header));
+    const uint8_t data_len = dlc_to_len[header.data_len_code];
+    if (pos + sizeof(can_header) + data_len >= can_rx_buf.size()) break;
 
     can_frame &canData = out_vec.emplace_back();
     canData.busTime = 0;
@@ -457,10 +484,13 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
     if (header.rejected) { canData.src += CANPACKET_REJECTED; }
     if (header.returned) { canData.src += CANPACKET_RETURNED; }
 
-    const uint8_t data_len = dlc_to_len[header.data_len_code];
-    canData.dat.assign((char *)&recv_buf[pos + CANPACKET_HEAD_SIZE], data_len);
+    canData.dat.assign((char *)&can_rx_buf[pos + sizeof(can_header)], data_len);
 
-    pos += CANPACKET_HEAD_SIZE + data_len;
+    pos += sizeof(can_header) + data_len;
   }
+
+  // move the data tail to the front for next time
+  can_rx_buf.erase(can_rx_buf.begin(), can_rx_buf.begin() + pos);
+
   return true;
 }
