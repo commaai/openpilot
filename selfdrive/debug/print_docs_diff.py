@@ -86,7 +86,8 @@ def print_car_info_diff(path):
         changes["detail"].append(f"- Sentence for {base_car.make} {base_car.name} changed!\n" +
                                  f"  ```diff\n" +
                                  f"  + {base_car.detail_sentence}\n" +
-                                 f"  - {new_car.detail_sentence}")
+                                 f"  - {new_car.detail_sentence}\n" +
+                                 "```")
 
       # Tier changes
       if base_car.tier != new_car.tier:
