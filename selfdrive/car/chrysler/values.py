@@ -42,7 +42,7 @@ RAM_CARS = {CAR.RAM_1500, }
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise"
+  package: str = "Adaptive Cruise Control"
   harness: Enum = Harness.fca
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
