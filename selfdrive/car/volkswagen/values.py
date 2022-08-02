@@ -188,7 +188,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
 }
 
 # TODO: Add CarInfo override, is any one platform all ev/hybrid?
-EV_HYBRID_CAR = {}
+EV_HYBRID_CAR = set()
 
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
