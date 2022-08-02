@@ -152,7 +152,7 @@ class CarInfo:
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
       elif CP.carName not in ("nissan", "subaru", "toyota") or (CP.carName == "toyota" and CP.openpilotLongitudinalControl):
-        acc = " that <strong>automatically resumes from a stop</strong>"
+        acc = " <strong>that automatically resumes from a stop</strong>"
       else:
         acc = " <strong>to a stop</strong>"
 
