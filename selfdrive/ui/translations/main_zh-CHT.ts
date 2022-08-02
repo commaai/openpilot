@@ -306,10 +306,16 @@
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least %n character(s)!</source>
+        <translation>
+            <numerusform>需要至少 %n 個字元！</numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Need at least %1 characters!</source>
-        <translation>需要至少 %1 個字元！</translation>
+        <translation type="vanished">需要至少 %1 個字元！</translation>
     </message>
 </context>
 <context>

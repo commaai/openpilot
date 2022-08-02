@@ -306,10 +306,16 @@
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least %n character(s)!</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Need at least %1 characters!</source>
-        <translation>최소 %1 자가 필요합니다!</translation>
+        <translation type="vanished">최소 %1 자가 필요합니다!</translation>
     </message>
 </context>
 <context>

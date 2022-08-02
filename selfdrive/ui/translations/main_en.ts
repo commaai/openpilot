@@ -2,6 +2,16 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>InputDialog</name>
+    <message numerus="yes">
+        <source>Need at least %n character(s)!</source>
+        <translation>
+            <numerusform>Need at least %n character!</numerusform>
+            <numerusform>Need at least %n characters!</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>QObject</name>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
