@@ -37,7 +37,7 @@ def create_lfa_icon(packer, enabled, frame):
     "LFA_GREY": 0 if enabled else 1,
     "LFA_YELLOW": 1 if enabled else 0,
   }
-  return packer.make_can_msg("NEW_MSG_1", 4, values, frame % 255)
+  return packer.make_can_msg("LFA_ICONS", 4, values, frame % 255)
 
 def create_cam_0x2a4(packer, frame, camera_values):
   camera_values.update({
