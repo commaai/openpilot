@@ -54,6 +54,7 @@ class CarController:
   def update(self, CC, CS):
     torque_l = 0
     torque_r = 0
+    knee_error = 0
 
     can_sends = []
 
