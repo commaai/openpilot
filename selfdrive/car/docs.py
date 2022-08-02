@@ -28,6 +28,7 @@ CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
   footnotes = get_all_footnotes(only_tier_cols)
+  ev_hybrid_cars = get_interface_attr("EV_HYBRID_CAR", combine_brands=True, result=set)
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
     # Hyundai exception: those with radar have openpilot longitudinal
     fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
@@ -42,7 +43,7 @@ def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
 
     for _car_info in car_info:
       if not hasattr(_car_info, "row"):
-        _car_info.init(CP, footnotes)
+        _car_info.init(CP, footnotes, ev_hybrid=CP.carFingerprint in ev_hybrid_cars)
       all_car_info.append(_car_info)
 
   # Sort cars by make and model + year

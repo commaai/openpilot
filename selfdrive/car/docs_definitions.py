@@ -81,7 +81,7 @@ class CarInfo:
   min_enable_speed: Optional[float] = None
   harness: Optional[Enum] = None
 
-  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
+  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int], ev_hybrid=False):
     # TODO: set all the min steer speeds in carParams and remove this
     if self.min_steer_speed is not None:
       assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
@@ -135,6 +135,7 @@ class CarInfo:
 
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
+    self.ev_hybrid = ev_hybrid
 
     return self
 
