@@ -124,7 +124,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
     VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
     VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA", ev_hybrid=True),
     VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
@@ -135,7 +135,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Teramont X 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   ],
   CAR.GOLF_MK7: [
-    VWCarInfo("Volkswagen e-Golf 2014-20"),
+    VWCarInfo("Volkswagen e-Golf 2014-20", ev_hybrid=True),
     VWCarInfo("Volkswagen Golf 2015-20", footnotes=[Footnote.VW_VARIANT]),
     VWCarInfo("Volkswagen Golf Alltrack 2015-19"),
     VWCarInfo("Volkswagen Golf GTD 2015-20"),
@@ -187,9 +187,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
 }
 
-# TODO: Add CarInfo override, is any one platform all ev/hybrid?
 EV_HYBRID_CAR = set()
-
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.

@@ -139,4 +139,5 @@ DBC = {
   CAR.ROGUE: dbc_dict('nissan_x_trail_2017', None),
   CAR.ALTIMA: dbc_dict('nissan_x_trail_2017', None),
 }
+
 EV_HYBRID_CAR = {CAR.LEAF, CAR.LEAF_IC}

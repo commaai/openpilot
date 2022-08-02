@@ -83,4 +83,5 @@ DBC = {
   CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', None),
   CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', None),
 }
+
 EV_HYBRID_CAR = set()
