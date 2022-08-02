@@ -5,7 +5,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import DBC, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams, CAR
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 4
@@ -19,7 +19,9 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
-    if CP.carFingerprint in HDA2_CAR:
+    if CP.carFingerprint in CAR.GENESIS_GV70:
+      self.shifter_values = can_define.dv["GEAR"]["GEAR"]
+    elif CP.carFingerprint in HDA2_CAR:
       self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
@@ -133,9 +135,11 @@ class CarState(CarStateBase):
 
   def update_hda2(self, cp, cp_cam):
     ret = car.CarState.new_message()
-
-    #ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    #ret.gasPressed = ret.gas > 1e-3
+    gas_scale = 255
+    if cp.carFingerprint in CAR.GENESIS_GV70:
+      gas_scale = 1022
+    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
+    ret.gasPressed = ret.gas > 1e-3
     ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
@@ -350,8 +354,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      #("ACCELERATOR_PEDAL", "ACCELERATOR"),
-      ("GEAR", "ACCELERATOR"),
+      ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+      ("GEAR", "GEAR"),
       ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
@@ -377,6 +381,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 100),
       ("ACCELERATOR", 100),
       ("BRAKE", 100),
+      ("GEAR", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("SCC1", 50),
