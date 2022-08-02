@@ -306,10 +306,16 @@
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least %n character(s)!</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Need at least %1 characters!</source>
-        <translation>최소 %1 자가 필요합니다!</translation>
+        <translation type="vanished">최소 %1 자가 필요합니다!</translation>
     </message>
 </context>
 <context>
@@ -635,20 +641,38 @@ location set</source>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
-        <source>%1 minute%2 ago</source>
-        <translation>%1 분전</translation>
+        <source>%n minute(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
-        <source>%1 hour%2 ago</source>
-        <translation>%1 시간전</translation>
+        <source>%n hour(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qt/util.cc" line="88"/>
+        <source>%n day(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message>
-        <location filename="../qt/util.cc" line="88"/>
+        <source>%1 minute%2 ago</source>
+        <translation type="vanished">%1 분전</translation>
+    </message>
+    <message>
+        <source>%1 hour%2 ago</source>
+        <translation type="vanished">%1 시간전</translation>
+    </message>
+    <message>
         <source>%1 day%2 ago</source>
-        <translation>%1 일전</translation>
+        <translation type="vanished">%1 일전</translation>
     </message>
 </context>
 <context>

@@ -306,10 +306,16 @@
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least %n character(s)!</source>
+        <translation>
+            <numerusform>需要至少 %n 個字元！</numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Need at least %1 characters!</source>
-        <translation>需要至少 %1 個字元！</translation>
+        <translation type="vanished">需要至少 %1 個字元！</translation>
     </message>
 </context>
 <context>
@@ -635,23 +641,41 @@ location set</source>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
+        <source>%n minute(s) ago</source>
+        <translation>
+            <numerusform>%n 分鐘前</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qt/util.cc" line="85"/>
+        <source>%n hour(s) ago</source>
+        <translation>
+            <numerusform>%n 小時前</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qt/util.cc" line="88"/>
+        <source>%n day(s) ago</source>
+        <translation>
+            <numerusform>%n 天前</numerusform>
+        </translation>
+    </message>
+    <message>
         <source>%1 minute%2 ago</source>
         <translatorcomment>we don&apos;t need %2</translatorcomment>
-        <translation>%1 分鐘前</translation>
+        <translation type="vanished">%1 分鐘前</translation>
     </message>
     <message>
-        <location filename="../qt/util.cc" line="85"/>
         <source>%1 hour%2 ago</source>
         <translatorcomment>we don&apos;t need %2</translatorcomment>
-        <translation>%1 小時前</translation>
+        <translation type="vanished">%1 小時前</translation>
     </message>
     <message>
-        <location filename="../qt/util.cc" line="88"/>
         <source>%1 day%2 ago</source>
         <translatorcomment>we don&apos;t need %2</translatorcomment>
-        <translation>%1 天前</translation>
+        <translation type="vanished">%1 天前</translation>
     </message>
 </context>
 <context>
