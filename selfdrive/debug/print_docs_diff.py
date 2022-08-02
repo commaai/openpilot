@@ -83,7 +83,7 @@ def print_car_info_diff(path):
     for new_car, base_car in car_changes:
       # Tier changes
       if base_car.tier != new_car.tier:
-        changes["tier"].append(f"- Tier for {base_car.make} {base_car.name} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
+        changes["tier"].append(f"- Tier for {base_car.name} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
 
       # Column changes
       row_diff = build_column_diff(base_car, new_car)
@@ -92,11 +92,11 @@ def print_car_info_diff(path):
 
       # Detail sentence changes
       if base_car.detail_sentence != new_car.detail_sentence:
-        changes["detail"].append(f"- Sentence for {base_car.make} {base_car.name} changed!\n" +
+        changes["detail"].append(f"- Sentence for {base_car.name} changed!\n" +
                                  "  ```diff\n" +
-                                 f"  + {base_car.detail_sentence}\n" +
-                                 f"  - {new_car.detail_sentence}\n" +
-                                 "```")
+                                 f"  - {base_car.detail_sentence}\n" +
+                                 f"  + {new_car.detail_sentence}\n" +
+                                 "  ```")
 
   # Print diff
   if any(len(c) for c in changes.values()):
