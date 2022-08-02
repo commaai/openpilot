@@ -306,10 +306,13 @@
         <source>Cancel</source>
         <translation>Annuleren</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least %1 characters!</source>
-        <translation>Heeft minstens %1 karakters nodig!</translation>
+        <source>Need at least %n character(s)!</source>
+        <translation>
+            <numerusform>Heeft minstens %n karakter nodig!</numerusform>
+            <numerusform>Heeft minstens %n karakters nodig!</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -633,20 +636,29 @@ location set</source>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
-        <source>%1 minute%2 ago</source>
-        <translation>%1 min. geleden</translation>
+        <source>%n minute(s) ago</source>
+        <translation>
+            <numerusform>%n minuut geleden</numerusform>
+            <numerusform>%n minuten geleden</numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
-        <source>%1 hour%2 ago</source>
-        <translation>%1 uur geleden</translation>
+        <source>%n hour(s) ago</source>
+        <translation>
+            <numerusform>%n uur geleden</numerusform>
+            <numerusform>%n uur geleden</numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
-        <source>%1 day%2 ago</source>
-        <translation>%1 dag(en) geleden</translation>
+        <source>%n day(s) ago</source>
+        <translation>
+            <numerusform>%n dag geleden</numerusform>
+            <numerusform>%n dagen geleden</numerusform>
+        </translation>
     </message>
 </context>
 <context>
