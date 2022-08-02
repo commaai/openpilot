@@ -2,6 +2,7 @@
 import sys
 import time
 import datetime
+import numpy as np
 from typing import List
 
 from common.realtime import Ratekeeper
