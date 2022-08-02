@@ -1,4 +1,3 @@
-
 Version 0.8.16 (2022-XX-XX)
 ========================
 * Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
