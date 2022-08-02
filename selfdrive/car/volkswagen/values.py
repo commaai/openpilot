@@ -122,10 +122,10 @@ class VWCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
     VWCarInfo("Volkswagen Atlas 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
