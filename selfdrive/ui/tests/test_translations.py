@@ -39,7 +39,7 @@ class TestTranslations(unittest.TestCase):
                         f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
-    update_translations(translations_dir=TMP_TRANSLATIONS_DIR)
+    update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
 
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
