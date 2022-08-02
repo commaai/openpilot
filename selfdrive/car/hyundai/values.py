@@ -22,7 +22,7 @@ class CarControllerParams:
 
     if CP.carFingerprint in HDA2_CAR:
       if CP.carFingerprint in (CAR.GENESIS_GV70,):
-        self.STEER_MAX = 384
+        self.STEER_MAX = 270
       else:
         self.STEER_MAX = 270
       self.STEER_DRIVER_ALLOWANCE = 250
