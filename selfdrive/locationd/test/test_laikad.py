@@ -28,7 +28,7 @@ def get_log(segs=range(0)):
 def verify_messages(lr, laikad, return_one_success=False):
   good_msgs = []
   for m in lr:
-    msg = laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=True)
+    msg = laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=True)
     if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
       good_msgs.append(msg)
       if return_one_success:
@@ -152,7 +152,7 @@ class TestLaikad(unittest.TestCase):
     self.assertFalse(all(laikad.kf_valid(m.logMonoTime * 1e-9)))
     kf_valid = False
     for m in self.logs:
-      laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=True)
+      laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=True)
       kf_valid = all(laikad.kf_valid(m.logMonoTime * 1e-9))
       if kf_valid:
         break
@@ -201,7 +201,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad(auto_update=False)
     has_orbits = False
     for m in self.logs:
-      laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=False)
+      laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=False)
       if laikad.orbit_fetch_future is not None:
         laikad.orbit_fetch_future.result()
       vals = laikad.astro_dog.orbits.values()
