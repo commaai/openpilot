@@ -313,10 +313,6 @@
             <numerusform></numerusform>
         </translation>
     </message>
-    <message>
-        <source>Need at least %1 characters!</source>
-        <translation type="vanished">최소 %1 자가 필요합니다!</translation>
-    </message>
 </context>
 <context>
     <name>Installer</name>
@@ -661,18 +657,6 @@ location set</source>
         <translation type="unfinished">
             <numerusform></numerusform>
         </translation>
-    </message>
-    <message>
-        <source>%1 minute%2 ago</source>
-        <translation type="vanished">%1 분전</translation>
-    </message>
-    <message>
-        <source>%1 hour%2 ago</source>
-        <translation type="vanished">%1 시간전</translation>
-    </message>
-    <message>
-        <source>%1 day%2 ago</source>
-        <translation type="vanished">%1 일전</translation>
     </message>
 </context>
 <context>
@@ -1187,14 +1171,6 @@ location set</source>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
         <translation>차량이 50km/h(31mph) 이상의 속도로 주행하는 동안 방향 지시등이 활성화되지 않은 상태에서 감지된 차선 위를 주행할 경우 차선이탈 경고를 사용합니다.</translation>
-    </message>
-    <message>
-        <source>Enable Right-Hand Drive</source>
-        <translation type="vanished">우측핸들 사용</translation>
-    </message>
-    <message>
-        <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation type="vanished">openpilot이 좌측 교통 규칙을 준수하고 우측 운전석에서 운전자 모니터링을 수행합니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>

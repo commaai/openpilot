@@ -313,10 +313,6 @@
             <numerusform>至少需要 %n 个字符！</numerusform>
         </translation>
     </message>
-    <message>
-        <source>Need at least %1 characters!</source>
-        <translation type="vanished">至少需要 %1 个字符！</translation>
-    </message>
 </context>
 <context>
     <name>Installer</name>
@@ -659,18 +655,6 @@ location set</source>
         <translation>
             <numerusform>%n 天前</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>%1 minute%2 ago</source>
-        <translation type="vanished">%1 分钟%2 前</translation>
-    </message>
-    <message>
-        <source>%1 hour%2 ago</source>
-        <translation type="vanished">%1 小时%2 前</translation>
-    </message>
-    <message>
-        <source>%1 day%2 ago</source>
-        <translation type="vanished">%1 天%2 前</translation>
     </message>
 </context>
 <context>
@@ -1185,14 +1169,6 @@ location set</source>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
         <translation>车速超过31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
-    </message>
-    <message>
-        <source>Enable Right-Hand Drive</source>
-        <translation type="vanished">启用右舵模式</translation>
-    </message>
-    <message>
-        <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation type="vanished">允许openpilot遵守左侧交通惯例并在右侧驾驶座上执行驾驶员监控。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
