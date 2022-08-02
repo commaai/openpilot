@@ -55,7 +55,7 @@ FW_VERSIONS = {
       b'ELECTRIC1'
     ],
     (Ecu.debug, 0x721, None): [
-      b'49e1d27b' # git hash of the firmware used
+      b'354d2da5' # git hash of the firmware used
     ],
   },
 }
