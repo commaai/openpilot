@@ -140,7 +140,12 @@ class CarState(CarStateBase):
       gas_scale = 1022
     ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
     ret.gasPressed = ret.gas > 1e-3
-    ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+
+    if cp.carFingerprint in CAR.GENESIS_GV70:
+      ret.brakePressed = cp.vl["ACCELERATOR"]["BRAKE_PRESSED"] == 1
+    else:
+      ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
@@ -355,8 +360,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
       ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+      ("BRAKE_PRESSED", "ACCELERATOR"),
       ("GEAR", "GEAR"),
-      ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
