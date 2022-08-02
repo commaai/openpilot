@@ -245,7 +245,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="218"/>
         <source>Disengage to Reboot</source>
-        <translation>Schakel openpilot uit om het apparaat opnieuw op te starten</translation>
+        <translation>Deactiveer openpilot om het apparaat opnieuw op te starten</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="224"/>
@@ -255,7 +255,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="231"/>
         <source>Disengage to Power Off</source>
-        <translation>Schakel openpilot uit om het apparaat uit te schakelen</translation>
+        <translation>Deactiveer openpilot om het apparaat uit te schakelen</translation>
     </message>
 </context>
 <context>
@@ -621,7 +621,7 @@ location set</source>
     <message>
         <location filename="../qt/text.cc" line="41"/>
         <source>Exit</source>
-        <translation>Verlaten</translation>
+        <translation>Afsluiten</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="21"/>
@@ -1185,12 +1185,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>Uitschakelen Met Gaspedaal</translation>
+        <translation>Deactiveren Met Gaspedaal</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Indien ingeschakeld, zal het indrukken van het gaspedaal openpilot uitschakelen.</translation>
+        <translation>Indien ingeschakeld, zal het indrukken van het gaspedaal openpilot deactiveren.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
