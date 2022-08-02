@@ -66,6 +66,16 @@ class TestTranslations(unittest.TestCase):
         self.assertTrue(b"<translation type=\"unfinished\">" not in cur_translations,
                         f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
 
+  def test_vanished_translations(self):
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        if not len(file):
+          raise self.skipTest(f"{name} translation has no defined file")
+
+        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
+        self.assertTrue(b"<translation type=\"vanished\">" not in cur_translations,
+                        f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove obsolete translations")
+
 
 if __name__ == "__main__":
   unittest.main()
