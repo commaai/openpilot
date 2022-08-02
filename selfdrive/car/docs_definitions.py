@@ -152,7 +152,9 @@ class CarInfo:
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
       elif CP.carName not in ("nissan", "subaru", "toyota") or (CP.carName == "toyota" and CP.openpilotLongitudinalControl):
-        acc = " <strong>that automatically resumes from a stop</strong>"
+        acc = " that <strong>automatically resumes from a stop</strong>"
+      else:
+        acc = " <strong>to a stop</strong>"
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
         sentence_builder += " This car may not be able to take tight turns on its own."
