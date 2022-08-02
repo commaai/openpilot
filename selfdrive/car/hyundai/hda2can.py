@@ -31,11 +31,11 @@ def create_lfa(packer, enabled, frame, lat_active, apply_steer):
   }
   return packer.make_can_msg("LFA", 4, values, frame % 255)
 
-def create_lfa_icon(packer, enabled, frame, gray, yellow):
+def create_lfa_icon(packer, enabled, frame):
   values = {
     "HDA": 1 if enabled else 0,
-    "LFA_GREY": 1 if gray else 0,
-    "LFA_YELLOW": 1 if yellow else 0,
+    "LFA_GREY": 0 if enabled else 1,
+    "LFA_YELLOW": 1 if enabled else 0,
   }
   return packer.make_can_msg("NEW_MSG_1", 4, values, frame % 255)
 
