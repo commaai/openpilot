@@ -321,7 +321,7 @@ class CarStateBase(ABC):
   def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
-    
+
     d: Dict[str, car.CarState.GearShifter] = {
         'P': GearShifter.park, 'PARK': GearShifter.park,
         'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
@@ -354,11 +354,11 @@ class CarStateBase(ABC):
 
 # interface-specific helpers
 
-def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: bool = False) -> Dict[str, Any]:
+def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: bool = False, result=dict) -> Dict[str, Any]:
   # read all the folders in selfdrive/car and return a dict where:
   # - keys are all the car models or brand names
   # - values are attr values from all car folders
-  result = {}
+  result = result()
   for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
     try:
       brand_name = car_folder.split('/')[-1]
@@ -372,6 +372,10 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
         if isinstance(attr_data, dict):
           for f, v in attr_data.items():
             result[f] = v
+        elif isinstance(attr_data, list):
+          result += attr_data
+        elif isinstance(attr_data, set):
+          result |= attr_data
       else:
         result[brand_name] = attr_data
     except (ImportError, OSError):

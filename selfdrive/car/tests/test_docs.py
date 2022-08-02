@@ -56,6 +56,12 @@ class TestCarDocs(unittest.TestCase):
       with self.subTest(car=car):
         self.assertIsNone(re.search(r"\d{4}-\d{4}", car.name), f"Format years correctly: {car.name}")
 
+  def test_ev_hybrid_car(self):
+    ev_hybrid_car = get_interface_attr("EV_HYBRID_CAR")
+    for brand, cars in ev_hybrid_car.items():
+      with self.subTest(brand=brand):
+        self.assertIsInstance(cars, set, f"Brand {brand} doesn't implement EV_HYBRID_CAR")
+
 
 if __name__ == "__main__":
   unittest.main()
