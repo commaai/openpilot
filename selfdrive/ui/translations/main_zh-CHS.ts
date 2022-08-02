@@ -306,10 +306,16 @@
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least %n character(s)!</source>
+        <translation>
+            <numerusform>至少需要 %n 个字符！</numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Need at least %1 characters!</source>
-        <translation>至少需要 %1 个字符！</translation>
+        <translation type="vanished">至少需要 %1 个字符！</translation>
     </message>
 </context>
 <context>
@@ -633,20 +639,38 @@ location set</source>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
-        <source>%1 minute%2 ago</source>
-        <translation>%1 分钟%2 前</translation>
+        <source>%n minute(s) ago</source>
+        <translation>
+            <numerusform>%n 分钟前</numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
-        <source>%1 hour%2 ago</source>
-        <translation>%1 小时%2 前</translation>
+        <source>%n hour(s) ago</source>
+        <translation>
+            <numerusform>%n 小时前</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qt/util.cc" line="88"/>
+        <source>%n day(s) ago</source>
+        <translation>
+            <numerusform>%n 天前</numerusform>
+        </translation>
     </message>
     <message>
-        <location filename="../qt/util.cc" line="88"/>
+        <source>%1 minute%2 ago</source>
+        <translation type="vanished">%1 分钟%2 前</translation>
+    </message>
+    <message>
+        <source>%1 hour%2 ago</source>
+        <translation type="vanished">%1 小时%2 前</translation>
+    </message>
+    <message>
         <source>%1 day%2 ago</source>
-        <translation>%1 天%2 前</translation>
+        <translation type="vanished">%1 天%2 前</translation>
     </message>
 </context>
 <context>
