@@ -10,3 +10,5 @@ class CAR:
 CAR_INFO: Dict[str, Optional[Union[CarInfo, List[CarInfo]]]] = {
   CAR.MOCK: None,
 }
+
+EV_HYBRID_CAR = set()

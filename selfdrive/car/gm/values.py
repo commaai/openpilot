@@ -151,3 +151,4 @@ FINGERPRINTS = {
 }
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
+EV_HYBRID_CAR = {CAR.VOLT}

@@ -36,3 +36,5 @@ FW_VERSIONS = {
 DBC = {
   CAR.BODY: dbc_dict('comma_body', None),
 }
+
+EV_HYBRID_CAR = {CAR.BODY}

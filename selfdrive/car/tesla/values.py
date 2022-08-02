@@ -37,6 +37,8 @@ DBC = {
   CAR.AP1_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
 }
 
+EV_HYBRID_CAR = {CAR.AP1_MODELS, CAR.AP2_MODELS}
+
 class CANBUS:
   # Lateral harness
   chassis = 0

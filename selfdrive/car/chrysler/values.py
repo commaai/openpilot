@@ -185,3 +185,5 @@ DBC = {
   CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
 }
+
+EV_HYBRID_CAR = {CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID}
