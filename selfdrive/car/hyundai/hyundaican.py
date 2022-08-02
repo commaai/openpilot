@@ -18,9 +18,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   if car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.SANTA_FE,
                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
-                         CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.SANTA_FE_2022,
-                         CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022,
-                         CAR.KONA_EV_2022):
+                         CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
+                         CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -79,7 +78,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
     "HDA_Icon_State": 2 if hda_set_speed else 0,
     "HDA_VSetReq": hda_set_speed,
   }
-  return packer.make_can_msg("LFAHDA_MFC", 0, values)  # TODO: this is on bus 2, okay to send on bus 0?
+  return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_acc_commands(packer, enabled, accel, jerk, idx, lead_visible, set_speed, stopping, gas_pressed):
   commands = []
