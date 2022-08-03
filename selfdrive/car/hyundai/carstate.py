@@ -135,9 +135,8 @@ class CarState(CarStateBase):
 
   def update_hda2(self, cp, cp_cam):
     ret = car.CarState.new_message()
-    gas_scale = 1022
-    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
-    ret.gasPressed = ret.gas > 1e-3
+    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_ENGINE"] / 1022
+    ret.gasPressed = cp.vl["ACCELERATOR"]["ACC_PEDAL_PRESSED"] == 1
 
     ret.brakePressed = cp.vl["ACCELERATOR"]["BRAKE_PRESSED"] == 1
 
@@ -353,7 +352,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+      ("ACCELERATOR_ENGINE", "ACCELERATOR"),
+      ("ACC_PEDAL_PRESSED", "ACCELERATOR"),
       ("BRAKE_PRESSED", "ACCELERATOR"),
       ("GEAR", "GEAR"),
 
