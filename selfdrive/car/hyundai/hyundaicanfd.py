@@ -23,7 +23,7 @@ def create_cam_0x2a4(packer, camera_values):
   })
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
 
-def create_buttons(packer, CP, cruise_buttons_copy, set_me_1, set_me_2, cnt, btn):
+def create_buttons(packer, CP, cruise_buttons_copy, cnt, btn):
   values = cruise_buttons_copy
   values["COUNTER"] = cnt
   values["CRUISE_BUTTONS"] = btn
@@ -32,7 +32,5 @@ def create_buttons(packer, CP, cruise_buttons_copy, set_me_1, set_me_2, cnt, btn
     values["SET_ME_1"] = 1
   else:
     bus = 4
-    values["SET_ME_1"] = set_me_1
-    values["SET_ME_2"] = set_me_2
 
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)

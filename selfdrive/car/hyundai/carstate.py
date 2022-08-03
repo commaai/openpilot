@@ -33,8 +33,6 @@ class CarState(CarStateBase):
     self.brake_error = False
     self.park_brake = False
     self.buttons_counter = 0
-    self.buttons_set_me_1 = 0
-    self.buttons_set_me_2 = 0
 
     self.params = CarControllerParams(CP)
 
@@ -189,9 +187,6 @@ class CarState(CarStateBase):
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
-    else:
-      self.buttons_set_me_1 = cp.vl["CRUISE_BUTTONS"]["SET_ME_1"]
-      self.buttons_set_me_2 = cp.vl["CRUISE_BUTTONS"]["SET_ME_2"]
 
     return ret
 
@@ -403,7 +398,27 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "SCC1"),
       ("COUNTER", "CRUISE_BUTTONS"),
       ("CRUISE_BUTTONS", "CRUISE_BUTTONS"),
+      ("NEW_SIGNAL_1", "CRUISE_BUTTONS"),
+      ("SET_ME_1", "CRUISE_BUTTONS"),
+      ("NEW_SIGNAL_2", "CRUISE_BUTTONS"),
+      ("NEW_SIGNAL_3", "CRUISE_BUTTONS"),
+      ("LKAS_BTN", "CRUISE_BUTTONS"),
+      ("NEW_SIGNAL_4", "CRUISE_BUTTONS"),
       ("ADAPTIVE_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
+      ("NORMAL_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
+      ("NEW_SIGNAL_5", "CRUISE_BUTTONS"),
+      ("SET_ME_2", "CRUISE_BUTTONS"),
+      ("NEW_SIGNAL_6", "CRUISE_BUTTONS"),
+      ("BYTE6", "CRUISE_BUTTONS"),
+      ("BYTE7", "CRUISE_BUTTONS"),
+      ("BYTE8", "CRUISE_BUTTONS"),
+      ("BYTE9", "CRUISE_BUTTONS"),
+      ("BYTE10", "CRUISE_BUTTONS"),
+      ("BYTE11", "CRUISE_BUTTONS"),
+      ("BYTE12", "CRUISE_BUTTONS"),
+      ("BYTE13", "CRUISE_BUTTONS"),
+      ("BYTE14", "CRUISE_BUTTONS"),
+      ("BYTE15", "CRUISE_BUTTONS"),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
 
