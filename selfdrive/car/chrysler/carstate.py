@@ -41,7 +41,7 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 1e-5
 
     # car speed
-    if self.CP.carFingerprint in RAM_CARS:
+    if self.car_fingerprint in RAM_CARS:
       ret.vEgoRaw = cp.vl["ESP_8"]["Vehicle_Speed"] * CV.KPH_TO_MS
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["Transmission_Status"]["Gear_State"], None))
     else:
@@ -70,7 +70,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
     # cruise state
-    cp_cruise = cp_cam if self.CP.carFingerprint in RAM_CARS else cp
+    cp_cruise = cp_cam if self.car_fingerprint in RAM_CARS else cp
 
     ret.cruiseState.available = cp_cruise.vl["DAS_3"]["ACC_AVAILABLE"] == 1
     ret.cruiseState.enabled = cp_cruise.vl["DAS_3"]["ACC_ACTIVE"] == 1
@@ -79,7 +79,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = cp_cruise.vl["DAS_3"]["ACC_STANDSTILL"] == 1
     ret.accFaulted = cp_cruise.vl["DAS_3"]["ACC_FAULTED"] != 0
 
-    if self.CP.carFingerprint in RAM_CARS:
+    if self.car_fingerprint in RAM_CARS:
       self.auto_high_beam = cp_cam.vl["DAS_6"]['AUTO_HIGH_BEAM_ON']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
       ret.steerFaultTemporary  = cp.vl["EPS_3"]["DASM_FAULT"] == 1
     else:

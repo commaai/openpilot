@@ -23,16 +23,16 @@ class CarState(CarStateBase):
   def update(self, cp, cp_adas, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
+    if self.car_fingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       ret.gas = cp.vl["GAS_PEDAL"]["GAS_PEDAL"]
-    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    elif self.car_fingerprint in (CAR.LEAF, CAR.LEAF_IC):
       ret.gas = cp.vl["CRUISE_THROTTLE"]["GAS_PEDAL"]
 
     ret.gasPressed = bool(ret.gas > 3)
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
+    if self.car_fingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA):
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
-    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    elif self.car_fingerprint in (CAR.LEAF, CAR.LEAF_IC):
       ret.brakePressed = bool(cp.vl["CRUISE_THROTTLE"]["USER_BRAKE_PRESSED"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -46,38 +46,38 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.car_fingerprint == CAR.ALTIMA:
       ret.cruiseState.enabled = bool(cp.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
     else:
       ret.cruiseState.enabled = bool(cp_adas.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
 
-    if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
+    if self.car_fingerprint in (CAR.ROGUE, CAR.XTRAIL):
       ret.seatbeltUnlatched = cp.vl["HUD"]["SEATBELT_DRIVER_LATCHED"] == 0
       ret.cruiseState.available = bool(cp_cam.vl["PRO_PILOT"]["CRUISE_ON"])
-    elif self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
-      if self.CP.carFingerprint == CAR.LEAF:
+    elif self.car_fingerprint in (CAR.LEAF, CAR.LEAF_IC):
+      if self.car_fingerprint == CAR.LEAF:
         ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEATBELT_DRIVER_LATCHED"] == 0
-      elif self.CP.carFingerprint == CAR.LEAF_IC:
+      elif self.car_fingerprint == CAR.LEAF_IC:
         ret.seatbeltUnlatched = cp.vl["CANCEL_MSG"]["CANCEL_SEATBELT"] == 1
       ret.cruiseState.available = bool(cp.vl["CRUISE_THROTTLE"]["CRUISE_AVAILABLE"])
-    elif self.CP.carFingerprint == CAR.ALTIMA:
+    elif self.car_fingerprint == CAR.ALTIMA:
       ret.seatbeltUnlatched = cp.vl["HUD"]["SEATBELT_DRIVER_LATCHED"] == 0
       ret.cruiseState.available = bool(cp_adas.vl["PRO_PILOT"]["CRUISE_ON"])
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.car_fingerprint == CAR.ALTIMA:
       speed = cp.vl["PROPILOT_HUD"]["SET_SPEED"]
     else:
       speed = cp_adas.vl["PROPILOT_HUD"]["SET_SPEED"]
 
     if speed != 255:
-      if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+      if self.car_fingerprint in (CAR.LEAF, CAR.LEAF_IC):
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
       else:
         conversion = CV.MPH_TO_MS if cp.vl["HUD"]["SPEED_MPH"] else CV.KPH_TO_MS
       ret.cruiseState.speed = speed * conversion
       ret.cruiseState.speedCluster = (speed - 1) * conversion  # Speed on HUD is always 1 lower than actually sent on can bus
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.car_fingerprint == CAR.ALTIMA:
       ret.steeringTorque = cp_cam.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     else:
       ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
@@ -101,17 +101,17 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEARBOX"]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    if self.CP.carFingerprint == CAR.ALTIMA:
+    if self.car_fingerprint == CAR.ALTIMA:
       self.lkas_enabled = bool(cp.vl["LKAS_SETTINGS"]["LKAS_ENABLED"])
     else:
       self.lkas_enabled = bool(cp_adas.vl["LKAS_SETTINGS"]["LKAS_ENABLED"])
 
     self.cruise_throttle_msg = copy.copy(cp.vl["CRUISE_THROTTLE"])
 
-    if self.CP.carFingerprint in (CAR.LEAF, CAR.LEAF_IC):
+    if self.car_fingerprint in (CAR.LEAF, CAR.LEAF_IC):
       self.cancel_msg = copy.copy(cp.vl["CANCEL_MSG"])
 
-    if self.CP.carFingerprint != CAR.ALTIMA:
+    if self.car_fingerprint != CAR.ALTIMA:
       self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
       self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
 

@@ -21,9 +21,9 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in HDA2_CAR:
       self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
-    elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    elif self.car_fingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif self.car_fingerprint in FEATURES["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
@@ -35,12 +35,12 @@ class CarState(CarStateBase):
     self.params = CarControllerParams(CP)
 
   def update(self, cp, cp_cam):
-    if self.CP.carFingerprint in HDA2_CAR:
+    if self.car_fingerprint in HDA2_CAR:
       return self.update_hda2(cp, cp_cam)
 
     ret = car.CarState.new_message()
 
-    cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
+    cp_cruise = cp_cam if self.car_fingerprint in CAMERA_SCC_CAR else cp
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
                         cp.vl["CGW2"]["CF_Gway_RLDrSw"], cp.vl["CGW2"]["CF_Gway_RRDrSw"]])
@@ -87,8 +87,8 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
 
-    if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
-      if self.CP.carFingerprint in HYBRID_CAR:
+    if self.car_fingerprint in (HYBRID_CAR | EV_CAR):
+      if self.car_fingerprint in HYBRID_CAR:
         ret.gas = cp.vl["E_EMS11"]["CR_Vcu_AccPedDep_Pos"] / 254.
       else:
         ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 254.
@@ -99,11 +99,11 @@ class CarState(CarStateBase):
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
     # as this seems to be standard over all cars, but is not the preferred method.
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    if self.car_fingerprint in FEATURES["use_cluster_gears"]:
       gear = cp.vl["CLU15"]["CF_Clu_Gear"]
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif self.car_fingerprint in FEATURES["use_tcu_gears"]:
       gear = cp.vl["TCU12"]["CUR_GR"]
-    elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
+    elif self.car_fingerprint in FEATURES["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
@@ -111,7 +111,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.CP.carFingerprint in FEATURES["use_fca"]:
+      if self.car_fingerprint in FEATURES["use_fca"]:
         ret.stockAeb = cp_cruise.vl["FCA11"]["FCA_CmdAct"] != 0
         ret.stockFcw = cp_cruise.vl["FCA11"]["CF_VSM_Warn"] == 2
       else:
