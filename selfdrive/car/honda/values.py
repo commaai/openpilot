@@ -1415,6 +1415,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x18DA53F1, None): [
       b'77959-T20-A970\x00\x00',
       b'77959-T47-A940\x00\x00',
+      b'77959-T47-A950\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78108-T21-A220\x00\x00',
