@@ -7,6 +7,7 @@ from selfdrive.car.docs_definitions import CarInfo
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 

@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from common.params import Params
 from laika.constants import SECS_IN_DAY
+from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, TimeRangeHolder
@@ -27,7 +28,7 @@ def get_log(segs=range(0)):
 def verify_messages(lr, laikad, return_one_success=False):
   good_msgs = []
   for m in lr:
-    msg = laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=True)
+    msg = laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=True)
     if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
       good_msgs.append(msg)
       if return_one_success:
@@ -49,6 +50,9 @@ def get_measurement_mock(gpstime, sat_ephemeris):
   meas.observables_final = meas.observables
   meas.sat_ephemeris = sat_ephemeris
   return meas
+
+
+GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC = GPSTime.from_datetime(datetime(2022, month=1, day=29, hour=12))
 
 
 class TestLaikad(unittest.TestCase):
@@ -109,7 +113,7 @@ class TestLaikad(unittest.TestCase):
     data_mock = defaultdict(str)
     data_mock['sv_id'] = 1
 
-    gpstime = GPSTime.from_datetime(datetime(2022, month=3, day=1))
+    gpstime = GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC
     laikad = Laikad()
     laikad.fetch_orbits(gpstime, block=True)
     meas = get_measurement_mock(gpstime, laikad.astro_dog.orbits['R01'][0])
@@ -148,7 +152,7 @@ class TestLaikad(unittest.TestCase):
     self.assertFalse(all(laikad.kf_valid(m.logMonoTime * 1e-9)))
     kf_valid = False
     for m in self.logs:
-      laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=True)
+      laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=True)
       kf_valid = all(laikad.kf_valid(m.logMonoTime * 1e-9))
       if kf_valid:
         break
@@ -165,7 +169,13 @@ class TestLaikad(unittest.TestCase):
 
   @mock.patch('laika.downloader.download_and_cache_file')
   def test_laika_offline(self, downloader_mock):
-    downloader_mock.side_effect = IOError
+    downloader_mock.side_effect = DownloadFailed("Mock download failed")
+    laikad = Laikad(auto_update=False)
+    laikad.fetch_orbits(GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC, block=True)
+
+  @mock.patch('laika.downloader.download_and_cache_file')
+  def test_download_failed_russian_source(self, downloader_mock):
+    downloader_mock.side_effect = DownloadFailed
     laikad = Laikad(auto_update=False)
     correct_msgs = verify_messages(self.logs, laikad)
     self.assertEqual(16, len(correct_msgs))
@@ -191,7 +201,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad(auto_update=False)
     has_orbits = False
     for m in self.logs:
-      laikad.process_ublox_msg(m.ubloxGnss, m.logMonoTime, block=False)
+      laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=False)
       if laikad.orbit_fetch_future is not None:
         laikad.orbit_fetch_future.result()
       vals = laikad.astro_dog.orbits.values()
