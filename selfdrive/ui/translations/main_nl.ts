@@ -120,7 +120,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="101"/>
         <source>Serial</source>
-        <translation>Serie</translation>
+        <translation>Serienummer</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
@@ -175,7 +175,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="130"/>
         <source>Regulatory</source>
-        <translation>Regulatie</translation>
+        <translation>Regelgeving</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="130"/>
@@ -240,22 +240,22 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="211"/>
         <source>Are you sure you want to reboot?</source>
-        <translation>Weet u zeker dat u het apparaat opnieuw wilt opstarten?</translation>
+        <translation>Weet u zeker dat u opnieuw wilt opstarten?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="218"/>
         <source>Disengage to Reboot</source>
-        <translation>Deactiveer openpilot om het apparaat opnieuw op te starten</translation>
+        <translation>Deactiveer openpilot om opnieuw op te starten</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="224"/>
         <source>Are you sure you want to power off?</source>
-        <translation>Weet u zeker dat u het apparaat wilt uitschakelen?</translation>
+        <translation>Weet u zeker dat u wilt uitschakelen?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="231"/>
         <source>Disengage to Power Off</source>
-        <translation>Deactiveer openpilot om het apparaat uit te schakelen</translation>
+        <translation>Deactiveer openpilot om uit te schakelen</translation>
     </message>
 </context>
 <context>
@@ -343,7 +343,7 @@
     <message>
         <location filename="../qt/maps/map.cc" line="622"/>
         <source>eta</source>
-        <translation>verwachte aankomsttijd</translation>
+        <translation>eta</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="632"/>
@@ -422,18 +422,20 @@ prime abonnement. Meld u nu aan: https://connect.comma.ai</translation>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
-        <translation>Geen thuislocatie ingesteld</translation>
+        <translation>Geen thuislocatie
+ingesteld</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>Geen werklocatie ingesteld</translation>
+        <translation>Geen werklocatie
+ingesteld</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation>Geen recente bestemmingen</translation>
+        <translation>geen recente bestemmingen</translation>
     </message>
 </context>
 <context>
@@ -508,13 +510,13 @@ location set</source>
         <location filename="../qt/onroad.cc" line="327"/>
         <location filename="../qt/onroad.cc" line="330"/>
         <source>SPEED</source>
-        <translation>SNELHEID</translation>
+        <translation>SPEED</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="333"/>
         <location filename="../qt/onroad.cc" line="336"/>
         <source>LIMIT</source>
-        <translation>LIMIET</translation>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -819,7 +821,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="253"/>
         <source>Custom Software</source>
-        <translation>Aangepaste Software</translation>
+        <translation>Andere Software</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
@@ -829,7 +831,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>for Custom Software</source>
-        <translation>voor Aangepaste Software</translation>
+        <translation>voor Andere Software</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
@@ -839,7 +841,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
         <source>Download Failed</source>
-        <translation>Download Mistlukt</translation>
+        <translation>Downloaden Mislukt</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
@@ -974,7 +976,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.h" line="42"/>
         <source>LTE</source>
-        <translation>LTE</translation>
+        <translation>4G</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="43"/>
@@ -1177,7 +1179,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
         <source>Use Metric System</source>
-        <translation>Gebruik Metrische Systeem</translation>
+        <translation>Gebruik Metrisch Systeem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="47"/>
