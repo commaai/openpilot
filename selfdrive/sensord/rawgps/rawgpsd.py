@@ -7,10 +7,10 @@ import math
 import time
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
-
 import cereal.messaging as messaging
 from cereal import log
 from system.swaglog import cloudlog
+from laika.gps_time import GPSTime
 
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import dict_unpacker
@@ -211,8 +211,8 @@ def main() -> NoReturn:
       gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-      # TODO: this probably isn't right, use laika for this
-      gps.timestamp = report['w_GpsWeekNumber']*604800*1000 + report['q_GpsFixTimeMs']
+      gps.unixTimestampMillis = GPSTime(report['w_GpsWeekNumber'],
+                                        1e-3*report['q_GpsFixTimeMs']).as_unix_timestamp()*1e3
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
