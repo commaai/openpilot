@@ -123,7 +123,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19", harness=Harness.hyundai_e),
   CAR.TUCSON: [
     HyundaiCarInfo("Hyundai Tucson 2021", "Smart Cruise Control", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_l),
-    HyundaiCarInfo("Hyundai Tucson Diesel 2019", harness=Harness.hyundai_l),
+    HyundaiCarInfo("Hyundai Tucson Diesel 2019", "Smart Cruise Control", harness=Harness.hyundai_l),
   ],
   CAR.PALISADE: [
     HyundaiCarInfo("Hyundai Palisade 2020-22", "All", video_link="https://youtu.be/TAnDqjF4fDY?t=456", harness=Harness.hyundai_h),
