@@ -306,11 +306,19 @@
         <source>Cancel</source>
         <translation>Anuluj</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
+        <source>Need at least %n character(s)!</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Need at least %1 characters!</source>
         <translatorcomment>Incorrect handling of plurals for plural sensitive languages</translatorcomment>
-        <translation>Pole musi zawierać przynajmniej %1 znaków!</translation>
+        <translation type="vanished">Pole musi zawierać przynajmniej %1 znaków!</translation>
     </message>
 </context>
 <context>
@@ -636,20 +644,44 @@ nie zostało ustawione</translation>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
-        <source>%1 minute%2 ago</source>
-        <translation>%1 minuty%2 temu</translation>
+        <source>%n minute(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
-        <source>%1 hour%2 ago</source>
-        <translation>%1 godzin%2 temu</translation>
+        <source>%n hour(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qt/util.cc" line="88"/>
+        <source>%n day(s) ago</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message>
-        <location filename="../qt/util.cc" line="88"/>
+        <source>%1 minute%2 ago</source>
+        <translation type="vanished">%1 minuty%2 temu</translation>
+    </message>
+    <message>
+        <source>%1 hour%2 ago</source>
+        <translation type="vanished">%1 godzin%2 temu</translation>
+    </message>
+    <message>
         <source>%1 day%2 ago</source>
-        <translation>%1 dni%2 temu</translation>
+        <translation type="vanished">%1 dni%2 temu</translation>
     </message>
 </context>
 <context>
