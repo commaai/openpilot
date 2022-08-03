@@ -72,11 +72,10 @@ class CarController:
     if self.CP.carFingerprint in HDA2_CAR:
       # steering control
       if self.CP.carFingerprint in CAR.GENESIS_GV70:
-        can_sends.append(hda2can.create_lfa(self.packer, CC.enabled, CC.enabled, self.frame, CC.latActive, apply_steer))
+        can_sends.append(hda2can.create_lfa(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
       else:
         can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, CC.latActive, apply_steer))
-      can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, CC.latActive, apply_steer))
-
+        
       if self.frame % 5 == 0:
         can_sends.append(hda2can.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 

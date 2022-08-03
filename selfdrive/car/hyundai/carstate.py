@@ -177,7 +177,7 @@ class CarState(CarStateBase):
 
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
-    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
+    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
 
     self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
@@ -395,7 +395,7 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "SCC1"),
       ("SET_SPEED", "CRUISE_INFO"),
       ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-      ("COUNTER", "CRUISE_BUTTONS"),
+      ("_COUNTER", "CRUISE_BUTTONS"),
       ("CRUISE_BUTTONS", "CRUISE_BUTTONS"),
       ("ADAPTIVE_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
 
