@@ -1,5 +1,6 @@
 Version 0.8.16 (2022-XX-XX)
 ========================
+* Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
 * Subaru Outback 2020-22 support
 
 Version 0.8.15 (2022-07-20)
