@@ -112,7 +112,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", harness=Harness.hyundai_c),
   CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21", harness=Harness.hyundai_h),
-  CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", harness=Harness.hyundai_b),
+  CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", "Smart Cruise Control", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", harness=Harness.hyundai_g),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo", harness=Harness.hyundai_i),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", harness=Harness.hyundai_d),
