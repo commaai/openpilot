@@ -1285,6 +1285,7 @@ FEATURES = {
 }
 
 HDA2_CAR = {CAR.KIA_EV6, }
+
 # The camera does SCC on these cars, rather than the radar
 CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
 
