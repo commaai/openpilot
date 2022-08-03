@@ -309,10 +309,10 @@
     <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Wpisana wartość powinna składać się przynajmniej z %n znaku!</numerusform>
+            <numerusform>Wpisana wartość powinna skłądać się przynajmniej z %n znaków!</numerusform>
+            <numerusform>Wpisana wartość powinna skłądać się przynajmniej z %n znaków!</numerusform>
         </translation>
     </message>
     <message>
@@ -647,28 +647,28 @@ nie zostało ustawione</translation>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n minutę temu</numerusform>
+            <numerusform>%n minuty temu</numerusform>
+            <numerusform>%n minut temu</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>% godzinę temu</numerusform>
+            <numerusform>%n godziny temu</numerusform>
+            <numerusform>%n godzin temu</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n dzień temu</numerusform>
+            <numerusform>%n dni temu</numerusform>
+            <numerusform>%n dni temu</numerusform>
         </translation>
     </message>
     <message>
