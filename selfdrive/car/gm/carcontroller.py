@@ -68,6 +68,7 @@ class CarController:
           self.apply_gas = self.params.MAX_ACC_REGEN
           self.apply_brake = 0
         else:
+          # ICE has less engine braking force, adjust thresholds to remove braking deadzone
           if self.CP.carFingerprint in EV_CAR:
             self.apply_gas = int(round(interp(actuators.accel, self.params.EV_GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
             self.apply_brake = int(round(interp(actuators.accel, self.params.EV_BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
