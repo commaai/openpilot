@@ -25,6 +25,18 @@ def create_lkas_values(enabled, lat_active, apply_steer):
   }
   return values
 
+def create_lfa_icon(packer, enabled, frame):
+  values = {
+    "HDA": 0,
+    "LFA_GREY": 0,
+    "LFA_YELLOW": 0,
+    #Will turn on HDA when cruise enabled
+    #"HDA": 1 if enabled else 0,
+    #"LFA_GREY": 0 if enabled else 1,
+    #"LFA_YELLOW": 1 if enabled else 0,
+  }
+  return packer.make_can_msg("LFA_ICONS", 4, values, frame % 255)
+
 def create_cam_0x2a4(packer, camera_values):
   camera_values.update({
     "BYTE7": 0,
