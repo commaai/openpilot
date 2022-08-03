@@ -135,22 +135,16 @@ class CarState(CarStateBase):
 
   def update_hda2(self, cp, cp_cam):
     ret = car.CarState.new_message()
-    gas_scale = 255
-    if cp.carFingerprint in CAR.GENESIS_GV70:
-      gas_scale = 1022
+    gas_scale = 1022
     ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
     ret.gasPressed = ret.gas > 1e-3
 
-    if cp.carFingerprint in CAR.GENESIS_GV70:
-      ret.brakePressed = cp.vl["ACCELERATOR"]["BRAKE_PRESSED"] == 1
-    else:
-      ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
-
+    ret.brakePressed = cp.vl["ACCELERATOR"]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl["ACCELERATOR"]["GEAR"]
+    gear = cp.vl["GEAR"]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -385,7 +379,6 @@ class CarState(CarStateBase):
     checks = [
       ("WHEEL_SPEEDS", 100),
       ("ACCELERATOR", 100),
-      ("BRAKE", 100),
       ("GEAR", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
