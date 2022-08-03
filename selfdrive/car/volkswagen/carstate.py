@@ -4,19 +4,23 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
-                                            CarControllerParams, MQB_BUTTONS
+from selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
+                                            MQBCarControllerParams
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.button_states = {button.event_type: False for button in MQB_BUTTONS}
-    can_define = CANDefine(DBC_FILES.mqb)
-    if CP.transmissionType == TransmissionType.automatic:
-      self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
-    elif CP.transmissionType == TransmissionType.direct:
-      self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
-    self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+
+    if True:  # pylint: disable=using-constant-test
+      self.CCP = MQBCarControllerParams
+      if CP.transmissionType == TransmissionType.automatic:
+        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+      elif CP.transmissionType == TransmissionType.direct:
+        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+      self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
+
+    self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
     ret = car.CarState.new_message()
@@ -37,7 +41,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = pt_cp.vl["LWI_01"]["LWI_Lenkradwinkel"] * (1, -1)[int(pt_cp.vl["LWI_01"]["LWI_VZ_Lenkradwinkel"])]
     ret.steeringRateDeg = pt_cp.vl["LWI_01"]["LWI_Lenkradw_Geschw"] * (1, -1)[int(pt_cp.vl["LWI_01"]["LWI_VZ_Lenkradw_Geschw"])]
     ret.steeringTorque = pt_cp.vl["LH_EPS_03"]["EPS_Lenkmoment"] * (1, -1)[int(pt_cp.vl["LH_EPS_03"]["EPS_VZ_Lenkmoment"])]
-    ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
+    ret.steeringPressed = abs(ret.steeringTorque) > self.CCP.STEER_DRIVER_ALLOWANCE
     ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
@@ -120,7 +124,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
     self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
     buttonEvents = []
-    for button in MQB_BUTTONS:
+    for button in self.CCP.BUTTONS:
       state = pt_cp.vl[button.can_addr][button.can_msg] in button.values
       if self.button_states[button.event_type] != state:
         event = car.CarState.ButtonEvent.new_message()
@@ -218,7 +222,7 @@ class CarState(CarStateBase):
         signals += MqbExtraSignals.bsm_radar_signals
         checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -246,7 +250,7 @@ class CarState(CarStateBase):
         signals += MqbExtraSignals.bsm_radar_signals
         checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
 
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
