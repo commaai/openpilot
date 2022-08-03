@@ -8,6 +8,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart):
   values = lkas11
+  values["CF_Lkas_FusionState"] = 2
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
