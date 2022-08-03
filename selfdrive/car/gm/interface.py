@@ -68,9 +68,10 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
-    ret.pcmCruise = False  # For ASCM, stock cruise control is kept off (but not ACC)
-    ret.radarOffCan = False  # For ASCM, radar is expected
-    ret.transmissionType = TransmissionType.automatic # or direct for EV
+    ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
+    ret.radarOffCan = False  # For ASCM, radar is present
+    ret.transmissionType = TransmissionType.automatic  # EV is direct
+    # NetworkLocation.gateway: OBD-II harness (typically ASCM), NetworkLocation.fwdCamera: non-ASCM
     ret.networkLocation = NetworkLocation.gateway # or fwdCamera
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
@@ -105,18 +106,18 @@ class CarInterface(CarInterfaceBase):
     #       Newer cars (that are still ASCM-based) use -1 for minEnableSpeed with the comment "engage speed is decided by pcm"
 
     if candidate == CAR.VOLT:
-      ret.transmissionType = TransmissionType.direct # EV (or hybrid)
+      ret.transmissionType = TransmissionType.direct
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
-      tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
-      ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
+      tire_stiffness_factor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
+      ret.centerToFront = ret.wheelbase * 0.45  # Volt Gen 1, TODO corner weigh
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
+      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.MALIBU:
@@ -223,8 +224,6 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_loopback)
 
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
@@ -234,9 +233,8 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    # TODO: Depends on OP PR #24764 (Switch to ECMPRDNL2)
-    events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low,
-                                                           GearShifter.eco, GearShifter.manumatic],
+    events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
+                                                         GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
@@ -254,5 +252,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS)
-    return ret
+    return self.CC.update(c, self.CS)

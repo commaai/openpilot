@@ -10,7 +10,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.spinner import Spinner
 from common.timeout import Timeout
-from common.transformations.camera import get_view_frame_from_road_frame, tici_f_frame_size, tici_d_frame_size
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
@@ -35,7 +35,7 @@ def get_log_fn(ref_commit, test_route):
 def replace_calib(msg, calib):
   msg = msg.as_builder()
   if calib is not None:
-    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
+    msg.liveCalibration.rpyCalib = calib.tolist()
   return msg
 
 
@@ -176,8 +176,9 @@ if __name__ == "__main__":
       # TODO this tolerence is absurdly large
       tolerance = 5e-1 if PC else None
       results: Any = {TEST_ROUTE: {}}
+      log_paths: Any = {TEST_ROUTE: {'ref': BASE_URL + log_fn, 'new': log_fn}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, ref_commit)
+      diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
 
       print(diff2)
       print('-------------\n'*5)
