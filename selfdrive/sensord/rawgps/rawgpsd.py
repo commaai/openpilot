@@ -211,7 +211,8 @@ def main() -> NoReturn:
       gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-      gps.unixTimestampMillis = GPSTime(report['w_GpsWeekNumber'], 1e-3*report['q_GpsFixTimeMs']).as_datetime().timestamp()*1e3
+      gps.unixTimestampMillis = GPSTime(report['w_GpsWeekNumber'],
+                                        1e-3*report['q_GpsFixTimeMs']).as_unix_timestamp()*1e3
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
