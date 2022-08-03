@@ -16,6 +16,8 @@ from system.swaglog import cloudlog
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
+LATERAL_ACC_SENSOR_THRESHOLD = 4.0
+
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset, P_initial=None):
@@ -31,6 +33,8 @@ class ParamsLearner:
     self.active = False
 
     self.speed = 0.0
+    self.yaw_rate = 0.0
+    self.yaw_rate_std = 0.0
     self.roll = 0.0
     self.steering_pressed = False
     self.steering_angle = 0.0
@@ -39,8 +43,8 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
-      yaw_rate = msg.angularVelocityCalibrated.value[2]
-      yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      self.yaw_rate = msg.angularVelocityCalibrated.value[2]
+      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       localizer_roll = msg.orientationNED.value[0]
       localizer_roll_std = np.radians(1) if np.isnan(msg.orientationNED.std[0]) else msg.orientationNED.std[0]
@@ -56,8 +60,8 @@ class ParamsLearner:
       self.roll = clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
 
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
-      yaw_rate_valid = yaw_rate_valid and 0 < yaw_rate_std < 10  # rad/s
-      yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1  # rad/s
+      yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
+      yaw_rate_valid = yaw_rate_valid and abs(self.yaw_rate) < 1  # rad/s
 
       if self.active:
         if msg.posenetOK:
@@ -65,8 +69,8 @@ class ParamsLearner:
           if yaw_rate_valid:
             self.kf.predict_and_observe(t,
                                         ObservationKind.ROAD_FRAME_YAW_RATE,
-                                        np.array([[-yaw_rate]]),
-                                        np.array([np.atleast_2d(yaw_rate_std**2)]))
+                                        np.array([[-self.yaw_rate]]),
+                                        np.array([np.atleast_2d(self.yaw_rate_std**2)]))
 
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_ROLL,
@@ -173,12 +177,14 @@ def main(sm=None, pm=None):
 
       angle_offset_average = clip(math.degrees(x[States.ANGLE_OFFSET]), angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
       angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET] + x[States.ANGLE_OFFSET_FAST]), angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
+      # Account for the opposite signs of the yaw rates
+      sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
 
       msg = messaging.new_message('liveParameters')
 
       liveParameters = msg.liveParameters
       liveParameters.posenetValid = True
-      liveParameters.sensorValid = True
+      liveParameters.sensorValid = sensors_valid
       liveParameters.steerRatio = float(x[States.STEER_RATIO])
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       liveParameters.roll = float(x[States.ROAD_ROLL])
