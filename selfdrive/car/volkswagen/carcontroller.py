@@ -88,9 +88,8 @@ class CarController:
       if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw):
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
 
-      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CC.enabled, CS.out.steeringPressed,
-                                                   hud_alert, hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                   CS.ldw_stock_values, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+      can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, CC.enabled,
+                                                       CS.out.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       if CC.longActive:
@@ -103,7 +102,7 @@ class CarController:
         acc_status = 0
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
       can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_status, set_speed,
-                                                   hud_control.leadVisible))
+                                                       hud_control.leadVisible))
 
     # **** Stock ACC Button Controls **************************************** #
 
