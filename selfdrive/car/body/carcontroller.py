@@ -61,8 +61,8 @@ class CarController:
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired
-      freeze_integrator = ((turn_error < 0 and self.turn_pid.error_integral <= -MAX_POS_INTEGRATOR) or
-                           (turn_error > 0 and self.turn_pid.error_integral >= MAX_POS_INTEGRATOR))
+      freeze_integrator = ((turn_error < 0 and self.turn_pid.error_integral <= -MAX_TURN_INTEGRATOR) or
+                           (turn_error > 0 and self.turn_pid.error_integral >= MAX_TURN_INTEGRATOR))
       torque_diff = self.turn_pid.update(turn_error, freeze_integrator=freeze_integrator)
 
       # Combine 2 PIDs outputs
@@ -80,7 +80,7 @@ class CarController:
       torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
 
     can_sends = []
-    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r, self.frame // 2))
+    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
     new_actuators = CC.actuators.copy()
     new_actuators.accel = torque_l

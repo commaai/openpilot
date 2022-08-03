@@ -10,7 +10,6 @@ class CarController:
     self.CP = CP
     self.apply_steer_last = 0
     self.frame = 0
-    self.steer_rate_limited = False
 
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
@@ -67,11 +66,9 @@ class CarController:
       apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
       if not lkas_active:
         apply_steer = 0
-      self.steer_rate_limited = new_steer != apply_steer
       self.apply_steer_last = apply_steer
 
-      idx = self.frame // 2
-      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, idx))
+      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
     self.frame += 1
     if not lkas_control_bit and self.lkas_control_bit_prev:
