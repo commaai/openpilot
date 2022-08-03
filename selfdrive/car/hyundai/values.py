@@ -97,7 +97,7 @@ class Footnote(Enum):
 class HyundaiCarInfo(CarInfo):
   # TODO: we can probably remove LKAS. LKAS is standard on many
   # HKG and for others, it's likely packaged together with SCC
-  package: str = "SCC + LKAS"
+  package: str = "Smart Cruise Control (SCC) & LKAS"
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
@@ -107,7 +107,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.ELANTRA_GT_I30: None,  # dashcamOnly and same platform as CAR.ELANTRA
   CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_j),
   CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", harness=Harness.hyundai_c),
-  CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "SCC + LFA", harness=Harness.hyundai_h),
+  CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "Smart Cruise Control (SCC) & LFA", harness=Harness.hyundai_h),
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", harness=Harness.hyundai_c),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", harness=Harness.hyundai_c),
@@ -137,7 +137,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Forte 2018", harness=Harness.hyundai_b),
     HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
   ],
-  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "SCC", harness=Harness.hyundai_a),
+  CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
     HyundaiCarInfo("Kia Niro Electric 2019-20", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
     HyundaiCarInfo("Kia Niro Electric 2021", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
