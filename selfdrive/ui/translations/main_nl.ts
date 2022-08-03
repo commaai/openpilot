@@ -1224,7 +1224,7 @@ ingesteld</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="72"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation>Toon kaart aan de linkerkant in gesplitste schermweergave.</translation>
+        <translation>Toon kaart links in gesplitste schermweergave.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="84"/>
