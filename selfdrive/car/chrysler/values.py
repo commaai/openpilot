@@ -115,6 +115,26 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
+  CAR.JEEP_CHEROKEE: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68302223AC',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68316742AB',
+    ],
+    (Ecu.esp, 0x747, None): [
+      b'68306178AD',
+    ],
+    (Ecu.fwdCamera, 0x753, None): [
+      b'68332015AB',
+    ],
+    (Ecu.eps, 0x75A, None): [
+      b'68321644AC',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'68311218AC',
+    ],
+  },
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294063AH',
