@@ -306,10 +306,12 @@
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
-        <source>Need at least %1 characters!</source>
-        <translation>需要至少 %1 個字元！</translation>
+        <source>Need at least %n character(s)!</source>
+        <translation>
+            <numerusform>需要至少 %n 個字元！</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -635,23 +637,26 @@ location set</source>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
-        <source>%1 minute%2 ago</source>
-        <translatorcomment>we don&apos;t need %2</translatorcomment>
-        <translation>%1 分鐘前</translation>
+        <source>%n minute(s) ago</source>
+        <translation>
+            <numerusform>%n 分鐘前</numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
-        <source>%1 hour%2 ago</source>
-        <translatorcomment>we don&apos;t need %2</translatorcomment>
-        <translation>%1 小時前</translation>
+        <source>%n hour(s) ago</source>
+        <translation>
+            <numerusform>%n 小時前</numerusform>
+        </translation>
     </message>
-    <message>
+    <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
-        <source>%1 day%2 ago</source>
-        <translatorcomment>we don&apos;t need %2</translatorcomment>
-        <translation>%1 天前</translation>
+        <source>%n day(s) ago</source>
+        <translation>
+            <numerusform>%n 天前</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -1166,14 +1171,6 @@ location set</source>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
         <translation>車速在時速 50 公里 (31 英里) 以上且未打方向燈的情況下，如果偵測到車輛駛出目前車道線時，發出車道偏離警告。</translation>
-    </message>
-    <message>
-        <source>Enable Right-Hand Drive</source>
-        <translation type="vanished">啟用右駕模式</translation>
-    </message>
-    <message>
-        <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation type="vanished">openpilot 將對右側駕駛進行監控 (但仍遵守靠左駕的交通慣例)。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>

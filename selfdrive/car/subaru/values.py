@@ -45,7 +45,7 @@ class CAR:
 
 @dataclass
 class SubaruCarInfo(CarInfo):
-  package: str = "EyeSight"
+  package: str = "EyeSight Driver Assistance"
   harness: Enum = Harness.subaru
 
 
@@ -240,6 +240,7 @@ FW_VERSIONS = {
       b'\xcb\"`@\a',
       b'\xcb\"`p\a',
       b'\xf1\x00\xa2\x10\n',
+      b'\xcf"`p\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\032\xf6B0\000',
