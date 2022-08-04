@@ -9,7 +9,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   left_lane_depart, right_lane_depart):
   values = lkas11
   # values["CF_Lkas_FusionState"] = 2
-  values["CF_Lkas_LdwsSysState"] = sys_state
+  values["CF_Lkas_LdwsSysState"] = 1  # sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
@@ -30,7 +30,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # FcwOpt_USM 2 = Green car + lanes
     # FcwOpt_USM 1 = White car + lanes
     # FcwOpt_USM 0 = No car + lanes
-    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
+    values["CF_Lkas_FcwOpt_USM"] = 1  # 2 if enabled else 1
 
     # SysWarning 4 = keep hands on wheel
     # SysWarning 5 = keep hands on wheel (red)
@@ -44,6 +44,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     values["CF_Lkas_LdwsActivemode"] = 2
   elif car_fingerprint == CAR.KIA_OPTIMA:
     values["CF_Lkas_LdwsActivemode"] = 0
+
+  values["CF_Lkas_LdwsActivemode"] = 3
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
