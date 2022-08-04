@@ -16,9 +16,9 @@ class CarController:
     self.CP = CP
     self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
-    self.disengage_frame = 0
+    self.pcm_cancel_frame = 0
     self.last_steer = 0
-    self.prev_pcm_cancel = 0
+    # self.prev_pcm_cancel = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -65,8 +65,8 @@ class CarController:
     if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
 
-    if not pcm_cancel_cmd and self.prev_pcm_cancel:
-      self.disengage_frame = self.frame
+    if pcm_cancel_cmd:
+      self.pcm_cancel_frame = self.frame
 
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and self.CP.carFingerprint not in NO_STOP_TIMER_CAR:
@@ -118,14 +118,12 @@ class CarController:
     # - there is something to display
     # - there is something to stop displaying
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
-
-    # when canceling, send two frames of a silent alert to mask bad sound, then quickly send no alert
-    recent_pcm_cancel = self.frame - self.disengage_frame <= 2
+    lda_hold_wheel = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
     send_ui = False
-    if ((fcw_alert or steer_alert) and not self.alert_active) or \
-       (not (fcw_alert or steer_alert) and self.alert_active):
+    recent_pcm_cancel = self.frame - self.pcm_cancel_frame < 10
+    if ((fcw_alert or lda_hold_wheel) and not self.alert_active) or \
+       (not (fcw_alert or lda_hold_wheel) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
     elif pcm_cancel_cmd or recent_pcm_cancel:
@@ -133,7 +131,7 @@ class CarController:
       send_ui = True
 
     if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
-      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd or self.prev_pcm_cancel, hud_control.leftLaneVisible,
+      can_sends.append(create_ui_command(self.packer, lda_hold_wheel or recent_pcm_cancel, hud_control.leftLaneVisible,
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                          hud_control.rightLaneDepart, CC.enabled))
 
