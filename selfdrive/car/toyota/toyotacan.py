@@ -68,7 +68,7 @@ def create_fcw_command(packer, fcw):
 
 def create_ui_command(packer, lda_hold_wheel, left_line, right_line, left_lane_depart, right_lane_depart, enabled):
   values = {
-    "LDA_ALERT": 1 if lda_hold_wheel else 0,  # 1 is a large text "HOLD WHEEL" alert, 2 is longer text
+    "LDA_ALERT": 1 if lda_hold_wheel else 0,
     "RIGHT_LINE": 3 if right_lane_depart else 1 if right_line else 2,
     "LEFT_LINE": 3 if left_lane_depart else 1 if left_line else 2,
     "BARRIERS": 1 if enabled else 0,

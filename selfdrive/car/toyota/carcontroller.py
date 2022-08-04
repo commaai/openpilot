@@ -16,9 +16,8 @@ class CarController:
     self.CP = CP
     self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
-    self.pcm_cancel_frame = 0
+    self.pcm_cancel_frame = -100
     self.last_steer = 0
-    # self.prev_pcm_cancel = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -121,17 +120,18 @@ class CarController:
     lda_hold_wheel = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
     send_ui = False
-    recent_pcm_cancel = self.frame - self.pcm_cancel_frame < 10
     if ((fcw_alert or lda_hold_wheel) and not self.alert_active) or \
        (not (fcw_alert or lda_hold_wheel) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
-    elif pcm_cancel_cmd or recent_pcm_cancel:
+    elif self.frame - self.pcm_cancel_frame < 10:
       # forcing the pcm to disengage causes a bad fault sound so mask with silent alert
       send_ui = True
 
+    # send additional 5 messages after disengage with silent alert, then 5 with no alert to quickly hide alert
+    lda_hold_wheel |= self.frame - self.pcm_cancel_frame < 5
     if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
-      can_sends.append(create_ui_command(self.packer, lda_hold_wheel or recent_pcm_cancel, hud_control.leftLaneVisible,
+      can_sends.append(create_ui_command(self.packer, lda_hold_wheel, hud_control.leftLaneVisible,
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                          hud_control.rightLaneDepart, CC.enabled))
 
@@ -149,5 +149,4 @@ class CarController:
     new_actuators.gas = self.gas
 
     self.frame += 1
-    self.prev_pcm_cancel = pcm_cancel_cmd
     return new_actuators, can_sends
