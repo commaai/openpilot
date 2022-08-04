@@ -184,7 +184,6 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
     
-    #if cp.carFingerprint in CAR.GENESIS_GV70:
     if self.CP.carFingerprint in CAR.GENESIS_GV70:
       self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
     else:
@@ -334,7 +333,8 @@ class CarState(CarStateBase):
     if CP.carFingerprint in HDA2_CAR:
       signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks = [("CAM_0x2a4", 20)]
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 5)
+      bus = 5 if CP.carFingerprint in CAR.GENESIS_GV70 else 6
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
     signals = [
       # signal_name, signal_address
