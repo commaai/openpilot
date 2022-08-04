@@ -19,7 +19,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 - [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
 
 
-# 198 Supported Cars
+# 199 Supported Cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|
 |---|---|---|:---:|:---:|:---:|:---:|
@@ -190,36 +190,37 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Toyota|RAV4 Hybrid 2019-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|RAV4 Hybrid 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|Sienna 2018-20|All|[![star](assets/icon-star-half.svg)](##)[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Arteon 2018-22[<sup>8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Arteon eHybrid 2020-22[<sup>8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Arteon R 2020-22[<sup>8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Atlas 2018-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Atlas Cross Sport 2021-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|California 2021[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Caravelle 2020[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|CC 2018-22[<sup>8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Arteon 2018-22[<sup>9,10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Arteon eHybrid 2020-22[<sup>9,10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Arteon R 2020-22[<sup>9,10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Atlas 2018-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Atlas Cross Sport 2021-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|California 2021[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Caravelle 2020[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|CC 2018-22[<sup>9,10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|e-Golf 2014-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf 2015-20[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Golf 2015-20[<sup>10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Golf Alltrack 2015-19|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Golf GTD 2015-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Golf GTE 2015-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Golf GTI 2015-21|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf R 2015-19[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Golf R 2015-19[<sup>10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Golf SportsVan 2015-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Jetta 2018-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Jetta GLI 2021-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat 2015-22[<sup>7,8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat Alltrack 2015-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat GTE 2015-22[<sup>8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Polo 2020-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Polo GTI 2020-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|T-Cross 2021[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|T-Roc 2021[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Taos 2022[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Teramont 2018-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Teramont Cross Sport 2021-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Teramont X 2021-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Tiguan 2019-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Jetta 2018-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Jetta GLI 2021-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Passat 2015-22[<sup>7,9,10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Passat Alltrack 2015-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Passat GTE 2015-22[<sup>9,10</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Passat NMS 2017-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Polo 2020-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Polo GTI 2020-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|T-Cross 2021[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|T-Roc 2021[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Taos 2022[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Teramont 2018-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Teramont Cross Sport 2021-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Teramont X 2021-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Volkswagen|Tiguan 2019-22[<sup>9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Touran 2017|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 
 <a id="footnotes"></a>
@@ -229,9 +230,10 @@ A supported vehicle is one that just works when you install a comma device. Ever
 <sup>4</sup>When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>5</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>6</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
-<sup>7</sup>Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform. <br />
-<sup>8</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard. <br />
-<sup>9</sup>Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.) <br />
+<sup>7</sup>Refers only to the MQB-based European B8 Passat, not including the NMS Passat in the USA/China/Mideast markets. <br />
+<sup>8</sup>Refers only to the NMS Passat in the USA/China/Mideast markets, not including the MQB-based European B8 Passat. <br />
+<sup>9</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard. <br />
+<sup>10</sup>Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.) <br />
 
 ## Community Maintained Cars
 Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
