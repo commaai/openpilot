@@ -16,7 +16,7 @@ class CarController:
     self.CP = CP
     self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
-    self.pcm_cancel_frame = -100
+    self.pcm_cancel_frame = float('-inf')
     self.last_steer = 0
     self.alert_active = False
     self.last_standstill = False
