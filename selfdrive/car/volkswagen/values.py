@@ -99,7 +99,7 @@ class Footnote(Enum):
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL)
   PASSAT = CarFootnote(
-    "Refers only to the MQB-based European B8 Passat, not including the NMS Passat in the USA/China/Mideast markets.",
+    "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
