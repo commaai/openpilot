@@ -137,15 +137,21 @@ class CarState(CarStateBase):
 
   def update_hda2(self, cp, cp_cam):
     ret = car.CarState.new_message()
-    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_ENGINE"] / 1022
-    ret.gasPressed = cp.vl["ACCELERATOR"]["ACC_PEDAL_PRESSED"] == 1
 
-    ret.brakePressed = cp.vl["ACCELERATOR"]["BRAKE_PRESSED"] == 1
-
+    if self.CP.carFingerprint in CAR.GENESIS_GV70:
+      ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_ENGINE"] / 1022
+      ret.gasPressed = cp.vl["ACCELERATOR"]["ACC_PEDAL_PRESSED"] == 1
+      ret.brakePressed = cp.vl["ACCELERATOR"]["BRAKE_PRESSED"] == 1
+      gear = cp.vl["GEAR"]["GEAR"]
+    else:
+      ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+      ret.gasPressed = ret.gas > 1e-3
+      ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+      gear = cp.vl["ACCELERATOR"]["GEAR"]
+    
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl["GEAR"]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -177,7 +183,12 @@ class CarState(CarStateBase):
 
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
-    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
+    
+    #if cp.carFingerprint in CAR.GENESIS_GV70:
+    if self.CP.carFingerprint in CAR.GENESIS_GV70:
+      self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["_COUNTER"]
+    else:
+      self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
     self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
@@ -382,11 +393,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      ("ACCELERATOR_ENGINE", "ACCELERATOR"),
-      ("ACC_PEDAL_PRESSED", "ACCELERATOR"),
-      ("BRAKE_PRESSED", "ACCELERATOR"),
-      ("GEAR", "GEAR"),
-
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
       ("STEERING_COL_TORQUE", "MDPS"),
@@ -395,7 +401,6 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "SCC1"),
       ("SET_SPEED", "CRUISE_INFO"),
       ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-      ("_COUNTER", "CRUISE_BUTTONS"),
       ("CRUISE_BUTTONS", "CRUISE_BUTTONS"),
       ("ADAPTIVE_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
 
@@ -408,10 +413,26 @@ class CarState(CarStateBase):
       ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
     ]
 
+    if CP.carFingerprint in CAR.GENESIS_GV70:
+      signals += [
+        ("ACCELERATOR_ENGINE", "ACCELERATOR"),
+        ("ACC_PEDAL_PRESSED", "ACCELERATOR"),
+        ("BRAKE_PRESSED", "ACCELERATOR"),
+        ("GEAR", "GEAR"),
+        ("_COUNTER", "CRUISE_BUTTONS"),
+
+      ]
+    else:
+      signals += [
+        ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+        ("GEAR", "ACCELERATOR"),
+        ("BRAKE_PRESSED", "BRAKE"),
+        ("COUNTER", "CRUISE_BUTTONS"),
+
+      ]
     checks = [
       ("WHEEL_SPEEDS", 100),
       ("ACCELERATOR", 100),
-      ("GEAR", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("SCC1", 50),
@@ -421,5 +442,14 @@ class CarState(CarStateBase):
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
+
+    if CP.carFingerprint in CAR.GENESIS_GV70:
+      checks += [
+        ("GEAR", 100),
+      ]
+    else:
+      checks += [
+        ("BRAKE", 100),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 4)
