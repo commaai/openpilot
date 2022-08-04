@@ -43,6 +43,16 @@ Arguments:
                          connect.comma.ai
 ```
 
+## `ui` on environments with non-working hardware rendering setups
+
+Disable hardware rendering and use software rendering. This may be needed for some setups such as some WSL2 setups where UI would segfault immediately.
+
+The UI will now require a capable CPU to render performantly. For reference, UI running the CTF replay route with software rendering on WSL2 takes about 70% CPU on a a Ryzen 2700. 
+
+```bash
+LIBGL_ALWAYS_SOFTWARE=1 ./selfdrive/ui/ui 
+```
+
 ## watch3
 
 watch all three cameras simultaneously from your comma three routes with watch3
