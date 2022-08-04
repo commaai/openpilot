@@ -125,7 +125,7 @@ class CarController:
       send_ui = True
       self.alert_active = not self.alert_active
     elif self.frame - self.pcm_cancel_frame < 10:
-      # forcing the pcm to disengage causes a bad fault sound so mask with silent alert
+      # forcing the pcm to disengage causes a bad fault sound so mask with a silent alert
       send_ui = True
 
     # send additional 5 messages after disengage with silent alert, then 5 with no alert to quickly hide alert
