@@ -16,7 +16,9 @@ class CarController:
     self.CP = CP
     self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
+    self.disengage_frame = 0
     self.last_steer = 0
+    self.prev_pcm_cancel = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -62,6 +64,9 @@ class CarController:
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
     if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
+
+    if not pcm_cancel_cmd and self.prev_pcm_cancel:
+      self.disengage_frame = self.frame
 
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and self.CP.carFingerprint not in NO_STOP_TIMER_CAR:
@@ -115,17 +120,20 @@ class CarController:
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
     steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
+    # when canceling, send two frames of a silent alert to mask bad sound, then quickly send no alert
+    recent_pcm_cancel = self.frame - self.disengage_frame <= 2
+
     send_ui = False
     if ((fcw_alert or steer_alert) and not self.alert_active) or \
        (not (fcw_alert or steer_alert) and self.alert_active):
       send_ui = True
       self.alert_active = not self.alert_active
-    elif pcm_cancel_cmd:
-      # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
+    elif pcm_cancel_cmd or recent_pcm_cancel:
+      # forcing the pcm to disengage causes a bad fault sound so mask with silent alert
       send_ui = True
 
     if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
-      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
+      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd or self.prev_pcm_cancel, hud_control.leftLaneVisible,
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                          hud_control.rightLaneDepart, CC.enabled))
 
@@ -143,4 +151,5 @@ class CarController:
     new_actuators.gas = self.gas
 
     self.frame += 1
+    self.prev_pcm_cancel = pcm_cancel_cmd
     return new_actuators, can_sends
