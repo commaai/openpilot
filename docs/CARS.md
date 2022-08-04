@@ -19,7 +19,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 - [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
 
 
-# 198 Supported Cars
+# 199 Supported Cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|
 |---|---|---|:---:|:---:|:---:|:---:|
@@ -97,7 +97,8 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Kia|Forte 2019-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Kia|K5 2021-22|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Electric 2019-20|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Kia|Niro Electric 2019|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Kia|Niro Electric 2020|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Kia|Niro Electric 2021|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Kia|Niro Electric 2022|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
