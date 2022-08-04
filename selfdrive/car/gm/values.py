@@ -67,7 +67,7 @@ class Footnote(Enum):
 
 @dataclass
 class GMCarInfo(CarInfo):
-  package: str = "Adaptive Cruise"
+  package: str = "Adaptive Cruise Control"
   harness: Enum = Harness.none
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.OBD_II])
 
@@ -79,7 +79,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", harness=Harness.custom),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
-  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "ACC + LKAS"),
+  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),  # TODO: can probably just be ACC?
 }
 
 

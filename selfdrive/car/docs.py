@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from collections import defaultdict
 import jinja2
 import os
 from enum import Enum
@@ -40,11 +41,20 @@ def get_all_car_info(only_tier_cols: bool = False) -> List[CarInfo]:
       car_info = (car_info,)
 
     for _car_info in car_info:
-      all_car_info.append(_car_info.init(CP, footnotes))
+      if not hasattr(_car_info, "row"):
+        _car_info.init(CP, footnotes)
+      all_car_info.append(_car_info)
 
   # Sort cars by make and model + year
   sorted_cars: List[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
   return sorted_cars
+
+
+def group_by_make(all_car_info: List[CarInfo]) -> Dict[str, List[CarInfo]]:
+  sorted_car_info = defaultdict(list)
+  for car_info in all_car_info:
+    sorted_car_info[car_info.make].append(car_info)
+  return dict(sorted_car_info)
 
 
 def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_cols: bool) -> str:
@@ -60,8 +70,8 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_co
         del car.row[c]
 
   footnotes = [fn.value.text for fn in get_all_footnotes(only_tier_cols)]
-  cars_md: str = template.render(all_car_info=all_car_info,
-                                 footnotes=footnotes, Star=Star, Column=cols, star_descriptions=STAR_DESCRIPTIONS)
+  cars_md: str = template.render(all_car_info=all_car_info, group_by_make=group_by_make,
+                                 footnotes=footnotes, Star=Star, Column=cols, STAR_DESCRIPTIONS=STAR_DESCRIPTIONS)
   return cars_md
 
 
