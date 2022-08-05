@@ -62,7 +62,7 @@ class TestTranslations(unittest.TestCase):
       with self.subTest(name=name, file=file):
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
         self.assertTrue(b"<translation type=\"vanished\">" not in cur_translations,
-                        f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove obsolete translations")
+                        f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove them")
 
 
 if __name__ == "__main__":
