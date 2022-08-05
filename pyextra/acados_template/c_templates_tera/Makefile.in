@@ -1,0 +1,406 @@
+#
+# Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
+# Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
+# Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
+# Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+#
+# This file is part of acados.
+#
+# The 2-Clause BSD License
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.;
+#
+
+{%- if solver_options.qp_solver %}
+	{%- set qp_solver = solver_options.qp_solver %}
+{%- else %}
+	{%- set qp_solver = "FULL_CONDENSING_HPIPM" %}
+{%- endif %}
+
+{%- if solver_options.hessian_approx %}
+	{%- set hessian_approx = solver_options.hessian_approx %}
+{%- elif solver_options.sens_hess %}
+	{%- set hessian_approx = "EXACT" %}
+{%- else %}
+	{%- set hessian_approx = "GAUSS_NEWTON" %}
+{%- endif %}
+
+{%- if constraints.constr_type %}
+	{%- set constr_type = constraints.constr_type %}
+{%- else %}
+	{%- set constr_type = "NONE" %}
+{%- endif %}
+
+{%- if constraints.constr_type_e %}
+	{%- set constr_type_e = constraints.constr_type_e %}
+{%- else %}
+	{%- set constr_type_e = "NONE" %}
+{%- endif %}
+
+{%- if cost.cost_type %}
+	{%- set cost_type = cost.cost_type %}
+{%- else %}
+	{%- set cost_type = "NONE" %}
+{%- endif %}
+
+{%- if cost.cost_type_e %}
+	{%- set cost_type_e = cost.cost_type_e %}
+{%- else %}
+	{%- set cost_type_e = "NONE" %}
+{%- endif %}
+
+{%- if cost.cost_type_0 %}
+	{%- set cost_type_0 = cost.cost_type_0 %}
+{%- else %}
+	{%- set cost_type_0 = "NONE" %}
+{%- endif %}
+
+{%- if dims.nh %}
+	{%- set dims_nh = dims.nh %}
+{%- else %}
+	{%- set dims_nh = 0 %}
+{%- endif %}
+
+{%- if dims.nphi %}
+	{%- set dims_nphi = dims.nphi %}
+{%- else %}
+	{%- set dims_nphi = 0 %}
+{%- endif %}
+
+{%- if dims.nh_e %}
+	{%- set dims_nh_e = dims.nh_e %}
+{%- else %}
+	{%- set dims_nh_e = 0 %}
+{%- endif %}
+
+{%- if dims.nphi_e %}
+	{%- set dims_nphi_e = dims.nphi_e %}
+{%- else %}
+	{%- set dims_nphi_e = 0 %}
+{%- endif %}
+{%- if solver_options.model_external_shared_lib_dir %}
+	{%- set model_external_shared_lib_dir = solver_options.model_external_shared_lib_dir %}
+{%- endif %}
+{%- if solver_options.model_external_shared_lib_name %}
+	{%- set model_external_shared_lib_name = solver_options.model_external_shared_lib_name %}
+{%- endif %}
+
+{# control operator #}
+{%- if os and os == "pc" %}
+	{%- set control = "&" %}
+{%- else %}
+	{%- set control = ";" %}
+{%- endif %}
+
+{# acados linking libraries and flags #}
+{%- if acados_link_libs and os and os == "pc" %}
+	{%- set link_libs = acados_link_libs.qpoases ~ " " ~ acados_link_libs.hpmpc ~ " " ~ acados_link_libs.osqp -%}
+	{%- set openmp_flag = acados_link_libs.openmp %}
+{%- else %}
+	{%- set openmp_flag = " " %}
+	{%- if qp_solver == "FULL_CONDENSING_QPOASES" %}
+		{%- set link_libs = "-lqpOASES_e" %}
+	{%- else %}
+		{%- set link_libs = "" %}
+	{%- endif %}
+{%- endif %}
+
+# define sources and use make's implicit rules to generate object files (*.o)
+
+# model
+MODEL_SRC=
+{%- if  solver_options.integrator_type == "ERK" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_expl_ode_fun.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_expl_vde_forw.c
+	{%- if hessian_approx == "EXACT" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_expl_ode_hess.c
+	{%- endif %}
+{%- elif solver_options.integrator_type == "IRK" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_fun.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_fun_jac_x_xdot_z.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_jac_x_xdot_u_z.c
+	{%- if hessian_approx == "EXACT" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_hess.c
+	{%- endif %}
+{%- elif solver_options.integrator_type == "LIFTED_IRK" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_fun.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_fun_jac_x_xdot_u.c
+	{%- if hessian_approx == "EXACT" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_impl_dae_hess.c
+	{%- endif %}
+{%- elif solver_options.integrator_type == "GNSF" %}
+	{% if model.gnsf.purely_linear != 1 %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_gnsf_phi_fun.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_gnsf_phi_fun_jac_y.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_gnsf_phi_jac_y_uhat.c
+		{% if model.gnsf.nontrivial_f_LO == 1 %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz.c
+		{%- endif %}
+	{%- endif %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_gnsf_get_matrices_fun.c
+{%- elif solver_options.integrator_type == "DISCRETE" %}
+	{%- if model.dyn_ext_fun_type == "casadi" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun.c
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun_jac.c
+		{%- if hessian_approx == "EXACT" %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun_jac_hess.c
+		{%- endif %}
+	{%- else %}
+MODEL_SRC+= {{ model.name }}_model/{{ model.dyn_source_discrete }}
+	{%- endif %}
+{%- endif %}
+MODEL_OBJ := $(MODEL_SRC:.c=.o)
+
+# optimal control problem - mostly CasADi exports
+OCP_SRC=
+{%- if constr_type == "BGP" and dims_nphi > 0 %}
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_phi_constraint.c
+{%- endif %}
+{%- if constr_type_e == "BGP" and dims_nphi_e > 0 %}
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_phi_e_constraint.c
+{%- endif %}
+
+{%- if constr_type == "BGH" and dims_nh > 0 %}
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_constr_h_fun_jac_uxt_zt.c
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_constr_h_fun.c
+	{%- if hessian_approx == "EXACT" %}
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_constr_h_fun_jac_uxt_zt_hess.c
+	{%- endif %}
+{%- endif %}
+
+{%- if constr_type_e == "BGH" and dims_nh_e > 0 %}
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_constr_h_e_fun_jac_uxt_zt.c
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_constr_h_e_fun.c
+	{%- if hessian_approx == "EXACT" %}
+OCP_SRC+= {{ model.name }}_constraints/{{ model.name }}_constr_h_e_fun_jac_uxt_zt_hess.c
+	{%- endif %}
+{%- endif %}
+
+{%- if cost_type_0 == "NONLINEAR_LS" %}
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_0_fun.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_0_fun_jac_ut_xt.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_0_hess.c
+{%- elif cost_type_0 == "EXTERNAL" %}
+	{%- if cost.cost_ext_fun_type_0 == "casadi" %}
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_0_fun.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_0_fun_jac.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_0_fun_jac_hess.c
+	{%- else %}
+OCP_SRC+= {{ model.name }}_cost/{{ cost.cost_source_ext_cost_0 }}
+	{%- endif %}
+{%- endif %}
+{%- if cost_type == "NONLINEAR_LS" %}
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_fun.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_fun_jac_ut_xt.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_hess.c
+{%- elif cost_type == "EXTERNAL" %}
+	{%- if cost.cost_ext_fun_type == "casadi" %}
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_fun.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_fun_jac.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_fun_jac_hess.c
+	{%- elif cost.cost_source_ext_cost != cost.cost_source_ext_cost_0 %}
+OCP_SRC+= {{ model.name }}_cost/{{ cost.cost_source_ext_cost }}
+	{%- endif %}
+{%- endif %}
+{%- if cost_type_e == "NONLINEAR_LS" %}
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_e_fun.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_e_fun_jac_ut_xt.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_y_e_hess.c
+{%- elif cost_type_e == "EXTERNAL" %}
+	{%- if cost.cost_ext_fun_type_e == "casadi" %}
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_e_fun.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_e_fun_jac.c
+OCP_SRC+= {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_e_fun_jac_hess.c
+	{%- elif cost.cost_source_ext_cost_e != cost.cost_source_ext_cost_0 %}
+OCP_SRC+= {{ model.name }}_cost/{{ cost.cost_source_ext_cost_e }}
+	{%- endif %}
+{%- endif %}
+OCP_SRC+= acados_solver_{{ model.name }}.c
+OCP_OBJ := $(OCP_SRC:.c=.o)
+
+# for sim solver
+SIM_SRC= acados_sim_solver_{{ model.name }}.c
+SIM_OBJ := $(SIM_SRC:.c=.o)
+
+# for target example
+EX_SRC= main_{{ model.name }}.c
+EX_OBJ := $(EX_SRC:.c=.o)
+EX_EXE := $(EX_SRC:.c=)
+
+# for target example_sim
+EX_SIM_SRC= main_sim_{{ model.name }}.c
+EX_SIM_OBJ := $(EX_SIM_SRC:.c=.o)
+EX_SIM_EXE := $(EX_SIM_SRC:.c=)
+
+# combine model, sim and ocp object files
+OBJ=
+OBJ+= $(MODEL_OBJ)
+{%- if solver_options.integrator_type != "DISCRETE" %}
+OBJ+= $(SIM_OBJ)
+{%- endif %}
+OBJ+= $(OCP_OBJ)
+
+EXTERNAL_DIR=
+EXTERNAL_LIB=
+
+{%- if model_external_shared_lib_dir and model_external_shared_lib_name %}
+EXTERNAL_DIR+= {{ model_external_shared_lib_dir  }}
+EXTERNAL_LIB+= {{ model_external_shared_lib_name }}
+{%- endif %}
+
+INCLUDE_PATH = {{ acados_include_path }}
+LIB_PATH = {{ acados_lib_path }}
+
+# preprocessor flags for make's implicit rules
+{%- if qp_solver == "FULL_CONDENSING_QPOASES" %}
+CPPFLAGS += -DACADOS_WITH_QPOASES
+{%- endif %}
+{%- if qp_solver == "PARTIAL_CONDENSING_OSQP" %}
+CPPFLAGS += -DACADOS_WITH_OSQP
+{%- endif %}
+{%- if qp_solver == "PARTIAL_CONDENSING_QPDUNES" %}
+CPPFLAGS += -DACADOS_WITH_QPDUNES
+{%- endif %}
+CPPFLAGS+= -I$(INCLUDE_PATH)
+CPPFLAGS+= -I$(INCLUDE_PATH)/acados
+CPPFLAGS+= -I$(INCLUDE_PATH)/blasfeo/include
+CPPFLAGS+= -I$(INCLUDE_PATH)/hpipm/include
+ {%- if qp_solver == "FULL_CONDENSING_QPOASES" %}
+CPPFLAGS+= -I $(INCLUDE_PATH)/qpOASES_e/
+ {%- endif %}
+
+{# c-compiler flags #}
+# define the c-compiler flags for make's implicit rules
+CFLAGS = -fPIC -std=c99 {{ openmp_flag }} #-fno-diagnostics-show-line-numbers -g
+# # Debugging
+# CFLAGS += -g3
+
+# linker flags
+LDFLAGS+= -L$(LIB_PATH)
+
+# link to libraries
+LDLIBS+= -lacados
+LDLIBS+= -lhpipm
+LDLIBS+= -lblasfeo
+LDLIBS+= -lm
+LDLIBS+= {{ link_libs }}
+
+# libraries
+LIBACADOS_SOLVER=libacados_solver_{{ model.name }}.so
+LIBACADOS_OCP_SOLVER=libacados_ocp_solver_{{ model.name }}.so
+LIBACADOS_SIM_SOLVER=lib$(SIM_SRC:.c=.so)
+
+# virtual targets
+.PHONY : all clean
+
+#all: clean example_sim example shared_lib
+{% if solver_options.integrator_type == "DISCRETE" -%}
+all: clean example
+shared_lib: ocp_shared_lib
+{%- else %}
+all: clean example_sim example
+shared_lib: bundled_shared_lib ocp_shared_lib sim_shared_lib
+{%- endif %}
+
+# some linker targets
+example: $(EX_OBJ) $(OBJ)
+	$(CC) $^ -o $(EX_EXE) $(LDFLAGS) $(LDLIBS)
+
+example_sim: $(EX_SIM_OBJ) $(MODEL_OBJ) $(SIM_OBJ)
+	$(CC) $^ -o $(EX_SIM_EXE) $(LDFLAGS) $(LDLIBS)
+
+{% if solver_options.integrator_type != "DISCRETE" -%}
+bundled_shared_lib: $(OBJ)
+	$(CC) -shared $^ -o $(LIBACADOS_SOLVER) $(LDFLAGS) $(LDLIBS)
+{%- endif %}
+
+ocp_shared_lib: $(OCP_OBJ) $(MODEL_OBJ)
+	$(CC) -shared $^ -o $(LIBACADOS_OCP_SOLVER) $(LDFLAGS) $(LDLIBS) \
+	-L$(EXTERNAL_DIR) -l$(EXTERNAL_LIB)
+
+sim_shared_lib: $(SIM_OBJ) $(MODEL_OBJ)
+	$(CC) -shared $^ -o $(LIBACADOS_SIM_SOLVER) $(LDFLAGS) $(LDLIBS)
+
+
+# Cython targets
+ocp_cython_c: ocp_shared_lib
+	cython \
+	-o acados_ocp_solver_pyx.c \
+	-I $(INCLUDE_PATH)/../interfaces/acados_template/acados_template \
+	$(INCLUDE_PATH)/../interfaces/acados_template/acados_template/acados_ocp_solver_pyx.pyx \
+	-I {{ code_export_directory }} \
+
+ocp_cython_o: ocp_cython_c
+	$(CC) $(ACADOS_FLAGS) -c -O2 \
+	-fPIC \
+	-o acados_ocp_solver_pyx.o \
+	-I /usr/include/python3.8 \
+	-I $(INCLUDE_PATH)/blasfeo/include/ \
+	-I $(INCLUDE_PATH)/hpipm/include/ \
+	-I $(INCLUDE_PATH) \
+	-I {{ cython_include_dirs }} \
+	acados_ocp_solver_pyx.c \
+
+ocp_cython: ocp_cython_o
+	$(CC) $(ACADOS_FLAGS) -shared \
+	-o acados_ocp_solver_pyx.so \
+	-Wl,-rpath=$(LIB_PATH) \
+	acados_ocp_solver_pyx.o \
+	$(abspath .)/libacados_ocp_solver_{{ model.name }}.so \
+	$(LDFLAGS) $(LDLIBS)
+
+{%- if os and os == "pc" %}
+
+clean:
+	del \Q *.o 2>nul
+	del \Q *.so 2>nul
+	del \Q main_{{ model.name }} 2>nul
+
+clean_ocp_shared_lib:
+	del \Q libacados_ocp_solver_{{ model.name }}.so 2>nul
+	del \Q acados_solver_{{ model.name }}.o 2>nul
+
+clean_ocp_cython:
+	del \Q libacados_ocp_solver_{{ model.name }}.so 2>nul
+	del \Q acados_solver_{{ model.name }}.o 2>nul
+	del \Q acados_ocp_solver_pyx.so 2>nul
+	del \Q acados_ocp_solver_pyx.o 2>nul
+
+{%- else %}
+
+clean:
+	$(RM) $(OBJ) $(EX_OBJ) $(EX_SIM_OBJ)
+	$(RM) $(LIBACADOS_SOLVER) $(LIBACADOS_OCP_SOLVER) $(LIBACADOS_SIM_SOLVER)
+	$(RM) $(EX_EXE) $(EX_SIM_EXE)
+
+clean_ocp_shared_lib:
+	$(RM) $(LIBACADOS_OCP_SOLVER)
+	$(RM) $(OCP_OBJ)
+
+clean_ocp_cython:
+	$(RM) libacados_ocp_solver_{{ model.name }}.so
+	$(RM) acados_solver_{{ model.name }}.o
+	$(RM) acados_ocp_solver_pyx.so
+	$(RM) acados_ocp_solver_pyx.o
+
+{%- endif %}

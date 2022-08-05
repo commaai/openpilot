@@ -1,0 +1,39 @@
+diff --git a/src/logger.cpp b/src/logger.cpp
+index a63c6dd..a1d9860 100644
+--- a/src/logger.cpp
++++ b/src/logger.cpp
+@@ -24,34 +24,22 @@ logger::~logger()
+ 
+ void logger::print(string str)
+ {
+-  cout << str;
+-  cout.flush();
+ }
+ 
+ void logger::print(double val)
+ {
+-  cout << setprecision(2) << fixed;
+-  cout << val;
+-  cout.flush();
+ }
+ 
+ void logger::print(float val)
+ {
+-  cout << setprecision(2) << fixed;
+-  cout << val;
+-  cout.flush();
+ }
+ 
+ void logger::print(int val)
+ {
+-  cout << val;
+-  cout.flush();
+ }
+ 
+ void logger::print(unsigned int val)
+ {
+-  cout << val;
+-  cout.flush();
+ }
+ 
+ void logger::xmlOpenTag(string tag)

@@ -1,0 +1,15 @@
+third_party/snpe/larch64**
+third_party/snpe/aarch64-ubuntu-gcc7.5/*
+third_party/mapbox-gl-native-qt/include/*
+
+system/timezoned.py
+
+selfdrive/assets/navigation/*
+selfdrive/assets/training_wide/*
+
+system/camerad/cameras/camera_qcom2.cc
+system/camerad/cameras/camera_qcom2.h
+system/camerad/cameras/real_debayer.cl
+
+selfdrive/ui/qt/spinner_larch64
+selfdrive/ui/qt/text_larch64

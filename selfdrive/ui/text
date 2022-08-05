@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -f /TICI ] && [ ! -f qt/text ]; then
+  cp qt/text_larch64 qt/text
+fi
+
+export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
+exec ./qt/text "$1"

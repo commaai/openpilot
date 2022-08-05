@@ -1,0 +1,3 @@
+Import('envCython')
+
+envCython.Program('simple_kalman_impl.so', 'simple_kalman_impl.pyx')

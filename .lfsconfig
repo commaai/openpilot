@@ -1,0 +1,4 @@
+[lfs]
+	url = https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
+	pushurl = ssh://git@gitlab.com/commaai/openpilot-lfs.git
+	locksverify = false

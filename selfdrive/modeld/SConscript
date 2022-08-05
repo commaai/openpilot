@@ -1,0 +1,85 @@
+import os
+
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+lenv = env.Clone()
+
+libs = [cereal, messaging, common, visionipc, gpucommon,
+        'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
+
+def get_dlsym_offset():
+  """Returns the offset between dlopen and dlsym in libdl.so"""
+  import ctypes
+  libdl = ctypes.PyDLL('libdl.so')
+  dlopen = ctypes.cast(libdl.dlopen, ctypes.c_void_p).value
+  dlsym = ctypes.cast(libdl.dlsym, ctypes.c_void_p).value
+  return dlsym - dlopen
+
+
+common_src = [
+  "models/commonmodel.cc",
+  "runners/snpemodel.cc",
+  "transforms/loadyuv.cc",
+  "transforms/transform.cc"
+]
+
+thneed_src = [
+  "thneed/thneed.cc",
+  "thneed/serialize.cc",
+  "thneed/optimizer.cc",
+  "runners/thneedmodel.cc",
+]
+
+use_thneed = not GetOption('no_thneed')
+
+if arch == "larch64":
+  libs += ['gsl', 'CB', 'pthread', 'dl']
+
+  if use_thneed:
+    common_src += thneed_src
+    dlsym_offset = get_dlsym_offset()
+    lenv['CXXFLAGS'].append("-DUSE_THNEED")
+    lenv['CXXFLAGS'].append(f"-DDLSYM_OFFSET={dlsym_offset}")
+else:
+  libs += ['pthread']
+
+  if not GetOption('snpe'):
+    # for onnx support
+    common_src += ['runners/onnxmodel.cc']
+
+    # tell runners to use onnx
+    lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
+    lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
+
+  if arch == "Darwin":
+    # fix OpenCL
+    del libs[libs.index('OpenCL')]
+    lenv['FRAMEWORKS'] = ['OpenCL']
+
+    # no SNPE on Mac
+    del libs[libs.index('SNPE')]
+    del common_src[common_src.index('runners/snpemodel.cc')]
+
+common_model = lenv.Object(common_src)
+
+# build thneed model
+if use_thneed and arch == "larch64":
+  fn = File("models/supercombo").abspath
+  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
+  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} --in {fn}.dlc --out {fn}.thneed --binary --optimize"
+
+  lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
+  kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
+  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
+
+  kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
+  cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
+
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
+  ]+common_model, LIBS=libs)
+
+lenv.Program('_modeld', [
+    "modeld.cc",
+    "models/driving.cc",
+  ]+common_model, LIBS=libs + transformations)
