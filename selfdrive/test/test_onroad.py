@@ -83,6 +83,8 @@ def check_cpu_usage(proclogs):
         n = list(x.cmdline)[0]
         plogs_by_proc[n].append(x)
 
+  print(plogs_by_proc.keys())
+
   r = True
   dt = (proclogs[-1].logMonoTime - proclogs[0].logMonoTime) / 1e9
   for proc_name, expected_cpu in PROCS.items():
@@ -99,7 +101,7 @@ def check_cpu_usage(proclogs):
       elif cpu_usage < min(expected_cpu * 0.65, max(expected_cpu - 1.0, 0.0)):
         err = "using less CPU than normal"
     else:
-      err = f"NO METRICS FOUND"
+      err = "NO METRICS FOUND"
 
     result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({expected_cpu:5.2f}%) {err}\n"
     if len(err) > 0:
