@@ -22,23 +22,32 @@ class CAR:
 
   # Ram
   RAM_1500 = "RAM 1500 5TH GEN"
+  RAM_HD = "RAM HD 5TH GEN"
 
 
 class CarControllerParams:
-  def __init__(self, CP):
-    self.STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
-    self.STEER_ERROR_MAX = 80
+  def __init__(self, CP):  
 
-    if CP.carFingerprint in RAM_CARS:
+    if CP.carFingerprint in RAM_HD:
+      self.STEER_DELTA_UP = 14
+      self.STEER_DELTA_DOWN = 14
+      self.STEER_MAX = 361 # higher than this faults the EPS
+      self.STEER_ERROR_MAX = 200
+    elif CP.carFingerprint in RAM_CARS:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
+      self.STEER_MAX = 350 # higher than this faults the EPS
+      self.STEER_ERROR_MAX = 80
     else:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
+      self.STEER_MAX = 261  # higher than this faults the EPS
+      self.STEER_ERROR_MAX = 80
 
 STEER_THRESHOLD = 120
 
-RAM_CARS = {CAR.RAM_1500, }
+RAM_CARS = {CAR.RAM_1500, CAR.RAM_HD}
+RAM_HD = {CAR.RAM_HD}
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
@@ -57,6 +66,7 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
   CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.none),
+  CAR.RAM_HD: ChryslerCarInfo("Ram HD 2020-22", harness=Harness.none),
 }
 
 # Unique CAN messages:
@@ -121,60 +131,108 @@ FINGERPRINTS = {
 FW_VERSIONS = {
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
-      b'68294063AH',
       b'68294063AG',
       b'68434860AC',
-      b'68527375AD',
       b'68453503AC',
+      b'68527375AD',
     ],
     (Ecu.srs, 0x744, None): [
+      b'68428609AB',
       b'68441329AB',
       b'68490898AA',
-      b'68428609AB',
       b'68500728AA',
     ],
     (Ecu.esp, 0x747, None): [
-      b'68432418AD',
       b'68432418AB',
-      b'68436004AE',
-      b'68438454AD',
       b'68436004AD',
-      b'68535469AB',
+      b'68436004AE',
       b'68438454AC',
+      b'68438454AD',
+      b'68535469AB',
     ],
     (Ecu.fwdCamera, 0x753, None): [
-      b'68320950AL',
+      b'68320950AI',
       b'68320950AJ',
+      b'68320950AL',
+      b'68320950AM',
       b'68454268AB',
+      b'68475160AE',
       b'68475160AG',
       b'04672892AB',
-      b'68475160AE',
     ],
     (Ecu.eps, 0x75A, None): [
-      b'68273275AG',
+      b'68273275AG', #S0
+      b'68312176AE', #S0
+      b'68312176AG', #S0
+      b'68440789AC',
+      b'68466110AB',
       b'68469901AA',
+      b'68522585AB',
       b'68552788AA',
+      b'68552790AA',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'68448163AJ',
       b'68500630AD',
       b'68539650AD',
+      b'           ', # TODO:some trucks are responding with nothing here
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
-      b'68384328AD',
       b'68360085AL',
-      b'68360081AM',
-      b'68502994AD',
+      b'68360085AM',
+      b'68384328AD',
       b'68445533AB',
-      b'68540431AB',
       b'68484467AC',
+      b'68502994AD',
+      b'68540431AB',
     ],
     (Ecu.gateway, 0x18DACBF1, None): [
       b'68402660AB',
       b'68445283AB',
-      b'68533631AB',
       b'68500483AB',
+      b'68533631AB',
+    ],
+  },
+
+  CAR.RAM_HD: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68361606AH',
+      b'68492693AD',
+      b'68525485AB', #TODO: CHECK in newest updat on dongle 5c05760b592aee2c
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68399794AC',
+      b'68428503AA',
+      b'68428505AA',
+    ],
+    (Ecu.esp, 0x747, None): [
+      b'68334977AH',
+      b'68504022AB',
+      b'68530686AB',
+    ],
+    (Ecu.fwdCamera, 0x753, None): [
+      b'04672895AB',
+      b'56029827AG',
+      b'68484694AE',
+    ],
+    (Ecu.eps, 0x761, None): [
+      b'68421036AC',
+      b'68507906AB',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'52421132AF',
+      b'M2370131MB',
+      b'M2421132MB',
+    ],
+    #(Ecu.transmission, 0x7e1, None): [
+      #b'68475153AD',
+      #b'68504640AC',
+      #b'68538041AB',
+    #],
+    (Ecu.gateway, 0x18DACBF1, None): [
+      b'68488419AB',
+      b'68535476AB',
     ],
   },
 }
@@ -188,4 +246,5 @@ DBC = {
   CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
+  CAR.RAM_HD: dbc_dict('chrysler_ram_hd', None),
 }
