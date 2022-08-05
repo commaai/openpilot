@@ -50,7 +50,7 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
     can.setAddress(i);
     can.setSrc(random_int(0, 3) + bus_offset);
     can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
-    total_pakets_size += CANPACKET_HEAD_SIZE + dat.size();
+    total_pakets_size += sizeof(can_header) + dat.size();
   }
 
   can_data_list = can_list.asReader();
@@ -75,9 +75,9 @@ void PandaTest::test_can_send() {
   INFO("test can message integrity");
   for (int pos = 0, pckt_len = 0; pos < unpacked_data.size(); pos += pckt_len) {
     can_header header;
-    memcpy(&header, &unpacked_data[pos], CANPACKET_HEAD_SIZE);
+    memcpy(&header, &unpacked_data[pos], sizeof(can_header));
     const uint8_t data_len = dlc_to_len[header.data_len_code];
-    pckt_len = CANPACKET_HEAD_SIZE + data_len;
+    pckt_len = sizeof(can_header) + data_len;
 
     REQUIRE(header.addr == cnt);
     REQUIRE(test_data.find(data_len) != test_data.end());
