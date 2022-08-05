@@ -18,10 +18,6 @@ def update_translations(vanish=False, plural_only=None, translations_dir=TRANSLA
     translation_files = json.load(f)
 
   for name, file in translation_files.items():
-    if not len(file):
-      print(f"{name} has no translation file, skipping...")
-      continue
-
     tr_file = os.path.join(translations_dir, f"{file}.ts")
     args = f"lupdate -recursive {UI_DIR} -ts {tr_file}"
     if vanish:
