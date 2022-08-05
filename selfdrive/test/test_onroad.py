@@ -83,8 +83,6 @@ def check_cpu_usage(proclogs):
         n = list(x.cmdline)[0]
         plogs_by_proc[n].append(x)
 
-  print(plogs_by_proc.keys())
-
   r = True
   dt = (proclogs[-1].logMonoTime - proclogs[0].logMonoTime) / 1e9
   for proc_name, expected_cpu in PROCS.items():
