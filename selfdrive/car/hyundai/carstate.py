@@ -33,6 +33,7 @@ class CarState(CarStateBase):
     self.brake_error = False
     self.park_brake = False
     self.buttons_counter = 0
+    self.cruise_info_counter = 0
 
     self.params = CarControllerParams(CP)
 
@@ -183,7 +184,11 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
+    self.cruise_info_counter = cruise_info_bus.vl["CRUISE_INFO"]["COUNTER"]
+    self.cruise_info_cruise_main = cruise_info_bus.vl["CRUISE_INFO"]["CRUISE_MAIN"]
     self.cruise_buttons_copy = copy.copy(cp.vl["CRUISE_BUTTONS"])
+    self.cruise_info_copy = copy.copy(cruise_info_bus.vl["CRUISE_INFO"])
+    self.cruise_info_cruise_status = cruise_info_bus.vl["CRUISE_INFO"]["CRUISE_STATUS"]
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
@@ -409,16 +414,6 @@ class CarState(CarStateBase):
       ("NEW_SIGNAL_5", "CRUISE_BUTTONS"),
       ("SET_ME_2", "CRUISE_BUTTONS"),
       ("NEW_SIGNAL_6", "CRUISE_BUTTONS"),
-      ("BYTE6", "CRUISE_BUTTONS"),
-      ("BYTE7", "CRUISE_BUTTONS"),
-      ("BYTE8", "CRUISE_BUTTONS"),
-      ("BYTE9", "CRUISE_BUTTONS"),
-      ("BYTE10", "CRUISE_BUTTONS"),
-      ("BYTE11", "CRUISE_BUTTONS"),
-      ("BYTE12", "CRUISE_BUTTONS"),
-      ("BYTE13", "CRUISE_BUTTONS"),
-      ("BYTE14", "CRUISE_BUTTONS"),
-      ("BYTE15", "CRUISE_BUTTONS"),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
 
@@ -428,6 +423,8 @@ class CarState(CarStateBase):
       ("DRIVER_DOOR_OPEN", "DOORS_SEATBELTS"),
       ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
     ]
+
+    signals += [(f"BYTE{i}", "CRUISE_BUTTONS") for i in range(6, 15)]
 
     checks = [
       ("WHEEL_SPEEDS", 100),
@@ -467,9 +464,24 @@ class CarState(CarStateBase):
       checks = [("CAM_0x2a4", 20)]
     else:
       signals = [
-        ("SET_SPEED", "CRUISE_INFO"),
+        ("COUNTER", "CRUISE_INFO"),
+        ("NEW_SIGNAL_1", "CRUISE_INFO"),
+        ("NEW_SIGNAL_2", "CRUISE_INFO"),
+        ("CRUISE_MAIN", "CRUISE_INFO"),
+        ("CRUISE_STATUS", "CRUISE_INFO"),
+        ("CRUISE_INACTIVE", "CRUISE_INFO"),
+        ("NEW_SIGNAL_3", "CRUISE_INFO"),
+        ("NEW_SIGNAL_3", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+        ("NEW_SIGNAL_4", "CRUISE_INFO"),
+        ("BYTE11", "CRUISE_INFO"),
+        ("BYTE11", "CRUISE_INFO"),
+        ("SET_SPEED", "CRUISE_INFO"),
+        ("NEW_SIGNAL_6", "CRUISE_INFO"),
       ]
+
+      signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(13, 31)]
+
       checks = [
         ("CRUISE_INFO", 50),
       ]

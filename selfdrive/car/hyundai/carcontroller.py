@@ -40,6 +40,8 @@ class CarController:
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.frame = 0
+    self.last_standstill = False
+    self.standstill_req = False
 
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
@@ -76,17 +78,26 @@ class CarController:
       if self.frame % 5 == 0 and self.car_fingerprint not in (CAR.TUCSON_HYBRID_4TH_GEN, ):
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
-      # cruise cancel
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
-        if CC.cruiseControl.cancel:
-          for _ in range(20):
-            can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.CANCEL))
-          self.last_button_frame = self.frame
+      if CS.out.standstill and not self.last_standstill and not self.CP.flags & HyundaiFlags.CANFD_HDA2:
+        self.standstill_req = True
+      if CS.cruise_info_cruise_status == 0:
+        self.standstill_req = False
+      self.last_standstill = CS.out.standstill
 
-        # cruise standstill resume
-        elif CC.cruiseControl.resume:
-          can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.RES_ACCEL))
-          self.last_button_frame = self.frame
+      if self.frame % 2 == 0 and not self.CP.flags & HyundaiFlags.CANFD_HDA2:
+        can_sends.append(hyundaicanfd.create_cruise_info(self.packer, CS.cruise_info_copy, CS.cruise_info_cruise_main, CC.cruiseControl.cancel, self.standstill_req, CS.cruise_info_counter))
+
+      # cruise cancel
+      #if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
+      #  if CC.cruiseControl.cancel:
+      #    for _ in range(20):
+      #      can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.CANCEL))
+      #    self.last_button_frame = self.frame
+
+      #  # cruise standstill resume
+      #  elif CC.cruiseControl.resume:
+      #    can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.cruise_buttons_copy, CS.buttons_counter+1, Buttons.RES_ACCEL))
+      #    self.last_button_frame = self.frame
     else:
 
       # tester present - w/ no response (keeps radar disabled)
