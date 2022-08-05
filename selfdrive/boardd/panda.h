@@ -20,10 +20,10 @@
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
 #define USBPACKET_MAX_SIZE  (0x40)
-#define CANPACKET_HEAD_SIZE 5U
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
+#define CAN_TRANSACTION_MAGIC 0x43414E2FU
 
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
