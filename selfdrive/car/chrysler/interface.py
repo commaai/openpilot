@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.chrysler.values import CAR, DBC, RAM_CARS
+from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -14,9 +14,15 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = DBC[candidate]['radar'] is None
 
-
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
+
+    # safety config
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+    if candidate in RAM_HD:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
+    elif candidate in RAM_DT:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
     ret.minSteerSpeed = 3.8  # m/s
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
@@ -31,7 +37,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
       ret.lateralTuning.pid.kf = 0.00006
-      param = None
 
     # Jeep
     elif candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
@@ -42,7 +47,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
       ret.lateralTuning.pid.kf = 0.00006
-      param = None
 
     # Ram
     elif candidate == CAR.RAM_1500:
@@ -56,17 +60,14 @@ class CarInterface(CarInterfaceBase):
         for fw in car_fw:
           if fw.ecu == 'eps' and fw.fwVersion in (b"68312176AE", b"68312176AG", b"68273275AG"):
             ret.minSteerSpeed = 0.
-      param = Panda.FLAG_CHRYSLER_RAM_DT
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2
-      ret.wheelbase = 3.785  # in meters
+      ret.wheelbase = 3.785
       ret.steerRatio = 15.61
       ret.mass = 3405. + STD_CARGO_KG
       ret.minSteerSpeed = 16
-      param = Panda.FLAG_CHRYSLER_RAM_HD
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
-
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")

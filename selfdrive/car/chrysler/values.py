@@ -26,17 +26,16 @@ class CAR:
 
 
 class CarControllerParams:
-  def __init__(self, CP):  
-
+  def __init__(self, CP):
     if CP.carFingerprint in RAM_HD:
       self.STEER_DELTA_UP = 14
       self.STEER_DELTA_DOWN = 14
-      self.STEER_MAX = 361 # higher than this faults the EPS
+      self.STEER_MAX = 361  # higher than this faults the EPS
       self.STEER_ERROR_MAX = 200
-    elif CP.carFingerprint in RAM_CARS:
+    elif CP.carFingerprint in RAM_DT:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
-      self.STEER_MAX = 350 # higher than this faults the EPS
+      self.STEER_MAX = 261  # EPS allwos more, up to 350?
       self.STEER_ERROR_MAX = 80
     else:
       self.STEER_DELTA_UP = 3
@@ -46,8 +45,9 @@ class CarControllerParams:
 
 STEER_THRESHOLD = 120
 
-RAM_CARS = {CAR.RAM_1500, CAR.RAM_HD}
-RAM_HD = {CAR.RAM_HD}
+RAM_DT = {CAR.RAM_1500, }
+RAM_HD = {CAR.RAM_HD, }
+RAM_CARS = RAM_DT | RAM_HD
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
@@ -66,7 +66,10 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
   CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.none),
-  CAR.RAM_HD: ChryslerCarInfo("Ram HD 2020-22", harness=Harness.none),
+  CAR.RAM_HD: [
+    ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.none),
+    ChryslerCarInfo("Ram 3500 2020-22", harness=Harness.none),
+  ],
 }
 
 # Unique CAN messages:
