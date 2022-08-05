@@ -45,7 +45,7 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>新しいﾃｻﾞﾘﾝｸﾞﾊﾟｽﾜｰﾄﾞを入力してください</translation>
+        <translation>新しいテザリングパスワードを入力</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
@@ -310,7 +310,7 @@
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>ﾊﾟｽﾜｰﾄﾞは％%n文字以上で入力してください！</numerusform>
+            <numerusform>%n文字以上でお願いします！</numerusform>
         </translation>
     </message>
 </context>
@@ -490,30 +490,30 @@ location set</source>
 <context>
     <name>NvgWindow</name>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
         <translation>km/h</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>mph</source>
         <translation>mph</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="280"/>
-        <location filename="../qt/onroad.cc" line="283"/>
+        <location filename="../qt/onroad.cc" line="286"/>
+        <location filename="../qt/onroad.cc" line="289"/>
         <source>MAX</source>
         <translation>最高速度</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="327"/>
-        <location filename="../qt/onroad.cc" line="330"/>
+        <location filename="../qt/onroad.cc" line="333"/>
+        <location filename="../qt/onroad.cc" line="336"/>
         <source>SPEED</source>
         <translation>速度</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="333"/>
-        <location filename="../qt/onroad.cc" line="336"/>
+        <location filename="../qt/onroad.cc" line="339"/>
+        <location filename="../qt/onroad.cc" line="342"/>
         <source>LIMIT</source>
         <translation>制限速度</translation>
     </message>
