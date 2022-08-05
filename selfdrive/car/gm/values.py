@@ -59,8 +59,7 @@ class CAR:
 
 class Footnote(Enum):
   OBD_II = CarFootnote(
-    'Requires an <a href="https://comma.ai/shop/products/comma-car-harness">OBD-II car harness</a> and ' +
-    '<a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
+    'Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
     '<b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b>',
     Column.MODEL)
 
