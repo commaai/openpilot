@@ -1,3 +1,0 @@
-git clone https://android.googlesource.com/platform/prebuilts/simpleperf
-git reset --hard 311a9d2cd27841498fc90a0b26a755deb47e7ebd
-cp -r report_html.* simpleperf_report_lib.py utils.py inferno lib ~/one/external/simpleperf/

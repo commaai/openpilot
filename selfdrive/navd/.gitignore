@@ -1,5 +1,0 @@
-moc_*
-*.moc
-
-map_renderer
-libmap_renderer.so
