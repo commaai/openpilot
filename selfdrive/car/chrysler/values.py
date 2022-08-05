@@ -35,7 +35,7 @@ class CarControllerParams:
     elif CP.carFingerprint in RAM_DT:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
-      self.STEER_MAX = 261  # EPS allwos more, up to 350?
+      self.STEER_MAX = 261  # EPS allows more, up to 350?
       self.STEER_ERROR_MAX = 80
     else:
       self.STEER_DELTA_UP = 3
@@ -242,5 +242,5 @@ DBC = {
   CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
-  CAR.RAM_HD: dbc_dict('chrysler_ram_hd', None),
+  CAR.RAM_HD: dbc_dict('chrysler_ram_hd_generated', None),
 }
