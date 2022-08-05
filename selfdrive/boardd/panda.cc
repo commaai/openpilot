@@ -374,6 +374,10 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   int32_t pos = 0;
   uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
 
+  uint32_t magic = CAN_TRANSACTION_MAGIC;
+  memcpy(&send_buf[0], &magic, sizeof(uint32_t));
+  pos += sizeof(uint32_t);
+
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
@@ -398,12 +402,12 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
 
     if (pos >= USB_TX_SOFT_LIMIT) {
       write_func(send_buf, pos);
-      pos = 0;
+      pos = sizeof(uint32_t);
     }
   }
 
   // send remaining packets
-  if (pos > 0) write_func(send_buf, pos);
+  if (pos > sizeof(uint32_t)) write_func(send_buf, pos);
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {

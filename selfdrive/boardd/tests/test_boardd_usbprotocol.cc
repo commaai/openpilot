@@ -60,14 +60,11 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
 void PandaTest::test_can_send() {
   std::vector<uint8_t> unpacked_data;
   this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
-    int size_left = size;
-    for (int i = 0, counter = 0; i < size; i += USBPACKET_MAX_SIZE, counter++) {
-      REQUIRE(chunk[i] == counter);
+    uint32_t magic;
+    memcpy(&magic, &chunk[0], sizeof(uint32_t));
 
-      const int len = std::min(USBPACKET_MAX_SIZE, size_left);
-      unpacked_data.insert(unpacked_data.end(), &chunk[i + 1], &chunk[i + len]);
-      size_left -= len;
-    }
+    REQUIRE(magic == CAN_TRANSACTION_MAGIC);
+    unpacked_data.insert(unpacked_data.end(), &chunk[sizeof(uint32_t)], &chunk[size]);
   });
   REQUIRE(unpacked_data.size() == total_pakets_size);
 
