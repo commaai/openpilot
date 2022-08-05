@@ -376,30 +376,9 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    # # From Honda
-    # if self.CP.pcmCruise:
-    #   # we engage when pcm is active (rising edge)
-    #   if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-    #     events.add(EventName.pcmEnable)
-    ## above handled in create_common_events
-    #   elif not ret.cruiseState.enabled and (c.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
-    #     # it can happen that car cruise disables while comma system is enabled: need to
-    #     # keep braking if needed or if the speed is very low
-    #     if ret.vEgo < self.CP.minEnableSpeed + 2.:
-    #       # non loud alert if cruise disables below 25mph as expected (+ a little margin)
-    #       events.add(EventName.speedTooLow)
-    #     else:
-    #       events.add(EventName.cruiseDisabled)
-    # if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
-    #   events.add(EventName.manualRestart)
-  
-    # TODO: pcmEnable means use stock ACC
-    # TODO: We should ignore buttons and use stock ACC state
-    # TODO: create_common_events and create_button_enable_events appear to now handle this
-    # TODO: Honda has the above extra code - this may explain scott's strange alerts!
-    # Note: this update changes behavior - have steve / scott / uncle tone test / Bolt EUV test
-    events = self.create_common_events(ret, extra_gears = [GearShifter.sport, GearShifter.low,
-                                                           GearShifter.eco, GearShifter.manumatic], pcm_enable=self.CP.pcmCruise)
+    events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
+                                                         GearShifter.eco, GearShifter.manumatic],
+                                       pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)

@@ -193,7 +193,13 @@ void NvgWindow::updateState(const UIState &s) {
   }
 
   // Handle older routes where vEgoCluster is not set
-  float v_ego = sm["carState"].getCarState().getVEgoCluster() == 0.0 ? sm["carState"].getCarState().getVEgo() : sm["carState"].getCarState().getVEgoCluster();
+  float v_ego;
+  if (sm["carState"].getCarState().getVEgoCluster() == 0.0 && !v_ego_cluster_seen) {
+    v_ego = sm["carState"].getCarState().getVEgo();
+  } else {
+    v_ego = sm["carState"].getCarState().getVEgoCluster();
+    v_ego_cluster_seen = true;
+  }
   float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
   cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
