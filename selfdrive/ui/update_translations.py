@@ -17,7 +17,7 @@ def update_translations(vanish=False, plural_only=None, translations_dir=TRANSLA
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
-  for name, file in translation_files.items():
+  for file in translation_files.values():
     tr_file = os.path.join(translations_dir, f"{file}.ts")
     args = f"lupdate -recursive {UI_DIR} -ts {tr_file}"
     if vanish:
