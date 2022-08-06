@@ -41,7 +41,7 @@ class CarControllerParams:
 
   # much less engine braking force compared to regen in an EV
   GAS_LOOKUP_BP = [-0.1, 0., ACCEL_MAX]
-  BRAKE_LOOKUP_BP = [ACCEL_MIN, 0.0]
+  BRAKE_LOOKUP_BP = [ACCEL_MIN, -0.1]
 
   EV_GAS_LOOKUP_BP = [-1.1, 0., ACCEL_MAX]
   EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.1]
