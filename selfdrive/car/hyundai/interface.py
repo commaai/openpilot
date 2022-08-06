@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, DBC, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import CAR, DBC, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = disable_radar and (candidate not in LEGACY_SAFETY_MODE_CAR)
+    ret.openpilotLongitudinalControl = disable_radar and (candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR))
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -115,9 +115,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [2.3]
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
+    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425.}.get(candidate, 1275.) + STD_CARGO_KG
+      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.6
       ret.steerRatio = 13.42  # Spec
       tire_stiffness_factor = 0.385
@@ -304,6 +304,9 @@ class CarInterface(CarInterfaceBase):
 
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_LONG
+
+    if candidate in CAMERA_SCC_CAR:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
     return ret
 

@@ -122,10 +122,10 @@ class VWCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
     VWCarInfo("Volkswagen Atlas 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -685,6 +685,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300013B \xf1\x894931',
       b'\xf1\x870D9300041N \xf1\x894512',
       b'\xf1\x870D9300043T \xf1\x899699',
+      b'\xf1\x870DD300046  \xf1\x891604',
       b'\xf1\x870DD300046A \xf1\x891602',
       b'\xf1\x870DD300046F \xf1\x891602',
       b'\xf1\x870DD300046G \xf1\x891601',
@@ -695,6 +696,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655AB\xf1\x890388\xf1\x82\0211111001111111206110412111321139114',
       b'\xf1\x875Q0959655AM\xf1\x890315\xf1\x82\x1311111111111111311411011231129321212100',
+      b'\xf1\x875Q0959655AM\xf1\x890318\xf1\x82\x1311111111111112311411011531159321212100',
       b'\xf1\x875Q0959655BJ\xf1\x890339\xf1\x82\x1311110011131100311111011731179321342100',
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
