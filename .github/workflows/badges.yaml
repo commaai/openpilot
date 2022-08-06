@@ -18,6 +18,7 @@ jobs:
   badges:
     name: create badges
     runs-on: ubuntu-latest
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
       with:
