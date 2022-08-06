@@ -61,6 +61,7 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
+    self.v_ego_cluster_seen = False
 
     self.CS = None
     self.can_parsers = []
@@ -162,8 +163,10 @@ class CarInterfaceBase(ABC):
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
-    if ret.vEgoCluster == 0.0:
+    if ret.vEgoCluster == 0.0 and not self.v_ego_cluster_seen:
       ret.vEgoCluster = ret.vEgo
+    else:
+      self.v_ego_cluster_seen = True
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
@@ -321,7 +324,7 @@ class CarStateBase(ABC):
   def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
-    
+
     d: Dict[str, car.CarState.GearShifter] = {
         'P': GearShifter.park, 'PARK': GearShifter.park,
         'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
