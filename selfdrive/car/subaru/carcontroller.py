@@ -22,7 +22,6 @@ class CarController:
   def update(self, CC, CS):
     actuators = CC.actuators
     hud_control = CC.hudControl
-    pcm_cancel_cmd = CC.cruiseControl.cancel
 
     can_sends = []
 
@@ -53,7 +52,7 @@ class CarController:
       if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
-        if pcm_cancel_cmd:
+        if CC.cruiseControl.cancel:
           cruise_button = 1
         # turn main on if off and past start-up state
         elif not CS.out.cruiseState.available and CS.ready:
@@ -70,10 +69,12 @@ class CarController:
         self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
     else:
-      if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
+      if (self.frame - self.last_cancel_frame) > 0.2:
         bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
-        can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
-        self.last_cancel_frame = self.frame
+        resume = CC.cruiseControl.resume and not CC.cruiseControl.cancel
+        if CC.cruiseControl.cancel or resume:
+          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, CC.cruiseControl.cancel, resume))
+          self.last_cancel_frame = self.frame
 
       if self.es_dashstatus_cnt != CS.es_dashstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
