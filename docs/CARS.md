@@ -19,7 +19,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 - [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
 
 
-# 199 Supported Cars
+# 200 Supported Cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|
 |---|---|---|:---:|:---:|:---:|:---:|
@@ -65,6 +65,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Honda|Passport 2019-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
 |Honda|Pilot 2016-22|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
 |Honda|Ridgeline 2017-22|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
+|Hongqi|HS5 2020|Who Knows|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Elantra 2017-19|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|

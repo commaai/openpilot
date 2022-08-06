@@ -1,10 +1,11 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 
 Ecu = car.CarParams.Ecu
 GearShifter = car.CarState.GearShifter
@@ -40,11 +41,11 @@ class CAR:
 @dataclass
 class FAWCarInfo(CarInfo):
   package: str = "Who Knows"  # FIXME
-  good_torque: bool = True  # TODO
+  harness: Enum = Harness.custom
 
 
 CAR_INFO: Dict[str, Union[FAWCarInfo, List[FAWCarInfo]]] = {
-  CAR.HONGQI_HS5_G1: FAWCarInfo("Hongqi HS5 ????"),
+  CAR.HONGQI_HS5_G1: FAWCarInfo("Hongqi HS5 2020"),
 }
 
 
