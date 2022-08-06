@@ -1,5 +1,6 @@
 # pylint: skip-file
 import numpy as np
+from typing import Callable
 
 from common.transformations.transformations import (ecef_euler_from_ned_single,
                                                     euler2quat_single,
@@ -11,7 +12,7 @@ from common.transformations.transformations import (ecef_euler_from_ned_single,
                                                     rot2quat_single)
 
 
-def numpy_wrap(function, input_shape, output_shape):
+def numpy_wrap(function, input_shape, output_shape) -> Callable[..., np.ndarray]:
   """Wrap a function to take either an input or list of inputs and return the correct shape"""
   def f(*inps):
     *args, inp = inps

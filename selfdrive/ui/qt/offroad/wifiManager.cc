@@ -3,8 +3,8 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/params.h"
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
@@ -303,7 +303,7 @@ void WifiManager::initConnections() {
     const Connection settings = getConnectionSettings(path);
     if (settings.value("connection").value("type") == "802-11-wireless") {
       knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
-    } else if (path.path() != "/") {
+    } else if (settings.value("connection").value("id") == "lte") {
       lteConnectionPath = path;
     }
   }

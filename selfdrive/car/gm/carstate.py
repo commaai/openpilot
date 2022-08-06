@@ -3,14 +3,16 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, CAR, AccState, CanBus, STEER_THRESHOLD
+from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
+
+TransmissionType = car.CarParams.TransmissionType
 
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
+    self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
 
   def update(self, pt_cp, loopback_cp):
@@ -29,9 +31,18 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
 
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL"]["PRNDL"], None))
-    ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["Brake_Pressed"] != 0
+    if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
+      ret.gearShifter = self.parse_gear_shifter("T")
+    else:
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None))
+
+    # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
+    ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 10
+
+    # Regen braking is braking
+    if self.CP.transmissionType == TransmissionType.direct:
+      ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
@@ -59,17 +70,13 @@ class CarState(CarStateBase):
     ret.leftBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 1
     ret.rightBlinker = pt_cp.vl["BCMTurnSignals"]["TurnSignals"] == 2
 
-    ret.parkingBrake = pt_cp.vl["EPBStatus"]["EPBClosed"] == 1
+    ret.parkingBrake = pt_cp.vl["VehicleIgnitionAlt"]["ParkBrake"] == 1
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
-    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
+    ret.accFaulted = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED
 
-    # Regen braking is braking
-    if self.car_fingerprint == CAR.VOLT:
-      ret.brakePressed = ret.brakePressed or pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-
-    ret.cruiseState.enabled = self.pcm_acc_status != AccState.OFF
-    ret.cruiseState.standstill = self.pcm_acc_status == AccState.STANDSTILL
+    ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
+    ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
 
     return ret
 
@@ -94,23 +101,23 @@ class CarState(CarStateBase):
       ("FRWheelSpd", "EBCMWheelSpdFront"),
       ("RLWheelSpd", "EBCMWheelSpdRear"),
       ("RRWheelSpd", "EBCMWheelSpdRear"),
-      ("PRNDL", "ECMPRDNL"),
+      ("PRNDL2", "ECMPRDNL2"),
+      ("ManualMode", "ECMPRDNL2"),
       ("LKADriverAppldTrq", "PSCMStatus"),
       ("LKATorqueDelivered", "PSCMStatus"),
       ("LKATorqueDeliveredStatus", "PSCMStatus"),
       ("TractionControlOn", "ESPStatus"),
-      ("EPBClosed", "EPBStatus"),
+      ("ParkBrake", "VehicleIgnitionAlt"),
       ("CruiseMainOn", "ECMEngineStatus"),
-      ("Brake_Pressed", "ECMEngineStatus"),
     ]
 
     checks = [
       ("BCMTurnSignals", 1),
-      ("ECMPRDNL", 10),
+      ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
       ("BCMDoorBeltStatus", 10),
-      ("EPBStatus", 20),
+      ("VehicleIgnitionAlt", 10),
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
       ("AcceleratorPedal2", 33),
@@ -120,7 +127,7 @@ class CarState(CarStateBase):
       ("EBCMBrakePedalPosition", 100),
     ]
 
-    if CP.carFingerprint == CAR.VOLT:
+    if CP.transmissionType == TransmissionType.direct:
       signals.append(("RegenPaddle", "EBCMRegenPaddle"))
       checks.append(("EBCMRegenPaddle", 50))
 
@@ -133,7 +140,9 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 50),
+      ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms).
+      #                             While active 50 Hz (every 20 ms) is normal
+      #                             EPS will tolerate around 200ms when active before faulting
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)

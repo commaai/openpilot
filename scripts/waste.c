@@ -11,7 +11,7 @@
 #include <pthread.h>
 #include <arm_neon.h>
 #include <sys/sysinfo.h>
-#include "../selfdrive/common/timing.h"
+#include "../common/timing.h"
 
 int get_nprocs(void);
 double *ttime, *oout;

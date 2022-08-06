@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import unittest
 import importlib
 from parameterized import parameterized
@@ -32,14 +33,16 @@ class TestCarInterfaces(unittest.TestCase):
     assert car_interface
 
     self.assertGreater(car_params.mass, 1)
-    self.assertGreater(car_params.steerRateCost, 1e-3)
+    self.assertGreater(car_params.maxLateralAccel, 0)
 
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
       tuning = car_params.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(car_params.lateralTuning.pid.kpV))
-      elif tuning == 'lqr':
-        self.assertTrue(len(car_params.lateralTuning.lqr.a))
+      elif tuning == 'torque':
+        kf = car_params.lateralTuning.torque.kf
+        self.assertTrue(not math.isnan(kf) and kf > 0)
+        self.assertTrue(not math.isnan(car_params.lateralTuning.torque.friction))
       elif tuning == 'indi':
         self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
 
@@ -64,7 +67,8 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Run radar interface once
     radar_interface.update([])
-    if not car_params.radarOffCan and hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+    if not car_params.radarOffCan and radar_interface.rcp is not None and \
+       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 
 if __name__ == "__main__":

@@ -119,6 +119,10 @@ void blasfeo_ref_dgemv_nt(int m, int n, double alpha_n, double alpha_t, struct b
 // z <= beta * y + alpha * A * x, where A is symmetric and only the lower triangular patr of A is accessed
 void blasfeo_ref_dsymv_l(int m, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dvec *sx, int xi, double beta, struct blasfeo_dvec *sy, int yi, struct blasfeo_dvec *sz, int zi);
 void blasfeo_ref_dsymv_l_mn(int m, int n, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dvec *sx, int xi, double beta, struct blasfeo_dvec *sy, int yi, struct blasfeo_dvec *sz, int zi);
+// z <= beta * y + alpha * A * x, where A is symmetric and only the upper triangular patr of A is accessed
+void blasfeo_ref_dsymv_u(int m, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dvec *sx, int xi, double beta, struct blasfeo_dvec *sy, int yi, struct blasfeo_dvec *sz, int zi);
+// D = C + alpha * x * y^T
+void blasfeo_ref_dger(int m, int n, double alpha, struct blasfeo_dvec *sx, int xi, struct blasfeo_dvec *sy, int yi, struct blasfeo_dmat *sC, int ci, int cj, struct blasfeo_dmat *sD, int di, int dj);
 
 // diagonal
 
@@ -214,6 +218,14 @@ void blasfeo_ref_dtrsm_runu(int m, int n, double alpha, struct blasfeo_dmat *sA,
 void blasfeo_ref_dtrsm_rutn(int m, int n, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj, struct blasfeo_dmat *sD, int di, int dj);
 // D <= alpha * B * A^{-T} , with A upper triangular with unit diagonal
 void blasfeo_ref_dtrsm_rutu(int m, int n, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj, struct blasfeo_dmat *sD, int di, int dj);
+// D <= beta * C + alpha * A * B^T + alpha * B * A^T ; C, D lower triangular
+void blasfeo_ref_dsyr2k_ln(int m, int k, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj, double beta, struct blasfeo_dmat *sC, int ci, int cj, struct blasfeo_dmat *sD, int di, int dj);
+// D <= beta * C + alpha * A^T * B + alpha * B^T * A ; C, D lower triangular
+void blasfeo_ref_dsyr2k_lt(int m, int k, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj, double beta, struct blasfeo_dmat *sC, int ci, int cj, struct blasfeo_dmat *sD, int di, int dj);
+// D <= beta * C + alpha * A * B^T + alpha * B * A^T ; C, D upper triangular
+void blasfeo_ref_dsyr2k_un(int m, int k, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj, double beta, struct blasfeo_dmat *sC, int ci, int cj, struct blasfeo_dmat *sD, int di, int dj);
+// D <= beta * C + alpha * A^T * B + alpha * B^T * A ; C, D upper triangular
+void blasfeo_ref_dsyr2k_ut(int m, int k, double alpha, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj, double beta, struct blasfeo_dmat *sC, int ci, int cj, struct blasfeo_dmat *sD, int di, int dj);
 
 // diagonal
 

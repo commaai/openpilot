@@ -1862,6 +1862,11 @@ void {{ model.name }}_acados_create_6_set_opts({{ model.name }}_solver_capsule* 
 {%- endif %}
 
 
+{%- if solver_options.qp_solver is containing("HPIPM") %}
+    // set HPIPM mode: should be done before setting other QP solver options
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_hpipm_mode", "{{ solver_options.hpipm_mode }}");
+{%- endif %}
+
 {% if solver_options.nlp_solver_type == "SQP" %}
     // set SQP specific options
     double nlp_solver_tol_stat = {{ solver_options.nlp_solver_tol_stat }};
@@ -2071,6 +2076,63 @@ int {{ model.name }}_acados_update_qp_solver_cond_N({{ model.name }}_solver_caps
 }
 
 
+int {{ model.name }}_acados_reset({{ model.name }}_solver_capsule* capsule)
+{
+
+    // set initialization to all zeros
+{# TODO: use guess values / initial state value from json instead?! #}
+    const int N = capsule->nlp_solver_plan->N;
+    ocp_nlp_config* nlp_config = capsule->nlp_config;
+    ocp_nlp_dims* nlp_dims = capsule->nlp_dims;
+    ocp_nlp_out* nlp_out = capsule->nlp_out;
+    ocp_nlp_in* nlp_in = capsule->nlp_in;
+    ocp_nlp_solver* nlp_solver = capsule->nlp_solver;
+
+    int nx, nu, nv, ns, nz, ni, dim;
+
+    double* buffer = calloc(NX+NU+NZ+2*NS+2*NSN+NBX+NBU+NG+NH+NPHI+NBX0+NBXN+NHN+NPHIN+NGN, sizeof(double));
+
+    for(int i=0; i<N+1; i++)
+    {
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "x", buffer);
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "u", buffer);
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "sl", buffer);
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "su", buffer);
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "lam", buffer);
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "t", buffer);
+        ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "z", buffer);
+        if (i<N)
+        {
+            ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, i, "pi", buffer);
+        {%- if solver_options.integrator_type == "IRK" %}
+            ocp_nlp_set(nlp_config, nlp_solver, i, "xdot_guess", buffer);
+            ocp_nlp_set(nlp_config, nlp_solver, i, "z_guess", buffer);
+        {% elif solver_options.integrator_type == "LIFTED_IRK" %}
+            ocp_nlp_set(nlp_config, nlp_solver, i, "xdot_guess", buffer);
+        {% elif solver_options.integrator_type == "GNSF" %}
+            ocp_nlp_set(nlp_config, nlp_solver, i, "gnsf_phi_guess", buffer);
+        {%- endif %}
+        }
+    }
+
+{%- if solver_options.qp_solver == 'PARTIAL_CONDENSING_HPIPM' %}
+    // get qp_status: if NaN -> reset memory
+    int qp_status;
+    ocp_nlp_get(capsule->nlp_config, capsule->nlp_solver, "qp_status", &qp_status);
+    if (qp_status == 3)
+    {
+        // printf("\nin reset qp_status %d -> resetting QP memory\n", qp_status);
+        ocp_nlp_solver_reset_qp_memory(nlp_solver, nlp_in, nlp_out);
+    }
+{%- endif %}
+
+    free(buffer);
+    return 0;
+}
+
+
+
+
 int {{ model.name }}_acados_update_params({{ model.name }}_solver_capsule* capsule, int stage, double *p, int np)
 {
     int solver_status = 0;
@@ -2096,7 +2158,7 @@ int {{ model.name }}_acados_update_params({{ model.name }}_solver_capsule* capsu
         {%- endif %}
     {% elif solver_options.integrator_type == "LIFTED_IRK" %}
         capsule->impl_dae_fun[stage].set_param(capsule->impl_dae_fun+stage, p);
-        capsule->impl_dae_fun_jac_x_xdot_z[stage].set_param(capsule->impl_dae_fun_jac_x_xdot_z+stage, p);
+        capsule->impl_dae_fun_jac_x_xdot_u[stage].set_param(capsule->impl_dae_fun_jac_x_xdot_u+stage, p);
     {% elif solver_options.integrator_type == "ERK" %}
         capsule->forw_vde_casadi[stage].set_param(capsule->forw_vde_casadi+stage, p);
         capsule->expl_ode_fun[stage].set_param(capsule->expl_ode_fun+stage, p);

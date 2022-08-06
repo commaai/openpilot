@@ -96,6 +96,7 @@ typedef struct
     struct blasfeo_dvec *u;         // controls (nu) -- for expansion step
 
     int update_sens;
+    // int init_K;
 
 	double time_sim;
 	double time_ad;

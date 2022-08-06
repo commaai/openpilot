@@ -3,6 +3,7 @@ import os
 import unittest
 
 from common.params import Params
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
@@ -105,6 +106,17 @@ maneuvers = [
     speed_lead_values=[0., 0., 0.0],
     breakpoints=[1., 1.01, 11.],
     cruise_values=[float("nan"), 15., 15.],
+  ),
+  # controls relies on planner commanding to move for stock-ACC resume spamming
+  Maneuver(
+    "resume from a stop",
+    duration=20.,
+    initial_speed=0.,
+    lead_relevancy=True,
+    initial_distance_lead=STOP_DISTANCE,
+    speed_lead_values=[0., 0., 2.],
+    breakpoints=[1., 10., 15.],
+    ensure_start=True,
   ),
 ]
 

@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 #
 # Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
 # Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
@@ -49,7 +50,7 @@ def get_acados_path():
         ACADOS_PATH = os.path.realpath(acados_path)
         msg = 'Warning: Did not find environment variable ACADOS_SOURCE_DIR, '
         msg += 'guessed ACADOS_PATH to be {}.\n'.format(ACADOS_PATH)
-        msg += 'Please export ACADOS_SOURCE_DIR to not avoid this warning.'
+        msg += 'Please export ACADOS_SOURCE_DIR to avoid this warning.'
         print(msg)
     return ACADOS_PATH
 
@@ -74,7 +75,7 @@ def get_tera_exec_path():
 platform2tera = {
     "linux": "linux",
     "darwin": "osx",
-    "win32": "window.exe"
+    "win32": "windows"
 }
 
 
@@ -212,16 +213,14 @@ def render_template(in_file, out_file, template_dir, json_path):
     template_glob = os.path.join(acados_path, 'c_templates_tera', '*')
 
     # call tera as system cmd
-    os_cmd = "{tera_path} '{template_glob}' '{in_file}' '{json_path}' '{out_file}'".format(
-        tera_path=tera_path,
-        template_glob=template_glob,
-        json_path=json_path,
-        in_file=in_file,
-        out_file=out_file
-    )
+    os_cmd = f"{tera_path} '{template_glob}' '{in_file}' '{json_path}' '{out_file}'"
+    # Windows cmd.exe can not cope with '...', so use "..." instead:
+    if os.name == 'nt':
+        os_cmd = os_cmd.replace('\'', '\"')
+
     status = os.system(os_cmd)
     if (status != 0):
-        raise Exception('Rendering of {} failed!\n\nAttempted to execute OS command:\n{}\n\nExiting.\n'.format(in_file, os_cmd))
+        raise Exception(f'Rendering of {in_file} failed!\n\nAttempted to execute OS command:\n{os_cmd}\n\nExiting.\n')
 
     os.chdir(cwd)
 
@@ -235,9 +234,7 @@ def np_array_to_list(np_array):
     elif isinstance(np_array, (DM)):
         return np_array.full()
     else:
-        raise(Exception(
-            "Cannot convert to list type {}".format(type(np_array))
-        ))
+        raise(Exception(f"Cannot convert to list type {type(np_array)}"))
 
 
 def format_class_dict(d):

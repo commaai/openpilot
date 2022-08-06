@@ -7,18 +7,19 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
+
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
-    self.steer_rate_limited = False
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -49,11 +50,9 @@ class CarController:
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
-    self.steer_rate_limited = new_steer != apply_steer
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
-    # Cut steering while we're in a known fault state (2s)
-    if not CC.latActive or CS.steer_state in (9, 25):
+    if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -82,7 +81,7 @@ class CarController:
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, self.frame))
+    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
 
@@ -125,12 +124,12 @@ class CarController:
       # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
       send_ui = True
 
-    if self.frame % 100 == 0 or send_ui:
+    if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
       can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                          hud_control.rightLaneDepart, CC.enabled))
 
-    if self.frame % 100 == 0 and self.CP.enableDsu:
+    if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***

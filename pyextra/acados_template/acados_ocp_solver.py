@@ -54,6 +54,7 @@ from .acados_model import acados_model_strip_casadi_symbolics
 from .utils import is_column, is_empty, casadi_length, render_template,\
      format_class_dict, ocp_check_against_layout, np_array_to_list, make_model_consistent,\
      set_up_imported_gnsf_model, get_ocp_nlp_layout, get_python_interface_path
+from .builders import CMakeBuilder
 
 
 def make_ocp_dims_consistent(acados_ocp):
@@ -132,6 +133,15 @@ def make_ocp_dims_consistent(acados_ocp):
                             f'\nGot W_0[{cost.W.shape}], yref_0[{cost.yref_0.shape}]\n')
         dims.ny_0 = ny_0
 
+    elif cost.cost_type_0 == 'EXTERNAL':
+        if opts.hessian_approx == 'GAUSS_NEWTON' and opts.ext_cost_num_hess == 0 and model.cost_expr_ext_cost_custom_hess_0 is None:
+            print("\nWARNING: Gauss-Newton Hessian approximation with EXTERNAL cost type not possible!\n"
+            "got cost_type_0: EXTERNAL, hessian_approx: 'GAUSS_NEWTON.'\n"
+            "GAUSS_NEWTON hessian is only supported for cost_types [NON]LINEAR_LS.\n"
+            "If you continue, acados will proceed computing the exact hessian for the cost term.\n"
+            "Note: There is also the option to use the external cost module with a numerical hessian approximation (see `ext_cost_num_hess`).\n"
+            "OR the option to provide a symbolic custom hessian approximation (see `cost_expr_ext_cost_custom_hess`).\n")
+
     # path
     if cost.cost_type == 'LINEAR_LS':
         ny = cost.W.shape[0]
@@ -161,6 +171,15 @@ def make_ocp_dims_consistent(acados_ocp):
                             f'\nGot W[{cost.W.shape}], yref[{cost.yref.shape}]\n')
         dims.ny = ny
 
+    elif cost.cost_type == 'EXTERNAL':
+        if opts.hessian_approx == 'GAUSS_NEWTON' and opts.ext_cost_num_hess == 0 and model.cost_expr_ext_cost_custom_hess is None:
+            print("\nWARNING: Gauss-Newton Hessian approximation with EXTERNAL cost type not possible!\n"
+            "got cost_type: EXTERNAL, hessian_approx: 'GAUSS_NEWTON.'\n"
+            "GAUSS_NEWTON hessian is only supported for cost_types [NON]LINEAR_LS.\n"
+            "If you continue, acados will proceed computing the exact hessian for the cost term.\n"
+            "Note: There is also the option to use the external cost module with a numerical hessian approximation (see `ext_cost_num_hess`).\n"
+            "OR the option to provide a symbolic custom hessian approximation (see `cost_expr_ext_cost_custom_hess`).\n")
+
     # terminal
     if cost.cost_type_e == 'LINEAR_LS':
         ny_e = cost.W_e.shape[0]
@@ -183,6 +202,14 @@ def make_ocp_dims_consistent(acados_ocp):
             raise Exception('inconsistent dimension: regarding W_e, yref_e.')
         dims.ny_e = ny_e
 
+    elif cost.cost_type_e == 'EXTERNAL':
+        if opts.hessian_approx == 'GAUSS_NEWTON' and opts.ext_cost_num_hess == 0 and model.cost_expr_ext_cost_custom_hess_e is None:
+            print("\nWARNING: Gauss-Newton Hessian approximation with EXTERNAL cost type not possible!\n"
+            "got cost_type_e: EXTERNAL, hessian_approx: 'GAUSS_NEWTON.'\n"
+            "GAUSS_NEWTON hessian is only supported for cost_types [NON]LINEAR_LS.\n"
+            "If you continue, acados will proceed computing the exact hessian for the cost term.\n"
+            "Note: There is also the option to use the external cost module with a numerical hessian approximation (see `ext_cost_num_hess`).\n"
+            "OR the option to provide a symbolic custom hessian approximation (see `cost_expr_ext_cost_custom_hess`).\n")
 
     ## constraints
     # initial
@@ -622,15 +649,25 @@ def ocp_generate_external_functions(acados_ocp, model):
         generate_c_code_external_cost(model, 'terminal', opts)
 
 
-def ocp_render_templates(acados_ocp, json_file):
+def ocp_get_default_cmake_builder() -> CMakeBuilder:
+    """
+    If :py:class:`~acados_template.acados_ocp_solver.AcadosOcpSolver` is used with `CMake` this function returns a good first setting.
+    :return: default :py:class:`~acados_template.builders.CMakeBuilder`
+    """
+    cmake_builder = CMakeBuilder()
+    cmake_builder.options_on = ['BUILD_ACADOS_OCP_SOLVER_LIB']
+    return cmake_builder
+
+
+def ocp_render_templates(acados_ocp, json_file, cmake_builder=None):
 
     name = acados_ocp.model.name
 
     # setting up loader and environment
-    json_path = os.path.join(os.getcwd(), json_file)
+    json_path = os.path.abspath(json_file)
 
     if not os.path.exists(json_path):
-        raise Exception('{} not found!'.format(json_path))
+        raise Exception(f'Path "{json_path}" not found!')
 
     code_export_dir = acados_ocp.code_export_directory
     template_dir = code_export_dir
@@ -652,9 +689,14 @@ def ocp_render_templates(acados_ocp, json_file):
     out_file = f'acados_solver.pxd'
     render_template(in_file, out_file, template_dir, json_path)
 
-    in_file = 'Makefile.in'
-    out_file = 'Makefile'
-    render_template(in_file, out_file, template_dir, json_path)
+    if cmake_builder is not None:
+        in_file = 'CMakeLists.in.txt'
+        out_file = 'CMakeLists.txt'
+        render_template(in_file, out_file, template_dir, json_path)
+    else:
+        in_file = 'Makefile.in'
+        out_file = 'Makefile'
+        render_template(in_file, out_file, template_dir, json_path)
 
     in_file = 'acados_solver_sfun.in.c'
     out_file = f'acados_solver_sfunction_{name}.c'
@@ -764,25 +806,30 @@ class AcadosOcpSolver:
     """
     Class to interact with the acados ocp solver C object.
 
-        :param acados_ocp: type AcadosOcp - description of the OCP for acados
+        :param acados_ocp: type :py:class:`~acados_template.acados_ocp.AcadosOcp` - description of the OCP for acados
         :param json_file: name for the json file used to render the templated code - default: acados_ocp_nlp.json
         :param simulink_opts: Options to configure Simulink S-function blocks, mainly to activate possible Inputs and Outputs
     """
     if sys.platform=="win32":
         from ctypes import wintypes
-        dlclose = ctypes.WinDLL('kernel32', use_last_error=True).FreeLibrary
+        from ctypes import WinDLL
+        dlclose = WinDLL('kernel32', use_last_error=True).FreeLibrary
         dlclose.argtypes = [wintypes.HMODULE]
     else:
         dlclose = CDLL(None).dlclose
         dlclose.argtypes = [c_void_p]
 
     @classmethod
-    def generate(cls, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None):
+    def generate(cls, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None, cmake_builder: CMakeBuilder = None):
         """
         Generates the code for an acados OCP solver, given the description in acados_ocp.
             :param acados_ocp: type AcadosOcp - description of the OCP for acados
-            :param json_file: name for the json file used to render the templated code - default: acados_ocp_nlp.json
-            :param simulink_opts: Options to configure Simulink S-function blocks, mainly to activate possible Inputs and Outputs
+            :param json_file: name for the json file used to render the templated code - default: `acados_ocp_nlp.json`
+            :param simulink_opts: Options to configure Simulink S-function blocks, mainly to activate possible inputs and
+                   outputs; default: `None`
+            :param cmake_builder: type :py:class:`~acados_template.builders.CMakeBuilder` generate a `CMakeLists.txt` and use
+                   the `CMake` pipeline instead of a `Makefile` (`CMake` seems to be the better option in conjunction with
+                   `MS Visual Studio`); default: `None`
         """
         model = acados_ocp.model
         acados_ocp.code_export_directory = os.path.abspath(acados_ocp.code_export_directory)
@@ -810,25 +857,32 @@ class AcadosOcpSolver:
         ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file)
 
         # render templates
-        ocp_render_templates(acados_ocp, json_file)
+        ocp_render_templates(acados_ocp, json_file, cmake_builder=cmake_builder)
         acados_ocp.json_file = json_file
 
 
     @classmethod
-    def build(cls, code_export_dir, with_cython=False):
+    def build(cls, code_export_dir, with_cython=False, cmake_builder: CMakeBuilder = None):
         """
         Builds the code for an acados OCP solver, that has been generated in code_export_dir
             :param code_export_dir: directory in which acados OCP solver has been generated, see generate()
             :param with_cython: option indicating if the cython interface is build, default: False.
+            :param cmake_builder: type :py:class:`~acados_template.builders.CMakeBuilder` generate a `CMakeLists.txt` and use
+                   the `CMake` pipeline instead of a `Makefile` (`CMake` seems to be the better option in conjunction with
+                   `MS Visual Studio`); default: `None`
         """
+        code_export_dir = os.path.abspath(code_export_dir)
         cwd=os.getcwd()
         os.chdir(code_export_dir)
         if with_cython:
             os.system('make clean_ocp_cython')
             os.system('make ocp_cython')
         else:
-            os.system('make clean_ocp_shared_lib')
-            os.system('make ocp_shared_lib')
+            if cmake_builder is not None:
+                cmake_builder.exec(code_export_dir)
+            else:
+                os.system('make clean_ocp_shared_lib')
+                os.system('make ocp_shared_lib')
         os.chdir(cwd)
 
 
@@ -856,11 +910,11 @@ class AcadosOcpSolver:
                     acados_ocp_json['dims']['N'])
 
 
-    def __init__(self, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None, build=True, generate=True):
+    def __init__(self, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None, build=True, generate=True, cmake_builder: CMakeBuilder = None):
 
         self.solver_created = False
         if generate:
-            self.generate(acados_ocp, json_file=json_file, simulink_opts=simulink_opts)
+            self.generate(acados_ocp, json_file=json_file, simulink_opts=simulink_opts, cmake_builder=cmake_builder)
 
         # load json, store options in object
         with open(json_file, 'r') as f:
@@ -873,14 +927,22 @@ class AcadosOcpSolver:
         code_export_directory = acados_ocp_json['code_export_directory']
 
         if build:
-            self.build(code_export_directory, with_cython=False)
+            self.build(code_export_directory, with_cython=False, cmake_builder=cmake_builder)
+
+        # prepare library loading
+        lib_prefix = 'lib'
+        lib_ext = '.so'
+        if os.name == 'nt':
+            lib_prefix = ''
+            lib_ext = ''
+        # ToDo: check for mac
 
         # Load acados library to avoid unloading the library.
         # This is necessary if acados was compiled with OpenMP, since the OpenMP threads can't be destroyed.
         # Unloading a library which uses OpenMP results in a segfault (on any platform?).
         # see [https://stackoverflow.com/questions/34439956/vc-crash-when-freeing-a-dll-built-with-openmp]
         # or [https://python.hotexamples.com/examples/_ctypes/-/dlclose/python-dlclose-function-examples.html]
-        libacados_name = 'libacados.so'
+        libacados_name = f'{lib_prefix}acados{lib_ext}'
         libacados_filepath = os.path.join(acados_lib_path, libacados_name)
         self.__acados_lib = CDLL(libacados_filepath)
         # find out if acados was compiled with OpenMP
@@ -892,8 +954,8 @@ class AcadosOcpSolver:
             print('acados was compiled with OpenMP.')
         else:
             print('acados was compiled without OpenMP.')
-
-        self.shared_lib_name = f'{code_export_directory}/libacados_ocp_solver_{self.model_name}.so'
+        libacados_ocp_solver_name = f'{lib_prefix}acados_ocp_solver_{self.model_name}{lib_ext}'
+        self.shared_lib_name = os.path.join(code_export_directory, libacados_ocp_solver_name)
 
         # get shared_lib
         self.shared_lib = CDLL(self.shared_lib_name)
@@ -957,6 +1019,17 @@ class AcadosOcpSolver:
         self.status = getattr(self.shared_lib, f"{self.model_name}_acados_solve")(self.capsule)
 
         return self.status
+
+
+    def reset(self):
+        """
+        Sets current iterate to all zeros.
+        """
+        getattr(self.shared_lib, f"{self.model_name}_acados_reset").argtypes = [c_void_p]
+        getattr(self.shared_lib, f"{self.model_name}_acados_reset").restype = c_int
+        getattr(self.shared_lib, f"{self.model_name}_acados_reset")(self.capsule)
+
+        return
 
 
     def set_new_time_steps(self, new_time_steps):
@@ -1364,12 +1437,12 @@ class AcadosOcpSolver:
         return out[0]
 
 
-    def get_residuals(self):
+    def get_residuals(self, recompute=False):
         """
         Returns an array of the form [res_stat, res_eq, res_ineq, res_comp].
         """
         # compute residuals if RTI
-        if self.solver_options['nlp_solver_type'] == 'SQP_RTI':
+        if self.solver_options['nlp_solver_type'] == 'SQP_RTI' or recompute:
             self.shared_lib.ocp_nlp_eval_residuals.argtypes = [c_void_p, c_void_p, c_void_p]
             self.shared_lib.ocp_nlp_eval_residuals(self.nlp_solver, self.nlp_in, self.nlp_out)
 
@@ -1403,7 +1476,7 @@ class AcadosOcpSolver:
         Set numerical data inside the solver.
 
             :param stage: integer corresponding to shooting node
-            :param field: string in ['x', 'u', 'pi', 'lam', 't', 'p']
+            :param field: string in ['x', 'u', 'pi', 'lam', 't', 'p', 'xdot_guess', 'z_guess']
 
             .. note:: regarding lam, t: \n
                     the inequalities are internally organized in the following order: \n
@@ -1419,7 +1492,7 @@ class AcadosOcpSolver:
         cost_fields = ['y_ref', 'yref']
         constraints_fields = ['lbx', 'ubx', 'lbu', 'ubu']
         out_fields = ['x', 'u', 'pi', 'lam', 't', 'z', 'sl', 'su']
-        mem_fields = ['xdot_guess']
+        mem_fields = ['xdot_guess', 'z_guess']
 
         # cast value_ to avoid conversion issues
         if isinstance(value_, (float, int)):
@@ -1663,11 +1736,21 @@ class AcadosOcpSolver:
         """
         Set options of the solver.
 
-            :param field: string, e.g. 'print_level', 'rti_phase', 'initialize_t_slacks', 'step_length', 'alpha_min', 'alpha_reduction', 'qp_warm_start', 'line_search_use_sufficient_descent', 'full_step_dual', 'globalization_use_SOC'
-            :param value: of type int, float
+            :param field: string, e.g. 'print_level', 'rti_phase', 'initialize_t_slacks', 'step_length', 'alpha_min', 'alpha_reduction', 'qp_warm_start', 'line_search_use_sufficient_descent', 'full_step_dual', 'globalization_use_SOC', 'qp_tol_stat', 'qp_tol_eq', 'qp_tol_ineq', 'qp_tol_comp', 'qp_tau_min', 'qp_mu0'
+
+            :param value: of type int, float, string
+
+            - qp_tol_stat: QP solver tolerance stationarity
+            - qp_tol_eq: QP solver tolerance equalities
+            - qp_tol_ineq: QP solver tolerance inequalities
+            - qp_tol_comp: QP solver tolerance complementarity
+            - qp_tau_min: for HPIPM QP solvers: minimum value of barrier parameter in HPIPM
+            - qp_mu0: for HPIPM QP solvers: initial value for complementarity slackness
+            - warm_start_first_qp: indicates if first QP in SQP is warm_started
         """
-        int_fields = ['print_level', 'rti_phase', 'initialize_t_slacks', 'qp_warm_start', 'line_search_use_sufficient_descent', 'full_step_dual', 'globalization_use_SOC']
-        double_fields = ['step_length', 'tol_eq', 'tol_stat', 'tol_ineq', 'tol_comp', 'alpha_min', 'alpha_reduction', 'eps_sufficient_descent']
+        int_fields = ['print_level', 'rti_phase', 'initialize_t_slacks', 'qp_warm_start', 'line_search_use_sufficient_descent', 'full_step_dual', 'globalization_use_SOC', 'warm_start_first_qp']
+        double_fields = ['step_length', 'tol_eq', 'tol_stat', 'tol_ineq', 'tol_comp', 'alpha_min', 'alpha_reduction', 'eps_sufficient_descent',
+        'qp_tol_stat', 'qp_tol_eq', 'qp_tol_ineq', 'qp_tol_comp', 'qp_tau_min', 'qp_mu0']
         string_fields = ['globalization']
 
         # check field availability and type

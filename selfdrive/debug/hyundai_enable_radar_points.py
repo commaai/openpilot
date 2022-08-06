@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print("\nyou didn't type 'OK! (aborted)")
     sys.exit(0)
 
-  panda = Panda() # type: ignore
+  panda = Panda()
   panda.set_safety_mode(Panda.SAFETY_ELM327)
   uds_client = UdsClient(panda, 0x7D0, bus=args.bus, debug=args.debug)
 

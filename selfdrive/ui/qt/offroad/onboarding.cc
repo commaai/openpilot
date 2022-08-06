@@ -6,8 +6,8 @@
 #include <QQuickWidget>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/params.h"
+#include "common/util.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
@@ -23,7 +23,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
     if (currentIndex == 9) {
-      const QRect yes = QRect(692, 842, 492, 148);
+      const QRect yes = QRect(707, 804, 531, 164);
       Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
     }
     currentIndex += 1;
@@ -76,7 +76,7 @@ void TermsPage::showEvent(QShowEvent *event) {
   main_layout->setContentsMargins(45, 35, 45, 45);
   main_layout->setSpacing(0);
 
-  QLabel *title = new QLabel("Terms & Conditions");
+  QLabel *title = new QLabel(tr("Terms & Conditions"));
   title->setStyleSheet("font-size: 90px; font-weight: 600;");
   main_layout->addWidget(title);
 
@@ -104,11 +104,11 @@ void TermsPage::showEvent(QShowEvent *event) {
   buttons->setSpacing(45);
   main_layout->addLayout(buttons);
 
-  QPushButton *decline_btn = new QPushButton("Decline");
+  QPushButton *decline_btn = new QPushButton(tr("Decline"));
   buttons->addWidget(decline_btn);
   QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
 
-  accept_btn = new QPushButton("Scroll to accept");
+  accept_btn = new QPushButton(tr("Scroll to accept"));
   accept_btn->setEnabled(false);
   accept_btn->setStyleSheet(R"(
     QPushButton {
@@ -123,7 +123,7 @@ void TermsPage::showEvent(QShowEvent *event) {
 }
 
 void TermsPage::enableAccept() {
-  accept_btn->setText("Agree");
+  accept_btn->setText(tr("Agree"));
   accept_btn->setEnabled(true);
 }
 
@@ -137,7 +137,7 @@ void DeclinePage::showEvent(QShowEvent *event) {
   main_layout->setSpacing(40);
 
   QLabel *text = new QLabel(this);
-  text->setText("You must accept the Terms and Conditions in order to use openpilot.");
+  text->setText(tr("You must accept the Terms and Conditions in order to use openpilot."));
   text->setStyleSheet(R"(font-size: 80px; font-weight: 300; margin: 200px;)");
   text->setWordWrap(true);
   main_layout->addWidget(text, 0, Qt::AlignCenter);
@@ -146,12 +146,12 @@ void DeclinePage::showEvent(QShowEvent *event) {
   buttons->setSpacing(45);
   main_layout->addLayout(buttons);
 
-  QPushButton *back_btn = new QPushButton("Back");
+  QPushButton *back_btn = new QPushButton(tr("Back"));
   buttons->addWidget(back_btn);
 
   QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
 
-  QPushButton *uninstall_btn = new QPushButton(QString("Decline, uninstall %1").arg(getBrand()));
+  QPushButton *uninstall_btn = new QPushButton(tr("Decline, uninstall %1").arg(getBrand()));
   uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
   QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {

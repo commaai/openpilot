@@ -2155,6 +2155,7 @@ class AcadosOcpOptions:
         self.__globalization_use_SOC = 0
         self.__full_step_dual = 0
         self.__eps_sufficient_descent = 1e-4
+        self.__hpipm_mode = 'BALANCE'
 
 
     @property
@@ -2164,6 +2165,21 @@ class AcadosOcpOptions:
         Default: 'PARTIAL_CONDENSING_HPIPM'.
         """
         return self.__qp_solver
+
+    @property
+    def hpipm_mode(self):
+        """
+        Mode of HPIPM to be used,
+
+        String in ('BALANCE', 'SPEED_ABS', 'SPEED', 'ROBUST').
+
+        Default: 'BALANCE'.
+
+        see https://cdn.syscop.de/publications/Frison2020a.pdf
+        and the HPIPM code:
+        https://github.com/giaf/hpipm/blob/master/ocp_qp/x_ocp_qp_ipm.c#L69
+        """
+        return self.__hpipm_mode
 
     @property
     def hessian_approx(self):
@@ -2541,6 +2557,15 @@ class AcadosOcpOptions:
             raise Exception('Invalid collocation_type value. Possible values are:\n\n' \
                     + ',\n'.join(collocation_types) + '.\n\nYou have: ' + collocation_type + '.\n\nExiting.')
 
+    @hpipm_mode.setter
+    def hpipm_mode(self, hpipm_mode):
+        hpipm_modes = ('BALANCE', 'SPEED_ABS', 'SPEED', 'ROBUST')
+        if hpipm_mode in hpipm_modes:
+            self.__hpipm_mode = hpipm_mode
+        else:
+            raise Exception('Invalid hpipm_mode value. Possible values are:\n\n' \
+                    + ',\n'.join(hpipm_modes) + '.\n\nYou have: ' + hpipm_mode + '.\n\nExiting.')
+
     @hessian_approx.setter
     def hessian_approx(self, hessian_approx):
         hessian_approxs = ('GAUSS_NEWTON', 'EXACT')
@@ -2890,10 +2915,10 @@ class AcadosOcp:
         self.solver_options = AcadosOcpOptions()
         """Solver Options, type :py:class:`acados_template.acados_ocp.AcadosOcpOptions`"""
 		
-        self.acados_include_path = f'{acados_path}/include'
-        """Path to acados include directory, type: string"""
-        self.acados_lib_path = f'{acados_path}/lib'
-        """Path to where acados library is located, type: string"""
+        self.acados_include_path = os.path.join(acados_path, 'include').replace(os.sep, '/') # the replace part is important on Windows for CMake
+        """Path to acados include directory (set automatically), type: `string`"""
+        self.acados_lib_path = os.path.join(acados_path, 'lib').replace(os.sep, '/') # the replace part is important on Windows for CMake
+        """Path to where acados library is located, type: `string`"""
 
         import numpy
         self.cython_include_dirs = numpy.get_include()

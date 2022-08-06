@@ -1,4 +1,4 @@
-def gpio_init(pin, output):
+def gpio_init(pin: int, output: bool) -> None:
   try:
     with open(f"/sys/class/gpio/gpio{pin}/direction", 'wb') as f:
       f.write(b"out" if output else b"in")
@@ -6,7 +6,7 @@ def gpio_init(pin, output):
     print(f"Failed to set gpio {pin} direction: {e}")
 
 
-def gpio_set(pin, high):
+def gpio_set(pin: int, high: bool) -> None:
   try:
     with open(f"/sys/class/gpio/gpio{pin}/value", 'wb') as f:
       f.write(b"1" if high else b"0")

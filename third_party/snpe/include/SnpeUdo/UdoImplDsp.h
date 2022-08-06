@@ -1,6 +1,6 @@
 //==============================================================================
 //
-// Copyright (c) 2019-2020 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2021 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -45,12 +45,15 @@ typedef SnpeUdo_ErrorType_t (*SnpeUdo_ValidateOperationFunction_t) (SnpeUdo_Stri
                                                                     uint32_t,
                                                                     const SnpeUdo_Param_t*);
 
+typedef SnpeUdo_ValidateOperationFunction_t Udo_ValidateOperationFunction_t;
 
 // enum used for indicating input/outout tensor data layouts on DSP, plain vs d32
 typedef enum {
-        SNPE_UDO_DSP_TENSOR_LAYOUT_PLAIN,
-        SNPE_UDO_DSP_TENSOR_LAYOUT_D32
+        SNPE_UDO_DSP_TENSOR_LAYOUT_PLAIN = 0x00,        UDO_DSP_TENSOR_LAYOUT_PLAIN = 0x00,
+        SNPE_UDO_DSP_TENSOR_LAYOUT_D32   = 0x01,        UDO_DSP_TENSOR_LAYOUT_D32   = 0x01
 } SnpeUdo_HexNNTensorLayout_t;
+
+typedef SnpeUdo_HexNNTensorLayout_t Udo_HexNNTensorLayout_t;
 
 /**
  * @brief A function to query numbers of inputs and outputs,
@@ -96,7 +99,7 @@ typedef SnpeUdo_ErrorType_t (*SnpeUdo_QueryOperationFunction_t) (SnpeUdo_String_
                                                                  SnpeUdo_QuantizationType_t**,
                                                                  SnpeUdo_HexNNTensorLayout_t**);
 
-
+typedef SnpeUdo_QueryOperationFunction_t Udo_QueryOperationFunction_t;
 
 // Global infrastructure functions supported by Hexagon-NN v2
 typedef void (*workerThread_t) (void* perOpInfrastructure, void* userData);
@@ -134,12 +137,25 @@ typedef struct hexNNv2GlobalInfra {
     udoRunWorkerThreads_t udoRunWorkerThreads;
 } SnpeUdo_HexNNv2GlobalInfra_t;
 
+typedef SnpeUdo_HexNNv2GlobalInfra_t Udo_HexNNv2GlobalInfra_t;
+
 // hexnn types
 typedef enum hexnnInfraType {
    UDO_INFRA_HEXNN_V2,
    UDO_INFRA_HEXNN_V3   // reserved, do not use
 } SnpeUdo_HexNNInfraType_t;
 
+typedef SnpeUdo_HexNNInfraType_t Udo_HexNNInfraType_t;
+
+typedef struct {
+    Udo_CreateOpFactoryFunction_t create_op_factory;
+    Udo_CreateOperationFunction_t create_operation;
+    Udo_ExecuteOpFunction_t execute_op;
+    Udo_ReleaseOpFunction_t release_op;
+    Udo_ReleaseOpFactoryFunction_t release_op_factory;
+    Udo_ValidateOperationFunction_t validate_op;
+    Udo_QueryOperationFunction_t query_op;
+} udo_func_package_t;
 
 /**
  * @brief Infrastructures needed by a developer of DSP Hexnn UDO Implementation library.
@@ -156,6 +172,7 @@ typedef struct dspGlobalInfrastructure {
     SnpeUdo_HexNNv2GlobalInfra_t hexNNv2Infra;
 } SnpeUdo_DspGlobalInfrastructure_t;
 
+typedef SnpeUdo_DspGlobalInfrastructure_t Udo_DspGlobalInfrastructure_t;
 
 /**
  * hexnn v2 per op factory infrastructure
@@ -169,6 +186,7 @@ typedef struct hexnnv2OpFactoryInfra {
    unsigned long graphId;
 } SnpeUdo_HexNNv2OpFactoryInfra_t;
 
+typedef SnpeUdo_HexNNv2OpFactoryInfra_t Udo_HexNNv2OpFactoryInfra_t;
 
 /**
  * hexnn v2 per operation infrastructure
@@ -181,6 +199,8 @@ typedef struct hexnnv2OpFactoryInfra {
  *
  */
 typedef void* SnpeUdo_HexNNv2OpInfra_t;
+
+typedef SnpeUdo_HexNNv2OpInfra_t Udo_HexNNv2OpInfra_t;
 
 /** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 

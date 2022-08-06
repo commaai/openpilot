@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import math
-from numbers import Number
+from typing import SupportsFloat
 
 from cereal import car, log
 from common.numpy_fast import clip
@@ -10,22 +10,25 @@ from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
-from selfdrive.swaglog import cloudlog
+from panda import ALTERNATIVE_EXPERIENCE
+from system.swaglog import cloudlog
+from system.version import get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
+from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
-from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.hardware import HARDWARE, TICI, EON
+from system.hardware import HARDWARE
 from selfdrive.manager.process_config import managed_processes
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -35,12 +38,9 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad",
-                    "statsd", "shutdownd"} | \
-                    {k for k, v in managed_processes.items() if not v.enabled}
-
-ACTUATOR_FIELDS = set(car.CarControl.Actuators.schema.fields.keys())
+IGNORE_PROCESSES = {"uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "statsd",
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad", "laikad"} | \
+                   {k for k, v in managed_processes.items() if not v.enabled}
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -52,12 +52,19 @@ EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
-IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
-CSID_MAP = {"0": EventName.roadCameraError, "1": EventName.wideRoadCameraError, "2": EventName.driverCameraError}
+IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
+CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, "0": EventName.driverCameraError}
+ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
+ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
+ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
+
 
 class Controls:
-  def __init__(self, sm=None, pm=None, can_sock=None):
-    config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
+  def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
+    config_realtime_process(4, Priority.CTRL_HIGH)
+
+    # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
+    self.branch = get_short_branch("")
 
     # Setup sockets
     self.pm = pm
@@ -65,36 +72,48 @@ class Controls:
       self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
                                      'carControl', 'carEvents', 'carParams'])
 
-    self.camera_packets = ["roadCameraState", "driverCameraState"]
-    if TICI:
-      self.camera_packets.append("wideRoadCameraState")
+    self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
+
+    self.can_sock = can_sock
+    if can_sock is None:
+      can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 20
+      self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
+
+    self.log_sock = messaging.sub_sock('androidLog')
+
+    if CI is None:
+      # wait for one pandaState and one CAN packet
+      print("Waiting for CAN messages...")
+      get_one_can(self.can_sock)
+
+      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    else:
+      self.CI, self.CP = CI, CI.CP
 
     params = Params()
-    self.joystick_mode = params.get_bool("JoystickDebugMode")
+    self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
+      ignore = []
+      if SIMULATION:
+        ignore += ['driverCameraState', 'managerState']
+      if params.get_bool('WideCameraOnly'):
+        ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
-                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
+                                    ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
 
-    self.can_sock = can_sock
-    if can_sock is None:
-      can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
-      self.can_sock = messaging.sub_sock('can', timeout=can_timeout)
+    # set alternative experiences from parameters
+    self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
+    self.CP.alternativeExperience = 0
+    if not self.disengage_on_accelerator:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-    if TICI:
-      self.log_sock = messaging.sub_sock('androidLog')
-
-    # wait for one pandaState and one CAN packet
-    print("Waiting for CAN messages...")
-    get_one_can(self.can_sock)
-
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
-    self.CP.unsafeMode = 0  # see panda/board/safety_declarations.h for allowed values
+    if self.CP.dashcamOnly and params.get_bool("DashcamOverride"):
+      self.CP.dashcamOnly = False
 
     # read params
     self.is_metric = params.get_bool("IsMetric")
@@ -127,14 +146,15 @@ class Controls:
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
 
+    self.LaC: LatControl
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       self.LaC = LatControlAngle(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'indi':
       self.LaC = LatControlINDI(self.CP, self.CI)
-    elif self.CP.lateralTuning.which() == 'lqr':
-      self.LaC = LatControlLQR(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'torque':
+      self.LaC = LatControlTorque(self.CP, self.CI)
 
     self.initialized = False
     self.state = State.disabled
@@ -143,6 +163,7 @@ class Controls:
     self.can_rcv_error = False
     self.soft_disable_timer = 0
     self.v_cruise_kph = 255
+    self.v_cruise_cluster_kph = 255
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
@@ -152,9 +173,12 @@ class Controls:
     self.last_functional_fan_frame = 0
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
-    self.logged_comm_issue = False
+    self.logged_comm_issue = None
     self.button_timers = {ButtonEvent.Type.decelCruise: 0, ButtonEvent.Type.accelCruise: 0}
     self.last_actuators = car.CarControl.Actuators.new_message()
+    self.steer_limited = False
+    self.desired_curvature = 0.0
+    self.desired_curvature_rate = 0.0
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -194,35 +218,39 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
-    # Disable on rising edge of gas or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS_prev.gasPressed) or \
+    # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
+    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
       (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
 
-    self.events.add_from_msg(CS.events)
-    self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+    if CS.gasPressed:
+      self.events.add(EventName.pedalPressedPreEnable if self.disengage_on_accelerator else
+                      EventName.gasPressedOverride)
 
-    # Create events for battery, temperature, disk space, and memory
-    if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
-       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
-      # at zero percent battery, while discharging, OP should not allowed
-      self.events.add(EventName.lowBattery)
+    if not self.CP.notCar:
+      self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+
+    # Add car events, ignore if CAN isn't valid
+    if CS.canValid:
+      self.events.add_from_msg(CS.events)
+
+    # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
     # TODO: make tici threshold the same
-    if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
+    if self.sm['deviceState'].memoryUsagePercent > 90 and not SIMULATION:
       self.events.add(EventName.lowMemory)
 
     # TODO: enable this once loggerd CPU usage is more reasonable
-    #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
+    #cpus = list(self.sm['deviceState'].cpuUsagePercent)
     #if max(cpus, default=0) > 95 and not SIMULATION:
     #  self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['peripheralState'].pandaType in (PandaType.uno, PandaType.dos):
+    if self.sm['peripheralState'].pandaType == PandaType.dos:
       if self.sm['peripheralState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
@@ -252,15 +280,12 @@ class Controls:
                                                     LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
-    if not CS.canValid:
-      self.events.add(EventName.canError)
-
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
       if i < len(self.CP.safetyConfigs):
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or \
                           pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam or \
-                          pandaState.unsafeMode != self.CP.unsafeMode
+                          pandaState.alternativeExperience != self.CP.alternativeExperience
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
@@ -270,26 +295,59 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
 
-    # Check for HW or system issues
-    if len(self.sm['radarState'].radarErrors):
-      self.events.add(EventName.radarFault)
-    elif not self.sm.valid["pandaStates"]:
-      self.events.add(EventName.usbError)
-    elif not self.sm.all_alive_and_valid() or self.can_rcv_error:
-      self.events.add(EventName.commIssue)
-      if not self.logged_comm_issue:
-        invalid = [s for s, valid in self.sm.valid.items() if not valid]
-        not_alive = [s for s, alive in self.sm.alive.items() if not alive]
-        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive, can_error=self.can_rcv_error, error=True)
-        self.logged_comm_issue = True
+    # Handle HW and system malfunctions
+    # Order is very intentional here. Be careful when modifying this.
+    # All events here should at least have NO_ENTRY and SOFT_DISABLE.
+    num_events = len(self.events)
+
+    not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
+    if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
+      self.events.add(EventName.processNotRunning)
     else:
-      self.logged_comm_issue = False
+      if not SIMULATION and not self.rk.lagging:
+        if not self.sm.all_alive(self.camera_packets):
+          self.events.add(EventName.cameraMalfunction)
+        elif not self.sm.all_freq_ok(self.camera_packets):
+          self.events.add(EventName.cameraFrameRate)
+    if self.rk.lagging:
+      self.events.add(EventName.controlsdLagging)
+    if len(self.sm['radarState'].radarErrors) or not self.sm.all_checks(['radarState']):
+      self.events.add(EventName.radarFault)
+    if not self.sm.valid['pandaStates']:
+      self.events.add(EventName.usbError)
+    if CS.canTimeout:
+      self.events.add(EventName.canBusMissing)
+    elif not CS.canValid:
+      self.events.add(EventName.canError)
+
+    # generic catch-all. ideally, a more specific event should be added above instead
+    has_disable_events = self.events.any(ET.NO_ENTRY) and (self.events.any(ET.SOFT_DISABLE) or self.events.any(ET.IMMEDIATE_DISABLE))
+    no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
+    if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors:
+      if not self.sm.all_alive():
+        self.events.add(EventName.commIssue)
+      elif not self.sm.all_freq_ok():
+        self.events.add(EventName.commIssueAvgFreq)
+      else:  # invalid or can_rcv_error.
+        self.events.add(EventName.commIssue)
+
+      logs = {
+        'invalid': [s for s, valid in self.sm.valid.items() if not valid],
+        'not_alive': [s for s, alive in self.sm.alive.items() if not alive],
+        'not_freq_ok': [s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
+        'can_error': self.can_rcv_error,
+      }
+      if logs != self.logged_comm_issue:
+        cloudlog.event("commIssue", error=True, **logs)
+        self.logged_comm_issue = logs
+    else:
+      self.logged_comm_issue = None
 
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
-    if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
+    if not (self.sm['liveParameters'].sensorValid or self.sm['liveLocationKalman'].sensorsOK) and not NOSENSOR:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
@@ -301,7 +359,7 @@ class Controls:
       # Check for mismatch between openpilot and car's PCM
       cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-      if self.cruise_mismatch_counter > int(3. / DT_CTRL):
+      if self.cruise_mismatch_counter > int(6. / DT_CTRL):
         self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
@@ -311,17 +369,16 @@ class Controls:
     if planner_fcw or model_fcw:
       self.events.add(EventName.fcw)
 
-    if TICI:
-      for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
-        try:
-          msg = m.androidLog.message
-          if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
-            csid = msg.split("CSID:")[-1].split(" ")[0]
-            evt = CSID_MAP.get(csid, None)
-            if evt is not None:
-              self.events.add(evt)
-        except UnicodeDecodeError:
-          pass
+    for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
+      try:
+        msg = m.androidLog.message
+        if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
+          csid = msg.split("CSID:")[-1].split(" ")[0]
+          evt = CSID_MAP.get(csid, None)
+          if evt is not None:
+            self.events.add(evt)
+      except UnicodeDecodeError:
+        pass
 
     # TODO: fix simulator
     if not SIMULATION:
@@ -329,17 +386,11 @@ class Controls:
         if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
-      if not self.sm.all_alive(self.camera_packets):
-        self.events.add(EventName.cameraMalfunction)
+
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
       if self.sm['liveLocationKalman'].excessiveResets:
         self.events.add(EventName.localizerMalfunction)
-
-      # Check if all manager processes are running
-      not_running = {p.name for p in self.sm['managerState'].processes if not p.running}
-      if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
-        self.events.add(EventName.processNotRunning)
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     speeds = self.sm['longitudinalPlan'].speeds
@@ -361,8 +412,9 @@ class Controls:
     self.sm.update(0)
 
     if not self.initialized:
-      all_valid = CS.canValid and self.sm.all_alive_and_valid()
-      if all_valid or self.sm.frame * DT_CTRL > 3.5 or SIMULATION:
+      all_valid = CS.canValid and self.sm.all_checks()
+      timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
+      if all_valid or timed_out or SIMULATION:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
@@ -402,9 +454,16 @@ class Controls:
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.pcmCruise:
-      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.button_timers, self.enabled, self.is_metric)
-    elif CS.cruiseState.enabled:
-      self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
+                                          self.button_timers, self.enabled, self.is_metric)
+      self.v_cruise_cluster_kph = self.v_cruise_kph
+    else:
+      if CS.cruiseState.available:
+        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
+      else:
+        self.v_cruise_kph = 0
+        self.v_cruise_cluster_kph = 0
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -412,7 +471,7 @@ class Controls:
 
     self.current_alert_types = [ET.PERMANENT]
 
-    # ENABLED, PRE ENABLING, SOFT DISABLING
+    # ENABLED, SOFT DISABLING, PRE ENABLING, OVERRIDING
     if self.state != State.disabled:
       # user and immediate disable always have priority in a non-disabled state
       if self.events.any(ET.USER_DISABLE):
@@ -431,6 +490,10 @@ class Controls:
             self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
+          elif self.events.any(ET.OVERRIDE):
+            self.state = State.overriding
+            self.current_alert_types.append(ET.OVERRIDE)
+
         # SOFT DISABLING
         elif self.state == State.softDisabling:
           if not self.events.any(ET.SOFT_DISABLE):
@@ -445,10 +508,24 @@ class Controls:
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
-          if not self.events.any(ET.PRE_ENABLE):
+          if self.events.any(ET.NO_ENTRY):
+            self.state = State.disabled
+            self.current_alert_types.append(ET.NO_ENTRY)
+          elif not self.events.any(ET.PRE_ENABLE):
             self.state = State.enabled
           else:
             self.current_alert_types.append(ET.PRE_ENABLE)
+
+        # OVERRIDING
+        elif self.state == State.overriding:
+          if self.events.any(ET.SOFT_DISABLE):
+            self.state = State.softDisabling
+            self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
+            self.current_alert_types.append(ET.SOFT_DISABLE)
+          elif not self.events.any(ET.OVERRIDE):
+            self.state = State.enabled
+          else:
+            self.current_alert_types.append(ET.OVERRIDE)
 
     # DISABLED
     elif self.state == State.disabled:
@@ -459,19 +536,20 @@ class Controls:
         else:
           if self.events.any(ET.PRE_ENABLE):
             self.state = State.preEnabled
+          elif self.events.any(ET.OVERRIDE):
+            self.state = State.overriding
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
           if not self.CP.pcmCruise:
             self.v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonEvents, self.v_cruise_kph_last)
+            self.v_cruise_cluster_kph = self.v_cruise_kph
 
-    # Check if actuators are enabled
-    self.active = self.state in (State.enabled, State.softDisabling)
+    # Check if openpilot is engaged and actuators are enabled
+    self.enabled = self.state in ENABLED_STATES
+    self.active = self.state in ACTIVE_STATES
     if self.active:
       self.current_alert_types.append(ET.WARNING)
-
-    # Check if openpilot is engaged
-    self.enabled = self.active or self.state == State.preEnabled
 
   def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
@@ -490,7 +568,7 @@ class Controls:
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                      CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
-    CC.longActive = self.active
+    CC.longActive = self.active and not self.events.any(ET.OVERRIDE) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
@@ -509,16 +587,16 @@ class Controls:
       # accel PID loop
       pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
-      actuators.accel = self.LoC.update(CC.longActive, CS, self.CP, long_plan, pid_accel_limits, t_since_plan)
+      actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
       # Steering PID loop and lateral MPC
-      desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
-                                                                             lat_plan.psis,
-                                                                             lat_plan.curvatures,
-                                                                             lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.CP, self.VM,
-                                                                             params, self.last_actuators, desired_curvature,
-                                                                             desired_curvature_rate)
+      self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
+                                                                                       lat_plan.psis,
+                                                                                       lat_plan.curvatures,
+                                                                                       lat_plan.curvatureRates)
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
+                                                                             self.last_actuators, self.steer_limited, self.desired_curvature,
+                                                                             self.desired_curvature_rate, self.sm['liveLocationKalman'])
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
@@ -536,7 +614,14 @@ class Controls:
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and lac_log.saturated and not CS.steeringPressed:
+    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
+      undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
+      turning = abs(lac_log.desiredLateralAccel) > 1.0
+      good_speed = CS.vEgo > 5
+      max_torque = abs(self.last_actuators.steer) > 0.99
+      if undershooting and turning and good_speed and max_torque:
+        self.events.add(EventName.steerSaturated)
+    elif lac_log.active and not CS.steeringPressed and lac_log.saturated:
       dpath_points = lat_plan.dPathPoints
       if len(dpath_points):
         # Check if we deviated from the path
@@ -550,7 +635,7 @@ class Controls:
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
-      if not isinstance(attr, Number):
+      if not isinstance(attr, SupportsFloat):
         continue
 
       if not math.isfinite(attr):
@@ -585,8 +670,12 @@ class Controls:
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
       CC.cruiseControl.cancel = True
 
+    speeds = self.sm['longitudinalPlan'].speeds
+    if len(speeds):
+      CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
+
     hudControl = CC.hudControl
-    hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
+    hudControl.setSpeed = float(self.v_cruise_cluster_kph * CV.KPH_TO_MS)
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
@@ -622,7 +711,7 @@ class Controls:
     if self.enabled:
       clear_event_types.add(ET.NO_ENTRY)
 
-    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric, self.soft_disable_timer])
+    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer])
     self.AM.add_many(self.sm.frame, alerts)
     current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
     if current_alert:
@@ -633,6 +722,7 @@ class Controls:
       self.last_actuators, can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
+      self.steer_limited = abs(CC.actuators.steer - CC.actuatorsOutput.steer) > 1e-2
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
@@ -662,11 +752,14 @@ class Controls:
     controlsState.enabled = self.enabled
     controlsState.active = self.active
     controlsState.curvature = curvature
+    controlsState.desiredCurvature = self.desired_curvature
+    controlsState.desiredCurvatureRate = self.desired_curvature_rate
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
+    controlsState.vCruiseCluster = float(self.v_cruise_cluster_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
@@ -682,8 +775,8 @@ class Controls:
       controlsState.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
-    elif lat_tuning == 'lqr':
-      controlsState.lateralControlState.lqrState = lac_log
+    elif lat_tuning == 'torque':
+      controlsState.lateralControlState.torqueState = lac_log
     elif lat_tuning == 'indi':
       controlsState.lateralControlState.indiState = lac_log
 
@@ -725,9 +818,11 @@ class Controls:
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
+    cloudlog.timestamp("Data sampled")
     self.prof.checkpoint("Sample")
 
     self.update_events(CS)
+    cloudlog.timestamp("Events updated")
 
     if not self.read_only and self.initialized:
       # Update control state

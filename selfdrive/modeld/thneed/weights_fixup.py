@@ -140,6 +140,7 @@ def weights_fixup(target, source_thneed, dlc):
   save_thneed(jdat, target)
 
 if __name__ == "__main__":
-  weights_fixup(os.path.join(BASEDIR, "models/supercombo_fixed.thneed"),
-                os.path.join(BASEDIR, "models/supercombo.thneed"),
-                os.path.join(BASEDIR, "models/supercombo.dlc"))
+  model_dir = os.path.join(BASEDIR, "selfdrive/modeld/models/")
+  weights_fixup(os.path.join(model_dir, "supercombo_fixed.thneed"),
+                os.path.join(model_dir, "supercombo.thneed"),
+                os.path.join(model_dir, "supercombo.dlc"))

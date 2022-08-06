@@ -52,7 +52,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --debug               enable ISO-TP/UDS stack debugging output
 
-This tool is meant to run directly on a vehicle-installed comma two or comma three, with
+This tool is meant to run directly on a vehicle-installed comma three, with
 the openpilot/tmux processes stopped. It should also work on a separate PC with a USB-
 attached comma panda. Vehicle ignition must be on. Recommend engine not be running when
 making changes. Must turn ignition off and on again for any changes to take effect.

@@ -4,7 +4,7 @@
 
 #include <QStackedLayout>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class DriverViewScene : public QWidget {

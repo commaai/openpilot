@@ -1,8 +1,61 @@
-Version 0.8.14 (2022-0X-XX)
+Version 0.8.16 (2022-XX-XX)
 ========================
- * bigmodel!
+* Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
+* Subaru Outback 2020-22 support
+
+Version 0.8.15 (2022-07-20)
+========================
+* New driving model
+  * Path planning uses end-to-end output instead of lane lines at all times
+  * Reduced ping pong
+  * Improved lane centering
+* New lateral controller based on physical wheel torque model
+  * Much smoother control that's consistent across the speed range
+  * Effective feedforward that uses road roll
+  * Simplified tuning, all car-specific parameters can be derived from data
+  * Used on select Toyota and Hyundai models at first
+  * Significantly improved control on TSS-P Prius
+* New driver monitoring model
+  * Bigger model, covering full interior view from driver camera
+  * Works with a wider variety of mounting angles
+  * 3x more unique comma three training data than previous
+* Navigation improvements
+  * Speed limits shown while navigating
+  * Faster position fix by using raw GPS measurements
+* UI updates
+  * Multilanguage support for settings and home screen
+  * New font
+  * Refreshed max speed design
+  * More consistent camera view perspective across cars
+* Reduced power usage: device runs cooler and fan spins less
+* AGNOS 5
+  * Support VSCode remote SSH target
+  * Support for delta updates to reduce data usage on future OS updates
+* Chrysler ECU firmware fingerprinting thanks to realfast!
+* Honda Civic 2022 support
+* Hyundai Tucson 2021 support thanks to bluesforte!
+* Kia EV6 2022 support
+* Lexus NX Hybrid 2020 support thanks to AlexandreSato!
+* Ram 1500 2019-21 support thanks to realfast!
+
+Version 0.8.14 (2022-06-01)
+========================
+ * New driving model
+   * Bigger model, using both of comma three's road-facing cameras
+   * Better at cut-in detection and tight turns
+ * New driver monitoring model
+   * Tweaked network structure to improve output resolution for DSP
+   * Fixed bug in quantization aware training to reduce quantizing errors
+   * Resulted in 7x less MSE and no more random biases at runtime
+ * Added toggle to disable disengaging on the accelerator pedal
+ * comma body support
+ * Audi RS3 support thanks to jyoung8607!
+ * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
+ * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
  * Toyota Alphard Hybrid 2021 support
  * Toyota Avalon Hybrid 2022 support
+ * Toyota RAV4 2022 support
+ * Toyota RAV4 Hybrid 2022 support
 
 Version 0.8.13 (2022-02-18)
 ========================

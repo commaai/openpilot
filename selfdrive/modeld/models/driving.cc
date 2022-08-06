@@ -8,9 +8,10 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/clutil.h"
+#include "common/params.h"
+#include "common/timing.h"
+#include "common/swaglog.h"
 
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
@@ -31,11 +32,11 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed",
+  s->m = std::make_unique<ThneedModel>("models/supercombo.thneed",
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx",
+  s->m = std::make_unique<ONNXModel>("models/supercombo.onnx",
 #else
-  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc",
+  s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
 #endif
    &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true);
 
@@ -48,14 +49,12 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  const int idx = Params().getBool("IsRHD") ? 1 : 0;
-  s->traffic_convention[idx] = 1.0;
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in) {
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
@@ -71,15 +70,27 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
   }
 #endif
 
+  int rhd_idx = is_rhd;
+  s->traffic_convention[rhd_idx] = 1.0;
+  s->traffic_convention[1-rhd_idx] = 0.0;
+
   // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
+  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->addImage(net_input_buf, s->frame->buf_size);
+  LOGT("Image added");
 
   if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
+    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
     s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+    LOGT("Extra image added");
   }
+
+  if (prepare_only) {
+    return nullptr;
+  }
+
   s->m->execute();
+  LOGT("Execution finished");
 
   return (ModelOutput*)&s->output;
 }

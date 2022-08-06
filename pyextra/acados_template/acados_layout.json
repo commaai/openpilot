@@ -668,6 +668,9 @@
         "hessian_approx": [
             "str"
         ],
+        "hpipm_mode": [
+            "str"
+        ],
         "regularize_method": [
             "str"
         ],

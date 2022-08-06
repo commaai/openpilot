@@ -15,10 +15,10 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.tests.routes import routes, non_tested_cars
+from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -36,34 +36,54 @@ ignore_addr_checks_valid = [
 # build list of test cases
 routes_by_car = defaultdict(set)
 for r in routes:
-  routes_by_car[r.car_fingerprint].add(r.route)
+  routes_by_car[r.car_model].add(r)
 
-test_cases: List[Tuple[str, Optional[str]]] = []
+test_cases: List[Tuple[str, Optional[TestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
+SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
-@parameterized_class(('car_model', 'route'), test_cases)
-class TestCarModel(unittest.TestCase):
 
+class TestCarModelBase(unittest.TestCase):
+  car_model = None
+  test_route = None
+  ci = True
+
+  @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
-    if cls.route is None:
+    if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
+      raise unittest.SkipTest
+
+    if 'FILTER' in os.environ:
+      print(tuple(os.environ.get('FILTER').split(', ')))
+      if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
+        raise unittest.SkipTest
+
+    if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
-    for seg in (2, 1, 0):
+    test_segs = (2, 1, 0)
+    if cls.test_route.segment is not None:
+      test_segs = (cls.test_route.segment,)
+
+    for seg in test_segs:
       try:
-        lr = LogReader(get_url(cls.route, seg))
+        if cls.ci:
+          lr = LogReader(get_url(cls.test_route.route, seg))
+        else:
+          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
       except Exception:
         continue
 
       can_msgs = []
-      fingerprint = {i: dict() for i in range(3)}
+      fingerprint = defaultdict(dict)
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
@@ -73,11 +93,13 @@ class TestCarModel(unittest.TestCase):
         elif msg.which() == "carParams":
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
+          if cls.car_model is None and not cls.ci:
+            cls.car_model = msg.carParams.carFingerprint
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
-      raise Exception(f"Route {repr(cls.route)} not found or no CAN msgs found. Is it uploaded?")
+      raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -92,8 +114,10 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpandasafety_py.libpandasafety
-    set_status = self.safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs}")
+
+    cfg = self.CP.safetyConfigs[-1]
+    set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
+    self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
   def test_car_params(self):
@@ -102,14 +126,13 @@ class TestCarModel(unittest.TestCase):
 
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
-    self.assertGreater(self.CP.steerRateCost, 1e-3)
 
     if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-      elif tuning == 'lqr':
-        self.assertTrue(len(self.CP.lateralTuning.lqr.a))
+      elif tuning == 'torque':
+        self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
@@ -119,6 +142,7 @@ class TestCarModel(unittest.TestCase):
     # TODO: also check for checkusm and counter violations from can parser
     can_invalid_cnt = 0
     CC = car.CarControl.new_message()
+
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
@@ -136,11 +160,11 @@ class TestCarModel(unittest.TestCase):
     assert RI
 
     error_cnt = 0
-    for msg in self.can_msgs:
-      radar_data = RI.update((msg.as_builder().to_bytes(),))
-      if radar_data is not None:
-        error_cnt += car.RadarData.Error.canError in radar_data.errors
-    self.assertLess(error_cnt, 20)
+    for i, msg in enumerate(self.can_msgs):
+      rr = RI.update((msg.as_builder().to_bytes(),))
+      if rr is not None and i > 50:
+        error_cnt += car.RadarData.Error.canError in rr.errors
+    self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_valid(self):
     if self.CP.dashcamOnly:
@@ -159,7 +183,7 @@ class TestCarModel(unittest.TestCase):
         if msg.src >= 64:
           continue
 
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
+        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
@@ -201,15 +225,8 @@ class TestCarModel(unittest.TestCase):
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-      # TODO: make the interceptor thresholds in openpilot and panda match, then remove this exception
-      gas_pressed = CS.gasPressed
-      if self.CP.enableGasInterceptor and gas_pressed and not self.safety.get_gas_pressed_prev():
-        # panda intentionally has a higher threshold
-        if self.CP.carName == "toyota" and 15 < CS.gas < 15*1.5:
-          gas_pressed = False
-        if self.CP.carName == "honda":
-          gas_pressed = False
-      checks['gasPressed'] += gas_pressed != self.safety.get_gas_pressed_prev()
+      checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
@@ -239,15 +256,19 @@ class TestCarModel(unittest.TestCase):
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       CS_prev = CS
 
-    # TODO: add flag to toyota safety
-    if self.CP.carFingerprint == TOYOTA.SIENNA and checks['brakePressed'] < 25:
-      checks['brakePressed'] = 0
-
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+
+
+@parameterized_class(('car_model', 'test_route'), test_cases)
+class TestCarModel(TestCarModelBase):
+  pass
+
 
 if __name__ == "__main__":
   unittest.main()
