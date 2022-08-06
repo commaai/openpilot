@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
     # Ram
     elif candidate == CAR.RAM_1500:
       ret.steerActuatorDelay = 0.2
-      ret.wheelbase = 3.67
+      ret.wheelbase = 3.88
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
