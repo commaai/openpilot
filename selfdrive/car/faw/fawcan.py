@@ -1,4 +1,4 @@
-def create_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
+def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   values = {
     "LKAS_TORQUE_ACTIVE": lkas_enabled,
     "LKAS_TORQUE": abs(apply_steer),
@@ -6,4 +6,4 @@ def create_steering_control(packer, bus, apply_steer, idx, lkas_enabled):
     "LKAS_ACTIVE": lkas_enabled,
     "MAYBE_LANE_STATUS": 0,  # TODO: populate this later
   }
-  return packer.make_can_msg("LKAS", bus, values, idx)
+  return packer.make_can_msg("LKAS", bus, values)

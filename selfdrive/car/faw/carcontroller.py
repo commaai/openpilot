@@ -30,9 +30,7 @@ class CarController():
         lkas_torque_enabled = False
 
       self.apply_steer_last = apply_steer
-      idx = (frame / P.LKAS_STEP) % 16
-      can_sends.append(fawcan.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer,
-                                                                 idx, lkas_torque_enabled))
+      can_sends.append(fawcan.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, lkas_torque_enabled))
 
     # **** HUD Controls ***************************************************** #
 
