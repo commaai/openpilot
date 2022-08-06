@@ -142,6 +142,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
+      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
