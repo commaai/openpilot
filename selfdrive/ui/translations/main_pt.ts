@@ -133,10 +133,6 @@
         <translation>PREVISUAL</translation>
     </message>
     <message>
-        <source>Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)</source>
-        <translation type="vanished">Pré visualizar a câmera do motorista para ajudar a montagem do dispositivo e obter um melhor monitoramento. (veiculo precisa estar desligado)</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/settings.cc" line="106"/>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
         <translation>Pré-visualizar a câmera voltada para o motorista para garantir que monitor tem uma boa visibilidade (veículo precisa estar desligado)</translation>
@@ -313,22 +309,10 @@
     <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Necessita no mínimo %n caractere(s)!</numerusform>
             <numerusform></numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Need at least %1 characters!</source>
-        <translation type="vanished">Necessário no mínimo %1 caracteres!</translation>
-    </message>
-    <message>
-        <source>Need at least </source>
-        <translation type="vanished">Necessário no mínimo </translation>
-    </message>
-    <message>
-        <source> characters!</source>
-        <translation type="vanished"> caracteres!</translation>
     </message>
 </context>
 <context>
@@ -435,11 +419,6 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
     </message>
     <message>
-        <source>Get turn-by-turn directions displayed and more with a comma 
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation type="vanished">Obtenha instruções passo a passo exibidas e muito mais com uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
-    </message>
-    <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
@@ -504,10 +483,6 @@ trabalho definido</translation>
         <translation>para &quot;%1&quot;</translation>
     </message>
     <message>
-        <source>for &quot;</source>
-        <translation type="vanished">para &quot;</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
         <translation>Senha incorreta</translation>
@@ -516,30 +491,30 @@ trabalho definido</translation>
 <context>
     <name>NvgWindow</name>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
         <translation>km/h</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>mph</source>
         <translation>mph</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="280"/>
-        <location filename="../qt/onroad.cc" line="283"/>
+        <location filename="../qt/onroad.cc" line="286"/>
+        <location filename="../qt/onroad.cc" line="289"/>
         <source>MAX</source>
         <translation>LIMITE</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="327"/>
-        <location filename="../qt/onroad.cc" line="330"/>
+        <location filename="../qt/onroad.cc" line="333"/>
+        <location filename="../qt/onroad.cc" line="336"/>
         <source>SPEED</source>
         <translation>MAX</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="333"/>
-        <location filename="../qt/onroad.cc" line="336"/>
+        <location filename="../qt/onroad.cc" line="339"/>
+        <location filename="../qt/onroad.cc" line="342"/>
         <source>LIMIT</source>
         <translation>VELO</translation>
     </message>
@@ -583,22 +558,6 @@ trabalho definido</translation>
         <location filename="../qt/widgets/prime.cc" line="99"/>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>Salve connect.comma.ai como sua página inicial para utilizar com um app</translation>
-    </message>
-    <message>
-        <source>
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Go to https://connect.comma.ai on your phone&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Click &quot;add new device&quot; and scan the QR code on the right&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Bookmark connect.comma.ai to your home screen to use it like an app&lt;/li&gt;
-      &lt;/ol&gt;
-    </source>
-        <translation type="vanished">
-      &lt;ol type=&apos;1&apos; style=&apos;margin-left: 15px;&apos;&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Navegue até https://connect.comma.ai&lt;/li&gt;
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Clique em &quot;add new device&quot; e  escaneie o QR code
-        &lt;li style=&apos;margin-bottom: 50px;&apos;&gt;Adicione connect.comma.ai em sua página inicial para utilizá-lo como um app&lt;/li&gt;
-      &lt;/ol&gt;
-    </translation>
     </message>
 </context>
 <context>
@@ -682,38 +641,26 @@ trabalho definido</translation>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>há %n minuto(s)</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>há %n hora(s)</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>há %n dia(s)</numerusform>
             <numerusform></numerusform>
         </translation>
-    </message>
-    <message>
-        <source>%1 minute%2 ago</source>
-        <translation type="vanished">%1 minuto%2 atrás</translation>
-    </message>
-    <message>
-        <source>%1 hour%2 ago</source>
-        <translation type="vanished">%1 hora%2 atrás</translation>
-    </message>
-    <message>
-        <source>%1 day%2 ago</source>
-        <translation type="vanished">%1 dia%2 atrás</translation>
     </message>
 </context>
 <context>
@@ -1101,10 +1048,6 @@ trabalho definido</translation>
         <translation>Inserir o nome do ramo</translation>
     </message>
     <message>
-        <source>Uninstall </source>
-        <translation type="vanished">Desinstalar </translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
         <source>UNINSTALL</source>
         <translation>DESINSTALAR</translation>
@@ -1152,7 +1095,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="14"/>
         <source>Enter your GitHub username</source>
-        <translation>Insisra seu nome de usuário do GitHub</translation>
+        <translation>Insira seu nome de usuário do GitHub</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="16"/>
@@ -1232,14 +1175,6 @@ trabalho definido</translation>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
         <translation>Receba alertas para voltar para a pista se o seu veículo sair da faixa e a seta não tiver sido acionada previamente quando em velocidades superiores a 50 km/h.</translation>
-    </message>
-    <message>
-        <source>Enable Right-Hand Drive</source>
-        <translation type="vanished">Volante no lado Direito</translation>
-    </message>
-    <message>
-        <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation type="vanished">Permita que o openpilot obedeça às convenções de tráfego à esquerda e realize o monitoramento do motorista no banco direito do motorista.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
@@ -1367,10 +1302,6 @@ trabalho definido</translation>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>Esquecer Rede Wi-Fi &quot;%1&quot;?</translation>
-    </message>
-    <message>
-        <source>Forget Wi-Fi Network &quot;</source>
-        <translation type="vanished">Esqueça a rede Wi-Fi &quot;</translation>
     </message>
 </context>
 </TS>
