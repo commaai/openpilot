@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 SEGMENT = 0
-MAX_FRAMES = 20 if PC else 1300
+MAX_FRAMES = 10 if PC else 1300
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
