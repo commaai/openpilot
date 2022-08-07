@@ -120,6 +120,8 @@ FINGERPRINTS = {
 
 FW_VERSIONS = {
   CAR.JEEP_CHEROKEE: {
+    # Don't add engine ECU FW for this CAR, even if FW is returned on newer vehicles, before resolving the issues with
+    # MY2017 / KWP2000 ECUs described in commaai/openpilot#25363
     (Ecu.combinationMeter, 0x742, None): [
       b'68302223AC',
     ],
