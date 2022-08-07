@@ -2,17 +2,16 @@ import numpy as np
 from cereal import car
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-#from opendbc.can.can_define import CANDefine
+from opendbc.can.can_define import CANDefine
 from selfdrive.car.faw.values import DBC_FILES, CANBUS, GearShifter, CarControllerParams
 
 class CarState(CarStateBase):
-  # def __init__(self, CP):
-    # super().__init__(CP)
-    # can_define = CANDefine(DBC_FILES.faw)
+  def __init__(self, CP):
+    super().__init__(CP)
+    can_define = CANDefine(DBC_FILES.faw)
     # TODO: populate this
     # self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
-    # TODO: populate this
-    # self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
+    self.lkas_status_values = can_define.dv["EPS_2"]["LKAS_STATUS"]
 
   def update(self, pt_cp, cam_cp):
     ret = car.CarState.new_message()
@@ -39,10 +38,9 @@ class CarState(CarStateBase):
     # ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
-    # TODO: populate this
-    # hca_status = self.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
-    # ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
-    # ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
+    lkas_status = self.lkas_status_values.get(pt_cp.vl["EPS_2"]["LKAS_STATUS"])
+    ret.steerFaultPermanent = lkas_status == "FAULT"
+    ret.steerFaultTemporary = lkas_status == "INITIALIZING"
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["ECM_1"]["DRIVER_THROTTLE"]
@@ -118,6 +116,7 @@ class CarState(CarStateBase):
       ("EPS_TORQUE", "EPS_2"),
       ("EPS_TORQUE_DIRECTION", "EPS_2"),
       ("DRIVER_INPUT_TORQUE", "EPS_2"),
+      ("LKAS_STATUS", "EPS_2"),
     ]
 
     checks = [

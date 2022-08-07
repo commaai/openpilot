@@ -10,8 +10,6 @@ class CarController():
 
     self.packer_pt = CANPacker(DBC_FILES.faw)
 
-    self.steer_rate_limited = False
-
   def update(self, c, CS, frame, actuators):
     """ Controls thread """
 
@@ -23,14 +21,11 @@ class CarController():
       if c.latActive:
         new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
-        self.steer_rate_limited = new_steer != apply_steer
-        lkas_torque_enabled = True if apply_steer != 0 else False
       else:
         apply_steer = 0
-        lkas_torque_enabled = False
 
       self.apply_steer_last = apply_steer
-      can_sends.append(fawcan.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, lkas_torque_enabled))
+      can_sends.append(fawcan.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, c.latActive))
 
     # **** HUD Controls ***************************************************** #
 
