@@ -59,8 +59,7 @@ class CAR:
 
 class Footnote(Enum):
   OBD_II = CarFootnote(
-    'Requires an <a href="https://comma.ai/shop/products/comma-car-harness">OBD-II car harness</a> and ' +
-    '<a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
+    'Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
     '<b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b>',
     Column.MODEL)
 
@@ -68,18 +67,18 @@ class Footnote(Enum):
 @dataclass
 class GMCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control"
-  harness: Enum = Harness.none
+  harness: Enum = Harness.obd_ii
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.OBD_II])
 
 
 CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
-  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017", harness=Harness.custom),
-  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, harness=Harness.custom),
+  CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017"),
+  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0),
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
-  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017", harness=Harness.custom),
+  CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
-  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),  # TODO: can probably just be ACC?
+  CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
 }
 
 
