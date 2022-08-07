@@ -49,7 +49,7 @@ SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 class TestCarModelBase(unittest.TestCase):
   car_model = None
   test_route = None
-  ci = True
+  ci = False
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
@@ -69,18 +69,18 @@ class TestCarModelBase(unittest.TestCase):
       raise Exception(f"missing test route for {cls.car_model}")
 
     disable_radar = False
-    test_segs = (2, 1, 0)
+    test_segs = (1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
     for seg in test_segs:
-      try:
-        if cls.ci:
-          lr = LogReader(get_url(cls.test_route.route, seg))
-        else:
-          lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-      except Exception:
-        continue
+#      try:
+      if cls.ci:
+        lr = LogReader(get_url(cls.test_route.route, seg))
+      else:
+        lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
+#      except Exception:
+#        continue
 
       can_msgs = []
       fingerprint = defaultdict(dict)
