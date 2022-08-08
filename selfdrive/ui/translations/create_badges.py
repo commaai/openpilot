@@ -17,9 +17,6 @@ if __name__ == "__main__":
 
   print("Copy into selfdrive/ui/translations/README.md:\n")
   for name, file in translation_files.items():
-    if not len(file):
-      continue
-
     with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as tr_f:
       tr_file = tr_f.read()
 
