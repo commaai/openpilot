@@ -122,6 +122,7 @@ FW_VERSIONS = {
   CAR.JEEP_CHEROKEE: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68302223AC',
+      b'68302249AD',
       b'68331512AC',
     ],
     (Ecu.srs, 0x744, None): [
@@ -138,6 +139,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672627AB',
+      b'68251506AD',
       b'68332015AB',
     ],
     (Ecu.eps, 0x75A, None): [
@@ -146,6 +148,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68311218AC',
+      b'68311218AD',
       b'68361916AD',
     ],
   },
