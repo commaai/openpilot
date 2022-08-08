@@ -170,7 +170,7 @@ if __name__ == "__main__":
     install()
 
   if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
-    ans = input(f"PlotJuggler is out of date. Would you like to update? (y/n) ")
+    ans = input("PlotJuggler is out of date. Would you like to update? (y/n) ")
     if ans == 'y':
       install()
     else:
