@@ -23,13 +23,10 @@ COMMA BODY: [.nan, 1000, .nan]
 KIA EV6 2022: [3.5, 2.5, 0.0]
 RAM 1500 5TH GEN: [2.0, 2.0, 0.0]
 SUBARU OUTBACK 6TH GEN: [2.3, 2.3, 0.11]
+CHEVROLET BOLT EUV PREMIER 2022: [.nan, 1.5, .nan]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
 
 # Manually checked
 HONDA CIVIC 2022: [2.5, 1.2, 0.15]
-
-# New GM Cars
-CHEVROLET SILVERADO 1500 2020: [.nan, 1.5, .nan]
-CHEVROLET BOLT EUV PREMIER 2022: [.nan, 1.5, .nan]
