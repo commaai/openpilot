@@ -67,10 +67,6 @@ class CAR:
   BOLT_EUV = "CHEVROLET BOLT EUV PREMIER 2022"
 
 
-EV_CAR = {CAR.VOLT}
-STEER_THRESHOLD = 1.0
-
-
 class Footnote(Enum):
   OBD_II = CarFootnote(
     'Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
@@ -111,11 +107,13 @@ class CruiseButtons:
   MAIN = 5
   CANCEL = 6
 
+
 class AccState:
   OFF = 0
   ACTIVE = 1
   FAULTED = 3
   STANDSTILL = 4
+
 
 class CanBus:
   POWERTRAIN = 0
@@ -124,6 +122,7 @@ class CanBus:
   SW_GMLAN = 3
   LOOPBACK = 128
   DROPPED = 192
+
 
 FINGERPRINTS = {
   CAR.HOLDEN_ASTRA: [
@@ -181,3 +180,9 @@ FINGERPRINTS = {
 }
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
+
+EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
+# These cars are integrated at the camera
+CAMERA_ACC_CAR = {CAR.BOLT_EUV}
+
+STEER_THRESHOLD = 1.0

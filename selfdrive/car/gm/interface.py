@@ -5,7 +5,7 @@ from panda import Panda
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams
+from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -22,14 +22,6 @@ class CarInterface(CarInterfaceBase):
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     params = CarControllerParams()
     return params.ACCEL_MIN, params.ACCEL_MAX
-
-  @staticmethod
-  def get_steer_feedforward_sigmoid(desired_angle: float, v_ego: float, ANGLE: float, ANGLE_OFFSET: float,
-                                    SIGMOID_SPEED: float, SIGMOID: float, SPEED: float) -> float:
-    # Apply sigmoid feedforward function on desired_angle & v_ego using supplied factors
-    x = ANGLE * (desired_angle + ANGLE_OFFSET)
-    sigmoid = x / (1 + fabs(x))
-    return (SIGMOID_SPEED * sigmoid * v_ego) + (SIGMOID * sigmoid) + (SPEED * v_ego)
 
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
@@ -57,22 +49,27 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
-    ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
-    ret.radarOffCan = False  # For ASCM, radar is present
-    ret.transmissionType = TransmissionType.automatic  # EV is direct
-    # NetworkLocation.gateway: OBD-II harness (typically ASCM), NetworkLocation.fwdCamera: non-ASCM
-    ret.networkLocation = NetworkLocation.gateway # or fwdCamera
+
+    if candidate in EV_CAR:
+      ret.transmissionType = TransmissionType.direct
+    else:
+      ret.transmissionType = TransmissionType.automatic
+
+    if candidate in CAMERA_ACC_CAR:  # non-ASCM, camera integration
+      ret.openpilotLongitudinalControl = False  # stock ACC
+      ret.networkLocation = NetworkLocation.fwdCamera
+      ret.radarOffCan = True  # no radar
+      ret.pcmCruise = True
+    else:  # ASCM, OBD-II harness
+      ret.networkLocation = NetworkLocation.gateway
+      ret.radarOffCan = False
+      ret.openpilotLongitudinalControl = True
+      ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
-
-    # Presence of a camera on the object bus is ok.
-    # Have to go to read_only if ASCM is online (ACC-enabled cars),
-    # or camera is on powertrain bus (LKA cars without ACC).
-    ret.openpilotLongitudinalControl = True # For ASCM, OP performs long
-    tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
@@ -80,6 +77,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    tire_stiffness_factor = 0.444  # not optimized yet
 
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -95,7 +93,6 @@ class CarInterface(CarInterfaceBase):
     #       Newer cars (that are still ASCM-based) use -1 for minEnableSpeed with the comment "engage speed is decided by pcm"
 
     if candidate == CAR.VOLT:
-      ret.transmissionType = TransmissionType.direct
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -155,22 +152,16 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     elif candidate == CAR.BOLT_EUV:
-      ret.transmissionType = TransmissionType.direct # EV (or hybrid)
       ret.minEnableSpeed = -1
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.675
-      ret.steerRatio = 16.8 # Not measured
+      ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.networkLocation = NetworkLocation.fwdCamera # Uses Cam Harness
-      ret.radarOffCan = True # No Radar
-      ret.openpilotLongitudinalControl = False # Stock ACC
-      ret.pcmCruise = True # CC is on
-      # Tune
-      ret.steerActuatorDelay = 0.
       ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
       ret.lateralTuning.pid.kf = 0.0002
       tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
 
     # Set Panda to camera forwarding mode
     if ret.networkLocation == NetworkLocation.fwdCamera:
