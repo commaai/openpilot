@@ -23,6 +23,7 @@ DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
 PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
+MINIMUM_PLOTJUGGLER_VERSION = "3.5.2"
 
 
 def install():
@@ -44,6 +45,13 @@ def install():
 
     with tarfile.open(tmp.name) as tar:
       tar.extractall(path=INSTALL_DIR)
+
+
+def check_plotjuggler_version():
+  proc = subprocess.Popen([PLOTJUGGLER_BIN, "-v"], stdout=subprocess.PIPE)
+  (out, _) = proc.communicate()
+  version = out.decode("utf-8").split(" ")[1]
+  return version >= MINIMUM_PLOTJUGGLER_VERSION
 
 
 def load_segment(segment_name):
@@ -160,6 +168,9 @@ if __name__ == "__main__":
   if not os.path.exists(PLOTJUGGLER_BIN):
     print("PlotJuggler is missing. Downloading...")
     install()
+
+  if not check_plotjuggler_version():
+    raise Exception(f"PlotJuggler version is too old. Please update to at least {MINIMUM_PLOTJUGGLER_VERSION}\n You can do so with './juggle.py --install'")
 
   if args.stream:
     start_juggler(layout=args.layout)
