@@ -8,8 +8,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart):
   values = lkas11
-  # values["CF_Lkas_FusionState"] = 2
-  values["CF_Lkas_LdwsSysState"] = 3 if steer_req else 1
+  values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
@@ -21,7 +20,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
                          CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
                          CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
-    values["CF_Lkas_LdwsActivemode"] = 3 if steer_req else 0  # int(left_lane) + (int(right_lane) << 1)
+    values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
     # FcwOpt_USM 5 = Orange blinking car + lanes
@@ -44,8 +43,6 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     values["CF_Lkas_LdwsActivemode"] = 2
   elif car_fingerprint == CAR.KIA_OPTIMA:
     values["CF_Lkas_LdwsActivemode"] = 0
-
-  # values["CF_Lkas_LdwsActivemode"] = 3
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
