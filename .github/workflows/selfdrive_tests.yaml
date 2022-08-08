@@ -39,6 +39,8 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+    - name: Pull LFS
+      run: git lfs pull
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: release/check-submodules.sh
