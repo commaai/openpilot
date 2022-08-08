@@ -122,24 +122,31 @@ FW_VERSIONS = {
   CAR.JEEP_CHEROKEE: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68302223AC',
+      b'68331512AC',
     ],
     (Ecu.srs, 0x744, None): [
       b'68316742AB',
+      b'68355363AB',
     ],
     (Ecu.esp, 0x747, None): [
       b'68306178AD',
+      b'68336276AB',
     ],
     (Ecu.fwdCamera, 0x764, None): [
+      b'04672631AC',
       b'68321608AD',
     ],
     (Ecu.fwdRadar, 0x753, None): [
+      b'04672627AB',
       b'68332015AB',
     ],
     (Ecu.eps, 0x75A, None): [
       b'68321644AC',
+      b'68321646AC',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68311218AC',
+      b'68361916AD',
     ],
   },
   CAR.RAM_1500: {
