@@ -48,9 +48,8 @@ def install():
 
 
 def get_plotjuggler_version():
-  proc = subprocess.Popen([PLOTJUGGLER_BIN, "-v"], stdout=subprocess.PIPE)
-  out, _ = proc.communicate()
-  version = out.decode("utf-8").split(" ")[1]
+  out = subprocess.check_output([PLOTJUGGLER_BIN, "-v"], encoding="utf-8")
+  version = out.split(" ")[1].strip()
   return tuple(map(int, version.split(".")))
 
 
