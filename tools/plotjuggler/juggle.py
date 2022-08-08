@@ -78,6 +78,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
     extra_args += f" -l {layout}"
   if route_or_segment_name is not None:
     extra_args += f" --window_title \"{route_or_segment_name}\""
+
   cmd = f'{PLOTJUGGLER_BIN} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
