@@ -47,12 +47,11 @@ def install():
       tar.extractall(path=INSTALL_DIR)
 
 
-def check_plotjuggler_version():
+def get_plotjuggler_version():
   proc = subprocess.Popen([PLOTJUGGLER_BIN, "-v"], stdout=subprocess.PIPE)
-  (out, _) = proc.communicate()
+  out, _ = proc.communicate()
   version = out.decode("utf-8").split(" ")[1]
-  version_tuple = tuple(map(int, version.split(".")))
-  return version_tuple >= MINIMUM_PLOTJUGGLER_VERSION
+  return tuple(map(int, version.split(".")))
 
 
 def load_segment(segment_name):
@@ -170,8 +169,8 @@ if __name__ == "__main__":
     print("PlotJuggler is missing. Downloading...")
     install()
 
-  if not check_plotjuggler_version():
-    raise Exception(f"PlotJuggler version is too old. Please update to at least {'.'.join(map(str, MINIMUM_PLOTJUGGLER_VERSION))}\n You can do so with './juggle.py --install'")
+  if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
+    raise Exception(f"PlotJuggler version is too old. Update with './juggle.py --install'")
 
   if args.stream:
     start_juggler(layout=args.layout)
