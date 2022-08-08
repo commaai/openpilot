@@ -12,7 +12,6 @@ from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
@@ -316,18 +315,14 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_versions = fw_versions_dict.get(addr, set())
-
-      ESP_OPTIONAL = (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS)
-      if ecu_type == Ecu.esp and candidate in ESP_OPTIONAL and not len(found_versions):
+      if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
 
       # On some Toyota models, the engine can show on two different addresses
-      # On older Chrysler models, the engine ecu may not support UDS
-      ENGINE_OPTIONAL = (TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS, CHRYSLER.JEEP_CHEROKEE)
-      if ecu_type == Ecu.engine and candidate in ENGINE_OPTIONAL and not len(found_versions):
+      if ecu_type == Ecu.engine and candidate in (TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
 
-      # Non-essential ecus aren't required to return firmware, but if they do, it must match the database
+      # Ignore non essential ecus
       if ecu_type not in ESSENTIAL_ECUS and not len(found_versions):
         continue
 
