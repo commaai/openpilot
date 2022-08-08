@@ -45,19 +45,16 @@ class TestManager(unittest.TestCase):
     time.sleep(10)
 
     for p in reversed(ALL_PROCESSES):
-      state = managed_processes[p].get_process_state_msg()
-      self.assertTrue(state.running, f"{p} not running")
+      with self.subTest(proc=p):
+        state = managed_processes[p].get_process_state_msg()
+        self.assertTrue(state.running, f"{p} not running")
+        exit_code = managed_processes[p].stop(retry=False)
 
-      exit_code = managed_processes[p].stop(retry=False)
-      if (AGNOS and p in ['ui',]):
-        # TODO: make Qt UI exit gracefully
-        continue
-
-      # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
-      exit_codes = [0, 1]
-      if managed_processes[p].sigkill:
-        exit_codes = [-signal.SIGKILL]
-      assert exit_code in exit_codes, f"{p} died with {exit_code}"
+        # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
+        exit_codes = [0, 1]
+        if managed_processes[p].sigkill:
+          exit_codes = [-signal.SIGKILL]
+        self.assertIn(exit_code, exit_codes, f"{p} died with {exit_code}")
 
 
 if __name__ == "__main__":
