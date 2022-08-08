@@ -30,8 +30,6 @@ camerad
 .. autodoxygenindex::
    :project: system_camerad_cameras
 .. autodoxygenindex::
-   :project: system_camerad_transforms
-.. autodoxygenindex::
    :project: system_camerad_imgproc
 
 locationd
