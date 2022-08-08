@@ -35,9 +35,9 @@ def create_buttons(packer, CP, cruise_buttons_copy, cnt, btn):
 
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
-def create_cruise_info(packer, cruise_info_copy, cruise_main, pcm_cancel_cmd, standstill_req, cnt):
+def create_cruise_info(packer, frame, cruise_info_copy, cruise_main, pcm_cancel_cmd, standstill_req):
   values = cruise_info_copy
-  values["COUNTER"] = cnt
+  values["COUNTER"] = frame % 0x40
   values["CRUISE_STANDSTILL"] = not standstill_req
   if pcm_cancel_cmd and cruise_main:
     values["CRUISE_STATUS"] = 0

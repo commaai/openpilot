@@ -84,8 +84,8 @@ class CarController:
         self.standstill_req = False
       self.last_standstill = CS.out.standstill
 
-      if self.frame % 2 == 0 and not self.CP.flags & HyundaiFlags.CANFD_HDA2:
-        can_sends.append(hyundaicanfd.create_cruise_info(self.packer, CS.cruise_info_copy, CS.cruise_info_cruise_main, CC.cruiseControl.cancel, self.standstill_req, CS.cruise_info_counter))
+      if not self.CP.flags & HyundaiFlags.CANFD_HDA2:
+        can_sends.append(hyundaicanfd.create_cruise_info(self.packer, self.frame, CS.cruise_info_copy, CS.cruise_info_cruise_main, CC.cruiseControl.cancel, self.standstill_req))
 
       # cruise cancel
       #if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
