@@ -23,6 +23,7 @@ DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
 PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
+MINIMUM_PLOTJUGGLER_VERSION = (3, 5, 2)
 
 
 def install():
@@ -46,6 +47,12 @@ def install():
       tar.extractall(path=INSTALL_DIR)
 
 
+def get_plotjuggler_version():
+  out = subprocess.check_output([PLOTJUGGLER_BIN, "-v"], encoding="utf-8").strip()
+  version = out.split(" ")[1]
+  return tuple(map(int, version.split(".")))
+
+
 def load_segment(segment_name):
   if segment_name is None:
     return []
@@ -57,7 +64,7 @@ def load_segment(segment_name):
     return []
 
 
-def start_juggler(fn=None, dbc=None, layout=None):
+def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
   env["PATH"] = f"{INSTALL_DIR}:{os.getenv('PATH', '')}"
@@ -69,6 +76,8 @@ def start_juggler(fn=None, dbc=None, layout=None):
     extra_args += f" -d {fn}"
   if layout is not None:
     extra_args += f" -l {layout}"
+  if route_or_segment_name is not None:
+    extra_args += f" --window_title \"{route_or_segment_name}\""
 
   cmd = f'{PLOTJUGGLER_BIN} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
@@ -129,7 +138,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    start_juggler(tmp.name, dbc, layout)
+    start_juggler(tmp.name, dbc, layout, route_or_segment_name)
 
 
 if __name__ == "__main__":
@@ -158,6 +167,10 @@ if __name__ == "__main__":
 
   if not os.path.exists(PLOTJUGGLER_BIN):
     print("PlotJuggler is missing. Downloading...")
+    install()
+  
+  if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
+    ans = input("PlotJuggler is out of date. Installing update...")
     install()
 
   if args.stream:
