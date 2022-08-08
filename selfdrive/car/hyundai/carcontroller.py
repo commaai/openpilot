@@ -80,7 +80,7 @@ class CarController:
 
       if CS.out.standstill and not self.last_standstill and not self.CP.flags & HyundaiFlags.CANFD_HDA2:
         self.standstill_req = True
-      if CS.cruise_info_cruise_status == 0:
+      if CS.cruise_info_cruise_status != 2:
         self.standstill_req = False
       self.last_standstill = CS.out.standstill
 

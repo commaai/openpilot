@@ -33,7 +33,6 @@ class CarState(CarStateBase):
     self.brake_error = False
     self.park_brake = False
     self.buttons_counter = 0
-    self.cruise_info_counter = 0
 
     self.params = CarControllerParams(CP)
 
@@ -184,7 +183,6 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
-    self.cruise_info_counter = cruise_info_bus.vl["CRUISE_INFO"]["COUNTER"]
     self.cruise_info_cruise_main = cruise_info_bus.vl["CRUISE_INFO"]["CRUISE_MAIN"]
     self.cruise_buttons_copy = copy.copy(cp.vl["CRUISE_BUTTONS"])
     self.cruise_info_copy = copy.copy(cruise_info_bus.vl["CRUISE_INFO"])
