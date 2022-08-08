@@ -151,9 +151,11 @@ FW_VERSIONS = {
   },
   CAR.PACIFICA_2018: {
     (Ecu.combinationMeter, 0x742, None): [
+      b'68227902AH',
       b'68360252AC',
     ],
     (Ecu.srs, 0x744, None): [
+      b'68211617AG',
       b'68358974AC',
     ],
     (Ecu.esp, 0x747, None): [
@@ -161,14 +163,18 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x764, None): [
       b'04672731AB',
+      b'68223694AH',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672758AA',
+      b'68226356AI',
     ],
     (Ecu.eps, 0x75A, None): [
+      b'68288891AE',
       b'68378884AA',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'68277372AE',
       b'68367471AC',
     ],
   },
