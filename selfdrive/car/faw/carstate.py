@@ -45,8 +45,8 @@ class CarState(CarStateBase):
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["ECM_1"]["DRIVER_THROTTLE"]
     ret.gasPressed = ret.gas > 0
-    ret.brake = pt_cp.vl["ABS_2"]["BRAKE_PRESSURE"]
-    ret.brakePressed = ret.brake > 0  # TODO: should be fine, but check for a nice boolean anyway
+    ret.brake = pt_cp.vl["ABS_3"]["DRIVER_BRAKE_PRESSURE"]
+    ret.brakePressed = bool(pt_cp.vl["MAYBE_ABS"]["BRAKE_PRESSED"])
     # TODO: populate this
     # ret.parkingBrake = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
 
@@ -81,7 +81,7 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     # TODO: populate this properly, need an available signal and overrides (11 avail?, 27 gas override?, 19 coastdown?)
     ret.cruiseState.available = True
-    ret.cruiseState.enabled = cam_cp.vl["ACC"]["STATUS"] == 20
+    ret.cruiseState.enabled = cam_cp.vl["ACC"]["STATUS"] in (4, 5, 6, 7)
 
     # Update ACC setpoint.
     # TODO: populate this
@@ -108,7 +108,8 @@ class CarState(CarStateBase):
       ("FRONT_RIGHT", "ABS_1"),
       ("REAR_LEFT", "ABS_2"),
       ("REAR_RIGHT", "ABS_2"),
-      ("BRAKE_PRESSURE", "ABS_2"),
+      ("DRIVER_BRAKE_PRESSURE", "ABS_3"),
+      ("BRAKE_PRESSED", "MAYBE_ABS"),
       ("STEER_ANGLE", "EPS_1"),
       ("STEER_ANGLE_DIRECTION", "EPS_1"),
       ("STEER_RATE", "EPS_1"),
@@ -124,6 +125,8 @@ class CarState(CarStateBase):
       ("ECM_1", 100),
       ("ABS_1", 100),
       ("ABS_2", 100),
+      ("MAYBE_ABS", 100),  # FIXME: figure out a better name
+      ("ABS_3", 50),
       ("EPS_1", 50),
       ("EPS_2", 50),
     ]
