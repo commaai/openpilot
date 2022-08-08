@@ -170,7 +170,11 @@ if __name__ == "__main__":
     install()
 
   if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
-    raise Exception(f"PlotJuggler version is too old. Update with './juggle.py --install'")
+    ans = input(f"PlotJuggler is out of date. Would you like to update? (y/n) ")
+    if ans == 'y':
+      install()
+    else:
+      sys.exit()
 
   if args.stream:
     start_juggler(layout=args.layout)
