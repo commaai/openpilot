@@ -172,6 +172,29 @@ FW_VERSIONS = {
       b'68367471AC',
     ],
   },
+  CAR.PACIFICA_2020: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68436251AE',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68480707AC',
+    ],
+    (Ecu.esp, 0x747, None): [
+      b'68453575AF',
+    ],
+    (Ecu.fwdCamera, 0x764, None): [
+      b'68493395AA',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'68540436AA',
+    ],
+    (Ecu.eps, 0x75A, None): [
+      b'68494461AB',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'68501055AD',
+    ],
+  },
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294063AH',
