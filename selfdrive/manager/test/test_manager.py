@@ -7,7 +7,7 @@ import unittest
 import selfdrive.manager.manager as manager
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
-from system.hardware import AGNOS, HARDWARE
+from system.hardware import HARDWARE
 
 os.environ['FAKEUPLOAD'] = "1"
 
@@ -35,8 +35,10 @@ class TestManager(unittest.TestCase):
       t = time.monotonic() - start
       assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
-  # ensure all processes exit cleanly
   def test_clean_exit(self):
+    """
+      Ensure all processes exit cleanly when stopped.
+    """
     HARDWARE.set_power_save(False)
     manager.manager_prepare()
     for p in ALL_PROCESSES:
@@ -45,19 +47,18 @@ class TestManager(unittest.TestCase):
     time.sleep(10)
 
     for p in reversed(ALL_PROCESSES):
-      state = managed_processes[p].get_process_state_msg()
-      self.assertTrue(state.running, f"{p} not running")
+      with self.subTest(proc=p):
+        state = managed_processes[p].get_process_state_msg()
+        self.assertTrue(state.running, f"{p} not running")
+        exit_code = managed_processes[p].stop(retry=False)
 
-      exit_code = managed_processes[p].stop(retry=False)
-      if (AGNOS and p in ['ui',]):
-        # TODO: make Qt UI exit gracefully
-        continue
+        self.assertTrue(exit_code is not None, f"{p} failed to exit")
 
-      # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
-      exit_codes = [0, 1]
-      if managed_processes[p].sigkill:
-        exit_codes = [-signal.SIGKILL]
-      assert exit_code in exit_codes, f"{p} died with {exit_code}"
+        # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
+        exit_codes = [0, 1]
+        if managed_processes[p].sigkill:
+          exit_codes = [-signal.SIGKILL]
+        self.assertIn(exit_code, exit_codes, f"{p} died with {exit_code}")
 
 
 if __name__ == "__main__":
