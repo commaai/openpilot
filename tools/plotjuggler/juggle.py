@@ -168,13 +168,10 @@ if __name__ == "__main__":
   if not os.path.exists(PLOTJUGGLER_BIN):
     print("PlotJuggler is missing. Downloading...")
     install()
-
+  
   if get_plotjuggler_version() < MINIMUM_PLOTJUGGLER_VERSION:
-    ans = input("PlotJuggler is out of date. Would you like to update? (y/n) ")
-    if ans == 'y':
-      install()
-    else:
-      sys.exit()
+    ans = input("PlotJuggler is out of date. Installing update...")
+    install()
 
   if args.stream:
     start_juggler(layout=args.layout)
