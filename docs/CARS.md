@@ -33,7 +33,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Audi|RS3 2018|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Audi|S3 2015-17|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chevrolet|Bolt EUV Premier 2022[<sup>2</sup>](#footnotes)|Chevy Safety Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Chevrolet|Bolt EUV 2022[<sup>2</sup>](#footnotes)|Chevy Safety Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
@@ -226,7 +226,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 <a id="footnotes"></a>
 <sup>1</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
-<sup>2</sup>Currently Requires a [harness box](https://comma.ai/shop/products/harness-box) and [community built GM camera harness](https://github.com/commaai/openpilot/wiki/GMCamHarness) <br />
+<sup>2</sup>Requires a [harness box](https://comma.ai/shop/products/harness-box) and [community built GM camera harness](https://github.com/commaai/openpilot/wiki/GMCamHarness) <br />
 <sup>3</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
 <sup>4</sup>When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>5</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
