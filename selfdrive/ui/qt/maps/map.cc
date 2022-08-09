@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QPainterPath>
 #include <QFileInfo>
+#include <QWebEngineView>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/ui.h"
