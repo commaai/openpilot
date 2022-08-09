@@ -56,12 +56,11 @@ class CarState(CarStateBase):
     ret.gearShifter = GearShifter.drive
 
     # Update door and trunk/hatch lid open status.
-    # TODO: populate this
-    # ret.doorOpen = any([pt_cp.vl["Gateway_72"]["ZV_FT_offen"],
-    #                     pt_cp.vl["Gateway_72"]["ZV_BT_offen"],
-    #                     pt_cp.vl["Gateway_72"]["ZV_HFS_offen"],
-    #                     pt_cp.vl["Gateway_72"]["ZV_HBFS_offen"],
-    #                     pt_cp.vl["Gateway_72"]["ZV_HD_offen"]])
+    # TODO: find trunk signal
+    ret.doorOpen = any([pt_cp.vl["DOOR_FL"]["OPEN"],
+                        pt_cp.vl["DOOR_FR"]["OPEN"],
+                        pt_cp.vl["DOOR_RL"]["OPEN"],
+                        pt_cp.vl["DOOR_RR"]["OPEN"]])
 
     # Update seatbelt fastened status.
     # TODO: populate this
@@ -129,6 +128,10 @@ class CarState(CarStateBase):
       ("ABS_3", 50),
       ("EPS_1", 50),
       ("EPS_2", 50),
+      ("DOOR_LF", 10),
+      ("DOOR_RF", 10),
+      ("DOOR_LR", 10),
+      ("DOOR_RR", 10),
     ]
 
     return CANParser(DBC_FILES.faw, signals, checks, CANBUS.pt)
