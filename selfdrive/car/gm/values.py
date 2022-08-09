@@ -72,10 +72,6 @@ class Footnote(Enum):
     'Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
     '<b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b>',
     Column.MODEL)
-  CAM_HARNESS = CarFootnote(
-    "Requires a [harness box](https://comma.ai/shop/products/harness-box) and [community built GM camera harness]" +
-    "(https://github.com/commaai/openpilot/wiki/GMCamHarness)",
-    Column.MODEL)
 
 
 @dataclass
@@ -93,7 +89,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022", "Chevy Safety Assist", footnotes=[Footnote.CAM_HARNESS], harness=Harness.gm_cam),
+  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022", "Chevy Safety Assist", footnotes=[], harness=Harness.gm),
 }
 
 
