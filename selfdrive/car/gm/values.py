@@ -10,11 +10,6 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  # TODO: Different cars have different min steer speed, usually around 3-5 mph
-  # TODO: Delta up and down limits may require adjustment based on excessive rate limiting
-  # TODO: Min steer speed seems to be about 3 MPH; may differ per car
-  # TODO: Unsure of driver values
-  # TODO: MAX_GAS, ZERO_GAS and MAX_BRAKE, MAX_ACC_REGEN are based on a specific volt year...
   STEER_MAX = 300  # GM limit is 3Nm. Used by carcontroller to generate LKA output
   STEER_STEP = 2  # Control frames per command (50hz)
   STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness

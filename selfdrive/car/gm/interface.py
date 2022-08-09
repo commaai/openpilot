@@ -55,16 +55,16 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.transmissionType = TransmissionType.automatic
 
-    if candidate in CAMERA_ACC_CAR:  # non-ASCM, camera integration
-      ret.openpilotLongitudinalControl = False  # stock ACC
+    if candidate in CAMERA_ACC_CAR:
+      ret.openpilotLongitudinalControl = False
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
     else:  # ASCM, OBD-II harness
+      ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
       ret.radarOffCan = False
-      ret.openpilotLongitudinalControl = True
-      ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
+      ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -89,8 +89,6 @@ class CarInterface(CarInterfaceBase):
 
     # supports stop and go, but initial engage must (conservatively) be above 18mph
     ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-    # TODO: Should this be changed to -1?
-    #       Newer cars (that are still ASCM-based) use -1 for minEnableSpeed with the comment "engage speed is decided by pcm"
 
     if candidate == CAR.VOLT:
       ret.mass = 1607. + STD_CARGO_KG
@@ -163,9 +161,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
 
-    # Set Panda to camera forwarding mode
     if ret.networkLocation == NetworkLocation.fwdCamera:
-      # TODO: Depends on Panda PR #962 (Cam Harness forwarding, stock ACC)
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
 
     # TODO: get actual value, for now starting with reasonable value for
