@@ -161,9 +161,13 @@ class CarInterface(CarInterfaceBase):
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
-      # Suppress resume button if we're resuming from stop so we don't adjust speed.
-      if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill):
-        be.type = ButtonType.unknown
+      if be.type == ButtonType.accelCruise:
+        # Suppress resume button if we're resuming from stop so we don't adjust speed.
+        if ret.cruiseState.enabled and ret.standstill:
+          be.type = ButtonType.unknown
+        # The ECM will fault if resume triggers an enable while speed is unset (unset is greater than 70 m/s)
+        elif c.hudControl.setSpeed < 70:
+          be.type = ButtonType.unknown
 
       ret.buttonEvents = [be]
 
@@ -179,7 +183,9 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
+    # The ECM will fault if resume triggers an enable while speed is unset (unset is greater than 70 m/s)
+    resume_enabled = c.hudControl.setSpeed < 70
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise, resume_enabled=resume_enabled))
 
     ret.events = events.to_msg()
 
