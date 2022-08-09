@@ -87,10 +87,8 @@ class CarState(CarStateBase):
     #    ret.cruiseState.speed = 0
 
     # Update control button states for turn signals and ACC controls.
-    # TODO: populate this
-    # CC button states
-    # ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
-    # ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
+    ret.leftBlinker = bool(pt_cp.vl["TURN_SIGNALS"]["LEFT_TURN_SIGNALING"])
+    ret.rightBlinker = bool(pt_cp.vl["TURN_SIGNALS"]["RIGHT_TURN_SIGNALING"])
 
     # TODO: populate this
     # ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
@@ -132,6 +130,7 @@ class CarState(CarStateBase):
       ("DOOR_RF", 10),
       ("DOOR_LR", 10),
       ("DOOR_RR", 10),
+      ("TURN_SIGNALS", 10),
     ]
 
     return CANParser(DBC_FILES.faw, signals, checks, CANBUS.pt)
