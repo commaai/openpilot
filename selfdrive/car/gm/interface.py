@@ -183,7 +183,7 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.resumeBlocked)
 
     # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise, resume_enabled=True))
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 

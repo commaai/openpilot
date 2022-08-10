@@ -24,12 +24,12 @@ def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, cap
   return be
 
 
-def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilder, pcm_cruise: bool = False, resume_enabled: bool = True) -> List[int]:
+def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilder, pcm_cruise: bool = False) -> List[int]:
   events = []
   for b in buttonEvents:
     # do enable on both accel and decel buttons
     if not pcm_cruise:
-      if (b.type == ButtonType.decelCruise or (b.type == ButtonType.accelCruise and resume_enabled)) and not b.pressed:
+      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
         events.append(EventName.buttonEnable)
     # do disable on button down
     if b.type == ButtonType.cancel and b.pressed:
