@@ -1,3 +1,5 @@
+import copy
+
 from cereal import car
 from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
@@ -14,14 +16,13 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
-    self.cruise_buttons_cmd_counter = 0
 
   def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
-    self.cruise_buttons_cmd_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
+    self.ascm_steering_button = copy.copy(pt_cp.vl["ASCMSteeringButton"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
@@ -96,6 +97,8 @@ class CarState(CarStateBase):
       ("TurnSignals", "BCMTurnSignals"),
       ("AcceleratorPedal2", "AcceleratorPedal2"),
       ("CruiseState", "AcceleratorPedal2"),
+      ("LKAButton", "ASCMSteeringButton"),
+      ("DistanceButton", "ASCMSteeringButton"),
       ("ACCButtons", "ASCMSteeringButton"),
       ("RollingCounter", "ASCMSteeringButton"),
       ("SteeringWheelAngle", "PSCMSteeringAngle"),
