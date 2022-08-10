@@ -5,7 +5,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, EV_CAR
+from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
@@ -106,6 +106,14 @@ class CarController:
 
       if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
+
+    elif self.CP.networkLocation == NetworkLocation.fwdCamera:
+      # Stock longitudinal, integrated at camera
+      if self.frame % 3 == 0:
+        if CC.cruiseControl.cancel:
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CruiseButtons.CANCEL))
+        elif CC.cruiseControl.resume:
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CruiseButtons.RES_ACCEL))
 
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.
