@@ -24,7 +24,7 @@ RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
 PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
 MINIMUM_PLOTJUGGLER_VERSION = (3, 5, 2)
-
+MAX_STREAMING_BUFFER_SIZE = 1000
 
 def install():
   m = f"{platform.system()}-{platform.machine()}"
@@ -71,7 +71,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  extra_args = ""
+  extra_args = f" --buffer_size {MAX_STREAMING_BUFFER_SIZE}"
   if fn is not None:
     extra_args += f" -d {fn}"
   if layout is not None:
