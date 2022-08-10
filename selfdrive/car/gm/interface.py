@@ -194,6 +194,8 @@ class CarInterface(CarInterfaceBase):
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
+    # TODO: remove this for pcmCruise cars where we can resume spam
+    # wait, if we do longitudinal, we can be stuck in standstill? is this like Toyota?
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
