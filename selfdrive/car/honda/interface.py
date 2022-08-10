@@ -372,10 +372,6 @@ class CarInterface(CarInterfaceBase):
     # handle button presses
     events.events.extend(create_button_enable_events(ret.buttonEvents, self.CP.pcmCruise))
 
-    # The ECM will fault if resume triggers an enable while speed is unset
-    if c.hudControl.setSpeed > 70 and ButtonType.accelCruise in (be.type for be in ret.buttonEvents):
-      events.add(car.CarEvent.EventName.resumeBlocked)
-
     ret.events = events.to_msg()
 
     return ret
