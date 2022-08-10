@@ -178,8 +178,10 @@ NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FRE
 void NvgWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
-  const auto cs = sm["controlsState"].getControlsState();
+  const bool cs_alive = sm.alive("controlsState");
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
+
+  const auto cs = sm["controlsState"].getControlsState();
 
   // Handle older routes where vCruiseCluster is not set
   float set_speed = cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
