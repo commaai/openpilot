@@ -178,7 +178,7 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
-    # The ECM will fault if resume triggers an enable while speed is unset (unset is greater than 70 m/s)
+    # The ECM will fault if resume triggers an enable while speed is unset
     if c.hudControl.setSpeed > 70:
       events.add(car.CarEvent.EventName.resumeBlocked)
 
