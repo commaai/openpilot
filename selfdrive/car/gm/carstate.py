@@ -140,7 +140,6 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      # TODO: does this still need to be 0?
       ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms).
       #                             While active 50 Hz (every 20 ms) is normal
       #                             EPS will tolerate around 200ms when active before faulting
