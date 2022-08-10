@@ -635,6 +635,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: wrong_car_mode_alert,
   },
 
+  EventName.resumeBlocked: {
+    ET.NO_ENTRY: NoEntryAlert("Press Set to Engage"),
+  },
+
   EventName.wrongCruiseMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
     ET.NO_ENTRY: NoEntryAlert("Adaptive Cruise Disabled"),

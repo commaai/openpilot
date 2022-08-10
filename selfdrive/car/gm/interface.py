@@ -178,10 +178,12 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
-    # handle button presses
     # The ECM will fault if resume triggers an enable while speed is unset (unset is greater than 70 m/s)
-    resume_enabled = c.hudControl.setSpeed < 70
-    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise, resume_enabled=resume_enabled))
+    if c.hudControl.setSpeed >= 70:
+      events.add(car.CarEvent.EventName.resumeBlocked)
+
+    # handle button presses
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise, resume_enabled=True))
 
     ret.events = events.to_msg()
 
