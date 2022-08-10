@@ -179,7 +179,7 @@ class CarInterface(CarInterfaceBase):
       events.add(car.CarEvent.EventName.belowSteerSpeed)
 
     # The ECM will fault if resume triggers an enable while speed is unset (unset is greater than 70 m/s)
-    if c.hudControl.setSpeed >= 70:
+    if c.hudControl.setSpeed > 70:
       events.add(car.CarEvent.EventName.resumeBlocked)
 
     # handle button presses
