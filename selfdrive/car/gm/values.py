@@ -107,6 +107,7 @@ class AccState:
 class CanBus:
   POWERTRAIN = 0
   OBSTACLE = 1
+  CAMERA = 2
   CHASSIS = 2
   SW_GMLAN = 3
   LOOPBACK = 128

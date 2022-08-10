@@ -110,10 +110,11 @@ class CarController:
     elif self.CP.networkLocation == NetworkLocation.fwdCamera:
       # Stock longitudinal, integrated at camera
       if self.frame % 3 == 0:
+        idx = (CS.cruise_buttons_cmd_counter + 1) % 4
         if CC.cruiseControl.cancel:
-          can_sends.append(gmcan.create_buttons(self.packer_pt, CruiseButtons.CANCEL))
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CruiseButtons.CANCEL, idx))
         elif CC.cruiseControl.resume:
-          can_sends.append(gmcan.create_buttons(self.packer_pt, CruiseButtons.RES_ACCEL))
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CruiseButtons.RES_ACCEL, idx))
 
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.
