@@ -99,6 +99,7 @@ class CarState(CarStateBase):
       ("CruiseState", "AcceleratorPedal2"),
       ("LKAButton", "ASCMSteeringButton"),
       ("DistanceButton", "ASCMSteeringButton"),
+      ("DriveModeButton", "ASCMSteeringButton"),
       ("ACCButtons", "ASCMSteeringButton"),
       ("RollingCounter", "ASCMSteeringButton"),
       ("SteeringWheelAngle", "PSCMSteeringAngle"),
