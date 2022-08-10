@@ -458,7 +458,9 @@ class Controls:
         self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
                                             self.button_timers, self.enabled, self.is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
-      else:
+      elif self.CP.carName == "gm":
+        # GM is the only car that requires a SET after losing main
+        # TODO: make the car interfaces handle button enable cruise speed
         self.v_cruise_kph = V_CRUISE_INITIAL
         self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     else:
