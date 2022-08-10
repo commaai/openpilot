@@ -71,7 +71,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   if dbc:
     env["DBC_NAME"] = dbc
 
-  extra_args = f" --buffer_size {MAX_STREAMING_BUFFER_SIZE}"
+  extra_args = ""
   if fn is not None:
     extra_args += f" -d {fn}"
   if layout is not None:
@@ -79,7 +79,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   if route_or_segment_name is not None:
     extra_args += f" --window_title \"{route_or_segment_name}\""
 
-  cmd = f'{PLOTJUGGLER_BIN} --plugin_folders {INSTALL_DIR}{extra_args}'
+  cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR} {extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
