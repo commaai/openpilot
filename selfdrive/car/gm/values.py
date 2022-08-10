@@ -39,12 +39,16 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
-  GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
-  BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
-  BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
+  EV_GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
+  EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
 
-STEER_THRESHOLD = 1.0
+  # ICE has much less engine braking force compared to regen in EVs,
+  # lower threshold removes some braking deadzone
+  GAS_LOOKUP_BP = [-0.1, 0., ACCEL_MAX]
+  BRAKE_LOOKUP_BP = [ACCEL_MIN, -0.1]
+
+  GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+  BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
 
 
 class CAR:
@@ -55,6 +59,10 @@ class CAR:
   ACADIA = "GMC ACADIA DENALI 2018"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+
+
+EV_CAR = {CAR.VOLT}
+STEER_THRESHOLD = 1.0
 
 
 class Footnote(Enum):

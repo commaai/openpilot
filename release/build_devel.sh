@@ -69,6 +69,15 @@ date: $DATETIME
 master commit: $GIT_HASH
 "
 
+# ensure files are within GitHub's limit
+BIG_FILES="$(find . -type f -not -path './.git/*' -size +95M)"
+if [ ! -z "$BIG_FILES" ]; then
+  printf '\n\n\n'
+  echo "Found files exceeding GitHub's 100MB limit:"
+  echo "$BIG_FILES"
+  exit 1
+fi
+
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
   git push -f origin master-ci:$BRANCH
