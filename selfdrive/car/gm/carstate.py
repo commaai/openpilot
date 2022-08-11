@@ -1,5 +1,3 @@
-import copy
-
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -24,7 +22,6 @@ class CarState(CarStateBase):
 
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
-    self.ascm_steering_button = copy.copy(pt_cp.vl["ASCMSteeringButton"])
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
@@ -111,11 +108,7 @@ class CarState(CarStateBase):
       ("TurnSignals", "BCMTurnSignals"),
       ("AcceleratorPedal2", "AcceleratorPedal2"),
       ("CruiseState", "AcceleratorPedal2"),
-      ("LKAButton", "ASCMSteeringButton"),
-      ("DistanceButton", "ASCMSteeringButton"),
-      ("DriveModeButton", "ASCMSteeringButton"),
       ("ACCButtons", "ASCMSteeringButton"),
-      ("RollingCounter", "ASCMSteeringButton"),
       ("SteeringWheelAngle", "PSCMSteeringAngle"),
       ("SteeringWheelRate", "PSCMSteeringAngle"),
       ("FLWheelSpd", "EBCMWheelSpdFront"),
