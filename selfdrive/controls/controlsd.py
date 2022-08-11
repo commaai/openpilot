@@ -50,6 +50,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
+ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
@@ -233,6 +234,16 @@ class Controls:
     # Add car events, ignore if CAN isn't valid
     if CS.canValid:
       self.events.add_from_msg(CS.events)
+
+    for b in CS.buttonEvents:
+      # do enable on both accel and decel buttons
+      if not self.CP.pcmCruise:
+
+        if not b.pressed and b.type in (ButtonType.accelCruise, ButtonType.decelCruise):
+          self.events.add(EventName.buttonEnable)
+      # do disable on button down
+      if b.type == ButtonType.cancel and b.pressed:
+        self.events.add(EventName.buttonCancel)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
@@ -452,24 +463,20 @@ class Controls:
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
-    # if stock cruise is completely disabled, then we can use our own set speed logic
-    if not self.CP.pcmCruise:
-      if CS.cruiseState.available:
+    if CS.cruiseState.available:
+      # if stock cruise is completely disabled, then we can use our own set speed logic
+      if not self.CP.pcmCruise:
         self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
                                             self.button_timers, self.enabled, self.is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
-      elif self.CP.carName == "gm":
-        # GM is the only car that requires a SET after losing main
-        # TODO: make the car interfaces handle button enable cruise speed
-        self.v_cruise_kph = V_CRUISE_INITIAL
-        self.v_cruise_cluster_kph = V_CRUISE_INITIAL
-    else:
-      if CS.cruiseState.available:
+
+      else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
-      else:
-        self.v_cruise_kph = 0
-        self.v_cruise_cluster_kph = 0
+
+    else:
+      self.v_cruise_kph = V_CRUISE_INITIAL
+      self.v_cruise_cluster_kph = V_CRUISE_INITIAL
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -660,6 +667,20 @@ class Controls:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
 
+  def update_button_events(self, buttonEvents):
+    for b in buttonEvents:
+      # accel and decel buttons both usually enable
+      if not self.CP.pcmCruise:
+        if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
+          self.events.add(EventName.buttonEnable)
+      # do disable on button down
+      if b.type == ButtonType.cancel and b.pressed:
+        self.events.add(EventName.buttonCancel)
+
+    # block enable on resume if cruise never engaged
+    if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL:
+      self.events.add(EventName.resumeBlocked)
+
   def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
@@ -828,6 +849,7 @@ class Controls:
     self.prof.checkpoint("Sample")
 
     self.update_events(CS)
+    self.update_button_events(CS.buttonEvents)
     cloudlog.timestamp("Events updated")
 
     if not self.read_only and self.initialized:
