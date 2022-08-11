@@ -193,7 +193,6 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x742, None): [
       b'68361606AH',
       b'68492693AD',
-      b'68525485AB', #TODO: CHECK in newest updat on dongle 5c05760b592aee2c
     ],
     (Ecu.srs, 0x744, None): [
       b'68399794AC',
@@ -219,11 +218,6 @@ FW_VERSIONS = {
       b'M2370131MB',
       b'M2421132MB',
     ],
-    #(Ecu.transmission, 0x7e1, None): [
-      #b'68475153AD',
-      #b'68504640AC',
-      #b'68538041AB',
-    #],
     (Ecu.gateway, 0x18DACBF1, None): [
       b'68488419AB',
       b'68535476AB',

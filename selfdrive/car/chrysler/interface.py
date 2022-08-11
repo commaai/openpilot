@@ -12,6 +12,8 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
 
+    ret.dashcamOnly = candidate in RAM_HD
+
     ret.radarOffCan = DBC[candidate]['radar'] is None
 
     ret.steerActuatorDelay = 0.1
