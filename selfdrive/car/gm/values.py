@@ -14,7 +14,6 @@ class CarControllerParams:
   STEER_STEP = 2  # Control frames per command (50hz)
   STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness
   STEER_DELTA_DOWN = 17
-  MIN_STEER_SPEED = 0.  # m/s
   STEER_DRIVER_ALLOWANCE = 50
   STEER_DRIVER_MULTIPLIER = 4
   STEER_DRIVER_FACTOR = 100
