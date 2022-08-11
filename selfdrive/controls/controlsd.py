@@ -235,16 +235,6 @@ class Controls:
     if CS.canValid:
       self.events.add_from_msg(CS.events)
 
-    for b in CS.buttonEvents:
-      # do enable on both accel and decel buttons
-      if not self.CP.pcmCruise:
-
-        if not b.pressed and b.type in (ButtonType.accelCruise, ButtonType.decelCruise):
-          self.events.add(EventName.buttonEnable)
-      # do disable on button down
-      if b.type == ButtonType.cancel and b.pressed:
-        self.events.add(EventName.buttonCancel)
-
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
@@ -469,11 +459,9 @@ class Controls:
         self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
                                             self.button_timers, self.enabled, self.is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
-
       else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
-
     else:
       self.v_cruise_kph = V_CRUISE_INITIAL
       self.v_cruise_cluster_kph = V_CRUISE_INITIAL
