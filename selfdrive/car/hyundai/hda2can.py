@@ -14,27 +14,7 @@ def create_lkas(packer, enabled, lat_active, apply_steer):
 
 def create_cam_0x2a4(packer, camera_values):
   camera_values.update({
-    "BYTE3": 0,
-    "BYTE4": 0,
-    "BYTE5": 0,
-    "BYTE6": 0,
     "BYTE7": 0,
-    "BYTE8": 0,
-    "BYTE9": 0,
-    "BYTE10": 0,
-    "BYTE11": 0,
-    "BYTE12": 0,
-    "BYTE13": 0,
-    "BYTE14": 0,
-    "BYTE15": 0,
-    "BYTE16": 0,
-    "BYTE17": 0,
-    "BYTE18": 0,
-    "BYTE19": 0,
-    "BYTE20": 0,
-    "BYTE21": 0,
-    "BYTE22": 0,
-    "BYTE23": 0,
   })
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
 
