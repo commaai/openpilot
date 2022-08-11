@@ -19,6 +19,7 @@ class CarController:
     self.apply_gas = 0
     self.apply_brake = 0
     self.frame = 0
+    self.last_button_frame = 0
 
     self.lka_steering_cmd_counter_last = -1
     self.lka_icon_status_last = (False, False)
@@ -109,10 +110,12 @@ class CarController:
 
     elif self.CP.networkLocation == NetworkLocation.fwdCamera:
       # Stock longitudinal, integrated at camera
-      if self.frame % 3 == 0:
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
         if CC.cruiseControl.cancel:
+          self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.ascm_steering_button, CruiseButtons.CANCEL))
         elif CC.cruiseControl.resume:
+          self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.ascm_steering_button, CruiseButtons.RES_ACCEL))
 
     # Show green icon when LKA torque is applied, and
