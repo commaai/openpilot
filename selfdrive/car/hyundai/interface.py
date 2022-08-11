@@ -281,12 +281,14 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.GENESIS_GV70:
       ret.mass = 1950. + STD_CARGO_KG
       ret.wheelbase = 2.87
-      ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
+      ret.steerRatio = 14.6 * 1.15  # 15% higher at the center seems reasonable
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                       get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
 
       tire_stiffness_factor = 0.65
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.03], [0.007]]
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
     if candidate in LEGACY_SAFETY_MODE_CAR:
