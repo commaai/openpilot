@@ -151,6 +151,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.BOLT_EUV:
       ret.minEnableSpeed = -1
+      ret.minSteerSpeed = 0.
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.675
       ret.steerRatio = 16.8
