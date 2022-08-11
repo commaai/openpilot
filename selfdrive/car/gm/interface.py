@@ -155,9 +155,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.675
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[10., 41.0], [10., 41.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18, 0.275], [0.01, 0.021]]
-      ret.lateralTuning.pid.kf = 0.0002
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
 
@@ -194,7 +192,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
-    if ret.cruiseState.standstill and not self.CP.pcmCruise:
+    if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
