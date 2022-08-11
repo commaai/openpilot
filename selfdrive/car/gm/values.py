@@ -95,13 +95,11 @@ class CruiseButtons:
   MAIN = 5
   CANCEL = 6
 
-
 class AccState:
   OFF = 0
   ACTIVE = 1
   FAULTED = 3
   STANDSTILL = 4
-
 
 class CanBus:
   POWERTRAIN = 0
@@ -111,7 +109,6 @@ class CanBus:
   SW_GMLAN = 3
   LOOPBACK = 128
   DROPPED = 192
-
 
 FINGERPRINTS = {
   CAR.HOLDEN_ASTRA: [

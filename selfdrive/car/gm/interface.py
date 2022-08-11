@@ -155,9 +155,9 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.675
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if ret.networkLocation == NetworkLocation.fwdCamera:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
