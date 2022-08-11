@@ -187,6 +187,7 @@ class Harness(Enum):
   bosch_b = "Honda Bosch B"
   toyota = "Toyota"
   subaru = "Subaru"
+  subaru_b = "Subaru B"
   fca = "FCA"
   ram = "Ram"
   vw = "VW"
