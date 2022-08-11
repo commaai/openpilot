@@ -3,9 +3,9 @@ import copy
 from selfdrive.car import make_can_msg
 
 def create_buttons(packer, bus, ascm_steering_button, button):
-  values = {}  # copy.copy(ascm_steering_button)
+  values = copy.copy(ascm_steering_button)
   values["ACCButtons"] = button
-  # values["RollingCounter"] = (values["RollingCounter"] + 1) % 4
+  values["RollingCounter"] = (values["RollingCounter"] + 1) % 4
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
