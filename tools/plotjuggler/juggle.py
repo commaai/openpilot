@@ -24,7 +24,7 @@ RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
 PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
 MINIMUM_PLOTJUGGLER_VERSION = (3, 5, 2)
-
+MAX_STREAMING_BUFFER_SIZE = 1000
 
 def install():
   m = f"{platform.system()}-{platform.machine()}"
@@ -79,7 +79,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   if route_or_segment_name is not None:
     extra_args += f" --window_title \"{route_or_segment_name}\""
 
-  cmd = f'{PLOTJUGGLER_BIN} --plugin_folders {INSTALL_DIR}{extra_args}'
+  cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
