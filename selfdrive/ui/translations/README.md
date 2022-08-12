@@ -6,9 +6,16 @@
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ko.ts)
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ja.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ja.ts)
 
+---
+The above badges show the translation completion of each language in openpilot. If you see one you're proficient in that is missing translations, check out the contributing instructions below.
+
 ## Contributing
 
 Before getting started, make sure you have set up the openpilot Ubuntu development environment by reading the [tools README.md](/tools/README.md).
+
+### Language Policy
+
+We will merge most pull requests adding a new language as long as the contributor(s) show a willingness to keep them up to date. Note that languages may be removed or hidden from releases depending on circumstances.
 
 ### Adding a New Language
 
