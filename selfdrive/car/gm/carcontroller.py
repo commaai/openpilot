@@ -107,7 +107,7 @@ class CarController:
       if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
-    elif self.CP.networkLocation == NetworkLocation.fwdCamera:
+    else:
       # Stock longitudinal, integrated at camera
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
         if CC.cruiseControl.cancel:
