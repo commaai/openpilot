@@ -340,27 +340,27 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="622"/>
+        <location filename="../qt/maps/map.cc" line="621"/>
         <source>eta</source>
         <translation>抵達</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="632"/>
+        <location filename="../qt/maps/map.cc" line="631"/>
         <source>min</source>
         <translation>分鐘</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="636"/>
+        <location filename="../qt/maps/map.cc" line="635"/>
         <source>hr</source>
         <translation>小時</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="656"/>
+        <location filename="../qt/maps/map.cc" line="655"/>
         <source>km</source>
         <translation>km</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="659"/>
+        <location filename="../qt/maps/map.cc" line="658"/>
         <source>mi</source>
         <translation>mi</translation>
     </message>

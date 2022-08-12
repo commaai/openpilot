@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, DBC, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -25,7 +25,6 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "hyundai"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
@@ -238,8 +237,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2055 + STD_CARGO_KG
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
       tire_stiffness_factor = 0.65
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -279,15 +276,28 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
 
-    # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in LEGACY_SAFETY_MODE_CAR:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
+    # panda safety config
+    if candidate in CANFD_CAR:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
+                           get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
+    else:
+      if candidate in LEGACY_SAFETY_MODE_CAR:
+        # these cars require a special panda safety mode due to missing counters and checksums in the messages
+        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
+      else:
+        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
 
-    # set appropriate safety param for gas signal
-    if candidate in HYBRID_CAR:
-      ret.safetyConfigs[0].safetyParam = 2
-    elif candidate in EV_CAR:
-      ret.safetyConfigs[0].safetyParam = 1
+      # set appropriate safety param for gas signal
+      if candidate in HYBRID_CAR:
+        ret.safetyConfigs[0].safetyParam = 2
+      elif candidate in EV_CAR:
+        ret.safetyConfigs[0].safetyParam = 1
+
+      if ret.openpilotLongitudinalControl:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_LONG
+
+      if candidate in CAMERA_SCC_CAR:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
     ret.centerToFront = ret.wheelbase * 0.4
 
@@ -301,12 +311,6 @@ class CarInterface(CarInterfaceBase):
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     ret.enableBsm = 0x58b in fingerprint[0]
-
-    if ret.openpilotLongitudinalControl:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_LONG
-
-    if candidate in CAMERA_SCC_CAR:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
     return ret
 

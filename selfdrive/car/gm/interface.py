@@ -118,6 +118,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
+      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
