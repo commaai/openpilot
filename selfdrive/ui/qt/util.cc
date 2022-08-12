@@ -106,9 +106,18 @@ void setQtSurfaceFormat() {
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
+void sigTermHandler(int s) {
+  std::signal(s, SIG_DFL);
+  qApp->quit();
+}
+
 void initApp(int argc, char *argv[]) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
+
+  // setup signal handlers to exit gracefully
+  std::signal(SIGINT, sigTermHandler);
+  std::signal(SIGTERM, sigTermHandler);
 
 #ifdef __APPLE__
   {
