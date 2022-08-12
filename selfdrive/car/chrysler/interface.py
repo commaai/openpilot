@@ -16,8 +16,9 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = DBC[candidate]['radar'] is None
 
-    ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
+    ret.steerActuatorDelay = 0.1
+    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # safety config
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
@@ -36,9 +37,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2242. + STD_CARGO_KG
       ret.wheelbase = 3.089
       ret.steerRatio = 16.2  # Pacifica Hybrid 2017
-      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
-      ret.lateralTuning.pid.kf = 0.00006
 
     # Jeep
     elif candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
@@ -46,9 +44,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.71
       ret.steerRatio = 16.7
       ret.steerActuatorDelay = 0.2
-      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
-      ret.lateralTuning.pid.kf = 0.00006
 
     # Ram
     elif candidate == CAR.RAM_1500:
@@ -56,7 +51,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.88
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.minSteerSpeed = 14.5
       if car_fw is not None:
         for fw in car_fw:
