@@ -11,12 +11,6 @@ GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
-class Tier(Enum):
-  GOLD = 0
-  SILVER = 1
-  BRONZE = 2
-
-
 class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
@@ -27,13 +21,14 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
 
 
+# TODO: used in test_docs
 class Star(Enum):
   FULL = "full"
   HALF = "half"
   EMPTY = "empty"
 
 
-CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
+CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
@@ -101,8 +96,8 @@ class CarInfo:
       Column.PACKAGE: self.package,
       # InfoColumns
       Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
-      Column.FSR_LONGITUDINAL: f"{self.min_enable_speed} mph",
-      Column.FSR_STEERING: f"{self.min_steer_speed} mph",
+      Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed, 0):.0f} mph",
+      Column.FSR_STEERING: f"{max(self.min_steer_speed, 0):.0f} mph",
       Column.STEERING_TORQUE: "Bad",  # TODO
     }
 
@@ -133,6 +128,8 @@ class CarInfo:
       elif CP.carName not in ("nissan", "subaru", "toyota") or (CP.carName == "toyota" and CP.openpilotLongitudinalControl):
         acc = " <strong>that automatically resumes from a stop</strong>"
 
+      # TODO: what to do about this. should row hold values or final string?
+      # if values, when do we convert to final string?
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
         sentence_builder += " This car may not be able to take tight turns on its own."
 
