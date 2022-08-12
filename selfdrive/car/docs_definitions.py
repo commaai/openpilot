@@ -94,17 +94,11 @@ class CarInfo:
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      # InfoColumns
       Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed, 0):.0f} mph",
       Column.STEERING_TORQUE: f"{max(CP.maxLateralAccel, 0):.1f} m/s/s",  # TODO
     }
-
-    # # Set steering torque star from max lateral acceleration
-    # assert CP.maxLateralAccel > 0.1
-    # if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-    #   self.row[Column.STEERING_TORQUE] = "Good"
 
     self.all_footnotes = all_footnotes
     self.year_list = get_year_list(self.years)
