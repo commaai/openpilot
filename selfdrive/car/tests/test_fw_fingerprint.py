@@ -49,14 +49,15 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_blacklisted_ecus(self):
     passed = True
-    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    subaru_blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    chrysler_blacklisted_addrs = (0x7e0, )  # see commaai/openpilot#25363
     for car_model, ecus in FW_VERSIONS.items():
       CP = interfaces[car_model][0].get_params(car_model)
-      if CP.carName == 'subaru':
-        for ecu in ecus.keys():
-          if ecu[1] in blacklisted_addrs:
-            print(f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
-            passed = False
+      for ecu in ecus.keys():
+        if (CP.carName == 'subaru' and ecu[1] in subaru_blacklisted_addrs) or \
+           (CP.carName == 'chrysler' and not car_model.startswith('RAM') and ecu[1] in chrysler_blacklisted_addrs):
+          print(f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+          passed = False
 
     self.assertTrue(passed, "Blacklisted FW versions found")
 
