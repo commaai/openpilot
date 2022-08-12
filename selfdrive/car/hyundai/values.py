@@ -65,6 +65,7 @@ class CAR:
   PALISADE = "HYUNDAI PALISADE 2020"
   VELOSTER = "HYUNDAI VELOSTER 2019"
   SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
+  IONIQ_5 = "HYUNDAI IONIQ 5 2022"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -126,6 +127,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", "Smart Cruise Control (SCC)", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
+  CAR.IONIQ_5: HyundaiCarInfo("Hyundai Ioniq 5 2022", "Highway Driving Assist II", harness=Harness.none),
 
   # Kia
   CAR.KIA_FORTE: [
@@ -156,7 +158,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
-  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p),
+  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "Highway Driving Assist II", harness=Harness.hyundai_p),
 
   # Genesis
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
@@ -1263,6 +1265,23 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
     ],
   },
+  CAR.IONIQ_5: {
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
+      b'\xf1\x8758520GI010\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
+      b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
+      b'\xf1\x8799110GI000\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
+    ],
+  },
 }
 
 CHECKSUM = {
@@ -1280,7 +1299,7 @@ FEATURES = {
   "use_fca": {CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.TUCSON, CAR.KONA_EV_2022},
 }
 
-CANFD_CAR = {CAR.KIA_EV6, }
+CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5}
 
 # The camera does SCC on these cars, rather than the radar
 CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
@@ -1335,4 +1354,5 @@ DBC = {
   CAR.KIA_CEED: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_EV6: dbc_dict('kia_ev6', None),
   CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
+  CAR.IONIQ_5: dbc_dict('kia_ev6', None),
 }
