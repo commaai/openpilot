@@ -45,7 +45,6 @@ class LateralPlanner:
     self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
-      self.speed_forward = np.linalg.norm(np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z]), axis=1)
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = np.array(md.orientation.z)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
@@ -78,7 +77,6 @@ class LateralPlanner:
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
     assert len(curv_rate_pts) == LAT_MPC_N + 1
-    # self.x0[4] = v_ego
     lateral_factor = max(0, self.factor1 - (self.factor2 * v_ego**2))
     p = np.array([v_ego, lateral_factor])
     self.lat_mpc.run(self.x0,
