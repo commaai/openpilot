@@ -58,7 +58,6 @@ class TestCarModelBase(unittest.TestCase):
       raise unittest.SkipTest
 
     if 'FILTER' in os.environ:
-      print(tuple(os.environ.get('FILTER').split(', ')))
       if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
         raise unittest.SkipTest
 
