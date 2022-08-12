@@ -145,7 +145,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Subaru|XV 2018-19|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
 |Subaru|XV 2020-21|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Karoq 2019-21|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Škoda|Karoq 2019-21[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Škoda|Kodiaq 2018-19|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Škoda|Octavia 2015, 2018-19|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Škoda|Octavia RS 2016|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
@@ -230,7 +230,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 <sup>4</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>5</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>6</sup>Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform. <br />
-<sup>7</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design, in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard. <br />
+<sup>7</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway inside the dashboard, choose "VW J533 Development" from the vehicle drop-down for a suitable harness. (Some newer models are also observed to not have a J533 connector.) <br />
 <sup>8</sup>Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.) <br />
 
 ## Community Maintained Cars
