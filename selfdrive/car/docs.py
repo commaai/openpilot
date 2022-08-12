@@ -8,16 +8,16 @@ from natsort import natsorted
 from typing import Dict, List
 
 from common.basedir import BASEDIR
-from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, StarColumns, TierColumns, CarInfo, Column, Star
+from selfdrive.car.docs_definitions import STAR_DESCRIPTIONS, TierColumns, CarInfo, Column, Star
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
 
 
 def get_all_footnotes(only_tier_cols: bool = False) -> Dict[Enum, int]:
   all_footnotes = []
-  hide_cols = set(StarColumns) - set(TierColumns) if only_tier_cols else []
+  # hide_cols = set(StarColumns) - set(TierColumns) if only_tier_cols else []
   for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
-    all_footnotes.extend([fn for fn in footnotes if fn.value.column not in hide_cols])
+    all_footnotes.extend(footnotes)
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
 
 
@@ -62,12 +62,12 @@ def generate_cars_md(all_car_info: List[CarInfo], template_fn: str, only_tier_co
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   cols = list(Column)
-  if only_tier_cols:
-    hide_cols = set(StarColumns) - set(TierColumns)
-    cols = [c for c in cols if c not in hide_cols]
-    for car in all_car_info:
-      for c in hide_cols:
-        del car.row[c]
+  # if only_tier_cols:
+  #   hide_cols = set(StarColumns) - set(TierColumns)
+  #   cols = [c for c in cols if c not in hide_cols]
+  #   for car in all_car_info:
+  #     for c in hide_cols:
+  #       del car.row[c]
 
   footnotes = [fn.value.text for fn in get_all_footnotes(only_tier_cols)]
   cars_md: str = template.render(all_car_info=all_car_info, group_by_make=group_by_make,

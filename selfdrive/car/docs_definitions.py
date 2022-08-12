@@ -21,9 +21,9 @@ class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
-  LONGITUDINAL = "openpilot ACC"
-  FSR_LONGITUDINAL = "Stop and Go"
-  FSR_STEERING = "Steer to 0"
+  LONGITUDINAL = "ACC"
+  FSR_LONGITUDINAL = "No ACC accel below"
+  FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
 
 
@@ -33,7 +33,8 @@ class Star(Enum):
   EMPTY = "empty"
 
 
-StarColumns = list(Column)[3:]
+InfoColumns = list(Column)[3:]
+# StarColumns = list(Column)[3:]
 TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
@@ -101,37 +102,37 @@ class CarInfo:
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      # StarColumns
-      Column.LONGITUDINAL: Star.FULL if CP.openpilotLongitudinalControl and not CP.radarOffCan else Star.EMPTY,
-      Column.FSR_LONGITUDINAL: Star.FULL if self.min_enable_speed <= 0. else Star.EMPTY,
-      Column.FSR_STEERING: Star.FULL if self.min_steer_speed <= 0. else Star.EMPTY,
-      Column.STEERING_TORQUE: Star.EMPTY,
+      # InfoColumns
+      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
+      Column.FSR_LONGITUDINAL: f"{self.min_enable_speed} mph",
+      Column.FSR_STEERING: f"{self.min_steer_speed} mph",
+      Column.STEERING_TORQUE: "Bad",  # TODO
     }
 
     # Set steering torque star from max lateral acceleration
     assert CP.maxLateralAccel > 0.1
     if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-      self.row[Column.STEERING_TORQUE] = Star.FULL
+      self.row[Column.STEERING_TORQUE] = "Good"
 
-    if CP.notCar:
-      for col in StarColumns:
-        self.row[col] = Star.FULL
+    # if CP.notCar:
+    #   for col in StarColumns:
+    #     self.row[col] = Star.FULL
 
     self.all_footnotes = all_footnotes
-    for column in StarColumns:
-      # Demote if footnote specifies a star
-      for fn in get_footnotes(self.footnotes, column):
-        if fn.value.star is not None:
-          self.row[column] = fn.value.star
+    # for column in StarColumns:
+    #   # Demote if footnote specifies a star
+    #   for fn in get_footnotes(self.footnotes, column):
+    #     if fn.value.star is not None:
+    #       self.row[column] = fn.value.star
 
-    # openpilot ACC star doesn't count for tiers
-    full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
-    if full_stars == len(TierColumns):
-      self.tier = Tier.GOLD
-    elif full_stars == len(TierColumns) - 1:
-      self.tier = Tier.SILVER
-    else:
-      self.tier = Tier.BRONZE
+    # # openpilot ACC star doesn't count for tiers
+    # full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
+    # if full_stars == len(TierColumns):
+    #   self.tier = Tier.GOLD
+    # elif full_stars == len(TierColumns) - 1:
+    #   self.tier = Tier.SILVER
+    # else:
+    #   self.tier = Tier.BRONZE
 
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
@@ -168,9 +169,9 @@ class CarInfo:
   @no_type_check
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
-    if column in StarColumns:
-      item = star_icon.format(item.value)
-    elif column == Column.MODEL and len(self.years):
+    # if column in StarColumns:
+    #   item = star_icon.format(item.value)
+    if column == Column.MODEL and len(self.years):
       item += f" {self.years}"
 
     footnotes = get_footnotes(self.footnotes, column)
