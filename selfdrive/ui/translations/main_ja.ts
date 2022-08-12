@@ -1025,7 +1025,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>Switch Branch</source>
-        <translation type="unfinished">ブランチの切り替え</translation>
+        <translation>ブランチの切り替え</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
