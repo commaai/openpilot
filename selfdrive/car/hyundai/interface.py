@@ -279,13 +279,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1950. + STD_CARGO_KG
       ret.wheelbase = 2.87
       ret.steerRatio = 14.6 * 1.15  # 15% higher at the center seems reasonable
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                      get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
-
       tire_stiffness_factor = 0.65
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.03], [0.007]]
+      ret.steerActuatorDelay = 0.11
+      ret.lateralTuning.pid.kf = 0.000053
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[15.,29.], [15.,29.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.09,0.046], [0.012,0.008]]
 
     # panda safety config
     if candidate in CANFD_CAR:

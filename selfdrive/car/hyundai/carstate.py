@@ -19,9 +19,10 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     if CP.carFingerprint in CANFD_CAR:
-      self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
-    elif CP.carFingerprint in CAR.GENESIS_GV70:
-      self.shifter_values = can_define.dv["GEAR"]["GEAR"]
+      if CP.carFingerprint in CAR.GENESIS_GV70:
+        self.shifter_values = can_define.dv["GEAR"]["GEAR"]
+      else:
+        self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:

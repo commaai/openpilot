@@ -7,9 +7,9 @@ def create_lkas(packer, enabled, lat_active, apply_steer):
   values = create_lkas_values(enabled, lat_active, apply_steer)
   return packer.make_can_msg("LKAS", 4, values)
 
-def create_lfa(packer, enabled, frame, lat_active, apply_steer):
+def create_lfa(packer, enabled, lat_active, apply_steer):
   values = create_lkas_values(enabled, lat_active, apply_steer)
-  return packer.make_can_msg("LFA", 4, values, frame % 255)
+  return packer.make_can_msg("LFA", 4, values)
 
 def create_lkas_values(enabled, lat_active, apply_steer):
   values = {
@@ -25,7 +25,7 @@ def create_lkas_values(enabled, lat_active, apply_steer):
   }
   return values
 
-def create_lfa_icon(packer, enabled, frame):
+def create_lfa_icon(packer, enabled):
   values = {
     "HDA": 0,
     "LFA_GREY": 0,
@@ -35,7 +35,7 @@ def create_lfa_icon(packer, enabled, frame):
     #"LFA_GREY": 0 if enabled else 1,
     #"LFA_YELLOW": 1 if enabled else 0,
   }
-  return packer.make_can_msg("LFA_ICONS", 4, values, frame % 255)
+  return packer.make_can_msg("LFA_ICONS", 4, values)
 
 def create_cam_0x2a4(packer, camera_values):
   camera_values.update({

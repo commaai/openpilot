@@ -72,8 +72,8 @@ class CarController:
     if self.CP.carFingerprint in CANFD_CAR:
       # steering control
       if self.CP.carFingerprint in CAR.GENESIS_GV70:
-        can_sends.append(hyundaicanfd.create_lfa(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
-        can_sends.append(hyundaicanfd.create_lfa_icon(self.packer, CC.enabled, self.frame))
+        can_sends.append(hyundaicanfd.create_lfa(self.packer, CC.enabled, CC.latActive, apply_steer))
+        can_sends.append(hyundaicanfd.create_lfa_icon(self.packer, CC.enabled))
       else:
         can_sends.append(hyundaicanfd.create_lkas(self.packer, CC.enabled, CC.latActive, apply_steer))
         
