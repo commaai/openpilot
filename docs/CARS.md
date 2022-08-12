@@ -122,7 +122,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Lexus|NX Hybrid 2018-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Lexus|NX Hybrid 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Lexus|RC 2017-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|RX 2016-18|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Lexus|RX 2016-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Lexus|RX 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Lexus|RX Hybrid 2016-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Lexus|RX Hybrid 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
