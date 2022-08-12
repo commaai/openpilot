@@ -46,7 +46,7 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  harness: Enum = Harness.subaru
+  harness: Enum = Harness.subaru_a
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
