@@ -4,21 +4,6 @@
 
 A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
-## How We Rate The Cars
-
-### No ACC accel below
-- [![star](assets/icon-star-full.svg)](##) - openpilot operates down to 0 mph.
-- [![star](assets/icon-star-empty.svg)](##) - openpilot operates only above a minimum speed. See your car's manual for the minimum speed.
-
-### No ALC below
-- [![star](assets/icon-star-full.svg)](##) - openpilot can control the steering wheel down to 0 mph.
-- [![star](assets/icon-star-empty.svg)](##) - No steering control below certain speeds. See your car's manual for the minimum speed.
-
-### Steering Torque
-- [![star](assets/icon-star-full.svg)](##) - Car has enough steering torque to comfortably take most highway turns.
-- [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
-
-
 # 199 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|

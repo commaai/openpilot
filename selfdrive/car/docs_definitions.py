@@ -2,7 +2,7 @@ import re
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union, no_type_check
+from typing import Dict, List, Optional, Tuple
 
 from cereal import car
 from common.conversions import Conversions as CV
@@ -33,9 +33,6 @@ class Star(Enum):
   EMPTY = "empty"
 
 
-InfoColumns = list(Column)[3:]
-# StarColumns = list(Column)[3:]
-TierColumns = (Column.FSR_LONGITUDINAL, Column.FSR_STEERING, Column.STEERING_TORQUE)
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
 
 
@@ -114,26 +111,7 @@ class CarInfo:
     if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
       self.row[Column.STEERING_TORQUE] = "Good"
 
-    # if CP.notCar:
-    #   for col in StarColumns:
-    #     self.row[col] = Star.FULL
-
     self.all_footnotes = all_footnotes
-    # for column in StarColumns:
-    #   # Demote if footnote specifies a star
-    #   for fn in get_footnotes(self.footnotes, column):
-    #     if fn.value.star is not None:
-    #       self.row[column] = fn.value.star
-
-    # # openpilot ACC star doesn't count for tiers
-    # full_stars = [s for col, s in self.row.items() if col in TierColumns].count(Star.FULL)
-    # if full_stars == len(TierColumns):
-    #   self.tier = Tier.GOLD
-    # elif full_stars == len(TierColumns) - 1:
-    #   self.tier = Tier.SILVER
-    # else:
-    #   self.tier = Tier.BRONZE
-
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
 
@@ -166,11 +144,8 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-  @no_type_check
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
-    item: Union[str, Star] = self.row[column]
-    # if column in StarColumns:
-    #   item = star_icon.format(item.value)
+  def get_column(self, column: Column, footnote_tag: str) -> str:
+    item: str = self.row[column]
     if column == Column.MODEL and len(self.years):
       item += f" {self.years}"
 
@@ -215,23 +190,3 @@ class Harness(Enum):
   nissan_b = "Nissan B"
   mazda = "Mazda"
   none = "None"
-
-
-STAR_DESCRIPTIONS = {
-  "Gas & Brakes": {  # icon and row name
-    Column.FSR_LONGITUDINAL.value: [
-      [Star.FULL.value, "openpilot operates down to 0 mph."],
-      [Star.EMPTY.value, "openpilot operates only above a minimum speed. See your car's manual for the minimum speed."],
-    ],
-  },
-  "Steering": {
-    Column.FSR_STEERING.value: [
-      [Star.FULL.value, "openpilot can control the steering wheel down to 0 mph."],
-      [Star.EMPTY.value, "No steering control below certain speeds. See your car's manual for the minimum speed."],
-    ],
-    Column.STEERING_TORQUE.value: [
-      [Star.FULL.value, "Car has enough steering torque to comfortably take most highway turns."],
-      [Star.EMPTY.value, "Limited ability to make tighter turns."],
-    ],
-  },
-}
