@@ -106,8 +106,9 @@ class Footnote(Enum):
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
     "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
-    "(older design) or light brown (newer design). For the newer design, in the interim, choose \"VW J533 Development\" " +
-    "from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.",
+    "(older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway " +
+    "inside the dashboard, choose \"VW J533 Development\" from the vehicle drop-down for a suitable harness. " +
+    "(Some newer models are also observed to not have a J533 connector.)",
     Column.MODEL)
   VW_VARIANT = CarFootnote(
     "Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.)",
@@ -177,7 +178,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
-  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
+  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21", footnotes=[Footnote.VW_HARNESS]),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-18"),
