@@ -5,7 +5,7 @@ import subprocess
 import time
 import numpy as np
 import unittest
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from cereal import car
@@ -70,32 +70,40 @@ def cputime_total(ct):
   return ct.cpuUser + ct.cpuSystem + ct.cpuChildrenUser + ct.cpuChildrenSystem
 
 
-def check_cpu_usage(first_proc, last_proc):
+def check_cpu_usage(proclogs):
   result = "\n"
   result += "------------------------------------------------\n"
   result += "------------------ CPU Usage -------------------\n"
   result += "------------------------------------------------\n"
 
+  plogs_by_proc = defaultdict(list)
+  for pl in proclogs:
+    for x in pl.procLog.procs:
+      if len(x.cmdline) > 0:
+        n = list(x.cmdline)[0]
+        plogs_by_proc[n].append(x)
+
+  print(plogs_by_proc.keys())
+
   r = True
-  dt = (last_proc.logMonoTime - first_proc.logMonoTime) / 1e9
-  for proc_name, normal_cpu_usage in PROCS.items():
+  dt = (proclogs[-1].logMonoTime - proclogs[0].logMonoTime) / 1e9
+  for proc_name, expected_cpu in PROCS.items():
     err = ""
-    first, last = None, None
-    try:
-      first = [p for p in first_proc.procLog.procs if proc_name in p.cmdline][0]
-      last = [p for p in last_proc.procLog.procs if proc_name in p.cmdline][0]
-      cpu_time = cputime_total(last) - cputime_total(first)
+    cpu_usage = 0.
+    x = plogs_by_proc[proc_name]
+    if len(x) > 2:
+      cpu_time = cputime_total(x[-1]) - cputime_total(x[0])
       cpu_usage = cpu_time / dt * 100.
-      if cpu_usage > max(normal_cpu_usage * 1.15, normal_cpu_usage + 5.0):
+      if cpu_usage > max(expected_cpu * 1.15, expected_cpu + 5.0):
         # cpu usage is high while playing sounds
         if not (proc_name == "./_soundd" and cpu_usage < 65.):
           err = "using more CPU than normal"
-      elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
+      elif cpu_usage < min(expected_cpu * 0.65, max(expected_cpu - 1.0, 0.0)):
         err = "using less CPU than normal"
-    except IndexError:
-      err = f"NO METRICS FOUND {first=} {last=}\n"
+    else:
+      err = "NO METRICS FOUND"
 
-    result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({normal_cpu_usage:5.2f}%) {err}\n"
+    result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({expected_cpu:5.2f}%) {err}\n"
     if len(err) > 0:
       r = False
 
@@ -111,6 +119,7 @@ class TestOnroad(unittest.TestCase):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
+      print(segs[-1])
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog")))
       return
 
@@ -180,7 +189,7 @@ class TestOnroad(unittest.TestCase):
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
-    cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
+    cpu_ok = check_cpu_usage(proclogs)
     self.assertTrue(cpu_ok)
 
   def test_camera_processing_time(self):

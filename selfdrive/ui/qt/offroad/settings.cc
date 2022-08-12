@@ -42,12 +42,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_warning.png",
     },
     {
-      "IsRHD",
-      tr("Enable Right-Hand Drive"),
-      tr("Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat."),
-      "../assets/offroad/icon_openpilot_mirrored.png",
-    },
-    {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
@@ -256,9 +250,10 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
   connect(uiState(), &UIState::offroadTransition, updateBtn, &QPushButton::setEnabled);
 
-  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"));
+  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"), tr("The new branch will be pulled the next time the updater runs."));
   connect(branchSwitcherBtn, &ButtonControl::clicked, [=]() {
-    QString branch = InputDialog::getText(tr("Enter name of new branch"), this);
+    QString branch = InputDialog::getText(tr("Enter branch name"), this, tr("The new branch will be pulled the next time the updater runs."),
+                                          false, -1, QString::fromStdString(params.get("SwitchToBranch")));
     if (branch.isEmpty()) {
       params.remove("SwitchToBranch");
     } else {

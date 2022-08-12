@@ -284,7 +284,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   MatrixXdr ecef_pos_R = Vector3d::Constant(std::pow(10.0 * log.getAccuracy(),2) + std::pow(10.0 * log.getVerticalAccuracy(),2)).asDiagonal();
   MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(log.getSpeedAccuracy() * 10.0, 2)).asDiagonal();
 
-  this->unix_timestamp_millis = log.getTimestamp();
+  this->unix_timestamp_millis = log.getUnixTimestampMillis();
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
@@ -443,6 +443,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   this->time_check(t);
   if (log.isSensorEvents()) {
     this->handle_sensors(t, log.getSensorEvents());
+  } else if (log.isGpsLocation()) {
+    this->handle_gps(t, log.getGpsLocation());
   } else if (log.isGpsLocationExternal()) {
     this->handle_gps(t, log.getGpsLocationExternal());
   } else if (log.isCarState()) {
@@ -490,11 +492,17 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
-  const std::initializer_list<const char *> service_list = {"gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  const char* gps_location_socket;
+  if (util::file_exists("/persist/comma/use-quectel-rawgps")) {
+    gps_location_socket = "gpsLocation";
+  } else {
+    gps_location_socket = "gpsLocationExternal";
+  }
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"gpsLocationExternal", "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;

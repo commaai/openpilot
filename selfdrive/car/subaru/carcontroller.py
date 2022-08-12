@@ -1,18 +1,20 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, PREGLOBAL_CARS, CarControllerParams
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams
 
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.apply_steer_last = 0
-    self.es_distance_cnt = -1
-    self.es_lkas_cnt = -1
-    self.cruise_button_prev = 0
-    self.steer_rate_limited = False
     self.frame = 0
+
+    self.es_lkas_cnt = -1
+    self.es_distance_cnt = -1
+    self.es_dashstatus_cnt = -1
+    self.cruise_button_prev = 0
+    self.last_cancel_frame = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -33,15 +35,14 @@ class CarController:
 
       new_steer = int(round(apply_steer))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
-      self.steer_rate_limited = new_steer != apply_steer
 
       if not CC.latActive:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, self.frame, self.p.STEER_STEP))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, self.frame, self.p.STEER_STEP))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer))
 
       self.apply_steer_last = apply_steer
 
@@ -49,7 +50,7 @@ class CarController:
     # *** alerts and pcm cancel ***
 
     if self.CP.carFingerprint in PREGLOBAL_CARS:
-      if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
+      if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
         if pcm_cancel_cmd:
@@ -66,16 +67,23 @@ class CarController:
         self.cruise_button_prev = cruise_button
 
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
-        self.es_distance_cnt = CS.es_distance_msg["Counter"]
+        self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
     else:
-      if self.es_distance_cnt != CS.es_distance_msg["Counter"]:
-        can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
-        self.es_distance_cnt = CS.es_distance_msg["Counter"]
+      if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
+        bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
+        can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
+        self.last_cancel_frame = self.frame
 
-      if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
-        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert, hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
-        self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
+      if self.es_dashstatus_cnt != CS.es_dashstatus_msg["COUNTER"]:
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
+        self.es_dashstatus_cnt = CS.es_dashstatus_msg["COUNTER"]
+
+      if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
+        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
+                                                  hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                  hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+        self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
