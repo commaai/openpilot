@@ -72,9 +72,14 @@ class TestTranslations(unittest.TestCase):
 
         for context in tr_xml.getroot():
           for message in context.iterfind("message"):
-            if message.attrib.get('numerus', False):
+            if message.get("numerus") == "yes":
               translation = message.find("translation")
               numerusform = translation.findall("numerusform")
+
+              # Do not assert finished translations
+              if translation.get("type") == "unfinished":
+                continue
+
               self.assertNotIn(None, [x.text for x in numerusform], "Ensure all plural translation forms are completed.")
 
 
