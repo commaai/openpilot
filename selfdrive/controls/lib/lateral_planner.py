@@ -16,6 +16,7 @@ class LateralPlanner:
     self.LP = LanePlanner(wide_camera)
     self.DH = DesireHelper()
 
+    # Vehicle model parameters used to calculate lateral movement of car
     self.factor1 = CP.wheelbase - CP.centerToFront
     self.factor2 = (CP.centerToFront * CP.mass) / (CP.wheelbase * CP.tireStiffnessRear)
     self.last_cloudlog_t = 0
