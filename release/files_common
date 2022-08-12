@@ -434,6 +434,19 @@ rednose/.gitignore
 rednose/**
 laika/**
 
+body/.gitignore
+body/board/SConscript
+body/board/*.h
+body/board/*.c
+body/board/*.s
+body/board/*.ld
+body/board/inc/**
+body/board/obj/
+body/board/bldc/**
+body/board/drivers/**
+body/certs/**
+body/crypto/**
+
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
