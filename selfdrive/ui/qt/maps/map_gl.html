@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>异步加载地图</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <style>
+    body,
+    html,
+    #container {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        font-family: "微软雅黑";
+    }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+</body>
+</html>
+<script>
+function loadJScript() {
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'http://api.map.baidu.com/api?type=webgl&v=1.0&ak=F03SBpMLu8KnlpF83T6vDu9YHk8LNVxB&callback=init';
+    document.body.appendChild(script);
+}
+function init() {
+    var map = new BMapGL.Map('container'); // 创建Map实例
+    var point = new BMapGL.Point(116.404, 39.915); // 创建点坐标
+    map.centerAndZoom(point, 20);
+    // map.enableScrollWheelZoom(); // 启用滚轮放大缩小
+    var myIcon=new BMapGL.Icon("/home/zhaojb1/adas/openpilot_git/openpilot/selfdrive/assets/images/car.png",new BMapGL.Size(30,30));
+    var marker = new BMapGL.Marker(point,{icon:myIcon});
+    map.addOverlay(marker); 
+    var opts ={
+        width:100,
+        height:80,
+        title:"car position"
+    };
+
+    var markerInfo= new BMapGL.InfoWindow("posion: bei jin ",opts);
+    marker.addEventListener("click",function(){
+        map.openInfoWindow(markerInfo,point);
+    })
+}
+
+
+window.onload = loadJScript; // 异步加载地图
+
+
+</script>

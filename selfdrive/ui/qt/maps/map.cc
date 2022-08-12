@@ -58,6 +58,12 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
 
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
+
+  QWebEngineView *webView = new QWebEngineView(this);
+  webView->resize(800, 1150);
+  webView->load(QUrl("file:///home/zhaojb1/adas/openpilot_git/openpilot/selfdrive/ui/qt/maps/map_gl.html"));
+
+  webView->show();
 }
 
 MapWindow::~MapWindow() {
