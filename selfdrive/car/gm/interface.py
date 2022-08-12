@@ -60,6 +60,7 @@ class CarInterface(CarInterfaceBase):
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
@@ -158,9 +159,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    if ret.networkLocation == NetworkLocation.fwdCamera:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
