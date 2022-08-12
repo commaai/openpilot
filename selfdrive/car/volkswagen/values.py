@@ -15,44 +15,43 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
-  HCA_STEP = 2                   # HCA_01/HCA_1 message frequency 50Hz
-  GRA_ACC_STEP = 3               # GRA_ACC_01/GRA_Neu message frequency 33Hz
+  HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
+  GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
 
-  # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
-  # MQB vs PQ maximums are shared, but rate-of-change limited differently
-  # in subclasses based on lateral accel testing and safety requirements.
-  STEER_MAX = 300                # Max heading control assist torque 3.00 Nm
-  STEER_DRIVER_ALLOWANCE = 80
-  STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
-  STEER_DRIVER_FACTOR = 1        # from dbc
+  def __init__(self, CP):
+    # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
+    # MQB vs PQ maximums are shared, but rate-of-change limited differently
+    # based on safety requirements driven by lateral accel testing.
+    self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
+    self.STEER_DRIVER_ALLOWANCE = 80      # Driver intervention threshold 0.8 Nm
+    self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
+    self.STEER_DRIVER_FACTOR = 1          # from dbc
+  
+    if True:  # pylint: disable=using-constant-test
+      self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+      self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
+      self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
 
+      self.BUTTONS = [
+        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+      ]
 
-class MQBCarControllerParams(CarControllerParams):
-  LDW_STEP = 10                  # LDW_02 message frequency 10Hz
-
-  STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
-  STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
-
-  BUTTONS = [
-    Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
-    Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
-    Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
-    Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
-    Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
-    Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
-  ]
-
-  LDW_MESSAGES = {
-    "none": 0,                            # Nothing to display
-    "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
-    "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
-    "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
-    "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
-    "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
-    "laneAssistTakeOver": 8,              # "Lane Assist: Please Take Over Steering" silent
-    "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
-    "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
-  }
+      self.LDW_MESSAGES = {
+        "none": 0,                            # Nothing to display
+        "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
+        "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
+        "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
+        "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
+        "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
+        "laneAssistTakeOver": 8,              # "Lane Assist: Please Take Over Steering" silent
+        "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
+        "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
+      }
 
 
 class CANBUS:

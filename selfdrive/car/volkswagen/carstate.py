@@ -4,16 +4,16 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
-                                            MQBCarControllerParams
+from selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, CarControllerParams
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
+    self.CCP = CarControllerParams(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     if True:  # pylint: disable=using-constant-test
-      self.CCP = MQBCarControllerParams
       if CP.transmissionType == TransmissionType.automatic:
         self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
       elif CP.transmissionType == TransmissionType.direct:

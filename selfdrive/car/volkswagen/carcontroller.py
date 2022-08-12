@@ -2,7 +2,7 @@ from cereal import car
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import mqbcan
-from selfdrive.car.volkswagen.values import CANBUS, MQBCarControllerParams
+from selfdrive.car.volkswagen.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -10,12 +10,12 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.CCP = CarControllerParams(CP)
+    self.CCS = mqbcan
+    self.packer_pt = CANPacker(dbc_name)
+
     self.apply_steer_last = 0
     self.frame = 0
-
-    self.packer_pt = CANPacker(dbc_name)
-    self.CCP, self.CCS = MQBCarControllerParams, mqbcan
-
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
 
