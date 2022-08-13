@@ -6,207 +6,207 @@ A supported vehicle is one that just works when you install a comma device. Ever
 
 # 199 Supported Cars
 
-|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Max steering torque|
-|---|---|---|:---:|:---:|:---:|:---:|
-|Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|0.5 m/s/s|
-|Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|0.5 m/s/s|
-|Acura|RDX 2019-22|All|Stock|0 mph|3 mph|0.3 m/s/s|
-|Audi|A3 2014-19|ACC + Lane Assist|Stock|0 mph|0 mph|1.7 m/s/s|
-|Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|Stock|0 mph|0 mph|1.7 m/s/s|
-|Audi|Q2 2018|ACC + Lane Assist|Stock|0 mph|0 mph|1.0 m/s/s|
-|Audi|Q3 2020-21|ACC + Lane Assist|Stock|0 mph|0 mph|1.2 m/s/s|
-|Audi|RS3 2018|ACC + Lane Assist|Stock|0 mph|0 mph|1.7 m/s/s|
-|Audi|S3 2015-17|ACC + Lane Assist|Stock|0 mph|0 mph|1.7 m/s/s|
-|Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|1.8 m/s/s|
-|Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|1.8 m/s/s|
-|Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.3 m/s/s|
-|Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|1.5 m/s/s|
-|Chrysler|Pacifica 2021|All|Stock|0 mph|39 mph|1.5 m/s/s|
-|Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.1 m/s/s|
-|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control|Stock|0 mph|39 mph|1.2 m/s/s|
-|comma|body|All|Stock|0 mph|0 mph|inf m/s/s|
-|Genesis|G70 2018-19|All|Stock|0 mph|0 mph|2.4 m/s/s|
-|Genesis|G70 2020|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Genesis|G80 2017-19|All|Stock|0 mph|0 mph|2.4 m/s/s|
-|Genesis|G90 2017-18|All|Stock|0 mph|0 mph|2.4 m/s/s|
-|GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|1.2 m/s/s|
-|Honda|Accord 2018-22|All|Stock|0 mph|3 mph|0.3 m/s/s|
-|Honda|Accord Hybrid 2018-22|All|Stock|0 mph|3 mph|0.3 m/s/s|
-|Honda|Civic 2016-18|Honda Sensing|openpilot|0 mph|12 mph|0.4 m/s/s|
-|Honda|Civic 2019-21|All|Stock|0 mph|2 mph[<sup>2</sup>](#footnotes)|0.4 m/s/s|
-|Honda|Civic 2022|All|Stock|0 mph|0 mph|1.2 m/s/s|
-|Honda|Civic Hatchback 2017-21|Honda Sensing|Stock|0 mph|12 mph|0.4 m/s/s|
-|Honda|Civic Hatchback 2022|All|Stock|0 mph|0 mph|1.2 m/s/s|
-|Honda|CR-V 2015-16|Touring Trim|openpilot|25 mph|12 mph|0.6 m/s/s|
-|Honda|CR-V 2017-22|Honda Sensing|Stock|0 mph|12 mph|0.3 m/s/s|
-|Honda|CR-V Hybrid 2017-19|Honda Sensing|Stock|0 mph|12 mph|0.7 m/s/s|
-|Honda|e 2020|All|Stock|0 mph|3 mph|0.4 m/s/s|
-|Honda|Fit 2018-20|Honda Sensing|openpilot|25 mph|12 mph|0.6 m/s/s|
-|Honda|Freed 2020|Honda Sensing|openpilot|25 mph|12 mph|0.8 m/s/s|
-|Honda|HR-V 2019-22|Honda Sensing|openpilot|25 mph|12 mph|0.8 m/s/s|
-|Honda|Insight 2019-22|All|Stock|0 mph|3 mph|0.6 m/s/s|
-|Honda|Inspire 2018|All|Stock|0 mph|3 mph|0.3 m/s/s|
-|Honda|Odyssey 2018-20|Honda Sensing|openpilot|25 mph|0 mph|0.8 m/s/s|
-|Honda|Passport 2019-21|All|openpilot|25 mph|12 mph|0.8 m/s/s|
-|Honda|Pilot 2016-22|Honda Sensing|openpilot|25 mph|12 mph|0.9 m/s/s|
-|Honda|Ridgeline 2017-22|Honda Sensing|openpilot|25 mph|12 mph|0.7 m/s/s|
-|Hyundai|Elantra 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|32 mph|1.3 m/s/s|
-|Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.1 m/s/s|
-|Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.1 m/s/s|
-|Hyundai|Genesis 2015-16|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|37 mph|1.6 m/s/s|
-|Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.6 m/s/s|
-|Hyundai|Ioniq Electric 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.6 m/s/s|
-|Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.6 m/s/s|
-|Hyundai|Ioniq Hybrid 2020-22|Smart Cruise Control (SCC) & LFA|Stock|0 mph|0 mph|1.6 m/s/s|
-|Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.6 m/s/s|
-|Hyundai|Ioniq Plug-in Hybrid 2020-21|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.1 m/s/s|
-|Hyundai|Kona 2020|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|3.3 m/s/s|
-|Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|3.3 m/s/s|
-|Hyundai|Kona Electric 2022|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|3.3 m/s/s|
-|Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|3.3 m/s/s|
-|Hyundai|Palisade 2020-22|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Hyundai|Santa Fe 2019-20|All|openpilot|0 mph|0 mph|2.6 m/s/s|
-|Hyundai|Santa Fe 2021-22|All|Stock|0 mph|0 mph|2.7 m/s/s|
-|Hyundai|Santa Fe Hybrid 2022|All|Stock|0 mph|0 mph|2.7 m/s/s|
-|Hyundai|Santa Fe Plug-in Hybrid 2022|All|Stock|0 mph|0 mph|1.6 m/s/s|
-|Hyundai|Sonata 2018-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.3 m/s/s|
-|Hyundai|Sonata 2020-22|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Hyundai|Sonata Hybrid 2020-22|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Hyundai|Tucson 2021|Smart Cruise Control (SCC)|Stock|19 mph|0 mph|2.6 m/s/s|
-|Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.6 m/s/s|
-|Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|Stock|5 mph|0 mph|1.3 m/s/s|
-|Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.4 m/s/s|
-|Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|Stock|0 mph|39 mph|1.3 m/s/s|
-|Kia|Ceed 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.1 m/s/s|
-|Kia|EV6 2022|All|Stock|0 mph|0 mph|2.5 m/s/s|
-|Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.1 m/s/s|
-|Kia|Forte 2019-21|All|Stock|0 mph|0 mph|2.1 m/s/s|
-|Kia|K5 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|1.5 m/s/s|
-|Kia|Niro Electric 2019|All|openpilot|0 mph|0 mph|2.2 m/s/s|
-|Kia|Niro Electric 2020|All|openpilot|0 mph|0 mph|2.2 m/s/s|
-|Kia|Niro Electric 2021|All|openpilot|0 mph|0 mph|2.2 m/s/s|
-|Kia|Niro Electric 2022|All|openpilot|0 mph|0 mph|2.2 m/s/s|
-|Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.2 m/s/s|
-|Kia|Niro Hybrid 2022|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.2 m/s/s|
-|Kia|Niro Plug-in Hybrid 2018-19|Smart Cruise Control (SCC) & LKAS|openpilot|10 mph|32 mph|2.2 m/s/s|
-|Kia|Optima 2017|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|2.1 m/s/s|
-|Kia|Optima 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.1 m/s/s|
-|Kia|Seltos 2021|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.1 m/s/s|
-|Kia|Sorento 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s/s|
-|Kia|Sorento 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s/s|
-|Kia|Stinger 2018-20|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.8 m/s/s|
-|Kia|Telluride 2020|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Lexus|CT Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.1 m/s/s|
-|Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Lexus|ES Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.8 m/s/s|
-|Lexus|ES Hybrid 2019-22|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Lexus|IS 2017-19|All|Stock|19 mph|0 mph|2.1 m/s/s|
-|Lexus|NX 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.1 m/s/s|
-|Lexus|NX 2020-21|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Lexus|NX Hybrid 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.8 m/s/s|
-|Lexus|NX Hybrid 2020-21|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Lexus|RC 2017-20|All|Stock|19 mph|0 mph|2.1 m/s/s|
-|Lexus|RX 2016-18|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.0 m/s/s|
-|Lexus|RX 2020-22|All|openpilot|0 mph|0 mph|1.4 m/s/s|
-|Lexus|RX Hybrid 2016-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.3 m/s/s|
-|Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|1.3 m/s/s|
-|Lexus|UX Hybrid 2019-22|All|openpilot|0 mph|0 mph|1.8 m/s/s|
-|Mazda|CX-5 2022|All|Stock|0 mph|0 mph|1.1 m/s/s|
-|Mazda|CX-9 2021-22|All|Stock|0 mph|28 mph|1.1 m/s/s|
-|Nissan|Altima 2019-20|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s/s|
-|Nissan|Leaf 2018-22|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s/s|
-|Nissan|Rogue 2018-20|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s/s|
-|Nissan|X-Trail 2017|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s/s|
-|Ram|1500 2019-22|Adaptive Cruise Control|Stock|0 mph|32 mph|2.0 m/s/s|
-|SEAT|Ateca 2018|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|SEAT|Leon 2014-20|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|2.3 m/s/s|
-|Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|0.8 m/s/s|
-|Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|2.1 m/s/s|
-|Subaru|Forester 2019-21|All|Stock|0 mph|0 mph|2.3 m/s/s|
-|Subaru|Impreza 2017-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|0.8 m/s/s|
-|Subaru|Impreza 2020-22|EyeSight Driver Assistance|Stock|0 mph|0 mph|2.1 m/s/s|
-|Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|2.3 m/s/s|
-|Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|0.8 m/s/s|
-|Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|2.1 m/s/s|
-|Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Škoda|Karoq 2019-21[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Škoda|Kodiaq 2018-19|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Škoda|Octavia 2015, 2018-19|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Škoda|Octavia RS 2016|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Škoda|Scala 2020|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Škoda|Superb 2015-18|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|1.3 m/s/s|
-|Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|1.3 m/s/s|
-|Toyota|Avalon 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.7 m/s/s|
-|Toyota|Avalon 2017-18|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.7 m/s/s|
-|Toyota|Avalon 2019-21|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.2 m/s/s|
-|Toyota|Avalon 2022|All|openpilot|0 mph|0 mph|2.8 m/s/s|
-|Toyota|Avalon Hybrid 2019-21|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.2 m/s/s|
-|Toyota|Avalon Hybrid 2022|All|openpilot|0 mph|0 mph|2.8 m/s/s|
-|Toyota|C-HR 2017-21|All|Stock|0 mph|0 mph|1.3 m/s/s|
-|Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|1.3 m/s/s|
-|Toyota|Camry 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|1.7 m/s/s|
-|Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>4</sup>](#footnotes)|0 mph|2.3 m/s/s|
-|Toyota|Camry Hybrid 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|1.8 m/s/s|
-|Toyota|Camry Hybrid 2021-22|All|openpilot|0 mph|0 mph|2.4 m/s/s|
-|Toyota|Corolla 2017-19|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.8 m/s/s|
-|Toyota|Corolla 2020-22|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Toyota|Corolla Cross (Non-US only) 2020-21|All|openpilot|17 mph|0 mph|1.9 m/s/s|
-|Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|openpilot|17 mph|0 mph|1.8 m/s/s|
-|Toyota|Corolla Hatchback 2019-22|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Toyota|Corolla Hybrid 2020-22|All|openpilot|0 mph|0 mph|1.8 m/s/s|
-|Toyota|Highlander 2017-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.6 m/s/s|
-|Toyota|Highlander 2020-22|All|openpilot|0 mph|0 mph|1.6 m/s/s|
-|Toyota|Highlander Hybrid 2017-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.6 m/s/s|
-|Toyota|Highlander Hybrid 2020-22|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Toyota|Mirai 2021|All|openpilot|0 mph|0 mph|1.7 m/s/s|
-|Toyota|Prius 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s/s|
-|Toyota|Prius 2017-20|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s/s|
-|Toyota|Prius 2021-22|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Toyota|Prius Prime 2017-20|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s/s|
-|Toyota|Prius Prime 2021-22|All|openpilot|0 mph|0 mph|1.9 m/s/s|
-|Toyota|Prius v 2017|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.5 m/s/s|
-|Toyota|RAV4 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|2.2 m/s/s|
-|Toyota|RAV4 2017-18|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|2.2 m/s/s|
-|Toyota|RAV4 2019-21|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Toyota|RAV4 2022|All|Stock|0 mph|0 mph|1.9 m/s/s|
-|Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.8 m/s/s|
-|Toyota|RAV4 Hybrid 2017-18|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.8 m/s/s|
-|Toyota|RAV4 Hybrid 2019-21|All|openpilot|0 mph|0 mph|2.1 m/s/s|
-|Toyota|RAV4 Hybrid 2022|All|Stock|0 mph|0 mph|1.9 m/s/s|
-|Toyota|Sienna 2018-20|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.3 m/s/s|
-|Volkswagen|Arteon 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.4 m/s/s|
-|Volkswagen|Arteon eHybrid 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.4 m/s/s|
-|Volkswagen|Arteon R 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.4 m/s/s|
-|Volkswagen|Atlas 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Atlas Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|California 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|1.0 m/s/s|
-|Volkswagen|Caravelle 2020[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|1.0 m/s/s|
-|Volkswagen|CC 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.4 m/s/s|
-|Volkswagen|e-Golf 2014-20|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf 2015-20[<sup>8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf Alltrack 2015-19|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf GTD 2015-20|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf GTE 2015-20|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf GTI 2015-21|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf R 2015-19[<sup>8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Golf SportsVan 2015-20|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Jetta 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Volkswagen|Jetta GLI 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.2 m/s/s|
-|Volkswagen|Passat 2015-22[<sup>6,7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Passat Alltrack 2015-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Passat GTE 2015-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Polo 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|Polo GTI 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.6 m/s/s|
-|Volkswagen|T-Cross 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s/s|
-|Volkswagen|T-Roc 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s/s|
-|Volkswagen|Taos 2022[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s/s|
-|Volkswagen|Teramont 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Teramont Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Teramont X 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.7 m/s/s|
-|Volkswagen|Tiguan 2019-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s/s|
-|Volkswagen|Touran 2017|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s/s|
+|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Max steering torque|Harness|
+|---|---|---|:---:|:---:|:---:|:---:|:---:|
+|Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|0.5 m/s<sup>2</sup>|Honda Nidec|
+|Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Nidec|
+|Acura|RDX 2019-22|All|Stock|0 mph|3 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Audi|A3 2014-19|ACC + Lane Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Audi|Q2 2018|ACC + Lane Assist|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Audi|Q3 2020-21|ACC + Lane Assist|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Audi|RS3 2018|ACC + Lane Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Audi|S3 2015-17|ACC + Lane Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|2.0 m/s<sup>2</sup>|OBD-II|
+|Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|2.0 m/s<sup>2</sup>|OBD-II|
+|Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.5 m/s<sup>2</sup>|FCA|
+|Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|1.5 m/s<sup>2</sup>|FCA|
+|Chrysler|Pacifica 2021|All|Stock|0 mph|39 mph|1.5 m/s<sup>2</sup>|FCA|
+|Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.0 m/s<sup>2</sup>|FCA|
+|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control|Stock|0 mph|39 mph|1.0 m/s<sup>2</sup>|FCA|
+|comma|body|All|Stock|0 mph|0 mph|inf m/s<sup>2</sup>|None|
+|Genesis|G70 2018-19|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai F|
+|Genesis|G70 2020|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai F|
+|Genesis|G80 2017-19|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai H|
+|Genesis|G90 2017-18|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai C|
+|GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|1.0 m/s<sup>2</sup>|OBD-II|
+|Honda|Accord 2018-22|All|Stock|0 mph|3 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Accord Hybrid 2018-22|All|Stock|0 mph|3 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Civic 2016-18|Honda Sensing|openpilot|0 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Nidec|
+|Honda|Civic 2019-21|All|Stock|0 mph|2 mph[<sup>2</sup>](#footnotes)|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Civic 2022|All|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|Honda Bosch B|
+|Honda|Civic Hatchback 2017-21|Honda Sensing|Stock|0 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Civic Hatchback 2022|All|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|Honda Bosch B|
+|Honda|CR-V 2015-16|Touring Trim|openpilot|25 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Nidec|
+|Honda|CR-V 2017-22|Honda Sensing|Stock|0 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|CR-V Hybrid 2017-19|Honda Sensing|Stock|0 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|e 2020|All|Stock|0 mph|3 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Fit 2018-20|Honda Sensing|openpilot|25 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Nidec|
+|Honda|Freed 2020|Honda Sensing|openpilot|25 mph|12 mph|1.0 m/s<sup>2</sup>|Honda Nidec|
+|Honda|HR-V 2019-22|Honda Sensing|openpilot|25 mph|12 mph|1.0 m/s<sup>2</sup>|Honda Nidec|
+|Honda|Insight 2019-22|All|Stock|0 mph|3 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Inspire 2018|All|Stock|0 mph|3 mph|0.5 m/s<sup>2</sup>|Honda Bosch A|
+|Honda|Odyssey 2018-20|Honda Sensing|openpilot|25 mph|0 mph|1.0 m/s<sup>2</sup>|Honda Nidec|
+|Honda|Passport 2019-21|All|openpilot|25 mph|12 mph|1.0 m/s<sup>2</sup>|Honda Nidec|
+|Honda|Pilot 2016-22|Honda Sensing|openpilot|25 mph|12 mph|1.0 m/s<sup>2</sup>|Honda Nidec|
+|Honda|Ridgeline 2017-22|Honda Sensing|openpilot|25 mph|12 mph|0.5 m/s<sup>2</sup>|Honda Nidec|
+|Hyundai|Elantra 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|32 mph|1.5 m/s<sup>2</sup>|Hyundai B|
+|Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai K|
+|Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai K|
+|Hyundai|Genesis 2015-16|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|37 mph|1.5 m/s<sup>2</sup>|Hyundai J|
+|Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.5 m/s<sup>2</sup>|Hyundai C|
+|Hyundai|Ioniq Electric 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai H|
+|Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.5 m/s<sup>2</sup>|Hyundai C|
+|Hyundai|Ioniq Hybrid 2020-22|Smart Cruise Control (SCC) & LFA|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai H|
+|Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.5 m/s<sup>2</sup>|Hyundai C|
+|Hyundai|Ioniq Plug-in Hybrid 2020-21|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai H|
+|Hyundai|Kona 2020|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|3.5 m/s<sup>2</sup>|Hyundai B|
+|Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|3.5 m/s<sup>2</sup>|Hyundai G|
+|Hyundai|Kona Electric 2022|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|3.5 m/s<sup>2</sup>|Hyundai O|
+|Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|3.5 m/s<sup>2</sup>|Hyundai I|
+|Hyundai|Palisade 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai H|
+|Hyundai|Santa Fe 2019-20|All|openpilot|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai D|
+|Hyundai|Santa Fe 2021-22|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai L|
+|Hyundai|Santa Fe Hybrid 2022|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai L|
+|Hyundai|Santa Fe Plug-in Hybrid 2022|All|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai L|
+|Hyundai|Sonata 2018-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai E|
+|Hyundai|Sonata 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai A|
+|Hyundai|Sonata Hybrid 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai A|
+|Hyundai|Tucson 2021|Smart Cruise Control (SCC)|Stock|19 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai L|
+|Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai L|
+|Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|Stock|5 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai E|
+|Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.5 m/s<sup>2</sup>|FCA|
+|Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|Stock|0 mph|39 mph|1.5 m/s<sup>2</sup>|FCA|
+|Kia|Ceed 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai E|
+|Kia|EV6 2022|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai P|
+|Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai B|
+|Kia|Forte 2019-21|All|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai G|
+|Kia|K5 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai A|
+|Kia|Niro Electric 2019|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai H|
+|Kia|Niro Electric 2020|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai F|
+|Kia|Niro Electric 2021|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai C|
+|Kia|Niro Electric 2022|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai H|
+|Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai F|
+|Kia|Niro Hybrid 2022|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai H|
+|Kia|Niro Plug-in Hybrid 2018-19|Smart Cruise Control (SCC) & LKAS|openpilot|10 mph|32 mph|2.0 m/s<sup>2</sup>|Hyundai C|
+|Kia|Optima 2017|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|2.0 m/s<sup>2</sup>|Hyundai B|
+|Kia|Optima 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai G|
+|Kia|Seltos 2021|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai A|
+|Kia|Sorento 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai C|
+|Kia|Sorento 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai E|
+|Kia|Stinger 2018-20|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai C|
+|Kia|Telluride 2020|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai H|
+|Lexus|CT Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|ES Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|ES Hybrid 2019-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|IS 2017-19|All|Stock|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|NX 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|NX 2020-21|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|NX Hybrid 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|NX Hybrid 2020-21|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|RC 2017-20|All|Stock|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Lexus|RX 2016-18|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.0 m/s<sup>2</sup>|Toyota|
+|Lexus|RX 2020-22|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Lexus|RX Hybrid 2016-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Lexus|UX Hybrid 2019-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Mazda|CX-5 2022|All|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|Mazda|
+|Mazda|CX-9 2021-22|All|Stock|0 mph|28 mph|1.0 m/s<sup>2</sup>|Mazda|
+|Nissan|Altima 2019-20|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Nissan B|
+|Nissan|Leaf 2018-22|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Nissan A|
+|Nissan|Rogue 2018-20|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Nissan A|
+|Nissan|X-Trail 2017|ProPILOT Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Nissan A|
+|Ram|1500 2019-22|Adaptive Cruise Control|Stock|0 mph|32 mph|2.0 m/s<sup>2</sup>|Ram|
+|SEAT|Ateca 2018|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|SEAT|Leon 2014-20|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Subaru A|
+|Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|Subaru A|
+|Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Subaru A|
+|Subaru|Forester 2019-21|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Subaru A|
+|Subaru|Impreza 2017-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|Subaru A|
+|Subaru|Impreza 2020-22|EyeSight Driver Assistance|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Subaru A|
+|Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Subaru B|
+|Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|Subaru A|
+|Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Subaru A|
+|Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Škoda|Karoq 2019-21[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Škoda|Kodiaq 2018-19|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Škoda|Octavia 2015, 2018-19|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Škoda|Octavia RS 2016|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Škoda|Scala 2020|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Škoda|Superb 2015-18|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
+|Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Avalon 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Avalon 2017-18|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Avalon 2019-21|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Avalon 2022|All|openpilot|0 mph|0 mph|3.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Avalon Hybrid 2019-21|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Avalon Hybrid 2022|All|openpilot|0 mph|0 mph|3.0 m/s<sup>2</sup>|Toyota|
+|Toyota|C-HR 2017-21|All|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Camry 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>4</sup>](#footnotes)|0 mph|2.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Camry Hybrid 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Camry Hybrid 2021-22|All|openpilot|0 mph|0 mph|2.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Corolla 2017-19|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Corolla 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Corolla Cross (Non-US only) 2020-21|All|openpilot|17 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|openpilot|17 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Corolla Hatchback 2019-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Corolla Hybrid 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Highlander 2017-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Highlander 2020-22|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Highlander Hybrid 2017-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Highlander Hybrid 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Mirai 2021|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Prius 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Prius 2017-20|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Prius 2021-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Prius Prime 2017-20|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|Prius Prime 2021-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Prius v 2017|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 2017-18|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 2019-21|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 2022|All|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 Hybrid 2017-18|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 Hybrid 2019-21|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|RAV4 Hybrid 2022|All|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Sienna 2018-20|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
+|Volkswagen|Arteon 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Arteon eHybrid 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Arteon R 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Atlas 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Atlas Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|California 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|Caravelle 2020[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|CC 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|e-Golf 2014-20|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf 2015-20[<sup>8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf Alltrack 2015-19|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf GTD 2015-20|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf GTE 2015-20|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf GTI 2015-21|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf R 2015-19[<sup>8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Golf SportsVan 2015-20|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
+|Volkswagen|Jetta 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|Jetta GLI 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|Passat 2015-22[<sup>6,7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Passat Alltrack 2015-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Passat GTE 2015-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Polo 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Polo GTI 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|T-Cross 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|T-Roc 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|Taos 2022[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|Teramont 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Teramont Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Teramont X 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|J533|
+|Volkswagen|Tiguan 2019-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|J533|
+|Volkswagen|Touran 2017|Driver Assistance|Stock|0 mph|0 mph|1.0 m/s<sup>2</sup>|VW|
 
 <a id="footnotes"></a>
 <sup>1</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />

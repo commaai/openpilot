@@ -9,7 +9,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 # {{all_car_info | length}} Supported Cars
 
 |{{Column | map(attribute='value') | join('|')}}|
-|---|---|---|:---:|:---:|:---:|:---:|
+|---|---|---|:---:|:---:|:---:|:---:|:---:|
 {% for car_info in all_car_info %}
 |{% for column in Column %}{{car_info.get_column(column, footnote_tag)}}|{% endfor %}
 

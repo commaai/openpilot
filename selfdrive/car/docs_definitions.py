@@ -19,6 +19,7 @@ class Column(Enum):
   FSR_LONGITUDINAL = "No ACC accel below"
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Max steering torque"
+  HARNESS = "Harness"
 
 
 # TODO: used in test_docs
@@ -90,6 +91,10 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+    if CP.maxLateralAccel < float('inf'):
+      rounded_accel = max(round(CP.maxLateralAccel * 2) / 2, 0.5)
+    else:
+      rounded_accel = CP.maxLateralAccel
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -97,7 +102,8 @@ class CarInfo:
       Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
-      Column.STEERING_TORQUE: f"{max(CP.maxLateralAccel, 0):.1f} m/s/s",  # TODO
+      Column.STEERING_TORQUE: f"{rounded_accel:.1f} m/s<sup>2</sup>",  # TODO
+      Column.HARNESS: self.harness.value,
     }
 
     self.all_footnotes = all_footnotes
