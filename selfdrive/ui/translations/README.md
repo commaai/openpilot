@@ -16,7 +16,7 @@ Most of the languages supported by openpilot come from and are maintained by the
 
 We also generally merge pull requests adding support for a new language if there are community members willing to maintain it. Maintaining a language is ensuring quality and completion of translations before each openpilot release.
 
-Note that comma may remove or hide language support from releases depending on circumstances.
+comma may remove or hide language support from releases depending on translation quality and completeness.
 
 ### Adding a New Language
 
