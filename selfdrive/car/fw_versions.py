@@ -282,6 +282,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   match_count = 0
   candidate = None
   for addr, versions in fw_versions_dict.items():
+    # Some ECUs respond multiple times to a brand's queries, try matching on all
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(addr[0], addr[1], version)]
