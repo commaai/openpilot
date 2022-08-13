@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
@@ -15,54 +16,56 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
-  HCA_STEP = 2                   # HCA_01 message frequency 50Hz
-  LDW_STEP = 10                  # LDW_02 message frequency 10Hz
-  GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
+  HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
+  GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
 
-  # Observed documented MQB limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
-  # Limiting rate-of-change based on real-world testing and Comma's safety
-  # requirements for minimum time to lane departure.
-  STEER_MAX = 300                # Max heading control assist torque 3.00 Nm
-  STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
-  STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
-  STEER_DRIVER_ALLOWANCE = 80
-  STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
-  STEER_DRIVER_FACTOR = 1        # from dbc
+  def __init__(self, CP):
+    # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
+    # MQB vs PQ maximums are shared, but rate-of-change limited differently
+    # based on safety requirements driven by lateral accel testing.
+    self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
+    self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
+    self.STEER_DRIVER_FACTOR = 1          # from dbc
+  
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+  
+    if True:  # pylint: disable=using-constant-test
+      self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
+      self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
+      self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+      if CP.transmissionType == TransmissionType.automatic:
+        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+      elif CP.transmissionType == TransmissionType.direct:
+        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+      self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
+
+      self.BUTTONS = [
+        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+      ]
+
+      self.LDW_MESSAGES = {
+        "none": 0,                            # Nothing to display
+        "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
+        "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
+        "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
+        "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
+        "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
+        "laneAssistTakeOver": 8,              # "Lane Assist: Please Take Over Steering" silent
+        "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
+        "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
+      }
 
 
 class CANBUS:
   pt = 0
   cam = 2
-
-
-class DBC_FILES:
-  mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
-
-
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
-
-
-MQB_BUTTONS = [
-  Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
-  Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
-  Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
-  Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
-  Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
-  Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
-]
-
-
-MQB_LDW_MESSAGES = {
-  "none": 0,                            # Nothing to display
-  "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
-  "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
-  "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
-  "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
-  "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
-  "laneAssistTakeOverSilent": 8,        # "Lane Assist: Please Take Over Steering" silent
-  "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
-  "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
-}
 
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
@@ -96,12 +99,15 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
+
+
 class Footnote(Enum):
   KAMIQ = CarFootnote(
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL)
   PASSAT = CarFootnote(
-    "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
+    "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
