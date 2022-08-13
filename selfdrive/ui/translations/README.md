@@ -6,16 +6,17 @@
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ko.ts)
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ja.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ja.ts)
 
----
-The above badges show the translation completion of each language in openpilot. If you see one you're proficient in that is missing translations, check out the contributing instructions below.
-
 ## Contributing
 
 Before getting started, make sure you have set up the openpilot Ubuntu development environment by reading the [tools README.md](/tools/README.md).
 
-### Language Policy
+### Policy
 
-We will merge most pull requests adding a new language as long as the contributor(s) show a willingness to keep them up to date. Note that languages may be removed or hidden from releases depending on circumstances.
+Most of the languages supported by openpilot come from and are maintained by the community. A pull request likely to be merged is one that fixes a translation or adds missing translations.
+
+We also generally merge pull requests adding support for a new language if there are community members willing to maintain it. Maintaining a language is ensuring quality and completion of translations before each openpilot release.
+
+Note that comma may remove or hide language support from releases depending on circumstances.
 
 ### Adding a New Language
 
@@ -45,7 +46,7 @@ Any time you edit source code in the UI, you need to update the translations to 
 
 ### Testing
 
-openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
+openpilot has a few unit tests to make sure all translations are up-to-date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
 
 Tests translation files up to date:
 
