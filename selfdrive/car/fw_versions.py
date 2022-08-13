@@ -344,11 +344,13 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
+  brands = get_interface_attr('FW_VERSIONS', ignore_none=True).keys()
   for exact_match, match_func in exact_matches:
-    # TODO: For each brand, attempt to fingerprint using only FW returned from its queries
+    # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
-    fw_versions_dict = build_fw_dict(fw_versions, filter_brand=None)
-    matches |= match_func(fw_versions_dict)
+    for brand in brands:
+      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict)
 
     if len(matches):
       return exact_match, matches
