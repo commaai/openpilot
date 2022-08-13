@@ -310,8 +310,8 @@
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>Necessita no mínimo %n caractere(s)!</numerusform>
-            <numerusform></numerusform>
+            <numerusform>Necessita no mínimo %n caractere!</numerusform>
+            <numerusform>Necessita no mínimo %n caracteres!</numerusform>
         </translation>
     </message>
 </context>
@@ -642,24 +642,24 @@ trabalho definido</translation>
         <location filename="../qt/util.cc" line="82"/>
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>há %n minuto(s)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>há %n minuto</numerusform>
+            <numerusform>há %n minutos</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
         <source>%n hour(s) ago</source>
         <translation>
-            <numerusform>há %n hora(s)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>há %n hora</numerusform>
+            <numerusform>há %n horas</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
         <source>%n day(s) ago</source>
         <translation>
-            <numerusform>há %n dia(s)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>há %n dia</numerusform>
+            <numerusform>há %n dias</numerusform>
         </translation>
     </message>
 </context>
