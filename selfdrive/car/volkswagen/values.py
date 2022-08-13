@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
@@ -23,14 +24,22 @@ class CarControllerParams:
     # MQB vs PQ maximums are shared, but rate-of-change limited differently
     # based on safety requirements driven by lateral accel testing.
     self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
-    self.STEER_DRIVER_ALLOWANCE = 80      # Driver intervention threshold 0.8 Nm
     self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1          # from dbc
   
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+  
     if True:  # pylint: disable=using-constant-test
       self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+      if CP.transmissionType == TransmissionType.automatic:
+        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+      elif CP.transmissionType == TransmissionType.direct:
+        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+      self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
 
       self.BUTTONS = [
         Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
