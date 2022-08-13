@@ -76,7 +76,7 @@ class CarController:
       if self.frame % 5 == 0 and self.car_fingerprint not in (CAR.TUCSON_HYBRID_4TH_GEN, ):
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
-      if not self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      if self.frame % 2 == 0 and not self.CP.flags & HyundaiFlags.CANFD_HDA2:
         can_sends.append(hyundaicanfd.create_cruise_info(self.packer, self.frame, CS.cruise_info_copy, CS.cruise_info_cruise_main, CC.cruiseControl.cancel))
 
       # cruise cancel
