@@ -7,7 +7,7 @@ from selfdrive.car import STD_CARGO_KG, create_button_enable_events, scale_rot_i
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
-ButtonType = car.CarState.ButtonEvent.Type
+
 EventName = car.CarEvent.EventName
 
 
