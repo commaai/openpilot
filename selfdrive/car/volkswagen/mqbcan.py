@@ -12,13 +12,10 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   }
   return packer.make_can_msg("HCA_01", bus, values)
 
+
 def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
-  # Lane color reference:
-  # 0 (LKAS disabled) - off
-  # 1 (LKAS enabled, no lane detected) - dark gray
-  # 2 (LKAS enabled, lane detected) - light gray on VW, green or white on Audi depending on year or virtual cockpit.  On a color MFD on a 2015 A3 TDI it is white, virtual cockpit on a 2018 A3 e-Tron its green.
-  # 3 (LKAS enabled, lane departure detected) - white on VW, red on Audi
   values = ldw_stock_values.copy()
+
   values.update({
     "LDW_Status_LED_gelb": 1 if enabled and steering_pressed else 0,
     "LDW_Status_LED_gruen": 1 if enabled and not steering_pressed else 0,
@@ -28,11 +25,14 @@ def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pres
   })
   return packer.make_can_msg("LDW_02", bus, values)
 
+
 def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
   values = gra_stock_values.copy()
 
-  values["COUNTER"] = idx
-  values["GRA_Abbrechen"] = cancel
-  values["GRA_Tip_Wiederaufnahme"] = resume
+  values.update({
+    "COUNTER": idx,
+    "GRA_Abbrechen": cancel,
+    "GRA_Tip_Wiederaufnahme": resume,
+  })
 
   return packer.make_can_msg("GRA_ACC_01", bus, values)

@@ -16,13 +16,13 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
-  HCA_STEP = 2                   # HCA_01/HCA_1 message frequency 50Hz
-  GRA_ACC_STEP = 3               # GRA_ACC_01/GRA_Neu message frequency 33Hz
-  ACC_CONTROL_STEP = 2           # ACC_06/ACC_07/ACC_System frequency 50Hz
-  ACC_HUD_STEP = 4               # ACC_GRA_Anziege frequency 25Hz
+  HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
+  GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
+  ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
+  ACC_HUD_STEP = 4                        # ACC_GRA_Anziege frequency 25Hz
 
-  ACCEL_MAX = 2.0                # 2.0 m/s max acceleration
-  ACCEL_MIN = -3.5               # 3.5 m/s max deceleration
+  ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
+  ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
 
   def __init__(self, CP):
     # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
