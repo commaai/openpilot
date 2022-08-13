@@ -129,7 +129,7 @@ class CarController:
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                          hud_control.rightLaneDepart, CC.enabled))
 
-    if self.frame % 100 == 0 and self.CP.enableDsu:
+    if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
