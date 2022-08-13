@@ -101,7 +101,7 @@ def create_bosch_supplemental_1(packer, car_fingerprint):
   return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values)
 
 
-def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, stock_hud):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
@@ -125,10 +125,10 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, stock_hud
       acc_hud_values['PCM_SPEED'] = pcm_speed * CV.MS_TO_KPH
       acc_hud_values['PCM_GAS'] = hud.pcm_accel
       acc_hud_values['SET_ME_X01'] = 1
-      acc_hud_values['FCM_OFF'] = stock_hud['FCM_OFF']
-      acc_hud_values['FCM_OFF_2'] = stock_hud['FCM_OFF_2']
-      acc_hud_values['FCM_PROBLEM'] = stock_hud['FCM_PROBLEM']
-      acc_hud_values['ICONS'] = stock_hud['ICONS']
+      acc_hud_values['FCM_OFF'] = acc_hud['FCM_OFF']
+      acc_hud_values['FCM_OFF_2'] = acc_hud['FCM_OFF_2']
+      acc_hud_values['FCM_PROBLEM'] = acc_hud['FCM_PROBLEM']
+      acc_hud_values['ICONS'] = acc_hud['ICONS']
     commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values))
 
   lkas_hud_values = {
@@ -141,6 +141,8 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, stock_hud
   if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
     lkas_hud_values['LANE_LINES'] = 3
     lkas_hud_values['DASHED_LANES'] = hud.lanes_visible
+    # car likely needs to see LKAS_PROBLEM fall within a specific time frame, so forward from camera
+    lkas_hud_values['LKAS_PROBLEM'] = lkas_hud['LKAS_PROBLEM']
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
     lkas_hud_values['SET_ME_X48'] = 0x48
