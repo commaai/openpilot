@@ -139,6 +139,7 @@ FW_VERSIONS = {
       b'\x00\x00c\xf4\x00\x00\x00\x00',
       b'\x00\x00d\xdc\x00\x00\x00\x00',
       b'\x00\x00dd\x00\x00\x00\x00',
+      b'\x00\x00c\xf4\x1f@ \x07',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
@@ -201,7 +202,6 @@ FW_VERSIONS = {
       b'\xca!`0\a',
       b'\xcc\"f0\a',
       b'\xcc!fp\a',
-      b'\xf1\x00\xa2\x10\t',
       b'\xca!f@\x07',
       b'\xca!fp\x07',
     ],
