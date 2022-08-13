@@ -13,6 +13,20 @@ class CarState(CarStateBase):
     self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
 
+  def create_button_events(self, pt_cp, buttons):
+    button_events = []
+
+    for button in buttons:
+      state = pt_cp.vl[button.can_addr][button.can_msg] in button.values
+      if self.button_states[button.event_type] != state:
+        event = car.CarState.ButtonEvent.new_message()
+        event.type = button.event_type
+        event.pressed = state
+        button_events.append(event)
+      self.button_states[button.event_type] = state
+
+    return button_events
+
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
@@ -113,17 +127,8 @@ class CarState(CarStateBase):
     # Update button states for turn signals and ACC controls, capture all ACC button state/config for passthrough
     ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
     ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
+    ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
     self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
-    buttonEvents = []
-    for button in self.CCP.BUTTONS:
-      state = pt_cp.vl[button.can_addr][button.can_msg] in button.values
-      if self.button_states[button.event_type] != state:
-        event = car.CarState.ButtonEvent.new_message()
-        event.type = button.event_type
-        event.pressed = state
-        buttonEvents.append(event)
-      self.button_states[button.event_type] = state
-    ret.buttonEvents = buttonEvents
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
