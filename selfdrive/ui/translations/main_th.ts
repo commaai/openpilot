@@ -344,27 +344,27 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="622"/>
+        <location filename="../qt/maps/map.cc" line="621"/>
         <source>eta</source>
         <translation>เวลาถึงปลายทางโดยประมาณ</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="632"/>
+        <location filename="../qt/maps/map.cc" line="631"/>
         <source>min</source>
         <translation>นาที</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="636"/>
+        <location filename="../qt/maps/map.cc" line="635"/>
         <source>hr</source>
         <translation>ช.ม.</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="656"/>
+        <location filename="../qt/maps/map.cc" line="655"/>
         <source>km</source>
         <translation>ก.ม.</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="659"/>
+        <location filename="../qt/maps/map.cc" line="658"/>
         <source>mi</source>
         <translation>ไมล์</translation>
     </message>
@@ -494,30 +494,30 @@ location set</source>
 <context>
     <name>NvgWindow</name>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
         <translation>ก.ม./ช.ม.</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>mph</source>
         <translation>ไมล์/ช.ม.</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="280"/>
-        <location filename="../qt/onroad.cc" line="283"/>
+        <location filename="../qt/onroad.cc" line="286"/>
+        <location filename="../qt/onroad.cc" line="289"/>
         <source>MAX</source>
         <translation>สูงสุด</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="327"/>
-        <location filename="../qt/onroad.cc" line="330"/>
+        <location filename="../qt/onroad.cc" line="333"/>
+        <location filename="../qt/onroad.cc" line="336"/>
         <source>SPEED</source>
         <translation>ความเร็ว</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="333"/>
-        <location filename="../qt/onroad.cc" line="336"/>
+        <location filename="../qt/onroad.cc" line="339"/>
+        <location filename="../qt/onroad.cc" line="342"/>
         <source>LIMIT</source>
         <translation>จำกัด</translation>
     </message>
