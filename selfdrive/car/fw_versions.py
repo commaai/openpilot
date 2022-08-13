@@ -416,9 +416,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
-
-    # TODO: Until erroneous FW versions are removed, try to fingerprint on all possible combinations so far
-    _, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
+    # Try to match using FW returned from this brand only
+    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
       break
 
