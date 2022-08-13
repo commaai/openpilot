@@ -31,6 +31,30 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
+def tsk_status_value(main_switch_on, acc_faulted, long_active):
+  if long_active:
+    tsk_status = 1
+  elif main_switch_on:
+    tsk_status = 2
+  else:
+    tsk_status = 0
+
+  return tsk_status
+
+
+def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
+  if acc_faulted:
+    hud_status = 6
+  elif long_active:
+    hud_status = 3
+  elif main_switch_on:
+    hud_status = 2
+  else:
+    hud_status = 0
+
+  return hud_status
+
+
 def create_acc_accel_control(packer, bus, adr_status, accel):
   values = {
     "ACS_Sta_ADR": adr_status,
