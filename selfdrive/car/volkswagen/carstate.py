@@ -3,30 +3,14 @@ from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, PQ_CARS, \
-                                            MQBCarControllerParams, PQCarControllerParams
+from selfdrive.car.volkswagen.values import DBC, CANBUS, PQ_CARS, NetworkLocation, TransmissionType, GearShifter, \
+                                            CarControllerParams
 
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.frame = 0
-
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    if CP.carFingerprint in PQ_CARS:
-      self.CCP = PQCarControllerParams
-      self.hca_status_values = can_define.dv["Lenkhilfe_2"]["LH2_Sta_HCA"]
-      if CP.transmissionType == TransmissionType.automatic:
-        self.shifter_values = can_define.dv["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"]
-    else:
-      self.CCP = MQBCarControllerParams
-      self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
-      if CP.transmissionType == TransmissionType.automatic:
-        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
-      elif CP.transmissionType == TransmissionType.direct:
-        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
-
+    self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
 
   def update(self, pt_cp, cam_cp, ext_cp, trans_type):
@@ -55,7 +39,7 @@ class CarState(CarStateBase):
     ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
-    hca_status = self.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
+    hca_status = self.CCP.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
     ret.steerFaultPermanent = hca_status in ("DISABLED", "FAULT")
     ret.steerFaultTemporary = hca_status in ("INITIALIZING", "REJECTED")
 
@@ -68,9 +52,9 @@ class CarState(CarStateBase):
 
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
-      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["Getriebe_11"]["GE_Fahrstufe"], None))
+      ret.gearShifter = self.parse_gear_shifter(self.CCP.shifter_values.get(pt_cp.vl["Getriebe_11"]["GE_Fahrstufe"], None))
     elif trans_type == TransmissionType.direct:
-      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["EV_Gearshift"]["GearPosition"], None))
+      ret.gearShifter = self.parse_gear_shifter(self.CCP.shifter_values.get(pt_cp.vl["EV_Gearshift"]["GearPosition"], None))
     elif trans_type == TransmissionType.manual:
       ret.clutchPressed = not pt_cp.vl["Motor_14"]["MO_Kuppl_schalter"]
       if bool(pt_cp.vl["Gateway_72"]["BCM1_Rueckfahrlicht_Schalter"]):
@@ -173,9 +157,9 @@ class CarState(CarStateBase):
     ret.yawRate = pt_cp.vl["Bremse_5"]["Giergeschwindigkeit"] * (1, -1)[int(pt_cp.vl["Bremse_5"]["Vorzeichen_der_Giergeschwindigk"])] * CV.DEG_TO_RAD
 
     # Verify EPS readiness to accept steering commands
-    hca_status = self.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
-    ret.steerFaultPermanent = hca_status in ["DISABLED", "FAULT"] and self.frame > 300
-    ret.steerFaultTemporary = hca_status in ["INITIALIZING", "REJECTED"] and self.frame > 300
+    hca_status = self.CCP.hca_status_values.get(pt_cp.vl["Lenkhilfe_2"]["LH2_Sta_HCA"])
+    ret.steerFaultPermanent = hca_status in ["DISABLED", "FAULT"]
+    ret.steerFaultTemporary = hca_status in ["INITIALIZING", "REJECTED"]
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_3"]["Fahrpedal_Rohsignal"] / 100.0
@@ -188,7 +172,7 @@ class CarState(CarStateBase):
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
       ret.gearShifter = self.parse_gear_shifter(
-        self.shifter_values.get(pt_cp.vl["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"], None))
+        self.CCP.shifter_values.get(pt_cp.vl["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"], None))
     elif trans_type == TransmissionType.manual:
       ret.clutchPressed = not pt_cp.vl["Motor_1"]["Kupplungsschalter"]
       reverse_light = bool(pt_cp.vl["Gate_Komf_1"]["GK1_Rueckfahr"])
@@ -258,7 +242,6 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])
 
-    self.frame += 1
     return ret
 
   @staticmethod

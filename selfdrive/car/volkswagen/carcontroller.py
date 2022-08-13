@@ -4,7 +4,7 @@ from common.numpy_fast import clip
 from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import mqbcan, pqcan
-from selfdrive.car.volkswagen.values import PQ_CARS, CANBUS, MQBCarControllerParams, PQCarControllerParams
+from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -12,14 +12,12 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.apply_steer_last = 0
-    self.frame = 0
+    self.CCP = CarControllerParams(CP)
+    self.CCS = pqcan if CP.carFingerprint in PQ_CARS else mqbcan
     self.packer_pt = CANPacker(dbc_name)
 
-    self.CCP, self.CCS = MQBCarControllerParams, mqbcan
-    if CP.carFingerprint in PQ_CARS:
-      self.CCP, self.CCS = PQCarControllerParams, pqcan
-
+    self.apply_steer_last = 0
+    self.frame = 0
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
 
