@@ -26,9 +26,9 @@ class CarControllerParams:
     self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
     self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1          # from dbc
-  
+
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-  
+
     if True:  # pylint: disable=using-constant-test
       self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
