@@ -16,7 +16,7 @@ FRICTION_FACTOR = 1.5  # ~85% of data coverage
 def slope2rot(slope):
   sin = np.sqrt(slope**2 / (slope**2 + 1))
   cos = np.sqrt(1 / (slope**2 + 1))
-  return np.array([[cos, -sin], [sin, cos]])  
+  return np.array([[cos, -sin], [sin, cos]])
 
 
 class PointBuckets:
@@ -68,7 +68,7 @@ class TorqueEstimator:
     return True
 
   def update_params(self, slope, intercept, friction_coeff):
-    pass
+    return
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
@@ -119,19 +119,6 @@ def torque_params_thread(sm=None, pm=None):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
-
-    # if sm.updated['cameraOdometry']:
-    #   calibrator.handle_v_ego(sm['carState'].vEgo)
-    #   new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-    #                                        sm['cameraOdometry'].rot,
-    #                                        sm['cameraOdometry'].transStd)
-
-    #   if DEBUG and new_rpy is not None:
-    #     print('got new rpy', new_rpy)
-
-    # # 4Hz driven by cameraOdometry
-    # if sm.frame % 5 == 0:
-    #   calibrator.send_data(pm)
 
 
 if __name__ == "__main__":
