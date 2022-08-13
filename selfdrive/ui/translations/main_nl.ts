@@ -1040,7 +1040,7 @@ ingesteld</translation>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>De nieuwe branch wordt opgehaald de volgende keer dat de updater wordt uitgevoerd.</translation>
+        <translation>Tijdens de volgende update wordt de nieuwe branch opgehaald.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
@@ -1219,7 +1219,7 @@ ingesteld</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="71"/>
         <source>Show Map on Left Side of UI</source>
-        <translation>Toon kaart aan de linkerkant van de gebruikersinterface</translation>
+        <translation>Toon kaart aan linkerkant van het scherm</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="72"/>
