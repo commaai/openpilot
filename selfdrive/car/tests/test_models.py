@@ -58,7 +58,6 @@ class TestCarModelBase(unittest.TestCase):
       raise unittest.SkipTest
 
     if 'FILTER' in os.environ:
-      print(tuple(os.environ.get('FILTER').split(', ')))
       if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
         raise unittest.SkipTest
 
@@ -219,6 +218,8 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs:
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+        msg = list(msg)
+        msg[3] %= 4
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")

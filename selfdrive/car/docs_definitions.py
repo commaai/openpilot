@@ -10,6 +10,10 @@ from common.conversions import Conversions as CV
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
+# Makes that lack auto-resume with stock long, and auto resume in any configuration
+NO_AUTO_RESUME_STOCK_LONG = {"toyota", "gm"}
+NO_AUTO_RESUME = NO_AUTO_RESUME_STOCK_LONG | {"nissan", "subaru"}
+
 
 class Tier(Enum):
   GOLD = 0
@@ -147,11 +151,11 @@ class CarInfo:
       else:
         alc = ""
 
-      # Exception for Nissan, Subaru, and stock long Toyota which do not auto-resume yet
+      # Exception for cars which do not auto-resume yet
       acc = ""
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif CP.carName not in ("nissan", "subaru", "toyota") or (CP.carName == "toyota" and CP.openpilotLongitudinalControl):
+      elif CP.carName not in NO_AUTO_RESUME or (CP.carName in NO_AUTO_RESUME_STOCK_LONG and CP.openpilotLongitudinalControl):
         acc = " <strong>that automatically resumes from a stop</strong>"
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
@@ -210,6 +214,7 @@ class Harness(Enum):
   hyundai_p = "Hyundai P"
   custom = "Developer"
   obd_ii = "OBD-II"
+  gm = "GM"
   nissan_a = "Nissan A"
   nissan_b = "Nissan B"
   mazda = "Mazda"
