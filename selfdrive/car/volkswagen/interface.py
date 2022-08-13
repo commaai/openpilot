@@ -2,9 +2,10 @@ from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
 from common.params import Params
-from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_enable_events, scale_rot_inertia, scale_tire_stiffness, \
+                          gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -216,14 +217,7 @@ class CarInterface(CarInterfaceBase):
       if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.speedTooLow)
 
-      for b in ret.buttonEvents:
-        # Enable on falling edge of both set and resume
-        if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
-          events.add(EventName.buttonEnable)
-        # Disable on rising edge of cancel
-        if b.type == ButtonType.cancel and b.pressed:
-          events.add(EventName.buttonCancel)
-
+    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
     ret.events = events.to_msg()
 
     return ret
