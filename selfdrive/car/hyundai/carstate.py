@@ -183,10 +183,7 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
-    self.cruise_info_cruise_main = cruise_info_bus.vl["CRUISE_INFO"]["CRUISE_MAIN"]
-    self.cruise_buttons_copy = copy.copy(cp.vl["CRUISE_BUTTONS"])
     self.cruise_info_copy = copy.copy(cruise_info_bus.vl["CRUISE_INFO"])
-    self.cruise_info_cruise_status = cruise_info_bus.vl["CRUISE_INFO"]["CRUISE_STATUS"]
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
@@ -401,17 +398,7 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "SCC1"),
       ("COUNTER", "CRUISE_BUTTONS"),
       ("CRUISE_BUTTONS", "CRUISE_BUTTONS"),
-      ("NEW_SIGNAL_1", "CRUISE_BUTTONS"),
-      ("SET_ME_1", "CRUISE_BUTTONS"),
-      ("NEW_SIGNAL_2", "CRUISE_BUTTONS"),
-      ("NEW_SIGNAL_3", "CRUISE_BUTTONS"),
-      ("LKAS_BTN", "CRUISE_BUTTONS"),
-      ("NEW_SIGNAL_4", "CRUISE_BUTTONS"),
       ("ADAPTIVE_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
-      ("NORMAL_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
-      ("NEW_SIGNAL_5", "CRUISE_BUTTONS"),
-      ("SET_ME_2", "CRUISE_BUTTONS"),
-      ("NEW_SIGNAL_6", "CRUISE_BUTTONS"),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
 
