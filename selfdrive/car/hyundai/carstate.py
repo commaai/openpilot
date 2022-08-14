@@ -409,8 +409,6 @@ class CarState(CarStateBase):
       ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
     ]
 
-    signals += [(f"BYTE{i}", "CRUISE_BUTTONS") for i in range(6, 15)]
-
     checks = [
       ("WHEEL_SPEEDS", 100),
       ("ACCELERATOR", 100),
