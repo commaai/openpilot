@@ -434,8 +434,6 @@ class CarState(CarStateBase):
     else:
       signals += [
         ("GEAR", "GEAR"),
-        ("SET_ME_1", "CRUISE_BUTTONS"),
-        ("SET_ME_2", "CRUISE_BUTTONS"),
       ]
       checks.append(("GEAR", 100))
 
