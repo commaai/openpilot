@@ -295,7 +295,7 @@ class CarInterface(CarInterfaceBase):
                            get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
 
       if candidate == CAR.TUCSON_HYBRID_4TH_GEN:
-        ret.safetyConfigs[1].safetyParam = Panda.FLAG_HYUNDAI_TUCSON_HEV_2022
+        ret.safetyConfigs[1].safetyParam = Panda.FLAG_HYUNDAI_TUCSON_HYBRID_4TH_GEN
 
       # detect HDA2 with LKAS message
       if 0x50 in fingerprint[6]:
