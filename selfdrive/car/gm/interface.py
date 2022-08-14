@@ -160,6 +160,16 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate == CAR.BOLT_EV:
+      ret.minEnableSpeed = -1
+      ret.mass = 1669. + STD_CARGO_KG
+      ret.wheelbase = 2.601
+      ret.steerRatio = 16.8
+      ret.centerToFront = 2.0828 # Measured
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
