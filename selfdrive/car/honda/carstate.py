@@ -10,7 +10,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, H
 from selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
-
+MAX_STEPS_STEER_MISMATCH = 4 + 2 # 3-4 steps is most common. Inlude a buffer.
 
 def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
   signals = [
@@ -67,7 +67,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("SCM_BUTTONS", 25),
     ]
 
-  if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+  if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.ODYSSEY_BOSCH):
     checks.append((gearbox_msg, 50))
   else:
     checks.append((gearbox_msg, 100))
@@ -86,6 +86,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       signals += [
         ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
         ("CRUISE_SPEED", "ACC_HUD"),
+        ("IMPERIAL_UNIT", "ACC_HUD"),
         ("ACCEL_COMMAND", "ACC_CONTROL"),
         ("AEB_STATUS", "ACC_CONTROL"),
       ]
@@ -102,7 +103,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     else:
       checks.append(("CRUISE_PARAMS", 50))
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022):
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.ODYSSEY_BOSCH):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK"))
   elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"))
@@ -126,6 +127,9 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ]
     checks.append(("STANDSTILL", 50))
 
+  if CP.minSteerSpeed > 0.:
+    signals.append(("STEER_CONTROL_ACTIVE", "STEER_STATUS"))
+
   return signals, checks
 
 
@@ -143,6 +147,7 @@ class CarState(CarStateBase):
 
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
+    self.steer_mismatch_cnt = 0
 
     self.brake_error = False
     self.brake_switch_prev = False
@@ -171,7 +176,7 @@ class CarState(CarStateBase):
     # panda checks if the signal is non-zero
     ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 1e-5
     # TODO: find a common signal across all cars
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022):
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.ODYSSEY_BOSCH):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
     elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
@@ -179,12 +184,6 @@ class CarState(CarStateBase):
       ret.doorOpen = any([cp.vl["DOORS_STATUS"]["DOOR_OPEN_FL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_FR"],
                           cp.vl["DOORS_STATUS"]["DOOR_OPEN_RL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_RR"]])
     ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LAMP"] or not cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LATCHED"])
-
-    steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
-    ret.steerFaultPermanent = steer_status not in ("NORMAL", "NO_TORQUE_ALERT_1", "NO_TORQUE_ALERT_2", "LOW_SPEED_LOCKOUT", "TMP_FAULT")
-    # LOW_SPEED_LOCKOUT is not worth a warning
-    # NO_TORQUE_ALERT_2 can be caused by bump or steering nudge from driver
-    ret.steerFaultTemporary = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
     if self.CP.openpilotLongitudinalControl:
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
@@ -235,9 +234,9 @@ class CarState(CarStateBase):
         acc_hud = cp_cam.vl["ACC_HUD"] if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS else cp.vl["ACC_HUD"]
         ret.cruiseState.nonAdaptive = acc_hud["CRUISE_CONTROL_LABEL"] != 0
         ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
-
         # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
-        conversion_factor = CV.MPH_TO_MS if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric else CV.KPH_TO_MS
+        ## TODO: verify with certainty. initial test route checks show that Bosch sets this unit according to the vehicles origin
+        conversion_factor = CV.MPH_TO_MS if bool(acc_hud["IMPERIAL_UNIT"]) else CV.KPH_TO_MS
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
         ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion_factor
         self.v_cruise_pcm_prev = ret.cruiseState.speed
@@ -262,6 +261,21 @@ class CarState(CarStateBase):
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
     ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
+
+    steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
+    # LOW_SPEED_LOCKOUT is not worth a warning on most cars
+    # NO_TORQUE_ALERT_2 can be caused by bump or steering nudge from driver
+    ret.steerFaultPermanent = steer_status not in ("NORMAL", "NO_TORQUE_ALERT_1", "NO_TORQUE_ALERT_2", "LOW_SPEED_LOCKOUT", "TMP_FAULT")
+    if self.CP.minSteerSpeed > 0.:
+      # TODO: make generic for all makes and clean up
+      # Check for steer mismatch when engaged and moving before setting a temporary fault. Allow for a small buffer as to not flash the alert when engaging.
+      self.steer_mismatch_cnt = self.steer_mismatch_cnt + 1 if ret.cruiseState.enabled and \
+                                not bool(cp.vl["STEER_STATUS"]["STEER_CONTROL_ACTIVE"]) and not ret.standstill else 0
+      steer_mismatch = True if self.steer_mismatch_cnt > MAX_STEPS_STEER_MISMATCH else False
+    else:
+      steer_mismatch = False
+    # TODO: detect the torque request diff from OP vs the radar
+    ret.steerFaultTemporary = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2") or steer_mismatch
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
@@ -310,6 +324,7 @@ class CarState(CarStateBase):
         signals += [
           ("CRUISE_SPEED", "ACC_HUD"),
           ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+          ("IMPERIAL_UNIT", "ACC_HUD"),
         ]
         checks.append(("ACC_HUD", 10))
 
