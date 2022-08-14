@@ -160,6 +160,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate == CAR.EQUINOX:
+      ret.minEnableSpeed = -1
+      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
+      ret.wheelbase = 2.72 #107.3 inches in meters
+      ret.steerRatio = 14.4 # guess for tourx
+      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
