@@ -432,9 +432,7 @@ class CarState(CarStateBase):
       ]
       checks.append(("CRUISE_INFO", 50))
     else:
-      signals += [
-        ("GEAR", "GEAR"),
-      ]
+      signals.append(("GEAR", "GEAR"))
       checks.append(("GEAR", 100))
 
     bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
