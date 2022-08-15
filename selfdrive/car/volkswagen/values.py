@@ -148,9 +148,6 @@ class Footnote(Enum):
   PASSAT = CarFootnote(
     "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  PASSAT_NMS = CarFootnote(
-    "Refers only to the NMS Passat in the USA/China/Mideast markets, not the MQB-based European B8 Passat.",
-    Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
     "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
@@ -202,7 +199,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Passat Alltrack 2015-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Passat GTE 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
   ],
-  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22", footnotes=[Footnote.PASSAT_NMS], harness=Harness.j533),
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22", harness=Harness.j533),
   CAR.POLO_MK6: [
     VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
