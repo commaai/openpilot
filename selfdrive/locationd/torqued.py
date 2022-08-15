@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from collections import deque, defaultdict
+import json
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car
-from common.params import Params
+from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
 
 HISTORY = 5  # secs
@@ -11,6 +12,7 @@ RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
 POINTS_PER_BUCKET = 500
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
+SANITY_FACTOR = 0.2
 
 
 def slope2rot(slope):
@@ -46,6 +48,27 @@ class TorqueEstimator:
     params_reader = Params()
     CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
+    self.offline_friction_coeff = CP.lateralTuning.torque.friction
+    self.offline_slope = 1.0 / CP.lateralTuning.torque.kp
+
+    self.saved_params = params_reader.get("LiveTorqueParameters")
+    self.saved_params = json.loads(self.saved_params) if self.saved_params is not None else None
+    if self.car_sane(self.saved_params, CP.carFingerprint):
+      try:
+        if not self.is_sane(self.saved_params.get('slope'), self.saved_params.get('intercept'), self.saved_params.get('frictionCoefficient')):
+          self.saved_params = None
+      except Exception as e:
+        print(e)
+        self.saved_params = None
+
+    if self.saved_params is None:
+      self.saved_params = {
+        'carFingerprint': CP.carFingerprint,
+        'slope': self.offline_slope,
+        'intercept': 0.0,
+        'frictionCoefficient': self.offline_friction_coeff,
+      }
+
     self.reset()
 
   def reset(self):
@@ -64,11 +87,16 @@ class TorqueEstimator:
     friction_coeff = np.std(spread) * FRICTION_FACTOR
     return slope, intercept, friction_coeff
 
-  def is_sane(self, slope, intercept, friction_coeff):
-    return True
+  def car_sane(self, params, fingerprint):
+    return False if params.get('carFingerprint', None) != fingerprint else True
 
-  def update_params(self, slope, intercept, friction_coeff):
-    return
+  def is_sane(self, slope, intercept, friction_coeff):
+    return (slope > (1.0 - SANITY_FACTOR) * self.offline_slope) & \
+      (slope < (1.0 + SANITY_FACTOR) * self.offline_slope) & \
+      (friction_coeff > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
+      (friction_coeff < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff) & \
+      (intercept > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
+      (intercept < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff)
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
@@ -93,13 +121,6 @@ class TorqueEstimator:
           lateral_acc = vego * yaw_rate
           self.filtered_points.add_point(steer, lateral_acc)
 
-      if self.filtered_points.is_valid():
-        slope, intercept, friction_coeff = self.estimate_params()
-        if self.is_sane(slope, intercept, friction_coeff):
-          self.update_params(slope, intercept, friction_coeff)
-        else:
-          self.reset()
-
 
 def torque_params_thread(sm=None, pm=None):
   set_realtime_priority(1)
@@ -119,6 +140,33 @@ def torque_params_thread(sm=None, pm=None):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
+
+    if sm.updated['liveLocationKalman']:
+      msg = messaging.new_message('liveTorqueParameters')
+      msg.valid = sm.all_checks()
+      liveTorqueParameters = msg.liveTorqueParameters
+
+      if estimator.filtered_points.is_valid():
+        slope, intercept, friction_coeff = estimator.estimate_params()
+        if estimator.is_sane(slope, intercept, friction_coeff):
+          liveTorqueParameters.liveValid = True
+          estimator.saved_params['slope'] = slope
+          estimator.saved_params['intercept'] = intercept
+          estimator.saved_params['frictionCoefficient'] = friction_coeff
+        else:
+          liveTorqueParameters.liveValid = False
+          estimator.reset()
+      else:
+        liveTorqueParameters.liveValid = estimator.saved_params['slope']
+      liveTorqueParameters.slope = estimator.saved_params['slope']
+      liveTorqueParameters.intercept = estimator.saved_params['slope']
+      liveTorqueParameters.frictionCoefficient = estimator.saved_params['slope']
+      liveTorqueParameters.totalFilteredPoints = len(estimator.filtered_points)
+
+      if sm.frame % 1200 == 0:  # once a minute
+        put_nonblocking("LiveTorqueParameters", json.dumps(estimator.saved_params))
+
+      pm.send('liveTorqueParameters', msg)
 
 
 if __name__ == "__main__":
