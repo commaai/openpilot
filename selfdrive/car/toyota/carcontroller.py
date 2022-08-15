@@ -96,7 +96,7 @@ class CarController:
 
       # if future plan or control loop wants to brake, set permit braking
       # Toyota is hesitant to respond to acceleration requests if PERMIT_BRAKING is 1
-      permit_braking = int(CS.out.vEgo < 0.3 or pcm_accel_cmd <= 0.1 or actuators.futureAccel < 0.6)
+      permit_braking = int(CS.out.vEgo < 0.2 or pcm_accel_cmd <= 0.1 or actuators.futureAccel < 0.6)
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
