@@ -1208,7 +1208,7 @@ trabalho definido</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
-        <source>Show ETA in 24h format</source>
+        <source>Show ETA in 24h Format</source>
         <translation>Mostrar ETA em formato 24h</translation>
     </message>
     <message>
