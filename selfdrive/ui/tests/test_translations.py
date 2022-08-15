@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import unittest
+import xml.etree.ElementTree as ET
 
 from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
@@ -63,6 +64,23 @@ class TestTranslations(unittest.TestCase):
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
         self.assertTrue(b"<translation type=\"vanished\">" not in cur_translations,
                         f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove them")
+
+  def test_plural_translations(self):
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+
+        for context in tr_xml.getroot():
+          for message in context.iterfind("message"):
+            if message.get("numerus") == "yes":
+              translation = message.find("translation")
+              numerusform = translation.findall("numerusform")
+
+              # Do not assert finished translations
+              if translation.get("type") == "unfinished":
+                continue
+
+              self.assertNotIn(None, [x.text for x in numerusform], "Ensure all plural translation forms are completed.")
 
 
 if __name__ == "__main__":
