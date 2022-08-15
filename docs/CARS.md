@@ -19,7 +19,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 - [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
 
 
-# 202 Supported Cars
+# 201 Supported Cars
 
 |Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|
 |---|---|---|:---:|:---:|:---:|:---:|
@@ -214,7 +214,6 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Volkswagen|Passat 2015-22[<sup>6,8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Passat Alltrack 2015-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Passat GTE 2015-22[<sup>8,9</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat NMS 2017-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Polo 2020-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|Polo GTI 2020-22[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Volkswagen|T-Cross 2021[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
