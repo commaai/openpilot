@@ -59,7 +59,7 @@ class TestCarDocs(unittest.TestCase):
   def test_harnesses(self):
     for car in self.all_cars:
       with self.subTest(car=car):
-        if car.name == "comma body":
+        if car.name in ["comma body", "comma body + knee"]:
           raise unittest.SkipTest
 
         self.assertNotIn(car.harness, [None, Harness.none], f"Need to specify car harness: {car.name}")
