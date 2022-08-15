@@ -31,7 +31,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
-      # ret.dashcamOnly = True  # Enable Passat NMS footnote before removing from dashcamOnly
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
       if 0x440 in fingerprint[0]:  # Getriebe_1
@@ -44,7 +43,17 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
+      # The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported
+      # EPS flash update to work around this timer, and enable steering down to zero, is available from:
+      #   https://github.com/pd0wm/pq-flasher
+      # It is documented in a four-part blog series:
+      #   https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/
+      # Panda ALLOW_DEBUG firmware required.
+      ret.dashcamOnly = True
+
       if Params().get_bool("DisableRadar") and ret.networkLocation == NetworkLocation.gateway:
+        # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
+        # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
 
