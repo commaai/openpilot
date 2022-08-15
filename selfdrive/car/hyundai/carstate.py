@@ -445,20 +445,18 @@ class CarState(CarStateBase):
       signals = [
         ("COUNTER", "CRUISE_INFO"),
         ("NEW_SIGNAL_1", "CRUISE_INFO"),
-        ("NEW_SIGNAL_2", "CRUISE_INFO"),
         ("CRUISE_MAIN", "CRUISE_INFO"),
         ("CRUISE_STATUS", "CRUISE_INFO"),
         ("CRUISE_INACTIVE", "CRUISE_INFO"),
-        ("NEW_SIGNAL_3", "CRUISE_INFO"),
-        ("NEW_SIGNAL_3", "CRUISE_INFO"),
+        ("NEW_SIGNAL_2", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-        ("NEW_SIGNAL_4", "CRUISE_INFO"),
-        ("BYTE11", "CRUISE_INFO"),
+        ("NEW_SIGNAL_3", "CRUISE_INFO"),
         ("BYTE11", "CRUISE_INFO"),
         ("SET_SPEED", "CRUISE_INFO"),
-        ("NEW_SIGNAL_6", "CRUISE_INFO"),
+        ("NEW_SIGNAL_4", "CRUISE_INFO"),
       ]
 
+      signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(3, 7)]
       signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(13, 31)]
 
       checks = [
