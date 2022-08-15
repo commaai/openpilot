@@ -175,8 +175,7 @@ class CarState(CarStateBase):
 
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
-      ret.gearShifter = self.parse_gear_shifter(
-        self.CCP.shifter_values.get(pt_cp.vl["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"], None))
+      ret.gearShifter = self.parse_gear_shifter(self.CCP.shifter_values.get(pt_cp.vl["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"], None))
     elif trans_type == TransmissionType.manual:
       ret.clutchPressed = not pt_cp.vl["Motor_1"]["Kupplungsschalter"]
       reverse_light = bool(pt_cp.vl["Gate_Komf_1"]["GK1_Rueckfahr"])
