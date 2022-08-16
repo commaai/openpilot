@@ -210,6 +210,7 @@ class Harness(Enum):
   hyundai_n = "Hyundai N"
   hyundai_o = "Hyundai O"
   hyundai_p = "Hyundai P"
+  hyundai_q = "Hyundai Q"
   custom = "Developer"
   obd_ii = "OBD-II"
   gm = "GM"
