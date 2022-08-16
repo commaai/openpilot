@@ -40,6 +40,7 @@ class ObservationKind:
   STEER_RATIO = 29  # [-]
   ROAD_FRAME_X_SPEED = 30  # (x) [m/s]
   ROAD_ROLL = 31  # [rad]
+  ROAD_PITCH = 36  # [rad]
 
   names = [
     'Unknown',
@@ -79,6 +80,7 @@ class ObservationKind:
     'NO accel',
     'ORB features wide camera',
     'ECEF_VEL',
+    'Road Pitch',
   ]
 
   @classmethod
