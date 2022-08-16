@@ -3,7 +3,7 @@ from selfdrive.car import make_can_msg
 def create_buttons(packer, bus, idx, button):
   values = {
     "ACCButtons": button,
-    "RollingCounter": idx,
+    # "RollingCounter": idx,
   }
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
