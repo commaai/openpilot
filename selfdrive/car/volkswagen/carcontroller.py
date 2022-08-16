@@ -62,7 +62,7 @@ class CarController:
         else:
           self.acc_stopping, self.acc_starting = False, False
 
-        cb_pos = 0.0 if hud_control.lead_visible or CS.out.vEgo < 2.0 else 0.1  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
+        cb_pos = 0.0 if hud_control.leadVisible or CS.out.vEgo < 2.0 else 0.1  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
         cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
 
         can_sends.append(self.CCS.create_acc_06_control(self.packer_pt, CANBUS.pt, CC.longActive, acc_status,
@@ -73,7 +73,7 @@ class CarController:
                                                                  acc_hold_type, stopping_distance))
 
       if self.frame % self.CCP.ACC_HUD_STEP == 0:
-        if hud_control.lead_visible:
+        if hud_control.leadVisible:
           lead_distance = 512 if CS.digital_cluster_installed else 8  # TODO: look up actual distance to lead
         else:
           lead_distance = 0
