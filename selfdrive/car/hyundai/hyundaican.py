@@ -17,6 +17,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_MsgCount"] = frame % 0x10
 
   if car_fingerprint in (CAR.KIA_NIRO_EV,):
+    # Some cars show an FCA fault when forwarding CF_Lkas_FusionState
     values["CF_Lkas_FusionState"] = 0
 
   if car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.SANTA_FE,
