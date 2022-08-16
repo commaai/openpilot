@@ -112,7 +112,9 @@ class CarController:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
         if CC.cruiseControl.cancel:
           self.last_button_frame = self.frame
-          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CruiseButtons.CANCEL))
+          idx = (CS.buttons_counter + 1) % 4
+          for i in range(10):
+            can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, idx, CruiseButtons.CANCEL))
 
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.
