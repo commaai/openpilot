@@ -117,7 +117,6 @@ def format_diff(results, log_paths, ref_commit):
     for proc, diff in list(result.items()):
       # long diff
       diff2 += f"*** process: {proc} ***\n"
-      print(segment, proc)
       diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n\n"
       diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
