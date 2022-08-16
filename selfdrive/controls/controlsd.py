@@ -211,6 +211,9 @@ class Controls:
         controls_state = log.ControlsState.from_bytes(controls_state)
         self.v_cruise_kph = controls_state.vCruise
 
+      if self.sm['pandaStates'][0].controlsAllowed:
+        self.state = State.enabled
+
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
@@ -432,9 +435,6 @@ class Controls:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
-
-        if REPLAY and self.sm['pandaStates'][0].controlsAllowed:
-          self.state = State.enabled
 
         Params().put_bool("ControlsReady", True)
 
