@@ -117,19 +117,19 @@ def format_diff(results, log_paths, ref_commit):
     for proc, diff in list(result.items()):
       # long diff
       diff2 += f"*** process: {proc} ***\n"
-      diff2 += f"\tref: {log_paths[segment]['ref']}\n\n"
-      diff2 += f"\tnew: {log_paths[segment]['new']}\n\n"
+      diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
+      diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
       # short diff
       diff1 += f"    {proc}\n"
       if isinstance(diff, str):
-        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
         diff1 += f"        {diff}\n"
         failed = True
       elif len(diff):
-        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
 
         cnt: Dict[str, int] = {}
         for d in diff:
@@ -196,8 +196,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-
-  log_paths: DefaultDict[str, Dict[str, str]] = defaultdict(dict)
+  log_paths: DefaultDict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]
@@ -225,8 +224,8 @@ if __name__ == "__main__":
         dat = None if args.upload_only else log_data[segment]
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
-        log_paths[segment]['ref'] = ref_log_path
-        log_paths[segment]['new'] = cur_log_fn
+        log_paths[segment][cfg.proc_name + cfg.subtest_name]['ref'] = ref_log_path
+        log_paths[segment][cfg.proc_name + cfg.subtest_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
