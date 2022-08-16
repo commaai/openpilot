@@ -1,4 +1,5 @@
 from collections import defaultdict
+from common.numpy_fast import interp
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Union
@@ -49,6 +50,16 @@ class CarControllerParams:
   GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
   BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
 
+  # determined by letting Volt regen to a stop in L gear from 89mph,
+  # and by letting off gas and allowing car to creep, for determining
+  # the positive threshold values at very low speed
+  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.29, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
+  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
+  
+  def update_ev_gas_brake_threshold(self, v_ego):
+    gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
+    self.EV_GAS_LOOKUP_BP = [gas_brake_threshold, max(0., gas_brake_threshold), self.ACCEL_MAX]
+    self.EV_BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
