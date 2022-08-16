@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
       # Panda ALLOW_DEBUG firmware required.
       ret.dashcamOnly = True
 
-      if Params().get_bool("DisableRadar") and ret.networkLocation == NetworkLocation.gateway:
+      if disable_radar and ret.networkLocation == NetworkLocation.gateway:
         # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
         # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
         ret.openpilotLongitudinalControl = True
