@@ -51,7 +51,7 @@ class TorqueEstimator:
     CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
     self.offline_friction_coeff = CP.lateralTuning.torque.friction
-    self.offline_slope = 1.0 / CP.lateralTuning.torque.kp
+    self.offline_slope = CP.lateralTuning.torque.slope
 
     params = params_reader.get("LiveTorqueParameters")
     params = json.loads(params) if params is not None else None
@@ -110,14 +110,13 @@ class TorqueEstimator:
     if which == "carControl":
       self.raw_points_t["steer_torque"].append(t)
       self.raw_points["steer_torque"].append(msg.actuatorsOutput.steer)
+      self.raw_points_t["active"].append(t)
+      self.raw_points["active"].append(msg.latActive)
     elif which == "carState":
       self.raw_points_t["vego"].append(t)
       self.raw_points["vego"].append(msg.vEgo)
       self.raw_points_t["steer_override"].append(t)
       self.raw_points["steer_override"].append(msg.steeringPressed)
-    elif which == "controlsState":
-      self.raw_points_t["active"].append(t)
-      self.raw_points["active"].append(msg.active)
     elif which == "liveLocationKalman":
       if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.msg.angularVelocityCalibrated.value[2]
@@ -134,7 +133,7 @@ def torque_params_thread(sm=None, pm=None):
   set_realtime_priority(1)
 
   if sm is None:
-    sm = messaging.SubMaster(['controlsState', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
+    sm = messaging.SubMaster(['carControl', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveTorqueParameters'])

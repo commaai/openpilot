@@ -73,3 +73,14 @@ class PIDController():
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
+
+
+class PIDControllerVariableGains(PIDController):
+  def __init__(self, pos_limit, neg_limit):
+    super().__init__(0, 0, pos_limit=pos_limit, neg_limit=neg_limit)
+
+  def update_gains(self, k_p, k_i, k_f=0, k_d=0,):
+    self._k_p = [[0], [k_p]]
+    self._k_i = [[0], [k_i]]
+    self._k_d = [[0], [k_d]]
+    self.k_f = k_f
