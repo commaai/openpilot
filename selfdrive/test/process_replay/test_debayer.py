@@ -10,7 +10,7 @@ from system.hardware import PC, TICI
 from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from system.version import get_commit
-from selfdrive.camerad.snapshot.snapshot import yuv_to_rgb
+from system.camerad.snapshot.snapshot import yuv_to_rgb
 from tools.lib.logreader import LogReader
 from tools.lib.filereader import FileReader
 
@@ -62,7 +62,7 @@ def unbzip_frames(url):
 def init_kernels(frame_offset=0):
   ctx = cl.create_some_context(interactive=False)
 
-  with open(os.path.join(BASEDIR, 'selfdrive/camerad/cameras/real_debayer.cl')) as f:
+  with open(os.path.join(BASEDIR, 'system/camerad/cameras/real_debayer.cl')) as f:
     build_args = ' -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant' + \
       f' -DFRAME_STRIDE={FRAME_STRIDE} -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DFRAME_OFFSET={frame_offset} -DCAM_NUM=0'
     if PC:

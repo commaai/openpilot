@@ -45,21 +45,23 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   main_layout->addLayout(hlayout);
 
   // description
-  if (!desc.isEmpty()) {
-    description = new QLabel(desc);
-    description->setContentsMargins(40, 20, 40, 20);
-    description->setStyleSheet("font-size: 40px; color: grey");
-    description->setWordWrap(true);
-    description->setVisible(false);
-    main_layout->addWidget(description);
+  description = new QLabel(desc);
+  description->setContentsMargins(40, 20, 40, 20);
+  description->setStyleSheet("font-size: 40px; color: grey");
+  description->setWordWrap(true);
+  description->setVisible(false);
+  main_layout->addWidget(description);
 
-    connect(title_label, &QPushButton::clicked, [=]() {
-      if (!description->isVisible()) {
-        emit showDescription();
-      }
+  connect(title_label, &QPushButton::clicked, [=]() {
+    if (!description->isVisible()) {
+      emit showDescription();
+    }
+
+    if (!description->text().isEmpty()) {
       description->setVisible(!description->isVisible());
-    });
-  }
+    }
+  });
+
   main_layout->addStretch();
 }
 
@@ -125,7 +127,9 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
 ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
 
 void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
+  if (rect().contains(event->pos())) {
+    emit clicked();
+  }
 }
 
 // Fix stylesheets

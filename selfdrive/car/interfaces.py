@@ -1,8 +1,8 @@
-import json
+import yaml
 import os
 import time
 from abc import abstractmethod, ABC
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, Optional, Tuple, List
 
 from cereal import car
 from common.basedir import BASEDIR
@@ -20,7 +20,34 @@ EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
-TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data.json')
+
+TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yaml')
+TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
+TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.yaml')
+
+
+def get_torque_params(candidate):
+  with open(TORQUE_SUBSTITUTE_PATH) as f:
+    sub = yaml.load(f, Loader=yaml.CSafeLoader)
+  if candidate in sub:
+    candidate = sub[candidate]
+
+  with open(TORQUE_PARAMS_PATH) as f:
+    params = yaml.load(f, Loader=yaml.CSafeLoader)
+  with open(TORQUE_OVERRIDE_PATH) as f:
+    override = yaml.load(f, Loader=yaml.CSafeLoader)
+
+  # Ensure no overlap
+  if sum([candidate in x for x in [sub, params, override]]) > 1:
+    raise RuntimeError(f'{candidate} is defined twice in torque config')
+
+  if candidate in override:
+    out = override[candidate]
+  elif candidate in params:
+    out = params[candidate]
+  else:
+    raise NotImplementedError(f"Did not find torque params for {candidate}")
+  return {key: out[i] for i, key in enumerate(params['legend'])}
 
 
 # generic car and radar interfaces
@@ -34,6 +61,7 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
+    self.v_ego_cluster_seen = False
 
     self.CS = None
     self.can_parsers = []
@@ -83,7 +111,7 @@ class CarInterfaceBase(ABC):
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
-    ret.maxLateralAccel = CarInterfaceBase.get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
+    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
@@ -108,10 +136,16 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def get_torque_params(candidate, default=float('NaN')):
-    with open(TORQUE_PARAMS_PATH) as f:
-      data = json.load(f)
-    return {key: data[key].get(candidate, default) for key in data}
+  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+    params = get_torque_params(candidate)
+
+    tune.init('torque')
+    tune.torque.useSteeringAngle = use_steering_angle
+    tune.torque.kp = 1.0 / params['LAT_ACCEL_FACTOR']
+    tune.torque.kf = 1.0 / params['LAT_ACCEL_FACTOR']
+    tune.torque.ki = 0.1 / params['LAT_ACCEL_FACTOR']
+    tune.torque.friction = params['FRICTION']
+    tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
@@ -128,6 +162,14 @@ class CarInterfaceBase(ABC):
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
+
+    if ret.vEgoCluster == 0.0 and not self.v_ego_cluster_seen:
+      ret.vEgoCluster = ret.vEgo
+    else:
+      self.v_ego_cluster_seen = True
+
+    if ret.cruiseState.speedCluster == 0:
+      ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
     reader = ret.as_reader()
@@ -279,13 +321,22 @@ class CarStateBase(ABC):
     return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
 
   @staticmethod
-  def parse_gear_shifter(gear: str) -> car.CarState.GearShifter:
+  def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
+    if gear is None:
+      return GearShifter.unknown
+
     d: Dict[str, car.CarState.GearShifter] = {
-        'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-        'E': GearShifter.eco, 'T': GearShifter.manumatic, 'D': GearShifter.drive,
-        'S': GearShifter.sport, 'L': GearShifter.low, 'B': GearShifter.brake
+        'P': GearShifter.park, 'PARK': GearShifter.park,
+        'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
+        'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
+        'E': GearShifter.eco, 'ECO': GearShifter.eco,
+        'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
+        'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
+        'S': GearShifter.sport, 'SPORT': GearShifter.sport,
+        'L': GearShifter.low, 'LOW': GearShifter.low,
+        'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
     }
-    return d.get(gear, GearShifter.unknown)
+    return d.get(gear.upper(), GearShifter.unknown)
 
   @staticmethod
   def get_cam_can_parser(CP):

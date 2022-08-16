@@ -66,8 +66,9 @@ static void log(int levelnum, const char* filename, int lineno, const char* func
   char levelnum_c = levelnum;
   zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
+
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
-                            char* msg_buf, json11::Json::object msg_j={}) {
+                            char* msg_buf, const json11::Json::object &msg_j={}) {
   std::lock_guard lk(s.lock);
   if (!s.initialized) s.initialize();
 
