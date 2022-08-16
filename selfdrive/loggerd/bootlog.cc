@@ -27,10 +27,8 @@ static kj::Array<capnp::word> build_boot_log() {
   // Gather output of commands
   std::vector<std::string> bootlog_commands;
   bootlog_commands.push_back("df -h");
-  bootlog_commands.push_back("[ -b /dev/nvme0n1 ] && sudo nvme smart-log --output-format=json /dev/nvme0");
-  if (Hardware::AGNOS()) {
-    bootlog_commands.push_back("journalctl");
-  }
+  bootlog_commands.push_back("[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0");
+  bootlog_commands.push_back("[ -x \"$(command -v journalctl)\" ] && journalctl");
 
   i = 0;
   auto commands = boot.initCommands().initEntries(bootlog_commands.size());
