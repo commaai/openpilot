@@ -417,6 +417,8 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   # Initialize controlsd with a controlsState packet
   if controlsState is not None:
     params.put("ControlsState", controlsState.as_builder().to_bytes())
+  else:
+    params.delete("ControlsState")
 
   # Regen or python process
   if CP is not None:
