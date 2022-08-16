@@ -434,6 +434,19 @@ rednose/.gitignore
 rednose/**
 laika/**
 
+body/.gitignore
+body/board/SConscript
+body/board/*.h
+body/board/*.c
+body/board/*.s
+body/board/*.ld
+body/board/inc/**
+body/board/obj/
+body/board/bldc/**
+body/board/drivers/**
+body/certs/**
+body/crypto/**
+
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
@@ -491,6 +504,7 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
+opendbc/chrysler_ram_hd_generated.dbc
 opendbc/chrysler_ram_dt_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc

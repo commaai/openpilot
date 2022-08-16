@@ -40,6 +40,7 @@ cp -pR --parents $(cat $FILES_SRC) $BUILD_DIR/
 cd $BUILD_DIR
 
 rm -f panda/board/obj/panda.bin.signed
+rm -f panda/board/obj/panda_h7.bin.signed
 
 VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
 echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
@@ -53,6 +54,7 @@ git branch --set-upstream-to=origin/$RELEASE_BRANCH
 pushd panda/
 CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
+mv board/obj/panda_h7.bin.signed /tmp/panda_h7.bin.signed
 popd
 
 # Build
@@ -81,6 +83,7 @@ rm selfdrive/modeld/models/supercombo.dlc
 # Move back signed panda fw
 mkdir -p panda/board/obj
 mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
+mv /tmp/panda_h7.bin.signed panda/board/obj/panda_h7.bin.signed
 
 # Restore third_party
 git checkout third_party/
