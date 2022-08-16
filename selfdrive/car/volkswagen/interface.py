@@ -1,7 +1,6 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from common.params import Params
 from selfdrive.car import STD_CARGO_KG, create_button_enable_events, scale_rot_inertia, scale_tire_stiffness, \
                           gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
