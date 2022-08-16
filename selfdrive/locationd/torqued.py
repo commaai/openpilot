@@ -6,6 +6,7 @@ import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
+from common.filter_simple import FirstOrderFilter
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
@@ -13,6 +14,7 @@ POINTS_PER_BUCKET = 500
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.2
+CALC_FREQ = 100
 
 
 def slope2rot(slope):
@@ -51,23 +53,29 @@ class TorqueEstimator:
     self.offline_friction_coeff = CP.lateralTuning.torque.friction
     self.offline_slope = 1.0 / CP.lateralTuning.torque.kp
 
-    self.saved_params = params_reader.get("LiveTorqueParameters")
-    self.saved_params = json.loads(self.saved_params) if self.saved_params is not None else None
-    if self.car_sane(self.saved_params, CP.carFingerprint):
+    params = params_reader.get("LiveTorqueParameters")
+    params = json.loads(params) if params is not None else None
+    if self.car_sane(params, CP.carFingerprint):
       try:
-        if not self.is_sane(self.saved_params.get('slope'), self.saved_params.get('intercept'), self.saved_params.get('frictionCoefficient')):
-          self.saved_params = None
+        if not self.is_sane(
+          params.get('slope'),
+          params.get('intercept'),
+          params.get('frictionCoefficient')
+        ):
+          params = None
       except Exception as e:
         print(e)
-        self.saved_params = None
+        params = None
 
-    if self.saved_params is None:
-      self.saved_params = {
-        'carFingerprint': CP.carFingerprint,
+    if params is None:
+      params = {
         'slope': self.offline_slope,
         'intercept': 0.0,
-        'frictionCoefficient': self.offline_friction_coeff,
+        'frictionCoefficient': self.offline_friction_coeff
       }
+    self.slopeFiltered = FirstOrderFilter(params['slope'], 19.0, 1.0)
+    self.interceptFiltered = FirstOrderFilter(params['intercept'], 19.0, 1.0)
+    self.frictionCoefficientFiltered = FirstOrderFilter(params['frictionCoefficient'], 19.0, 1.0)
 
     self.reset()
 
@@ -150,21 +158,29 @@ def torque_params_thread(sm=None, pm=None):
         slope, intercept, friction_coeff = estimator.estimate_params()
         if estimator.is_sane(slope, intercept, friction_coeff):
           liveTorqueParameters.liveValid = True
-          estimator.saved_params['slope'] = slope
-          estimator.saved_params['intercept'] = intercept
-          estimator.saved_params['frictionCoefficient'] = friction_coeff
+          liveTorqueParameters.slopeRaw = slope
+          liveTorqueParameters.interceptRaw = intercept
+          liveTorqueParameters.frictionCoefficientRaw = friction_coeff
+          estimator.slopeFiltered.update(slope)
+          estimator.interceptFiltered.update(intercept)
+          estimator.frictionCoefficientFiltered.update(friction_coeff)
         else:
           liveTorqueParameters.liveValid = False
           estimator.reset()
       else:
-        liveTorqueParameters.liveValid = estimator.saved_params['slope']
-      liveTorqueParameters.slope = estimator.saved_params['slope']
-      liveTorqueParameters.intercept = estimator.saved_params['slope']
-      liveTorqueParameters.frictionCoefficient = estimator.saved_params['slope']
-      liveTorqueParameters.totalFilteredPoints = len(estimator.filtered_points)
+        liveTorqueParameters.liveValid = False
+      liveTorqueParameters.slopeFiltered = estimator.slopeFiltered.x
+      liveTorqueParameters.interceptFiltered = estimator.interceptFiltered.x
+      liveTorqueParameters.frictionCoefficientFiltered = estimator.frictionCoefficientFiltered.x
+      liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
 
       if sm.frame % 1200 == 0:  # once a minute
-        put_nonblocking("LiveTorqueParameters", json.dumps(estimator.saved_params))
+        params_to_write = {
+          "slope": estimator.slopeFiltered.x,
+          "intercept": estimator.interceptFiltered.x,
+          "frictionCoefficient": estimator.frictionCoefficientFiltered.x
+        }
+        put_nonblocking("LiveTorqueParameters", json.dumps(params_to_write))
 
       pm.send('liveTorqueParameters', msg)
 
