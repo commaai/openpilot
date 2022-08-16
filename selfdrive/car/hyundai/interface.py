@@ -294,13 +294,14 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
 
-      if candidate == CAR.TUCSON_HYBRID_4TH_GEN:
-        ret.safetyConfigs[1].safetyParam = Panda.FLAG_HYUNDAI_TUCSON_HYBRID_4TH_GEN
-
       # detect HDA2 with LKAS message
       if 0x50 in fingerprint[6]:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
+
+      if 0x1cf in (fingerprint[i] for i in range(4, 6)) and not (ret.flags & HyundaiFlags.CANFD_HDA2):
+        ret.flags |= HyundaiFlags.CANFD_BUTTON_SEND.value
+        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_BUTTON_SEND
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 

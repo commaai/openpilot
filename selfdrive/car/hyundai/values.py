@@ -41,6 +41,7 @@ class CarControllerParams:
 
 class HyundaiFlags(IntFlag):
   CANFD_HDA2 = 1
+  CANFD_BUTTON_SEND = 2
 
 
 class CAR:
