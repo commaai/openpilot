@@ -219,6 +219,10 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
+    # Block resume if cruise never previously enabled
+    if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL:
+      self.events.add(EventName.resumeBlocked)
+
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
       (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
@@ -664,20 +668,6 @@ class Controls:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
 
-  def update_button_events(self, buttonEvents):
-    for b in buttonEvents:
-      # accel and decel buttons both usually enable
-      if not self.CP.pcmCruise:
-        if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-          self.events.add(EventName.buttonEnable)
-      # do disable on button down
-      if b.type == ButtonType.cancel and b.pressed:
-        self.events.add(EventName.buttonCancel)
-
-    # block enable on resume if cruise never engaged
-    if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL:
-      self.events.add(EventName.resumeBlocked)
-
   def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
@@ -846,7 +836,6 @@ class Controls:
     self.prof.checkpoint("Sample")
 
     self.update_events(CS)
-    self.update_button_events(CS.buttonEvents)
     cloudlog.timestamp("Events updated")
 
     if not self.read_only and self.initialized:
