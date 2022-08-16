@@ -7,9 +7,11 @@ import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_nonblocking
 from common.realtime import config_realtime_process, DT_MDL
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
+from selfdrive.controls.lib.lane_planner import TRAJECTORY_SIZE
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
+from selfdrive.modeld.constants import T_IDXS
 from system.swaglog import cloudlog
 
 
@@ -41,6 +43,10 @@ class ParamsLearner:
     self.pitch = 0.0
     self.steering_pressed = False
     self.steering_angle = 0.0
+    
+    self.future_pitch_delay = 0.4 + (CP.longitudinalActuatorDelayUpperBound + CP.longitudinalActuatorDelayLowerBound) / 2
+    self.future_pitch_ema_k = 1/10
+    self.future_pitch_ema = 0.0
 
     self.valid = True
 
@@ -118,7 +124,14 @@ class ParamsLearner:
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
-
+    
+    elif which == 'modelV2' and self.active and len(msg.orientation.y) == TRAJECTORY_SIZE:
+      future_pitch_diff = interp(self.future_pitch_delay, T_IDXS, msg.orientation.y)
+      future_pitch = float(self.kf.x[States.ROAD_PITCH]) + future_pitch_diff
+      future_pitch = clip(future_pitch, self.future_pitch_ema - PITCH_MAX_DELTA, self.future_pitch_ema + PITCH_MAX_DELTA)
+      self.future_pitch_ema = self.future_pitch_ema_k * future_pitch \
+                            + (1 - self.future_pitch_ema_k) * self.future_pitch_ema
+        
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
       self.kf.filter.set_filter_time(t)
@@ -129,7 +142,7 @@ def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
 
   if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
+    sm = messaging.SubMaster(['liveLocationKalman', 'carState', 'modelV2'], poll=['liveLocationKalman'])
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
@@ -201,6 +214,8 @@ def main(sm=None, pm=None):
       # Account for the opposite signs of the yaw rates
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
 
+      
+      
       msg = messaging.new_message('liveParameters')
 
       liveParameters = msg.liveParameters
@@ -210,6 +225,7 @@ def main(sm=None, pm=None):
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       liveParameters.roll = float(x[States.ROAD_ROLL])
       liveParameters.pitch = float(x[States.ROAD_PITCH])
+      liveParameters.pitchFutureLong = float(learner.future_pitch_ema)
       liveParameters.angleOffsetAverageDeg = angle_offset_average
       liveParameters.angleOffsetDeg = angle_offset
       liveParameters.valid = all((

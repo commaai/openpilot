@@ -81,6 +81,7 @@ class ObservationKind:
     'ORB features wide camera',
     'ECEF_VEL',
     'Road Pitch',
+    'Road Future Pitch',
   ]
 
   @classmethod
