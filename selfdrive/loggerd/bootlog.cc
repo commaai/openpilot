@@ -25,21 +25,19 @@ static kj::Array<capnp::word> build_boot_log() {
   }
 
   // Gather output of commands
-  std::vector<std::string> bootlog_commands;
-  bootlog_commands.push_back("[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0");
-  bootlog_commands.push_back("[ -x \"$(command -v journalctl)\" ] && journalctl");
+  std::vector<std::string> bootlog_commands = {
+    "[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0",
+    "[ -x \"$(command -v journalctl)\" ] && journalctl",
+  };
 
-  i = 0;
   auto commands = boot.initCommands().initEntries(bootlog_commands.size());
-  for (auto &command : bootlog_commands) {
-    auto lentry = commands[i];
+  for (int j = 0; j < bootlog_commands.size(); j++) {
+    auto lentry = commands[j];
 
-    lentry.setKey(command);
+    lentry.setKey(bootlog_commands[j]);
 
-    const std::string result = util::check_output(command);
+    const std::string result = util::check_output(bootlog_commands[j]);
     lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
-
-    i++;
   }
 
   boot.setLaunchLog(util::read_file("/tmp/launch_log"));
