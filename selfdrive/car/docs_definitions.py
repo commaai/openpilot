@@ -92,8 +92,6 @@ class CarInfo:
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
-    assert self.harness is not None, f"{CP.carFingerprint}: Need to specify car harness"
-
     # TODO: set all the min enable speeds in carParams correctly and remove this
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
@@ -212,6 +210,7 @@ class Harness(Enum):
   hyundai_n = "Hyundai N"
   hyundai_o = "Hyundai O"
   hyundai_p = "Hyundai P"
+  hyundai_q = "Hyundai Q"
   custom = "Developer"
   obd_ii = "OBD-II"
   gm = "GM"
