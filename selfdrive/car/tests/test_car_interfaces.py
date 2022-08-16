@@ -23,6 +23,10 @@ class TestCarInterfaces(unittest.TestCase):
       0: fingerprint,
       1: fingerprint,
       2: fingerprint,
+      3: fingerprint,
+      4: fingerprint,
+      5: fingerprint,
+      6: fingerprint,
     }
 
     car_fw = []
