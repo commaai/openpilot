@@ -581,7 +581,7 @@ class Controls:
     # Update Torque Params
     if self.CP.lateralTuning.which() == 'torque':
       torque_params = self.sm['liveTorqueParameters']
-      self.LaC.update_params(torque_params.slopeFiltered, torque_params.interceptFiltered, torque_params.frictionFiltered)
+      self.LaC.update_params(torque_params.slopeFiltered, torque_params.offsetFiltered, torque_params.frictionFiltered)
 
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']

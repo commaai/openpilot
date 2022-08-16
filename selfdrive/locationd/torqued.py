@@ -59,7 +59,7 @@ class TorqueEstimator:
       try:
         if not self.is_sane(
           params.get('slope'),
-          params.get('intercept'),
+          params.get('offset'),
           params.get('frictionCoefficient')
         ):
           params = None
@@ -70,11 +70,11 @@ class TorqueEstimator:
     if params is None:
       params = {
         'slope': self.offline_slope,
-        'intercept': 0.0,
+        'offset': 0.0,
         'frictionCoefficient': self.offline_friction_coeff
       }
     self.slopeFiltered = FirstOrderFilter(params['slope'], 19.0, 1.0)
-    self.interceptFiltered = FirstOrderFilter(params['intercept'], 19.0, 1.0)
+    self.offsetFiltered = FirstOrderFilter(params['offset'], 19.0, 1.0)
     self.frictionCoefficientFiltered = FirstOrderFilter(params['frictionCoefficient'], 19.0, 1.0)
 
     self.reset()
@@ -90,21 +90,21 @@ class TorqueEstimator:
     # total least square solution as both x and y are noisy observations
     # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     _, _, v = np.linalg.svd(points, full_matrices=False)
-    slope, intercept = -v.T[0:2, 2] / v.T[2, 2]
-    _, spread = np.einsum("ik,kj -> ji", np.column_stack((points[:, 0], points[:, 2] - intercept)), slope2rot(slope))
+    slope, offset = -v.T[0:2, 2] / v.T[2, 2]
+    _, spread = np.einsum("ik,kj -> ji", np.column_stack((points[:, 0], points[:, 2] - offset)), slope2rot(slope))
     friction_coeff = np.std(spread) * FRICTION_FACTOR
-    return slope, intercept, friction_coeff
+    return slope, offset, friction_coeff
 
   def car_sane(self, params, fingerprint):
     return False if params.get('carFingerprint', None) != fingerprint else True
 
-  def is_sane(self, slope, intercept, friction_coeff):
+  def is_sane(self, slope, offset, friction_coeff):
     return (slope > (1.0 - SANITY_FACTOR) * self.offline_slope) & \
       (slope < (1.0 + SANITY_FACTOR) * self.offline_slope) & \
       (friction_coeff > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
       (friction_coeff < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff) & \
-      (intercept > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
-      (intercept < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff)
+      (offset > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
+      (offset < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff)
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
@@ -154,14 +154,14 @@ def torque_params_thread(sm=None, pm=None):
       liveTorqueParameters = msg.liveTorqueParameters
 
       if estimator.filtered_points.is_valid():
-        slope, intercept, friction_coeff = estimator.estimate_params()
-        if estimator.is_sane(slope, intercept, friction_coeff):
+        slope, offset, friction_coeff = estimator.estimate_params()
+        if estimator.is_sane(slope, offset, friction_coeff):
           liveTorqueParameters.liveValid = True
           liveTorqueParameters.slopeRaw = slope
-          liveTorqueParameters.interceptRaw = intercept
+          liveTorqueParameters.offsetRaw = offset
           liveTorqueParameters.frictionCoefficientRaw = friction_coeff
           estimator.slopeFiltered.update(slope)
-          estimator.interceptFiltered.update(intercept)
+          estimator.offsetFiltered.update(offset)
           estimator.frictionCoefficientFiltered.update(friction_coeff)
         else:
           liveTorqueParameters.liveValid = False
@@ -169,14 +169,14 @@ def torque_params_thread(sm=None, pm=None):
       else:
         liveTorqueParameters.liveValid = False
       liveTorqueParameters.slopeFiltered = estimator.slopeFiltered.x
-      liveTorqueParameters.interceptFiltered = estimator.interceptFiltered.x
+      liveTorqueParameters.offsetFiltered = estimator.offsetFiltered.x
       liveTorqueParameters.frictionCoefficientFiltered = estimator.frictionCoefficientFiltered.x
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
 
       if sm.frame % 1200 == 0:  # once a minute
         params_to_write = {
           "slope": estimator.slopeFiltered.x,
-          "intercept": estimator.interceptFiltered.x,
+          "offset": estimator.offsetFiltered.x,
           "frictionCoefficient": estimator.frictionCoefficientFiltered.x
         }
         put_nonblocking("LiveTorqueParameters", json.dumps(params_to_write))
