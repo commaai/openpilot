@@ -1,8 +1,10 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
+from common.numpy_fast import clip
+from common.conversions import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.volkswagen import mqbcan
-from selfdrive.car.volkswagen.values import CANBUS, CarControllerParams
+from selfdrive.car.volkswagen import mqbcan, pqcan
+from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -11,7 +13,7 @@ class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.CCP = CarControllerParams(CP)
-    self.CCS = mqbcan
+    self.CCS = pqcan if CP.carFingerprint in PQ_CARS else mqbcan
     self.packer_pt = CANPacker(dbc_name)
 
     self.apply_steer_last = 0
@@ -65,6 +67,13 @@ class CarController:
       self.apply_steer_last = apply_steer
       can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hcaEnabled))
 
+    # **** Acceleration Controls ******************************************** #
+
+    if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
+      tsk_status = self.CCS.tsk_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
+      accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0
+      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, tsk_status, accel))
+
     # **** HUD Controls ***************************************************** #
 
     if self.frame % self.CCP.LDW_STEP == 0:
@@ -73,6 +82,12 @@ class CarController:
         hud_alert = self.CCP.LDW_MESSAGES["laneAssistTakeOver"]
       can_sends.append(self.CCS.create_lka_hud_control(self.packer_pt, CANBUS.pt, CS.ldw_stock_values, CC.enabled,
                                                        CS.out.steeringPressed, hud_alert, hud_control))
+
+    if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
+      acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
+      set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
+      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
+                                                       hud_control.leadVisible))
 
     # **** Stock ACC Button Controls **************************************** #
 
