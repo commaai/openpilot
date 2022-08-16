@@ -16,6 +16,8 @@ from system.swaglog import cloudlog
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
+PITCH_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
+PITCH_MIN, PITCH_MAX = math.radians(-10), math.radians(10)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
 
 
@@ -36,6 +38,7 @@ class ParamsLearner:
     self.yaw_rate = 0.0
     self.yaw_rate_std = 0.0
     self.roll = 0.0
+    self.pitch = 0.0
     self.steering_pressed = False
     self.steering_angle = 0.0
 
@@ -58,6 +61,19 @@ class ParamsLearner:
         roll = 0.0
         roll_std = np.radians(10.0)
       self.roll = clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
+      
+      localizer_pitch = msg.orientationNED.value[1]
+      localizer_pitch_std = np.radians(1) if np.isnan(msg.orientationNED.std[1]) else msg.orientationNED.std[1]
+      pitch_valid = msg.orientationNED.valid and PITCH_MIN < localizer_pitch < PITCH_MAX
+      if pitch_valid:
+        pitch = localizer_pitch
+        # Experimentally found multiplier of 2 to be best trade-off between stability and accuracy or similar?
+        pitch_std = 2 * localizer_pitch_std
+      else:
+        # This is done to bound the road pitch estimate when localizer values are invalid
+        pitch = 0.0
+        pitch_std = np.radians(10.0)
+      self.pitch = clip(pitch, self.pitch - PITCH_MAX_DELTA, self.pitch + PITCH_MAX_DELTA)
 
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
       yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
@@ -76,6 +92,11 @@ class ParamsLearner:
                                       ObservationKind.ROAD_ROLL,
                                       np.array([[self.roll]]),
                                       np.array([np.atleast_2d(roll_std**2)]))
+          
+          self.kf.predict_and_observe(t,
+                                      ObservationKind.ROAD_PITCH,
+                                      np.array([[self.pitch]]),
+                                      np.array([np.atleast_2d(pitch_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
         # We observe the current stiffness and steer ratio (with a high observation noise) to bound
@@ -188,6 +209,7 @@ def main(sm=None, pm=None):
       liveParameters.steerRatio = float(x[States.STEER_RATIO])
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
       liveParameters.roll = float(x[States.ROAD_ROLL])
+      liveParameters.pitch = float(x[States.ROAD_PITCH])
       liveParameters.angleOffsetAverageDeg = angle_offset_average
       liveParameters.angleOffsetDeg = angle_offset
       liveParameters.valid = all((
