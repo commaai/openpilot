@@ -79,7 +79,7 @@ class CarController:
           lead_distance = 0
 
         can_sends.append(self.CCS.create_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
-                                                                 hud_control.set_speed * CV.MS_TO_KPH, lead_distance))
+                                                                 hud_control.setSpeed * CV.MS_TO_KPH, lead_distance))
         can_sends.append(self.CCS.create_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values))
 
     # **** Steering Controls ************************************************ #
