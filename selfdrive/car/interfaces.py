@@ -213,7 +213,7 @@ class CarInterfaceBase(ABC):
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
 
-    # handle button presses
+    # Handle button presses
     events.events.extend(create_button_enable_events(cs_out.buttonEvents, pcm_cruise=pcm_enable))
 
     # Handle permanent and temporary steering faults
