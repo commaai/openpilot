@@ -369,9 +369,6 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
 
-    # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents, self.CP.pcmCruise))
-
     ret.events = events.to_msg()
 
     return ret
