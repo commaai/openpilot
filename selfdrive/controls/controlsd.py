@@ -578,10 +578,11 @@ class Controls:
     sr = max(params.steerRatio, 0.1)
     self.VM.update_params(x, sr)
 
-    # Update Torque Params
-    if self.CP.lateralTuning.which() == 'torque':
-      torque_params = self.sm['liveTorqueParameters']
-      self.LaC.update_params(torque_params.slopeFiltered, torque_params.offsetFiltered, torque_params.frictionFiltered)
+    # Do not update the params as of now, param compute only mode
+    # # Update Torque Params
+    # if self.CP.lateralTuning.which() == 'torque':
+    #   torque_params = self.sm['liveTorqueParameters']
+    #   self.LaC.update_params(torque_params.slopeFiltered, torque_params.offsetFiltered, torque_params.frictionFiltered)
 
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']

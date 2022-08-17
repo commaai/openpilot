@@ -7,6 +7,7 @@ from cereal import car
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
 from common.filter_simple import FirstOrderFilter
+from system.swaglog import cloudlog
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
@@ -15,6 +16,7 @@ MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.2
 CALC_FREQ = 100
+STEER_MIN_THRESHOLD = 0.05
 
 
 def slope2rot(slope):
@@ -99,12 +101,12 @@ class TorqueEstimator:
     return False if params.get('carFingerprint', None) != fingerprint else True
 
   def is_sane(self, slope, offset, friction_coeff):
-    return (slope > (1.0 - SANITY_FACTOR) * self.offline_slope) & \
-      (slope < (1.0 + SANITY_FACTOR) * self.offline_slope) & \
-      (friction_coeff > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
-      (friction_coeff < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff) & \
-      (offset > (1.0 - SANITY_FACTOR) * self.offline_friction_coeff) & \
-      (offset < (1.0 + SANITY_FACTOR) * self.offline_friction_coeff)
+    min_factor, max_factor = 1.0 + SANITY_FACTOR, 1.0 - SANITY_FACTOR
+    if np.isnan(slope) or np.isnan(offset) or np.isnan(friction_coeff):
+      return False
+    return ((max_factor * self.offline_slope) >= slope >= (min_factor * self.offline_slope)) & \
+      ((max_factor * self.offline_friction_coeff) >= friction_coeff >= (min_factor * self.offline_friction_coeff)) & \
+      ((max_factor * self.offline_friction_coeff) >= offset >= (min_factor * self.offline_friction_coeff))
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
@@ -123,8 +125,8 @@ class TorqueEstimator:
         active = bool(np.interp(t, np.array(self.raw_points_t['active']) + self.lag, self.raw_points['active']))
         steer_override = bool(np.interp(t, np.array(self.raw_points_t['steer_override']) + self.lag, self.raw_points['steer_override']))
         vego = np.interp(t, np.array(self.raw_points_t['vego']) + self.lag, self.raw_points['vego'])
-        if active and (not steer_override) and (vego > MIN_VEL):
-          steer = np.interp(t, np.array(self.raw_points_t['steer_torque']) + self.lag, self.raw_points['steer_torque'])
+        steer = np.interp(t, np.array(self.raw_points_t['steer_torque']) + self.lag, self.raw_points['steer_torque'])
+        if active and (not steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
           lateral_acc = vego * yaw_rate
           self.filtered_points.add_point(steer, lateral_acc)
 
@@ -154,7 +156,11 @@ def torque_params_thread(sm=None, pm=None):
       liveTorqueParameters = msg.liveTorqueParameters
 
       if estimator.filtered_points.is_valid():
-        slope, offset, friction_coeff = estimator.estimate_params()
+        try:
+          slope, offset, friction_coeff = estimator.estimate_params()
+        except Exception as e:
+          cloudlog.exception(f"Error computing live torque params: {e}")
+
         if estimator.is_sane(slope, offset, friction_coeff):
           liveTorqueParameters.liveValid = True
           liveTorqueParameters.slopeRaw = slope
@@ -164,6 +170,7 @@ def torque_params_thread(sm=None, pm=None):
           estimator.offsetFiltered.update(offset)
           estimator.frictionCoefficientFiltered.update(friction_coeff)
         else:
+          cloudlog.exception("live torque params are numerically unstable")
           liveTorqueParameters.liveValid = False
           estimator.reset()
       else:
