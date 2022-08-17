@@ -179,7 +179,7 @@ class CarInterface(CarInterfaceBase):
       be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
 
       # Suppress resume button if we're resuming from stop so we don't adjust speed.
-      if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill) and be.pressed:
+      if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.cruiseState.standstill) and be.pressed:
         be.type = ButtonType.unknown
 
       ret.buttonEvents = [be]
