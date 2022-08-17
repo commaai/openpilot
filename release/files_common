@@ -434,6 +434,19 @@ rednose/.gitignore
 rednose/**
 laika/**
 
+body/.gitignore
+body/board/SConscript
+body/board/*.h
+body/board/*.c
+body/board/*.s
+body/board/*.ld
+body/board/inc/**
+body/board/obj/
+body/board/bldc/**
+body/board/drivers/**
+body/certs/**
+body/crypto/**
+
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
@@ -539,6 +552,7 @@ opendbc/toyota_nodsu_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
+opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc

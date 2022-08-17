@@ -99,7 +99,6 @@ FW_VERSIONS = {
       b'\x00\xfe\xf7\x00\x00',
       b'\001\xfe\xf9\000\000',
       b'\x01\xfe\xf7\x00\x00',
-      b'\xf1\x00\xa4\x10@',
     ],
   },
   CAR.IMPREZA: {
@@ -116,6 +115,7 @@ FW_VERSIONS = {
       b'z\x94\x08\x90\x00',
       b'z\x84\x19\x90\x00',
       b'\xf1\x00\xb2\x06\x04',
+      b'z\x94\x0c\x90\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x7a\xc0\x0c\x00',
@@ -139,6 +139,7 @@ FW_VERSIONS = {
       b'\x00\x00c\xf4\x00\x00\x00\x00',
       b'\x00\x00d\xdc\x00\x00\x00\x00',
       b'\x00\x00dd\x00\x00\x00\x00',
+      b'\x00\x00c\xf4\x1f@ \x07',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
@@ -148,7 +149,6 @@ FW_VERSIONS = {
       b'\xaa!`u\a',
       b'\xaa!dq\a',
       b'\xaa!dt\a',
-      b'\xf1\x00\xa2\x10\t',
       b'\xc5!ar\a',
       b'\xbe!as\a',
       b'\xc5!ds\a',
@@ -158,6 +158,7 @@ FW_VERSIONS = {
       b'\xaa\x00Bu\x07',
       b'\xc5!dr\x07',
       b'\xaa!aw\x07',
+      b'\xaa!av\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe3\xe5\x46\x31\x00',
@@ -173,7 +174,6 @@ FW_VERSIONS = {
       b'\xe4\xf5\002\000\000',
       b'\xe3\xd0\x081\x00',
       b'\xe3\xf5\x06\x00\x00',
-      b'\xf1\x00\xa4\x10@',
     ],
   },
   CAR.IMPREZA_2020: {
@@ -202,7 +202,6 @@ FW_VERSIONS = {
       b'\xca!`0\a',
       b'\xcc\"f0\a',
       b'\xcc!fp\a',
-      b'\xf1\x00\xa2\x10\t',
       b'\xca!f@\x07',
       b'\xca!fp\x07',
     ],
@@ -247,7 +246,6 @@ FW_VERSIONS = {
       b'\x1a\xf6F`\x00',
       b'\032\xf6b`\000',
       b'\x1a\xf6B`\x00',
-      b'\xf1\x00\xa4\x10@',
       b'\x1a\xf6b0\x00',
     ],
   },
