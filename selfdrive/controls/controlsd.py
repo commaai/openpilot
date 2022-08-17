@@ -206,13 +206,17 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
+      print('SETTING INITIAL STATE!')
       controls_state = Params().get("ControlsState")
       if controls_state is not None:
+        print('NOT NONE!')
         controls_state = log.ControlsState.from_bytes(controls_state)
         self.v_cruise_kph = controls_state.vCruise
+        self.state = controls_state.state
+        print(self.v_cruise_kph)
 
-      if self.sm['pandaStates'][0].controlsAllowed:
-        self.state = State.enabled
+      # if self.sm['pandaStates'][0].controlsAllowed:
+      #   self.state = State.enabled
 
   def update_events(self, CS):
     """Compute carEvents from carState"""
@@ -429,7 +433,8 @@ class Controls:
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
-      if all_valid or timed_out or SIMULATION:
+      if all_valid or timed_out or SIMULATION or REPLAY:
+        print('INIT!')
         self.set_initial_state()
 
         if not self.read_only:
