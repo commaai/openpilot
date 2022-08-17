@@ -205,12 +205,10 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
-      print('SETTING INITIAL STATE')
       controls_state = Params().get("ControlsState")
       if controls_state is not None:
         controls_state = log.ControlsState.from_bytes(controls_state)
         self.v_cruise_kph = controls_state.vCruise
-        print("V_CRUISE:", self.v_cruise_kph)
 
       if self.sm['pandaStates'][0].controlsAllowed:
         self.state = State.enabled
