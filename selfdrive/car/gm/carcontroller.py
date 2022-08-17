@@ -10,7 +10,9 @@ from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButt
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
 
-
+# only use pitch-compensated acceleration at 10m/s+
+ACCEL_PITCH_FACTOR_BP = [5., 10.] # [m/s]
+ACCEL_PITCH_FACTOR_V = [0., 1.] # [unitless in [0-1]]
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
@@ -59,7 +61,7 @@ class CarController:
       idx = (CS.lka_steering_cmd_counter + 1) % 4
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
-
+    
     if self.CP.openpilotLongitudinalControl:
       # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
@@ -68,12 +70,14 @@ class CarController:
           self.apply_gas = self.params.MAX_ACC_REGEN
           self.apply_brake = 0
         else:
+          k = interp(CS.out.vEgo, ACCEL_PITCH_FACTOR_BP, ACCEL_PITCH_FACTOR_V)
+          brake_accel = k * actuators.accelPitchCompensated + (1. - k) * actuators.accel
           if self.CP.carFingerprint in EV_CAR:
-            self.apply_gas = int(round(interp(actuators.accel, self.params.EV_GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.EV_BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+            self.apply_gas = int(round(interp(actuators.accelPitchCompensated, self.params.EV_GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
+            self.apply_brake = int(round(interp(brake_accel, self.params.EV_BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           else:
-            self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+            self.apply_gas = int(round(interp(actuators.accelPitchCompensated, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
+            self.apply_brake = int(round(interp(brake_accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
 
         idx = (self.frame // 4) % 4
 
