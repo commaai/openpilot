@@ -71,6 +71,11 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   if len(log1) != len(log2):
     cnt1 = Counter(m.which() for m in log1)
     cnt2 = Counter(m.which() for m in log2)
+    # print([m for m in log1 if m.which() == 'carEvents'])
+    # print([m for m in log2 if m.which() == 'carEvents'])
+    # for m1, m2 in zip([m for m in log1 if m.which() == 'carEvents'], [m for m in log2 if m.which() == 'carEvents']):
+    #   print(m1, m2, m1==m2)
+    print('LOGS ARE NOT SAME LENGTH')
     raise Exception(f"logs are not same length: {len(log1)} VS {len(log2)}\n\t\t{cnt1}\n\t\t{cnt2}")
 
   diff = []

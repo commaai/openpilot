@@ -446,7 +446,15 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
+  controlsState = None
+  initialized = False
+  for msg in lr:
+    if msg.which() == 'controlsState':
+      controlsState = msg.controlsState
+      if initialized:
+        break
+    elif msg.which() == 'carEvents':
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
 
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"

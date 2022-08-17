@@ -49,7 +49,7 @@ segments = [
   ("CHRYSLER", "regen38346FB33D0|2022-07-14--18-05-26--0"),
   ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),
   ("SUBARU", "regen54A1E2BE5AA|2022-07-14--18-07-50--0"),
-  ("GM", "regen98924C9908A|2022-08-16--18-47-30--0"),
+  ("GM", "regenCD457936EB4|2022-08-16--19-05-06--0"),
   ("NISSAN", "regenCA0B0DC946E|2022-07-14--18-10-17--0"),
   ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
   ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
@@ -74,7 +74,7 @@ def run_test_process(data):
   if args.update_refs or args.upload_only:
     print(f'Uploading: {os.path.basename(cur_log_fn)}')
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+    # upload_file(cur_log_fn, os.path.basename(cur_log_fn))
     os.remove(cur_log_fn)
   return (segment, cfg.proc_name, cfg.subtest_name, res)
 
@@ -177,8 +177,8 @@ if __name__ == "__main__":
   upload = args.update_refs or args.upload_only
   os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
-  if upload:
-    assert full_test, "Need to run full test when updating refs"
+  # if upload:
+  #   assert full_test, "Need to run full test when updating refs"
 
   try:
     ref_commit = open(REF_COMMIT_FN).read().strip()
@@ -235,6 +235,7 @@ if __name__ == "__main__":
         results[segment][proc + subtest_name] = result
 
   diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
+  print('failed', failed)
   if not upload:
     with open(os.path.join(PROC_REPLAY_DIR, "diff.txt"), "w") as f:
       f.write(diff2)
@@ -248,8 +249,12 @@ if __name__ == "__main__":
       print("TEST SUCCEEDED")
 
   else:
-    with open(REF_COMMIT_FN, "w") as f:
-      f.write(cur_commit)
-    print(f"\n\nUpdated reference logs for commit: {cur_commit}")
+    if failed:
+      print(diff1)
+      print("UPDATING REFS FAILED")
+    else:
+      with open(REF_COMMIT_FN, "w") as f:
+        f.write(cur_commit)
+      print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
   sys.exit(int(failed))

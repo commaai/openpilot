@@ -235,6 +235,7 @@ class Controls:
 
     # Block resume if cruise never previously enabled
     if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL:
+      print('ADDING RESUME BLOCKED')
       self.events.add(EventName.resumeBlocked)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
