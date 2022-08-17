@@ -42,20 +42,25 @@ FW_QUERY_CONFIG = FwQueryConfig(
 FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
-      # b'0.0.02',
-      b'ELECTRIC0'
+      b'0.0.03',
     ],
     (Ecu.debug, 0x721, None): [
-      b'1fc01d70' # git hash of the firmware used
+      b'32023af9' # git hash of the firmware used
     ],
   },
   CAR.BODY_KNEE: {
     (Ecu.engine, 0x720, None): [
-      # b'0.0.02',
-      b'ELECTRIC1'
+      b'0.0.03',
     ],
     (Ecu.debug, 0x721, None): [
-      b'1fc01d70' # git hash of the firmware used
+      b'32023af9' # git hash of the firmware used
+    ],
+    # knee ECUs
+    (Ecu.engine, 0x730, None): [
+      b'0.0.03',
+    ],
+    (Ecu.debug, 0x731, None): [
+      b'32023af9' # git hash of the firmware used
     ],
   },
 }
