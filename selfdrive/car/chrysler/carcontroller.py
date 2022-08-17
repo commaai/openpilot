@@ -61,6 +61,10 @@ class CarController:
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
 
+      if not lkas_control_bit and self.lkas_control_bit_prev:
+        self.last_lkas_falling_edge = self.frame
+      self.lkas_control_bit_prev = lkas_control_bit
+
       # steer torque
       new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
       apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
@@ -71,9 +75,6 @@ class CarController:
       can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
     self.frame += 1
-    if not lkas_control_bit and self.lkas_control_bit_prev:
-      self.last_lkas_falling_edge = self.frame
-    self.lkas_control_bit_prev = lkas_control_bit
 
     new_actuators = CC.actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
