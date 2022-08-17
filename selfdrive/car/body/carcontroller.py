@@ -97,7 +97,7 @@ class CarController:
       self.torque_r_filtered = np.clip(self.deadband_filter(torque_r, 10),
                                        self.torque_r_filtered - MAX_TORQUE_RATE,
                                        self.torque_r_filtered + MAX_TORQUE_RATE)
-      
+
       torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
       torque_r = int(np.clip(self.torque_r_filtered, -MAX_TORQUE, MAX_TORQUE))
 
@@ -127,7 +127,7 @@ class CarController:
       self.torque_knee_r_filtered = np.clip(knee_torque_r,
                                         self.torque_knee_r_filtered - MAX_KNEE_TORQUE_RATE,
                                         self.torque_knee_r_filtered + MAX_KNEE_TORQUE_RATE)
-      
+
       knee_torque_l = int(np.clip(self.torque_knee_l_filtered, -MAX_KNEE_TORQUE_LEFT, MAX_KNEE_TORQUE_LEFT))
       knee_torque_r = int(np.clip(self.torque_knee_r_filtered, -MAX_KNEE_TORQUE_RIGHT, MAX_KNEE_TORQUE_RIGHT))
 
@@ -136,6 +136,11 @@ class CarController:
         knee_torque_l = 0
       elif knee_angle_measured_left >= 330 and knee_torque_l < 0:
         knee_torque_l = 0
+
+      # Do not try to balance if knee and hip have excessive angle on start
+      if abs(knee_angle_desired_left - knee_angle_measured_left) > 5 or abs(knee_angle_desired_right - knee_angle_measured_right) > 5:
+        torque_l = 0
+        torque_r = 0
 
       can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
 
