@@ -250,7 +250,7 @@ if __name__ == "__main__":
   else:
     if failed:
       print(diff1)
-      print("UPDATING REFS FAILED")
+      print("FAILED TO UPDATE REFS")
     else:
       with open(REF_COMMIT_FN, "w") as f:
         f.write(cur_commit)
