@@ -206,17 +206,13 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
-      print('SETTING INITIAL STATE!')
-      controls_state = Params().get("ControlsState")
+      controls_state = Params().get("ReplayControlsState")
       if controls_state is not None:
-        print('NOT NONE!')
         controls_state = log.ControlsState.from_bytes(controls_state)
         self.v_cruise_kph = controls_state.vCruise
-        self.state = controls_state.state
-        print(self.v_cruise_kph)
 
-      # if self.sm['pandaStates'][0].controlsAllowed:
-      #   self.state = State.enabled
+      if self.sm['pandaStates'][0].controlsAllowed:
+        self.state = State.enabled
 
   def update_events(self, CS):
     """Compute carEvents from carState"""
@@ -440,8 +436,9 @@ class Controls:
 
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-        self.initialized = True
 
+        self.initialized = True
+        self.set_initial_state()
         Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout

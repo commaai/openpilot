@@ -416,9 +416,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
 
   # Initialize controlsd with a controlsState packet
   if controlsState is not None:
-    params.put("ControlsState", controlsState.as_builder().to_bytes())
+    params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
   else:
-    params.delete("ControlsState")
+    params.delete("ReplayControlsState")
 
   # Regen or python process
   if CP is not None:
@@ -455,6 +455,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
         break
     elif msg.which() == 'carEvents':
       initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+  assert controlsState is not None and initialized, "controlsState never initialized"
 
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
