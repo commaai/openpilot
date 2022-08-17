@@ -456,7 +456,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     elif msg.which() == 'carEvents':
       initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
 
-  assert controlsState is not None, "controlsState never initialized"
+  assert controlsState is not None and initialized, "controlsState never initialized"
 
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
