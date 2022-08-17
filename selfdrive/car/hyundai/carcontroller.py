@@ -77,7 +77,7 @@ class CarController:
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
       if self.frame % 2 == 0 and not self.CP.flags & HyundaiFlags.CANFD_HDA2:
-        # cruise cancel for non HDA CAN-FD
+        # cruise cancel for non HDA2 without 0x1cf
         can_sends.append(hyundaicanfd.create_cruise_info(self.packer, CS.cruise_info_copy, CC.cruiseControl.cancel))
         # LFA and HDA icons
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, CC.enabled))
