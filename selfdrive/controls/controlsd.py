@@ -466,22 +466,18 @@ class Controls:
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
-    # if stock cruise is completely disabled, then we can use our own set speed logic
-    if not self.CP.pcmCruise:
-      if CS.cruiseState.available:
+    if CS.cruiseState.available:
+      # if stock cruise is completely disabled, then we can use our own set speed logic
+      if not self.CP.pcmCruise:
         self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
                                             self.button_timers, self.enabled, self.is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
       else:
-        self.v_cruise_kph = V_CRUISE_INITIAL
-        self.v_cruise_cluster_kph = V_CRUISE_INITIAL
-    else:
-      if CS.cruiseState.available:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
-      else:
-        self.v_cruise_kph = 0
-        self.v_cruise_cluster_kph = 0
+    else:
+      self.v_cruise_kph = V_CRUISE_INITIAL
+      self.v_cruise_cluster_kph = V_CRUISE_INITIAL
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
