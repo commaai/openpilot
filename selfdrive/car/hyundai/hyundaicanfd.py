@@ -41,6 +41,6 @@ def create_cruise_info(packer, cruise_info_copy, pcm_cancel_cmd):
 def create_lfahda_cluster(packer, enabled):
   values = {
     "HDA_ICON": 1 if enabled else 0,
-    "LFA_ICON": 2 if enabled else 1,
+    "LFA_ICON": 2 if enabled else 0,
   }
   return packer.make_can_msg("LFAHDA_CLUSTER", 4, values)
