@@ -203,9 +203,10 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
 
   # Get and setup initial state
   CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+  controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
   liveCalibration = [m for m in lr if m.which() == 'liveCalibration'][0]
 
-  setup_env(CP=CP)
+  setup_env(CP=CP, controlsState=controlsState)
   params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)

@@ -49,7 +49,7 @@ segments = [
   ("CHRYSLER", "regen38346FB33D0|2022-07-14--18-05-26--0"),
   ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),
   ("SUBARU", "regen54A1E2BE5AA|2022-07-14--18-07-50--0"),
-  ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
+  ("GM", "regen76027B408B7|2022-08-16--19-56-58--0"),
   ("NISSAN", "regenCA0B0DC946E|2022-07-14--18-10-17--0"),
   ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
   ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
@@ -248,12 +248,8 @@ if __name__ == "__main__":
       print("TEST SUCCEEDED")
 
   else:
-    if failed:
-      print(diff1)
-      print("FAILED TO UPDATE REFS")
-    else:
-      with open(REF_COMMIT_FN, "w") as f:
-        f.write(cur_commit)
-      print(f"\n\nUpdated reference logs for commit: {cur_commit}")
+    with open(REF_COMMIT_FN, "w") as f:
+      f.write(cur_commit)
+    print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
   sys.exit(int(failed))
