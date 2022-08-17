@@ -231,7 +231,6 @@ class Controls:
 
     # Block resume if cruise never previously enabled
     if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL:
-      print('ADDING RESUME BLOCKED')
       self.events.add(EventName.resumeBlocked)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
@@ -430,8 +429,7 @@ class Controls:
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
-      if all_valid or timed_out or SIMULATION or REPLAY:
-        print('INIT!')
+      if all_valid or timed_out or SIMULATION:
         self.set_initial_state()
 
         if not self.read_only:
