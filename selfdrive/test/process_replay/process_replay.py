@@ -385,7 +385,7 @@ def replay_process(cfg, lr, fingerprint=None):
       return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def setup_env(simulation=False, CP=None, cfg=None):
+def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -413,6 +413,12 @@ def setup_env(simulation=False, CP=None, cfg=None):
     os.environ["SIMULATION"] = "1"
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
+
+  # Initialize controlsd with a controlsState packet
+  if controlsState is not None:
+    params.put("ControlsState", controlsState.as_builder().to_bytes())
+  else:
+    params.delete("ControlsState")
 
   # Regen or python process
   if CP is not None:

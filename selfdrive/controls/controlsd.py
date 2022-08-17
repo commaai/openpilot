@@ -203,6 +203,18 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
 
+  def set_initial_state(self):
+    if REPLAY:
+      print('SETTING INITIAL STATE')
+      controls_state = Params().get("ControlsState")
+      if controls_state is not None:
+        controls_state = log.ControlsState.from_bytes(controls_state)
+        self.v_cruise_kph = controls_state.vCruise
+        print("V_CRUISE:", self.v_cruise_kph)
+
+      if self.sm['pandaStates'][0].controlsAllowed:
+        self.state = State.enabled
+
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
@@ -415,12 +427,11 @@ class Controls:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
       if all_valid or timed_out or SIMULATION:
+        self.set_initial_state()
+
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
         self.initialized = True
-
-        if REPLAY and self.sm['pandaStates'][0].controlsAllowed:
-          self.state = State.enabled
 
         Params().put_bool("ControlsReady", True)
 
