@@ -309,13 +309,9 @@
     <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>ต้องการอย่างน้อย %1 ตัวอักษร!</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>Need at least %1 characters!</source>
-        <translation type="vanished">ต้องการอย่างน้อย %1 ตัวอักษร!</translation>
     </message>
 </context>
 <context>
@@ -346,7 +342,7 @@
     <message>
         <location filename="../qt/maps/map.cc" line="621"/>
         <source>eta</source>
-        <translation>เวลาถึงปลายทางโดยประมาณ</translation>
+        <translation>eta</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="631"/>
@@ -644,35 +640,23 @@ location set</source>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="82"/>
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n นาทีที่แล้ว</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n ชั่วโมงที่แล้ว</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n วันที่แล้ว</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>%1 minute%2 ago</source>
-        <translation type="vanished">%1 นาทีที่แล้ว</translation>
-    </message>
-    <message>
-        <source>%1 hour%2 ago</source>
-        <translation type="vanished">%1 ชั่วโมงที่แล้ว</translation>
-    </message>
-    <message>
-        <source>%1 day%2 ago</source>
-        <translation type="vanished">%1 วันมาแล้ว</translation>
     </message>
 </context>
 <context>
@@ -1041,23 +1025,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>เปลี่ยน Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>เปลี่ยน</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Branch ใหม่จะถูกติดตั้งในครั้งต่อไปที่ตัวอัปเดตทำงาน</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>ใส่ชื่อ Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
@@ -1189,14 +1173,6 @@ location set</source>
         <translation>รับการแจ้งเตือนให้เลี้ยวกลับเข้าเลนเมื่อรถของคุณตรวจพบการข้ามช่องจราจรโดยไม่เปิดสัญญาณไฟเลี้ยวในขณะขับขี่ที่ความเร็วเกิน 31 ไมล์ต่อชั่วโมง (50 ก.ม./ช.ม.)</translation>
     </message>
     <message>
-        <source>Enable Right-Hand Drive</source>
-        <translation type="vanished">เปิดใช้งานรถพวงมาลัยขวา</translation>
-    </message>
-    <message>
-        <source>Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.</source>
-        <translation type="vanished">กำหนดให้ openpilot ปฏิบัติตามการจราจรแบบขับชิดซ้าย และตรวจสอบคนขับบนที่นั่งด้านขวา</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
         <source>Use Metric System</source>
         <translation>ใช้ระบบเมตริก</translation>
@@ -1228,8 +1204,8 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
-        <source>Show ETA in 24h format</source>
-        <translation>แสดงผลเวลาคาดการณ์ถึงปลายทาง ในรูปแบบ 24 ชั่วโมง</translation>
+        <source>Show ETA in 24h Format</source>
+        <translation>แสดงผล ETA ในรูปแบบ 24 ชั่วโมง</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="66"/>
@@ -1239,12 +1215,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="71"/>
         <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
+        <translation>แสดงแผนที่ที่ด้านซ้ายของหน้าจอ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="72"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
+        <translation>แสดงแผนที่ที่ด้านซ้ายของหน้าจออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="84"/>
