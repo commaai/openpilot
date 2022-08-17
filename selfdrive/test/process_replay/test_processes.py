@@ -32,8 +32,9 @@ original_segments = [
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
 
-  # Enable when port is tested and dascamOnly is no longer set
+  # Enable when port is tested and dashcamOnly is no longer set
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
+  #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.PASSAT_NMS
 ]
 
 segments = [
@@ -48,7 +49,7 @@ segments = [
   ("CHRYSLER", "regen38346FB33D0|2022-07-14--18-05-26--0"),
   ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),
   ("SUBARU", "regen54A1E2BE5AA|2022-07-14--18-07-50--0"),
-  ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
+  ("GM", "regen76027B408B7|2022-08-16--19-56-58--0"),
   ("NISSAN", "regenCA0B0DC946E|2022-07-14--18-10-17--0"),
   ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
   ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
@@ -117,19 +118,19 @@ def format_diff(results, log_paths, ref_commit):
     for proc, diff in list(result.items()):
       # long diff
       diff2 += f"*** process: {proc} ***\n"
-      diff2 += f"\tref: {log_paths[segment]['ref']}\n\n"
-      diff2 += f"\tnew: {log_paths[segment]['new']}\n\n"
+      diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
+      diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
       # short diff
       diff1 += f"    {proc}\n"
       if isinstance(diff, str):
-        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
         diff1 += f"        {diff}\n"
         failed = True
       elif len(diff):
-        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
 
         cnt: Dict[str, int] = {}
         for d in diff:
@@ -196,8 +197,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-
-  log_paths: DefaultDict[str, Dict[str, str]] = defaultdict(dict)
+  log_paths: DefaultDict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]
@@ -225,8 +225,8 @@ if __name__ == "__main__":
         dat = None if args.upload_only else log_data[segment]
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
-        log_paths[segment]['ref'] = ref_log_path
-        log_paths[segment]['new'] = cur_log_fn
+        log_paths[segment][cfg.proc_name + cfg.subtest_name]['ref'] = ref_log_path
+        log_paths[segment][cfg.proc_name + cfg.subtest_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
