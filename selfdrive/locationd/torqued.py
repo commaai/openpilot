@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from collections import deque, defaultdict
+from collections import deque
 import json
 import numpy as np
 import cereal.messaging as messaging
@@ -11,7 +11,7 @@ from system.swaglog import cloudlog
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
-POINTS_PER_BUCKET = 500
+POINTS_PER_BUCKET = 300
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.2
@@ -28,7 +28,7 @@ def slope2rot(slope):
 class PointBuckets:
   def __init__(self, x_bounds):
     self.x_bounds = x_bounds
-    self.buckets = defaultdict(lambda: deque(maxlen=POINTS_PER_BUCKET))
+    self.buckets = {bounds: deque(maxlen=POINTS_PER_BUCKET) for bounds in x_bounds}
 
   def __len__(self):
     return sum([len(v) for v in self.buckets.values()])
@@ -43,7 +43,7 @@ class PointBuckets:
         break
 
   def get_points(self):
-    return np.array([v for sublist in self.buckets.items() for v in sublist])
+    return np.array([v for sublist in self.buckets.values() for v in list(sublist)])
 
 
 class TorqueEstimator:
@@ -57,7 +57,7 @@ class TorqueEstimator:
 
     params = params_reader.get("LiveTorqueParameters")
     params = json.loads(params) if params is not None else None
-    if self.car_sane(params, CP.carFingerprint):
+    if params is not None and self.car_sane(params, CP.carFingerprint):
       try:
         if not self.is_sane(
           params.get('slope'),
@@ -65,8 +65,8 @@ class TorqueEstimator:
           params.get('frictionCoefficient')
         ):
           params = None
-      except Exception as e:
-        print(e)
+      except Exception:
+        # print(e)
         params = None
 
     if params is None:
@@ -102,6 +102,8 @@ class TorqueEstimator:
 
   def is_sane(self, slope, offset, friction_coeff):
     min_factor, max_factor = 1.0 + SANITY_FACTOR, 1.0 - SANITY_FACTOR
+    if slope is None or offset is None or friction_coeff is None:
+      return False
     if np.isnan(slope) or np.isnan(offset) or np.isnan(friction_coeff):
       return False
     return ((max_factor * self.offline_slope) >= slope >= (min_factor * self.offline_slope)) & \
@@ -121,7 +123,7 @@ class TorqueEstimator:
       self.raw_points["steer_override"].append(msg.steeringPressed)
     elif which == "liveLocationKalman":
       if len(self.raw_points['steer_torque']) == self.hist_len:
-        yaw_rate = msg.msg.angularVelocityCalibrated.value[2]
+        yaw_rate = msg.angularVelocityCalibrated.value[2]
         active = bool(np.interp(t, np.array(self.raw_points_t['active']) + self.lag, self.raw_points['active']))
         steer_override = bool(np.interp(t, np.array(self.raw_points_t['steer_override']) + self.lag, self.raw_points['steer_override']))
         vego = np.interp(t, np.array(self.raw_points_t['vego']) + self.lag, self.raw_points['vego'])
@@ -151,6 +153,7 @@ def torque_params_thread(sm=None, pm=None):
           estimator.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
+      # print(sm.frame, [len(v) for v in estimator.filtered_points.buckets.values()])
       msg = messaging.new_message('liveTorqueParameters')
       msg.valid = sm.all_checks()
       liveTorqueParameters = msg.liveTorqueParameters
@@ -158,7 +161,10 @@ def torque_params_thread(sm=None, pm=None):
       if estimator.filtered_points.is_valid():
         try:
           slope, offset, friction_coeff = estimator.estimate_params()
+          # print(slope, offset, friction_coeff)
         except Exception as e:
+          # print(e)
+          slope = offset = friction_coeff = None
           cloudlog.exception(f"Error computing live torque params: {e}")
 
         if estimator.is_sane(slope, offset, friction_coeff):
@@ -172,7 +178,7 @@ def torque_params_thread(sm=None, pm=None):
         else:
           cloudlog.exception("live torque params are numerically unstable")
           liveTorqueParameters.liveValid = False
-          estimator.reset()
+          # estimator.reset()
       else:
         liveTorqueParameters.liveValid = False
       liveTorqueParameters.slopeFiltered = estimator.slopeFiltered.x
