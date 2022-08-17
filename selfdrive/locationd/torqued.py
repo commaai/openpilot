@@ -52,8 +52,12 @@ class TorqueEstimator:
     params_reader = Params()
     CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
-    self.offline_friction_coeff = CP.lateralTuning.torque.friction
-    self.offline_slope = CP.lateralTuning.torque.slope
+
+    self.offline_friction_coeff = 0
+    self.offline_slope = 0
+    if CP.lateralTuning.which() == 'torque':
+      self.offline_friction_coeff = CP.lateralTuning.torque.friction
+      self.offline_slope = CP.lateralTuning.torque.slope
 
     params = params_reader.get("LiveTorqueParameters")
     params = json.loads(params) if params is not None else None
