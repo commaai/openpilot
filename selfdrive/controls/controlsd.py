@@ -425,12 +425,11 @@ class Controls:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
       if all_valid or timed_out or SIMULATION:
-        self.set_initial_state()
-
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-        self.initialized = True
 
+        self.initialized = True
+        self.set_initial_state()
         Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
