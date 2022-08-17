@@ -137,7 +137,7 @@ class TorqueEstimator:
           self.filtered_points.add_point(steer, lateral_acc)
 
 
-def torque_params_thread(sm=None, pm=None):
+def main(sm=None, pm=None):
   set_realtime_priority(1)
 
   if sm is None:
@@ -202,4 +202,4 @@ def torque_params_thread(sm=None, pm=None):
 
 
 if __name__ == "__main__":
-  torque_params_thread()
+  main()
