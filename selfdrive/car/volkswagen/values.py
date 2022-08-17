@@ -18,6 +18,11 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 class CarControllerParams:
   HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
   GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
+  ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
+  ACC_HUD_STEP = 4                        # ACC_GRA_Anziege frequency 25Hz
+
+  ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
+  ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
 
   def __init__(self, CP):
     # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
@@ -29,7 +34,35 @@ class CarControllerParams:
 
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-    if True:  # pylint: disable=using-constant-test
+    if CP.carFingerprint in PQ_CARS:
+      self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
+      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
+      self.STEER_DELTA_UP = 6             # Max HCA reached in 1.00s (STEER_MAX / (50Hz * 1.00))
+      self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+      if CP.transmissionType == TransmissionType.automatic:
+        self.shifter_values = can_define.dv["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"]
+      self.hca_status_values = can_define.dv["Lenkhilfe_2"]["LH2_Sta_HCA"]
+
+      self.BUTTONS = [
+        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_Neu", "GRA_Neu_Setzen", [1]),
+        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_Neu", "GRA_Recall", [1]),
+        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_Neu", "GRA_Up_kurz", [1]),
+        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_Neu", "GRA_Down_kurz", [1]),
+        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_Neu", "GRA_Abbrechen", [1]),
+        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_Neu", "GRA_Zeitluecke", [1]),
+      ]
+
+      self.LDW_MESSAGES = {
+        "none": 0,  # Nothing to display
+        "laneAssistUnavail": 1,  # "Lane Assist currently not available."
+        "laneAssistUnavailSysError": 2,  # "Lane Assist system error"
+        "laneAssistUnavailNoSensorView": 3,  # "Lane Assist not available. No sensor view."
+        "laneAssistTakeOver": 4,  # "Lane Assist: Please Take Over Steering"
+        "laneAssistDeactivTrailer": 5,  # "Lane Assist: no function with trailer"
+      }
+
+    else:
       self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
@@ -79,6 +112,7 @@ class CAR:
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 VW Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
+  PASSAT_NMS = "VOLKSWAGEN PASSAT NMS"              # Chassis A3, North America/China/Mideast NMS Passat, incl. facelift
   POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
@@ -99,7 +133,12 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
+PQ_CARS = {CAR.PASSAT_NMS}
+
+
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
+for car_type in PQ_CARS:
+  DBC[car_type] = dbc_dict("vw_golf_mk4", None)
 
 
 class Footnote(Enum):
@@ -160,6 +199,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Passat Alltrack 2015-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Passat GTE 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
   ],
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22", harness=Harness.j533),
   CAR.POLO_MK6: [
     VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -512,6 +552,26 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x873Q0907572C \xf1\x890196',
       b'\xf1\x875Q0907572R \xf1\x890771',
+    ],
+  },
+  CAR.PASSAT_NMS: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8706K906016C \xf1\x899609',
+      b'\xf1\x8706K906016G \xf1\x891124',
+      b'\xf1\x8706K906071BJ\xf1\x894891',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158AB\xf1\x893318',
+      b'\xf1\x8709G927158BD\xf1\x893121',
+      b'\xf1\x8709G927158FQ\xf1\x893745',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x87561959655  \xf1\x890210\xf1\x82\02212121111113000102011--121012--101312',
+      b'\xf1\x87561959655C \xf1\x890508\xf1\x82\02215141111121100314919--153015--304831',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x87561907567A \xf1\x890132',
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\00152',
     ],
   },
   CAR.POLO_MK6: {

@@ -223,7 +223,6 @@ def regen_segment(lr, segment_num, frs=None, outdir=FAKEDATA, disable_tqdm=False
   params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
-
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
