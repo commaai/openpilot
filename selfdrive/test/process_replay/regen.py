@@ -193,7 +193,20 @@ def migrate_carparams(lr):
   return all_msgs
 
 
-def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
+def trim_and_write_segment(log_path):
+  regen_seg_lr = LogReader(log_path)
+  os.remove(log_path)
+  initialized = False
+  for msg in sorted(regen_seg_lr, key=lambda msg: msg.logMonoTime):
+    if msg.which() == 'carEvents':
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+    if initialized:
+      with open(log_path, "ab") as f:
+        f.write(msg.as_builder().to_bytes())
+
+
+def regen_segment(lr, segment_num, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   lr = migrate_carparams(list(lr))
   if frs is None:
     frs = dict()
@@ -263,6 +276,11 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
 
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
   seg_path = os.path.join(outdir, segment)
+
+  # Trim segment to remove initializing frames
+  if segment_num > 0:
+    trim_and_write_segment(os.path.join(seg_path, "rlog"))
+
   # check to make sure openpilot is engaged in the route
   if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
     raise Exception(f"Route did not engage for long enough: {segment}")
@@ -278,7 +296,7 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKED
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir, disable_tqdm=disable_tqdm)
+  rpath = regen_segment(lr, sidx, {'roadCameraState': fr}, outdir=outdir, disable_tqdm=disable_tqdm)
 
   # compress raw rlog before uploading
   with open(os.path.join(rpath, "rlog"), "rb") as f:
