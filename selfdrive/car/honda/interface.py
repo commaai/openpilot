@@ -227,6 +227,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 14.35  # as spec
       if candidate == CAR.ODYSSEY_BOSCH and not ret.openpilotLongitudinalControl:
+        ret.minSteerSpeed = 36.5 * CV.MPH_TO_MS
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]  # clipped by radar
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
