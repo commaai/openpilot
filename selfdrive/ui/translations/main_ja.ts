@@ -1025,23 +1025,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>ブランチの切り替え</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>切替</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>updater を実行する時にブランチを切り替えます。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>ブランチ名を入力</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
@@ -1204,7 +1204,7 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
-        <source>Show ETA in 24h format</source>
+        <source>Show ETA in 24h Format</source>
         <translation>24時間表示</translation>
     </message>
     <message>
