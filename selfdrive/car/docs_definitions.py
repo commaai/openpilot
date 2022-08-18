@@ -2,7 +2,7 @@ import re
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
@@ -22,11 +22,10 @@ class Column(Enum):
   LONGITUDINAL = "ACC"
   FSR_LONGITUDINAL = "No ACC accel below"
   FSR_STEERING = "No ALC below"
-  STEERING_TORQUE = "Max steering torque"
+  STEERING_TORQUE = "Steering Torque"
   HARNESS = "Harness"
 
 
-# TODO: used in test_docs
 class Star(Enum):
   FULL = "full"
   HALF = "half"
@@ -93,10 +92,6 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
-    if CP.maxLateralAccel < float('inf'):
-      rounded_accel = max(round(CP.maxLateralAccel * 2) / 2, 0.5)
-    else:
-      rounded_accel = CP.maxLateralAccel
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -104,9 +99,14 @@ class CarInfo:
       Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
-      Column.STEERING_TORQUE: f"{rounded_accel:.1f} m/s<sup>2</sup>",  # TODO
+      Column.STEERING_TORQUE: Star.EMPTY,
       Column.HARNESS: self.harness.value,
     }
+
+    # Set steering torque star from max lateral acceleration
+    assert CP.maxLateralAccel > 0.1
+    if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+      self.row[Column.STEERING_TORQUE] = Star.FULL
 
     self.all_footnotes = all_footnotes
     self.year_list = get_year_list(self.years)
@@ -130,7 +130,6 @@ class CarInfo:
       elif CP.carName not in NO_AUTO_RESUME or (CP.carName in NO_AUTO_RESUME_STOCK_LONG and CP.openpilotLongitudinalControl):
         acc = " <strong>that automatically resumes from a stop</strong>"
 
-      # TODO: what to do about this. should row hold values or final string?
       # if values, when do we convert to final string?
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
         sentence_builder += " This car may not be able to take tight turns on its own."
@@ -143,9 +142,11 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-  def get_column(self, column: Column, footnote_tag: str) -> str:
-    item: str = self.row[column]
-    if column == Column.MODEL and len(self.years):
+  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+    item: Union[str, Star] = self.row[column]
+    if isinstance(item, Star):
+      item = star_icon.format(item.value)
+    elif column == Column.MODEL and len(self.years):
       item += f" {self.years}"
 
     footnotes = get_footnotes(self.footnotes, column)
