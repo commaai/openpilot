@@ -19,7 +19,7 @@ repos:
     rev: v0.931
     hooks:
     -   id: mypy
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/|(tinygrad/)|(tinygrad_repo/)'
         additional_dependencies: ['types-PyYAML', 'lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
         args:
         - --warn-redundant-casts
@@ -31,7 +31,7 @@ repos:
     rev: 4.0.1
     hooks:
     -   id: flake8
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/debug/)/'
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(selfdrive/debug/)/'
         additional_dependencies: ['flake8-no-implicit-concat']
         args:
         - --indent-size=2
@@ -46,7 +46,7 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)'
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
 -   repo: local
     hooks:
     -   id: cppcheck
