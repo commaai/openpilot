@@ -560,11 +560,11 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad/openpilot/compile.py
-tinygrad/accel/opencl/*
+tinygrad_repo/openpilot/compile.py
+tinygrad_repo/accel/opencl/*
 
-tinygrad/tinygrad/helpers.py
-tinygrad/tinygrad/mlops.py
-tinygrad/tinygrad/ops.py
-tinygrad/tinygrad/shapetracker.py
-tinygrad/tinygrad/tensor.py
+tinygrad_repo/tinygrad/helpers.py
+tinygrad_repo/tinygrad/mlops.py
+tinygrad_repo/tinygrad/ops.py
+tinygrad_repo/tinygrad/shapetracker.py
+tinygrad_repo/tinygrad/tensor.py
