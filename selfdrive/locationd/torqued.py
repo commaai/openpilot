@@ -8,16 +8,19 @@ from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
 from common.filter_simple import FirstOrderFilter
 from system.swaglog import cloudlog
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
 POINTS_PER_BUCKET = 300
+MIN_POINTS_PER_BUCKET = 100
+MIN_POINTS_TOTAL = 500
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
-SANITY_FACTOR = 0.2
-CALC_FREQ = 100
+SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.05
-
+FILTER_RC = 50
 
 def slope2rot(slope):
   sin = np.sqrt(slope**2 / (slope**2 + 1))
@@ -34,7 +37,7 @@ class PointBuckets:
     return sum([len(v) for v in self.buckets.values()])
 
   def is_valid(self):
-    return np.all(np.array([len(v) for v in self.buckets.values()]) == POINTS_PER_BUCKET)
+    return np.all(np.array([len(v) for v in self.buckets.values()]) >= MIN_POINTS_PER_BUCKET) and (self.__len__() >= MIN_POINTS_TOTAL)
 
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
@@ -47,10 +50,8 @@ class PointBuckets:
 
 
 class TorqueEstimator:
-  def __init__(self):
+  def __init__(self, CP, params):
     self.hist_len = int(HISTORY / DT_MDL)
-    params_reader = Params()
-    CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
 
     self.offline_friction_coeff = 0
@@ -59,7 +60,6 @@ class TorqueEstimator:
       self.offline_friction_coeff = CP.lateralTuning.torque.friction
       self.offline_slope = CP.lateralTuning.torque.slope
 
-    params = params_reader.get("LiveTorqueParameters")
     params = json.loads(params) if params is not None else None
     if params is not None and self.car_sane(params, CP.carFingerprint):
       try:
@@ -79,9 +79,9 @@ class TorqueEstimator:
         'offset': 0.0,
         'frictionCoefficient': self.offline_friction_coeff
       }
-    self.slopeFiltered = FirstOrderFilter(params['slope'], 19.0, 1.0)
-    self.offsetFiltered = FirstOrderFilter(params['offset'], 19.0, 1.0)
-    self.frictionCoefficientFiltered = FirstOrderFilter(params['frictionCoefficient'], 19.0, 1.0)
+    self.slopeFiltered = FirstOrderFilter(params['slope'], FILTER_RC, DT_MDL)
+    self.offsetFiltered = FirstOrderFilter(params['offset'], FILTER_RC, DT_MDL)
+    self.frictionCoefficientFiltered = FirstOrderFilter(params['frictionCoefficient'], FILTER_RC, DT_MDL)
 
     self.reset()
 
@@ -105,19 +105,18 @@ class TorqueEstimator:
     return False if params.get('carFingerprint', None) != fingerprint else True
 
   def is_sane(self, slope, offset, friction_coeff):
-    min_factor, max_factor = 1.0 + SANITY_FACTOR, 1.0 - SANITY_FACTOR
+    min_factor, max_factor = 1.0 - SANITY_FACTOR, 1.0 + SANITY_FACTOR
     if slope is None or offset is None or friction_coeff is None:
       return False
     if np.isnan(slope) or np.isnan(offset) or np.isnan(friction_coeff):
       return False
     return ((max_factor * self.offline_slope) >= slope >= (min_factor * self.offline_slope)) & \
-      ((max_factor * self.offline_friction_coeff) >= friction_coeff >= (min_factor * self.offline_friction_coeff)) & \
-      ((max_factor * self.offline_friction_coeff) >= offset >= (min_factor * self.offline_friction_coeff))
+      ((max_factor * self.offline_friction_coeff) >= friction_coeff >= (min_factor * self.offline_friction_coeff))
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
       self.raw_points_t["steer_torque"].append(t)
-      self.raw_points["steer_torque"].append(msg.actuatorsOutput.steer)
+      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
       self.raw_points_t["active"].append(t)
       self.raw_points["active"].append(msg.latActive)
     elif which == "carState":
@@ -128,12 +127,13 @@ class TorqueEstimator:
     elif which == "liveLocationKalman":
       if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
+        roll = msg.orientationNED.value[0]
         active = bool(np.interp(t, np.array(self.raw_points_t['active']) + self.lag, self.raw_points['active']))
         steer_override = bool(np.interp(t, np.array(self.raw_points_t['steer_override']) + self.lag, self.raw_points['steer_override']))
         vego = np.interp(t, np.array(self.raw_points_t['vego']) + self.lag, self.raw_points['vego'])
         steer = np.interp(t, np.array(self.raw_points_t['steer_torque']) + self.lag, self.raw_points['steer_torque'])
         if active and (not steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
-          lateral_acc = vego * yaw_rate
+          lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
           self.filtered_points.add_point(steer, lateral_acc)
 
 
@@ -146,7 +146,10 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['liveTorqueParameters'])
 
-  estimator = TorqueEstimator()
+  params_reader = Params()
+  CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
+  params = params_reader.get("LiveTorqueParameters")
+  estimator = TorqueEstimator(CP, params)
 
   while True:
     sm.update()
