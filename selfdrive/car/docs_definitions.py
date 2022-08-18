@@ -100,7 +100,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
-      Column.HARNESS: self.harness.value,
+      Column.HARNESS: "None" if self.harness is None else self.harness.value,  # TODO: make this required
     }
 
     # Set steering torque star from max lateral acceleration
