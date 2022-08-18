@@ -32,6 +32,45 @@ class Star(Enum):
   EMPTY = "empty"
 
 
+class Harness(Enum):
+  nidec = "Honda Nidec"
+  bosch_a = "Honda Bosch A"
+  bosch_b = "Honda Bosch B"
+  toyota = "Toyota"
+  subaru_a = "Subaru A"
+  subaru_b = "Subaru B"
+  fca = "FCA"
+  ram = "Ram"
+  vw = "VW"
+  j533 = "J533"
+  hyundai_a = "Hyundai A"
+  hyundai_b = "Hyundai B"
+  hyundai_c = "Hyundai C"
+  hyundai_d = "Hyundai D"
+  hyundai_e = "Hyundai E"
+  hyundai_f = "Hyundai F"
+  hyundai_g = "Hyundai G"
+  hyundai_h = "Hyundai H"
+  hyundai_i = "Hyundai I"
+  hyundai_j = "Hyundai J"
+  hyundai_k = "Hyundai K"
+  hyundai_l = "Hyundai L"
+  hyundai_m = "Hyundai M"
+  hyundai_n = "Hyundai N"
+  hyundai_o = "Hyundai O"
+  hyundai_p = "Hyundai P"
+  hyundai_q = "Hyundai Q"
+  custom = "Developer"
+  obd_ii = "OBD-II"
+  gm = "GM"
+  nissan_a = "Nissan A"
+  nissan_b = "Nissan B"
+  mazda = "Mazda"
+  ford_q3 = "Ford Q3"
+  ford_q4 = "Ford Q4"
+  none = "None"
+
+
 CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
 
 
@@ -76,7 +115,7 @@ class CarInfo:
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
-  harness: Optional[Enum] = None
+  harness: Enum = Harness.none
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
@@ -100,7 +139,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
-      Column.HARNESS: "None" if self.harness is None else self.harness.value,  # TODO: make this required
+      Column.HARNESS: self.harness.value,
     }
 
     # Set steering torque star from max lateral acceleration
@@ -156,41 +195,3 @@ class CarInfo:
 
     return item
 
-
-class Harness(Enum):
-  nidec = "Honda Nidec"
-  bosch_a = "Honda Bosch A"
-  bosch_b = "Honda Bosch B"
-  toyota = "Toyota"
-  subaru_a = "Subaru A"
-  subaru_b = "Subaru B"
-  fca = "FCA"
-  ram = "Ram"
-  vw = "VW"
-  j533 = "J533"
-  hyundai_a = "Hyundai A"
-  hyundai_b = "Hyundai B"
-  hyundai_c = "Hyundai C"
-  hyundai_d = "Hyundai D"
-  hyundai_e = "Hyundai E"
-  hyundai_f = "Hyundai F"
-  hyundai_g = "Hyundai G"
-  hyundai_h = "Hyundai H"
-  hyundai_i = "Hyundai I"
-  hyundai_j = "Hyundai J"
-  hyundai_k = "Hyundai K"
-  hyundai_l = "Hyundai L"
-  hyundai_m = "Hyundai M"
-  hyundai_n = "Hyundai N"
-  hyundai_o = "Hyundai O"
-  hyundai_p = "Hyundai P"
-  hyundai_q = "Hyundai Q"
-  custom = "Developer"
-  obd_ii = "OBD-II"
-  gm = "GM"
-  nissan_a = "Nissan A"
-  nissan_b = "Nissan B"
-  mazda = "Mazda"
-  ford_q3 = "Ford Q3"
-  ford_q4 = "Ford Q4"
-  none = "None"
