@@ -53,7 +53,7 @@ def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
 
-def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timers, enabled, metric):
+def update_v_cruise(v_cruise_kph, CS, button_timers, enabled, metric):
   # handle button presses. TODO: this should be in state_control, but a decelCruise press
   # would have the effect of both enabling and changing speed is checked after the state transition
   if not enabled:
@@ -65,10 +65,13 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
   # should be CV.MPH_TO_KPH, but this causes rounding errors
   v_cruise_delta = 1. if metric else 1.6
 
-  for b in buttonEvents:
+  for b in CS.buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
       if button_timers[b.type.raw] > CRUISE_LONG_PRESS:
         return v_cruise_kph  # end long press
+
+      # if enabled and CS.cruiseState.standstill and b.type.raw in (ButtonType.accelCruise, ButtonType.resumeCruise):
+      #   continue
       button_type = b.type.raw
       break
   else:
@@ -78,6 +81,10 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
         long_press = True
         break
 
+  # Don't adjust speed when pressing resume to exit standstill
+  if CS.cruiseState.standstill and button_type in (ButtonType.accelCruise, ButtonType.resumeCruise):
+    button_type = None
+
   if button_type:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
     if long_press and v_cruise_kph % v_cruise_delta != 0:  # partial interval
@@ -86,8 +93,8 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
       v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
 
     # If set is pressed while overriding, clip cruise speed to minimum of vEgo
-    if gas_pressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
-      v_cruise_kph = max(v_cruise_kph, v_ego * CV.MS_TO_KPH)
+    if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
+      v_cruise_kph = max(v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
 
     v_cruise_kph = clip(round(v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 

@@ -469,8 +469,7 @@ class Controls:
     if CS.cruiseState.available:
       # if stock cruise is completely disabled, then we can use our own set speed logic
       if not self.CP.pcmCruise:
-        self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
-                                            self.button_timers, self.enabled, self.is_metric)
+        self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS, self.button_timers, self.enabled, self.is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
       else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
@@ -865,6 +864,7 @@ class Controls:
       self.step()
       self.rk.monitor_time()
       self.prof.display()
+
 
 def main(sm=None, pm=None, logcan=None):
   controls = Controls(sm, pm, logcan)
