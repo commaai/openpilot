@@ -6,6 +6,7 @@ Version 0.8.16 (2022-XX-XX)
 * Chevrolet Bolt EUV 2022-23 support thanks to JasonJShuler!
 * Hyundai Ioniq 5 2022 support thanks to sunnyhaibin!
 * Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
+* Subaru Legacy 2020-22 support thanks to martinl!
 * Subaru Outback 2020-22 support
 
 Version 0.8.15 (2022-07-20)
