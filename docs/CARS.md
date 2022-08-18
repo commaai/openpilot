@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
-# 199 Supported Cars
+# 201 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Max steering torque|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
@@ -18,6 +18,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Audi|RS3 2018|ACC + Lane Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
 |Audi|S3 2015-17|ACC + Lane Assist|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|VW|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|2.0 m/s<sup>2</sup>|OBD-II|
+|Chevrolet|Bolt EUV 2022-23|Premier/Premier Redline Trim|Stock|0 mph|7 mph|2.0 m/s<sup>2</sup>|GM|
 |Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|2.0 m/s<sup>2</sup>|OBD-II|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.5 m/s<sup>2</sup>|FCA|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|1.5 m/s<sup>2</sup>|FCA|
@@ -54,6 +55,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai K|
 |Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai K|
 |Hyundai|Genesis 2015-16|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|37 mph|1.5 m/s<sup>2</sup>|Hyundai J|
+|Hyundai|Ioniq 5 2022|Highway Driving Assist II|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai Q|
 |Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.5 m/s<sup>2</sup>|Hyundai C|
 |Hyundai|Ioniq Electric 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai H|
 |Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|1.5 m/s<sup>2</sup>|Hyundai C|
@@ -78,7 +80,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|Stock|0 mph|9 mph|1.5 m/s<sup>2</sup>|FCA|
 |Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|Stock|0 mph|39 mph|1.5 m/s<sup>2</sup>|FCA|
 |Kia|Ceed 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai E|
-|Kia|EV6 2022|All|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai P|
+|Kia|EV6 2022|Highway Driving Assist II|Stock|0 mph|0 mph|2.5 m/s<sup>2</sup>|Hyundai P|
 |Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai B|
 |Kia|Forte 2019-21|All|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Hyundai G|
 |Kia|K5 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Hyundai A|
@@ -106,7 +108,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Lexus|NX Hybrid 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
 |Lexus|NX Hybrid 2020-21|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
 |Lexus|RC 2017-20|All|Stock|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
-|Lexus|RX 2016-18|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.0 m/s<sup>2</sup>|Toyota|
+|Lexus|RX 2016-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.0 m/s<sup>2</sup>|Toyota|
 |Lexus|RX 2020-22|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
 |Lexus|RX Hybrid 2016-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
 |Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
@@ -148,7 +150,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|1.5 m/s<sup>2</sup>|Toyota|
 |Toyota|Camry 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|1.5 m/s<sup>2</sup>|Toyota|
 |Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>4</sup>](#footnotes)|0 mph|2.5 m/s<sup>2</sup>|Toyota|
-|Toyota|Camry Hybrid 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|2.0 m/s<sup>2</sup>|Toyota|
+|Toyota|Camry Hybrid 2018-20|All|Stock|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
 |Toyota|Camry Hybrid 2021-22|All|openpilot|0 mph|0 mph|2.5 m/s<sup>2</sup>|Toyota|
 |Toyota|Corolla 2017-19|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
 |Toyota|Corolla 2020-22|All|openpilot|0 mph|0 mph|2.0 m/s<sup>2</sup>|Toyota|
@@ -214,7 +216,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 <sup>3</sup>When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>4</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>5</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
-<sup>6</sup>Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform. <br />
+<sup>6</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
 <sup>7</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway inside the dashboard, choose "VW J533 Development" from the vehicle drop-down for a suitable harness. (Some newer models are also observed to not have a J533 connector.) <br />
 <sup>8</sup>Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.) <br />
 

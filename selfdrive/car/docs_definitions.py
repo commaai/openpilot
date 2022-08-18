@@ -10,6 +10,10 @@ from common.conversions import Conversions as CV
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
+# Makes that lack auto-resume with stock long, and auto resume in any configuration
+NO_AUTO_RESUME_STOCK_LONG = {"toyota", "gm"}
+NO_AUTO_RESUME = NO_AUTO_RESUME_STOCK_LONG | {"nissan", "subaru"}
+
 
 class Column(Enum):
   MAKE = "Make"
@@ -82,8 +86,6 @@ class CarInfo:
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
-    assert self.harness is not None, f"{CP.carFingerprint}: Need to specify car harness"
-
     # TODO: set all the min enable speeds in carParams correctly and remove this
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
@@ -121,11 +123,11 @@ class CarInfo:
       else:
         alc = ""
 
-      # Exception for Nissan, Subaru, and stock long Toyota which do not auto-resume yet
+      # Exception for cars which do not auto-resume yet
       acc = ""
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif CP.carName not in ("nissan", "subaru", "toyota") or (CP.carName == "toyota" and CP.openpilotLongitudinalControl):
+      elif CP.carName not in NO_AUTO_RESUME or (CP.carName in NO_AUTO_RESUME_STOCK_LONG and CP.openpilotLongitudinalControl):
         acc = " <strong>that automatically resumes from a stop</strong>"
 
       # TODO: what to do about this. should row hold values or final string?
@@ -181,9 +183,13 @@ class Harness(Enum):
   hyundai_n = "Hyundai N"
   hyundai_o = "Hyundai O"
   hyundai_p = "Hyundai P"
+  hyundai_q = "Hyundai Q"
   custom = "Developer"
   obd_ii = "OBD-II"
+  gm = "GM"
   nissan_a = "Nissan A"
   nissan_b = "Nissan B"
   mazda = "Mazda"
+  ford_q3 = "Ford Q3"
+  ford_q4 = "Ford Q4"
   none = "None"
