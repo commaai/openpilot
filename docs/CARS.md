@@ -144,6 +144,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Subaru|Forester 2019-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Subaru|Impreza 2017-19|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
 |Subaru|Impreza 2020-22|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Subaru|Legacy 2020-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Subaru|Outback 2020-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Subaru|XV 2018-19|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
 |Subaru|XV 2020-21|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
@@ -166,7 +167,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Toyota|C-HR Hybrid 2017-19|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|Camry 2018-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|Camry 2021-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Camry Hybrid 2018-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Toyota|Camry Hybrid 2018-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|Camry Hybrid 2021-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|Corolla 2017-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
 |Toyota|Corolla 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
