@@ -10,7 +10,7 @@ In order to SSH into your device, you'll need a GitHub account with SSH keys. Se
   * Username: `comma`
   * Port: `22` or `8022`
 
-Here's an example command for connecting to your device using its tethered connection:  
+Here's an example command for connecting to your device using its tethered connection:<br />
 `ssh comma@192.168.43.1`
 
 For doing development work on device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
@@ -34,7 +34,7 @@ Requires [comma SIM with comma prime](https://comma.ai/shop) activated with comm
 
 ## Recommended .ssh/config
 
-With the below SSH configuration, you can type `ssh comma-{dongleid}` to connect to your device through `ssh.comma.ai`.  
+With the below SSH configuration, you can type `ssh comma-{dongleid}` to connect to your device through `ssh.comma.ai`.<br />
 For example: `ssh comma-ffffffffffffffff`
 
 ```
