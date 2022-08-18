@@ -1139,11 +1139,13 @@ FW_VERSIONS = {
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.01 99210-AB000 210205',
+      b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.06 99210-AA000 220111',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
       b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
+      b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 105 \x10\x03 58910-AA800',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00HT6WA280BLHT6VA640A1CCN0N20NS5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -1153,12 +1155,18 @@ FW_VERSIONS = {
       b'\xf1\x87CXLQF40189012JL2f\x88\x86\x88\x88vUex\xb8\x88\x88\x88\x87\x88\x89fh?\xffz\xff\xff\xff\x08z\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87CXMQFM2728305JB2E\x97\x87xw\x87vwgw\x84x\x88\x88w\x89EI\xbf\xff{\xff\xff\xff\xe6\x0e\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87CXMQFM3806705JB2\x89\x87wwx\x88g\x86\x99\x87\x86xwwv\x88yv\x7f\xffz\xff\xff\xffV\x15\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
+      b'CCN0N20NS5\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x87CXNQF45856792JL2wvug\x99UcV\xaavffgVwyff_\xffy\xff\xff\xff\xf14\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5'
+      b'\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x82CNCWD0AMFCXCSFFA',
       b'\xf1\x82CNCWD0AMFCXCSFFB',
       b'\xf1\x82CNCVD0AMFCXCSFFB',
       b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x82CNDWD0AMFCXCSG8A',
+      b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81HM6M2_0a0_G80',
+      b'HM6M2_0a0_G80',
+      b'CNDWD0AMFCXCSG8A',
     ],
   },
   CAR.ELANTRA_HEV_2021: {
