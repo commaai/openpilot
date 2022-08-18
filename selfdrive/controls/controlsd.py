@@ -865,7 +865,6 @@ class Controls:
       self.rk.monitor_time()
       self.prof.display()
 
-
 def main(sm=None, pm=None, logcan=None):
   controls = Controls(sm, pm, logcan)
   controls.controlsd_thread()
