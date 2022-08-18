@@ -559,3 +559,12 @@ opendbc/vw_mqb_2010.dbc
 opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
+
+tinygrad/openpilot/compile.py
+tinygrad/accel/opencl/*
+
+tinygrad/tinygrad/helpers.py
+tinygrad/tinygrad/mlops.py
+tinygrad/tinygrad/ops.py
+tinygrad/tinygrad/shapetracker.py
+tinygrad/tinygrad/tensor.py
