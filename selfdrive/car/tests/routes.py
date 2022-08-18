@@ -24,13 +24,13 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
-  COMMA.BODY_KNEE,
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
 
 routes = [
-  CarTestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
+  CarTestRoute("ceacc4d097850b24|2022-08-17--19-48-37", COMMA.BODY),
+  CarTestRoute("ceacc4d097850b24|2022-08-17--19-36-08", COMMA.BODY_KNEE),
 
   CarTestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_CHEROKEE),
   CarTestRoute("91dfedae61d7bd75|2021-05-22--20-07-52", CHRYSLER.JEEP_CHEROKEE_2019),
@@ -43,7 +43,7 @@ routes = [
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
 
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
-  #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
+  #CarTestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
