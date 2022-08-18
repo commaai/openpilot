@@ -6,6 +6,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -96,7 +97,10 @@ class CarController:
 
       # if future plan or control loop wants to brake, set permit braking
       # Toyota is hesitant to respond to acceleration requests if PERMIT_BRAKING is 1
-      permit_braking = int(CS.out.vEgo < 0.2 or pcm_accel_cmd <= 0.1 or actuators.futureAccel < 0.6)
+      # ORIG: permit_braking = int(CS.out.vEgo < 0.2 or pcm_accel_cmd <= 0.1 or actuators.futureAccel < 0.6)
+
+      coasting_accel = CC.orientationNED[1] * ACCELERATION_DUE_TO_GRAVITY + 0.2  # offset threshold
+      permit_braking = int(CS.out.vEgo < 0.1 or actuators.accel < coasting_accel or actuators.futureAccel < coasting_accel)
 
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
