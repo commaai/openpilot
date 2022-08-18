@@ -13,11 +13,11 @@ MAX_ANGLE_ERROR = np.radians(7)
 MAX_POS_INTEGRATOR = 10.0   # meters
 MAX_TURN_INTEGRATOR = 10.0  # meters
 
-MAX_KNEE_TORQUE_LEFT = 400 # knee motor
-MAX_KNEE_TORQUE_RIGHT = 200 # hip motor
+MAX_TORQUE_KNEE = 400
+MAX_TORQUE_HIP = 200
 MAX_KNEE_TORQUE_RATE = 20
-MAX_KNEE_ANGLE_INTEGRATOR_LEFT = 10
-MAX_KNEE_ANGLE_INTEGRATOR_RIGHT = 10
+MAX_ANGLE_INTEGRATOR_KNEE = 10
+MAX_ANGLE_INTEGRATOR_HIP = 10
 
 
 class CarController:
@@ -34,14 +34,14 @@ class CarController:
       self.balance_pid = PIDController(2400, k_i=0, k_d=180, rate=1/DT_CTRL)
     self.turn_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
 
-    self.torque_l_filtered = 0.
-    self.torque_r_filtered = 0.
+    self.torque_left_wheel_filtered = 0.
+    self.torque_right_wheel_filtered = 0.
 
-    self.knee_angle_left_pid = PIDController(40, k_i=12, rate=1/DT_CTRL)
-    self.knee_angle_right_pid = PIDController(40, k_i=4, rate=1/DT_CTRL)
+    self.knee_angle_pid = PIDController(40, k_i=12, rate=1/DT_CTRL)
+    self.hip_angle_pid = PIDController(40, k_i=4, rate=1/DT_CTRL)
 
-    self.torque_knee_l_filtered = 0.
-    self.torque_knee_r_filtered = 0.
+    self.torque_knee_filtered = 0.
+    self.torque_hip_filtered = 0.
 
   @staticmethod
   def deadband_filter(torque, deadband):
@@ -52,9 +52,9 @@ class CarController:
     return torque
 
   def update(self, CC, CS):
-    torque_l = 0
-    torque_r = 0
-    knee_error = 0
+    torque_left_wheel = 0
+    torque_right_wheel = 0
+    knee_angle_error = 0
 
     can_sends = []
 
@@ -72,11 +72,11 @@ class CarController:
                            (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
       angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
-      if self.CP.carFingerprint == CAR.BODY_KNEE:
-        knee_error = (np.radians(CS.knee_angle_r - CS.knee_angle_r))
-        knee_error = 0 # Ignore knee angle error for now
-       # Clip angle error, this is enough to get up from stands
-      angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint + knee_error, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
+      # if self.CP.carFingerprint == CAR.BODY_KNEE:
+        # knee_angle_error = np.radians(CS.knee_angle - CS.hip_angle)
+
+      # Clip angle error, this is enough to get up from stands
+      angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint + knee_angle_error, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
       angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
       torque = self.balance_pid.update(angle_error, error_rate=angle_error_rate)
 
@@ -87,68 +87,68 @@ class CarController:
       torque_diff = self.turn_pid.update(turn_error, freeze_integrator=freeze_integrator)
 
       # Combine 2 PIDs outputs
-      torque_l = torque - torque_diff
-      torque_r = torque + torque_diff
+      torque_left_wheel = torque - torque_diff
+      torque_right_wheel = torque + torque_diff
 
       # Torque rate limits
-      self.torque_l_filtered = np.clip(self.deadband_filter(torque_l, 10),
-                                       self.torque_l_filtered - MAX_TORQUE_RATE,
-                                       self.torque_l_filtered + MAX_TORQUE_RATE)
-      self.torque_r_filtered = np.clip(self.deadband_filter(torque_r, 10),
-                                       self.torque_r_filtered - MAX_TORQUE_RATE,
-                                       self.torque_r_filtered + MAX_TORQUE_RATE)
+      self.torque_left_wheel_filtered = np.clip(self.deadband_filter(torque_left_wheel, 10),
+                                       self.torque_left_wheel_filtered - MAX_TORQUE_RATE,
+                                       self.torque_left_wheel_filtered + MAX_TORQUE_RATE)
+      self.torque_right_wheel_filtered = np.clip(self.deadband_filter(torque_right_wheel, 10),
+                                       self.torque_right_wheel_filtered - MAX_TORQUE_RATE,
+                                       self.torque_right_wheel_filtered + MAX_TORQUE_RATE)
 
-      torque_l = int(np.clip(self.torque_l_filtered, -MAX_TORQUE, MAX_TORQUE))
-      torque_r = int(np.clip(self.torque_r_filtered, -MAX_TORQUE, MAX_TORQUE))
+      torque_left_wheel = int(np.clip(self.torque_left_wheel_filtered, -MAX_TORQUE, MAX_TORQUE))
+      torque_right_wheel = int(np.clip(self.torque_right_wheel_filtered, -MAX_TORQUE, MAX_TORQUE))
 
     # Knee angle controls
     if self.CP.carFingerprint == CAR.BODY_KNEE and CC.enabled:
-      knee_angle_desired_left = CC.actuators.gas
-      knee_angle_desired_right = CC.actuators.brake
+      angle_desired_knee = CC.actuators.gas
+      angle_desired_hip = CC.actuators.brake
 
-      knee_angle_measured_left = CS.knee_angle_l
-      knee_angle_measured_right = CS.knee_angle_r
+      angle_measured_knee = CS.knee_angle
+      angle_measured_hip = CS.hip_angle
 
-      knee_angle_error_left = knee_angle_desired_left - knee_angle_measured_left
-      knee_angle_error_right = knee_angle_desired_right - knee_angle_measured_right
+      angle_error_knee = angle_desired_knee - angle_measured_knee
+      angle_error_hip = angle_desired_hip - angle_measured_hip
 
-      freeze_integrator = ((knee_angle_error_left < 0 and self.knee_angle_left_pid.error_integral <= -MAX_KNEE_ANGLE_INTEGRATOR_LEFT) or
-                           (knee_angle_error_left > 0 and self.knee_angle_left_pid.error_integral >= MAX_KNEE_ANGLE_INTEGRATOR_LEFT))
-      knee_torque_l = self.knee_angle_left_pid.update(knee_angle_error_left, freeze_integrator=freeze_integrator)
+      freeze_integrator = ((angle_error_knee < 0 and self.knee_angle_pid.error_integral <= -MAX_ANGLE_INTEGRATOR_KNEE) or
+                           (angle_error_knee > 0 and self.knee_angle_pid.error_integral >= MAX_ANGLE_INTEGRATOR_KNEE))
+      torque_knee = self.knee_angle_pid.update(angle_error_knee, freeze_integrator=freeze_integrator)
 
-      freeze_integrator = ((knee_angle_error_right < 0 and self.knee_angle_right_pid.error_integral <= -MAX_KNEE_ANGLE_INTEGRATOR_RIGHT) or
-                           (knee_angle_error_right > 0 and self.knee_angle_right_pid.error_integral >= MAX_KNEE_ANGLE_INTEGRATOR_RIGHT))
-      knee_torque_r = self.knee_angle_right_pid.update(knee_angle_error_right, freeze_integrator=freeze_integrator)
+      freeze_integrator = ((angle_error_hip < 0 and self.hip_angle_pid.error_integral <= -MAX_ANGLE_INTEGRATOR_HIP) or
+                           (angle_error_hip > 0 and self.hip_angle_pid.error_integral >= MAX_ANGLE_INTEGRATOR_HIP))
+      torque_hip = self.hip_angle_pid.update(angle_error_hip, freeze_integrator=freeze_integrator)
 
-    # Torque rate limits
-      self.torque_knee_l_filtered = np.clip(knee_torque_l,
-                                        self.torque_knee_l_filtered - MAX_KNEE_TORQUE_RATE,
-                                        self.torque_knee_l_filtered + MAX_KNEE_TORQUE_RATE)
-      self.torque_knee_r_filtered = np.clip(knee_torque_r,
-                                        self.torque_knee_r_filtered - MAX_KNEE_TORQUE_RATE,
-                                        self.torque_knee_r_filtered + MAX_KNEE_TORQUE_RATE)
+      # Torque rate limits
+      self.torque_knee_filtered = np.clip(torque_knee,
+                                        self.torque_knee_filtered - MAX_KNEE_TORQUE_RATE,
+                                        self.torque_knee_filtered + MAX_KNEE_TORQUE_RATE)
+      self.torque_hip_filtered = np.clip(torque_hip,
+                                        self.torque_hip_filtered - MAX_KNEE_TORQUE_RATE,
+                                        self.torque_hip_filtered + MAX_KNEE_TORQUE_RATE)
 
-      knee_torque_l = int(np.clip(self.torque_knee_l_filtered, -MAX_KNEE_TORQUE_LEFT, MAX_KNEE_TORQUE_LEFT))
-      knee_torque_r = int(np.clip(self.torque_knee_r_filtered, -MAX_KNEE_TORQUE_RIGHT, MAX_KNEE_TORQUE_RIGHT))
+      torque_knee = int(np.clip(self.torque_knee_filtered, -MAX_TORQUE_KNEE, MAX_TORQUE_KNEE))
+      torque_hip = int(np.clip(self.torque_hip_filtered, -MAX_TORQUE_HIP, MAX_TORQUE_HIP))
 
-      # Extra safety for when training stands attached:
-      if knee_angle_measured_left<=30 and knee_torque_l > 0:
-        knee_torque_l = 0
-      elif knee_angle_measured_left >= 330 and knee_torque_l < 0:
-        knee_torque_l = 0
+      # Extra safety for when training stands attached(temporary):
+      if angle_measured_knee <= 30 and torque_knee > 0:
+        torque_knee = 0
+      elif angle_measured_knee >= 330 and torque_knee < 0:
+        torque_knee = 0
 
       # Do not try to balance if knee and hip have excessive angle on start
-      if abs(knee_angle_desired_left - knee_angle_measured_left) > 5 or abs(knee_angle_desired_right - knee_angle_measured_right) > 5:
-        torque_l = 0
-        torque_r = 0
+      if abs(angle_desired_knee - angle_measured_knee) > 5 or abs(angle_desired_hip - angle_measured_hip) > 5:
+        torque_left_wheel = 0
+        torque_right_wheel = 0
 
-      can_sends.append(bodycan.create_knee_control(self.packer, knee_torque_l, knee_torque_r))
+      can_sends.append(bodycan.create_knee_control(self.packer, torque_knee, torque_hip))
 
-    can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
+    can_sends.append(bodycan.create_control(self.packer, torque_left_wheel, torque_right_wheel))
     # can_sends.append(bodycan.create_rpm_limit(self.packer,500,500)) # Increase speed limit to ~5m/s
 
     new_actuators = CC.actuators.copy()
-    new_actuators.accel = torque_l
-    new_actuators.steer = torque_r
+    new_actuators.accel = torque_left_wheel
+    new_actuators.steer = torque_right_wheel
 
     return new_actuators, can_sends

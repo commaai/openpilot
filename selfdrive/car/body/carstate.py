@@ -13,8 +13,8 @@ class CarState(CarStateBase):
     ret.wheelSpeeds.fr = cp.vl['MOTORS_DATA']['SPEED_R']
 
     if self.CP.carFingerprint == CAR.BODY_KNEE:
-      self.knee_angle_l = cp.vl['KNEE_MOTORS_ANGLE']['LEFT_ANGLE_SENSOR'] * KNEE_RAW_ANGLE_TO_DEGREES
-      self.knee_angle_r = cp.vl['KNEE_MOTORS_ANGLE']['RIGHT_ANGLE_SENSOR'] * KNEE_RAW_ANGLE_TO_DEGREES
+      self.knee_angle = cp.vl['KNEE_MOTORS_ANGLE']['LEFT_ANGLE_SENSOR'] * KNEE_RAW_ANGLE_TO_DEGREES
+      self.hip_angle = cp.vl['KNEE_MOTORS_ANGLE']['RIGHT_ANGLE_SENSOR'] * KNEE_RAW_ANGLE_TO_DEGREES
 
     ret.vEgoRaw = ((ret.wheelSpeeds.fl + ret.wheelSpeeds.fr) / 2.) * self.CP.wheelSpeedFactor
 
