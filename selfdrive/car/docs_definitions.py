@@ -217,6 +217,8 @@ class Harness(Enum):
   nissan_a = "Nissan A"
   nissan_b = "Nissan B"
   mazda = "Mazda"
+  ford_q3 = "Ford Q3"
+  ford_q4 = "Ford Q4"
   none = "None"
 
 
