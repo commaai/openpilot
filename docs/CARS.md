@@ -4,227 +4,212 @@
 
 A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
-## How We Rate The Cars
-
-### Stop and Go
-- [![star](assets/icon-star-full.svg)](##) - openpilot operates down to 0 mph.
-- [![star](assets/icon-star-empty.svg)](##) - openpilot operates only above a minimum speed. See your car's manual for the minimum speed.
-
-### Steer to 0
-- [![star](assets/icon-star-full.svg)](##) - openpilot can control the steering wheel down to 0 mph.
-- [![star](assets/icon-star-empty.svg)](##) - No steering control below certain speeds. See your car's manual for the minimum speed.
-
-### Steering Torque
-- [![star](assets/icon-star-full.svg)](##) - Car has enough steering torque to comfortably take most highway turns.
-- [![star](assets/icon-star-empty.svg)](##) - Limited ability to make tighter turns.
-
-
 # 202 Supported Cars
 
-|Make|Model|Supported Package|openpilot ACC|Stop and Go|Steer to 0|Steering Torque|
-|---|---|---|:---:|:---:|:---:|:---:|
-|Acura|ILX 2016-19|AcuraWatch Plus|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Acura|RDX 2016-18|AcuraWatch Plus|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Acura|RDX 2019-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Audi|A3 2014-19|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Audi|Q2 2018|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Audi|Q3 2020-21|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Audi|RS3 2018|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Audi|S3 2015-17|ACC + Lane Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chevrolet|Bolt EUV 2022-23|Premier/Premier Redline Trim|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chrysler|Pacifica 2017-18|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chrysler|Pacifica 2019-20|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chrysler|Pacifica 2021|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|comma|body|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Genesis|G70 2018-19|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Genesis|G70 2020|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Genesis|G80 2017-19|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Genesis|G90 2017-18|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Honda|Accord 2018-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Accord Hybrid 2018-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Civic 2016-18|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Civic 2019-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)[<sup>2</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Civic 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Honda|Civic Hatchback 2017-21|Honda Sensing|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Civic Hatchback 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Honda|CR-V 2015-16|Touring Trim|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|CR-V 2017-22|Honda Sensing|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|CR-V Hybrid 2017-19|Honda Sensing|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|e 2020|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Fit 2018-20|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Freed 2020|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|HR-V 2019-22|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Insight 2019-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Inspire 2018|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Odyssey 2018-20|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Passport 2019-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Pilot 2016-22|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Honda|Ridgeline 2017-22|Honda Sensing|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Hyundai|Elantra 2017-19|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Genesis 2015-16|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq 5 2022|Highway Driving Assist II|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq Electric 2020|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq Hybrid 2020-22|Smart Cruise Control (SCC) & LFA|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Ioniq Plug-in Hybrid 2020-21|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Kona 2020|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Kona Electric 2022|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Palisade 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Santa Fe 2019-20|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Santa Fe 2021-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Santa Fe Hybrid 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Santa Fe Plug-in Hybrid 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Sonata 2018-19|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Sonata 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Sonata Hybrid 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Tucson 2021|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Ceed 2019|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|EV6 2022|Highway Driving Assist II|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Forte 2019-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|K5 2021-22|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Electric 2019|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Electric 2020|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Electric 2021|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Electric 2022|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Hybrid 2022|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Niro Plug-in Hybrid 2018-19|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Optima 2017|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Optima 2019|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Seltos 2021|Smart Cruise Control (SCC)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Sorento 2018|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Sorento 2019|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Stinger 2018-20|Smart Cruise Control (SCC) & LKAS|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Kia|Telluride 2020|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|CT Hybrid 2017-18|Lexus Safety System+|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|ES 2019-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|ES Hybrid 2017-18|Lexus Safety System+|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|ES Hybrid 2019-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|IS 2017-19|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|NX 2018-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|NX 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|NX Hybrid 2018-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|NX Hybrid 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|RC 2017-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|RX 2016-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|RX 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|RX Hybrid 2016-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|RX Hybrid 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Lexus|UX Hybrid 2019-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Mazda|CX-5 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Mazda|CX-9 2021-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Nissan|Altima 2019-20|ProPILOT Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Nissan|Leaf 2018-22|ProPILOT Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Nissan|Rogue 2018-20|ProPILOT Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Nissan|X-Trail 2017|ProPILOT Assist|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Ram|1500 2019-22|Adaptive Cruise Control|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|SEAT|Ateca 2018|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|SEAT|Leon 2014-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|Ascent 2019-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|Forester 2019-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|Impreza 2017-19|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Subaru|Impreza 2020-22|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|Legacy 2020-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|Outback 2020-22|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Subaru|XV 2018-19|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|
-|Subaru|XV 2020-21|EyeSight Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Karoq 2019-21[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Kodiaq 2018-19|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Octavia 2015, 2018-19|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Octavia RS 2016|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Scala 2020|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Škoda|Superb 2015-18|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Alphard 2019-20|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Alphard Hybrid 2021|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Avalon 2016|Toyota Safety Sense P|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Avalon 2017-18|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Avalon 2019-21|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Avalon 2022|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Avalon Hybrid 2019-21|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Avalon Hybrid 2022|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|C-HR 2017-21|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|C-HR Hybrid 2017-19|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Camry 2018-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Camry 2021-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Camry Hybrid 2018-20|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Camry Hybrid 2021-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Corolla 2017-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Corolla 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Corolla Cross (Non-US only) 2020-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Corolla Hatchback 2019-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Corolla Hybrid 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Highlander 2017-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Highlander 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Highlander Hybrid 2017-19|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Highlander Hybrid 2020-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Mirai 2021|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Prius 2016|Toyota Safety Sense P|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Prius 2017-20|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Prius 2021-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Prius Prime 2017-20|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Prius Prime 2021-22|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Prius v 2017|Toyota Safety Sense P|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 2016|Toyota Safety Sense P|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 2017-18|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 2019-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 Hybrid 2017-18|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 Hybrid 2019-21|All|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|RAV4 Hybrid 2022|All|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Toyota|Sienna 2018-20|All|[![star](assets/icon-star-half.svg)](##)[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Arteon 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Arteon eHybrid 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Arteon R 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Atlas 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Atlas Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|California 2021[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Caravelle 2020[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|CC 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|e-Golf 2014-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf 2015-20[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf Alltrack 2015-19|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf GTD 2015-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf GTE 2015-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf GTI 2015-21|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf R 2015-19[<sup>8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Golf SportsVan 2015-20|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Jetta 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Jetta GLI 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat 2015-22[<sup>6,7,8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat Alltrack 2015-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Passat GTE 2015-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Polo 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Polo GTI 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|T-Cross 2021[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|T-Roc 2021[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Taos 2022[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Teramont 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Teramont Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Teramont X 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Tiguan 2019-22[<sup>7</sup>](#footnotes)|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
-|Volkswagen|Touran 2017|Driver Assistance|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|
+|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Harness|
+|---|---|---|:---:|:---:|:---:|:---:|:---:|
+|Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Acura|RDX 2019-22|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Audi|A3 2014-19|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|Q2 2018|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|Q3 2020-21|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|RS3 2018|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|S3 2015-17|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
+|Chevrolet|Bolt EUV 2022-23|Premier/Premier Redline Trim|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
+|Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
+|Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica 2021|All|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|comma|body|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|None|
+|Genesis|G70 2018-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
+|Genesis|G70 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
+|Genesis|G80 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Genesis|G90 2017-18|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
+|Honda|Accord 2018-22|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Accord Hybrid 2018-22|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Civic 2016-18|Honda Sensing|openpilot|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|Civic 2019-21|All|Stock|0 mph|2 mph[<sup>2</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Civic 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Honda Bosch B|
+|Honda|Civic Hatchback 2017-21|Honda Sensing|Stock|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Civic Hatchback 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Honda Bosch B|
+|Honda|CR-V 2015-16|Touring Trim|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|CR-V 2017-22|Honda Sensing|Stock|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|CR-V Hybrid 2017-19|Honda Sensing|Stock|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|e 2020|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Fit 2018-20|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|Freed 2020|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|HR-V 2019-22|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|Insight 2019-22|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Inspire 2018|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
+|Honda|Odyssey 2018-20|Honda Sensing|openpilot|25 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|Passport 2019-21|All|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|Pilot 2016-22|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Honda|Ridgeline 2017-22|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
+|Hyundai|Elantra 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
+|Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
+|Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
+|Hyundai|Genesis 2015-16|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai J|
+|Hyundai|Ioniq 5 2022|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai Q|
+|Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Hyundai|Ioniq Electric 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Hyundai|Ioniq Hybrid 2020-22|Smart Cruise Control (SCC) & LFA|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Hyundai|Ioniq Plug-in Hybrid 2020-21|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Kona 2020|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
+|Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
+|Hyundai|Kona Electric 2022|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai O|
+|Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai I|
+|Hyundai|Palisade 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Santa Fe 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai D|
+|Hyundai|Santa Fe 2021-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Santa Fe Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Santa Fe Plug-in Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Sonata 2018-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Hyundai|Sonata 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
+|Hyundai|Sonata Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
+|Hyundai|Tucson 2021|Smart Cruise Control (SCC)|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|Stock|5 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Kia|Ceed 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Kia|EV6 2022|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai P|
+|Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
+|Kia|Forte 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
+|Kia|K5 2021-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
+|Kia|Niro Electric 2019|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Kia|Niro Electric 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
+|Kia|Niro Electric 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Niro Electric 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
+|Kia|Niro Hybrid 2022|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Kia|Niro Plug-in Hybrid 2018-19|Smart Cruise Control (SCC) & LKAS|openpilot|10 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Optima 2017|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
+|Kia|Optima 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
+|Kia|Seltos 2021|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
+|Kia|Sorento 2018|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Sorento 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Kia|Stinger 2018-20|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Telluride 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Lexus|CT Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|ES Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|ES Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|IS 2017-19|All|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|NX 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|NX 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|NX Hybrid 2018-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|NX Hybrid 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|RC 2017-20|All|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|RX 2016-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|RX 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|RX Hybrid 2016-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Lexus|UX Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Mazda|CX-5 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Mazda|
+|Mazda|CX-9 2021-22|All|Stock|0 mph|28 mph|[![star](assets/icon-star-full.svg)](##)|Mazda|
+|Nissan|Altima 2019-20|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Nissan B|
+|Nissan|Leaf 2018-22|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Nissan A|
+|Nissan|Rogue 2018-20|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Nissan A|
+|Nissan|X-Trail 2017|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Nissan A|
+|Ram|1500 2019-22|Adaptive Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|Ram|
+|SEAT|Ateca 2018|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|SEAT|Leon 2014-20|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru A|
+|Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru A|
+|Subaru|Forester 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru A|
+|Subaru|Impreza 2017-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Impreza 2020-22|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru A|
+|Subaru|Legacy 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru B|
+|Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru B|
+|Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Subaru A|
+|Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Škoda|Karoq 2019-21[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Škoda|Kodiaq 2018-19|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Škoda|Octavia 2015, 2018-19|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Škoda|Octavia RS 2016|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Škoda|Scala 2020|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Škoda|Superb 2015-18|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Avalon 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Avalon 2017-18|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Avalon 2019-21|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Avalon 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Avalon Hybrid 2019-21|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Avalon Hybrid 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|C-HR 2017-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Camry 2018-20|All|Stock|0 mph[<sup>4</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>4</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Camry Hybrid 2018-20|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Camry Hybrid 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla 2017-19|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla Cross (Non-US only) 2020-21|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla Hatchback 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Highlander 2017-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Highlander 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Highlander Hybrid 2017-19|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Highlander Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Mirai 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius 2017-20|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius Prime 2017-20|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius Prime 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius v 2017|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 2017-18|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 2019-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 Hybrid 2017-18|All|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 Hybrid 2019-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Sienna 2018-20|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Volkswagen|Arteon 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Arteon eHybrid 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Arteon R 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Atlas 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Atlas Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|California 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Caravelle 2020[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|CC 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|e-Golf 2014-20|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf 2015-20[<sup>8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf Alltrack 2015-19|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf GTD 2015-20|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf GTE 2015-20|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf GTI 2015-21|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf R 2015-19[<sup>8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Golf SportsVan 2015-20|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
+|Volkswagen|Jetta 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Jetta GLI 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Passat 2015-22[<sup>6,7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Passat Alltrack 2015-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Passat GTE 2015-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Polo 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Polo GTI 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|T-Cross 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|T-Roc 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Taos 2022[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Teramont 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Teramont Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Teramont X 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Tiguan 2019-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Touran 2017|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
 
 <a id="footnotes"></a>
 <sup>1</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
