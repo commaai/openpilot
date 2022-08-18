@@ -154,8 +154,10 @@ class CarController:
       if self.frame % 10 == 0:
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
 
+    lateral_active = CC.enabled if self.CP.minSteerSpeed > 0. else CC.latActive
+
     # Send steering command.
-    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, CC.latActive, self.CP.carFingerprint,
+    can_sends.append(hondacan.create_steering_control(self.packer, apply_steer, lateral_active, self.CP.carFingerprint,
                                                       CS.CP.openpilotLongitudinalControl))
 
     # wind brake from air resistance decel at high speed

@@ -66,6 +66,7 @@ routes = [
   TestRoute("f29e2b57a55e7ad5|2021-03-24--20-52-38", HONDA.ACCORDH), # 2021 with new style HUD msgs
   TestRoute("1ad763dd22ef1a0e|2020-02-29--18-37-03", HONDA.CRV_5G),
   TestRoute("0a96f86fcfe35964|2020-02-05--07-25-51", HONDA.ODYSSEY),
+  # TestRoute("", HONDA.ODYSSEY_BOSCH),   # TODO: get this
   TestRoute("d83f36766f8012a5|2020-02-05--18-42-21", HONDA.CIVIC_BOSCH_DIESEL),
   TestRoute("f0890d16a07a236b|2021-05-25--17-27-22", HONDA.INSIGHT),
   TestRoute("07d37d27996096b6|2020-03-04--21-57-27", HONDA.PILOT),

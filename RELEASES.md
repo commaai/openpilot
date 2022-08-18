@@ -8,6 +8,7 @@ Version 0.8.16 (2022-XX-XX)
 * Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
 * Subaru Legacy 2020-22 support thanks to martinl!
 * Subaru Outback 2020-22 support
+* Honda Odyssey 2021-22 support thanks to csouers!
 
 Version 0.8.15 (2022-07-20)
 ========================
