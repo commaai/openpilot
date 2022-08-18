@@ -96,8 +96,8 @@ def update_v_cruise(v_cruise_kph, v_ego, gas_pressed, buttonEvents, button_timer
 
 def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
   for b in buttonEvents:
-    # 0kph means we never had a set speed
-    if b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) and v_cruise_last != 0:
+    # V_CRUISE_INITIAL means we never had a set speed
+    if b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) and v_cruise_last != V_CRUISE_INITIAL:
       return v_cruise_last
 
   return int(round(clip(v_ego * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
