@@ -101,8 +101,9 @@ class Footnote(Enum):
     "2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph.",
     Column.FSR_STEERING)
   STEER_LIMITING_RADAR = CarFootnote(
-    "Stock LKAS limitations apply when used with Stock ACC, including minimum speed and active windshield wiper mode.",
+    "When disabling the radar, openpilot will steer to 3 mph. <b><i>NOTE: disabling the radar disables Automatic Emergency Braking (AEB).</i></b>",
     Column.FSR_STEERING)
+
 
 @dataclass
 class HondaCarInfo(CarInfo):
@@ -136,7 +137,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", harness=Harness.nidec),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
-  CAR.ODYSSEY_BOSCH: HondaCarInfo("Honda Odyssey 2021-22", "All", min_steer_speed=36.5 * CV.MPH_TO_MS, footnotes=[Footnote.STEER_LIMITING_RADAR], harness=Harness.bosch_a),
+  CAR.ODYSSEY_BOSCH: HondaCarInfo("Honda Odyssey 2021-22", "All", footnotes=[Footnote.STEER_LIMITING_RADAR], harness=Harness.bosch_a),
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   CAR.PILOT: HondaCarInfo("Honda Pilot 2016-22", harness=Harness.nidec),
@@ -1490,9 +1491,6 @@ FW_VERSIONS = {
     ],
   },
 }
-
-# Bosch radar with these firmware IDs limit steering availability to the same vehicle conditions as the factory LKAS (i.e. speed and wiper mode).
-STEER_LIMITING_RADAR = [b'36802-THR-A220\x00\x00', b'36802-TJB-A540\x00\x00']
 
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
