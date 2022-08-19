@@ -492,7 +492,7 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
-        <translation>ก.ม./ช.ม.</translation>
+        <translation>กม./ชม</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
@@ -1170,7 +1170,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>รับการแจ้งเตือนให้เลี้ยวกลับเข้าเลนเมื่อรถของคุณตรวจพบการข้ามช่องจราจรโดยไม่เปิดสัญญาณไฟเลี้ยวในขณะขับขี่ที่ความเร็วเกิน 31 ไมล์ต่อชั่วโมง (50 ก.ม./ช.ม.)</translation>
+        <translation>รับการแจ้งเตือนให้เลี้ยวกลับเข้าเลนเมื่อรถของคุณตรวจพบการข้ามช่องจราจรโดยไม่เปิดสัญญาณไฟเลี้ยวในขณะขับขี่ที่ความเร็วเกิน 31 ไมล์ต่อชั่วโมง (50 กม./ชม)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
@@ -1180,7 +1180,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="47"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>แสดงความเร็วเป็น ก.ม./ช.ม. แทน ไมล์/ชั่วโมง</translation>
+        <translation>แสดงความเร็วเป็น กม./ชม แทน ไมล์/ชั่วโมง</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="52"/>
