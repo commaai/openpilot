@@ -210,7 +210,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate == CAR.ACURA_RDX_3G:
+    elif candidate in [CAR.ACURA_RDX_3G, CAR.ACURA_RDX_3G_2022]:
+      if candidate == CAR.ACURA_RDX_3G_2022 and not ret.openpilotLongitudinalControl:
+        ret.minSteerSpeed = 36.5 * CV.MPH_TO_MS
       ret.mass = 4068. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.41
