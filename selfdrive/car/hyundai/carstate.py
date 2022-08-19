@@ -145,7 +145,7 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
     else:
       ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
-    ret.gasPressed = ret.gas > 1e-3
+    ret.gasPressed = ret.gas > 1e-5
     ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
