@@ -87,8 +87,8 @@ class CAR:
   ODYSSEY = "HONDA ODYSSEY 2018"
   ODYSSEY_CHN = "HONDA ODYSSEY CHN 2019"
   ACURA_RDX = "ACURA RDX 2018"
-  ACURA_RDX_3G = "ACURA RDX 2020"
-  ACURA_RDX_3G_2022 = "ACURA RDX 2022"
+  ACURA_RDX_2020 = "ACURA RDX 2020"
+  ACURA_RDX_2022 = "ACURA RDX 2022"
   PILOT = "HONDA PILOT 2017"
   PASSPORT = "HONDA PASSPORT 2021"
   RIDGELINE = "HONDA RIDGELINE 2017"
@@ -137,10 +137,10 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
-  CAR.ACURA_RDX_3G: [
+  CAR.ACURA_RDX_2020: [
     HondaCarInfo("Acura RDX 2019-21", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   ],
-  CAR.ACURA_RDX_3G_2022: [
+  CAR.ACURA_RDX_2022: [
     HondaCarInfo("Acura RDX 2022", "All", min_steer_speed=36.5 * CV.MPH_TO_MS, footnotes=[Footnote.STEER_LIMITING_RADAR], harness=Harness.bosch_a),
   ],
   CAR.PILOT: HondaCarInfo("Honda Pilot 2016-22", harness=Harness.nidec),
@@ -1191,7 +1191,7 @@ FW_VERSIONS = {
       b'78109-TX4-A310\x00\x00',
     ],
   },
-  CAR.ACURA_RDX_3G: {
+  CAR.ACURA_RDX_2020: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5YF-A130\x00\x00',
       b'37805-5YF-A230\x00\x00',
@@ -1267,7 +1267,7 @@ FW_VERSIONS = {
       b'39990-TJB-A130\x00\x00'
     ],
   },
-  CAR.ACURA_RDX_3G_2022: {
+  CAR.ACURA_RDX_2022: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-5YF-AD20\x00\x00',
     ],
@@ -1495,8 +1495,8 @@ DBC = {
   CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
-  CAR.ACURA_RDX_3G_2022: dbc_dict('acura_rdx_2020_can_generated', None),
+  CAR.ACURA_RDX_2020: dbc_dict('acura_rdx_2020_can_generated', None),
+  CAR.ACURA_RDX_2022: dbc_dict('acura_rdx_2020_can_generated', None),
   CAR.CIVIC: dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CIVIC_BOSCH: dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
   CAR.CIVIC_BOSCH_DIESEL: dbc_dict('honda_accord_2018_can_generated', None),
@@ -1527,6 +1527,6 @@ HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
 HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
                                 CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE}
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.ACURA_RDX_3G_2022, CAR.HONDA_E, CAR.CIVIC_2022}
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G, CAR.ACURA_RDX_3G_2022}
+               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_2020, CAR.ACURA_RDX_2022, CAR.HONDA_E, CAR.CIVIC_2022}
+HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_2020, CAR.ACURA_RDX_2022}
 HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022}

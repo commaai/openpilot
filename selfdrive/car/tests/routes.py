@@ -49,9 +49,9 @@ routes = [
   TestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
   TestRoute("f08912a233c1584f|2022-08-11--18-02-41", GM.BOLT_EUV),
 
-  TestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
+  TestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_2020),
   # TODO: get this
-  # TestRoute("", HONDA.ACURA_RDX_3G), # 2022 with radar steering limitation
+  # TestRoute("", HONDA.ACURA_RDX_2022), # 2022 with radar steering limitation
   TestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),
   TestRoute("a859a044a447c2b0|2020-03-03--18-42-45", HONDA.CRV_EU),
   TestRoute("68aac44ad69f838e|2021-05-18--20-40-52", HONDA.CRV),
