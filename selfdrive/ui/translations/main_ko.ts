@@ -1204,7 +1204,7 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
-        <source>Show ETA in 24h format</source>
+        <source>Show ETA in 24h Format</source>
         <translation>24시간 형식으로 도착예정시간 표시</translation>
     </message>
     <message>
