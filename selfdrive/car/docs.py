@@ -31,7 +31,7 @@ def get_all_car_info() -> List[CarInfo]:
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
     # Hyundai exception: those with radar have openpilot longitudinal
     fingerprint = gen_empty_fingerprint()
-    fingerprint.update({0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}})
+    fingerprint[1] = {HKG_RADAR_START_ADDR: 8}
     CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
 
     if CP.dashcamOnly or car_info is None:
