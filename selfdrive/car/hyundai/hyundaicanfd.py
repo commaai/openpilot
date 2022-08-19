@@ -31,9 +31,9 @@ def create_buttons(packer, cnt, btn):
   }
   return packer.make_can_msg("CRUISE_BUTTONS", 5, values)
 
-def create_cruise_info(packer, cruise_info_copy, pcm_cancel_cmd):
+def create_cruise_info(packer, cruise_info_copy, cancel):
   values = cruise_info_copy
-  if pcm_cancel_cmd:
+  if cancel:
     values["CRUISE_STATUS"] = 0
     values["CRUISE_INACTIVE"] = 1
   return packer.make_can_msg("CRUISE_INFO", 4, values)

@@ -54,7 +54,7 @@ class CarController:
 
     # These cars have significantly more torque than most HKG.  Limit to 70% of max.
     steer = actuators.steer
-    if self.CP.carFingeprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
+    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       steer = clip(steer, -0.7, 0.7)
     new_steer = int(round(steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
@@ -73,21 +73,23 @@ class CarController:
       # steering control
       can_sends.append(hyundaicanfd.create_lkas(self.packer, self.CP, CC.enabled, CC.latActive, apply_steer))
 
+      # block LFA on HDA2
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.CANFD_HDA2:
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
-      if self.frame % 2 == 0 and not (self.CP.flags & (HyundaiFlags.CANFD_HDA2 | HyundaiFlags.CANFD_BUTTON_SEND)):
-        # cruise cancel for non HDA2 without 0x1cf
-        can_sends.append(hyundaicanfd.create_cruise_info(self.packer, CS.cruise_info_copy, CC.cruiseControl.cancel))
-        # LFA and HDA icons
+      # LFA and HDA icons
+      if self.frame % 2 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_HDA2):
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, CC.enabled))
 
       # cruise cancel
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.25 and self.CP.flags & (HyundaiFlags.CANFD_HDA2 | HyundaiFlags.CANFD_BUTTON_SEND):
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
         if CC.cruiseControl.cancel:
-          for _ in range(20):
-            can_sends.append(hyundaicanfd.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
-          self.last_button_frame = self.frame
+          if self.CP.flags & (HyundaiFlags.CANFD_HDA2 | HyundaiFlags.CANFD_BUTTON_SEND):
+            for _ in range(20):
+              can_sends.append(hyundaicanfd.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
+            self.last_button_frame = self.frame
+          else:
+            can_sends.append(hyundaicanfd.create_cruise_info(self.packer, CS.cruise_info_copy, True))
 
         # cruise standstill resume
         elif CC.cruiseControl.resume:
