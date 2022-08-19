@@ -1208,7 +1208,7 @@ ingesteld</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
-        <source>Show ETA in 24h format</source>
+        <source>Show ETA in 24h Format</source>
         <translation>Toon verwachte aankomsttijd in 24-uurs formaat</translation>
     </message>
     <message>
