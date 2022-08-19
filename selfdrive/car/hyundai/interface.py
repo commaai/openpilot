@@ -4,7 +4,7 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car.hyundai.values import CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 
@@ -326,6 +326,14 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
+    if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
+      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
+      # Handle CF_Clu_CruiseSwState changing buttons mid-press
+      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
+        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
+
+      ret.buttonEvents = buttonEvents
+
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
     # Main button also can trigger an engagement on these cars
@@ -334,15 +342,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-
-    if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
-      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
-      # Handle CF_Clu_CruiseSwState changing buttons mid-press
-      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
-        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
-
-      ret.buttonEvents = buttonEvents
-      events.events.extend(create_button_enable_events(ret.buttonEvents))
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
