@@ -139,10 +139,12 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
 
     # TODO: find something common with EV6
-    gas_scale = 1022. # if self.CP.carFingerprint in (CAR.TUCSON_HYBRID_4TH_GEN, ) else 255.
     cruise_info_bus = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
 
-    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / gas_scale
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+    else:
+      ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
     ret.gasPressed = ret.gas > 1e-3
     ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
 
@@ -387,7 +389,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      ("ACCELERATOR_PEDAL", "ACCELERATOR"),
       ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
@@ -411,7 +412,6 @@ class CarState(CarStateBase):
 
     checks = [
       ("WHEEL_SPEEDS", 100),
-      ("ACCELERATOR", 100),
       ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
@@ -424,14 +424,24 @@ class CarState(CarStateBase):
 
     if CP.flags & HyundaiFlags.CANFD_HDA2:
       signals += [
+        ("ACCELERATOR_PEDAL", "ACCELERATOR"),
         ("GEAR", "ACCELERATOR"),
         ("SET_SPEED", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
       ]
-      checks.append(("CRUISE_INFO", 50))
+      checks += [
+        ("CRUISE_INFO", 50),
+        ("ACCELERATOR", 100),
+      ]
     else:
-      signals.append(("GEAR", "GEAR"))
-      checks.append(("GEAR", 100))
+      signals += [
+        ("GEAR", "GEAR"),
+        ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
+      ]
+      checks += [
+        ("GEAR", 100),
+        ("ACCELERATOR_ALT", 100),
+      ]
 
     bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
