@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
     if CP.carFingerprint in CANFD_CAR:
-      self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
+      self.shifter_values = can_define.dv["GEAR_SHIFTER"]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -143,7 +143,7 @@ class CarState(CarStateBase):
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl["ACCELERATOR"]["GEAR"]
+    gear = cp.vl["GEAR_SHIFTER"]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -381,7 +381,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
       ("ACCELERATOR_PEDAL", "ACCELERATOR"),
-      ("GEAR", "ACCELERATOR"),
+      ("GEAR", "GEAR_SHIFTER"),
       ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
@@ -408,6 +408,7 @@ class CarState(CarStateBase):
     checks = [
       ("WHEEL_SPEEDS", 100),
       ("ACCELERATOR", 100),
+      ("GEAR_SHIFTER", 100),
       ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
