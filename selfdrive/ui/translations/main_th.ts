@@ -310,7 +310,7 @@
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>ต้องการอย่างน้อย %1 ตัวอักษร!</numerusform>
+            <numerusform>ต้องการอย่างน้อย %n ตัวอักษร!</numerusform>
         </translation>
     </message>
 </context>
