@@ -6,6 +6,7 @@
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHS.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHS.ts)
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ko.ts)
 [![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ja.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ja.ts)
+[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_th.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_th.ts)
 
 ## Contributing
 
