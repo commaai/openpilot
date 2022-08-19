@@ -38,7 +38,7 @@ def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilde
 
 
 def gen_empty_fingerprint():
-  return {i: {} for i in range(0, 4)}
+  return {i: {} for i in range(0, 8)}
 
 
 # FIXME: hardcoding honda civic 2016 touring params so they can be used to

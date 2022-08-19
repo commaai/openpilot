@@ -1,11 +1,10 @@
-from enum import Enum
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness
 Ecu = car.CarParams.Ecu
 
 
@@ -21,7 +20,7 @@ class CarControllerParams:
     self.STEER_DRIVER_FACTOR = 1
     self.STEER_THRESHOLD = 150
 
-    if CP.carFingerprint in HDA2_CAR:
+    if CP.carFingerprint in CANFD_CAR:
       self.STEER_MAX = 270
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
@@ -66,6 +65,7 @@ class CAR:
   PALISADE = "HYUNDAI PALISADE 2020"
   VELOSTER = "HYUNDAI VELOSTER 2019"
   SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
+  IONIQ_5 = "HYUNDAI IONIQ 5 2022"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -86,12 +86,6 @@ class CAR:
   GENESIS_G70_2020 = "GENESIS G70 2020"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
-
-
-class Footnote(Enum):
-  CANFD = CarFootnote(
-    "Requires a <a href='https://comma.ai/shop/products/panda'>red panda</a> and additional <a href='https://comma.ai/shop/products/harness-box'>harness box.</a>",
-    Column.MODEL)
 
 
 @dataclass
@@ -118,7 +112,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", "Smart Cruise Control (SCC)", harness=Harness.hyundai_o),
   CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo", harness=Harness.hyundai_i),
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", harness=Harness.hyundai_d),
-  CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All", harness=Harness.hyundai_l),
+  CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All", video_link="https://youtu.be/VnHzSTygTS4", harness=Harness.hyundai_l),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All", harness=Harness.hyundai_l),
   CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", "All", harness=Harness.hyundai_l),
   CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw", harness=Harness.hyundai_a),
@@ -133,6 +127,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", "Smart Cruise Control (SCC)", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
+  CAR.IONIQ_5: HyundaiCarInfo("Hyundai Ioniq 5 2022", "Highway Driving Assist II", harness=Harness.hyundai_q),
 
   # Kia
   CAR.KIA_FORTE: [
@@ -141,7 +136,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
-    HyundaiCarInfo("Kia Niro Electric 2019-20", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
+    HyundaiCarInfo("Kia Niro Electric 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro Electric 2020", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
     HyundaiCarInfo("Kia Niro Electric 2021", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
     HyundaiCarInfo("Kia Niro Electric 2022", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
   ],
@@ -165,7 +161,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
-  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "All", harness=Harness.hyundai_p, footnotes=[Footnote.CANFD,]),
+  CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "Highway Driving Assist II", harness=Harness.hyundai_p),
 
   # Genesis
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
@@ -620,6 +616,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x8799110S1500\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x8799110S1500\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
+      b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
@@ -628,6 +625,7 @@ FW_VERSIONS = {
       b'\xf1\x8758910-S2GA0\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
       b'\xf1\x8758910-S1DA0\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
       b'\xf1\x8758910-S2GA0\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
+      b'\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x82TACVN5GMI3XXXH0A',
@@ -636,6 +634,7 @@ FW_VERSIONS = {
       b'\xf1\x82TMCFD5MMCXXXXG0A',
       b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x82TMDWN5TMD3TXXJ1A',
       b'\xf1\x81HM6M2_0a0_G00',
+      b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81HM6M1_0a0_J10',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56370-S2AA0 0B19',
@@ -655,6 +654,8 @@ FW_VERSIONS = {
       b'\xf1\x87KMMYBU034207SB72x\x89\x88\x98h\x88\x98\x89\x87fhvvfWf33_\xff\x87\xff\x8f\xfa\x81\xe5\xf1\x89HT6TAF00A1\xf1\x82STM0M25GS1\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87954A02N250\x00\x00\x00\x00\x00\xf1\x81T02730A1  \xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6',
       b'\xf1\x00HT6TA290BLHT6TAF00A1STM0M25GS1\x00\x00\x00\x00\x00\x006\xd8\x97\x15',
+      b'\xf1\x00T02601BL  T02900A1  VTMPT25XXX900NS8\xb7\xaa\xfe\xfc',
+      b'\xf1\x87954A02N250\x00\x00\x00\x00\x00\xf1\x81T02900A1  \xf1\x00T02601BL  T02900A1  VTMPT25XXX900NS8\xb7\xaa\xfe\xfc',
     ],
   },
   CAR.SANTA_FE_HEV_2022: {
@@ -745,6 +746,7 @@ FW_VERSIONS = {
       b'\xf1\x00LX ESC \x0b 104 \x10\x16 58910-S8360',
       b'\xf1\x00ON ESC \x0b 100\x18\x12\x18 58910-S9360',
       b'\xf1\x00ON ESC \x0b 101\x19\t\x08 58910-S9360',
+      b'\xf1\x00ON ESC \x0b 101\x19\t\x05 58910-S9320',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -815,6 +817,8 @@ FW_VERSIONS = {
       b'\xf1\x87LDMVBN899222KF37\xa8\x88x\x87\x97www\x98\x99\x99\x89\x88\x99\x98\x89f\x88\x96hdo\xf7\xff\xbb\xaa\x9f\xff\xe2U\xf1\x81U922\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U922\x00\x00\x00\x00\x00\x00SLX4G38NB5\xb9\x94\xe8\x89',
       b"\xf1\x87LBLUFN622950KF36\xa8\x88\x88\x88\x87w\x87xh\x99\x96\x89\x88\x99\x98\x89\x88\x99\x98\x89\x87o\xf6\xff\x98\x88o\xffx'\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX2G38NB3\xd1\xc3\xf8\xa8",
       b'\xf1\x87LDMVBN950669KF37\x97www\x96fffy\x99\xa7\x99\xa9\x99\xaa\x99g\x88\x96x\xb8\x8f\xf9\xffTD/\xff\xa7\xcb\xf1\x81U922\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U922\x00\x00\x00\x00\x00\x00SLX4G38NB5\xb9\x94\xe8\x89',
+      b'\xf1\x87LDLVAA4478824HH1\x87wwwvfvg\x89\x99\xa8\x99w\x88\x87x\x89\x99\xa8\x99\xa6o\xfa\xfffU/\xffu\x92\xf1\x81U903\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00TON4G38NB2[v\\\xb6',
+      b'\xf1\x87LDMVBN871852KF37\xb9\x99\x99\x99\xa8\x88\x88\x88y\x99\xa7\x99x\x99\xa7\x89\x88\x88\x98\x88\x89o\xf7\xff\xaa\x88o\xff\x0e\xed\xf1\x81U922\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U922\x00\x00\x00\x00\x00\x00SLX4G38NB5\xb9\x94\xe8\x89',
     ],
   },
   CAR.VELOSTER: {
@@ -1015,6 +1019,7 @@ FW_VERSIONS = {
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         ',
+      b'\xf1\x00DEev SCC FHCUP      1.00 1.03 96400-Q4000         ',
       b'\xf1\x8799110Q4000\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
       b'\xf1\x8799110Q4100\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4100         ',
       b'\xf1\x8799110Q4500\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
@@ -1034,6 +1039,7 @@ FW_VERSIONS = {
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.03 95740-Q4000 180821',
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.01 99211-Q4500 210428',
       b'\xf1\x00DEE MFC  AT EUR LHD 1.00 1.03 95740-Q4000 180821',
+      b'\xf1\x00DEE MFC  AT KOR LHD 1.00 1.03 95740-Q4000 180821',
     ],
   },
   CAR.KIA_NIRO_PHEV: {
@@ -1144,11 +1150,13 @@ FW_VERSIONS = {
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.01 99210-AB000 210205',
+      b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.06 99210-AA000 220111',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
       b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
+      b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 105 \x10\x03 58910-AA800',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00HT6WA280BLHT6VA640A1CCN0N20NS5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -1163,7 +1171,7 @@ FW_VERSIONS = {
       b'\xf1\x82CNCWD0AMFCXCSFFA',
       b'\xf1\x82CNCWD0AMFCXCSFFB',
       b'\xf1\x82CNCVD0AMFCXCSFFB',
-      b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x82CNDWD0AMFCXCSG8A',
+      b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81HM6M2_0a0_G80',
     ],
   },
   CAR.ELANTRA_HEV_2021: {
@@ -1272,6 +1280,23 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
     ],
   },
+  CAR.IONIQ_5: {
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
+      b'\xf1\x8758520GI010\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
+      b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
+      b'\xf1\x8799110GI000\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
+    ],
+  },
 }
 
 CHECKSUM = {
@@ -1289,7 +1314,7 @@ FEATURES = {
   "use_fca": {CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.TUCSON, CAR.KONA_EV_2022},
 }
 
-HDA2_CAR = {CAR.KIA_EV6, }
+CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5}
 
 # The camera does SCC on these cars, rather than the radar
 CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
@@ -1342,6 +1367,7 @@ DBC = {
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_CEED: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_EV6: dbc_dict('kia_ev6', None),
+  CAR.KIA_EV6: dbc_dict('hyundai_canfd', None),
   CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
+  CAR.IONIQ_5: dbc_dict('hyundai_canfd', None),
 }
