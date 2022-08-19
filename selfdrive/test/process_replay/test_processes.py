@@ -16,8 +16,8 @@ from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
 original_segments = [
-  ("BODY", "ceacc4d097850b24|2022-08-17--19-48-37--2"),        # COMMA.BODY
-  ("BODY_KNEE", "ceacc4d097850b24|2022-08-17--19-36-08--2"),   # COMMA.BODY_KNEE
+  ("BODY", "ceacc4d097850b24|2022-08-18--16-42-06--1"),        # COMMA.BODY
+  ("BODY_KNEE", "ceacc4d097850b24|2022-08-18--16-32-31--1"),   # COMMA.BODY_KNEE
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("HYUNDAI", "d824e27e8c60172c|2022-08-19--17-58-07--2"),     # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
@@ -39,8 +39,8 @@ original_segments = [
 ]
 
 segments = [
-  ("BODY", "ceacc4d097850b24|2022-08-17--19-48-37--2"),
-  ("BODY_KNEE", "ceacc4d097850b24|2022-08-17--19-36-08--2"),
+  ("BODY", "ceacc4d097850b24|2022-08-18--16-42-06--1"),
+  ("BODY_KNEE", "ceacc4d097850b24|2022-08-18--16-32-31--1"),
   ("HYUNDAI", "regen114E5FF24D8|2022-07-14--17-08-47--0"),
   ("HYUNDAI", "d824e27e8c60172c|2022-08-19--17-58-07--2"),
   ("TOYOTA", "regenBA97410FBEC|2022-07-06--14-26-49--0"),
