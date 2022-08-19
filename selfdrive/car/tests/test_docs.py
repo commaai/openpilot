@@ -13,7 +13,7 @@ class TestCarDocs(unittest.TestCase):
     self.all_cars = get_all_car_info()
 
   def test_generator(self):
-    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE, False)
+    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
     with open(CARS_MD_OUT, "r") as f:
       current_cars_md = f.read()
 
