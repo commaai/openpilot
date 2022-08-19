@@ -76,7 +76,7 @@ User Data and comma Account
 
 By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
 
-openpilot is open source software: the user is free to disable data collection if they wish to do so.
+openpilot is open-source software: the user is free to disable data collection if they wish to do so.
 
 openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
 The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
