@@ -220,8 +220,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.677
 
     elif candidate in (CAR.ODYSSEY, CAR.ODYSSEY_BOSCH):
-      if candidate == CAR.ODYSSEY_BOSCH and not ret.openpilotLongitudinalControl:
-        ret.minSteerSpeed = 36.5 * CV.MPH_TO_MS
       ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.00
       ret.centerToFront = ret.wheelbase * 0.41
