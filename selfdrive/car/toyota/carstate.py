@@ -94,12 +94,11 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if self.CP.carFingerprint in RADAR_ACC_CAR:
-      self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
-      ret.stockFcw = bool(cp.vl["ACC_HUD"]["FCW"])
-    elif self.CP.carFingerprint in TSS2_CAR:
-      self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
-      ret.stockFcw = bool(cp_cam.vl["ACC_HUD"]["FCW"])
+    cp_cruise = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
+
+    if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
+      self.acc_type = cp_cruise.vl["ACC_CONTROL"]["ACC_TYPE"]
+      ret.stockFcw = bool(cp_cruise.vl["ACC_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -120,8 +119,8 @@ class CarState(CarStateBase):
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
-    ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
+    ret.stockAeb = bool(cp_cruise.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cruise.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
 
     if self.CP.enableBsm:
@@ -219,27 +218,33 @@ class CarState(CarStateBase):
         ("ACC_HUD", 1),
       ]
 
+    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR):
+      signals += [
+        ("FORCE", "PRE_COLLISION"),
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+      ]
+      checks += [
+        ("PRE_COLLISION", 33),
+      ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      ("FORCE", "PRE_COLLISION"),
-      ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
-    ]
-
-    # use steering message to check if panda is connected to frc
+    signals = []
     checks = [
-      ("STEERING_LKA", 42),
-      ("PRE_COLLISION", 33), # TODO: figure out why freq is inconsistent
+      ("STEERING_LKA", 42)  # use steering message to check if panda is connected to frc
     ]
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+        ("FORCE", "PRE_COLLISION"),
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
       ]
       checks += [
+        ("PRE_COLLISION", 33),
         ("ACC_CONTROL", 33),
         ("ACC_HUD", 1),
       ]
