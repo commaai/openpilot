@@ -232,9 +232,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     signals = []
-    checks = [
-      ("STEERING_LKA", 42)  # use steering message to check if panda is connected to frc
-    ]
+    checks = []
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
