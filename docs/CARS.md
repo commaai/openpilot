@@ -18,7 +18,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Audi|RS3 2018|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
 |Audi|S3 2015-17|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
-|Chevrolet|Bolt EUV 2022-23|Premier/Premier Redline Trim|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
+|Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
 |Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|

@@ -19,10 +19,8 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
-    self.gear_msg_canfd = "ACCELERATOR" if CP.flags & HyundaiFlags.CANFD_HDA2 else "GEAR"
     if CP.carFingerprint in CANFD_CAR:
-      # TODO: find something in common with the EV6
-      self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
+      self.shifter_values = can_define.dv["GEAR_SHIFTER"]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -151,8 +149,7 @@ class CarState(CarStateBase):
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear_msg = "ACCELERATOR" if self.CP.flags & HyundaiFlags.CANFD_HDA2 else "GEAR"
-    gear = cp.vl[gear_msg]["GEAR"]
+    gear = cp.vl["GEAR_SHIFTER"]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -392,6 +389,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
+      ("GEAR", "GEAR_SHIFTER"),
       ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
@@ -415,6 +413,7 @@ class CarState(CarStateBase):
 
     checks = [
       ("WHEEL_SPEEDS", 100),
+      ("GEAR_SHIFTER", 100),
       ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
@@ -438,11 +437,9 @@ class CarState(CarStateBase):
       ]
     else:
       signals += [
-        ("GEAR", "GEAR"),
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]
       checks += [
-        ("GEAR", 100),
         ("ACCELERATOR_ALT", 100),
       ]
 

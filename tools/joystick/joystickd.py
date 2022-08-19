@@ -41,7 +41,7 @@ class Joystick:
   def __init__(self):
     # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
     self.min_axis_value = {'ABS_Y': 0., 'ABS_RZ': 0.}
-    self.max_axis_value = {'ABS_Y': 1023., 'ABS_RZ': 255.}
+    self.max_axis_value = {'ABS_Y': 255., 'ABS_RZ': 255.}
     self.cancel_button = 'BTN_TRIGGER'
     self.axes_values = {'ABS_Y': 0., 'ABS_RZ': 0.}  # gb, steer
     self.axes_order = ['ABS_Y', 'ABS_RZ']

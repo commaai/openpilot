@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
 import shutil
 import unittest
 import xml.etree.ElementTree as ET
@@ -66,6 +67,11 @@ class TestTranslations(unittest.TestCase):
                         f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove them")
 
   def test_plural_translations(self):
+    """
+      Tests:
+      - that any numerus (plural) translations marked "finished" have all plural forms non-empty
+      - that the correct format specifier is used (%n)
+    """
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
         tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
@@ -74,13 +80,15 @@ class TestTranslations(unittest.TestCase):
           for message in context.iterfind("message"):
             if message.get("numerus") == "yes":
               translation = message.find("translation")
-              numerusform = translation.findall("numerusform")
+              numerusform = [t.text for t in translation.findall("numerusform")]
 
               # Do not assert finished translations
               if translation.get("type") == "unfinished":
                 continue
 
-              self.assertNotIn(None, [x.text for x in numerusform], "Ensure all plural translation forms are completed.")
+              self.assertNotIn(None, numerusform, "Ensure all plural translation forms are completed.")
+              self.assertTrue(all([re.search("%[0-9]+", t) is None for t in numerusform]),
+                              "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
 
 
 if __name__ == "__main__":

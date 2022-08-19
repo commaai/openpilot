@@ -83,7 +83,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier/Premier Redline Trim", video_link="https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
+  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
 }
 
 
