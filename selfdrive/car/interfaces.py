@@ -9,7 +9,7 @@ from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
-from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import create_button_enable_events, gen_empty_fingerprint
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -61,6 +61,7 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
+    self.v_ego_cluster_seen = False
 
     self.CS = None
     self.can_parsers = []
@@ -162,8 +163,10 @@ class CarInterfaceBase(ABC):
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
-    if ret.vEgoCluster == 0.0:
+    if ret.vEgoCluster == 0.0 and not self.v_ego_cluster_seen:
       ret.vEgoCluster = ret.vEgo
+    else:
+      self.v_ego_cluster_seen = True
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
@@ -209,6 +212,9 @@ class CarInterfaceBase(ABC):
       events.add(EventName.parkBrake)
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
+
+    # Handle button presses
+    events.events.extend(create_button_enable_events(cs_out.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
@@ -321,7 +327,7 @@ class CarStateBase(ABC):
   def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
-    
+
     d: Dict[str, car.CarState.GearShifter] = {
         'P': GearShifter.park, 'PARK': GearShifter.park,
         'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,

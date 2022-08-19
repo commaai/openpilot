@@ -340,27 +340,27 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="622"/>
+        <location filename="../qt/maps/map.cc" line="621"/>
         <source>eta</source>
         <translation>予定到着時間</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="632"/>
+        <location filename="../qt/maps/map.cc" line="631"/>
         <source>min</source>
         <translation>分</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="636"/>
+        <location filename="../qt/maps/map.cc" line="635"/>
         <source>hr</source>
         <translation>時間</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="656"/>
+        <location filename="../qt/maps/map.cc" line="655"/>
         <source>km</source>
         <translation>ｷﾛﾒｰﾄﾙ</translation>
     </message>
     <message>
-        <location filename="../qt/maps/map.cc" line="659"/>
+        <location filename="../qt/maps/map.cc" line="658"/>
         <source>mi</source>
         <translation>ﾏｲﾙ</translation>
     </message>
@@ -490,30 +490,30 @@ location set</source>
 <context>
     <name>NvgWindow</name>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
         <translation>km/h</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="212"/>
+        <location filename="../qt/onroad.cc" line="218"/>
         <source>mph</source>
         <translation>mph</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="280"/>
-        <location filename="../qt/onroad.cc" line="283"/>
+        <location filename="../qt/onroad.cc" line="286"/>
+        <location filename="../qt/onroad.cc" line="289"/>
         <source>MAX</source>
         <translation>最高速度</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="327"/>
-        <location filename="../qt/onroad.cc" line="330"/>
+        <location filename="../qt/onroad.cc" line="333"/>
+        <location filename="../qt/onroad.cc" line="336"/>
         <source>SPEED</source>
         <translation>速度</translation>
     </message>
     <message>
-        <location filename="../qt/onroad.cc" line="333"/>
-        <location filename="../qt/onroad.cc" line="336"/>
+        <location filename="../qt/onroad.cc" line="339"/>
+        <location filename="../qt/onroad.cc" line="342"/>
         <source>LIMIT</source>
         <translation>制限速度</translation>
     </message>
@@ -1025,23 +1025,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>Switch Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>ブランチの切り替え</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>ENTER</source>
-        <translation type="unfinished"></translation>
+        <translation>切替</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished"></translation>
+        <translation>updater を実行する時にブランチを切り替えます。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>Enter branch name</source>
-        <translation type="unfinished"></translation>
+        <translation>ブランチ名を入力</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
@@ -1204,7 +1204,7 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
-        <source>Show ETA in 24h format</source>
+        <source>Show ETA in 24h Format</source>
         <translation>24時間表示</translation>
     </message>
     <message>

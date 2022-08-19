@@ -2,9 +2,9 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, DBC, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 
@@ -25,11 +25,10 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "hyundai"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = disable_radar and (candidate not in LEGACY_SAFETY_MODE_CAR)
+    ret.openpilotLongitudinalControl = disable_radar and (candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR))
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -115,14 +114,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [2.3]
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
-      ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425.}.get(candidate, 1275.) + STD_CARGO_KG
+    elif candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
+      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425., CAR.KONA_EV_2022: 1743.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.6
       ret.steerRatio = 13.42  # Spec
       tire_stiffness_factor = 0.385
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
@@ -238,8 +235,12 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2055 + STD_CARGO_KG
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                           get_safety_config(car.CarParams.SafetyModel.hyundaiHDA2)]
+      tire_stiffness_factor = 0.65
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif candidate == CAR.IONIQ_5:
+      ret.mass = 2012 + STD_CARGO_KG
+      ret.wheelbase = 3.0
+      ret.steerRatio = 16.
       tire_stiffness_factor = 0.65
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -279,15 +280,28 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
 
-    # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in LEGACY_SAFETY_MODE_CAR:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
+    # panda safety config
+    if candidate in CANFD_CAR:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
+                           get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
+    else:
+      if candidate in LEGACY_SAFETY_MODE_CAR:
+        # these cars require a special panda safety mode due to missing counters and checksums in the messages
+        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
+      else:
+        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
 
-    # set appropriate safety param for gas signal
-    if candidate in HYBRID_CAR:
-      ret.safetyConfigs[0].safetyParam = 2
-    elif candidate in EV_CAR:
-      ret.safetyConfigs[0].safetyParam = 1
+      # set appropriate safety param for gas signal
+      if candidate in HYBRID_CAR:
+        ret.safetyConfigs[0].safetyParam = 2
+      elif candidate in EV_CAR:
+        ret.safetyConfigs[0].safetyParam = 1
+
+      if ret.openpilotLongitudinalControl:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_LONG
+
+      if candidate in CAMERA_SCC_CAR:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
     ret.centerToFront = ret.wheelbase * 0.4
 
@@ -302,9 +316,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.enableBsm = 0x58b in fingerprint[0]
 
-    if ret.openpilotLongitudinalControl:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_LONG
-
     return ret
 
   @staticmethod
@@ -315,6 +326,14 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
+    if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
+      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
+      # Handle CF_Clu_CruiseSwState changing buttons mid-press
+      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
+        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
+
+      ret.buttonEvents = buttonEvents
+
     # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
     # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
     # Main button also can trigger an engagement on these cars
@@ -323,15 +342,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-
-    if self.CS.CP.openpilotLongitudinalControl and self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
-      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
-      # Handle CF_Clu_CruiseSwState changing buttons mid-press
-      if self.CS.cruise_buttons[-1] != 0 and self.CS.prev_cruise_buttons != 0:
-        buttonEvents.append(create_button_event(0, self.CS.prev_cruise_buttons, BUTTONS_DICT))
-
-      ret.buttonEvents = buttonEvents
-      events.events.extend(create_button_enable_events(ret.buttonEvents))
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:

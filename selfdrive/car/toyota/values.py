@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Star
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -89,7 +89,7 @@ class Footnote(Enum):
   DSU = CarFootnote(
     "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
     "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
-    Column.LONGITUDINAL, star=Star.HALF)
+    Column.LONGITUDINAL)
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
     Column.FSR_LONGITUDINAL)
@@ -114,7 +114,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.AVALON_TSS2: ToyotaCarInfo("Toyota Avalon 2022"),
   CAR.AVALONH_TSS2: ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
   CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-22", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-22"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-21"),
@@ -157,7 +157,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.RAV4H_TSS2: ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
   CAR.RAV4H_TSS2_2022: ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
   CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
-  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU]),
+  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU], min_enable_speed=MIN_ACC_SPEED),
 
   # Lexus
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+", footnotes=[Footnote.DSU]),
@@ -170,7 +170,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
-  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-18", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
@@ -687,6 +687,7 @@ FW_VERSIONS = {
       b'\x01896630ZP2000\x00\x00\x00\x00',
       b'\x01896630ZQ5000\x00\x00\x00\x00',
       b'\x01896630ZU9000\x00\x00\x00\x00',
+      b'\x01896630ZX4000\x00\x00\x00\x00',
       b'\x018966312L8000\x00\x00\x00\x00',
       b'\x018966312M0000\x00\x00\x00\x00',
       b'\x018966312M9000\x00\x00\x00\x00',
@@ -1823,15 +1824,18 @@ FW_VERSIONS = {
       b'\x02348Y3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D14000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'F152648831\x00\x00\x00\x00\x00\x00',
       b'F152648891\x00\x00\x00\x00\x00\x00',
       b'F152648D00\x00\x00\x00\x00\x00\x00',
       b'F152648D60\x00\x00\x00\x00\x00\x00',
+      b'F152648811\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B48271\x00\x00\x00\x00\x00\x00',
+      b'8965B48261\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
