@@ -85,9 +85,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier/Premier Redline Trim", video_link="https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
-  # TEMP NOTE: ACC is not standard, only optional on LTZ and High Country Trims if you buy "Safety Package II"
-  # https://cdn.dealereprocess.org/cdn/brochures/chevrolet/2020-silverado1500.pdf
-  CAR.SILVERADO: GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II", footnotes=[], harness=Harness.gm),
+  CAR.SILVERADO: GMCarInfo("Chevrolet Silverado 1500 2020-22", "Adaptive Cruise Control", footnotes=[], harness=Harness.gm),
 }
 
 
