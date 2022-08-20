@@ -213,6 +213,12 @@ REQUESTS: List[Request] = [
   Request(
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
+    [b'I\x02\x01'],
+    rx_offset=CHRYSLER_RX_OFFSET,
+  ),
+  Request(
+    "chrysler",
+    [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
   ),
   # Ford
