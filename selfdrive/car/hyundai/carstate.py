@@ -136,9 +136,6 @@ class CarState(CarStateBase):
   def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    # TODO: find something common with EV6
-    cruise_info_bus = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
-
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
     else:
@@ -174,16 +171,16 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = True
     ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
-    ret.cruiseState.standstill = cruise_info_bus.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
-
+    cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
-    ret.cruiseState.speed = cruise_info_bus.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+    ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+    ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
-    self.cruise_info_copy = copy.copy(cruise_info_bus.vl["CRUISE_INFO"])
+    self.cruise_info_copy = copy.copy(cp_cruise_info.vl["CRUISE_INFO"])
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
