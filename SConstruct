@@ -69,8 +69,11 @@ lenv = {
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
-  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
+if arch == "Darwin" and real_arch == "x86_64":
+    lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/Darwin_x86_64/t_renderer"
+else:
+  lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
@@ -114,9 +117,13 @@ else:
       f"{brew_prefix}/Library",
       f"{brew_prefix}/opt/openssl/lib",
       f"{brew_prefix}/Cellar",
-      f"#third_party/acados/{arch}/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
+    if real_arch == "x86_64":
+      libpath.append(f"#third_party/acados/Darwin_x86_64/lib")
+    else:
+      libpath.append(f"#third_party/acados/{arch}/lib")
+
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
