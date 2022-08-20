@@ -179,7 +179,7 @@ class CarState(CarStateBase):
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
     ret.cruiseState.speed = cruise_info_bus.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
 
-    cruise_btn_msg = "CRUISE_BUTTONS" if self.CP.flags & HyundaiFlags.CANFD_HDA2 else "CRUISE_BUTTONS_ALT"
+    cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
@@ -382,7 +382,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_can_parser_canfd(CP):
 
-    cruise_btn_msg = "CRUISE_BUTTONS" if CP.flags & HyundaiFlags.CANFD_HDA2 else "CRUISE_BUTTONS_ALT"
+    cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     signals = [
       ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),

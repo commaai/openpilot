@@ -295,9 +295,10 @@ class CarInterface(CarInterfaceBase):
       if 0x50 in fingerprint[6]:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
-
-      if 0x1cf in (fingerprint[i] for i in range(4, 6)) and not (ret.flags & HyundaiFlags.CANFD_HDA2):
-        ret.flags |= HyundaiFlags.CANFD_BUTTON_SEND.value
+      else:
+        # non-HDA2
+        if 0x1cf not in fingerprint[4]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
