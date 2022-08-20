@@ -56,9 +56,10 @@ class TestEncoder(unittest.TestCase):
     return os.path.join(ROOT, last_route)
 
   # TODO: this should run faster than real time
-  @parameterized.expand([(True, ), (False, )])
-  def test_log_rotation(self, record_front):
+  @parameterized.expand([(True, True, ), (True, False, ), (False, True, ), (False, False, )])
+  def test_log_rotation(self, record_front, record_road = True):
     Params().put_bool("RecordFront", record_front)
+    Params().put_bool("RecordRoad", record_road)
 
     managed_processes['sensord'].start()
     managed_processes['loggerd'].start()

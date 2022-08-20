@@ -41,12 +41,16 @@ def manager_init() -> None:
     ("DisengageOnAccelerator", "1"),
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
+    ("RecordRoad", "1"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
+    
+  if params.get_bool("RecordRoadLock"):
+    params.put_bool("RecordRoad", True)
 
   if not params.get_bool("DisableRadar_Allow"):
     params.delete("DisableRadar")
