@@ -40,6 +40,12 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
+        # 2021 Santa Cruz has accelerator pedal message on 0x100
+        if 0x100 in fingerprint[4]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_PEDALS.value
+        # 2021 Santa Cruz does not have 0x130; GEARS message on 0x40
+        if 0x130 not in fingerprint[4]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
@@ -161,6 +167,11 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
       tire_stiffness_factor = 0.385
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif candidate == CAR.SANTA_CRUZ_1ST_GEN:
+      ret.mass = 1870. + STD_CARGO_KG  # weight from Limited trim - the only supported trim
+      ret.wheelbase = 3.000
+      ret.steerRatio = 14.2 # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Kia
@@ -314,6 +325,8 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
+      if ret.flags & HyundaiFlags.CANFD_ALT_PEDALS:
+        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_PEDALS
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
