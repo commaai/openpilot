@@ -71,7 +71,7 @@ lenv = {
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
 }
 if arch == "Darwin" and real_arch == "x86_64":
-    lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/Darwin_x86_64/t_renderer"
+  lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/Darwin_x86_64/t_renderer"
 else:
   lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 
