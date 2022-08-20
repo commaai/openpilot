@@ -211,12 +211,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
     elif candidate in [CAR.ACURA_RDX_2020, CAR.ACURA_RDX_2022]:
-      if candidate == CAR.ACURA_RDX_2022 and not ret.openpilotLongitudinalControl:
-        ret.minSteerSpeed = 36.5 * CV.MPH_TO_MS
       ret.mass = 4068. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 11.95  # as spec
+      if candidate == CAR.ACURA_RDX_2022 and not ret.openpilotLongitudinalControl:
+        ret.minSteerSpeed = 36.5 * CV.MPH_TO_MS
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       tire_stiffness_factor = 0.677
