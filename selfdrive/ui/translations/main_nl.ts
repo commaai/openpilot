@@ -1024,7 +1024,7 @@ ingesteld</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="246"/>
         <source>CHECKING</source>
-        <translation>CONTROLEREN</translation>
+        <translation>CONTROLEER</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
@@ -1071,7 +1071,7 @@ ingesteld</translation>
         <location filename="../qt/offroad/settings.cc" line="286"/>
         <location filename="../qt/offroad/settings.cc" line="307"/>
         <source>CHECK</source>
-        <translation>CONTROLEREN</translation>
+        <translation>CONTROLEER</translation>
     </message>
 </context>
 <context>
