@@ -150,7 +150,7 @@ class TestCarModelBase(unittest.TestCase):
       if i > 200:
         can_invalid_cnt += not CS.canValid
 
-    self.assertLess(can_invalid_cnt, 50)
+    self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
