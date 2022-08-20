@@ -4,6 +4,7 @@ Version 0.8.16 (2022-XX-XX)
   * Reduced turn cutting
 * Auto-detect right hand drive setting with driver monitoring model
 * Chevrolet Bolt EUV 2022-23 support thanks to JasonJShuler!
+* Chevrolet Silverado 2020-21 support thanks to JasonJShuler!
 * Hyundai Ioniq 5 2022 support thanks to sunnyhaibin!
 * Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
 * Subaru Legacy 2020-22 support thanks to martinl!
