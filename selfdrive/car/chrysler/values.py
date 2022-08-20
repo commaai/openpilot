@@ -170,6 +170,7 @@ FW_VERSIONS = {
       b'68448163AJ',
       b'68500630AD',
       b'68539650AD',
+      b'68378758AM ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
