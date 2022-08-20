@@ -140,14 +140,18 @@ class TestCarModelBase(unittest.TestCase):
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
     can_invalid_cnt = 0
+    can_valid = False
     CC = car.CarControl.new_message()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
 
-      # wait 2s for low frequency msgs to be seen
-      if i > 200:
+      if CS.canValid:
+        can_valid = True
+
+      # wait max of 2s for low frequency msgs to be seen
+      if i > 200 or can_valid:
         can_invalid_cnt += not CS.canValid
 
     self.assertEqual(can_invalid_cnt, 0)
