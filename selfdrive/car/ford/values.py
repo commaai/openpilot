@@ -7,6 +7,7 @@ from selfdrive.car.docs_definitions import CarInfo
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 
@@ -21,6 +22,11 @@ class CarControllerParams:
 
   STEER_RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
   STEER_RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+
+
+class RADAR:
+  DELPHI_ESR = 'ford_fusion_2018_adas'
+  DELPHI_MRR = 'FORD_CADS'
 
 
 class CANBUS:
@@ -79,6 +85,6 @@ FW_VERSIONS = {
 
 
 DBC = {
-  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', None),
-  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', None),
+  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
+  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
 }

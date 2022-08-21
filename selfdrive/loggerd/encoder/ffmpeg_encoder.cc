@@ -68,7 +68,9 @@ void FfmpegEncoder::encoder_open(const char* path) {
 
 void FfmpegEncoder::encoder_close() {
   if (!is_open) return;
+
   writer_close();
+  avcodec_free_context(&codec_ctx);
   is_open = false;
 }
 

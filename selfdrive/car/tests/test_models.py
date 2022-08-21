@@ -57,6 +57,10 @@ class TestCarModelBase(unittest.TestCase):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
+    if 'FILTER' in os.environ:
+      if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
+        raise unittest.SkipTest
+
     if cls.test_route is None:
       if cls.car_model in non_tested_cars:
         print(f"Skipping tests for {cls.car_model}: missing route")
@@ -121,7 +125,6 @@ class TestCarModelBase(unittest.TestCase):
 
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
-    self.assertGreater(self.CP.steerRateCost, 1e-3)
 
     if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
@@ -135,19 +138,23 @@ class TestCarModelBase(unittest.TestCase):
         raise Exception("unkown tuning")
 
   def test_car_interface(self):
-    # TODO: also check for checkusm and counter violations from can parser
+    # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
+    can_valid = False
     CC = car.CarControl.new_message()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
 
-      # wait 2s for low frequency msgs to be seen
-      if i > 200:
+      if CS.canValid:
+        can_valid = True
+
+      # wait max of 2s for low frequency msgs to be seen
+      if i > 200 or can_valid:
         can_invalid_cnt += not CS.canValid
 
-    self.assertLess(can_invalid_cnt, 50)
+    self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
@@ -215,6 +222,8 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs:
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+        msg = list(msg)
+        msg[3] %= 4
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
@@ -222,6 +231,7 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed

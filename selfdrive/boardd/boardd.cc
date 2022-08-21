@@ -193,9 +193,11 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
     return nullptr;
   }
 
+  // common panda config
   if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
   }
+  //panda->enable_deepsleep();
 
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
@@ -370,6 +372,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setAlternativeExperience(health.alternative_experience_pkt);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
+    ps.setFanPower(health.fan_power);
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);

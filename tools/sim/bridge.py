@@ -81,7 +81,7 @@ class Camerad:
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
     # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "selfdrive", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
       self.krnl = prg.rgb_to_yuv
@@ -198,12 +198,12 @@ def gps_callback(gps, vehicle_state):
 
 
 def fake_driver_monitoring(exit_event: threading.Event):
-  pm = messaging.PubMaster(['driverState', 'driverMonitoringState'])
+  pm = messaging.PubMaster(['driverStateV2', 'driverMonitoringState'])
   while not exit_event.is_set():
     # dmonitoringmodeld output
-    dat = messaging.new_message('driverState')
-    dat.driverState.faceProb = 1.0
-    pm.send('driverState', dat)
+    dat = messaging.new_message('driverStateV2')
+    dat.driverStateV2.leftDriverData.faceProb = 1.0
+    pm.send('driverStateV2', dat)
 
     # dmonitoringd output
     dat = messaging.new_message('driverMonitoringState')
@@ -304,6 +304,7 @@ class CarlaBridge:
     world_map = world.get_map()
 
     vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
+    vehicle_bp.set_attribute('role_name', 'hero')
     spawn_points = world_map.get_spawn_points()
     assert len(spawn_points) > self._args.num_selected_spawn_point, f'''No spawn point {self._args.num_selected_spawn_point}, try a value between 0 and
       {len(spawn_points)} for this town.'''

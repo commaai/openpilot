@@ -119,7 +119,8 @@ class TestPowerMonitoring(unittest.TestCase):
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_max_time_offroad(self, hw_type):
     MOCKED_MAX_OFFROAD_TIME = 3600
-    with pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True), pm_patch("HARDWARE.get_current_power_draw", None):
+    POWER_DRAW = 0 # To stop shutting down for other reasons
+    with pm_patch("MAX_TIME_OFFROAD_S", MOCKED_MAX_OFFROAD_TIME, constant=True), pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       start_time = ssb

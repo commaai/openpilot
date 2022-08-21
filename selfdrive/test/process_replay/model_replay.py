@@ -10,7 +10,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.spinner import Spinner
 from common.timeout import Timeout
-from common.transformations.camera import get_view_frame_from_road_frame, tici_f_frame_size, tici_d_frame_size
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 SEGMENT = 0
-MAX_FRAMES = 20 if PC else 1300
+MAX_FRAMES = 10 if PC else 1300
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
@@ -35,7 +35,7 @@ def get_log_fn(ref_commit, test_route):
 def replace_calib(msg, calib):
   msg = msg.as_builder()
   if calib is not None:
-    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
+    msg.liveCalibration.rpyCalib = calib.tolist()
   return msg
 
 
@@ -52,7 +52,7 @@ def model_replay(lr, frs):
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size))
   vipc_server.start_listener()
 
-  sm = messaging.SubMaster(['modelV2', 'driverState'])
+  sm = messaging.SubMaster(['modelV2', 'driverStateV2'])
   pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
 
   try:
@@ -112,7 +112,7 @@ def model_replay(lr, frs):
             if min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
               recv = "modelV2"
           elif msg.which() == 'driverCameraState':
-            recv = "driverState"
+            recv = "driverStateV2"
 
           # wait for a response
           with Timeout(15, f"timed out waiting for {recv}"):
@@ -170,14 +170,15 @@ if __name__ == "__main__":
         'logMonoTime',
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
-        'driverState.modelExecutionTime',
-        'driverState.dspExecutionTime'
+        'driverStateV2.modelExecutionTime',
+        'driverStateV2.dspExecutionTime'
       ]
       # TODO this tolerence is absurdly large
       tolerance = 5e-1 if PC else None
       results: Any = {TEST_ROUTE: {}}
+      log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff1, diff2, failed = format_diff(results, ref_commit)
+      diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
 
       print(diff2)
       print('-------------\n'*5)

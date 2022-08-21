@@ -11,6 +11,7 @@ from selfdrive.modeld.constants import T_IDXS
 V_CRUISE_MAX = 145  # kph
 V_CRUISE_MIN = 8  # kph
 V_CRUISE_ENABLE_MIN = 40  # kph
+V_CRUISE_INITIAL = 255  # kph
 
 LAT_MPC_N = 16
 LON_MPC_N = 32
@@ -122,7 +123,7 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
 
   # This is the "desired rate of the setpoint" not an actual desired rate
   desired_curvature_rate = curvature_rates[0]
-  max_curvature_rate = MAX_LATERAL_JERK / (v_ego**2)
+  max_curvature_rate = MAX_LATERAL_JERK / (v_ego**2) # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
   safe_desired_curvature_rate = clip(desired_curvature_rate,
                                           -max_curvature_rate,
                                           max_curvature_rate)
