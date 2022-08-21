@@ -210,7 +210,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="187"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot กำหนดให้ติดตั้งอุปกรณ์ โดยเอียงซ้ายหรือขวาไม่เกิน 4° และเอียงขึ้นไม่เกิน 5° หรือเอียงลงไม่เกิน 8° openpilot ทำการคาลิเบรทอย่างต่อเนื่อง แทบจะไม่จำเป็นต้องทำการรีเซ็ตการคาลิเบรท</translation>
+        <translation>openpilot กำหนดให้ติดตั้งอุปกรณ์ โดยสามารถเอียงด้านซ้ายหรือขวาไม่เกิน 4° และเอียงขึ้นด้านบนไม่เกิน 5° หรือเอียงลงด้านล่างไม่เกิน 8° openpilot ทำการคาลิเบรทอย่างต่อเนื่อง แทบจะไม่จำเป็นต้องทำการรีเซ็ตการคาลิเบรท</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
@@ -283,7 +283,7 @@
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
         <source>KM</source>
-        <translation>ก.ม.</translation>
+        <translation>กิโลเมตร</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
@@ -352,12 +352,12 @@
     <message>
         <location filename="../qt/maps/map.cc" line="635"/>
         <source>hr</source>
-        <translation>ช.ม.</translation>
+        <translation>ชม.</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="655"/>
         <source>km</source>
-        <translation>ก.ม.</translation>
+        <translation>กม.</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="658"/>
@@ -370,7 +370,7 @@
     <message>
         <location filename="../qt/maps/map.cc" line="421"/>
         <source> km</source>
-        <translation> ก.ม.</translation>
+        <translation> กม.</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="424"/>
@@ -492,12 +492,12 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
-        <translation>กม./ชม</translation>
+        <translation>กม./ชม.</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
         <source>mph</source>
-        <translation>ไมล์/ช.ม.</translation>
+        <translation>ไมล์/ชม.</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="286"/>
@@ -1180,7 +1180,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="47"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>แสดงความเร็วเป็น กม./ชม แทน ไมล์/ชั่วโมง</translation>
+        <translation>แสดงความเร็วเป็น กม./ชม. แทน ไมล์/ชั่วโมง</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="52"/>
@@ -1205,7 +1205,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
         <source>Show ETA in 24h Format</source>
-        <translation>แสดงผล ETA ในรูปแบบ 24 ชั่วโมง</translation>
+        <translation>แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="66"/>
@@ -1220,7 +1220,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="72"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation>แสดงแผนที่ที่ด้านซ้ายของหน้าจออยู่ในโหมดแบ่งหน้าจอ</translation>
+        <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="84"/>
