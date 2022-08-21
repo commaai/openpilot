@@ -21,6 +21,19 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
+  def get_steer_feedforward_torque_sonata(desired_lateral_accel, v_ego):
+    ANGLE_COEF = 8.03475992
+    SPEED_OFFSET = 2.35560549
+    SPEED_COEF = 0.75487215
+    return ANGLE_COEF * desired_lateral_accel / (max(0.05, v_ego + SPEED_OFFSET) ** SPEED_COEF)
+
+  def get_steer_feedforward_torque_function(self):
+    if self.CP.carFingerprint in (CAR.SONATA, CAR.SONATA_HYBRID):
+      return self.get_steer_feedforward_torque_sonata
+    else:
+      return CarInterfaceBase.get_steer_feedforward_torque_default
+  
+  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
@@ -64,6 +77,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.65
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
+      ret.lateralTuning.torque.friction = 0.0
     elif candidate == CAR.SONATA_LF:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 4497. * CV.LB_TO_KG
