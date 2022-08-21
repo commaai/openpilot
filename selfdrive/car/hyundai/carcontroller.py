@@ -78,7 +78,7 @@ class CarController:
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
       # LFA and HDA icons
-      if self.frame % 2 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_HDA2):
+      if self.frame % 2 == 0:
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, CC.enabled))
 
       # button presses
