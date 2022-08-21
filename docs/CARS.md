@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
-# 202 Supported Cars
+# 204 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
@@ -18,7 +18,8 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Audi|RS3 2018|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
 |Audi|S3 2015-17|ACC + Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|VW|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
-|Chevrolet|Bolt EUV 2022-23|Premier/Premier Redline Trim|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
+|Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
+|Chevrolet|Silverado 1500 2020-21|Safety Package II|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
 |Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
@@ -76,6 +77,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Hyundai|Sonata Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Hyundai|Tucson 2021|Smart Cruise Control (SCC)|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Tucson Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|Stock|5 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
 |Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|FCA|
