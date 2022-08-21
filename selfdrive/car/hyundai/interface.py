@@ -21,6 +21,19 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
+  def get_steer_feedforward_torque_palisade(desired_lateral_accel, v_ego):
+    ANGLE_COEF = 4.08716899
+    ANGLE_OFFSET = -0.04588786
+    SPEED_COEF = 0.20107215
+    return ANGLE_COEF * (desired_lateral_accel+ANGLE_OFFSET) / max(0.2, v_ego * SPEED_COEF)
+  
+  def get_steer_feedforward_torque_function(self):
+    if self.CP.carFingerprint == CAR.PALISADE:
+      return self.get_steer_feedforward_torque_palisade
+    else:
+      return CarInterfaceBase.get_steer_feedforward_torque_default
+
+  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
@@ -72,12 +85,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.PALISADE:
-      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1999. + STD_CARGO_KG
       ret.wheelbase = 2.90
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
     elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
