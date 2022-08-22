@@ -13,14 +13,14 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
-POINTS_PER_BUCKET = 300
-MIN_POINTS_PER_BUCKET = 100
-MIN_POINTS_TOTAL = 500
+POINTS_PER_BUCKET = 1000
+MIN_POINTS_TOTAL = 800
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.05
 FILTER_RC = 50
+
 
 def slope2rot(slope):
   sin = np.sqrt(slope**2 / (slope**2 + 1))
@@ -29,15 +29,16 @@ def slope2rot(slope):
 
 
 class PointBuckets:
-  def __init__(self, x_bounds):
+  def __init__(self, x_bounds, min_points):
     self.x_bounds = x_bounds
     self.buckets = {bounds: deque(maxlen=POINTS_PER_BUCKET) for bounds in x_bounds}
+    self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
 
   def __len__(self):
     return sum([len(v) for v in self.buckets.values()])
 
   def is_valid(self):
-    return np.all(np.array([len(v) for v in self.buckets.values()]) >= MIN_POINTS_PER_BUCKET) and (self.__len__() >= MIN_POINTS_TOTAL)
+    return np.all([len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())]) and (self.__len__() >= MIN_POINTS_TOTAL)
 
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
@@ -88,7 +89,7 @@ class TorqueEstimator:
   def reset(self):
     self.raw_points = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
     self.raw_points_t = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
-    self.filtered_points = PointBuckets([(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)])
+    self.filtered_points = PointBuckets(x_bounds=[(-0.99, -0.5), (-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5), (0.5, 0.99)], min_points=[0, 200, 400, 400, 200, 0])
 
   def estimate_params(self):
     points = self.filtered_points.get_points()
@@ -176,9 +177,9 @@ def main(sm=None, pm=None):
 
         if estimator.is_sane(slope, offset, friction_coeff):
           liveTorqueParameters.liveValid = True
-          liveTorqueParameters.slopeRaw = slope
-          liveTorqueParameters.offsetRaw = offset
-          liveTorqueParameters.frictionCoefficientRaw = friction_coeff
+          liveTorqueParameters.slopeRaw = float(slope)
+          liveTorqueParameters.offsetRaw = float(offset)
+          liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
           estimator.slopeFiltered.update(slope)
           estimator.offsetFiltered.update(offset)
           estimator.frictionCoefficientFiltered.update(friction_coeff)
@@ -188,9 +189,9 @@ def main(sm=None, pm=None):
           # estimator.reset()
       else:
         liveTorqueParameters.liveValid = False
-      liveTorqueParameters.slopeFiltered = estimator.slopeFiltered.x
-      liveTorqueParameters.offsetFiltered = estimator.offsetFiltered.x
-      liveTorqueParameters.frictionCoefficientFiltered = estimator.frictionCoefficientFiltered.x
+      liveTorqueParameters.slopeFiltered = float(estimator.slopeFiltered.x)
+      liveTorqueParameters.offsetFiltered = float(estimator.offsetFiltered.x)
+      liveTorqueParameters.frictionCoefficientFiltered = float(estimator.frictionCoefficientFiltered.x)
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
 
       if sm.frame % 1200 == 0:  # once a minute
