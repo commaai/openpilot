@@ -18,8 +18,9 @@ MIN_POINTS_TOTAL = 800
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
-STEER_MIN_THRESHOLD = 0.05
+STEER_MIN_THRESHOLD = 0.02
 FILTER_RC = 50
+LAT_ACC_THRESHOLD = 1
 
 
 def slope2rot(slope):
@@ -89,10 +90,11 @@ class TorqueEstimator:
   def reset(self):
     self.raw_points = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
     self.raw_points_t = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
-    self.filtered_points = PointBuckets(x_bounds=[(-0.99, -0.5), (-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5), (0.5, 0.99)], min_points=[0, 200, 400, 400, 200, 0])
+    self.filtered_points = PointBuckets(x_bounds=[(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)], min_points=[200, 400, 400, 200])
 
-  def estimate_params(self):
-    points = self.filtered_points.get_points()
+  def estimate_params(self, points=None):
+    if points is None:
+      points = self.filtered_points.get_points()
     points = np.insert(points, 1, 1.0, axis=1)
     # total least square solution as both x and y are noisy observations
     # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
@@ -133,8 +135,8 @@ class TorqueEstimator:
         steer_override = bool(np.interp(t, np.array(self.raw_points_t['steer_override']) + self.lag, self.raw_points['steer_override']))
         vego = np.interp(t, np.array(self.raw_points_t['vego']) + self.lag, self.raw_points['vego'])
         steer = np.interp(t, np.array(self.raw_points_t['steer_torque']) + self.lag, self.raw_points['steer_torque'])
-        if active and (not steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
-          lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
+        lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
+        if active and (not steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(steer, lateral_acc)
 
 
