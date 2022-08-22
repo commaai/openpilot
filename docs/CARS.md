@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
 
-# 204 Supported Cars
+# 205 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|
@@ -32,6 +32,7 @@ A supported vehicle is one that just works when you install a comma device. Ever
 |Genesis|G80 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Genesis|G90 2017-18|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|OBD-II|
+|GMC|Sierra 1500 2020-21|Driver Alert Package II|Stock|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|GM|
 |Honda|Accord 2018-22|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
 |Honda|Accord Hybrid 2018-22|All|Stock|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Bosch A|
 |Honda|Civic 2016-18|Honda Sensing|openpilot|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|Honda Nidec|
