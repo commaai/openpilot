@@ -140,8 +140,13 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
     else:
       ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
-    ret.gasPressed = ret.gas > 1e-5
-    ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+    
+    if self.CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1:
+      ret.gasPressed = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL_PRESSED"] == 1
+      ret.brakePressed = cp.vl["ACCELERATOR_ALT"]["BRAKE_PRESSED"] == 1
+    else:
+      ret.gasPressed = ret.gas > 1e-5
+      ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
@@ -387,7 +392,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
       ("GEAR", "GEAR_SHIFTER"),
-      ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
@@ -411,7 +415,6 @@ class CarState(CarStateBase):
     checks = [
       ("WHEEL_SPEEDS", 100),
       ("GEAR_SHIFTER", 100),
-      ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("SCC1", 50),
@@ -420,6 +423,13 @@ class CarState(CarStateBase):
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
+    if not CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1:
+      signals += [
+        ("BRAKE_PRESSED", "BRAKE"),
+      ]
+      checks += [
+        ("BRAKE", 100),
+      ]
 
     if CP.flags & HyundaiFlags.CANFD_HDA2:
       signals += [
@@ -434,8 +444,15 @@ class CarState(CarStateBase):
       ]
     else:
       signals += [
-        ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
+          ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]
+
+      if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1:
+        signals += [
+          ("BRAKE_PRESSED", "ACCELERATOR_ALT"),
+          ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_ALT"),
+        ]
+
       checks += [
         ("ACCELERATOR_ALT", 100),
       ]
@@ -445,7 +462,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
-    if CP.flags & HyundaiFlags.CANFD_HDA2:
+    if CP.flags & (HyundaiFlags.CANFD_HDA2 or HyundaiFlags.CANFD_GENESIS_HDA1):
       signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks = [("CAM_0x2a4", 20)]
     else:
@@ -470,4 +487,5 @@ class CarState(CarStateBase):
         ("CRUISE_INFO", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
+    bus = 5 if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1 else 6
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)

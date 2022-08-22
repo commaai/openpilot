@@ -22,10 +22,7 @@ class CarControllerParams:
     self.STEER_THRESHOLD = 150
 
     if CP.carFingerprint in CANFD_CAR:
-      if CP.carFingerprint in CAR.GENESIS_GV70:
-        self.STEER_MAX = 384
-      else:
-        self.STEER_MAX = 270
+      self.STEER_MAX = 270
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
       self.STEER_THRESHOLD = 250
@@ -45,6 +42,7 @@ class CarControllerParams:
 class HyundaiFlags(IntFlag):
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
+  CANFD_GENESIS_HDA1 = 3
 
 
 class CAR:
@@ -177,7 +175,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2017-19", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
-  CAR.GENESIS_GV70: HyundaiCarInfo("Genesis GV70 2022", "All", harness=Harness.hyundai_l),
+  CAR.GENESIS_GV70: HyundaiCarInfo("Genesis GV70 2022", "Highway Driving Assist I", harness=Harness.hyundai_l),
 }
 
 class Buttons:
