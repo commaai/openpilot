@@ -53,4 +53,7 @@ protected:
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
   int net_strength = 0;
+
+private:
+  std::unique_ptr<PubMaster> pm;
 };

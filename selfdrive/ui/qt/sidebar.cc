@@ -43,11 +43,16 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   setFixedWidth(300);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
+
+  pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 }
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   if (home_btn.contains(event->pos())) {
-    // TODO do something
+    // TODO: maybe only create event while car started?
+    MessageBuilder msg;
+    msg.initEvent().initUserFlag();
+    pm->send("userFlag", msg);
   }
   if (settings_btn.contains(event->pos())) {
     emit openSettings();
