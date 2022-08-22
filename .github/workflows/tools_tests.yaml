@@ -21,46 +21,6 @@ env:
        GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
 
 jobs:
-  build_latest_ubuntu:
-    name: build latest ubuntu
-    runs-on: ubuntu-20.04
-    timeout-minutes: 60
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Cache pyenv
-      id: ubuntu-latest-pyenv
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.pyenv
-          ~/.local/share/virtualenvs/
-        key: ubuntu-latest-python-${{ hashFiles('tools/ubuntu_setup.sh') }}-
-    - name: Cache scons
-      id: ubuntu-latest-scons
-      uses: actions/cache@v3
-      with:
-        path: /tmp/scons_cache
-        key: ubuntu-latest-scons-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
-        restore-keys: |
-          ubuntu-latest-scons-${{ hashFiles('.github/workflows/tools_test.yaml') }}-
-          ubuntu-latest-scons-
-
-    - name: tools/ubuntu_setup.sh
-      run: |
-        source tools/openpilot_env.sh
-        tools/ubuntu_setup.sh
-    - name: Build openpilot
-      run: |
-        source tools/openpilot_env.sh
-        pipenv run scons -j$(nproc) --extras --test
-    - name: Cleanup scons cache
-      run: |
-        source tools/openpilot_env.sh
-        rm -rf /tmp/scons_cache/*
-        pipenv run scons -j$(nproc) --extras --test --cache-populate
-
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
