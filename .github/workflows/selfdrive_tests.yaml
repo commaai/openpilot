@@ -36,29 +36,31 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
+        fetch: 0
         submodules: true
     - name: Build devel
-      run: |
-        TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
-        cp Dockerfile.openpilot_base $STRIPPED_DIR
-        cp .pre-commit-config.yaml $STRIPPED_DIR
-        cp .pylintrc $STRIPPED_DIR
-        cp mypy.ini $STRIPPED_DIR
+      run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
       run: |
-          cd $STRIPPED_DIR
-          rm $STRIPPED_DIR/Dockerfile.openpilot_base
-          ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
-                          pre-commit run --all && \
-                          rm .pre-commit-config.yaml && \
-                          rm .pylintrc && \
-                          rm mypy.ini && \
-                          release/check-dirty.sh && \
-                          python -m unittest discover selfdrive/car"
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
+    - name: Run tests
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "release/check-dirty.sh && \
+                        python -m unittest discover selfdrive/car"
+    - name: pre-commit
+      run: |
+        cd $GITHUB_WORKSPACE
+        cp .pre-commit-config.yaml $STRIPPED_DIR
+        cp .pylintrc $STRIPPED_DIR
+        cp mypy.ini $STRIPPED_DIR
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "pre-commit run --all"
 
   build_all:
     name: build all
