@@ -292,9 +292,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.6 * 1.15  # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.65
       ret.steerActuatorDelay = 0.11
-      ret.lateralTuning.pid.kf = 0.000053
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[15.,29.], [15.,29.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.09,0.046], [0.012,0.008]]
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # panda safety config
     if candidate in CANFD_CAR:
