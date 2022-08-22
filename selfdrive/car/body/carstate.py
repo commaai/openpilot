@@ -40,8 +40,6 @@ class CarState(CarStateBase):
       # sig_name, sig_address
       ("SPEED_L", "MOTORS_DATA"),
       ("SPEED_R", "MOTORS_DATA"),
-      ("COUNTER", "MOTORS_DATA"),
-      ("CHECKSUM", "MOTORS_DATA"),
       ("IGNITION", "VAR_VALUES"),
       ("ENABLE_MOTORS", "VAR_VALUES"),
       ("FAULT", "VAR_VALUES"),
@@ -63,8 +61,6 @@ class CarState(CarStateBase):
       signals += [
         ("SPEED_L", "KNEE_MOTORS_DATA"),
         ("SPEED_R", "KNEE_MOTORS_DATA"),
-        ("COUNTER", "KNEE_MOTORS_DATA"),
-        ("CHECKSUM", "KNEE_MOTORS_DATA"),
         ("LEFT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
         ("RIGHT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
       ]
