@@ -173,7 +173,10 @@ class CarInfo:
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
     else:
-      return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
+      if CP.carFingerprint == "COMMA BODY":
+        return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
+      else:
+        raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
