@@ -286,7 +286,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.GENESIS_GV70:
-      ret.flags |= HyundaiFlags.CANFD_GENESIS_HDA1.value
       ret.mass = 1950. + STD_CARGO_KG
       ret.wheelbase = 2.87
       ret.steerRatio = 14.6 * 1.15  # 15% higher at the center seems reasonable
@@ -307,6 +306,10 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
+
+        if HyundaiFlags.CANFD_GENESIS_HDA1:
+          ret.flags |= HyundaiFlags.CANFD_GENESIS_HDA1.value
+          ret.safetyConfigs[1].safetyParam |= Panda.FLAG_CANFD_GENESIS_HDA1
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
