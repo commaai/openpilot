@@ -42,7 +42,7 @@ class CarControllerParams:
 class HyundaiFlags(IntFlag):
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
-  CANFD_GENESIS_HDA1 = 3
+  CANFD_GENESIS_HDA1 = 4
 
 
 class CAR:
