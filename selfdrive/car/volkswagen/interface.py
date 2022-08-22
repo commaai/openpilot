@@ -1,7 +1,10 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, GearShifter
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from panda import Panda
+from common.conversions import Conversions as CV
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, \
+                          gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
 EventName = car.CarEvent.EventName
 
@@ -23,7 +26,36 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "volkswagen"
     ret.radarOffCan = True
 
-    if True:  # pylint: disable=using-constant-test
+    if candidate in PQ_CARS:
+      # Set global PQ35/PQ46/NMS parameters
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
+      ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
+
+      if 0x440 in fingerprint[0]:  # Getriebe_1
+        ret.transmissionType = TransmissionType.automatic
+      else:
+        ret.transmissionType = TransmissionType.manual
+
+      if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
+        ret.networkLocation = NetworkLocation.gateway
+      else:
+        ret.networkLocation = NetworkLocation.fwdCamera
+
+      # The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported
+      # EPS flash update to work around this timer, and enable steering down to zero, is available from:
+      #   https://github.com/pd0wm/pq-flasher
+      # It is documented in a four-part blog series:
+      #   https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/
+      # Panda ALLOW_DEBUG firmware required.
+      ret.dashcamOnly = True
+
+      if disable_radar and ret.networkLocation == NetworkLocation.gateway:
+        # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
+        # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
+        ret.openpilotLongitudinalControl = True
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
+
+    else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
@@ -52,6 +84,13 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV = [0.6]
     ret.lateralTuning.pid.kiV = [0.2]
 
+    # Global longitudinal tuning defaults, can be overridden per-vehicle
+
+    ret.pcmCruise = not ret.openpilotLongitudinalControl
+    ret.longitudinalActuatorDelayUpperBound = 0.5  # s
+    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kiV = [0.0]
+
     # Per-chassis tuning values, override tuning defaults here if desired
 
     if candidate == CAR.ARTEON_MK1:
@@ -73,6 +112,14 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.PASSAT_MK8:
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
+
+    elif candidate == CAR.PASSAT_NMS:
+      ret.mass = 1503 + STD_CARGO_KG
+      ret.wheelbase = 2.80
+      ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
@@ -160,7 +207,8 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
 
-    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
+    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
+                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -169,6 +217,12 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
     if self.low_speed_alert:
       events.add(EventName.belowSteerSpeed)
+
+    if self.CS.CP.openpilotLongitudinalControl:
+      if ret.vEgo < self.CP.minEnableSpeed + 2.:
+        events.add(EventName.belowEngageSpeed)
+      if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
+        events.add(EventName.speedTooLow)
 
     ret.events = events.to_msg()
 

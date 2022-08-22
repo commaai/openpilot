@@ -361,7 +361,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
-  is_rhd = Params().getBool("IsRHD");
+  is_rhd = Params().getBool("IsRhdDetected");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
   {
