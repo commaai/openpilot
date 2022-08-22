@@ -24,13 +24,19 @@ def create_cam_0x2a4(packer, camera_values):
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
 
 def create_buttons(packer, CP, cnt, btn):
-  counter_msg = "_COUNTER" if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1 else "COUNTER" 
+  if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1:
+    counter_msg = "_COUNTER"
+    bus = 4
+  else:
+    counter_msg = "COUNTER"
+    bus = 5
+
   values = {
     counter_msg: cnt,
     "SET_ME_1": 1,
     "CRUISE_BUTTONS": btn,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", 4, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
 def create_cruise_info(packer, cruise_info_copy, cancel):
   values = cruise_info_copy
