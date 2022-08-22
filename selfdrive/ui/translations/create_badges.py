@@ -8,19 +8,17 @@ from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
 TRANSLATION_TAG = "<translation"
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""
-TRANSLATION_BADGE = "translation_badge_{}.svg"
-TRANSLATION_LINK = "https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/{}"
+BADGE_HEIGHT = 20
+BADGE_OFFSET = 8
 
 if __name__ == "__main__":
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
-  print("Copy into selfdrive/ui/translations/README.md:\n")
-  for name, file in translation_files.items():
+  global_svg = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="{len(translation_files) * (BADGE_HEIGHT + BADGE_OFFSET)}">']
+  for idx, (name, file) in enumerate(translation_files.items()):
     with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as tr_f:
       tr_file = tr_f.read()
-
-    print(f"[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/{TRANSLATION_BADGE.format(file)})]({TRANSLATION_LINK.format(file)}.ts)")
 
     total_translations = 0
     unfinished_translations = 0
@@ -35,6 +33,18 @@ if __name__ == "__main__":
 
     r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-{percent_finished}%25 complete-{color}")
     assert r.status_code == 200, "Error downloading badge"
+    content_svg = r.content.decode("utf-8")
 
-    with open(os.path.join(BASEDIR, TRANSLATION_BADGE.format(file)), "wb") as badge_f:
-      badge_f.write(r.content)
+    # need to make tag ids in each badge unique
+    for tag in ("r", "s"):
+      content_svg = content_svg.replace(f'id="{tag}"', f'id="{tag}{idx}"')
+      content_svg = content_svg.replace(f'"url(#{tag})"', f'"url(#{tag}{idx})"')
+
+    global_svg.append('<g transform="translate(0, {})">'.format(idx * (BADGE_HEIGHT + BADGE_OFFSET)))
+    global_svg.append(content_svg)
+    global_svg.append("</g>")
+
+  global_svg.append("</svg>")
+
+  with open(os.path.join(BASEDIR, "translation_badge.svg"), "w") as badge_f:
+    badge_f.write("\n".join(global_svg))
