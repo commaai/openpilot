@@ -228,7 +228,7 @@ struct i2c_random_wr_payload init_array_os04c10[] = {
 
 // Y_OUTPUT_SIZE = 0x500 = 1280 (changed to 0x4b0)
 {0x380a, 0x04},
-{0x380b, 0xb0},
+{0x380b, 0xb8},
 
 // horizontal timing 0x447
 {0x380c, 0x04},
