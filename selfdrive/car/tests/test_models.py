@@ -19,7 +19,6 @@ from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
-from selfdrive.car.toyota.values import TSS2_CAR
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg

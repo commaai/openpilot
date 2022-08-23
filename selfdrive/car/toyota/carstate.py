@@ -94,11 +94,11 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    cp_cruise = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
+    cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
-      self.acc_type = cp_cruise.vl["ACC_CONTROL"]["ACC_TYPE"]
-      ret.stockFcw = bool(cp_cruise.vl["ACC_HUD"]["FCW"])
+      self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
+      ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -122,7 +122,7 @@ class CarState(CarStateBase):
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
 
     if not self.CP.enableDsu:
-      ret.stockAeb = bool(cp_cruise.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cruise.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+      ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
