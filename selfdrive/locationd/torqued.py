@@ -15,7 +15,7 @@ RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego', 'carStat
 POINTS_PER_BUCKET = 3000
 MIN_POINTS_TOTAL = 3000
 MIN_VEL = 10  # m/s
-FRICTION_FACTOR = 1.5  # ~85% of data coverage
+FRICTION_FACTOR = 2  # ~95% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
 FILTER_DECAY = 50
@@ -64,7 +64,7 @@ class TorqueEstimator:
       self.offline_friction_coeff = CP.lateralTuning.torque.friction
       self.offline_slope = CP.lateralTuning.torque.slope
 
-    params = log.Event.from_bytes(params) if params is not None else None
+    params = log.Event.from_bytes(params).liveTorqueParameters if params is not None else None
     if params is not None and self.is_sane(params.slopeFiltered, params.offsetFiltered, params.frictionCoefficientFiltered):
       initial_params = {
         'slope': params.slopeFiltered,
@@ -195,8 +195,9 @@ def main(sm=None, pm=None):
       liveTorqueParameters.frictionCoefficientFiltered = float(estimator.filtered_params['frictionCoefficient'].x)
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
       liveTorqueParameters.decay = estimator.decay
+
       if sm.frame % 1200 == 0:  # once a minute
-        put_nonblocking("LiveTorqueParameters", liveTorqueParameters.to_bytes())
+        put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
       pm.send('liveTorqueParameters', msg)
 
