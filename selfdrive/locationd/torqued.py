@@ -13,14 +13,16 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
-POINTS_PER_BUCKET = 1000
-MIN_POINTS_TOTAL = 800
+POINTS_PER_BUCKET = 3000
+MIN_POINTS_TOTAL = 3000
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
 FILTER_RC = 50
 LAT_ACC_THRESHOLD = 1
+STEER_BUCKET_BOUNDS = [(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)]
+MIN_BUCKET_POINTS = [200, 800, 800, 200]
 
 
 def slope2rot(slope):
@@ -90,11 +92,12 @@ class TorqueEstimator:
   def reset(self):
     self.raw_points = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
     self.raw_points_t = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
-    self.filtered_points = PointBuckets(x_bounds=[(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)], min_points=[200, 400, 400, 200])
+    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
   def estimate_params(self, points=None):
     if points is None:
       points = self.filtered_points.get_points()
+      points = points[np.random.choice(points.shape[0], MIN_POINTS_TOTAL, replace=False)]
     points = np.insert(points, 1, 1.0, axis=1)
     # total least square solution as both x and y are noisy observations
     # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
@@ -188,7 +191,7 @@ def main(sm=None, pm=None):
         else:
           cloudlog.exception("live torque params are numerically unstable")
           liveTorqueParameters.liveValid = False
-          # estimator.reset()
+          estimator.reset()
       else:
         liveTorqueParameters.liveValid = False
       liveTorqueParameters.slopeFiltered = float(estimator.slopeFiltered.x)
