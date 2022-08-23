@@ -58,7 +58,6 @@ class TestCarModelBase(unittest.TestCase):
       raise unittest.SkipTest
 
     if 'FILTER' in os.environ:
-      print(tuple(os.environ.get('FILTER').split(', ')))
       if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
         raise unittest.SkipTest
 
@@ -139,19 +138,23 @@ class TestCarModelBase(unittest.TestCase):
         raise Exception("unkown tuning")
 
   def test_car_interface(self):
-    # TODO: also check for checkusm and counter violations from can parser
+    # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
+    can_valid = False
     CC = car.CarControl.new_message()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
 
-      # wait 2s for low frequency msgs to be seen
-      if i > 200:
+      if CS.canValid:
+        can_valid = True
+
+      # wait max of 2s for low frequency msgs to be seen
+      if i > 200 or can_valid:
         can_invalid_cnt += not CS.canValid
 
-    self.assertLess(can_invalid_cnt, 50)
+    self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
@@ -219,6 +222,8 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs:
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+        msg = list(msg)
+        msg[3] %= 4
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")

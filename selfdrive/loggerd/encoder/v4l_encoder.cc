@@ -303,4 +303,10 @@ V4LEncoder::~V4LEncoder() {
   checked_ioctl(fd, VIDIOC_STREAMOFF, &buf_type);
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0);
   close(fd);
+
+  for (int i = 0; i < BUF_OUT_COUNT; i++) {
+    if (buf_out[i].free() != 0) {
+      LOGE("Failed to free buffer");
+    }
+  }
 }
