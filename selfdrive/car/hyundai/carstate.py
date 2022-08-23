@@ -464,7 +464,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
-    if CP.flags & (HyundaiFlags.CANFD_HDA2 or HyundaiFlags.CANFD_GENESIS_HDA1):
+    if (CP.flags & HyundaiFlags.CANFD_HDA2) or (CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1):
       signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks = [("CAM_0x2a4", 20)]
     else:
