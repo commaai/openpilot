@@ -39,9 +39,7 @@ if __name__ == "__main__":
       content_svg = content_svg.replace(f'id="{tag}"', f'id="{tag}{idx}"')
       content_svg = content_svg.replace(f'"url(#{tag})"', f'"url(#{tag}{idx})"')
 
-    badge_svg.append('<g transform="translate(0, {})">'.format(idx * BADGE_HEIGHT))
-    badge_svg.append(content_svg)
-    badge_svg.append("</g>")
+    badge_svg.extend([f'<g transform="translate(0, {idx * BADGE_HEIGHT})">', content_svg, "</g>"])
 
   badge_svg.append("</svg>")
 
