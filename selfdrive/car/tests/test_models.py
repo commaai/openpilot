@@ -84,7 +84,6 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
-      CP = None
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
@@ -92,12 +91,11 @@ class TestCarModelBase(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
-          CP = msg.carParams
-          car_fw = CP.carFw
-          if CP.openpilotLongitudinalControl:
+          car_fw = msg.carParams.carFw
+          if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
           if cls.car_model is None and not cls.ci:
-            cls.car_model = CP.carFingerprint
+            cls.car_model = msg.carParams.carFingerprint
 
       if len(can_msgs) > int(50 / DT_CTRL):
         break
@@ -105,11 +103,6 @@ class TestCarModelBase(unittest.TestCase):
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
-
-    # Sets enableDsu for cars with missing carFw
-    # TODO: get new route for TOYOTA.LEXUS_CTH
-    if len(car_fw) == 0 and CP is not None and CP.enableDsu:
-      car_fw = [car.CarParams.CarFw(ecu=car.CarParams.Ecu.unknown)]
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
