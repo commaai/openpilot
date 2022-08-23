@@ -109,7 +109,7 @@ class CarController:
 
     else:
       # Stock longitudinal, integrated at camera
-      if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
+      if (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
         if CC.cruiseControl.cancel:
           self.last_button_frame = self.frame
           # CS.buttons_counter = (CS.buttons_counter + 1) % 4
@@ -118,7 +118,7 @@ class CarController:
     # Resume allowed for ASCM and CAM, OP and Stock long
     # TODO: @sshane: cruiseControl.resume logic may need review for stock long
     # TODO: Spamming repeatedly faster than 100ms can cause fault (cruise main off)
-    if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
+    if (self.frame - self.last_button_frame) * DT_CTRL > 0.2:
       if CC.cruiseControl.resume:
         self.last_button_frame = self.frame
         # CS.buttons_counter = (CS.buttons_counter + 1) % 4
