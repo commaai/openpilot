@@ -33,6 +33,7 @@ bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
   }
 }
 
+
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.filename);
 
