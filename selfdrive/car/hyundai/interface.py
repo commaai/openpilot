@@ -309,7 +309,6 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
