@@ -28,7 +28,7 @@
 extern ExitHandler do_exit;
 
 const size_t FRAME_WIDTH = 1928;
-const size_t FRAME_HEIGHT = 1288;
+const size_t FRAME_HEIGHT = 1208;
 
 //const size_t FRAME_STRIDE = 2416;  // for 10 bit output
 const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
