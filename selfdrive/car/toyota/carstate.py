@@ -119,10 +119,10 @@ class CarState(CarStateBase):
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
-
-    # ret.stockAeb = bool(cp_cruise.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cruise.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
-    print(cp.vl_all['PRE_COLLISION'])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
+
+    if not self.CP.enableDsu:
+      ret.stockAeb = bool(cp_cruise.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cruise.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
@@ -219,7 +219,7 @@ class CarState(CarStateBase):
         ("ACC_HUD", 1),
       ]
 
-    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR):
+    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu:
       signals += [
         ("FORCE", "PRE_COLLISION"),
         ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
