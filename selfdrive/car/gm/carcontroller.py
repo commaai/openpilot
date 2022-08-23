@@ -112,8 +112,18 @@ class CarController:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
         if CC.cruiseControl.cancel:
           self.last_button_frame = self.frame
-          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
+          # CS.buttons_counter = (CS.buttons_counter + 1) % 4
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, (CS.buttons_counter + 1) % 4, CruiseButtons.CANCEL))
 
+    # Resume allowed for ASCM and CAM, OP and Stock long
+    # TODO: @sshane: cruiseControl.resume logic may need review for stock long
+    # TODO: Spamming repeatedly faster than 100ms can cause fault (cruise main off)
+    if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
+      if CC.cruiseControl.resume:
+        self.last_button_frame = self.frame
+        # CS.buttons_counter = (CS.buttons_counter + 1) % 4
+        can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, (CS.buttons_counter + 1) % 4, CruiseButtons.RES_ACCEL))
+    
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.
     # If not sent again, LKA icon disappears in about 5 seconds.
