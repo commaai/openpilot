@@ -115,6 +115,12 @@ class CarState(CarStateBase):
       ("EPS_TORQUE_DIRECTION", "EPS_2"),
       ("DRIVER_INPUT_TORQUE", "EPS_2"),
       ("LKAS_STATUS", "EPS_2"),
+      ("OPEN", "DOOR_FL"),
+      ("OPEN", "DOOR_FR"),
+      ("OPEN", "DOOR_RL"),
+      ("OPEN", "DOOR_RR"),
+      ("LEFT_TURN_SIGNALING", "TURN_SIGNALS"),
+      ("RIGHT_TURN_SIGNALING", "TURN_SIGNALS"),
     ]
 
     checks = [
@@ -126,9 +132,9 @@ class CarState(CarStateBase):
       ("ABS_3", 50),
       ("EPS_1", 50),
       ("EPS_2", 50),
-      ("DOOR_LF", 10),
-      ("DOOR_RF", 10),
-      ("DOOR_LR", 10),
+      ("DOOR_FL", 10),
+      ("DOOR_FR", 10),
+      ("DOOR_RL", 10),
       ("DOOR_RR", 10),
       ("TURN_SIGNALS", 10),
     ]
