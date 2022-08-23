@@ -8,14 +8,13 @@ from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
 TRANSLATION_TAG = "<translation"
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""
-BADGE_HEIGHT = 20
-BADGE_OFFSET = 8
+BADGE_HEIGHT = 20 + 8
 
 if __name__ == "__main__":
   with open(LANGUAGES_FILE, "r") as f:
     translation_files = json.load(f)
 
-  global_svg = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="{len(translation_files) * (BADGE_HEIGHT + BADGE_OFFSET)}">']
+  badge_svg = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="{len(translation_files) * BADGE_HEIGHT}">']
   for idx, (name, file) in enumerate(translation_files.items()):
     with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as tr_f:
       tr_file = tr_f.read()
@@ -35,16 +34,16 @@ if __name__ == "__main__":
     assert r.status_code == 200, "Error downloading badge"
     content_svg = r.content.decode("utf-8")
 
-    # need to make tag ids in each badge unique
+    # make tag ids in each badge unique
     for tag in ("r", "s"):
       content_svg = content_svg.replace(f'id="{tag}"', f'id="{tag}{idx}"')
       content_svg = content_svg.replace(f'"url(#{tag})"', f'"url(#{tag}{idx})"')
 
-    global_svg.append('<g transform="translate(0, {})">'.format(idx * (BADGE_HEIGHT + BADGE_OFFSET)))
-    global_svg.append(content_svg)
-    global_svg.append("</g>")
+    badge_svg.append('<g transform="translate(0, {})">'.format(idx * BADGE_HEIGHT))
+    badge_svg.append(content_svg)
+    badge_svg.append("</g>")
 
-  global_svg.append("</svg>")
+  badge_svg.append("</svg>")
 
   with open(os.path.join(BASEDIR, "translation_badge.svg"), "w") as badge_f:
-    badge_f.write("\n".join(global_svg))
+    badge_f.write("\n".join(badge_svg))
