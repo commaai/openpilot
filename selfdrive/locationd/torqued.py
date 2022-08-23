@@ -12,14 +12,15 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 
 HISTORY = 5  # secs
-RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego']
+RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego', 'carState_t', 'carControl_t']
 POINTS_PER_BUCKET = 3000
 MIN_POINTS_TOTAL = 3000
 MIN_VEL = 10  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
-FILTER_RC = 50
+FILTER_DECAY = 50
+MAX_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)]
 MIN_BUCKET_POINTS = [200, 800, 800, 200]
@@ -81,17 +82,17 @@ class TorqueEstimator:
       params = {
         'slope': self.offline_slope,
         'offset': 0.0,
-        'frictionCoefficient': self.offline_friction_coeff
+        'frictionCoefficient': self.offline_friction_coeff,
+        'decay': FILTER_DECAY
       }
-    self.slopeFiltered = FirstOrderFilter(params['slope'], FILTER_RC, DT_MDL)
-    self.offsetFiltered = FirstOrderFilter(params['offset'], FILTER_RC, DT_MDL)
-    self.frictionCoefficientFiltered = FirstOrderFilter(params['frictionCoefficient'], FILTER_RC, DT_MDL)
-
+    self.filtered_params = {}
+    self.decay = params['decay']
+    for param in params:
+      self.filtered_params[param] = FirstOrderFilter(params[param], self.decay, DT_MDL)
     self.reset()
 
   def reset(self):
     self.raw_points = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
-    self.raw_points_t = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
     self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
   def estimate_params(self, points=None):
@@ -107,6 +108,12 @@ class TorqueEstimator:
     friction_coeff = np.std(spread) * FRICTION_FACTOR
     return slope, offset, friction_coeff
 
+  def update_params(self, params):
+    self.decay = min(self.decay + DT_MDL, MAX_DECAY)
+    for param, value in params.items():
+      self.filtered_params[param].update(value)
+      self.filtered_params[param].update_alpha(self.decay)
+
   def car_sane(self, params, fingerprint):
     return False if params.get('carFingerprint', None) != fingerprint else True
 
@@ -121,23 +128,21 @@ class TorqueEstimator:
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
-      self.raw_points_t["steer_torque"].append(t)
+      self.raw_points["carControl_t"].append(t)
       self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
-      self.raw_points_t["active"].append(t)
       self.raw_points["active"].append(msg.latActive)
     elif which == "carState":
-      self.raw_points_t["vego"].append(t)
+      self.raw_points["carState_t"].append(t)
       self.raw_points["vego"].append(msg.vEgo)
-      self.raw_points_t["steer_override"].append(t)
       self.raw_points["steer_override"].append(msg.steeringPressed)
     elif which == "liveLocationKalman":
       if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
         roll = msg.orientationNED.value[0]
-        active = bool(np.interp(t, np.array(self.raw_points_t['active']) + self.lag, self.raw_points['active']))
-        steer_override = bool(np.interp(t, np.array(self.raw_points_t['steer_override']) + self.lag, self.raw_points['steer_override']))
-        vego = np.interp(t, np.array(self.raw_points_t['vego']) + self.lag, self.raw_points['vego'])
-        steer = np.interp(t, np.array(self.raw_points_t['steer_torque']) + self.lag, self.raw_points['steer_torque'])
+        active = bool(np.interp(t, np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['active']))
+        steer_override = bool(np.interp(t, np.array(self.raw_points['carState_t']) + self.lag, self.raw_points['steer_override']))
+        vego = np.interp(t, np.array(self.raw_points['carState_t']) + self.lag, self.raw_points['vego'])
+        steer = np.interp(t, np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
         if active and (not steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(steer, lateral_acc)
@@ -185,26 +190,20 @@ def main(sm=None, pm=None):
           liveTorqueParameters.slopeRaw = float(slope)
           liveTorqueParameters.offsetRaw = float(offset)
           liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
-          estimator.slopeFiltered.update(slope)
-          estimator.offsetFiltered.update(offset)
-          estimator.frictionCoefficientFiltered.update(friction_coeff)
+          estimator.update_params({'slope': slope, 'offset': offset, 'frictionCoefficient': friction_coeff})
         else:
           cloudlog.exception("live torque params are numerically unstable")
           liveTorqueParameters.liveValid = False
           estimator.reset()
       else:
         liveTorqueParameters.liveValid = False
-      liveTorqueParameters.slopeFiltered = float(estimator.slopeFiltered.x)
-      liveTorqueParameters.offsetFiltered = float(estimator.offsetFiltered.x)
-      liveTorqueParameters.frictionCoefficientFiltered = float(estimator.frictionCoefficientFiltered.x)
+      liveTorqueParameters.slopeFiltered = float(estimator.filtered_params['slope'].x)
+      liveTorqueParameters.offsetFiltered = float(estimator.filtered_params['offset'].x)
+      liveTorqueParameters.frictionCoefficientFiltered = float(estimator.filtered_params['frictionCoefficient'].x)
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
-
       if sm.frame % 1200 == 0:  # once a minute
-        params_to_write = {
-          "slope": estimator.slopeFiltered.x,
-          "offset": estimator.offsetFiltered.x,
-          "frictionCoefficient": estimator.frictionCoefficientFiltered.x
-        }
+        params_to_write = {k: estimator.filtered_params[k].x for k in ['slope', 'offset', 'frictionCoefficient']}
+        params_to_write.update({'decay': estimator.decay})
         put_nonblocking("LiveTorqueParameters", json.dumps(params_to_write))
 
       pm.send('liveTorqueParameters', msg)
