@@ -64,7 +64,7 @@ common_model = lenv.Object(common_src)
 # build thneed model
 if use_thneed and arch == "larch64":
   fn = File("models/supercombo").abspath
-  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 FLOAT16=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 FLOAT16=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
   lenv.Command(fn + ".thneed", [fn + ".onnx"], cmd)
 
   #compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
