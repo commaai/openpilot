@@ -176,8 +176,13 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = True
     ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
-    cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+    if (self.CP.flags & HyundaiFlags.CANFD_HDA2) or (self.CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1):
+      cp_cruise_info = cp
+    else:
+      cp_cruise_info = cp_cam
+    #cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
+    #print(self.CP.flags)
     ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
     ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
 
@@ -384,7 +389,6 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser_canfd(CP):
-
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     counter_msg = "_COUNTER" if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1 else "COUNTER"
     signals = [
@@ -455,7 +459,7 @@ class CarState(CarStateBase):
         checks += [
           ("CRUISE_INFO", 50),
         ]
-        
+
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]
