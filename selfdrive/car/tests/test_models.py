@@ -84,7 +84,6 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
-      car_fw = []
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
@@ -123,8 +122,8 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.init_tests()
 
   def test_car_params(self):
-    # if self.CP.dashcamOnly:
-    self.skipTest("no need to check carParams for dashcamOnly")
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check carParams for dashcamOnly")
 
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
