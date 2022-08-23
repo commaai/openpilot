@@ -49,7 +49,6 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   if (home_btn.contains(event->pos())) {
-    // TODO: maybe only create event while car started?
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
