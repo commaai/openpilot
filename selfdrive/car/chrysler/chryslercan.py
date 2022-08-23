@@ -62,10 +62,37 @@ def create_lkas_command(packer, CP, apply_steer, lkas_control_bit):
   return packer.make_can_msg("LKAS_COMMAND", 0, values)
 
 
-def create_cruise_buttons(packer, frame, bus, cancel=False, resume=False):
-  values = {
-    "ACC_Cancel": cancel,
-    "ACC_Resume": resume,
-    "COUNTER": frame % 0x10,
-  }
+def create_cruise_buttons(packer, frame, bus, cruise_buttons, cancel=False, resume=False):
+  
+  if (cancel == True) or (resume == True):
+    values = {
+      "ACC_Cancel": cancel,
+      "ACC_Resume": resume,
+      "COUNTER": frame % 0x10,
+    }
+  else:
+    values = cruise_buttons.copy()
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
+
+def acc_command(packer, counter, enabled, accel_req, torque, max_gear, decel_req, decel, das_3):
+  values = das_3.copy()  # forward what we parsed
+  values['ACC_AVAILABLE'] = 1
+  values['ACC_ACTIVE'] = enabled
+  # values['COUNTER'] = counter % 0x10
+
+  # values['ACC_GO'] = 0 #accel_req
+  values['ACC_STANDSTILL'] = decel_req
+  values['GR_MAX_REQ'] = max_gear
+  
+
+  values['ACC_DECEL_REQ'] = enabled and decel is not None
+  values['BRAKE_BOOL_1'] = enabled and decel is not None
+  if decel is not None:
+    values['ACC_DECEL'] = decel
+
+  values['ENGINE_TORQUE_REQUEST_MAX'] = enabled and torque is not None
+  if torque is not None:
+    values['ENGINE_TORQUE_REQUEST'] = torque
+    values['ACC_DECEL'] = 3.99
+
+  return packer.make_can_msg("DAS_3", 0, values)
