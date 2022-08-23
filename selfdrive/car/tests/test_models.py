@@ -81,6 +81,7 @@ class TestCarModelBase(unittest.TestCase):
       except Exception:
         continue
 
+      car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
       for msg in lr:
@@ -90,6 +91,7 @@ class TestCarModelBase(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
+          car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
           if cls.car_model is None and not cls.ci:
@@ -103,7 +105,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [], disable_radar)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
