@@ -114,11 +114,11 @@ class CarInterfaceBase(ABC):
     ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
-    ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
+    ret.minEnableSpeed = -1.  # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
     ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
+    ret.stoppingDecelRate = 0.8  # brake_travel/s while trying to stop
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
     ret.stoppingControl = True
@@ -141,10 +141,11 @@ class CarInterfaceBase(ABC):
 
     tune.init('torque')
     tune.torque.useSteeringAngle = use_steering_angle
-    tune.torque.kp = 1.0 / params['LAT_ACCEL_FACTOR']
-    tune.torque.kf = 1.0 / params['LAT_ACCEL_FACTOR']
-    tune.torque.ki = 0.1 / params['LAT_ACCEL_FACTOR']
+    tune.torque.kp = 1.0
+    tune.torque.kf = 1.0
+    tune.torque.ki = 0.1
     tune.torque.friction = params['FRICTION']
+    tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
