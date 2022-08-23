@@ -120,7 +120,8 @@ class CarState(CarStateBase):
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
 
-    ret.stockAeb = bool(cp_cruise.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cruise.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+    # ret.stockAeb = bool(cp_cruise.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cruise.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+    print(cp.vl_all['PRE_COLLISION'])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
 
     if self.CP.enableBsm:
@@ -234,17 +235,17 @@ class CarState(CarStateBase):
     signals = []
     checks = []
 
-    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-      signals += [
-        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
-        ("FORCE", "PRE_COLLISION"),
-        ("ACC_TYPE", "ACC_CONTROL"),
-        ("FCW", "ACC_HUD"),
-      ]
-      checks += [
-        ("PRE_COLLISION", 33),
-        ("ACC_CONTROL", 33),
-        ("ACC_HUD", 1),
-      ]
+    # if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+    #   signals += [
+    #     ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+    #     ("FORCE", "PRE_COLLISION"),
+    #     ("ACC_TYPE", "ACC_CONTROL"),
+    #     ("FCW", "ACC_HUD"),
+    #   ]
+    #   checks += [
+    #     ("PRE_COLLISION", 33),
+    #     ("ACC_CONTROL", 33),
+    #     ("ACC_HUD", 1),
+    #   ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)

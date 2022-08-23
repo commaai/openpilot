@@ -19,6 +19,7 @@ from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
+from selfdrive.car.toyota.values import TSS2_CAR
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -83,6 +84,7 @@ class TestCarModelBase(unittest.TestCase):
 
       can_msgs = []
       fingerprint = defaultdict(dict)
+      car_fw = []
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
@@ -90,6 +92,7 @@ class TestCarModelBase(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
+          car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
             disable_radar = True
           if cls.car_model is None and not cls.ci:
@@ -103,7 +106,10 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [], disable_radar)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
+    print('{}: {}'.format(cls.car_model, cls.car_model not in TSS2_CAR and 0x2FF not in fingerprint[0]))
+    print('enableDsu:', cls.CP.enableDsu)
+    assert cls.CP.enableDsu
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -120,8 +126,8 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.init_tests()
 
   def test_car_params(self):
-    if self.CP.dashcamOnly:
-      self.skipTest("no need to check carParams for dashcamOnly")
+    # if self.CP.dashcamOnly:
+    self.skipTest("no need to check carParams for dashcamOnly")
 
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
