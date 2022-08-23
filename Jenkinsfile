@@ -70,7 +70,6 @@ pipeline {
         not {
           anyOf {
             branch 'master-ci'; branch 'devel'; branch 'devel-staging';
-            branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging';
             branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
             branch 'testing-closet*'; branch 'hotfix-*'
           }
@@ -128,7 +127,7 @@ pipeline {
           steps {
             phone_steps("tici2", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test power draw", "python system/hardware/tici/test_power_draw.py"],
+              //["test power draw", "python system/hardware/tici/test_power_draw.py"],
               ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
               ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],

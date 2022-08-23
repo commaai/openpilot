@@ -95,14 +95,7 @@ static int tesla_rx_hook(CANPacket_t *to_push) {
                               (cruise_state == 4) ||  // OVERRIDE
                               (cruise_state == 6) ||  // PRE_FAULT
                               (cruise_state == 7);    // PRE_CANCEL
-
-        if(cruise_engaged && !cruise_engaged_prev) {
-          controls_allowed = 1;
-        }
-        if(!cruise_engaged) {
-          controls_allowed = 0;
-        }
-        cruise_engaged_prev = cruise_engaged;
+        pcm_cruise_check(cruise_engaged);
       }
     }
 

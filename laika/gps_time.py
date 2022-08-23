@@ -53,6 +53,7 @@ def tow_to_datetime(tow, week):
 
 
 def get_leap_seconds(time):
+  # TODO use library for this
   if time <= GPSTime.from_datetime(datetime.datetime(2006, 1, 1)):
     raise ValueError("Don't know how many leap seconds to use before 2006")
   elif time <= GPSTime.from_datetime(datetime.datetime(2009, 1, 1)):
@@ -61,6 +62,7 @@ def get_leap_seconds(time):
     return 15
   elif time <= GPSTime.from_datetime(datetime.datetime(2015, 7, 1)):
     return 16
+  # TODO is this correct?
   elif time <= GPSTime.from_datetime(datetime.datetime(2017, 7, 1)):
     return 17
   else:
@@ -150,6 +152,9 @@ class GPSTime:
 
   def as_datetime(self):
     return tow_to_datetime(self.tow, self.week)
+
+  def as_unix_timestamp(self):
+    return (gpst_to_utc(self).as_datetime() - datetime.datetime(1970, 1, 1)).total_seconds()
 
   @property
   def day(self):

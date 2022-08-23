@@ -46,19 +46,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .registers_offset = 0,
     .frame_offset = AR0231_REGISTERS_HEIGHT,
     .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
-
-    .bayer = true,
-    .bayer_flip = 1,
-    .hdr = false,
   },
   [CAMERA_ID_IMX390] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
-
-    .bayer = true,
-    .bayer_flip = 1,
-    .hdr = false,
   },
 };
 
@@ -614,7 +606,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, bool enabled_) {
+void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, bool enabled_) {
   multi_cam_state = multi_cam_state_;
   camera_id = camera_id_;
   camera_num = camera_num_;
@@ -638,7 +630,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[gain_idx] * exposure_time;
 
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
 }
 
 void CameraState::camera_open() {
@@ -833,9 +825,9 @@ void CameraState::camera_open() {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER, !env_disable_driver);
-  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_disable_road);
-  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
+  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_DRIVER, !env_disable_driver);
+  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_ROAD, !env_disable_road);
+  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
@@ -1233,9 +1225,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
+
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);
   }
@@ -1248,9 +1238,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
-    framed.setImage(get_frame_image(b));
-  } else if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
+  if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
     framed.setImage(get_raw_frame_image(b));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");

@@ -90,14 +90,7 @@ static int nissan_rx_hook(CANPacket_t *to_push) {
     // Handle cruise enabled
     if ((addr == 0x30f) && (((bus == 2) && (!nissan_alt_eps)) || ((bus == 1) && (nissan_alt_eps)))) {
       bool cruise_engaged = (GET_BYTE(to_push, 0) >> 3) & 1U;
-
-      if (cruise_engaged && !cruise_engaged_prev) {
-        controls_allowed = 1;
-      }
-      if (!cruise_engaged) {
-        controls_allowed = 0;
-      }
-      cruise_engaged_prev = cruise_engaged;
+      pcm_cruise_check(cruise_engaged);
     }
 
     generic_rx_checks((addr == 0x169) && (bus == 0));

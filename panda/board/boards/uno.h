@@ -167,10 +167,8 @@ void uno_set_ir_power(uint8_t percentage){
   pwm_set(TIM4, 2, percentage);
 }
 
-void uno_set_fan_power(uint8_t percentage){
-  // Enable fan power only if percentage is non-zero.
-  set_gpio_output(GPIOA, 1, (percentage != 0U));
-  fan_set_power(percentage);
+void uno_set_fan_enabled(bool enabled){
+  set_gpio_output(GPIOA, 1, enabled);
 }
 
 void uno_init(void) {
@@ -213,7 +211,7 @@ void uno_init(void) {
 
   // Initialize fan and set to 0%
   fan_init();
-  uno_set_fan_power(0U);
+  uno_set_fan_enabled(false);
 
   // Initialize harness
   harness_init();
@@ -270,6 +268,7 @@ const board board_uno = {
   .has_obd = true,
   .has_lin = false,
   .has_rtc_battery = true,
+  .fan_max_rpm = 5100U,
   .init = uno_init,
   .enable_can_transceiver = uno_enable_can_transceiver,
   .enable_can_transceivers = uno_enable_can_transceivers,
@@ -280,7 +279,7 @@ const board board_uno = {
   .usb_power_mode_tick = uno_usb_power_mode_tick,
   .check_ignition = uno_check_ignition,
   .read_current = unused_read_current,
-  .set_fan_power = uno_set_fan_power,
+  .set_fan_enabled = uno_set_fan_enabled,
   .set_ir_power = uno_set_ir_power,
   .set_phone_power = uno_set_phone_power,
   .set_clock_source_mode = unused_set_clock_source_mode,

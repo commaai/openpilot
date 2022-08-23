@@ -101,6 +101,48 @@ QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordina
   return collections;
 }
 
+QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString) {
+  QList<QGeoCoordinate> path;
+  if (polylineString.isEmpty())
+      return path;
+
+  QByteArray data = polylineString.toLatin1();
+
+  bool parsingLatitude = true;
+
+  int shift = 0;
+  int value = 0;
+
+  QGeoCoordinate coord(0, 0);
+
+  for (int i = 0; i < data.length(); ++i) {
+      unsigned char c = data.at(i) - 63;
+
+      value |= (c & 0x1f) << shift;
+      shift += 5;
+
+      // another chunk
+      if (c & 0x20)
+          continue;
+
+      int diff = (value & 1) ? ~(value >> 1) : (value >> 1);
+
+      if (parsingLatitude) {
+          coord.setLatitude(coord.latitude() + (double)diff/1e6);
+      } else {
+          coord.setLongitude(coord.longitude() + (double)diff/1e6);
+          path.append(coord);
+      }
+
+      parsingLatitude = !parsingLatitude;
+
+      value = 0;
+      shift = 0;
+  }
+
+  return path;
+}
+
 std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
   QString json_str = QString::fromStdString(Params().get(param));
   if (json_str.isEmpty()) return {};

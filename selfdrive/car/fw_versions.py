@@ -99,6 +99,11 @@ CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x
 
 CHRYSLER_RX_OFFSET = -0x280
 
+FORD_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+FORD_VERSION_RESPONSE =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+
 
 @dataclass
 class Request:
@@ -139,16 +144,19 @@ REQUESTS: List[Request] = [
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
+    bus=0,
   ),
   Request(
     "toyota",
     [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
     [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
+    bus=0,
   ),
   Request(
     "toyota",
     [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
+    bus=0,
   ),
   # Volkswagen
   Request(
@@ -206,6 +214,20 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
+  ),
+  # Ford
+  Request(
+    "ford",
+    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.engine],
+  ),
+  Request(
+    "ford",
+    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+    bus=0,
+    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
   ),
 ]
 
@@ -315,17 +337,21 @@ def match_fw_to_car_exact(fw_versions_dict):
   return set(candidates.keys()) - set(invalid)
 
 
-def match_fw_to_car(fw_versions, allow_fuzzy=True):
+def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   # Try exact matching first
-  exact_matches = [(True, match_fw_to_car_exact)]
+  exact_matches = []
+  if allow_exact:
+    exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
+  brands = get_interface_attr('FW_VERSIONS', ignore_none=True).keys()
   for exact_match, match_func in exact_matches:
-    # TODO: For each brand, attempt to fingerprint using only FW returned from its queries
+    # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
-    fw_versions_dict = build_fw_dict(fw_versions, filter_brand=None)
-    matches |= match_func(fw_versions_dict)
+    for brand in brands:
+      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict)
 
     if len(matches):
       return exact_match, matches
@@ -394,9 +420,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
-
-    # TODO: Until erroneous FW versions are removed, try to fingerprint on all possible combinations so far
-    _, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
+    # Try to match using FW returned from this brand only
+    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
       break
 
@@ -433,7 +458,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   addrs.insert(0, parallel_addrs)
 
-  fw_versions = {}
+  # Get versions and build capnp list to put into CarParams
+  car_fw = []
   requests = [r for r in REQUESTS if query_brand is None or r.brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
@@ -444,26 +470,23 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            fw_versions.update({(r.brand, addr): (version, r) for (addr, _), version in query.get_data(timeout).items()})
+            for (addr, rx_addr), version in query.get_data(timeout).items():
+              f = car.CarParams.CarFw.new_message()
+
+              f.ecu = ecu_types.get((r.brand, addr[0], addr[1]), Ecu.unknown)
+              f.fwVersion = version
+              f.address = addr[0]
+              f.responseAddress = rx_addr
+              f.request = r.request
+              f.brand = r.brand
+              f.bus = r.bus
+
+              if addr[1] is not None:
+                f.subAddress = addr[1]
+
+              car_fw.append(f)
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
-
-  # Build capnp list to put into CarParams
-  car_fw = []
-  for (brand, addr), (version, request) in fw_versions.items():
-    f = car.CarParams.CarFw.new_message()
-
-    f.ecu = ecu_types[(brand, addr[0], addr[1])]
-    f.fwVersion = version
-    f.address = addr[0]
-    f.responseAddress = uds.get_rx_addr_for_tx_addr(addr[0], request.rx_offset)
-    f.request = request.request
-    f.brand = brand
-
-    if addr[1] is not None:
-      f.subAddress = addr[1]
-
-    car_fw.append(f)
 
   return car_fw
 
@@ -512,7 +535,7 @@ if __name__ == "__main__":
   padding = max([len(fw.brand) for fw in fw_vers] or [0])
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-    print(f"  Brand: {version.brand:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+    print(f"  Brand: {version.brand:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
 
   print()

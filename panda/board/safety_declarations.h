@@ -26,6 +26,28 @@ typedef struct {
   int len;
 } CanMsg;
 
+typedef enum {
+  TorqueMotorLimited,   // torque steering command, limited by EPS output torque
+  TorqueDriverLimited,  // torque steering command, limited by driver's input torque
+} SteeringControlType;
+
+typedef struct {
+  const int max_steer;
+  const int max_rate_up;
+  const int max_rate_down;
+  const int max_rt_delta;
+  const uint32_t max_rt_interval;
+
+  const SteeringControlType type;
+
+  // driver torque limits
+  const int driver_torque_allowance;
+  const int driver_torque_factor;
+
+  // motor torque limits
+  const int max_torque_error;
+} SteeringLimits;
+
 typedef struct {
   const int addr;
   const int bus;
@@ -84,6 +106,8 @@ bool addr_safety_check(CANPacket_t *to_push,
 void generic_rx_checks(bool stock_ecu_detected);
 void relay_malfunction_set(void);
 void relay_malfunction_reset(void);
+bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLimits limits);
+void pcm_cruise_check(bool cruise_engaged);
 
 typedef const addr_checks* (*safety_hook_init)(uint16_t param);
 typedef int (*rx_hook)(CANPacket_t *to_push);

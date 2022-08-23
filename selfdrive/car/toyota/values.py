@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Star
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -87,11 +87,11 @@ class CAR:
 
 class Footnote(Enum):
   DSU = CarFootnote(
-    "When disconnecting the Driver Support Unit (DSU), openpilot Adaptive Cruise Control (ACC) will replace stock " +
-    "Adaptive Cruise Control (ACC). <b><i> NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
-    Column.LONGITUDINAL, star=Star.HALF)
+    "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
+    "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
+    Column.LONGITUDINAL)
   CAMRY = CarFootnote(
-    "28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
+    "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
     Column.FSR_LONGITUDINAL)
 
 
@@ -105,13 +105,16 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   # Toyota
   CAR.ALPHARD_TSS2: ToyotaCarInfo("Toyota Alphard 2019-20"),
   CAR.ALPHARDH_TSS2: ToyotaCarInfo("Toyota Alphard Hybrid 2021"),
-  CAR.AVALON: ToyotaCarInfo("Toyota Avalon 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.AVALONH_2019: ToyotaCarInfo("Toyota Avalon Hybrid 2019-21", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.AVALON: [
+    ToyotaCarInfo("Toyota Avalon 2016", "Toyota Safety Sense P", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Avalon 2017-18", footnotes=[Footnote.DSU]),
+  ],
+  CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", footnotes=[Footnote.DSU]),
+  CAR.AVALONH_2019: ToyotaCarInfo("Toyota Avalon Hybrid 2019-21", footnotes=[Footnote.DSU]),
   CAR.AVALON_TSS2: ToyotaCarInfo("Toyota Avalon 2022"),
   CAR.AVALONH_TSS2: ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
   CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-22", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-22"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-21"),
@@ -119,11 +122,12 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19", footnotes=[Footnote.DSU]),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
-    ToyotaCarInfo("Toyota Corolla Cross 2020-21 (Non-US only)", min_enable_speed=7.5),
+    ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-21", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
   ],
   CAR.COROLLAH_TSS2: [
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+    ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
     ToyotaCarInfo("Lexus UX Hybrid 2019-22"),
   ],
   CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo", footnotes=[Footnote.DSU]),
@@ -131,26 +135,33 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", footnotes=[Footnote.DSU]),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
   CAR.PRIUS: [
-    ToyotaCarInfo("Toyota Prius 2016-20", "TSS-P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
   ],
-  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "TSS-P", min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU]),
+  CAR.PRIUS_V: ToyotaCarInfo("Toyota Prius v 2017", "Toyota Safety Sense P", min_enable_speed=MIN_ACC_SPEED, footnotes=[Footnote.DSU]),
   CAR.PRIUS_TSS2: [
     ToyotaCarInfo("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
     ToyotaCarInfo("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
   ],
-  CAR.RAV4: ToyotaCarInfo("Toyota RAV4 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
-  CAR.RAV4H: ToyotaCarInfo("Toyota RAV4 Hybrid 2016-18", "TSS-P", footnotes=[Footnote.DSU]),
+  CAR.RAV4: [
+    ToyotaCarInfo("Toyota RAV4 2016", "Toyota Safety Sense P", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota RAV4 2017-18", footnotes=[Footnote.DSU])
+  ],
+  CAR.RAV4H: [
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU])
+  ],
   CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
   CAR.RAV4_TSS2_2022: ToyotaCarInfo("Toyota RAV4 2022"),
   CAR.RAV4H_TSS2: ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
   CAR.RAV4H_TSS2_2022: ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
   CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
-  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU]),
+  CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", footnotes=[Footnote.DSU], min_enable_speed=MIN_ACC_SPEED),
 
   # Lexus
-  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "LSS", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "Lexus Safety System+", footnotes=[Footnote.DSU]),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
   CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-22", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
@@ -158,8 +169,8 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
-  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-2020"),
-  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-18", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
+  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
@@ -676,6 +687,7 @@ FW_VERSIONS = {
       b'\x01896630ZP2000\x00\x00\x00\x00',
       b'\x01896630ZQ5000\x00\x00\x00\x00',
       b'\x01896630ZU9000\x00\x00\x00\x00',
+      b'\x01896630ZX4000\x00\x00\x00\x00',
       b'\x018966312L8000\x00\x00\x00\x00',
       b'\x018966312M0000\x00\x00\x00\x00',
       b'\x018966312M9000\x00\x00\x00\x00',
@@ -771,6 +783,7 @@ FW_VERSIONS = {
       b'\x01896637626000\x00\x00\x00\x00',
       b'\x01896637648000\x00\x00\x00\x00',
       b'\x01896637643000\x00\x00\x00\x00',
+      b'\x02896630A21000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZJ5000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZN8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZQ3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -788,6 +801,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7a1, None): [
       b'8965B12361\x00\x00\x00\x00\x00\x00',
       b'8965B12451\x00\x00\x00\x00\x00\x00',
+      b'8965B16011\x00\x00\x00\x00\x00\x00',
       b'8965B76012\x00\x00\x00\x00\x00\x00',
       b'8965B76050\x00\x00\x00\x00\x00\x00',
       b'\x018965B12350\x00\x00\x00\x00\x00\x00',
@@ -808,15 +822,17 @@ FW_VERSIONS = {
       b'F152612800\x00\x00\x00\x00\x00\x00',
       b'F152612820\x00\x00\x00\x00\x00\x00',
       b'F152612840\x00\x00\x00\x00\x00\x00',
+      b'F152612842\x00\x00\x00\x00\x00\x00',
       b'F152612890\x00\x00\x00\x00\x00\x00',
       b'F152612A00\x00\x00\x00\x00\x00\x00',
       b'F152612A10\x00\x00\x00\x00\x00\x00',
+      b'F152612D00\x00\x00\x00\x00\x00\x00',
+      b'F152616011\x00\x00\x00\x00\x00\x00',
+      b'F152616060\x00\x00\x00\x00\x00\x00',
       b'F152642540\x00\x00\x00\x00\x00\x00',
       b'F152676293\x00\x00\x00\x00\x00\x00',
       b'F152676303\x00\x00\x00\x00\x00\x00',
       b'F152676304\x00\x00\x00\x00\x00\x00',
-      b'F152612D00\x00\x00\x00\x00\x00\x00',
-      b'F152612842\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
@@ -832,6 +848,7 @@ FW_VERSIONS = {
       b'\x028646F1202000\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F1202100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F1202200\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F1601100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b"\x028646F1601300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00",
       b'\x028646F4203400\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F76020C0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1387,6 +1404,7 @@ FW_VERSIONS = {
       b'\x01896634A08000\x00\x00\x00\x00',
       b'\x01896634A61000\x00\x00\x00\x00',
       b'\x01896634A62000\x00\x00\x00\x00',
+      b'\x01896634A62100\x00\x00\x00\x00',
       b'\x01896634A63000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
@@ -1451,6 +1469,7 @@ FW_VERSIONS = {
   },
   CAR.LEXUS_ES_TSS2: {
     (Ecu.engine, 0x700, None): [
+      b'\x018966306U6000\x00\x00\x00\x00',
       b'\x01896630EC9100\x00\x00\x00\x00',
       b'\x018966333T5000\x00\x00\x00\x00',
       b'\x018966333T5100\x00\x00\x00\x00',
@@ -1467,18 +1486,21 @@ FW_VERSIONS = {
       b'8965B33252\x00\x00\x00\x00\x00\x00',
       b'8965B33590\x00\x00\x00\x00\x00\x00',
       b'8965B33690\x00\x00\x00\x00\x00\x00',
+      b'8965B33721\x00\x00\x00\x00\x00\x00',
       b'8965B48271\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F3303200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F3304100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F3304300\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
@@ -1804,15 +1826,18 @@ FW_VERSIONS = {
       b'\x02348Y3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D14000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'F152648831\x00\x00\x00\x00\x00\x00',
       b'F152648891\x00\x00\x00\x00\x00\x00',
       b'F152648D00\x00\x00\x00\x00\x00\x00',
       b'F152648D60\x00\x00\x00\x00\x00\x00',
+      b'F152648811\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B48271\x00\x00\x00\x00\x00\x00',
+      b'8965B48261\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
@@ -1849,6 +1874,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4707000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4710000\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F4712000\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
     ],
   },
   CAR.MIRAI: {

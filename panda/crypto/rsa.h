@@ -28,7 +28,7 @@
 #ifndef SYSTEM_CORE_INCLUDE_MINCRYPT_RSA_H_
 #define SYSTEM_CORE_INCLUDE_MINCRYPT_RSA_H_
 
-#include "stdint.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

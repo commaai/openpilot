@@ -41,26 +41,25 @@ void debug_ring_callback(uart_ring *ring) {
   }
 }
 
-int usb_cb_ep1_in(void *usbdata, int len) {
-  UNUSED(usbdata);
-  UNUSED(len);
+int comms_can_read(uint8_t *data, uint32_t max_len) {
+  UNUSED(data);
+  UNUSED(max_len);
   return 0;
 }
-void usb_cb_ep2_out(void *usbdata, int len) {
-  UNUSED(usbdata);
+void comms_can_write(uint8_t *data, uint32_t len) {
+  UNUSED(data);
   UNUSED(len);
 }
-void usb_cb_ep3_out(void *usbdata, int len) {
-  UNUSED(usbdata);
+void comms_endpoint2_write(uint8_t *data, uint32_t len) {
+  UNUSED(data);
   UNUSED(len);
 }
 void usb_cb_ep3_out_complete(void) {}
-void usb_cb_enumeration_complete(void) {}
 
-int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
+int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
-  switch (setup->b.bRequest) {
+  switch (req->request) {
     // **** 0xc1: get hardware type
     case 0xc1:
       resp[0] = hw_type;
@@ -68,19 +67,19 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
       break;
     // **** 0xe0: uart read
     case 0xe0:
-      ur = get_ring_by_number(setup->b.wValue.w);
+      ur = get_ring_by_number(req->param1);
       if (!ur) {
         break;
       }
       // read
-      while ((resp_len < MIN(setup->b.wLength.w, USBPACKET_MAX_SIZE)) &&
+      while ((resp_len < MIN(req->length, USBPACKET_MAX_SIZE)) &&
                          getc(ur, (char*)&resp[resp_len])) {
         ++resp_len;
       }
       break;
     default:
       puts("NO HANDLER ");
-      puth(setup->b.bRequest);
+      puth(req->request);
       puts("\n");
       break;
   }

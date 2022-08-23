@@ -12,16 +12,16 @@
 #define MAZDA_AUX  1
 #define MAZDA_CAM  2
 
-#define MAZDA_MAX_STEER 800U
-
-// the real time limit is 960/sec, a 20% buffer
-#define MAZDA_MAX_RT_DELTA 300  // max delta torque allowed for real time checks
-#define MAZDA_RT_INTERVAL 250000  // 250ms between real time checks
-#define MAZDA_MAX_RATE_UP 10
-#define MAZDA_MAX_RATE_DOWN 25
-#define MAZDA_DRIVER_TORQUE_ALLOWANCE 15
-#define MAZDA_DRIVER_TORQUE_FACTOR 1
-#define MAZDA_MAX_TORQUE_ERROR 350
+const SteeringLimits MAZDA_STEERING_LIMITS = {
+  .max_steer = 800,
+  .max_rate_up = 10,
+  .max_rate_down = 25,
+  .max_rt_delta = 300,
+  .max_rt_interval = 250000,
+  .driver_torque_factor = 1,
+  .driver_torque_allowance = 15,
+  .type = TorqueDriverLimited,
+};
 
 const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}};
 
@@ -56,14 +56,7 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == MAZDA_CRZ_CTRL) {
       bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8U;
-      if (cruise_engaged) {
-        if (!cruise_engaged_prev) {
-          controls_allowed = 1;
-        }
-      } else {
-        controls_allowed = 0;
-      }
-      cruise_engaged_prev = cruise_engaged;
+      pcm_cruise_check(cruise_engaged);
     }
 
     if (addr == MAZDA_ENGINE_DATA) {
@@ -96,46 +89,8 @@ static int mazda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
     // steer cmd checks
     if (addr == MAZDA_LKAS) {
       int desired_torque = (((GET_BYTE(to_send, 0) & 0x0FU) << 8) | GET_BYTE(to_send, 1)) - 2048U;
-      bool violation = 0;
-      uint32_t ts = microsecond_timer_get();
 
-      if (controls_allowed) {
-
-        // *** global torque limit check ***
-        violation |= max_limit_check(desired_torque, MAZDA_MAX_STEER, -MAZDA_MAX_STEER);
-
-        // *** torque rate limit check ***
-        violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
-                                        MAZDA_MAX_STEER, MAZDA_MAX_RATE_UP, MAZDA_MAX_RATE_DOWN,
-                                        MAZDA_DRIVER_TORQUE_ALLOWANCE, MAZDA_DRIVER_TORQUE_FACTOR);
-
-        // used next time
-        desired_torque_last = desired_torque;
-
-        // *** torque real time rate limit check ***
-        violation |= rt_rate_limit_check(desired_torque, rt_torque_last, MAZDA_MAX_RT_DELTA);
-
-        // every RT_INTERVAL set the new limits
-        uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
-        if (ts_elapsed > ((uint32_t) MAZDA_RT_INTERVAL)) {
-          rt_torque_last = desired_torque;
-          ts_last = ts;
-        }
-      }
-
-      // no torque if controls is not allowed
-      if (!controls_allowed && (desired_torque != 0)) {
-        violation = 1;
-      }
-
-      // reset to 0 if either controls is not allowed or there's a violation
-      if (violation || !controls_allowed) {
-        desired_torque_last = 0;
-        rt_torque_last = 0;
-        ts_last = ts;
-      }
-
-      if (violation) {
+      if (steer_torque_cmd_checks(desired_torque, -1, MAZDA_STEERING_LIMITS)) {
         tx = 0;
       }
     }

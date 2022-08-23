@@ -15,24 +15,18 @@ import os
 import numbers
 from collections import defaultdict
 
-cdef int CAN_INVALID_CNT = 5
-
 
 cdef class CANParser:
   cdef:
     cpp_CANParser *can
     const DBC *dbc
-    map[string, uint32_t] msg_name_to_address
     map[uint32_t, string] address_to_msg_name
     vector[SignalValue] can_values
 
   cdef readonly:
     dict vl
     dict vl_all
-    bool can_valid
-    bool bus_timeout
     string dbc_name
-    int can_invalid_cnt
 
   def __init__(self, dbc_name, signals, checks=None, bus=0, enforce_checks=True):
     if checks is None:
@@ -45,14 +39,13 @@ cdef class CANParser:
 
     self.vl = {}
     self.vl_all = {}
-    self.can_valid = False
-    self.can_invalid_cnt = CAN_INVALID_CNT
+    msg_name_to_address = {}
 
     for i in range(self.dbc[0].msgs.size()):
       msg = self.dbc[0].msgs[i]
       name = msg.name.decode('utf8')
 
-      self.msg_name_to_address[name] = msg.address
+      msg_name_to_address[name] = msg.address
       self.address_to_msg_name[msg.address] = name
       self.vl[msg.address] = {}
       self.vl[name] = self.vl[msg.address]
@@ -63,15 +56,19 @@ cdef class CANParser:
     for i in range(len(signals)):
       s = signals[i]
       if not isinstance(s[1], numbers.Number):
-        name = s[1].encode('utf8')
-        s = (s[0], self.msg_name_to_address[name])
+        if name not in msg_name_to_address:
+          print(msg_name_to_address)
+          raise RuntimeError(f"could not find message {repr(name)} in DBC {self.dbc_name}")
+        s = (s[0], msg_name_to_address[s[1]])
         signals[i] = s
 
     for i in range(len(checks)):
       c = checks[i]
       if not isinstance(c[0], numbers.Number):
-        name = c[0].encode('utf8')
-        c = (self.msg_name_to_address[name], c[1])
+        if c[0] not in msg_name_to_address:
+          print(msg_name_to_address)
+          raise RuntimeError(f"could not find message {repr(name)} in DBC {self.dbc_name}")
+        c = (msg_name_to_address[c[0]], c[1])
         checks[i] = c
 
     if enforce_checks:
@@ -105,13 +102,6 @@ cdef class CANParser:
   cdef unordered_set[uint32_t] update_vl(self):
     cdef unordered_set[uint32_t] updated_addrs
 
-    # Update invalid flag
-    self.can_invalid_cnt += 1
-    if self.can.can_valid:
-      self.can_invalid_cnt = 0
-    self.can_valid = self.can_invalid_cnt < CAN_INVALID_CNT
-    self.bus_timeout = self.can.bus_timeout
-
     new_vals = self.can.query_latest()
     for cv in new_vals:
       # Cast char * directly to unicode
@@ -138,6 +128,14 @@ cdef class CANParser:
       self.can.update_string(s, sendcan)
       updated_addrs.update(self.update_vl())
     return updated_addrs
+
+  @property
+  def can_valid(self):
+    return self.can.can_valid
+
+  @property
+  def bus_timeout(self):
+    return self.can.bus_timeout
 
 
 cdef class CANDefine():

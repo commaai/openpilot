@@ -10,6 +10,7 @@
 #include "safety/safety_hyundai.h"
 #include "safety/safety_chrysler.h"
 #include "safety/safety_subaru.h"
+#include "safety/safety_subaru_legacy.h"
 #include "safety/safety_mazda.h"
 #include "safety/safety_nissan.h"
 #include "safety/safety_volkswagen_mqb.h"
@@ -23,7 +24,7 @@
 
 // CAN-FD only safety modes
 #ifdef CANFD
-#include "safety/safety_hyundai_hda2.h"
+#include "safety/safety_hyundai_canfd.h"
 #endif
 
 // from cereal.car.CarParams.SafetyModel
@@ -52,7 +53,7 @@
 #define SAFETY_STELLANTIS 25U
 #define SAFETY_FAW 26U
 #define SAFETY_BODY 27U
-#define SAFETY_HYUNDAI_HDA2 28U
+#define SAFETY_HYUNDAI_CANFD 28U
 
 uint16_t current_safety_mode = SAFETY_SILENT;
 uint16_t current_safety_param = 0;
@@ -287,7 +288,7 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_MAZDA, &mazda_hooks},
   {SAFETY_BODY, &body_hooks},
 #ifdef CANFD
-  {SAFETY_HYUNDAI_HDA2, &hyundai_hda2_hooks},
+  {SAFETY_HYUNDAI_CANFD, &hyundai_canfd_hooks},
 #endif
 #ifdef ALLOW_DEBUG
   {SAFETY_TESLA, &tesla_hooks},
@@ -464,4 +465,67 @@ float interpolate(struct lookup_t xy, float x) {
     }
   }
   return ret;
+}
+
+
+// Safety checks for torque-based steering commands
+bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLimits limits) {
+  bool violation = false;
+  uint32_t ts = microsecond_timer_get();
+
+  if (controls_allowed) {
+    // *** global torque limit check ***
+    violation |= max_limit_check(desired_torque, limits.max_steer, -limits.max_steer);
+
+    // *** torque rate limit check ***
+    if (limits.type == TorqueDriverLimited) {
+      violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
+                                      limits.max_steer, limits.max_rate_up, limits.max_rate_down,
+                                      limits.driver_torque_allowance, limits.driver_torque_factor);
+    } else {
+      violation |= dist_to_meas_check(desired_torque, desired_torque_last, &torque_meas,
+                                      limits.max_rate_up, limits.max_rate_down, limits.max_torque_error);
+    }
+    desired_torque_last = desired_torque;
+
+    // *** torque real time rate limit check ***
+    violation |= rt_rate_limit_check(desired_torque, rt_torque_last, limits.max_rt_delta);
+
+    // every RT_INTERVAL set the new limits
+    uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
+    if (ts_elapsed > limits.max_rt_interval) {
+      rt_torque_last = desired_torque;
+      ts_last = ts;
+    }
+  }
+
+  // no torque if controls is not allowed
+  if (!controls_allowed && (desired_torque != 0)) {
+    violation = true;
+  }
+
+  // no torque if request bit isn't high
+  if ((steer_req == 0) && (desired_torque != 0)) {
+    violation = true;
+  }
+
+  // reset to 0 if either controls is not allowed or there's a violation
+  if (violation || !controls_allowed) {
+    desired_torque_last = 0;
+    rt_torque_last = 0;
+    ts_last = ts;
+  }
+
+  return violation;
+}
+
+void pcm_cruise_check(bool cruise_engaged) {
+  // Enter controls on rising edge of stock ACC, exit controls if stock ACC disengages
+  if (!cruise_engaged) {
+    controls_allowed = false;
+  }
+  if (cruise_engaged && !cruise_engaged_prev) {
+    controls_allowed = true;
+  }
+  cruise_engaged_prev = cruise_engaged;
 }

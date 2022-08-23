@@ -10,7 +10,7 @@ typedef void (*board_usb_power_mode_tick)(uint32_t uptime);
 typedef bool (*board_check_ignition)(void);
 typedef uint32_t (*board_read_current)(void);
 typedef void (*board_set_ir_power)(uint8_t percentage);
-typedef void (*board_set_fan_power)(uint8_t percentage);
+typedef void (*board_set_fan_enabled)(bool enabled);
 typedef void (*board_set_phone_power)(bool enabled);
 typedef void (*board_set_clock_source_mode)(uint8_t mode);
 typedef void (*board_set_siren)(bool enabled);
@@ -23,6 +23,7 @@ struct board {
   const bool has_obd;
   const bool has_lin;
   const bool has_rtc_battery;
+  const uint16_t fan_max_rpm;
   board_init init;
   board_enable_can_transceiver enable_can_transceiver;
   board_enable_can_transceivers enable_can_transceivers;
@@ -34,7 +35,7 @@ struct board {
   board_check_ignition check_ignition;
   board_read_current read_current;
   board_set_ir_power set_ir_power;
-  board_set_fan_power set_fan_power;
+  board_set_fan_enabled set_fan_enabled;
   board_set_phone_power set_phone_power;
   board_set_clock_source_mode set_clock_source_mode;
   board_set_siren set_siren;

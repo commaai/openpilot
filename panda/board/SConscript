@@ -1,4 +1,5 @@
 import os
+import copy
 import subprocess
 
 PREFIX = "arm-none-eabi-"
@@ -7,25 +8,23 @@ BUILDER = "DEV"
 common_flags = []
 build_projects = {}
 
-if os.getenv("PEDAL"):
-  build_projects["pedal"] = {
-    "MAIN": "pedal/main.c",
-    "STARTUP_FILE": "stm32fx/startup_stm32f205xx.s",
-    "LINKER_SCRIPT": "stm32fx/stm32fx_flash.ld",
-    "APP_START_ADDRESS": "0x8004000",
-    "PROJECT_FLAGS": [
-      "-mcpu=cortex-m3",
-      "-msoft-float",
-      "-DSTM32F2",
-      "-DSTM32F205xx",
-      "-O2",
-      "-DPEDAL",
-    ],
-  }
+build_projects["pedal"] = {
+  "MAIN": "pedal/main.c",
+  "STARTUP_FILE": "stm32fx/startup_stm32f205xx.s",
+  "LINKER_SCRIPT": "stm32fx/stm32fx_flash.ld",
+  "APP_START_ADDRESS": "0x8004000",
+  "PROJECT_FLAGS": [
+    "-mcpu=cortex-m3",
+    "-msoft-float",
+    "-DSTM32F2",
+    "-DSTM32F205xx",
+    "-O2",
+    "-DPEDAL",
+  ],
+}
 
-  if os.getenv("PEDAL_USB"):
-    build_projects["pedal_usb"] = build_projects.pop("pedal")
-    build_projects["pedal_usb"]["PROJECT_FLAGS"].append("-DPEDAL_USB")
+build_projects["pedal_usb"] = copy.deepcopy(build_projects["pedal"])
+build_projects["pedal_usb"]["PROJECT_FLAGS"].append("-DPEDAL_USB")
 
 build_projects["panda"] = {
   "MAIN": "main.c",
@@ -45,25 +44,23 @@ build_projects["panda"] = {
   ],
 }
 
-# arm-none-eabi-gcc on comma two has no cortex-m7 support
-if not os.path.exists("/EON"):
-  build_projects["panda_h7"] = {
-    "MAIN": "main.c",
-    "STARTUP_FILE": "stm32h7/startup_stm32h7x5xx.s",
-    "LINKER_SCRIPT": "stm32h7/stm32h7x5_flash.ld",
-    "APP_START_ADDRESS": "0x8020000",
-    "PROJECT_FLAGS": [
-      "-mcpu=cortex-m7",
-      "-mhard-float",
-      "-DSTM32H7",
-      "-DSTM32H725xx",
-      "-mfpu=fpv5-d16",
-      "-fsingle-precision-constant",
-      "-Os",
-      "-g",
-      "-DPANDA",
-    ],
-  }
+build_projects["panda_h7"] = {
+  "MAIN": "main.c",
+  "STARTUP_FILE": "stm32h7/startup_stm32h7x5xx.s",
+  "LINKER_SCRIPT": "stm32h7/stm32h7x5_flash.ld",
+  "APP_START_ADDRESS": "0x8020000",
+  "PROJECT_FLAGS": [
+    "-mcpu=cortex-m7",
+    "-mhard-float",
+    "-DSTM32H7",
+    "-DSTM32H725xx",
+    "-mfpu=fpv5-d16",
+    "-fsingle-precision-constant",
+    "-Os",
+    "-g",
+    "-DPANDA",
+  ],
+}
 
 if os.getenv("RELEASE"):
   BUILD_TYPE = "RELEASE"
@@ -137,6 +134,7 @@ with open("obj/cert.h", "w") as f:
   for cert in certs:
     f.write("\n".join(cert) + "\n")
 
+
 for project_name in build_projects:
   project = build_projects[project_name]
   linkerscript_fn = File(project["LINKER_SCRIPT"]).srcnode().abspath
@@ -169,7 +167,8 @@ for project_name in build_projects:
       'Objcopy': Builder(generator=objcopy, suffix='.bin', src_suffix='.elf')
     }
   )
-  startup = project_env.Object(project["STARTUP_FILE"])
+
+  startup = project_env.Object(f"obj/startup_{project_name}", project["STARTUP_FILE"])
 
   # Bootstub
   crypto_obj = [

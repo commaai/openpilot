@@ -35,6 +35,7 @@
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x080FFFC0U
 
 #include "can_definitions.h"
+#include "comms_definitions.h"
 
 #ifndef BOOTSTUB
   #include "main_declarations.h"

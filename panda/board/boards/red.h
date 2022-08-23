@@ -83,7 +83,7 @@ void red_set_can_mode(uint8_t mode) {
 
         set_gpio_pullup(GPIOB, 13, PULL_NONE);
         set_gpio_mode(GPIOB, 13, MODE_ANALOG);
-        
+
         // B5,B6: FDCAN2 mode
         set_gpio_pullup(GPIOB, 5, PULL_NONE);
         set_gpio_alternate(GPIOB, 5, GPIO_AF9_FDCAN2);
@@ -187,6 +187,7 @@ const board board_red = {
   .has_obd = true,
   .has_lin = false,
   .has_rtc_battery = false,
+  .fan_max_rpm = 0U,
   .init = red_init,
   .enable_can_transceiver = red_enable_can_transceiver,
   .enable_can_transceivers = red_enable_can_transceivers,
@@ -197,7 +198,7 @@ const board board_red = {
   .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = red_check_ignition,
   .read_current = unused_read_current,
-  .set_fan_power = unused_set_fan_power,
+  .set_fan_enabled = unused_set_fan_enabled,
   .set_ir_power = unused_set_ir_power,
   .set_phone_power = unused_set_phone_power,
   .set_clock_source_mode = unused_set_clock_source_mode,

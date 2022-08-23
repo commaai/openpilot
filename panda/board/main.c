@@ -22,13 +22,15 @@
 
 #include "obj/gitversion.h"
 
-#include "usb_comms.h"
+#include "main_comms.h"
 
 
 // ********************* Serial debugging *********************
 
 bool check_started(void) {
-  return current_board->check_ignition() || ignition_can;
+  bool started = current_board->check_ignition() || ignition_can;
+  ignition_seen |= started;
+  return started;
 }
 
 void debug_ring_callback(uart_ring *ring) {
@@ -129,6 +131,7 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
 bool is_car_safety_mode(uint16_t mode) {
   return (mode != SAFETY_SILENT) &&
          (mode != SAFETY_NOOUTPUT) &&
+         (mode != SAFETY_ALLOUTPUT) &&
          (mode != SAFETY_ELM327);
 }
 
@@ -155,6 +158,9 @@ void tick_handler(void) {
     // siren
     current_board->set_siren((loop_counter & 1U) && (siren_enabled || (siren_countdown > 0U)));
 
+    // tick drivers
+    fan_tick();
+
     // decimated to 1Hz
     if (loop_counter == 0U) {
       can_live = pending_can_live;
@@ -175,9 +181,6 @@ void tick_handler(void) {
         puts("tx3:"); puth4(can_tx3_q.r_ptr); puts("-"); puth4(can_tx3_q.w_ptr); puts("\n");
       #endif
 
-      // Tick drivers
-      fan_tick();
-
       // set green LED to be controls allowed
       current_board->set_led(LED_GREEN, controls_allowed | green_led_enabled);
 
@@ -188,6 +191,11 @@ void tick_handler(void) {
       // increase heartbeat counter and cap it at the uint32 limit
       if (heartbeat_counter < __UINT32_MAX__) {
         heartbeat_counter += 1U;
+      }
+
+      // disabling heartbeat not allowed while in safety mode
+      if (is_car_safety_mode(current_safety_mode)) {
+        heartbeat_disabled = false;
       }
 
       if (siren_countdown > 0U) {
@@ -241,9 +249,9 @@ void tick_handler(void) {
 
           // If enumerated but no heartbeat (phone up, boardd not running), turn the fan on to cool the device
           if(usb_enumerated){
-            current_board->set_fan_power(50U);
+            fan_set_power(50U);
           } else {
-            current_board->set_fan_power(0U);
+            fan_set_power(0U);
           }
         }
 
@@ -283,7 +291,7 @@ void EXTI_IRQ_Handler(void) {
 
     current_board->set_usb_power_mode(USB_POWER_CDP);
     set_power_save_state(POWER_SAVE_STATUS_DISABLED);
-    deepsleep_requested = false;
+    deepsleep_allowed = false;
     heartbeat_counter = 0U;
     usb_soft_disconnect(false);
 
@@ -419,9 +427,9 @@ int main(void) {
         }
       #endif
     } else {
-      if (deepsleep_requested && !usb_enumerated && !check_started()) {
+      if (deepsleep_allowed && !usb_enumerated && !check_started() && ignition_seen && (heartbeat_counter > 20U)) {
         usb_soft_disconnect(true);
-        current_board->set_fan_power(0U);
+        fan_set_power(0U);
         current_board->set_usb_power_mode(USB_POWER_CLIENT);
         NVIC_DisableIRQ(TICK_TIMER_IRQ);
         delay(512000U);

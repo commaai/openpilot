@@ -1,10 +1,14 @@
-const int VOLKSWAGEN_MQB_MAX_STEER = 300;               // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
-const int VOLKSWAGEN_MQB_MAX_RT_DELTA = 75;             // 4 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 50 ; 50 * 1.5 for safety pad = 75
-const uint32_t VOLKSWAGEN_MQB_RT_INTERVAL = 250000;     // 250ms between real time checks
-const int VOLKSWAGEN_MQB_MAX_RATE_UP = 4;               // 2.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-const int VOLKSWAGEN_MQB_MAX_RATE_DOWN = 10;            // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
-const int VOLKSWAGEN_MQB_DRIVER_TORQUE_ALLOWANCE = 80;
-const int VOLKSWAGEN_MQB_DRIVER_TORQUE_FACTOR = 3;
+
+const SteeringLimits VOLKSWAGEN_MQB_STEERING_LIMITS = {
+  .max_steer = 300,              // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
+  .max_rt_delta = 75,            // 4 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 50 ; 50 * 1.5 for safety pad = 75
+  .max_rt_interval = 250000,     // 250ms between real time checks
+  .max_rate_up = 4,              // 2.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
+  .max_rate_down = 10,           // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
+  .driver_torque_allowance = 80,
+  .driver_torque_factor = 3,
+  .type = TorqueDriverLimited,
+};
 
 #define MSG_ESP_19      0x0B2   // RX from ABS, for wheel speeds
 #define MSG_LH_EPS_03   0x09F   // RX from EPS, for driver steering torque
@@ -118,14 +122,8 @@ static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
     // Signal: TSK_06.TSK_Status
     if (addr == MSG_TSK_06) {
       int acc_status = (GET_BYTE(to_push, 3) & 0x7U);
-      int cruise_engaged = ((acc_status == 3) || (acc_status == 4) || (acc_status == 5)) ? 1 : 0;
-      if (cruise_engaged && !cruise_engaged_prev) {
-        controls_allowed = 1;
-      }
-      if (!cruise_engaged) {
-        controls_allowed = 0;
-      }
-      cruise_engaged_prev = cruise_engaged;
+      bool cruise_engaged = (acc_status == 3) || (acc_status == 4) || (acc_status == 5);
+      pcm_cruise_check(cruise_engaged);
     }
 
     // Signal: Motor_20.MO_Fahrpedalrohwert_01
@@ -163,43 +161,7 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send, bool longitudinal_allowe
       desired_torque *= -1;
     }
 
-    bool violation = false;
-    uint32_t ts = microsecond_timer_get();
-
-    if (controls_allowed) {
-      // *** global torque limit check ***
-      violation |= max_limit_check(desired_torque, VOLKSWAGEN_MQB_MAX_STEER, -VOLKSWAGEN_MQB_MAX_STEER);
-
-      // *** torque rate limit check ***
-      violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
-        VOLKSWAGEN_MQB_MAX_STEER, VOLKSWAGEN_MQB_MAX_RATE_UP, VOLKSWAGEN_MQB_MAX_RATE_DOWN,
-        VOLKSWAGEN_MQB_DRIVER_TORQUE_ALLOWANCE, VOLKSWAGEN_MQB_DRIVER_TORQUE_FACTOR);
-      desired_torque_last = desired_torque;
-
-      // *** torque real time rate limit check ***
-      violation |= rt_rate_limit_check(desired_torque, rt_torque_last, VOLKSWAGEN_MQB_MAX_RT_DELTA);
-
-      // every RT_INTERVAL set the new limits
-      uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
-      if (ts_elapsed > VOLKSWAGEN_MQB_RT_INTERVAL) {
-        rt_torque_last = desired_torque;
-        ts_last = ts;
-      }
-    }
-
-    // no torque if controls is not allowed
-    if (!controls_allowed && (desired_torque != 0)) {
-      violation = true;
-    }
-
-    // reset to 0 if either controls is not allowed or there's a violation
-    if (violation || !controls_allowed) {
-      desired_torque_last = 0;
-      rt_torque_last = 0;
-      ts_last = ts;
-    }
-
-    if (violation) {
+    if (steer_torque_cmd_checks(desired_torque, -1, VOLKSWAGEN_MQB_STEERING_LIMITS)) {
       tx = 0;
     }
   }

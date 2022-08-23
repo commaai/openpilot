@@ -9,12 +9,13 @@ import traceback
 import sys
 from functools import wraps
 from typing import Optional
+from itertools import accumulate
 from .dfu import PandaDFU, MCU_TYPE_F2, MCU_TYPE_F4, MCU_TYPE_H7  # pylint: disable=import-error
 from .flash_release import flash_release  # noqa pylint: disable=import-error
 from .update import ensure_st_up_to_date  # noqa pylint: disable=import-error
 from .serial import PandaSerial  # noqa pylint: disable=import-error
 from .isotp import isotp_send, isotp_recv  # pylint: disable=import-error
-from .config import DEFAULT_FW_FN, DEFAULT_H7_FW_FN  # noqa pylint: disable=import-error
+from .config import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, SECTOR_SIZES_FX, SECTOR_SIZES_H7  # noqa pylint: disable=import-error
 
 __version__ = '0.0.10'
 
@@ -149,7 +150,7 @@ class Panda:
   SAFETY_STELLANTIS = 25
   SAFETY_FAW = 26
   SAFETY_BODY = 27
-  SAFETY_HYUNDAI_HDA2 = 28
+  SAFETY_HYUNDAI_CANFD = 28
 
   SERIAL_DEBUG = 0
   SERIAL_ESP = 1
@@ -172,8 +173,8 @@ class Panda:
   HW_TYPE_RED_PANDA = b'\x07'
 
   CAN_PACKET_VERSION = 2
-  HEALTH_PACKET_VERSION = 7
-  HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBBBHBBBHIf")
+  HEALTH_PACKET_VERSION = 8
+  HEALTH_STRUCT = struct.Struct("<IIIIIIIIBBBBBBBHBBBHIfB")
 
   F2_DEVICES = (HW_TYPE_PEDAL, )
   F4_DEVICES = (HW_TYPE_WHITE_PANDA, HW_TYPE_GREY_PANDA, HW_TYPE_BLACK_PANDA, HW_TYPE_UNO, HW_TYPE_DOS)
@@ -194,17 +195,33 @@ class Panda:
   FLAG_HYUNDAI_EV_GAS = 1
   FLAG_HYUNDAI_HYBRID_GAS = 2
   FLAG_HYUNDAI_LONG = 4
+  FLAG_HYUNDAI_CAMERA_SCC = 8
+
+  FLAG_HYUNDAI_CANFD_HDA2 = 1
+  FLAG_HYUNDAI_CANFD_ALT_BUTTONS = 2
 
   FLAG_TESLA_POWERTRAIN = 1
   FLAG_TESLA_LONG_CONTROL = 2
 
-  FLAG_CHRYSLER_RAM_DT = 1
+  FLAG_VOLKSWAGEN_LONG_CONTROL = 1
 
-  def __init__(self, serial: Optional[str] = None, claim: bool = True):
+  FLAG_CHRYSLER_RAM_DT = 1
+  FLAG_CHRYSLER_RAM_HD = 2
+
+  FLAG_SUBARU_GEN2 = 1
+
+  FLAG_GM_HW_CAM = 1
+
+  def __init__(self, serial: Optional[str] = None, claim: bool = True, disable_checks: bool = True):
     self._serial = serial
+    self._disable_checks = disable_checks
+
     self._handle = None
+    self._bcd_device = None
+
+    # connect and set mcu type
     self.connect(claim)
-    self._mcu_type = self.get_mcu_type()
+
 
   def close(self):
     self._handle.close()
@@ -235,6 +252,12 @@ class Panda:
               if claim:
                 self._handle.claimInterface(0)
                 # self._handle.setInterfaceAltSetting(0, 0)  # Issue in USB stack
+
+              # bcdDevice wasn't always set to the hw type, ignore if it's the old constant
+              bcd = device.getbcdDevice()
+              if bcd is not None and bcd != 0x2300:
+                self._bcd_device = bytearray([bcd >> 8, ])
+
               break
       except Exception as e:
         print("exception", e)
@@ -242,11 +265,18 @@ class Panda:
       if not wait or self._handle is not None:
         break
       context = usb1.USBContext()  # New context needed so new devices show up
-    assert(self._handle is not None)
+
+    assert self._handle is not None
+    self._mcu_type = self.get_mcu_type()
     self.health_version, self.can_version = self.get_packets_versions()
     print("connected")
 
-  def reset(self, enter_bootstub=False, enter_bootloader=False):
+    # disable openpilot's heartbeat checks
+    if self._disable_checks:
+      self.set_heartbeat_disabled()
+      self.set_power_save(0)
+
+  def reset(self, enter_bootstub=False, enter_bootloader=False, reconnect=True):
     try:
       if enter_bootloader:
         self._handle.controlWrite(Panda.REQUEST_IN, 0xd1, 0, 0, b'')
@@ -257,12 +287,14 @@ class Panda:
           self._handle.controlWrite(Panda.REQUEST_IN, 0xd8, 0, 0, b'')
     except Exception:
       pass
-    if not enter_bootloader:
+    if not enter_bootloader and reconnect:
       self.reconnect()
 
   def reconnect(self):
-    self.close()
-    time.sleep(1.0)
+    if self._handle is not None:
+      self.close()
+      time.sleep(1.0)
+
     success = False
     # wait up to 15 seconds
     for i in range(0, 15):
@@ -284,18 +316,26 @@ class Panda:
 
 
   @staticmethod
-  def flash_static(handle, code):
+  def flash_static(handle, code, mcu_type):
+    assert mcu_type is not None, "must set valid mcu_type to flash"
+
     # confirm flasher is present
     fr = handle.controlRead(Panda.REQUEST_IN, 0xb0, 0, 0, 0xc)
     assert fr[4:8] == b"\xde\xad\xd0\x0d"
+
+    # determine sectors to erase
+    apps_sectors_cumsum = accumulate(SECTOR_SIZES_H7[1:] if mcu_type == MCU_TYPE_H7 else SECTOR_SIZES_FX[1:])
+    last_sector = next((i + 1 for i, v in enumerate(apps_sectors_cumsum) if v > len(code)), -1)
+    assert last_sector >= 1, "Binary too small? No sector to erase."
+    assert last_sector < 7, "Binary too large! Risk of overwriting provisioning chunk."
 
     # unlock flash
     print("flash: unlocking")
     handle.controlWrite(Panda.REQUEST_IN, 0xb1, 0, 0, b'')
 
-    # erase sectors 1 through 3
-    print("flash: erasing")
-    for i in range(1, 4):
+    # erase sectors
+    print(f"flash: erasing sectors 1 - {last_sector}")
+    for i in range(1, last_sector + 1):
       handle.controlWrite(Panda.REQUEST_IN, 0xb2, i, 0, b'')
 
     # flash over EP2
@@ -311,9 +351,10 @@ class Panda:
     except Exception:
       pass
 
-  def flash(self, fn=DEFAULT_FW_FN, code=None, reconnect=True):
-    if self._mcu_type == MCU_TYPE_H7 and fn == DEFAULT_FW_FN:
-      fn = DEFAULT_H7_FW_FN
+  def flash(self, fn=None, code=None, reconnect=True):
+    if not fn:
+      fn = DEFAULT_H7_FW_FN if self._mcu_type == MCU_TYPE_H7 else DEFAULT_FW_FN
+    assert os.path.isfile(fn)
     print("flash: main version is " + self.get_version())
     if not self.bootstub:
       self.reset(enter_bootstub=True)
@@ -327,30 +368,38 @@ class Panda:
     print("flash: bootstub version is " + self.get_version())
 
     # do flash
-    Panda.flash_static(self._handle, code)
+    Panda.flash_static(self._handle, code, mcu_type=self._mcu_type)
 
     # reconnect
     if reconnect:
       self.reconnect()
 
   def recover(self, timeout: Optional[int] = None, reset: bool = True) -> bool:
+    dfu_serial = PandaDFU.st_serial_to_dfu_serial(self._serial, self._mcu_type)
+
     if reset:
       self.reset(enter_bootstub=True)
       self.reset(enter_bootloader=True)
 
-    t_start = time.time()
-    while len(PandaDFU.list()) == 0:
-      print("waiting for DFU...")
-      time.sleep(0.1)
-      if timeout is not None and (time.time() - t_start) > timeout:
-        return False
+    if not self.wait_for_dfu(dfu_serial, timeout=timeout):
+      return False
 
-    dfu = PandaDFU(PandaDFU.st_serial_to_dfu_serial(self._serial, self._mcu_type))
+    dfu = PandaDFU(dfu_serial)
     dfu.recover()
 
     # reflash after recover
     self.connect(True, True)
     self.flash()
+    return True
+
+  @staticmethod
+  def wait_for_dfu(dfu_serial: str, timeout: Optional[int] = None) -> bool:
+    t_start = time.monotonic()
+    while dfu_serial not in PandaDFU.list():
+      print("waiting for DFU...")
+      time.sleep(0.1)
+      if timeout is not None and (time.monotonic() - t_start) > timeout:
+        return False
     return True
 
   @staticmethod
@@ -400,6 +449,7 @@ class Panda:
       "alternative_experience": a[19],
       "blocked_msg_cnt": a[20],
       "interrupt_load": a[21],
+      "fan_power": a[22],
     }
 
   # ******************* control *******************
@@ -425,7 +475,14 @@ class Panda:
     return bytes(part_1 + part_2)
 
   def get_type(self):
-    return self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
+    ret = self._handle.controlRead(Panda.REQUEST_IN, 0xc1, 0, 0, 0x40)
+
+    # bootstub doesn't implement this call, so fallback to bcdDevice
+    invalid_type = self.bootstub and (ret is None or len(ret) != 1)
+    if invalid_type and self._bcd_device is not None:
+      ret = self._bcd_device
+
+    return ret
 
   # Returns tuple with health packet version and CAN packet/USB packet version
   def get_packets_versions(self):
@@ -506,11 +563,8 @@ class Panda:
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xda, int(bootmode), 0, b'')
     time.sleep(0.2)
 
-  def set_safety_mode(self, mode=SAFETY_SILENT, param=0, disable_checks=True):
+  def set_safety_mode(self, mode=SAFETY_SILENT, param=0):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xdc, mode, param, b'')
-    if disable_checks:
-      self.set_heartbeat_disabled()
-      self.set_power_save(0)
 
   def set_gmlan(self, bus=2):
     # TODO: check panda type

@@ -93,6 +93,7 @@ BO_ 201 ECMEngineStatus: 8 K20_ECM
  SG_ CruiseMainOn : 29|1@0+ (1,0) [0|1] "" NEO
  SG_ Brake_Pressed : 40|1@0+ (1,0) [0|1] "" NEO
  SG_ Standstill : 2|1@0+ (1,0) [0|1] "" NEO
+ SG_ CruiseActive : 31|2@0+ (1,0) [0|3] "" NEO
 
 BO_ 209 EBCMBrakePedalSensors: 7 K17_EBCM
  SG_ Counter1 : 7|2@0+ (1,0) [0|3] "" XXX
@@ -158,6 +159,8 @@ BO_ 481 ASCMSteeringButton: 7 K124_ASCM
  SG_ LKAButton : 23|1@0+ (1,0) [0|0] ""  NEO
  SG_ ACCButtons : 46|3@0+ (1,0) [0|0] ""  NEO
  SG_ DriveModeButton : 39|1@0+ (1,0) [0|1] "" XXX
+ SG_ RollingCounter : 33|2@0+ (1,0) [0|3] "" NEO
+ SG_ SteeringButtonChecksum : 43|12@0+ (1,0) [0|255] "" NEO
 
 BO_ 485 PSCMSteeringAngle: 8 K43_PSCM
  SG_ SteeringWheelAngle : 15|16@0- (0.0625,0) [-2047|2047] "deg"  NEO
@@ -209,9 +212,10 @@ BO_ 789 EBCMFrictionBrakeCmd: 5 K124_ASCM
 
 BO_ 800 AEBCmd: 6 K124_ASCM
  SG_ RollingCounter : 5|2@0+ (1,0) [0|3] "" NEO
- SG_ Checksum : 27|20@0+ (1,0) [0|2047] "" NEO
- SG_ BrakeCmdActive : 3|1@1+ (1,0) [0|1] "" NEO
- SG_ BrakingForce : 2|7@0+ (1,0) [0|7] "" NEO
+ SG_ AEBChecksum : 27|20@0+ (1,0) [0|0] "" NEO
+ SG_ AEBCmdActive : 3|1@1+ (1,0) [0|1] "" NEO
+ SG_ AEBCmd : 2|11@0+ (1,0) [0|0] "" NEO
+ SG_ AEBCmd2 : 23|8@0+ (1,0) [0|0] "" NEO
 
 BO_ 810 TCICOnStarGPSPosition: 8 K73_TCIC
  SG_ GPSLongitude : 39|32@0+ (1,-2147483648) [0|0] "milliarcsecond"  NEO
@@ -231,7 +235,7 @@ BO_ 880 ASCMActiveCruiseControlStatus: 6 K124_ASCM
  SG_ ACCLeadCar : 44|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ ACCAlwaysOne2 : 32|1@0+ (1,0) [0|0] "" Vector__XXX
  SG_ ACCAlwaysOne : 0|1@0+ (1,0) [0|0] "" Vector__XXX
- SG_ ACCSpeedSetpoint : 19|12@0+ (1,0) [0|0] "km/h"  NEO
+ SG_ ACCSpeedSetpoint : 19|12@0+ (0.0625,0) [0|255.9375] "km/h"  NEO
  SG_ ACCGapLevel : 21|2@0+ (1,0) [0|0] ""  NEO
  SG_ ACCResumeButton : 1|1@0+ (1,0) [0|0] ""  NEO
  SG_ ACCCmdActive : 23|1@0+ (1,0) [0|0] ""  NEO
@@ -239,6 +243,7 @@ BO_ 880 ASCMActiveCruiseControlStatus: 6 K124_ASCM
 
 BO_ 1001 ECMVehicleSpeed: 8 K20_ECM
  SG_ VehicleSpeed : 7|16@0+ (0.01,0) [0|0] "mph"  NEO
+ SG_ VehicleSpeedLeft : 39|16@0+ (0.01,0) [0|0] "mph" NEO
 
 BO_ 1033 ASCMKeepAlive: 7 NEO
  SG_ ASCMKeepAliveAllZero : 7|56@0+ (1,0) [0|0] ""  NEO
@@ -283,6 +288,7 @@ CM_ SG_ 352 Ignition "Non-zero when ignition is on";
 CM_ SG_ 451 GasPedalAndAcc2 "ACC baseline is 62";
 CM_ SG_ 497 Ignition "Describes ignition + preconditioning mode, noisy";
 CM_ SG_ 501 PRNDL2 "When ManualMode is Active, Value is 13=L1 12=L2 11=L3 ... 4=L10";
+CM_ SG_ 1001 VehicleSpeed "Spinouts show here on 2wd. Speed derived from right front wheel (drive tire)";
 BA_DEF_  "UseGMParameterIDs" INT 0 0;
 BA_DEF_  "ProtocolType" STRING ;
 BA_DEF_  "BusType" STRING ;

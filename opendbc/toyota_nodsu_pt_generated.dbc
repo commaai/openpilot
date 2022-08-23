@@ -162,7 +162,7 @@ BO_ 614 STEERING_IPAS: 8 IPAS
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 643 PRE_COLLISION: 7 DSU
- SG_ COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ _COUNTER : 7|8@0+ (1,0) [0|255] "" XXX
  SG_ SET_ME_X00 : 15|8@0+ (1,0) [0|255] "" XXX
  SG_ FORCE : 23|16@0- (2,0) [0|255] "N" XXX
  SG_ SET_ME_X002 : 33|8@0+ (1,0) [0|3] "" XXX
@@ -207,6 +207,10 @@ BO_ 835 ACC_CONTROL: 8 DSU
 
 BO_ 836 PRE_COLLISION_2: 8 DSU
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 865 CLUTCH: 8 XXX
+ SG_ CLUTCH_RELEASED : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ GAS_PEDAL_ALT : 23|8@0+ (0.005,0) [0|1] "" XXX
 
 BO_ 869 DSU_CRUISE : 7 DSU
  SG_ RES_BTN : 3|1@0+ (1,0) [0|0] "" XXX
@@ -430,8 +434,11 @@ CM_ SG_ 835 ITS_CONNECT_LEAD "Displayed when lead car is capable of ITS Connect"
 CM_ SG_ 835 ALLOW_LONG_PRESS "Enable Toyota's factory set speed increment behaviour, available on both metrics cars and imperial unit cars";
 CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front is detected. In openpilot and before the PERMIT_BRAKING name, this was 'SET_ME_1' and is hardcoded to be high. Unsure if only informational or has an effect though existing usage in openpilot is to always set it to 1. Originally 'PMTBRKG' in the leaked toyota_2017_ref_pt.dbc file and name expansion speculated to be PerMiT BRaKinG.";
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
+CM_ SG_ 865 GAS_PEDAL_ALT "copy of main GAS_PEDAL. Both use 8 bits. Might indicate that this message is for pedals.";
+CM_ SG_ 865 CLUTCH_RELEASED "boolean of clutch for 6MT.";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in the vehicle's UI with the vehicle's unit";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
+CM_ SG_ 956 GEAR "on 6MT, only R shows.";
 CM_ SG_ 1009 SET_SPEED "units seem to be whatever the car is set to";
 CM_ SG_ 1041 PCS_INDICATOR "Pre-Collision System Indicator";
 CM_ SG_ 1041 PCS_SENSITIVITY "Pre-Collision System Sensitivity";
@@ -485,6 +492,7 @@ VAL_ 835 ACC_TYPE 2 "permanent low speed lockout" 1 "ok";
 VAL_ 835 ACC_MALFUNCTION 1 "faulted" 0 "ok";
 VAL_ 835 ACC_CUT_IN 1 "CUT-IN Detected" 0 "clear";
 VAL_ 835 ALLOW_LONG_PRESS 2 "set speed increase by 5 speed units regardless" 1 "set speed increase by 1 speed unit on short press, 5 speed units on long press";
+VAL_ 865 CLUTCH_RELEASED 0 "clutch pressed any amount" 1 "clutch released"
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
 VAL_ 956 SPORT_ON 0 "off" 1 "on";
 VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";

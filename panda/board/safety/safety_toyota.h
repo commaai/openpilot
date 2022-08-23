@@ -1,16 +1,12 @@
-// global torque limit
-const int TOYOTA_MAX_TORQUE = 1500;       // max torque cmd allowed ever
-
-// rate based torque limit + stay within actually applied
-// packet is sent at 100hz, so this limit is 1500/sec
-const int TOYOTA_MAX_RATE_UP = 15;        // ramp up slow
-const int TOYOTA_MAX_RATE_DOWN = 25;      // ramp down fast
-const int TOYOTA_MAX_TORQUE_ERROR = 350;  // max torque cmd in excess of torque motor
-
-// real time torque limit to prevent controls spamming
-// the real time limit is 1800/sec, a 20% buffer
-const int TOYOTA_MAX_RT_DELTA = 450;      // max delta torque allowed for real time checks
-const uint32_t TOYOTA_RT_INTERVAL = 250000;    // 250ms between real time checks
+const SteeringLimits TOYOTA_STEERING_LIMITS = {
+  .max_steer = 1500,
+  .max_rate_up = 15,          // ramp up slow
+  .max_rate_down = 25,        // ramp down fast
+  .max_torque_error = 350,    // max torque cmd in excess of motor torque
+  .max_rt_delta = 450,        // the real time limit is 1800/sec, a 20% buffer
+  .max_rt_interval = 250000,
+  .type = TorqueMotorLimited,
+};
 
 // longitudinal limits
 const int TOYOTA_MAX_ACCEL = 2000;        // 2.0 m/s2
@@ -93,14 +89,8 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
     // exit controls on rising edge of gas press
     if (addr == 0x1D2) {
       // 5th bit is CRUISE_ACTIVE
-      int cruise_engaged = GET_BYTE(to_push, 0) & 0x20U;
-      if (!cruise_engaged) {
-        controls_allowed = 0;
-      }
-      if (cruise_engaged && !cruise_engaged_prev) {
-        controls_allowed = 1;
-      }
-      cruise_engaged_prev = cruise_engaged;
+      bool cruise_engaged = GET_BIT(to_push, 5U) != 0U;
+      pcm_cruise_check(cruise_engaged);
 
       // sample gas pedal
       if (!gas_interceptor_detected) {
@@ -216,46 +206,7 @@ static int toyota_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
       int desired_torque = (GET_BYTE(to_send, 1) << 8) | GET_BYTE(to_send, 2);
       desired_torque = to_signed(desired_torque, 16);
       bool steer_req = GET_BIT(to_send, 0U) != 0U;
-      bool violation = 0;
-
-      uint32_t ts = microsecond_timer_get();
-
-      if (controls_allowed) {
-
-        // *** global torque limit check ***
-        violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
-
-        // *** torque rate limit check ***
-        violation |= dist_to_meas_check(desired_torque, desired_torque_last,
-          &torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
-
-        // used next time
-        desired_torque_last = desired_torque;
-
-        // *** torque real time rate limit check ***
-        violation |= rt_rate_limit_check(desired_torque, rt_torque_last, TOYOTA_MAX_RT_DELTA);
-
-        // every RT_INTERVAL set the new limits
-        uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
-        if (ts_elapsed > TOYOTA_RT_INTERVAL) {
-          rt_torque_last = desired_torque;
-          ts_last = ts;
-        }
-      }
-
-      // no torque if controls is not allowed or mismatch with STEER_REQUEST bit
-      if ((!controls_allowed || !steer_req) && (desired_torque != 0)) {
-        violation = 1;
-      }
-
-      // reset to 0 if either controls is not allowed or there's a violation
-      if (violation || !controls_allowed) {
-        desired_torque_last = 0;
-        rt_torque_last = 0;
-        ts_last = ts;
-      }
-
-      if (violation) {
+      if (steer_torque_cmd_checks(desired_torque, steer_req, TOYOTA_STEERING_LIMITS)) {
         tx = 0;
       }
     }

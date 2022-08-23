@@ -114,10 +114,8 @@ void dos_set_ir_power(uint8_t percentage){
   pwm_set(TIM4, 2, percentage);
 }
 
-void dos_set_fan_power(uint8_t percentage){
-  // Enable fan power only if percentage is non-zero.
-  set_gpio_output(GPIOA, 1, (percentage != 0U));
-  fan_set_power(percentage);
+void dos_set_fan_enabled(bool enabled){
+  set_gpio_output(GPIOA, 1, enabled);
 }
 
 void dos_set_clock_source_mode(uint8_t mode){
@@ -159,7 +157,7 @@ void dos_init(void) {
 
   // Initialize fan and set to 0%
   fan_init();
-  dos_set_fan_power(0U);
+  dos_set_fan_enabled(false);
 
   // Initialize harness
   harness_init();
@@ -209,6 +207,7 @@ const board board_dos = {
   .has_obd = true,
   .has_lin = false,
   .has_rtc_battery = true,
+  .fan_max_rpm = 6500U,
   .init = dos_init,
   .enable_can_transceiver = dos_enable_can_transceiver,
   .enable_can_transceivers = dos_enable_can_transceivers,
@@ -219,7 +218,7 @@ const board board_dos = {
   .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = dos_check_ignition,
   .read_current = unused_read_current,
-  .set_fan_power = dos_set_fan_power,
+  .set_fan_enabled = dos_set_fan_enabled,
   .set_ir_power = dos_set_ir_power,
   .set_phone_power = unused_set_phone_power,
   .set_clock_source_mode = dos_set_clock_source_mode,

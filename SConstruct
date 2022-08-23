@@ -393,9 +393,13 @@ if arch != "Darwin":
 
 # Build openpilot
 
-SConscript(['cereal/SConscript'])
-SConscript(['panda/board/SConscript'])
-SConscript(['opendbc/can/SConscript'])
+# build submodules
+SConscript([
+  'cereal/SConscript',
+  'body/board/SConscript',
+  'panda/board/SConscript',
+  'opendbc/can/SConscript',
+])
 
 SConscript(['third_party/SConscript'])
 
@@ -415,6 +419,7 @@ SConscript(['selfdrive/loggerd/SConscript'])
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
+SConscript(['selfdrive/navd/SConscript'])
 
 SConscript(['tools/replay/SConscript'])
 

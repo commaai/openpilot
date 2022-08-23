@@ -28,7 +28,7 @@ class CAR:
 
 @dataclass
 class NissanCarInfo(CarInfo):
-  package: str = "ProPILOT"
+  package: str = "ProPILOT Assist"
   harness: Enum = Harness.nissan_a
 
 

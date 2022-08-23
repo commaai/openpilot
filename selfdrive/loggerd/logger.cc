@@ -24,9 +24,11 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  init.setDeviceType(Hardware::get_device_type());
   init.setVersion(COMMA_VERSION);
+  init.setDirty(!getenv("CLEAN"));
+  init.setDeviceType(Hardware::get_device_type());
 
+  // log kernel args
   std::ifstream cmdline_stream("/proc/cmdline");
   std::vector<std::string> kernel_args;
   std::string buf;
@@ -42,8 +44,6 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setKernelVersion(util::read_file("/proc/version"));
   init.setOsVersion(util::read_file("/VERSION"));
 
-  init.setDirty(!getenv("CLEAN"));
-
   // log params
   auto params = Params();
   std::map<std::string, std::string> params_map = params.readAll();
@@ -55,16 +55,31 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setDongleId(params_map["DongleId"]);
 
   auto lparams = init.initParams().initEntries(params_map.size());
-  int i = 0;
+  int j = 0;
   for (auto& [key, value] : params_map) {
-    auto lentry = lparams[i];
+    auto lentry = lparams[j];
     lentry.setKey(key);
     if ( !(params.getKeyType(key) & DONT_LOG) ) {
       lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
     }
-    i++;
-
+    j++;
   }
+
+  // log commands
+  std::vector<std::string> log_commands = {
+    "df -h",  // usage for all filesystems
+  };
+
+  auto commands = init.initCommands().initEntries(log_commands.size());
+  for (int i = 0; i < log_commands.size(); i++) {
+    auto lentry = commands[i];
+
+    lentry.setKey(log_commands[i]);
+
+    const std::string result = util::check_output(log_commands[i]);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
+  }
+
   return capnp::messageToFlatArray(msg);
 }
 

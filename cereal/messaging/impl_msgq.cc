@@ -25,16 +25,6 @@ static bool service_exists(std::string path){
   return false;
 }
 
-static size_t get_size(std::string endpoint){
-  size_t sz = DEFAULT_SEGMENT_SIZE;
-
-  if (endpoint == "roadCameraState" || endpoint == "driverCameraState" || endpoint == "wideRoadCameraState"){
-    sz *= 10;
-  }
-
-  return sz;
-}
-
 
 MSGQContext::MSGQContext() {
 }
@@ -78,7 +68,7 @@ int MSGQSubSocket::connect(Context *context, std::string endpoint, std::string a
   }
 
   q = new msgq_queue_t;
-  int r = msgq_new_queue(q, endpoint.c_str(), get_size(endpoint));
+  int r = msgq_new_queue(q, endpoint.c_str(), DEFAULT_SEGMENT_SIZE);
   if (r != 0){
     return r;
   }
@@ -170,7 +160,7 @@ int MSGQPubSocket::connect(Context *context, std::string endpoint, bool check_en
   }
 
   q = new msgq_queue_t;
-  int r = msgq_new_queue(q, endpoint.c_str(), get_size(endpoint));
+  int r = msgq_new_queue(q, endpoint.c_str(), DEFAULT_SEGMENT_SIZE);
   if (r != 0){
     return r;
   }

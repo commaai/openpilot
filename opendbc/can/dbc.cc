@@ -54,26 +54,27 @@ typedef struct ChecksumState {
   int counter_start_bit;
   bool little_endian;
   SignalType checksum_type;
-  SignalType counter_type;
   unsigned int (*calc_checksum)(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 } ChecksumState;
 
 ChecksumState* get_checksum(const std::string& dbc_name) {
   ChecksumState* s = nullptr;
   if (startswith(dbc_name, {"honda_", "acura_"})) {
-    s = new ChecksumState({4, 2, 3, 5, false, HONDA_CHECKSUM, COUNTER, &honda_checksum});
+    s = new ChecksumState({4, 2, 3, 5, false, HONDA_CHECKSUM, &honda_checksum});
   } else if (startswith(dbc_name, {"toyota_", "lexus_"})) {
-    s = new ChecksumState({8, -1, 7, -1, false, TOYOTA_CHECKSUM, DEFAULT, &toyota_checksum});
-  } else if (startswith(dbc_name, "kia_ev6")) {
-    s = new ChecksumState({16, -1, 0, -1, true, HKG_CAN_FD_CHECKSUM, COUNTER, &hkg_can_fd_checksum});
-  } else if (startswith(dbc_name, {"vw_mqb_2010"})) {
-    s = new ChecksumState({8, 4, 0, 0, true, VOLKSWAGEN_MQB_CHECKSUM, COUNTER, &volkswagen_mqb_checksum});
+    s = new ChecksumState({8, -1, 7, -1, false, TOYOTA_CHECKSUM, &toyota_checksum});
+  } else if (startswith(dbc_name, "hyundai_canfd")) {
+    s = new ChecksumState({16, -1, 0, -1, true, HKG_CAN_FD_CHECKSUM, &hkg_can_fd_checksum});
+  } else if (startswith(dbc_name, "vw_mqb_2010")) {
+    s = new ChecksumState({8, 4, 0, 0, true, VOLKSWAGEN_MQB_CHECKSUM, &volkswagen_mqb_checksum});
+  } else if (startswith(dbc_name, "vw_golf_mk4")) {
+    s = new ChecksumState({8, 4, 0, -1, true, XOR_CHECKSUM, &xor_checksum});
   } else if (startswith(dbc_name, "subaru_global_")) {
-    s = new ChecksumState({8, -1, 0, -1, true, SUBARU_CHECKSUM, DEFAULT, &subaru_checksum});
+    s = new ChecksumState({8, -1, 0, -1, true, SUBARU_CHECKSUM, &subaru_checksum});
   } else if (startswith(dbc_name, "chrysler_")) {
-    s = new ChecksumState({8, -1, 7, -1, false, CHRYSLER_CHECKSUM, DEFAULT, &chrysler_checksum});
+    s = new ChecksumState({8, -1, 7, -1, false, CHRYSLER_CHECKSUM, &chrysler_checksum});
   } else if (startswith(dbc_name, "comma_body")) {
-    s = new ChecksumState({8, 4, 7, 3, false, PEDAL_CHECKSUM, COUNTER, &pedal_checksum});
+    s = new ChecksumState({8, 4, 7, 3, false, PEDAL_CHECKSUM, &pedal_checksum});
   }
   return s;
 }
@@ -92,7 +93,7 @@ void set_signal_type(Signal& s, ChecksumState* chk, const std::string& dbc_name,
       DBC_ASSERT(chk->counter_size == -1 || s.size == chk->counter_size, "COUNTER is not " << chk->counter_size << " bits long");
       DBC_ASSERT(chk->counter_start_bit == -1 || (s.start_bit % 8) == chk->counter_start_bit, "COUNTER starts at wrong bit");
       DBC_ASSERT(chk->little_endian == s.is_little_endian, "COUNTER has wrong endianness");
-      s.type = chk->counter_type;
+      s.type = COUNTER;
     }
   }
 

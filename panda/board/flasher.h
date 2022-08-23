@@ -6,20 +6,20 @@ bool unlocked = false;
 void debug_ring_callback(uart_ring *ring) {}
 #endif
 
-int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
+int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   int resp_len = 0;
 
   // flasher machine
   memset(resp, 0, 4);
   memcpy(resp+4, "\xde\xad\xd0\x0d", 4);
   resp[0] = 0xff;
-  resp[2] = setup->b.bRequest;
-  resp[3] = ~setup->b.bRequest;
+  resp[2] = req->request;
+  resp[3] = ~req->request;
   *((uint32_t **)&resp[8]) = prog_ptr;
   resp_len = 0xc;
 
   int sec;
-  switch (setup->b.bRequest) {
+  switch (req->request) {
     // **** 0xb0: flasher echo
     case 0xb0:
       resp[1] = 0xff;
@@ -36,7 +36,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
       break;
     // **** 0xb2: erase sector
     case 0xb2:
-      sec = setup->b.wValue.w;
+      sec = req->param1;
       if (flash_erase_sector(sec, unlocked)) {
         resp[1] = 0xff;
       }
@@ -45,7 +45,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
     case 0xd0:
       #ifndef STM32F2
         // addresses are OTP
-        if (setup->b.wValue.w == 1) {
+        if (req->param1 == 1) {
           memcpy(resp, (void *)DEVICE_SERIAL_NUMBER_ADDRESS, 0x10);
           resp_len = 0x10;
         } else {
@@ -57,7 +57,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
     // **** 0xd1: enter bootloader mode
     case 0xd1:
       // this allows reflashing of the bootstub
-      switch (setup->b.wValue.w) {
+      switch (req->param1) {
         case 0:
           puts("-> entering bootloader\n");
           enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
@@ -85,27 +85,23 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp) {
   return resp_len;
 }
 
-int usb_cb_ep1_in(void *usbdata, int len) {
-  UNUSED(usbdata);
+void comms_can_write(uint8_t *data, uint32_t len) {
+  UNUSED(data);
   UNUSED(len);
+}
+
+int comms_can_read(uint8_t *data, uint32_t max_len) {
+  UNUSED(data);
+  UNUSED(max_len);
   return 0;
 }
-void usb_cb_ep3_out(void *usbdata, int len) {
-  UNUSED(usbdata);
-  UNUSED(len);
-}
+
 void usb_cb_ep3_out_complete(void) {}
 
-int is_enumerated = 0;
-void usb_cb_enumeration_complete(void) {
-  puts("USB enumeration complete\n");
-  is_enumerated = 1;
-}
-
-void usb_cb_ep2_out(void *usbdata, int len) {
+void comms_endpoint2_write(uint8_t *data, uint32_t len) {
   current_board->set_led(LED_RED, 0);
-  for (int i = 0; i < len/4; i++) {
-    flash_write_word(prog_ptr, *(uint32_t*)(usbdata+(i*4)));
+  for (uint32_t i = 0; i < len/4; i++) {
+    flash_write_word(prog_ptr, *(uint32_t*)(data+(i*4)));
 
     //*(uint64_t*)(&spi_tx_buf[0x30+(i*4)]) = *prog_ptr;
     prog_ptr++;
@@ -116,15 +112,22 @@ void usb_cb_ep2_out(void *usbdata, int len) {
 
 int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
   UNUSED(len);
+  ControlPacket_t control_req;
+  
   int resp_len = 0;
   switch (data[0]) {
     case 0:
-      // control transfer
-      resp_len = usb_cb_control_msg((USB_Setup_TypeDef *)(data+4), data_out);
+      // control transfer      
+      control_req.request = ((USB_Setup_TypeDef *)(data+4))->b.bRequest;
+      control_req.param1 = ((USB_Setup_TypeDef *)(data+4))->b.wValue.w;
+      control_req.param2 = ((USB_Setup_TypeDef *)(data+4))->b.wIndex.w;
+      control_req.length = ((USB_Setup_TypeDef *)(data+4))->b.wLength.w;
+
+      resp_len = comms_control_handler(&control_req, data_out);
       break;
     case 2:
       // ep 2, flash!
-      usb_cb_ep2_out(data+4, data[2]);
+      comms_endpoint2_write(data+4, data[2]);
       break;
   }
   return resp_len;
@@ -284,16 +287,7 @@ void soft_flasher_start(void) {
 
   enable_interrupts();
 
-  uint64_t cnt = 0;
-
-  for (cnt=0;;cnt++) {
-    if (cnt == 35 && !is_enumerated && usb_power_mode == USB_POWER_CLIENT) {
-      // if you are connected through a hub to the phone
-      // you need power to be able to see the device
-      puts("USBP: didn't enumerate, switching to CDP mode\n");
-      current_board->set_usb_power_mode(USB_POWER_CDP);
-      current_board->set_led(LED_BLUE, 1);
-    }
+  for (;;) {
     // blink the green LED fast
     current_board->set_led(LED_GREEN, 0);
     delay(500000);

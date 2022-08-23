@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.chrysler.values import CAR, DBC, RAM_CARS
+from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -12,13 +12,19 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
 
-    ret.radarOffCan = DBC[candidate]['radar'] is None
+    ret.dashcamOnly = candidate in RAM_HD
 
-    param = Panda.FLAG_CHRYSLER_RAM_DT if candidate in RAM_CARS else None
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
+    ret.radarOffCan = DBC[candidate]['radar'] is None
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
+
+    # safety config
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+    if candidate in RAM_HD:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
+    elif candidate in RAM_DT:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
     ret.minSteerSpeed = 3.8  # m/s
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
@@ -47,14 +53,23 @@ class CarInterface(CarInterfaceBase):
     # Ram
     elif candidate == CAR.RAM_1500:
       ret.steerActuatorDelay = 0.2
-
       ret.wheelbase = 3.88
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
-      ret.maxLateralAccel = 2.4
-      ret.minSteerSpeed = 14.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.minSteerSpeed = 14.5
+      if car_fw is not None:
+        for fw in car_fw:
+          if fw.ecu == 'eps' and fw.fwVersion in (b"68312176AE", b"68312176AG", b"68273275AG"):
+            ret.minSteerSpeed = 0.
 
+    elif candidate == CAR.RAM_HD:
+      ret.steerActuatorDelay = 0.2
+      ret.wheelbase = 3.785
+      ret.steerRatio = 15.61
+      ret.mass = 3405. + STD_CARGO_KG
+      ret.minSteerSpeed = 16
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")
@@ -74,8 +89,6 @@ class CarInterface(CarInterfaceBase):
 
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
-
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])

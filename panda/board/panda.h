@@ -10,7 +10,7 @@
 #define USBPACKET_MAX_SIZE 0x40U
 
 #define MAX_CAN_MSGS_PER_BULK_TRANSFER 51U
-#define MAX_EP1_CHUNK_PER_BULK_TRANSFER 16256 // max data stream chunk in bytes, shouldn't be higher than 16320 or counter will overflow
+#define MAX_EP1_CHUNK_PER_BULK_TRANSFER 16256U // max data stream chunk in bytes, shouldn't be higher than 16320 or counter will overflow
 
 // CAN definitions
 #define CANPACKET_HEAD_SIZE 5U
