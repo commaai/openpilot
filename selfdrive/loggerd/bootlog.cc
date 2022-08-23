@@ -5,6 +5,7 @@
 #include "common/swaglog.h"
 #include "selfdrive/loggerd/logger.h"
 
+const bool SIMULATION = (getenv("SIMULATION") != nullptr) && (std::string(getenv("SIMULATION")) == "1");
 
 static kj::Array<capnp::word> build_boot_log() {
   MessageBuilder msg;
@@ -24,20 +25,22 @@ static kj::Array<capnp::word> build_boot_log() {
     i++;
   }
 
-  // Gather output of commands
-  std::vector<std::string> bootlog_commands = {
-    "[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0",
-    "[ -x \"$(command -v journalctl)\" ] && journalctl",
-  };
+  if (!SIMULATION) {
+    // Gather output of commands
+    std::vector<std::string> bootlog_commands = {
+      "[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0",
+      "[ -x \"$(command -v journalctl)\" ] && journalctl",
+    };
 
-  auto commands = boot.initCommands().initEntries(bootlog_commands.size());
-  for (int j = 0; j < bootlog_commands.size(); j++) {
-    auto lentry = commands[j];
+    auto commands = boot.initCommands().initEntries(bootlog_commands.size());
+    for (int j = 0; j < bootlog_commands.size(); j++) {
+      auto lentry = commands[j];
 
-    lentry.setKey(bootlog_commands[j]);
+      lentry.setKey(bootlog_commands[j]);
 
-    const std::string result = util::check_output(bootlog_commands[j]);
-    lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
+      const std::string result = util::check_output(bootlog_commands[j]);
+      lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
+    }
   }
 
   boot.setLaunchLog(util::read_file("/tmp/launch_log"));
