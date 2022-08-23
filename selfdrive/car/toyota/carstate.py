@@ -235,17 +235,17 @@ class CarState(CarStateBase):
     signals = []
     checks = []
 
-    # if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-    #   signals += [
-    #     ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
-    #     ("FORCE", "PRE_COLLISION"),
-    #     ("ACC_TYPE", "ACC_CONTROL"),
-    #     ("FCW", "ACC_HUD"),
-    #   ]
-    #   checks += [
-    #     ("PRE_COLLISION", 33),
-    #     ("ACC_CONTROL", 33),
-    #     ("ACC_HUD", 1),
-    #   ]
+    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+      signals += [
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+        ("FORCE", "PRE_COLLISION"),
+        ("ACC_TYPE", "ACC_CONTROL"),
+        ("FCW", "ACC_HUD"),
+      ]
+      checks += [
+        ("PRE_COLLISION", 33),
+        ("ACC_CONTROL", 33),
+        ("ACC_HUD", 1),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
