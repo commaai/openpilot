@@ -425,7 +425,7 @@ class CarState(CarStateBase):
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
-    if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1:
+    if not (CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1):
       signals += [
         ("BRAKE_PRESSED", "BRAKE"),
       ]
