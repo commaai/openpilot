@@ -9,6 +9,7 @@ Version 0.8.16 (2022-08-26)
   * Brazilian Portuguese thanks to AlexandreSato!
 * Chevrolet Bolt EUV 2022-23 support thanks to JasonJShuler!
 * Chevrolet Silverado 2020-21 support thanks to JasonJShuler!
+* GMC Sierra 1500 2020-21 support thanks to JasonJShuler!
 * Hyundai Ioniq 5 2022 support thanks to sunnyhaibin!
 * Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
 * Hyundai Tucson Hybrid 2022 support thanks to sunnyhaibin!
