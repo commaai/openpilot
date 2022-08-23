@@ -8,6 +8,7 @@ from natsort import natsorted
 from typing import Dict, List
 
 from common.basedir import BASEDIR
+from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.docs_definitions import CarInfo, Column
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR as HKG_RADAR_START_ADDR
@@ -29,7 +30,8 @@ def get_all_car_info() -> List[CarInfo]:
   footnotes = get_all_footnotes()
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
     # Hyundai exception: those with radar have openpilot longitudinal
-    fingerprint = {0: {}, 1: {HKG_RADAR_START_ADDR: 8}, 2: {}, 3: {}}
+    fingerprint = gen_empty_fingerprint()
+    fingerprint[1] = {HKG_RADAR_START_ADDR: 8}
     CP = interfaces[model][0].get_params(model, fingerprint=fingerprint, disable_radar=True)
 
     if CP.dashcamOnly or car_info is None:

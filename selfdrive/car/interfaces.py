@@ -9,7 +9,7 @@ from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.realtime import DT_CTRL
-from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car import create_button_enable_events, gen_empty_fingerprint
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -212,6 +212,9 @@ class CarInterfaceBase(ABC):
       events.add(EventName.parkBrake)
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
+
+    # Handle button presses
+    events.events.extend(create_button_enable_events(cs_out.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
