@@ -82,6 +82,7 @@ class TestCarModelBase(unittest.TestCase):
       except Exception:
         continue
 
+      car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
       car_fw = []
@@ -107,9 +108,6 @@ class TestCarModelBase(unittest.TestCase):
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
-    print('{}: {}'.format(cls.car_model, cls.car_model not in TSS2_CAR and 0x2FF not in fingerprint[0]))
-    print('enableDsu:', cls.CP.enableDsu)
-    assert cls.CP.enableDsu
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
