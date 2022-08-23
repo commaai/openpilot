@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 from collections import deque
-import json
 import numpy as np
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority, DT_MDL
 from common.filter_simple import FirstOrderFilter
@@ -65,30 +64,24 @@ class TorqueEstimator:
       self.offline_friction_coeff = CP.lateralTuning.torque.friction
       self.offline_slope = CP.lateralTuning.torque.slope
 
-    params = json.loads(params) if params is not None else None
-    if params is not None and self.car_sane(params, CP.carFingerprint):
-      try:
-        if not self.is_sane(
-          params.get('slope'),
-          params.get('offset'),
-          params.get('frictionCoefficient')
-        ):
-          params = None
-      except Exception:
-        # print(e)
-        params = None
-
-    if params is None:
-      params = {
+    params = log.Event.from_bytes(params) if params is not None else None
+    if params is not None and self.is_sane(params.slopeFiltered, params.offsetFiltered, params.frictionCoefficientFiltered):
+      initial_params = {
+        'slope': params.slopeFiltered,
+        'offset': params.offsetFiltered,
+        'frictionCoefficient': params.frictionCoefficientFiltered,
+      }
+      self.decay = params.decay
+    else:
+      initial_params = {
         'slope': self.offline_slope,
         'offset': 0.0,
-        'frictionCoefficient': self.offline_friction_coeff,
-        'decay': FILTER_DECAY
+        'frictionCoefficient': self.offline_friction_coeff
       }
+      self.decay = FILTER_DECAY
     self.filtered_params = {}
-    self.decay = params['decay']
-    for param in params:
-      self.filtered_params[param] = FirstOrderFilter(params[param], self.decay, DT_MDL)
+    for param in initial_params:
+      self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
     self.reset()
 
   def reset(self):
@@ -159,8 +152,8 @@ def main(sm=None, pm=None):
 
   params_reader = Params()
   CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
-  params = params_reader.get("LiveTorqueParameters")
-  estimator = TorqueEstimator(CP, params)
+  torque_params = params_reader.get("LiveTorqueParameters")
+  estimator = TorqueEstimator(CP, torque_params)
 
   while True:
     sm.update()
@@ -201,10 +194,9 @@ def main(sm=None, pm=None):
       liveTorqueParameters.offsetFiltered = float(estimator.filtered_params['offset'].x)
       liveTorqueParameters.frictionCoefficientFiltered = float(estimator.filtered_params['frictionCoefficient'].x)
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
+      liveTorqueParameters.decay = estimator.decay
       if sm.frame % 1200 == 0:  # once a minute
-        params_to_write = {k: estimator.filtered_params[k].x for k in ['slope', 'offset', 'frictionCoefficient']}
-        params_to_write.update({'decay': estimator.decay})
-        put_nonblocking("LiveTorqueParameters", json.dumps(params_to_write))
+        put_nonblocking("LiveTorqueParameters", liveTorqueParameters.to_bytes())
 
       pm.send('liveTorqueParameters', msg)
 
