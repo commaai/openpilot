@@ -446,7 +446,7 @@ class CarState(CarStateBase):
       ]
     else:
       signals += [
-          ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
+        ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]
 
       if CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1:
