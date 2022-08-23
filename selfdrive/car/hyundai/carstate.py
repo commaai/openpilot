@@ -176,11 +176,7 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = True
     ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
-    if (self.CP.flags & HyundaiFlags.CANFD_HDA2) or (self.CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1):
-      cp_cruise_info = cp
-    else:
-      cp_cruise_info = cp_cam
-    #cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+    cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
     #print(self.CP.flags)
     ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
@@ -453,11 +449,6 @@ class CarState(CarStateBase):
         signals += [
           ("BRAKE_PRESSED", "ACCELERATOR_ALT"),
           ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_ALT"),
-          ("SET_SPEED", "CRUISE_INFO"),
-          ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-        ]
-        checks += [
-          ("CRUISE_INFO", 50),
         ]
 
       signals += [
@@ -472,7 +463,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
-    if (CP.flags & HyundaiFlags.CANFD_HDA2) or (CP.flags & HyundaiFlags.CANFD_GENESIS_HDA1):
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
       signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks = [("CAM_0x2a4", 20)]
     else:
