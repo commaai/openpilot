@@ -14,5 +14,5 @@
   path = rednose_repo
   url = ../../commaai/rednose.git
 [submodule "body"]
-  path = body 
+  path = body
   url = ../../commaai/body.git
