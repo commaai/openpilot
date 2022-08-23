@@ -31,9 +31,9 @@ If your car doesn't fit into any of the incompatibility criteria here, then ther
 
 ### Which cars are able to be supported?
 
-openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering) and [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control), then it almost certainly has these interfaces. These interfaces generally started shipping on cars around 2016. Note that manufacturers will often make their own marketing terms for these features, such as Hyundai's Smart Cruise Control branding of Adaptive Cruise Control.
+openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control) and any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering), then it almost certainly has these interfaces. These features generally started shipping on cars around 2016. Note that manufacturers will often make their own marketing terms for these features, such as Hyundai's Smart Cruise Control branding of Adaptive Cruise Control.
 
-If your car has the following packages or features, then it's a good candidate for support. If it does not, then it's unlikely that your car will ever be supported by openpilot.
+If your car has the following packages or features, then it's a good candidate for support.
 
 | Make | Required Package/Features |
 | ---- | ------------------------- |
@@ -51,7 +51,8 @@ All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wi
 
 ### Toyota Security
 
-openpilot does not yet support these Toyota models due to a new message authentication method:
+openpilot does not yet support these Toyota models due to a new message authentication method.
+[Vote](https://comma.ai/shop/products/vote) if you'd like to see openpilot support on these models.
 
 * Toyota RAV4 Prime 2021+
 * Toyota Sienna 2021+
@@ -63,4 +64,3 @@ openpilot does not yet support these Toyota models due to a new message authenti
 * Toyota bZ4x 2023+
 * Subaru Solterra 2023+
 
-[Vote](https://comma.ai/shop/products/vote) if you'd like to see openpilot support on these models.
