@@ -101,15 +101,22 @@ class Camerad:
     img = np.reshape(img, (H, W, 4))
     img = img[:, :, [0, 1, 2]].copy()
 
+    # TODO: use real_debayer.cl or dedicated rgb_to_nv12.cl program to convert from RGB to NV12 directly
     # convert RGB frame to YUV
     rgb = np.reshape(img, (H, W * 3))
     rgb_cl = cl_array.to_device(self.queue, rgb)
     yuv_cl = cl_array.empty_like(rgb_cl)
     self.krnl(self.queue, (np.int32(self.Wdiv4), np.int32(self.Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
     yuv = np.resize(yuv_cl.get(), rgb.size // 2)
-    eof = int(frame_id * 0.05 * 1e9)
 
-    self.vipc_server.send(yuv_type, yuv.data.tobytes(), frame_id, eof, eof)
+    # convert YUV frame to NV12
+    uv_offset = H * W
+    y = yuv[:uv_offset]
+    uv = yuv[uv_offset:].reshape(2, -1).ravel('F')
+    nv12 = np.hstack((y, uv))
+
+    eof = int(frame_id * 0.05 * 1e9)
+    self.vipc_server.send(yuv_type, nv12.data.tobytes(), frame_id, eof, eof)
 
     dat = messaging.new_message(pub_type)
     msg = {
