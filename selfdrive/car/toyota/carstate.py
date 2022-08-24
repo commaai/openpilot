@@ -99,6 +99,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion_factor
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
+
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
       self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
