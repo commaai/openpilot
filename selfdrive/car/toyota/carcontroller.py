@@ -124,12 +124,12 @@ class CarController:
       # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
       send_ui = True
 
-    if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
+    if (self.frame % 100 == 0 or send_ui) and self.CP.carFingerprint != CAR.PRIUS_V:
       can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                          hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                          hud_control.rightLaneDepart, CC.enabled))
 
-    if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
+    if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu and self.CP.carFingerprint != CAR.PRIUS_V:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
