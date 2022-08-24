@@ -61,7 +61,6 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
-    self.v_ego_cluster_seen = False
 
     self.CS = None
     self.can_parsers = []
@@ -163,12 +162,10 @@ class CarInterfaceBase(ABC):
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
-    if ret.vEgoCluster == 0.0 and not self.v_ego_cluster_seen:
+    if ret.vEgoCluster == -1:
       ret.vEgoCluster = ret.vEgo
-    else:
-      self.v_ego_cluster_seen = True
 
-    if ret.cruiseState.speedCluster == 0:
+    if ret.cruiseState.speedCluster == -1:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
