@@ -240,8 +240,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [("SPDUNT", "RSA2")]
-    checks = [("RSA2", 1)]
+    signals = []
+    checks = []
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
