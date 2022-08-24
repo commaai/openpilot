@@ -1,10 +1,18 @@
-Version 0.8.16 (2022-XX-XX)
+Version 0.8.17 (2022-XX-XX)
+========================
+
+Version 0.8.16 (2022-08-26)
 ========================
 * New driving model
   * Reduced turn cutting
 * Auto-detect right hand drive setting with driver monitoring model
+* Improved fan controller for comma three
+* New translations
+  * Japanese thanks to cydia2020!
+  * Brazilian Portuguese thanks to AlexandreSato!
 * Chevrolet Bolt EUV 2022-23 support thanks to JasonJShuler!
-* Chevrolet Silverado 2020-21 support thanks to JasonJShuler!
+* Chevrolet Silverado 1500 2020-21 support thanks to JasonJShuler!
+* GMC Sierra 1500 2020-21 support thanks to JasonJShuler!
 * Hyundai Ioniq 5 2022 support thanks to sunnyhaibin!
 * Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
 * Hyundai Tucson Hybrid 2022 support thanks to sunnyhaibin!
