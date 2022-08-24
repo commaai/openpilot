@@ -152,7 +152,7 @@ struct i2c_random_wr_payload init_array_os04c10[] = {
 {0x380d, 0x47},
 
 // rows per frame (was 0x2ae)
-{0x380e, 0x04}, {0x380f, 0xae},
+{0x380e, 0x08}, {0x380f, 0xae},
 // this should be triggered by FSIN, not free running
 
 {0x3810, 0x00},
