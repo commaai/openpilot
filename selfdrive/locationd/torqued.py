@@ -23,6 +23,7 @@ MAX_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)]
 MIN_BUCKET_POINTS = [200, 800, 800, 200]
+MAX_RESETS = 5.0
 
 
 def slope2rot(slope):
@@ -46,11 +47,16 @@ class PointBuckets:
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
       if (x >= bound_min) and (x < bound_max):
-        self.buckets[(bound_min, bound_max)].append([x, y])
+        self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
         break
 
   def get_points(self):
-    return np.array([v for sublist in self.buckets.values() for v in list(sublist)])
+    points = np.array([v for sublist in self.buckets.values() for v in list(sublist)])
+    return points[np.random.choice(len(points), min(len(points), MIN_POINTS_TOTAL), replace=False)]
+
+  def load_points(self, points):
+    for x, _, y in points:
+      self.add_point(x, y)
 
 
 class TorqueEstimator:
@@ -58,8 +64,10 @@ class TorqueEstimator:
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
 
-    self.offline_friction_coeff = 0
-    self.offline_slope = 0
+    self.offline_friction_coeff = 0.0
+    self.offline_slope = 0.0
+    self.resets = 0.0
+
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction_coeff = CP.lateralTuning.torque.friction
       self.offline_slope = CP.lateralTuning.torque.slope
@@ -70,29 +78,30 @@ class TorqueEstimator:
         'slope': params.slopeFiltered,
         'offset': params.offsetFiltered,
         'frictionCoefficient': params.frictionCoefficientFiltered,
+        'points': params.points
       }
       self.decay = params.decay
     else:
       initial_params = {
         'slope': self.offline_slope,
         'offset': 0.0,
-        'frictionCoefficient': self.offline_friction_coeff
+        'frictionCoefficient': self.offline_friction_coeff,
+        'points': []
       }
       self.decay = FILTER_DECAY
     self.filtered_params = {}
     for param in initial_params:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
     self.reset()
+    self.filtered_points.load_points(initial_params['points'])
 
   def reset(self):
+    self.resets += 1
     self.raw_points = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
     self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
-  def estimate_params(self, points=None):
-    if points is None:
-      points = self.filtered_points.get_points()
-      points = points[np.random.choice(points.shape[0], MIN_POINTS_TOTAL, replace=False)]
-    points = np.insert(points, 1, 1.0, axis=1)
+  def estimate_params(self):
+    points = self.filtered_points.get_points()
     # total least square solution as both x and y are noisy observations
     # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     _, _, v = np.linalg.svd(points, full_matrices=False)
@@ -195,8 +204,10 @@ def main(sm=None, pm=None):
       liveTorqueParameters.frictionCoefficientFiltered = float(estimator.filtered_params['frictionCoefficient'].x)
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
       liveTorqueParameters.decay = estimator.decay
+      liveTorqueParameters.maxResets = estimator.resets > MAX_RESETS
 
       if sm.frame % 1200 == 0:  # once a minute
+        liveTorqueParameters.points = estimator.filtered_points.get_points().tolist()
         put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
       pm.send('liveTorqueParameters', msg)
