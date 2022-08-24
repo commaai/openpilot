@@ -95,7 +95,7 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
     conversion_factor = CV.KPH_TO_MS if cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2) else CV.MPH_TO_MS
-    ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE_2"]["UI_SPEED"] * conversion_factor
+    ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE_2"]["UI_SPEED"]
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion_factor
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
