@@ -87,7 +87,7 @@ class LatControlTorque(LatControl):
       pid_log.desiredLateralAccel = desired_lateral_accel
     
       # TODO left is positive in this convention
-      output_torque = -self.get_steer_feedforward(error, pid_lat_accel, lateral_accel_deadzone)
+      output_torque = -self.torque_from_lat_accel(error, pid_lat_accel, lateral_accel_deadzone)
       pid_log.saturated = self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited)
 
     return output_torque, 0.0, pid_log
