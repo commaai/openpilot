@@ -94,11 +94,12 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    # TODO: where is the metric/imperial bit?
-    ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * CV.MPH_TO_MS
+    # TODO: check other messages for the bit
+    # TODO: DBC says 1: km, 2: mi, but a Camry Hybrid had it at 0 for mi
+    conversion = CV.MPH_TO_MS if cp.vl["UI_SETTING"]["UNITS"] in (0, 2) else CV.KPH_TO_MS
+    ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
-
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
       self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
@@ -165,11 +166,13 @@ class CarState(CarStateBase):
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
+      ("UNITS", "UI_SETTING"),
     ]
 
     checks = [
       ("GEAR_PACKET", 1),
       ("LIGHT_STALK", 1),
+      ("UI_SETTING", 1),
       ("BLINKERS_STATE", 0.15),
       ("BODY_CONTROL_STATE", 3),
       ("ESP_CONTROL", 3),
