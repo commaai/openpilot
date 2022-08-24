@@ -1,9 +1,10 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
@@ -11,58 +12,93 @@ Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
+Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
-  HCA_STEP = 2                   # HCA_01 message frequency 50Hz
-  LDW_STEP = 10                  # LDW_02 message frequency 10Hz
-  GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
+  HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
+  GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
+  ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
+  ACC_HUD_STEP = 4                        # ACC_GRA_Anziege frequency 25Hz
 
-  GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
-  GRA_VBP_COUNT = 16             # Send VBP messages for ~0.5s (GRA_ACC_STEP * 16)
+  ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
+  ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
 
-  # Observed documented MQB limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
-  # Limiting rate-of-change based on real-world testing and Comma's safety
-  # requirements for minimum time to lane departure.
-  STEER_MAX = 300                # Max heading control assist torque 3.00 Nm
-  STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
-  STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
-  STEER_DRIVER_ALLOWANCE = 80
-  STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
-  STEER_DRIVER_FACTOR = 1        # from dbc
+  def __init__(self, CP):
+    # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
+    # MQB vs PQ maximums are shared, but rate-of-change limited differently
+    # based on safety requirements driven by lateral accel testing.
+    self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
+    self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
+    self.STEER_DRIVER_FACTOR = 1          # from dbc
+
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+
+    if CP.carFingerprint in PQ_CARS:
+      self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
+      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
+      self.STEER_DELTA_UP = 6             # Max HCA reached in 1.00s (STEER_MAX / (50Hz * 1.00))
+      self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+      if CP.transmissionType == TransmissionType.automatic:
+        self.shifter_values = can_define.dv["Getriebe_1"]["Waehlhebelposition__Getriebe_1_"]
+      self.hca_status_values = can_define.dv["Lenkhilfe_2"]["LH2_Sta_HCA"]
+
+      self.BUTTONS = [
+        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_Neu", "GRA_Neu_Setzen", [1]),
+        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_Neu", "GRA_Recall", [1]),
+        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_Neu", "GRA_Up_kurz", [1]),
+        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_Neu", "GRA_Down_kurz", [1]),
+        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_Neu", "GRA_Abbrechen", [1]),
+        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_Neu", "GRA_Zeitluecke", [1]),
+      ]
+
+      self.LDW_MESSAGES = {
+        "none": 0,  # Nothing to display
+        "laneAssistUnavail": 1,  # "Lane Assist currently not available."
+        "laneAssistUnavailSysError": 2,  # "Lane Assist system error"
+        "laneAssistUnavailNoSensorView": 3,  # "Lane Assist not available. No sensor view."
+        "laneAssistTakeOver": 4,  # "Lane Assist: Please Take Over Steering"
+        "laneAssistDeactivTrailer": 5,  # "Lane Assist: no function with trailer"
+      }
+
+    else:
+      self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+      self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
+      self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
+      self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
+
+      if CP.transmissionType == TransmissionType.automatic:
+        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+      elif CP.transmissionType == TransmissionType.direct:
+        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+      self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
+
+      self.BUTTONS = [
+        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+      ]
+
+      self.LDW_MESSAGES = {
+        "none": 0,                            # Nothing to display
+        "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
+        "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
+        "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
+        "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
+        "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
+        "laneAssistTakeOver": 8,              # "Lane Assist: Please Take Over Steering" silent
+        "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
+        "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
+      }
 
 
 class CANBUS:
   pt = 0
   cam = 2
-
-
-class DBC_FILES:
-  mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
-
-
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))
-
-BUTTON_STATES = {
-  "accelCruise": False,
-  "decelCruise": False,
-  "cancel": False,
-  "setCruise": False,
-  "resumeCruise": False,
-  "gapAdjustCruise": False
-}
-
-MQB_LDW_MESSAGES = {
-  "none": 0,                            # Nothing to display
-  "laneAssistUnavailChime": 1,          # "Lane Assist currently not available." with chime
-  "laneAssistUnavailNoSensorChime": 3,  # "Lane Assist not available. No sensor view." with chime
-  "laneAssistTakeOverUrgent": 4,        # "Lane Assist: Please Take Over Steering" with urgent beep
-  "emergencyAssistUrgent": 6,           # "Emergency Assist: Please Take Over Steering" with urgent beep
-  "laneAssistTakeOverChime": 7,         # "Lane Assist: Please Take Over Steering" with chime
-  "laneAssistTakeOverSilent": 8,        # "Lane Assist: Please Take Over Steering" silent
-  "emergencyAssistChangingLanes": 9,    # "Emergency Assist: Changing lanes..." with urgent beep
-  "laneAssistDeactivated": 10,          # "Lane Assist deactivated." silent with persistent icon afterward
-}
 
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
@@ -76,6 +112,7 @@ class CAR:
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 VW Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
+  PASSAT_NMS = "VOLKSWAGEN PASSAT NMS"              # Chassis A3, North America/China/Mideast NMS Passat, incl. facelift
   POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
@@ -96,18 +133,27 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
+PQ_CARS = {CAR.PASSAT_NMS}
+
+
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
+for car_type in PQ_CARS:
+  DBC[car_type] = dbc_dict("vw_golf_mk4", None)
+
+
 class Footnote(Enum):
   KAMIQ = CarFootnote(
     "Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform.",
     Column.MODEL)
   PASSAT = CarFootnote(
-    "Not including the USA/China market Passat, which is based on the (currently) unsupported PQ35/NMS platform.",
+    "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
   VW_HARNESS = CarFootnote(
     "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
     "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
-    "(older design) or light brown (newer design). For the newer design, in the interim, choose \"VW J533 Development\" " +
-    "from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.",
+    "(older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway " +
+    "inside the dashboard, choose \"VW J533 Development\" from the vehicle drop-down for a suitable harness. " +
+    "(Some newer models are also observed to not have a J533 connector.)",
     Column.MODEL)
   VW_VARIANT = CarFootnote(
     "Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.)",
@@ -122,10 +168,10 @@ class VWCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
+    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
     VWCarInfo("Volkswagen Atlas 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -153,6 +199,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Passat Alltrack 2015-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Passat GTE 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
   ],
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22", harness=Harness.j533),
   CAR.POLO_MK6: [
     VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -177,7 +224,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
-  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019"),
+  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21", footnotes=[Footnote.VW_HARNESS]),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-18"),
@@ -226,6 +273,7 @@ FW_VERSIONS = {
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
+      b'\xf1\x8703H906026AJ\xf1\x890638',
       b'\xf1\x8703H906026AT\xf1\x891922',
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
@@ -237,6 +285,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158A \xf1\x893387',
       b'\xf1\x8709G927158DR\xf1\x893536',
+      b'\xf1\x8709G927158DR\xf1\x893742',
       b'\xf1\x8709G927158FT\xf1\x893835',
     ],
     (Ecu.srs, 0x715, None): [
@@ -251,6 +300,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820528B6090105',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
       b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572J \xf1\x890654',
@@ -504,6 +554,26 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
+  CAR.PASSAT_NMS: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8706K906016C \xf1\x899609',
+      b'\xf1\x8706K906016G \xf1\x891124',
+      b'\xf1\x8706K906071BJ\xf1\x894891',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158AB\xf1\x893318',
+      b'\xf1\x8709G927158BD\xf1\x893121',
+      b'\xf1\x8709G927158FQ\xf1\x893745',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x87561959655  \xf1\x890210\xf1\x82\02212121111113000102011--121012--101312',
+      b'\xf1\x87561959655C \xf1\x890508\xf1\x82\02215141111121100314919--153015--304831',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x87561907567A \xf1\x890132',
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\00152',
+    ],
+  },
   CAR.POLO_MK6: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704C906025H \xf1\x895177',
@@ -682,6 +752,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300013B \xf1\x894931',
       b'\xf1\x870D9300041N \xf1\x894512',
       b'\xf1\x870D9300043T \xf1\x899699',
+      b'\xf1\x870DD300046  \xf1\x891604',
       b'\xf1\x870DD300046A \xf1\x891602',
       b'\xf1\x870DD300046F \xf1\x891602',
       b'\xf1\x870DD300046G \xf1\x891601',
@@ -692,6 +763,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655AB\xf1\x890388\xf1\x82\0211111001111111206110412111321139114',
       b'\xf1\x875Q0959655AM\xf1\x890315\xf1\x82\x1311111111111111311411011231129321212100',
+      b'\xf1\x875Q0959655AM\xf1\x890318\xf1\x82\x1311111111111112311411011531159321212100',
       b'\xf1\x875Q0959655BJ\xf1\x890339\xf1\x82\x1311110011131100311111011731179321342100',
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
@@ -821,18 +893,23 @@ FW_VERSIONS = {
   CAR.SKODA_KAROQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018P \xf1\x896020',
+      b'\xf1\x8705L906022BS\xf1\x890913',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300041S \xf1\x891615',
+      b'\xf1\x870GC300014L \xf1\x892802',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655BH\xf1\x890712\xf1\x82\0161213001211001101131122012100',
+      b'\xf1\x873Q0959655DE\xf1\x890731\xf1\x82\x0e1213001211001101131121012J00',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567T6100500',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100700',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572M \xf1\x890233',
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.SKODA_KODIAQ_MK1: {

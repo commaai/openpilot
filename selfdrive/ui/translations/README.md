@@ -1,14 +1,24 @@
 # Multilanguage
 
+[![languages](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)](#)
+
 ## Contributing
 
 Before getting started, make sure you have set up the openpilot Ubuntu development environment by reading the [tools README.md](/tools/README.md).
+
+### Policy
+
+Most of the languages supported by openpilot come from and are maintained by the community via pull requests. A pull request likely to be merged is one that [fixes a translation or adds missing translations.](https://github.com/commaai/openpilot/blob/lang-policy/selfdrive/ui/translations/README.md#improving-an-existing-language)
+
+We also generally merge pull requests adding support for a new language if there are community members willing to maintain it. Maintaining a language is ensuring quality and completion of translations before each openpilot release.
+
+comma may remove or hide language support from releases depending on translation quality and completeness.
 
 ### Adding a New Language
 
 openpilot provides a few tools to help contributors manage their translations and to ensure quality. To get started:
 
-1. Add your new language to [languages.json](/selfdrive/ui/translations/languages.json) with the appropriate [language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) and the localized language name (Simplified Chinese is `中文（繁體）`).
+1. Add your new language to [languages.json](/selfdrive/ui/translations/languages.json) with the appropriate [language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) and the localized language name (Traditional Chinese is `中文（繁體）`).
 2. Generate the XML translation file (`*.ts`):
    ```shell
    selfdrive/ui/update_translations.py
@@ -32,7 +42,7 @@ Any time you edit source code in the UI, you need to update the translations to 
 
 ### Testing
 
-openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
+openpilot has a few unit tests to make sure all translations are up-to-date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
 
 Tests translation files up to date:
 

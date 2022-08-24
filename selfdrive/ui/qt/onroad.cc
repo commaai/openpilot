@@ -193,7 +193,13 @@ void NvgWindow::updateState(const UIState &s) {
   }
 
   // Handle older routes where vEgoCluster is not set
-  float v_ego = sm["carState"].getCarState().getVEgoCluster() == 0.0 ? sm["carState"].getCarState().getVEgo() : sm["carState"].getCarState().getVEgoCluster();
+  float v_ego;
+  if (sm["carState"].getCarState().getVEgoCluster() == 0.0 && !v_ego_cluster_seen) {
+    v_ego = sm["carState"].getCarState().getVEgo();
+  } else {
+    v_ego = sm["carState"].getCarState().getVEgoCluster();
+    v_ego_cluster_seen = true;
+  }
   float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
   cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
@@ -217,6 +223,7 @@ void NvgWindow::updateState(const UIState &s) {
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+    setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
 
   if (s.scene.calibration_valid) {
@@ -381,7 +388,8 @@ void NvgWindow::drawHud(QPainter &p) {
 
   // dm icon
   if (!hideDM) {
-    drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
+    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
+    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
   p.restore();

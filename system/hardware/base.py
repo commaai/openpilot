@@ -144,3 +144,6 @@ class HardwareBase(ABC):
 
   def recover_internal_panda(self):
     pass
+
+  def get_modem_data_usage(self):
+    return -1, -1

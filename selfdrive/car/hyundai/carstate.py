@@ -5,7 +5,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import DBC, FEATURES, HDA2_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -19,8 +19,8 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
-    if CP.carFingerprint in HDA2_CAR:
-      self.shifter_values = can_define.dv["ACCELERATOR"]["GEAR"]
+    if CP.carFingerprint in CANFD_CAR:
+      self.shifter_values = can_define.dv["GEAR_SHIFTER"]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -35,10 +35,12 @@ class CarState(CarStateBase):
     self.params = CarControllerParams(CP)
 
   def update(self, cp, cp_cam):
-    if self.CP.carFingerprint in HDA2_CAR:
-      return self.update_hda2(cp, cp_cam)
+    if self.CP.carFingerprint in CANFD_CAR:
+      return self.update_canfd(cp, cp_cam)
 
     ret = car.CarState.new_message()
+
+    cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
                         cp.vl["CGW2"]["CF_Gway_RLDrSw"], cp.vl["CGW2"]["CF_Gway_RRDrSw"]])
@@ -73,11 +75,11 @@ class CarState(CarStateBase):
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
     else:
-      ret.cruiseState.available = cp.vl["SCC11"]["MainMode_ACC"] == 1
-      ret.cruiseState.enabled = cp.vl["SCC12"]["ACCMode"] != 0
-      ret.cruiseState.standstill = cp.vl["SCC11"]["SCCInfoDisplay"] == 4.
+      ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
+      ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
+      ret.cruiseState.standstill = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 4.
       speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
-      ret.cruiseState.speed = cp.vl["SCC11"]["VSetDis"] * speed_conv
+      ret.cruiseState.speed = cp_cruise.vl["SCC11"]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
     ret.brake = 0
@@ -110,11 +112,11 @@ class CarState(CarStateBase):
 
     if not self.CP.openpilotLongitudinalControl:
       if self.CP.carFingerprint in FEATURES["use_fca"]:
-        ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
-        ret.stockFcw = cp.vl["FCA11"]["CF_VSM_Warn"] == 2
+        ret.stockAeb = cp_cruise.vl["FCA11"]["FCA_CmdAct"] != 0
+        ret.stockFcw = cp_cruise.vl["FCA11"]["CF_VSM_Warn"] == 2
       else:
-        ret.stockAeb = cp.vl["SCC12"]["AEB_CmdAct"] != 0
-        ret.stockFcw = cp.vl["SCC12"]["CF_VSM_Warn"] == 2
+        ret.stockAeb = cp_cruise.vl["SCC12"]["AEB_CmdAct"] != 0
+        ret.stockFcw = cp_cruise.vl["SCC12"]["CF_VSM_Warn"] == 2
 
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
@@ -131,17 +133,20 @@ class CarState(CarStateBase):
 
     return ret
 
-  def update_hda2(self, cp, cp_cam):
+  def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    ret.gasPressed = ret.gas > 1e-3
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+    else:
+      ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
+    ret.gasPressed = ret.gas > 1e-5
     ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl["ACCELERATOR"]["GEAR"]
+    gear = cp.vl["GEAR_SHIFTER"]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -166,23 +171,26 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = True
     ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
-    ret.cruiseState.standstill = cp.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
-
+    cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
     speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
-    ret.cruiseState.speed = cp.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+    ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+    ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
 
-    self.cruise_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["CRUISE_BUTTONS"])
-    self.main_buttons.extend(cp.vl_all["CRUISE_BUTTONS"]["ADAPTIVE_CRUISE_MAIN_BTN"])
-    self.buttons_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
+    cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
+    self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
+    self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
+    self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
+    self.cruise_info_copy = copy.copy(cp_cruise_info.vl["CRUISE_INFO"])
 
-    self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
+    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
+      self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
     return ret
 
   @staticmethod
   def get_can_parser(CP):
-    if CP.carFingerprint in HDA2_CAR:
-      return CarState.get_can_parser_hda2(CP)
+    if CP.carFingerprint in CANFD_CAR:
+      return CarState.get_can_parser_canfd(CP)
 
     signals = [
       # signal_name, signal_address
@@ -251,7 +259,7 @@ class CarState(CarStateBase):
       ("SAS11", 100),
     ]
 
-    if not CP.openpilotLongitudinalControl:
+    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in CAMERA_SCC_CAR:
       signals += [
         ("MainMode_ACC", "SCC11"),
         ("VSetDis", "SCC11"),
@@ -316,10 +324,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    if CP.carFingerprint in HDA2_CAR:
-      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
-      checks = [("CAM_0x2a4", 20)]
-      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
+    if CP.carFingerprint in CANFD_CAR:
+      return CarState.get_cam_can_parser_canfd(CP)
 
     signals = [
       # signal_name, signal_address
@@ -343,18 +349,44 @@ class CarState(CarStateBase):
       ("LKAS11", 100)
     ]
 
+    if not CP.openpilotLongitudinalControl and CP.carFingerprint in CAMERA_SCC_CAR:
+      signals += [
+        ("MainMode_ACC", "SCC11"),
+        ("VSetDis", "SCC11"),
+        ("SCCInfoDisplay", "SCC11"),
+        ("ACC_ObjDist", "SCC11"),
+        ("ACCMode", "SCC12"),
+      ]
+      checks += [
+        ("SCC11", 50),
+        ("SCC12", 50),
+      ]
+
+      if CP.carFingerprint in FEATURES["use_fca"]:
+        signals += [
+          ("FCA_CmdAct", "FCA11"),
+          ("CF_VSM_Warn", "FCA11"),
+        ]
+        checks.append(("FCA11", 50))
+      else:
+        signals += [
+          ("AEB_CmdAct", "SCC12"),
+          ("CF_VSM_Warn", "SCC12"),
+        ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
   @staticmethod
-  def get_can_parser_hda2(CP):
+  def get_can_parser_canfd(CP):
+
+    cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     signals = [
       ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      ("ACCELERATOR_PEDAL", "ACCELERATOR"),
-      ("GEAR", "ACCELERATOR"),
+      ("GEAR", "GEAR_SHIFTER"),
       ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
@@ -363,11 +395,9 @@ class CarState(CarStateBase):
       ("STEERING_OUT_TORQUE", "MDPS"),
 
       ("CRUISE_ACTIVE", "SCC1"),
-      ("SET_SPEED", "CRUISE_INFO"),
-      ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-      ("COUNTER", "CRUISE_BUTTONS"),
-      ("CRUISE_BUTTONS", "CRUISE_BUTTONS"),
-      ("ADAPTIVE_CRUISE_MAIN_BTN", "CRUISE_BUTTONS"),
+      ("COUNTER", cruise_btn_msg),
+      ("CRUISE_BUTTONS", cruise_btn_msg),
+      ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
 
@@ -380,16 +410,64 @@ class CarState(CarStateBase):
 
     checks = [
       ("WHEEL_SPEEDS", 100),
-      ("ACCELERATOR", 100),
+      ("GEAR_SHIFTER", 100),
       ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("SCC1", 50),
-      ("CRUISE_INFO", 50),
-      ("CRUISE_BUTTONS", 50),
+      (cruise_btn_msg, 50),
       ("CLUSTER_INFO", 4),
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 5)
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
+      signals += [
+        ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+        ("GEAR", "ACCELERATOR"),
+        ("SET_SPEED", "CRUISE_INFO"),
+        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+      ]
+      checks += [
+        ("CRUISE_INFO", 50),
+        ("ACCELERATOR", 100),
+      ]
+    else:
+      signals += [
+        ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
+      ]
+      checks += [
+        ("ACCELERATOR_ALT", 100),
+      ]
+
+    bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
+
+  @staticmethod
+  def get_cam_can_parser_canfd(CP):
+    if CP.flags & HyundaiFlags.CANFD_HDA2:
+      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks = [("CAM_0x2a4", 20)]
+    else:
+      signals = [
+        ("COUNTER", "CRUISE_INFO"),
+        ("NEW_SIGNAL_1", "CRUISE_INFO"),
+        ("CRUISE_MAIN", "CRUISE_INFO"),
+        ("CRUISE_STATUS", "CRUISE_INFO"),
+        ("CRUISE_INACTIVE", "CRUISE_INFO"),
+        ("NEW_SIGNAL_2", "CRUISE_INFO"),
+        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+        ("NEW_SIGNAL_3", "CRUISE_INFO"),
+        ("BYTE11", "CRUISE_INFO"),
+        ("SET_SPEED", "CRUISE_INFO"),
+        ("NEW_SIGNAL_4", "CRUISE_INFO"),
+      ]
+
+      signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(3, 7)]
+      signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(13, 31)]
+
+      checks = [
+        ("CRUISE_INFO", 50),
+      ]
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)

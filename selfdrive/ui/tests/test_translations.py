@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
 import shutil
 import unittest
+import xml.etree.ElementTree as ET
 
 from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
@@ -32,20 +34,14 @@ class TestTranslations(unittest.TestCase):
   def test_missing_translation_files(self):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
-        if not len(file):
-          self.skipTest(f"{name} translation has no defined file")
-
         self.assertTrue(os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")),
                         f"{name} has no XML translation file, run selfdrive/ui/update_translations.py")
 
   def test_translations_updated(self):
-    update_translations(translations_dir=TMP_TRANSLATIONS_DIR)
+    update_translations(plural_only=["main_en"], translations_dir=TMP_TRANSLATIONS_DIR)
 
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
-        if not len(file):
-          self.skipTest(f"{name} translation has no defined file")
-
         # caught by test_missing_translation_files
         if not os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")):
           self.skipTest(f"{name} missing translation file")
@@ -59,12 +55,40 @@ class TestTranslations(unittest.TestCase):
   def test_unfinished_translations(self):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
-        if not len(file):
-          raise self.skipTest(f"{name} translation has no defined file")
-
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
         self.assertTrue(b"<translation type=\"unfinished\">" not in cur_translations,
                         f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
+
+  def test_vanished_translations(self):
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
+        self.assertTrue(b"<translation type=\"vanished\">" not in cur_translations,
+                        f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove them")
+
+  def test_plural_translations(self):
+    """
+      Tests:
+      - that any numerus (plural) translations marked "finished" have all plural forms non-empty
+      - that the correct format specifier is used (%n)
+    """
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        tr_xml = ET.parse(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"))
+
+        for context in tr_xml.getroot():
+          for message in context.iterfind("message"):
+            if message.get("numerus") == "yes":
+              translation = message.find("translation")
+              numerusform = [t.text for t in translation.findall("numerusform")]
+
+              # Do not assert finished translations
+              if translation.get("type") == "unfinished":
+                continue
+
+              self.assertNotIn(None, numerusform, "Ensure all plural translation forms are completed.")
+              self.assertTrue(all([re.search("%[0-9]+", t) is None for t in numerusform]),
+                              "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
 
 
 if __name__ == "__main__":

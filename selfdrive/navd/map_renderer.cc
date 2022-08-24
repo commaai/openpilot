@@ -153,10 +153,15 @@ void MapRenderer::sendVipc() {
 
 uint8_t* MapRenderer::getImage() {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
-  uint8_t* buf = new uint8_t[cap.sizeInBytes()];
-  memcpy(buf, cap.bits(), cap.sizeInBytes());
 
-  return buf;
+  uint8_t* src = cap.bits();
+  uint8_t* dst = new uint8_t[WIDTH * HEIGHT];
+
+  for (int i = 0; i < WIDTH * HEIGHT; i++) {
+    dst[i] = src[i * 3];
+  }
+
+  return dst;
 }
 
 void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
@@ -189,7 +194,7 @@ MapRenderer::~MapRenderer() {
 }
 
 extern "C" {
-  MapRenderer* map_renderer_init() {
+  MapRenderer* map_renderer_init(char *maps_host = nullptr, char *token = nullptr) {
     char *argv[] = {
       (char*)"navd",
       nullptr
@@ -199,8 +204,8 @@ extern "C" {
     assert(app);
 
     QMapboxGLSettings settings;
-    settings.setApiBaseUrl(MAPS_HOST);
-    settings.setAccessToken(get_mapbox_token());
+    settings.setApiBaseUrl(maps_host == nullptr ? MAPS_HOST : maps_host);
+    settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
   }

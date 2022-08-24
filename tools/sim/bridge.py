@@ -179,7 +179,7 @@ def gps_callback(gps, vehicle_state):
   ]
 
   dat.gpsLocationExternal = {
-    "timestamp": int(time.time() * 1000),
+    "unixTimestampMillis": int(time.time() * 1000),
     "flags": 1,  # valid fix
     "accuracy": 1.0,
     "verticalAccuracy": 1.0,
@@ -304,6 +304,7 @@ class CarlaBridge:
     world_map = world.get_map()
 
     vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
+    vehicle_bp.set_attribute('role_name', 'hero')
     spawn_points = world_map.get_spawn_points()
     assert len(spawn_points) > self._args.num_selected_spawn_point, f'''No spawn point {self._args.num_selected_spawn_point}, try a value between 0 and
       {len(spawn_points)} for this town.'''
