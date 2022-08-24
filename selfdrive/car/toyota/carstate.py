@@ -94,7 +94,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    conversion_factor = CV.KPH_TO_MS if cp_cam.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2) else CV.MPH_TO_MS
+    conversion_factor = CV.KPH_TO_MS if cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2) else CV.MPH_TO_MS
     ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE_2"]["UI_SPEED"] * conversion_factor
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion_factor
 
