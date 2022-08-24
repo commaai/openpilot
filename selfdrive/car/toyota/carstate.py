@@ -94,9 +94,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    # TODO: check other messages for the bit
-    # TODO: DBC says 1: km, 2: mi, but a Camry Hybrid had it at 0 for mi
-    conversion = CV.MPH_TO_MS if cp.vl["UI_SETTING"]["UNITS"] in (0, 2) else CV.KPH_TO_MS
+    conversion = CV.MPH_TO_MS if cp_cam.vl["RSA2"]["UNITS"] == 2 else CV.KPH_TO_MS
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
@@ -166,13 +164,11 @@ class CarState(CarStateBase):
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
-      ("UNITS", "UI_SETTING"),
     ]
 
     checks = [
       ("GEAR_PACKET", 1),
       ("LIGHT_STALK", 1),
-      ("UI_SETTING", 1),
       ("BLINKERS_STATE", 0.15),
       ("BODY_CONTROL_STATE", 3),
       ("ESP_CONTROL", 3),
@@ -240,8 +236,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = []
-    checks = []
+    signals = [("SPDUNT", "RSA2")]
+    checks = [("RSA2", 1)]
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
