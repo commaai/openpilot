@@ -149,6 +149,9 @@ void Replay::buildTimeline() {
           timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), alert_type});
           alert_begin = 0;
         }
+      } else if (e->which == cereal::Event::Which::USER_FLAG) {
+        std::lock_guard lk(timeline_lock);
+        timeline.push_back({toSeconds(e->mono_time), toSeconds(e->mono_time), TimelineType::UserFlag});
       }
     }
   }
@@ -162,6 +165,10 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
         return start_ts;
       } else if (flag == FindFlag::nextDisEngagement && end_ts > cur_ts) {
         return end_ts;
+      }
+    } else if (type == TimelineType::UserFlag) {
+      if (flag == FindFlag::nextUserFlag && start_ts > cur_ts) {
+        return start_ts;
       }
     }
   }
@@ -360,7 +367,7 @@ void Replay::stream() {
       setCurrentSegment(toSeconds(cur_mono_time_) / 60);
 
       // migration for pandaState -> pandaStates to keep UI working for old segments
-      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D && 
+      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D &&
           sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
         MessageBuilder msg;
         auto ps = msg.initEvent().initPandaStates(1);

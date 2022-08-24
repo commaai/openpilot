@@ -24,10 +24,11 @@ enum REPLAY_FLAGS {
 
 enum class FindFlag {
   nextEngagement,
-  nextDisEngagement
+  nextDisEngagement,
+  nextUserFlag,
 };
 
-enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical };
+enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 
 class Replay : public QObject {
   Q_OBJECT

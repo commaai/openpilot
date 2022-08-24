@@ -89,7 +89,7 @@ def gen_lat_ocp():
   # TODO hacky weights to keep behavior the same
   ocp.model.cost_y_expr = vertcat(y_ego,
                                   ((v_ego +5.0) * psi_ego),
-                                  ((v_ego +5.0) * 4 * curv_rate))
+                                  ((v_ego + 5.0) * 4.0 * curv_rate))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
                                     ((v_ego +5.0) * psi_ego))
 
@@ -147,7 +147,7 @@ class LateralMpc():
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3/20.)*W[:2,:2])
 
-  def run(self, x0, p, y_pts, heading_pts):
+  def run(self, x0, p, y_pts, heading_pts, curv_rate_pts):
     x0_cp = np.copy(x0)
     p_cp = np.copy(p)
     self.solver.constraints_set(0, "lbx", x0_cp)
@@ -156,6 +156,7 @@ class LateralMpc():
     v_ego = p_cp[0]
     # rotation_radius = p_cp[1]
     self.yref[:,1] = heading_pts*(v_ego+5.0)
+    self.yref[:,2] = curv_rate_pts * (v_ego+5.0) * 4.0
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
       self.solver.set(i, "p", p_cp)

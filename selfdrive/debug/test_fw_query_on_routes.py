@@ -10,7 +10,7 @@ from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
+from selfdrive.car.fw_versions import match_fw_to_car
 
 
 NO_API = "NO_API" in os.environ
@@ -89,9 +89,8 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          fw_versions_dict = build_fw_dict(car_fw)
-          exact_matches = match_fw_to_car_exact(fw_versions_dict)
-          fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
+          _, exact_matches = match_fw_to_car(car_fw, allow_exact=True, allow_fuzzy=False)
+          _, fuzzy_matches = match_fw_to_car(car_fw, allow_exact=False, allow_fuzzy=True)
 
           if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
             good_exact += 1
