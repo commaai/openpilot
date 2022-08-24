@@ -15,7 +15,7 @@ RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego', 'carStat
 POINTS_PER_BUCKET = 3000
 MIN_POINTS_TOTAL = 3000
 MIN_VEL = 10  # m/s
-FRICTION_FACTOR = 2  # ~95% of data coverage
+FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
 FILTER_DECAY = 50
@@ -50,9 +50,11 @@ class PointBuckets:
         self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
         break
 
-  def get_points(self):
+  def get_points(self, num_points=None):
     points = np.array([v for sublist in self.buckets.values() for v in list(sublist)])
-    return points[np.random.choice(len(points), min(len(points), MIN_POINTS_TOTAL), replace=False)]
+    if num_points is None:
+      return points
+    return points[np.random.choice(len(points), min(len(points), num_points), replace=False)]
 
   def load_points(self, points):
     for x, _, y in points:
@@ -101,7 +103,7 @@ class TorqueEstimator:
     self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
   def estimate_params(self):
-    points = self.filtered_points.get_points()
+    points = self.filtered_points.get_points(MIN_POINTS_TOTAL)
     # total least square solution as both x and y are noisy observations
     # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     _, _, v = np.linalg.svd(points, full_matrices=False)
