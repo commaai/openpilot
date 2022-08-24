@@ -94,7 +94,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    conversion = CV.MPH_TO_MS if cp_cam.vl["RSA2"]["UNITS"] == 2 else CV.KPH_TO_MS
+    conversion = CV.KPH_TO_MS if cp_cam.vl["RSA2"]["SPDUNT"] == 1 else CV.MPH_TO_MS
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
