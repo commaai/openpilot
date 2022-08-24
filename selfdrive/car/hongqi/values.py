@@ -10,6 +10,7 @@ from selfdrive.car.docs_definitions import CarInfo, Harness
 Ecu = car.CarParams.Ecu
 GearShifter = car.CarState.GearShifter
 
+
 class CarControllerParams:
   LKAS_STEP = 2                  # LKAS message frequency 50Hz
 
@@ -28,30 +29,30 @@ class CANBUS:
 
 
 class DBC_FILES:
-  faw = "faw"
+  hongqi = "hongqi_hs5"
 
 
-DBC = defaultdict(lambda: dbc_dict(DBC_FILES.faw, None))  # type: Dict[str, Dict[str, str]]
+DBC = defaultdict(lambda: dbc_dict(DBC_FILES.hongqi, None))  # type: Dict[str, Dict[str, str]]
 
 
 class CAR:
-  HONGQI_HS5_G1 = "HONGQI HS5 1ST GEN"          # First generation FAW Hongqi HS5 SUV
+  HS5_G1 = "HONGQI HS5 1ST GEN"          # First generation FAW Hongqi HS5 SUV
 
 
 @dataclass
-class FAWCarInfo(CarInfo):
+class HongqiCarInfo(CarInfo):
   package: str = "Who Knows"  # FIXME
   harness: Enum = Harness.custom
 
 
-CAR_INFO: Dict[str, Union[FAWCarInfo, List[FAWCarInfo]]] = {
-  CAR.HONGQI_HS5_G1: FAWCarInfo("Hongqi HS5 2020"),
+CAR_INFO: Dict[str, Union[HongqiCarInfo, List[HongqiCarInfo]]] = {
+  CAR.HS5_G1: HongqiCarInfo("Hongqi HS5 2020"),
 }
 
 
 # TODO -- UDS fingerprinting known to work relatively easily
 FW_VERSIONS = {
-  CAR.HONGQI_HS5_G1: {
+  CAR.HS5_G1: {
     (Ecu.engine, 0x7e0, None): [
       b'PLACEHOLDER',
     ],

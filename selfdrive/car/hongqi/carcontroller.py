@@ -1,6 +1,6 @@
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.faw import fawcan
-from selfdrive.car.faw.values import DBC_FILES, CANBUS, CarControllerParams as P
+from selfdrive.car.hongqi import hongqican
+from selfdrive.car.hongqi.values import DBC_FILES, CANBUS, CarControllerParams as P
 from opendbc.can.packer import CANPacker
 
 class CarController():
@@ -8,7 +8,7 @@ class CarController():
     self.apply_steer_last = 0
     self.CP = CP
 
-    self.packer_pt = CANPacker(DBC_FILES.faw)
+    self.packer_pt = CANPacker(DBC_FILES.hongqi)
 
   def update(self, c, CS, frame, actuators):
     """ Controls thread """
@@ -25,7 +25,7 @@ class CarController():
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      can_sends.append(fawcan.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, c.latActive))
+      can_sends.append(hongqican.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, c.latActive))
 
     # **** HUD Controls ***************************************************** #
 

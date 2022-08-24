@@ -3,12 +3,12 @@ from cereal import car
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.faw.values import DBC_FILES, CANBUS, GearShifter, CarControllerParams
+from selfdrive.car.hongqi.values import DBC_FILES, CANBUS, GearShifter, CarControllerParams
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC_FILES.faw)
+    can_define = CANDefine(DBC_FILES.hongqi)
     # TODO: populate this
     # self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
     self.lkas_status_values = can_define.dv["EPS_2"]["LKAS_STATUS"]
@@ -139,7 +139,7 @@ class CarState(CarStateBase):
       ("TURN_SIGNALS", 10),
     ]
 
-    return CANParser(DBC_FILES.faw, signals, checks, CANBUS.pt)
+    return CANParser(DBC_FILES.hongqi, signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -152,4 +152,4 @@ class CarState(CarStateBase):
       ("ACC", 50),
     ]
 
-    return CANParser(DBC_FILES.faw, signals, checks, CANBUS.cam)
+    return CANParser(DBC_FILES.hongqi, signals, checks, CANBUS.cam)

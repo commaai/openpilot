@@ -2,7 +2,7 @@
 from collections import namedtuple
 
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
-from selfdrive.car.faw.values import CAR as FAW
+from selfdrive.car.hongqi.values import CAR as HONGQI
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.ford.values import CAR as FORD
 from selfdrive.car.honda.values import CAR as HONDA
@@ -44,7 +44,7 @@ routes = [
 
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
-  TestRoute("7d3307665954222a|2022-08-07--10-20-43", FAW.HONGQI_HS5_G1),
+  TestRoute("7d3307665954222a|2022-08-07--10-20-43", HONGQI.HS5_G1),
 
   TestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   TestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),

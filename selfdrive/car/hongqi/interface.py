@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.faw.values import CAR, GearShifter
+from selfdrive.car.hongqi.values import CAR, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -13,11 +13,11 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-    ret.carName = "faw"
+    ret.carName = "hongqi"
     ret.radarOffCan = True
 
-    # Set global FAW parameters
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.faw)]
+    # Set global Hongqi parameters
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hongqi)]
     # TODO: identify BSM signals
     # ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.HONGQI_HS5_G1:
+    if candidate == CAR.HS5_G1:
       ret.mass = 1780 + STD_CARGO_KG
       ret.wheelbase = 2.87
 
