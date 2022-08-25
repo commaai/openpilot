@@ -25,7 +25,6 @@ class CarState(CarStateBase):
 
     self.low_speed_lockout = False
     self.acc_type = 1
-    self.mismatches = 0
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -105,12 +104,6 @@ class CarState(CarStateBase):
     if ret.cruiseState.speed != 0:
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
-
-    # # print(ret.cruiseState.speedCluster, ret.cruiseState.speed)
-    # if len(cp.vl_all["PCM_CRUISE_SM"]["UI_SET_SPEED"]):
-    #   if abs(ret.cruiseState.speedCluster - ret.cruiseState.speed) > 5:
-    #     self.mismatches += 1
-    # assert self.mismatches < 5
 
     # ego dash speed factor is dynamic across the speed range
     dash_speed_factor = ret.cruiseState.speedCluster / max(ret.cruiseState.speed, 0.01)
