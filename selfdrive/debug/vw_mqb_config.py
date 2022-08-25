@@ -82,7 +82,7 @@ if __name__ == "__main__":
     coding_byte = 3
     coding_bit = 0
 
-  if coding_variant == None:
+  if coding_variant is None:
     print("Configuration changes not yet supported on this EPS!")
     quit()
 
