@@ -180,7 +180,7 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
   }
 }
 
-void CameraViewWidget::updateFrameMat() {
+void CameraViewWidget::updateTransforms() {
   float x_offset = 0., y_offset = 0.;
   float zoom = 1.0;
   UIState *s = uiState();
@@ -238,7 +238,7 @@ void CameraViewWidget::updateFrameMat() {
 
 void CameraViewWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
-  updateFrameMat();
+  updateTransforms();
 }
 
 void CameraViewWidget::paintGL() {
@@ -348,7 +348,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
-  updateFrameMat();
+  updateTransforms();
 }
 
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {

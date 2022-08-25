@@ -42,11 +42,11 @@ signals:
 protected:
   void paintGL() override;
   void initializeGL() override;
-  void resizeGL(int w, int h) override { updateFrameMat(); }
+  void resizeGL(int w, int h) override { updateTransforms(); }
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
-  virtual void updateFrameMat();
+  void updateTransforms();
   void updateCalibration(const mat3 &calib);
   void vipcThread();
 
