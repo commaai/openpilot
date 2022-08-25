@@ -26,6 +26,13 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
 
+  @staticmethod
+  def get_cluster_ego_speed(v_ego):
+    # TODO: this is different for metric
+    v_ego_mph = v_ego * CV.MS_TO_MPH
+    v_ego_mph = round(v_ego_mph) + int(v_ego_mph * 3 / 100 + 1)
+    return v_ego_mph * CV.MPH_TO_MS
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -105,13 +112,10 @@ class CarState(CarStateBase):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    # ego dash speed factor is dynamic across the speed range
-    dash_speed_factor = ret.cruiseState.speedCluster / max(ret.cruiseState.speed, 0.01)
-    print(dash_speed_factor)
-
     # native_unit = CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH
     # ret.vEgoCluster = math.floor(ret.vEgoRaw * native_unit * 1.05) / native_unit
-    ret.vEgoCluster = ret.vEgoRaw * dash_speed_factor
+    # TODO: might break if not imperial
+    ret.vEgoCluster = self.get_cluster_ego_speed(ret.vEgoRaw)
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
