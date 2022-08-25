@@ -96,7 +96,7 @@ jobs:
   #      echo 'EOF' >> $GITHUB_ENV
   #  - name: Cache dependencies
   #    id: dependency-cache
-  #    uses: actions/cache@v2
+  #    uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed # pin@v2
   #    with:
   #      path: |
   #        ~/.pyenv
@@ -252,7 +252,7 @@ jobs:
                         ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b # pin@v2
 
   process_replay:
     name: process replay
@@ -265,7 +265,7 @@ jobs:
     - uses: ./.github/workflows/setup
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # pin@v3
       with:
         path: /tmp/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
@@ -277,7 +277,7 @@ jobs:
     - name: Print diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
       if: always()
       continue-on-error: true
       with:
@@ -289,7 +289,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc) && \
                         CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b # pin@v2
 
   model_replay_onnx:
     name: model replay onnx
@@ -327,8 +327,8 @@ jobs:
                         coverage run ./test_longitudinal.py && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
-    - uses: actions/upload-artifact@v2
+      uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b # pin@v2
+    - uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # pin@v2
       if: always()
       continue-on-error: true
       with:
@@ -350,7 +350,7 @@ jobs:
     - uses: ./.github/workflows/setup
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3.0.8
+      uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # pin@v3.0.8
       with:
         path: /tmp/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
@@ -364,7 +364,7 @@ jobs:
         NUM_JOBS: 5
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@f32b3a3741e1053eb607407145bc9619351dc93b # pin@v2
 
   docs:
     name: build docs
@@ -412,14 +412,14 @@ jobs:
           echo "::set-output name=diff::$output"
       - name: Find comment
         if: ${{ env.AZURE_TOKEN != '' }}
-        uses: peter-evans/find-comment@v2.0.0
+        uses: peter-evans/find-comment@1769778a0c5bd330272d749d12c036d65e70d39d # pin@v2.0.0
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
         if: ${{ steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != '' }}
-        uses: peter-evans/create-or-update-comment@v2.0.0
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32 # pin@v2.0.0
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -427,7 +427,7 @@ jobs:
           edit-mode: replace
       - name: Delete comment
         if: ${{ steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != '' }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@d50f485531ba88479582bc2da03ff424389af5c1 # pin@v6
         with:
           script: |
             github.rest.issues.deleteComment({
