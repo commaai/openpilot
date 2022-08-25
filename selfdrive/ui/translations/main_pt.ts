@@ -29,12 +29,12 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="129"/>
         <source>Enable Tethering</source>
-        <translation>Ativar Theter</translation>
+        <translation>Ativar Tether</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <source>Tethering Password</source>
-        <translation>Senha Thetering</translation>
+        <translation>Senha Tethering</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
@@ -45,12 +45,12 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>Insira nova senha thetering</translation>
+        <translation>Insira nova senha tethering</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
         <source>IP Address</source>
-        <translation>IP Endereço</translation>
+        <translation>Endereço IP</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
@@ -125,7 +125,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Driver Camera</source>
-        <translation>Câmera Motorista</translation>
+        <translation>Câmera do Condutor</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
@@ -140,7 +140,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
         <source>Reset Calibration</source>
-        <translation>Limpar Calibragem</translation>
+        <translation>Resetar Calibragem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
@@ -150,7 +150,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="113"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>Tem certeza que quer limpar calibragem?</translation>
+        <translation>Tem certeza que quer resetar calibragem?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
@@ -165,7 +165,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>Revisar regras, features e limitações do openpilot</translation>
+        <translation>Revisar regras, aprimoramentos e limitações do openpilot</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="122"/>
@@ -210,7 +210,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="187"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>o openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. o openpilot está continuamente calibrando, a redefinição raramente é necessária.</translation>
+        <translation>o openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. o openpilot está continuamente calibrando, resetar é raramente necessário.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
@@ -296,7 +296,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="55"/>
         <source>camera starting</source>
-        <translation>camera iniciando</translation>
+        <translation>câmera iniciando</translation>
     </message>
 </context>
 <context>
@@ -335,7 +335,7 @@
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation>Atualizando arquivos: </translation>
+        <translation>Atualizando ficheiros: </translation>
     </message>
 </context>
 <context>
@@ -415,8 +415,8 @@
         <location filename="../qt/maps/map_settings.cc" line="107"/>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com 
-uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
+        <translation>Obtenha direções curva a curva exibidas no ecrã e muito mais com 
+uma assinatura prime Inscreva-se agora：https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
@@ -429,7 +429,7 @@ residência definido</translation>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>Sem local
+        <translation>Sem local de
 trabalho definido</translation>
     </message>
     <message>
@@ -542,7 +542,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="86"/>
         <source>Pair your device to your comma account</source>
-        <translation>Pareie seu dispositivo a sua conta comma</translation>
+        <translation>Emparelhe seu dispositivo à sua conta comma</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="97"/>
@@ -557,7 +557,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="99"/>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>Salve connect.comma.ai como sua página inicial para utilizar com um app</translation>
+        <translation>Faça Bookmark de connect.comma.ai na sua página inicial para utilizar como uma app</translation>
     </message>
 </context>
 <context>
@@ -688,7 +688,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Solicitado reset do sistema. Confirme para apagar todo conteúdo e configurações. Aperte cancelar para continuar boot.</translation>
+        <translation>Sistema de reset acionado. Confirme para apagar todo o conteúdo e configurações. Aperte cancelar para continuar boot.</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
@@ -763,7 +763,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Ligue seu dispositivo em um carro com um chicote ou prossiga por sua conta e risco.</translation>
+        <translation>Ligue seu dispositivo em um carro com os cabos dados ou prossiga por sua conta e risco.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="92"/>
@@ -831,7 +831,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>for Custom Software</source>
-        <translation>para o Software Customizado</translation>
+        <translation>para Software Customizado</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
@@ -846,7 +846,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Garanta que a URL inserida é valida, e uma boa conexão à internet.</translation>
+        <translation>Garanta que o URL inserido é valido, e que tenha uma boa conexão à internet.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
@@ -869,12 +869,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>Pareie seu dispositivo com comma connect (connect.comma.ai) e reivindique sua oferta de comma prime.</translation>
+        <translation>Emparelhe seu dispositivo com o comma connect (connect.comma.ai) e reivindique sua oferta de comma prime.</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
-        <translation>Parear dispositivo</translation>
+        <translation>Emparelhar dispositivo</translation>
     </message>
 </context>
 <context>
@@ -1040,7 +1040,7 @@ trabalho definido</translation>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>O novo ramo será aplicado na próxima execução do atualizador.</translation>
+        <translation>O novo ramo será aplicado na próxima que o atualizador seja executado.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
@@ -1055,7 +1055,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
         <source>Uninstall %1</source>
-        <translation>Desintalando %1</translation>
+        <translation>Desintalar %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
@@ -1141,12 +1141,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="107"/>
         <source>Decline</source>
-        <translation>Declinar</translation>
+        <translation>Recusar</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>Role para aceitar</translation>
+        <translation>Faça scroll para aceitar</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
@@ -1164,7 +1164,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="35"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Use o sistema openpilot para controle de cruzeiro adaptativo e assistência ao motorista de manutenção de faixa. Sua atenção é necessária o tempo todo para usar esse recurso. A alteração desta configuração tem efeito quando o carro é desligado.</translation>
+        <translation>Use o sistema openpilot para cruise control adaptativo e assistência ao condutor de manutenção de faixa. Sua atenção é necessária o tempo todo para usar esse recurso. A alteração desta configuração tem efeito quando o carro é desligado.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="40"/>
@@ -1174,7 +1174,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>Receba alertas para voltar para a pista se o seu veículo sair da faixa e a seta não tiver sido acionada previamente quando em velocidades superiores a 50 km/h.</translation>
+        <translation>Receba alertas para voltar para a pista se o seu veículo passar por cima de uma linha da pista sem a seta de mudança de linha ter sido ativada em velocidades superiores a 50 km/h (31 mph).</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
@@ -1234,7 +1234,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="85"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot desativará o radar do carro e assumirá o controle do acelerador e freios. Atenção: isso desativa AEB!</translation>
+        <translation>openpilot desativará o radar do carro e assumirá o controle do acelerador e freios. Atenção: isso desativa a paragem de emergência automática (AEB)!</translation>
     </message>
 </context>
 <context>
@@ -1247,7 +1247,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/setup/updater.cc" line="29"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Uma atualização do sistema operacional é necessária. Conecte seu dispositivo ao Wi-Fi para a experiência de atualização mais rápida. O tamanho do download é de aproximadamente 1GB.</translation>
+        <translation>Uma atualização do sistema operativo é necessária. Conecte seu dispositivo ao Wi-Fi para a experiência de atualização mais rápida. O tamanho do download é de aproximadamente 1GB.</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
