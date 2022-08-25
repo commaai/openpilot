@@ -423,24 +423,6 @@ void NvgWindow::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void NvgWindow::updateFrameMat() {
-  CameraViewWidget::updateFrameMat();
-  UIState *s = uiState();
-  int w = width(), h = height();
-
-  s->fb_w = w;
-  s->fb_h = h;
-
-  // Apply transformation such that video pixel coordinates match video
-  // 1) Put (0, 0) in the middle of the video
-  // 2) Apply same scaling as video
-  // 3) Put (0, 0) in top left corner of video
-  s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
-      .scale(zoom, zoom)
-      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
-}
-
 void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.save();
 

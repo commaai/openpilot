@@ -24,7 +24,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(s->scene.intrinsic_matrix, Ep);
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
@@ -218,7 +218,6 @@ void UIState::updateStatus() {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      wide_camera = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
@@ -232,9 +231,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
   });
 
-  Params params;
-  wide_camera = params.getBool("WideCameraOnly");
-  prime_type = std::atoi(params.get("PrimeType").c_str());
+  prime_type = std::atoi(Params().get("PrimeType").c_str());
 
   // update timer
   timer = new QTimer(this);

@@ -89,6 +89,7 @@ typedef struct UIScene {
   bool calibration_valid = false;
   mat3 view_from_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
+  mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
   // modelV2
   float lane_line_probs[4];
@@ -129,7 +130,6 @@ public:
   int prime_type = 0;
 
   QTransform car_space_transform;
-  bool wide_camera;
 
 signals:
   void uiUpdate(const UIState &s);
