@@ -25,6 +25,7 @@ class CarState(CarStateBase):
 
     self.low_speed_lockout = False
     self.acc_type = 1
+    self.mismatches = 0
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -91,9 +92,11 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
+      cluster_set_speed = cp.vl["PCM_CRUISE_ALT"]["UI_SET_SPEED"]
     else:
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
+      cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
 
     is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
 
@@ -101,10 +104,21 @@ class CarState(CarStateBase):
     ret.cruiseState.speedCluster = 0
     if ret.cruiseState.speed != 0:
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
-      ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion_factor
+      ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    native_unit = CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH
-    ret.vEgoCluster = math.floor(ret.vEgoRaw * native_unit * 1.05) / native_unit
+    # # print(ret.cruiseState.speedCluster, ret.cruiseState.speed)
+    # if len(cp.vl_all["PCM_CRUISE_SM"]["UI_SET_SPEED"]):
+    #   if abs(ret.cruiseState.speedCluster - ret.cruiseState.speed) > 5:
+    #     self.mismatches += 1
+    # assert self.mismatches < 5
+
+    # ego dash speed factor is dynamic across the speed range
+    dash_speed_factor = ret.cruiseState.speedCluster / max(ret.cruiseState.speed, 0.01)
+    print(dash_speed_factor)
+
+    # native_unit = CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH
+    # ret.vEgoCluster = math.floor(ret.vEgoRaw * native_unit * 1.05) / native_unit
+    ret.vEgoCluster = ret.vEgoRaw * dash_speed_factor
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
@@ -117,7 +131,7 @@ class CarState(CarStateBase):
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
     if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
-       (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
+      (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
@@ -203,7 +217,9 @@ class CarState(CarStateBase):
     if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
       signals.append(("MAIN_ON", "DSU_CRUISE"))
       signals.append(("SET_SPEED", "DSU_CRUISE"))
+      signals.append(("UI_SET_SPEED", "PCM_CRUISE_ALT"))
       checks.append(("DSU_CRUISE", 5))
+      checks.append(("PCM_CRUISE_ALT", 1))
     else:
       signals.append(("MAIN_ON", "PCM_CRUISE_2"))
       signals.append(("SET_SPEED", "PCM_CRUISE_2"))
