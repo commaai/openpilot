@@ -1,3 +1,4 @@
+import math
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -96,8 +97,10 @@ class CarState(CarStateBase):
 
     is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
     conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
-    ret.vEgoCluster = ret.vEgoRaw * 1.05
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion_factor
+
+    native_unit = CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH
+    ret.vEgoCluster = math.floor(ret.vEgoRaw * native_unit * 1.05) / native_unit
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
