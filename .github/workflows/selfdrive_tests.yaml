@@ -34,7 +34,7 @@ jobs:
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         fetch-depth: 0
         submodules: true
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -85,7 +85,7 @@ jobs:
   #  runs-on: macos-latest
   #  timeout-minutes: 60
   #  steps:
-  #  - uses: actions/checkout@v3
+  #  - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
   #    with:
   #      submodules: true
   #  - name: Determine pre-existing Homebrew packages
@@ -144,7 +144,7 @@ jobs:
     env:
       IMAGE_NAME: openpilotwebcamci
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -167,7 +167,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - name: Build Docker image
@@ -188,7 +188,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - name: Build Docker image
@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -218,7 +218,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -259,7 +259,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -296,7 +296,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -315,7 +315,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -344,7 +344,7 @@ jobs:
       matrix:
         job: [0, 1, 2, 3, 4]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
@@ -371,7 +371,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
       with:
         submodules: true
     - name: Build docker container
@@ -391,7 +391,7 @@ jobs:
     timeout-minutes: 50
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
@@ -400,7 +400,7 @@ jobs:
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
           sudo chown -R $USER:$USER ${{ github.workspace }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # pin@v3
         with:
           submodules: true
       - name: Save car docs diff
