@@ -67,7 +67,7 @@ if __name__ == "__main__":
     print("Timeout fetching data from EPS")
     quit()
 
-  coding_variant, current_coding_array, coding_byte, coding_bit = None, None, None, None
+  coding_variant, current_coding_array, coding_byte, coding_bit = None, None, 0, 0
   coding_length = len(current_coding)
 
   # EV_SteerAssisMQB covers the majority of MQB racks (EPS_MQB_ZFLS)
