@@ -226,7 +226,7 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_SOFTWARE_VERSION_REQUEST],
     [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
-    # whitelist_ecus=[Ecu.engine],
+    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Ford
   Request(
