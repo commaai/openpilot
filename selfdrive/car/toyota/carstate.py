@@ -96,10 +96,7 @@ class CarState(CarStateBase):
 
     is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
     conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
-    if is_metric:
-      ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE_2"]["UI_SPEED"] * CV.KPH_TO_MS
-    else:
-      ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE_2"]["UI_SPEED"] * CV.KPH_TO_MS * 1.05
+    ret.vEgoCluster = ret.vEgoRaw * 1.05
     ret.cruiseState.speedCluster = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"] * conversion_factor
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
@@ -156,7 +153,6 @@ class CarState(CarStateBase):
       ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
       ("PARKING_BRAKE", "BODY_CONTROL_STATE"),
       ("UNITS", "BODY_CONTROL_STATE_2"),
-      ("UI_SPEED", "BODY_CONTROL_STATE_2"),
       ("TC_DISABLED", "ESP_CONTROL"),
       ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
