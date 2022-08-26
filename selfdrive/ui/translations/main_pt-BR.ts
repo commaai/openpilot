@@ -29,12 +29,12 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="129"/>
         <source>Enable Tethering</source>
-        <translation>Ativar Theter</translation>
+        <translation>Ativar Tether</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <source>Tethering Password</source>
-        <translation>Senha Thetering</translation>
+        <translation>Senha Tethering</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
@@ -45,12 +45,12 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>Insira nova senha thetering</translation>
+        <translation>Insira nova senha tethering</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
         <source>IP Address</source>
-        <translation>IP Endereço</translation>
+        <translation>Endereço IP</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
@@ -125,7 +125,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Driver Camera</source>
-        <translation>Câmera Motorista</translation>
+        <translation>Câmera voltada para o Motorista</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
@@ -140,7 +140,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
         <source>Reset Calibration</source>
-        <translation>Limpar Calibragem</translation>
+        <translation>Resetar Calibragem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
@@ -150,7 +150,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="113"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>Tem certeza que quer limpar calibragem?</translation>
+        <translation>Tem certeza que quer resetar a calibragem?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
@@ -165,7 +165,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>Revisar regras, features e limitações do openpilot</translation>
+        <translation>Revisar regras, aprimoramentos e limitações do openpilot</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="122"/>
@@ -210,7 +210,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="187"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>o openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. o openpilot está continuamente calibrando, a redefinição raramente é necessária.</translation>
+        <translation>o openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. o openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
@@ -296,7 +296,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="55"/>
         <source>camera starting</source>
-        <translation>camera iniciando</translation>
+        <translation>câmera iniciando</translation>
     </message>
 </context>
 <context>
@@ -416,7 +416,7 @@
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
         <translation>Obtenha instruções passo a passo exibidas e muito mais com 
-uma assinatura prime Increva-se agora：https://connect.comma.ai</translation>
+uma assinatura prime Inscreva-se agora:  https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
@@ -429,7 +429,7 @@ residência definido</translation>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>Sem local
+        <translation>Sem local de
 trabalho definido</translation>
     </message>
     <message>
@@ -542,7 +542,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="86"/>
         <source>Pair your device to your comma account</source>
-        <translation>Pareie seu dispositivo a sua conta comma</translation>
+        <translation>Pareie seu dispositivo à sua conta comma</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="97"/>
@@ -557,7 +557,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="99"/>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>Salve connect.comma.ai como sua página inicial para utilizar com um app</translation>
+        <translation>Salve connect.comma.ai como sua página inicial para utilizar como um app</translation>
     </message>
 </context>
 <context>
@@ -575,7 +575,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
-        <translation>PRIME FEATURES:</translation>
+        <translation>APRIMORAMENTOS PRIME:</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="204"/>
@@ -1146,7 +1146,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>Role para aceitar</translation>
+        <translation>Role a tela para aceitar</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
