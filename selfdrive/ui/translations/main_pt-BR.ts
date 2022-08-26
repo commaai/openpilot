@@ -864,7 +864,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
-        <translation>Terminar Configuração</translation>
+        <translation>Concluir</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="239"/>
