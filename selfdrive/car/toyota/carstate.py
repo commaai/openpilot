@@ -30,7 +30,7 @@ class CarState(CarStateBase):
   def get_cluster_ego_speed(v_ego):
     # TODO: this is different for metric
     v_ego_mph = v_ego * CV.MS_TO_MPH
-    v_ego_mph = round(v_ego_mph) + int(v_ego_mph * 3 / 100 + 1)
+    v_ego_mph = round(v_ego_mph) + round(v_ego_mph * 3 / 100)
     return v_ego_mph * CV.MPH_TO_MS
 
   def update(self, cp, cp_cam):
