@@ -876,106 +876,106 @@ location set</source>
 <context>
     <name>Sidebar</name>
     <message>
-        <location filename="../qt/sidebar.cc" line="74"/>
-        <location filename="../qt/sidebar.cc" line="76"/>
+        <location filename="../qt/sidebar.cc" line="77"/>
+        <location filename="../qt/sidebar.cc" line="79"/>
         <source>CONNECT</source>
         <translation>雲端服務</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="74"/>
+        <location filename="../qt/sidebar.cc" line="77"/>
         <source>OFFLINE</source>
         <translation>已離線</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="76"/>
-        <location filename="../qt/sidebar.cc" line="89"/>
+        <location filename="../qt/sidebar.cc" line="79"/>
+        <location filename="../qt/sidebar.cc" line="92"/>
         <source>ONLINE</source>
         <translation>已連線</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="76"/>
+        <location filename="../qt/sidebar.cc" line="79"/>
         <source>ERROR</source>
         <translation>錯誤</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="80"/>
         <location filename="../qt/sidebar.cc" line="83"/>
-        <location filename="../qt/sidebar.cc" line="85"/>
+        <location filename="../qt/sidebar.cc" line="86"/>
+        <location filename="../qt/sidebar.cc" line="88"/>
         <source>TEMP</source>
         <translation>溫度</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="80"/>
+        <location filename="../qt/sidebar.cc" line="83"/>
         <source>HIGH</source>
         <translation>偏高</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="83"/>
+        <location filename="../qt/sidebar.cc" line="86"/>
         <source>GOOD</source>
         <translation>正常</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="85"/>
+        <location filename="../qt/sidebar.cc" line="88"/>
         <source>OK</source>
         <translation>一般</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="89"/>
+        <location filename="../qt/sidebar.cc" line="92"/>
         <source>VEHICLE</source>
         <translation>車輛通訊</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="91"/>
+        <location filename="../qt/sidebar.cc" line="94"/>
         <source>NO</source>
         <translation>未連線</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="91"/>
+        <location filename="../qt/sidebar.cc" line="94"/>
         <source>PANDA</source>
         <translation>車輛通訊</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="93"/>
+        <location filename="../qt/sidebar.cc" line="96"/>
         <source>GPS</source>
         <translation>GPS</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="93"/>
+        <location filename="../qt/sidebar.cc" line="96"/>
         <source>SEARCH</source>
         <translation>車輛通訊</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="37"/>
+        <location filename="../qt/sidebar.h" line="40"/>
         <source>--</source>
         <translation>--</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="38"/>
+        <location filename="../qt/sidebar.h" line="41"/>
         <source>Wi-Fi</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="39"/>
+        <location filename="../qt/sidebar.h" line="42"/>
         <source>ETH</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="40"/>
+        <location filename="../qt/sidebar.h" line="43"/>
         <source>2G</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="41"/>
+        <location filename="../qt/sidebar.h" line="44"/>
         <source>3G</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="42"/>
+        <location filename="../qt/sidebar.h" line="45"/>
         <source>LTE</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="43"/>
+        <location filename="../qt/sidebar.h" line="46"/>
         <source>5G</source>
         <translation></translation>
     </message>
