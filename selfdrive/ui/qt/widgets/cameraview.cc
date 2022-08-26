@@ -296,13 +296,16 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 #ifdef QCOM2
   egl_display = eglGetCurrentDisplay();
 
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(egl_display, pair.second);
+  for (auto &[_, s] : egl_images) {
+    eglDestroyImageKHR(egl_display, s.handle);
+    close(s.fd);
   }
   egl_images.clear();
-
   for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
-    int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
+    // the EGL_EXT_image_dma_buf_import spec was revised after 2013:
+    // EGL does not take ownership of the file descriptors. It is the
+    // responsibility of the application to close it.
+    int fd = dup(vipc_client->buffers[i].fd);
     EGLint img_attrs[] = {
       EGL_WIDTH, (int)vipc_client->buffers[i].width,
       EGL_HEIGHT, (int)vipc_client->buffers[i].height,
@@ -315,7 +318,8 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
       EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
       EGL_NONE
     };
-    egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+    egl_images[i] = {.handle = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs),
+                     .fd = fd};
     assert(eglGetError() == EGL_SUCCESS);
   }
 #else
@@ -372,8 +376,9 @@ void CameraViewWidget::vipcThread() {
   }
 
 #ifdef QCOM2
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(egl_display, pair.second);
+  for (auto &[_, s] : egl_images) {
+    eglDestroyImageKHR(egl_display, s.handle);
+    close(s.fd);
   }
   egl_images.clear();
 #endif

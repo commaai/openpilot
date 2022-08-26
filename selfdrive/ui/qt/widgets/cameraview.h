@@ -59,7 +59,11 @@ protected:
 
 #ifdef QCOM2
   EGLDisplay egl_display;
-  std::map<int, EGLImageKHR> egl_images;
+  struct {
+    EGLImageKHR handle;
+    int fd;
+  } EGLState;
+  std::map<int, EGLState> egl_images;
 #endif
 
   std::string stream_name;
