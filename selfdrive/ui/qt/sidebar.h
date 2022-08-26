@@ -2,12 +2,15 @@
 
 #include <QFrame>
 #include <QMap>
+#include <QTimer>
 
 #include "common/params.h"
 #include "selfdrive/ui/ui.h"
 
 typedef QPair<QPair<QString, QString>, QColor> ItemStatus;
 Q_DECLARE_METATYPE(ItemStatus);
+
+#define SIDEBAR_HOME_BTN_TIMEOUT_MS 1000
 
 class Sidebar : public QFrame {
   Q_OBJECT
@@ -56,4 +59,6 @@ protected:
 
 private:
   std::unique_ptr<PubMaster> pm;
+
+  QTimer* home_btn_timer;
 };
