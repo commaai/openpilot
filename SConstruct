@@ -52,7 +52,7 @@ AddOption('--no-thneed',
 AddOption('--no-test',
           action='store_false',
           dest='test',
-          default=os.path.isfile(Dir('#laika_repo').abspath),
+          default=os.path.islink(Dir('#laika/').abspath),
           help='skip building test files')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
