@@ -1194,6 +1194,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
                                                   };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
+    //printf("exposure time %d gain %f\n", exposure_time, gain);
     uint32_t real_exposure_time = exposure_time;
     uint32_t real_gain = gain*0x100;
     struct i2c_random_wr_payload exp_reg_array[] = {
