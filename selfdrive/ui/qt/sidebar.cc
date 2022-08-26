@@ -45,16 +45,14 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
-  home_btn_timer = new QTimer(this);
-  home_btn_timer->setSingleShot(true);
 }
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
-  if (home_btn.contains(event->pos()) && home_btn_timer->remainingTime() <= 0) {
+  if (home_btn.contains(event->pos()) && event->timestamp() - last_home_btn_press_time > SIDEBAR_HOME_BTN_TIMEOUT_MS) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
-    home_btn_timer->start(SIDEBAR_HOME_BTN_TIMEOUT_MS);
+    last_home_btn_press_time = event->timestamp();
   }
   if (settings_btn.contains(event->pos())) {
     emit openSettings();

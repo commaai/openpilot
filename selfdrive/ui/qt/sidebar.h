@@ -60,5 +60,5 @@ protected:
 private:
   std::unique_ptr<PubMaster> pm;
 
-  QTimer* home_btn_timer;
+  long last_home_btn_press_time = 0;
 };
