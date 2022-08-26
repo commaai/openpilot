@@ -10,10 +10,6 @@ AGNOS = TICI
 
 Decider('MD5-timestamp')
 
-AddOption('--test',
-          action='store_true',
-          help='build test files')
-
 AddOption('--extras',
           action='store_true',
           help='build misc extras, like setup and installer files')
@@ -52,6 +48,12 @@ AddOption('--no-thneed',
           action='store_true',
           dest='no_thneed',
           help='avoid using thneed')
+
+AddOption('--no-test',
+          action='store_false',
+          dest='test',
+          default=os.path.isfile(Dir('#laika_repo').abspath),
+          help='skip building test files')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -393,9 +395,13 @@ if arch != "Darwin":
 
 # Build openpilot
 
-SConscript(['cereal/SConscript'])
-SConscript(['panda/board/SConscript'])
-SConscript(['opendbc/can/SConscript'])
+# build submodules
+SConscript([
+  'cereal/SConscript',
+  'body/board/SConscript',
+  'panda/board/SConscript',
+  'opendbc/can/SConscript',
+])
 
 SConscript(['third_party/SConscript'])
 
