@@ -61,6 +61,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
 
+    elif candidate == CAR.CROSSTREK_HYBRID:
+      ret.mass = 1668. + STD_CARGO_KG
+      ret.wheelbase = 2.67
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 17
+      ret.steerActuatorDelay = 0.1
+
     elif candidate == CAR.FORESTER:
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67

@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, HYBRID_CARS, PREGLOBAL_CARS
 
 
 class CarState(CarStateBase):
@@ -55,8 +55,12 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
     cp_cruise = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
-    ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
-    ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
+    if self.car_fingerprint in HYBRID_CARS:
+      ret.cruiseState.enabled = cp_cam.vl["ES_DashStatus"]['Cruise_Activated'] != 0
+      ret.cruiseState.available = cp_cam.vl["ES_DashStatus"]['Cruise_On'] != 0
+    else:
+      ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
+      ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
     if self.car_fingerprint not in PREGLOBAL_CARS:
@@ -88,10 +92,8 @@ class CarState(CarStateBase):
     return ret
 
   @staticmethod
-  def get_common_global_signals():
+  def get_common_global_signals(CP):
     signals = [
-      ("Cruise_On", "CruiseControl"),
-      ("Cruise_Activated", "CruiseControl"),
       ("FL", "Wheel_Speeds"),
       ("FR", "Wheel_Speeds"),
       ("RL", "Wheel_Speeds"),
@@ -99,10 +101,18 @@ class CarState(CarStateBase):
       ("Brake", "Brake_Status"),
     ]
     checks = [
-      ("CruiseControl", 20),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
     ]
+
+    if CP.carFingerprint not in HYBRID_CARS:
+      signals += [
+        ("Cruise_On", "CruiseControl"),
+        ("Cruise_Activated", "CruiseControl"),
+      ]
+      checks += [
+        ("CruiseControl", 20),
+      ]
 
     return signals, checks
 
@@ -176,8 +186,8 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
       if CP.carFingerprint not in GLOBAL_GEN2:
-        signals += CarState.get_common_global_signals()[0]
-        checks += CarState.get_common_global_signals()[1]
+        signals += CarState.get_common_global_signals(CP)[0]
+        checks += CarState.get_common_global_signals(CP)[1]
 
       signals += [
         ("Steer_Warning", "Steering_Torque"),
@@ -308,7 +318,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_body_can_parser(CP):
     if CP.carFingerprint in GLOBAL_GEN2:
-      signals, checks = CarState.get_common_global_signals()
+      signals, checks = CarState.get_common_global_signals(CP)
       signals += CarState.get_global_es_distance_signals()[0]
       checks += CarState.get_global_es_distance_signals()[1]
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)

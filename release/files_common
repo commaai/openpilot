@@ -396,6 +396,8 @@ selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
+selfdrive/assets/training_wide/*
+selfdrive/assets/navigation/*
 
 third_party/SConscript
 

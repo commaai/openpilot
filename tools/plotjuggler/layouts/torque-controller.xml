@@ -55,6 +55,12 @@
   <plugin ID="Cereal Subscriber"/>
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles>
+  <fileInfo filename="../../../../threepilot/tools/plotjuggler/tmp03i8v25j.rlog" prefix="">
+   <selected_datasources value=""/>
+   <plugin ID="DataLoad Rlog"/>
+  </fileInfo>
+ </previouslyLoaded_Datafiles>
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations>
   <snippet name="carState.vEgo kmh">

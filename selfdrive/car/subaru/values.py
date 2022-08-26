@@ -35,6 +35,7 @@ class CAR:
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
+  CROSSTREK_HYBRID = "SUBARU CROSSTREK HYBRID 2020"
   LEGACY = "SUBARU LEGACY 7TH GEN"
 
   # Pre-global
@@ -64,6 +65,8 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
     SubaruCarInfo("Subaru Crosstrek 2020-21"),
     SubaruCarInfo("Subaru XV 2020-21"),
   ],
+  # TODO: is there an XV and Impreza too?
+  CAR.CROSSTREK_HYBRID: SubaruCarInfo("Subaru Crosstrek Hybrid 2020"),
   CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
   CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
@@ -231,6 +234,21 @@ FW_VERSIONS = {
       b'\xe7\xf5D0\000',
       b'\xf1\x00\xd7\x10@',
       b'\xe6\xf5D0\x00',
+    ],
+  },
+  CAR.CROSSTREK_HYBRID: {
+    (Ecu.esp, 0x7b0, None): [
+      b'\xa2 \x19e\x01',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x9a\xc2\x01\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00el\x1f@ #',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xd7!`@\x07',
+      b'\xd7!`p\a',
     ],
   },
   CAR.FORESTER: {
@@ -473,6 +491,7 @@ DBC = {
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
+  CAR.CROSSTREK_HYBRID: dbc_dict('subaru_global_2020_hybrid_generated', None),
   CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
@@ -480,5 +499,6 @@ DBC = {
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-GLOBAL_GEN2 = (CAR.OUTBACK, CAR.LEGACY)
+GLOBAL_GEN2 = (CAR.OUTBACK, CAR.LEGACY, CAR.CROSSTREK_HYBRID)
+HYBRID_CARS = (CAR.CROSSTREK_HYBRID, )
 PREGLOBAL_CARS = (CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018)
