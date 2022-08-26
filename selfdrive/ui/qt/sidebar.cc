@@ -46,6 +46,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
 
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
   home_btn_timer = new QTimer(this);
+  home_btn_timer->setSingleShot(true);
 }
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
