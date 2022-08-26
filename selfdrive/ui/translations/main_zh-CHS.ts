@@ -874,71 +874,71 @@ location set</source>
 <context>
     <name>Sidebar</name>
     <message>
+        <location filename="../qt/sidebar.cc" line="75"/>
         <location filename="../qt/sidebar.cc" line="77"/>
-        <location filename="../qt/sidebar.cc" line="79"/>
         <source>CONNECT</source>
         <translation>CONNECT</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="77"/>
+        <location filename="../qt/sidebar.cc" line="75"/>
         <source>OFFLINE</source>
         <translation>离线</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="79"/>
-        <location filename="../qt/sidebar.cc" line="92"/>
+        <location filename="../qt/sidebar.cc" line="77"/>
+        <location filename="../qt/sidebar.cc" line="90"/>
         <source>ONLINE</source>
         <translation>在线</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="79"/>
+        <location filename="../qt/sidebar.cc" line="77"/>
         <source>ERROR</source>
         <translation>连接出错</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="83"/>
+        <location filename="../qt/sidebar.cc" line="81"/>
+        <location filename="../qt/sidebar.cc" line="84"/>
         <location filename="../qt/sidebar.cc" line="86"/>
-        <location filename="../qt/sidebar.cc" line="88"/>
         <source>TEMP</source>
         <translation>设备温度</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="83"/>
+        <location filename="../qt/sidebar.cc" line="81"/>
         <source>HIGH</source>
         <translation>过热</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="86"/>
+        <location filename="../qt/sidebar.cc" line="84"/>
         <source>GOOD</source>
         <translation>良好</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="88"/>
+        <location filename="../qt/sidebar.cc" line="86"/>
         <source>OK</source>
         <translation>一般</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="92"/>
+        <location filename="../qt/sidebar.cc" line="90"/>
         <source>VEHICLE</source>
         <translation>车辆连接</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="94"/>
+        <location filename="../qt/sidebar.cc" line="92"/>
         <source>NO</source>
         <translation>无</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="94"/>
+        <location filename="../qt/sidebar.cc" line="92"/>
         <source>PANDA</source>
         <translation>PANDA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="96"/>
+        <location filename="../qt/sidebar.cc" line="94"/>
         <source>GPS</source>
         <translation>GPS</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="96"/>
+        <location filename="../qt/sidebar.cc" line="94"/>
         <source>SEARCH</source>
         <translation>搜索中</translation>
     </message>

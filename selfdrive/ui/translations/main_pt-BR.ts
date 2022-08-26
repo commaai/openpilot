@@ -880,71 +880,71 @@ trabalho definido</translation>
 <context>
     <name>Sidebar</name>
     <message>
+        <location filename="../qt/sidebar.cc" line="75"/>
         <location filename="../qt/sidebar.cc" line="77"/>
-        <location filename="../qt/sidebar.cc" line="79"/>
         <source>CONNECT</source>
         <translation>CONEXÃO</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="77"/>
+        <location filename="../qt/sidebar.cc" line="75"/>
         <source>OFFLINE</source>
         <translation>DESCONEC</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="79"/>
-        <location filename="../qt/sidebar.cc" line="92"/>
+        <location filename="../qt/sidebar.cc" line="77"/>
+        <location filename="../qt/sidebar.cc" line="90"/>
         <source>ONLINE</source>
         <translation>CONECTADO</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="79"/>
+        <location filename="../qt/sidebar.cc" line="77"/>
         <source>ERROR</source>
         <translation>ERRO</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="83"/>
+        <location filename="../qt/sidebar.cc" line="81"/>
+        <location filename="../qt/sidebar.cc" line="84"/>
         <location filename="../qt/sidebar.cc" line="86"/>
-        <location filename="../qt/sidebar.cc" line="88"/>
         <source>TEMP</source>
         <translation>TEMP</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="83"/>
+        <location filename="../qt/sidebar.cc" line="81"/>
         <source>HIGH</source>
         <translation>ALTA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="86"/>
+        <location filename="../qt/sidebar.cc" line="84"/>
         <source>GOOD</source>
         <translation>BOA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="88"/>
+        <location filename="../qt/sidebar.cc" line="86"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="92"/>
+        <location filename="../qt/sidebar.cc" line="90"/>
         <source>VEHICLE</source>
         <translation>VEÍCULO</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="94"/>
+        <location filename="../qt/sidebar.cc" line="92"/>
         <source>NO</source>
         <translation>SEM</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="94"/>
+        <location filename="../qt/sidebar.cc" line="92"/>
         <source>PANDA</source>
         <translation>PANDA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="96"/>
+        <location filename="../qt/sidebar.cc" line="94"/>
         <source>GPS</source>
         <translation>GPS</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="96"/>
+        <location filename="../qt/sidebar.cc" line="94"/>
         <source>SEARCH</source>
         <translation>PROCURA</translation>
     </message>
