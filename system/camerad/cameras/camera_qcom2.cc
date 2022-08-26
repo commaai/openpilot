@@ -1194,6 +1194,16 @@ void CameraState::set_camera_exposure(float grey_frac) {
                                                   };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
+    uint32_t real_exposure_time = exposure_time;
+    uint32_t real_gain = gain*0x100;
+    struct i2c_random_wr_payload exp_reg_array[] = {
+      {0x3501, real_exposure_time>>8}, {0x3502, real_exposure_time&0xFF},
+      {0x3541, real_exposure_time>>8}, {0x3542, real_exposure_time&0xFF},
+      {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
+      {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
+    };
+    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+
 
     // if gain is sub 1, we have to use exposure to mimic sub 1 gains
     /*int32_t real_exposure_time = (gain < 1.0) ? (exposure_time*gain) : exposure_time;
