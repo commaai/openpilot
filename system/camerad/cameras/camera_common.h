@@ -94,7 +94,6 @@ private:
 public:
   cl_command_queue q;
   FrameMetadata cur_frame_data;
-  VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;

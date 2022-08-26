@@ -162,7 +162,7 @@ QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMo
   }
 }
 
-QRect getTextRect(QPainter &p, int flags, QString text) {
+QRect getTextRect(QPainter &p, int flags, const QString &text) {
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
   return fm.boundingRect(init_rect, flags, text);
