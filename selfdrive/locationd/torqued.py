@@ -13,17 +13,19 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego', 'carState_t', 'carControl_t']
 POINTS_PER_BUCKET = 3000
-MIN_POINTS_TOTAL = 3000
-MIN_VEL = 10  # m/s
+MIN_POINTS_TOTAL = 4000
+FIT_POINTS_TOTAL = 3000
+MIN_VEL = 15  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
 FILTER_DECAY = 50
 MAX_DECAY = 250
 LAT_ACC_THRESHOLD = 1
-STEER_BUCKET_BOUNDS = [(-0.5, -0.25), (-0.25, 0), (0, 0.25), (0.25, 0.5)]
-MIN_BUCKET_POINTS = [200, 800, 800, 200]
+STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
+MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
 MAX_RESETS = 5.0
+MIN_DATA_PERC = 0.3
 
 
 def slope2rot(slope):
@@ -38,8 +40,11 @@ class PointBuckets:
     self.buckets = {bounds: deque(maxlen=POINTS_PER_BUCKET) for bounds in x_bounds}
     self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
 
+  def bucket_len(self):
+    return [len(v) for v in self.buckets.values()]
+
   def __len__(self):
-    return sum([len(v) for v in self.buckets.values()])
+    return sum(self.bucket_len())
 
   def is_valid(self):
     return np.all([len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())]) and (self.__len__() >= MIN_POINTS_TOTAL)
@@ -103,14 +108,16 @@ class TorqueEstimator:
     self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
   def estimate_params(self):
-    points = self.filtered_points.get_points(MIN_POINTS_TOTAL)
+    points = self.filtered_points.get_points(FIT_POINTS_TOTAL)
     # total least square solution as both x and y are noisy observations
     # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     _, _, v = np.linalg.svd(points, full_matrices=False)
     slope, offset = -v.T[0:2, 2] / v.T[2, 2]
     _, spread = np.einsum("ik,kj -> ji", np.column_stack((points[:, 0], points[:, 2] - offset)), slope2rot(slope))
     friction_coeff = np.std(spread) * FRICTION_FACTOR
-    return slope, offset, friction_coeff
+    steer_data_distribution = np.array([np.mean(points[:, 0] < 0), np.mean(points[:, 0] > 0)])
+    lat_acc_data_distribution = np.array([np.mean(points[:, 2] < offset), np.mean(points[:, 2] > offset)])
+    return slope, offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution
 
   def update_params(self, params):
     self.decay = min(self.decay + DT_MDL, MAX_DECAY)
@@ -121,8 +128,10 @@ class TorqueEstimator:
   def car_sane(self, params, fingerprint):
     return False if params.get('carFingerprint', None) != fingerprint else True
 
-  def is_sane(self, slope, offset, friction_coeff):
+  def is_sane(self, slope, offset, friction_coeff, steer_data_distribution=np.array([0.5, 0.5]), lat_acc_data_distribution=np.array([0.5, 0.5])):
     min_factor, max_factor = 1.0 - SANITY_FACTOR, 1.0 + SANITY_FACTOR
+    if np.any(steer_data_distribution < MIN_DATA_PERC) or np.any(lat_acc_data_distribution < MIN_DATA_PERC):
+      return False
     if slope is None or offset is None or friction_coeff is None:
       return False
     if np.isnan(slope) or np.isnan(offset) or np.isnan(friction_coeff):
@@ -182,14 +191,14 @@ def main(sm=None, pm=None):
 
       if estimator.filtered_points.is_valid():
         try:
-          slope, offset, friction_coeff = estimator.estimate_params()
+          slope, offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution = estimator.estimate_params()
           # print(slope, offset, friction_coeff)
         except Exception as e:
           # print(e)
           slope = offset = friction_coeff = None
           cloudlog.exception(f"Error computing live torque params: {e}")
 
-        if estimator.is_sane(slope, offset, friction_coeff):
+        if estimator.is_sane(slope, offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution):
           liveTorqueParameters.liveValid = True
           liveTorqueParameters.slopeRaw = float(slope)
           liveTorqueParameters.offsetRaw = float(offset)
@@ -198,7 +207,7 @@ def main(sm=None, pm=None):
         else:
           cloudlog.exception("live torque params are numerically unstable")
           liveTorqueParameters.liveValid = False
-          estimator.reset()
+          # estimator.reset()
       else:
         liveTorqueParameters.liveValid = False
       liveTorqueParameters.slopeFiltered = float(estimator.filtered_params['slope'].x)
