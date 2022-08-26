@@ -111,14 +111,14 @@ if __name__ == "__main__":
   if args.action in ["enable", "disable"]:
     print("\nAttempting configuration update")
 
-    assert(coding_variant == "ZF" or coding_variant == "ZF2") 
+    assert(coding_variant in ('ZF', 'ZF2')) 
     # ZF EPS config coding length can be anywhere from 1 to 4 bytes, but the
     # bit we care about is always in the same place in the first byte
     if args.action == "enable":
       new_byte = current_coding_array[coding_byte] | (1 << coding_bit)
     else:
       new_byte = current_coding_array[coding_byte] & ~(1 << coding_bit)
-    new_coding = current_coding[0:coding_byte]+new_byte.to_bytes(1, "little")+current_coding[coding_byte+1:]
+    new_coding = current_coding[0:coding_byte] + new_byte.to_bytes(1, "little") + current_coding[coding_byte+1:]
 
     try:
       seed = uds_client.security_access(ACCESS_TYPE_LEVEL_1.REQUEST_SEED)  # type: ignore
