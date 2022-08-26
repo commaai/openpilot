@@ -3,7 +3,7 @@ from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
+from selfdrive.car.mazda.values import CAR, DBC, LKAS_LIMITS, GEN1
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -72,6 +72,7 @@ class CarState(CarStateBase):
         self.lkas_allowed_speed = True
       elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
         self.lkas_allowed_speed = False
+    else:
       self.lkas_allowed_speed = True
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
@@ -90,7 +91,9 @@ class CarState(CarStateBase):
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
     # it should be enabled (steer lockout). Don't warn until we actually get lkas active
     # and lose it again, i.e, after initial lkas activation
-    ret.steerFaultTemporary = self.lkas_allowed_speed and lkas_blocked
+    # On certain cars, LKAS_BLOCK signal has no effect on whether EPS will apply torque
+    if self.CP.carFingerprint not in {CAR.CX5_2022}:
+      ret.steerFaultTemporary = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
 
