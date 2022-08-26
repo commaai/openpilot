@@ -5,7 +5,6 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
 
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -14,7 +13,6 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["GEAR"]["GEAR"]
 
     self.crz_btns_counter = 0
-    self.above_min_steer_counter = 0
     self.acc_active_last = False
     self.low_speed_alert = False
     self.lkas_allowed_speed = False
@@ -67,10 +65,6 @@ class CarState(CarStateBase):
     # Either due to low speed or hands off
     lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
-    self.above_min_steer_counter += 1
-    if ret.vEgo <= max(self.CP.minSteerSpeed, 1):  # TODO: tune max(x, 1), or see if we can just use standstill
-      self.above_min_steer_counter = 0
-
     if self.CP.minSteerSpeed > 0:
       # LKAS is enabled at 52kph going up and disabled at 45kph going down
       # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
@@ -78,10 +72,7 @@ class CarState(CarStateBase):
         self.lkas_allowed_speed = True
       elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
         self.lkas_allowed_speed = False
-    elif self.above_min_steer_counter > 350:  # LKAS allowed 3.25 seconds above minSteerSpeed
       self.lkas_allowed_speed = True
-    else:
-      self.lkas_allowed_speed = False
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
     #       it should be used for carState.cruiseState.nonAdaptive instead
