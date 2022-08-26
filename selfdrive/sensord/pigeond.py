@@ -5,9 +5,12 @@ import time
 import signal
 import serial
 import struct
+import requests
+import urllib.parse
 from datetime import datetime
 
 from cereal import messaging
+from common.params import Params
 from system.swaglog import cloudlog
 from selfdrive.hardware import TICI
 from common.gpio import gpio_init, gpio_set
@@ -38,6 +41,27 @@ def add_ubx_checksum(msg):
     A = (A + b) % 256
     B = (B + A) % 256
   return msg + bytes([A, B])
+
+def get_assistnow_messages(token):
+  # make request
+  # TODO: implement adding the last known location
+  r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
+    'token': token,
+    'gnss': 'gps,glo',
+    'datatype': 'eph,alm,aux',
+  }, safe=':,'), timeout=5)
+  assert r.status_code == 200, "Got invalid status code"
+  dat = r.content
+
+  # split up messages
+  msgs = []
+  while len(dat) > 0:
+    assert dat[:2] == b"\xB5\x62"
+    msg_len = 6 + (dat[5] << 8 | dat[4]) + 2
+    msgs.append(dat[:msg_len])
+    dat = dat[msg_len:]
+  return msgs
+
 
 class TTYPigeon():
   def __init__(self, path):
@@ -160,6 +184,16 @@ def initialize_pigeon(pigeon):
           0
         ))
         pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+
+      # try getting AssistNow if we have a token
+      token = Params().get('AssistNowToken')
+      if token is not None:
+        try:
+          for msg in get_assistnow_messages(token):
+            pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
+          cloudlog.warning("AssistNow messages sent")
+        except:
+          cloudlog.warning("failed to get AssistNow messages")
 
       cloudlog.warning("Pigeon GPS on!")
       break
