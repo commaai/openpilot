@@ -84,10 +84,11 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       re.marked_ready_to_rotate = false;
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
-        for (auto &qmsg: re.q) {
+        auto q = re.q;
+        re.q.clear();
+        for (auto &qmsg: q) {
           bytes_count += handle_encoder_msg(s, qmsg, name, re);
         }
-        re.q.clear();
       }
     }
 
