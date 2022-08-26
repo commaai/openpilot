@@ -181,6 +181,9 @@ def deinitialize_pigeon(pigeon):
   except TimeoutError:
     pass
 
+  # turn off power
+  set_power(False)
+
 
 if __name__ == "__main__":
   assert TICI, "unsupported hardware for pigeond"
