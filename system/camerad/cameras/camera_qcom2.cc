@@ -48,12 +48,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_offset = AR0231_REGISTERS_HEIGHT,
     .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
   },
-  [CAMERA_ID_IMX390] = {
-    .frame_width = FRAME_WIDTH,
-    .frame_height = FRAME_HEIGHT,
-    .frame_stride = FRAME_STRIDE,
-  },
-  [CAMERA_ID_OS04C10] = {
+  [CAMERA_ID_OX03C10] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE, // (0xa80*12//8)
@@ -220,10 +215,8 @@ void CameraState::sensors_start() {
   LOGD("starting sensor %d", camera_num);
   if (camera_id == CAMERA_ID_AR0231) {
     sensors_i2c(start_reg_array_ar0231, std::size(start_reg_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
-  } else if (camera_id == CAMERA_ID_IMX390) {
-    sensors_i2c(start_reg_array_imx390, std::size(start_reg_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-  } else if (camera_id == CAMERA_ID_OS04C10) {
-    sensors_i2c(start_reg_array_os04c10, std::size(start_reg_array_os04c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else if (camera_id == CAMERA_ID_OX03C10) {
+    sensors_i2c(start_reg_array_ox03c10, std::size(start_reg_array_ox03c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   } else {
     assert(false);
   }
@@ -336,10 +329,7 @@ int CameraState::sensors_init() {
   if (camera_id == CAMERA_ID_AR0231) {
     probe->reg_addr = 0x3000;
     probe->expected_data = 0x354;
-  } else if (camera_id == CAMERA_ID_IMX390) {
-    probe->reg_addr = 0x330;
-    probe->expected_data = 0x1538;
-  } else if (camera_id == CAMERA_ID_OS04C10) {
+  } else if (camera_id == CAMERA_ID_OX03C10) {
     probe->reg_addr = 0x300a;
     probe->expected_data = 0x5803;
   } else {
@@ -663,8 +653,8 @@ void CameraState::camera_open() {
   LOGD("-- Probing sensor %d", camera_num);
   ret = sensors_init();
   if (ret != 0) {
-    LOGD("AR0231 init failed, trying OS04C10");
-    camera_id = CAMERA_ID_OS04C10;
+    LOGD("AR0231 init failed, trying OX03C10");
+    camera_id = CAMERA_ID_OX03C10;
     ret = sensors_init();
   }
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
@@ -692,11 +682,8 @@ void CameraState::camera_open() {
   if (camera_id == CAMERA_ID_AR0231) {
     sensors_i2c(init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
     dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
-  } else if (camera_id == CAMERA_ID_IMX390) {
-    sensors_i2c(init_array_imx390, std::size(init_array_imx390), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-    dt = 0x2c;
-  } else if (camera_id == CAMERA_ID_OS04C10) {
-    sensors_i2c(init_array_os04c10, std::size(init_array_os04c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+  } else if (camera_id == CAMERA_ID_OX03C10) {
+    sensors_i2c(init_array_ox03c10, std::size(init_array_ox03c10), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
     // one is 0x2a, two are 0x2b
     dt = 0x2c;
   } else {
@@ -1190,19 +1177,21 @@ void CameraState::set_camera_exposure(float grey_frac) {
                                                     {0x3012, (uint16_t)exposure_time},
                                                   };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
-  } else if (camera_id == CAMERA_ID_IMX390) {
+  } else if (camera_id == CAMERA_ID_OX03C10) {
+
     // if gain is sub 1, we have to use exposure to mimic sub 1 gains
-    uint32_t real_exposure_time = (gain < 1.0) ? (exposure_time*gain) : exposure_time;
+    /*int32_t real_exposure_time = (gain < 1.0) ? (exposure_time*gain) : exposure_time;
     // invert real_exposure_time, max exposure is 2
     real_exposure_time = (exposure_time >= 0x7cf) ? 2 : (0x7cf - exposure_time);
     uint32_t real_gain = int((10*log10(fmax(1.0, gain)))/0.3);
+
     //printf("%d expose: %d gain: %f = %d\n", camera_num, exposure_time, gain, real_gain);
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x000c, real_exposure_time&0xFF}, {0x000d, real_exposure_time>>8},
       {0x0010, real_exposure_time&0xFF}, {0x0011, real_exposure_time>>8},
       {0x0018, real_gain&0xFF}, {0x0019, real_gain>>8},
     };
-    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
+    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);*/
   }
 }
 
