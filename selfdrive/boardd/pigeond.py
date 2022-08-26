@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import sys
 import time
-import atexit
+import signal
 import serial
 import struct
 from datetime import datetime
@@ -165,7 +166,7 @@ def initialize_pigeon(pigeon):
     except TimeoutError:
       cloudlog.warning("Initialization failed, trying again!")
 
-def deinitialize_pigeon(pigeon):
+def deinitialize_and_exit(pigeon):
   cloudlog.warning("Storing almanac in ublox flash")
 
   # controlled GNSS stop
@@ -181,11 +182,11 @@ def deinitialize_pigeon(pigeon):
   except TimeoutError:
     pass
 
-  # turn off power
+  # turn off power and exit cleanly
   set_power(False)
+  sys.exit(0)
 
-
-if __name__ == "__main__":
+def main():
   assert TICI, "unsupported hardware for pigeond"
 
   pm = messaging.PubMaster(['ubloxRaw'])
@@ -200,7 +201,7 @@ if __name__ == "__main__":
   initialize_pigeon(pigeon)
 
   # register exit handler
-  atexit.register(deinitialize_pigeon, pigeon)
+  signal.signal(signal.SIGINT, lambda sig, frame: deinitialize_and_exit(pigeon))
 
   # start receiving data
   while True:
@@ -216,9 +217,5 @@ if __name__ == "__main__":
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
 
-
-
-
-
-
-
+if __name__ == "__main__":
+  main()
