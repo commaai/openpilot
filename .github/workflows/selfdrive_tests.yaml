@@ -74,11 +74,11 @@ jobs:
       with:
         save-cache: true
     - name: Build openpilot with all flags
-      run: ${{ env.RUN }} "scons -j$(nproc) --extras --test && release/check-dirty.sh"
+      run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --extras --test --cache-populate"
+                          scons -j$(nproc) --extras --cache-populate"
 
   #build_mac:
   #  name: build macos
@@ -225,7 +225,7 @@ jobs:
     - name: Run unit tests
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        scons -j$(nproc) --test && \
+                        scons -j$(nproc) && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
@@ -356,7 +356,7 @@ jobs:
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Test car models
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) --test && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         coverage run -m pytest selfdrive/car/tests/test_models.py && \
                         coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
