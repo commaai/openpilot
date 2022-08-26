@@ -32,6 +32,7 @@ a.out
 *.class
 *.pyxbldc
 *.vcd
+*.qm
 config.json
 clcache
 compile_commands.json
@@ -54,7 +55,6 @@ selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 one
-/body/
 openpilot
 notebooks
 xx

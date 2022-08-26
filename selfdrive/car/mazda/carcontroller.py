@@ -12,7 +12,6 @@ class CarController:
     self.CP = CP
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_name)
-    self.steer_rate_limited = False
     self.brake_counter = 0
     self.frame = 0
 
@@ -20,14 +19,12 @@ class CarController:
     can_sends = []
 
     apply_steer = 0
-    self.steer_rate_limited = False
 
     if CC.latActive:
       # calculate steer and also set limits due to driver torque
       new_steer = int(round(CC.actuators.steer * CarControllerParams.STEER_MAX))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
                                                   CS.out.steeringTorque, CarControllerParams)
-      self.steer_rate_limited = new_steer != apply_steer
 
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid

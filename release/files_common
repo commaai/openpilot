@@ -303,7 +303,8 @@ selfdrive/ui/soundd/*.cc
 selfdrive/ui/soundd/*.h
 selfdrive/ui/soundd/soundd
 selfdrive/ui/soundd/.gitignore
-selfdrive/ui/translations/*
+selfdrive/ui/translations/*.ts
+selfdrive/ui/translations/languages.json
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -323,11 +324,6 @@ system/camerad/include/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
-
-system/camerad/transforms/rgb_to_yuv.cc
-system/camerad/transforms/rgb_to_yuv.h
-system/camerad/transforms/rgb_to_yuv.cl
-system/camerad/transforms/rgb_to_yuv_test.cc
 
 system/camerad/imgproc/conv.cl
 system/camerad/imgproc/pool.cl
@@ -385,7 +381,9 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
-selfdrive/navd/*.py
+selfdrive/navd/__init__.py
+selfdrive/navd/navd.py
+selfdrive/navd/helpers.py
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
@@ -424,6 +422,8 @@ third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
 
+third_party/qt5/larch64/bin/**
+
 scripts/update_now.sh
 scripts/stop_updater.sh
 
@@ -433,6 +433,19 @@ pyextra/acados_template/**
 rednose/.gitignore
 rednose/**
 laika/**
+
+body/.gitignore
+body/board/SConscript
+body/board/*.h
+body/board/*.c
+body/board/*.s
+body/board/*.ld
+body/board/inc/**
+body/board/obj/
+body/board/bldc/**
+body/board/drivers/**
+body/certs/**
+body/crypto/**
 
 cereal/.gitignore
 cereal/__init__.py
@@ -491,6 +504,7 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
+opendbc/chrysler_ram_hd_generated.dbc
 opendbc/chrysler_ram_dt_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
@@ -499,6 +513,8 @@ opendbc/gm_global_a_powertrain_generated.dbc
 opendbc/gm_global_a_object.dbc
 opendbc/gm_global_a_chassis.dbc
 
+opendbc/FORD_CADS.dbc
+opendbc/ford_fusion_2018_adas.dbc
 opendbc/ford_lincoln_base_pt.dbc
 
 opendbc/honda_accord_2018_can_generated.dbc
@@ -518,7 +534,7 @@ opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 opendbc/honda_civic_ex_2022_can_generated.dbc
 
-opendbc/kia_ev6.dbc
+opendbc/hyundai_canfd.dbc
 opendbc/hyundai_kia_generic.dbc
 opendbc/hyundai_kia_mando_front_radar.dbc
 
@@ -538,6 +554,7 @@ opendbc/toyota_nodsu_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
+opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc

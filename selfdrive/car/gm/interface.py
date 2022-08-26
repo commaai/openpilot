@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 from cereal import car
 from math import fabs
+from panda import Panda
 
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
@@ -47,22 +49,28 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
-    ret.pcmCruise = False  # For ASCM, stock non-adaptive cruise control is kept off
-    ret.radarOffCan = False  # For ASCM, radar exists
-    ret.transmissionType = TransmissionType.automatic
-    # NetworkLocation.gateway: OBD-II harness (typically ASCM), NetworkLocation.fwdCamera: non-ASCM
-    ret.networkLocation = NetworkLocation.gateway
+
+    if candidate in EV_CAR:
+      ret.transmissionType = TransmissionType.direct
+    else:
+      ret.transmissionType = TransmissionType.automatic
+
+    if candidate in CAMERA_ACC_CAR:
+      ret.openpilotLongitudinalControl = False
+      ret.networkLocation = NetworkLocation.fwdCamera
+      ret.radarOffCan = True  # no radar
+      ret.pcmCruise = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+    else:  # ASCM, OBD-II harness
+      ret.openpilotLongitudinalControl = True
+      ret.networkLocation = NetworkLocation.gateway
+      ret.radarOffCan = False
+      ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
-
-    # Presence of a camera on the object bus is ok.
-    # Have to go to read_only if ASCM is online (ACC-enabled cars),
-    # or camera is on powertrain bus (LKA cars without ACC).
-    ret.openpilotLongitudinalControl = True
-    tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 7 * CV.MPH_TO_MS
@@ -70,6 +78,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    tire_stiffness_factor = 0.444  # not optimized yet
 
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -83,7 +92,6 @@ class CarInterface(CarInterfaceBase):
     ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     if candidate == CAR.VOLT:
-      ret.transmissionType = TransmissionType.direct
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
@@ -117,6 +125,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
+      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
@@ -141,6 +150,25 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
+    elif candidate == CAR.BOLT_EUV:
+      ret.minEnableSpeed = -1
+      ret.mass = 1669. + STD_CARGO_KG
+      ret.wheelbase = 2.675
+      ret.steerRatio = 16.8
+      ret.centerToFront = ret.wheelbase * 0.4
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.SILVERADO:
+      ret.minEnableSpeed = -1
+      ret.mass = 2200. + STD_CARGO_KG
+      ret.wheelbase = 3.75
+      ret.steerRatio = 16.3
+      ret.centerToFront = ret.wheelbase * 0.5
+      tire_stiffness_factor = 1.0
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -154,9 +182,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_loopback)
-
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
@@ -167,7 +193,9 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
-    events = self.create_common_events(ret, pcm_enable=self.CP.pcmCruise)
+    events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
+                                                         GearShifter.eco, GearShifter.manumatic],
+                                       pcm_enable=self.CP.pcmCruise)
 
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
@@ -175,9 +203,6 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
-
-    # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 

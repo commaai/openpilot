@@ -1,6 +1,6 @@
 import os
 
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
 lenv = env.Clone()
 
 libs = [cereal, messaging, common, visionipc, gpucommon,
@@ -82,4 +82,4 @@ lenv.Program('_dmonitoringmodeld', [
 lenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
-  ]+common_model, LIBS=libs)
+  ]+common_model, LIBS=libs + transformations)

@@ -10,7 +10,7 @@ from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import match_fw_to_car_exact, match_fw_to_car_fuzzy, build_fw_dict
+from selfdrive.car.fw_versions import match_fw_to_car
 
 
 NO_API = "NO_API" in os.environ
@@ -89,24 +89,8 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          # Older routes only have carFw from their brand
-          old_route = not any([len(fw.brand) for fw in car_fw])
-          brands = SUPPORTED_BRANDS if not old_route else [None]
-
-          # Exact match
-          exact_matches, fuzzy_matches = [], []
-          for brand in brands:
-            fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
-            exact_matches = match_fw_to_car_exact(fw_versions_dict)
-            if len(exact_matches) == 1:
-              break
-
-          # Fuzzy match
-          for brand in brands:
-            fw_versions_dict = build_fw_dict(car_fw, filter_brand=brand)
-            fuzzy_matches = match_fw_to_car_fuzzy(fw_versions_dict)
-            if len(fuzzy_matches) == 1:
-              break
+          _, exact_matches = match_fw_to_car(car_fw, allow_exact=True, allow_fuzzy=False)
+          _, fuzzy_matches = match_fw_to_car(car_fw, allow_exact=False, allow_fuzzy=True)
 
           if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
             good_exact += 1
@@ -130,7 +114,7 @@ if __name__ == "__main__":
           padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False

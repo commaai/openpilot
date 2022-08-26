@@ -4,7 +4,7 @@ Table of Contents
 =======================
 
 * [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-in-a-car)
+* [Running in a car](#running-on-a-dedicated-device-in-a-car)
 * [Running on PC](#running-on-pc)
 * [Community and Contributing](#community-and-contributing)
 * [User Data and comma Account](#user-data-and-comma-account)
@@ -17,7 +17,7 @@ Table of Contents
 What is openpilot?
 ------
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
+[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
 
 <table>
   <tr>
@@ -40,9 +40,9 @@ Running on a dedicated device in a car
 
 To use openpilot in a car, you need four things
 * A supported device to run this software: a [comma three](https://comma.ai/shop/products/three).
-* This software. The setup procedure of the comma three allows the user to enter a url for custom software.
-The url, openpilot.comma.ai will install the release version of openpilot. To install openpilot master, you can use installer.comma.ai/commaai/master, and replacing commaai with another github username can install a fork.
-* One of [the 150+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car is not supported, but has adaptive cruise control and lane keeping assist, it's likely able to run openpilot.
+* This software. The setup procedure of the comma three allows the user to enter a URL for custom software.
+The URL, openpilot.comma.ai will install the release version of openpilot. To install openpilot master, you can use installer.comma.ai/commaai/master, and replacing commaai with another GitHub username can install a fork.
+* One of [the 150+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run openpilot.
 * A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car.
 
 We have detailed instructions for [how to mount the device in a car](https://comma.ai/setup).
@@ -52,11 +52,11 @@ Running on PC
 
 All of openpilot's services can run as normal on a PC, even without special hardware or a car. To develop or experiment with openpilot you can run openpilot on recorded or simulated data.
 
-With openpilot's tools you can plot logs, replay drives and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
+With openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
 
-You can also run openpilot in simulation [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes, but does require a decent GPU.
+You can also run openpilot in simulation [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes but does require a decent GPU.
 
-A PC running openpilot can also control your vehicle if it is connected to a [a webcam](https://github.com/commaai/openpilot/tree/master/tools/webcam), a [black panda](https://comma.ai/shop/products/panda), and [a harness](https://comma.ai/shop/products/car-harness).
+A PC running openpilot can also control your vehicle if it is connected to a [webcam](https://github.com/commaai/openpilot/tree/master/tools/webcam), a [black panda](https://comma.ai/shop/products/panda), and a [harness](https://comma.ai/shop/products/car-harness).
 
 Community and Contributing
 ------
@@ -78,8 +78,8 @@ By default, openpilot uploads the driving data to our servers. You can also acce
 
 openpilot is open source software: the user is free to disable data collection if they wish to do so.
 
-openpilot logs the road facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-The driver facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
+openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
+The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
 
 By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
 
@@ -87,11 +87,11 @@ Safety and Testing
 ----
 
 * openpilot observes ISO26262 guidelines, see [SAFETY.md](docs/SAFETY.md) for more details.
-* openpilot has software in the loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
+* openpilot has software-in-the-loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
 * The code enforcing the safety model lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
-* panda has software in the loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
-* Internally, we have a hardware in the loop Jenkins test suite that builds and unit tests the various processes.
-* panda has additional hardware in the loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
+* panda has software-in-the-loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
+* Internally, we have a hardware-in-the-loop Jenkins test suite that builds and unit tests the various processes.
+* panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
 * We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
 
 Directory Structure

@@ -10,14 +10,12 @@ if arch == "larch64":
   env.Program('camerad', [
       'main.cc',
       'cameras/camera_common.cc',
-      'transforms/rgb_to_yuv.cc',
       'imgproc/utils.cc',
       cameras,
     ], LIBS=libs)
 
-if GetOption("test"):
+if GetOption("test") and arch == "x86_64":
   env.Program('test/ae_gray_test', [
       'test/ae_gray_test.cc',
       'cameras/camera_common.cc',
-      'transforms/rgb_to_yuv.cc',
     ], LIBS=libs)
