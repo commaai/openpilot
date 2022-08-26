@@ -21,11 +21,12 @@ SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
 FILTER_DECAY = 50
 MAX_DECAY = 250
-LAT_ACC_THRESHOLD = 1
+LAT_ACC_THRESHOLD = 2
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
 MAX_RESETS = 5.0
 MIN_DATA_PERC = 0.3
+MIN_ENGAGE_BUFFER = 2  # secs
 
 
 def slope2rot(slope):
@@ -152,12 +153,12 @@ class TorqueEstimator:
       if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
         roll = msg.orientationNED.value[0]
-        active = bool(np.interp(t, np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['active']))
-        steer_override = bool(np.interp(t, np.array(self.raw_points['carState_t']) + self.lag, self.raw_points['steer_override']))
+        active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['active']).astype(bool)
+        steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), np.array(self.raw_points['carState_t']) + self.lag, self.raw_points['steer_override']).astype(bool)
         vego = np.interp(t, np.array(self.raw_points['carState_t']) + self.lag, self.raw_points['vego'])
         steer = np.interp(t, np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
-        if active and (not steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
+        if np.all(active) and (not np.any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(steer, lateral_acc)
 
 
