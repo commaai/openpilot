@@ -40,8 +40,8 @@ class CarState(CarStateBase):
     ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
     ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
     ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
-                                                                      cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
+    ret.leftBlinker = cp.vl["TURN_SWITCH"]["TURN_LEFT_SWITCH"] == 1
+    ret.rightBlinker = cp.vl["TURN_SWITCH"]["TURN_RIGHT_SWITCH"] == 1
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
@@ -109,8 +109,8 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
-      ("LEFT_BLINK", "BLINK_INFO"),
-      ("RIGHT_BLINK", "BLINK_INFO"),
+      ("TURN_RIGHT_SWITCH", "TURN_SWITCH"),
+      ("TURN_LEFT_SWITCH", "TURN_SWITCH"),
       ("HIGH_BEAMS", "BLINK_INFO"),
       ("STEER_ANGLE", "STEER"),
       ("STEER_ANGLE_RATE", "STEER_RATE"),
@@ -125,6 +125,7 @@ class CarState(CarStateBase):
     checks = [
       # sig_address, frequency
       ("BLINK_INFO", 10),
+      ("TURN_SWITCH", 10),
       ("STEER", 67),
       ("STEER_RATE", 83),
       ("STEER_TORQUE", 83),
