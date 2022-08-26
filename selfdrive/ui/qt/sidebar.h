@@ -2,7 +2,6 @@
 
 #include <QFrame>
 #include <QMap>
-#include <QTimer>
 
 #include "common/params.h"
 #include "selfdrive/ui/ui.h"
