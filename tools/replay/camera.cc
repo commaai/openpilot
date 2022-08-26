@@ -37,7 +37,8 @@ void CameraServer::startVipcServer() {
 void CameraServer::cameraThread(Camera &cam) {
   auto read_frame = [&](FrameReader *fr, int frame_id) {
     VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.stream_type);
-    bool ret = fr->get(frame_id, yuv_buf ? (uint8_t *)yuv_buf->addr : nullptr);
+    assert(yuv_buf);
+    bool ret = fr->get(frame_id, (uint8_t *)yuv_buf->addr);
     return ret ? yuv_buf : nullptr;
   };
 

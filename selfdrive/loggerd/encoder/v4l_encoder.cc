@@ -37,11 +37,11 @@ static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=N
   assert(v4l_buf.m.planes[0].data_offset == 0);
 }
 
-static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={0}, unsigned int bytesused=0) {
+static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
   v4l2_plane plane = {
     .length = (unsigned int)buf->len,
     .m = { .userptr = (unsigned long)buf->addr, },
-    .bytesused = bytesused,
+    .bytesused = (uint32_t)buf->len,
     .reserved = {(unsigned int)buf->fd}
   };
 
@@ -51,7 +51,6 @@ static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, Vis
     .memory = V4L2_MEMORY_USERPTR,
     .m = { .planes = &plane, },
     .length = 1,
-    .bytesused = 0,
     .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY,
     .timestamp = timestamp
   };
