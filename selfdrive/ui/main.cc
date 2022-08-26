@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
 
   MainWindow w;
   setMainWindow(&w);
+#ifndef QCOM2
   a.installEventFilter(&w);
+#endif
   return a.exec();
 }
