@@ -192,7 +192,7 @@ def initialize_pigeon(pigeon):
           for msg in get_assistnow_messages(token):
             pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
           cloudlog.warning("AssistNow messages sent")
-        except:
+        except Exception:
           cloudlog.warning("failed to get AssistNow messages")
 
       cloudlog.warning("Pigeon GPS on!")
