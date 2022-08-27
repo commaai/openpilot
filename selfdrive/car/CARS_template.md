@@ -12,8 +12,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |{{Column | map(attribute='value') | join('|')}}|
 |---|---|---|{% for _ in range((Column | length) - 3) %}{{':---:|'}}{% endfor +%}
 {% for car_info in all_car_info %}
-|{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}
-
+|{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}<!-- {{car_info.detail_sentence}} -->
 {% endfor %}
 
 <a id="footnotes"></a>
