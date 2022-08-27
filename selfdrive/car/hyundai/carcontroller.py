@@ -162,7 +162,7 @@ class CarController:
           can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
         elif CC.cruiseControl.resume:
           if self.CP.carFingerprint == CAR.HYUNDAI_GENESIS:
-            # send resume at a max freq of 5Hz
+            # send resume at a max freq of 20Hz
             if (self.frame - self.last_button_frame) * DT_CTRL > 0.05:
               can_sends.append(hyundaican.create_clu11(self.packer, self.resume_count, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint))
               self.resume_count += 1
