@@ -85,7 +85,8 @@ def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bo
     "DasStats_D_Dsply": stock_values["DasStats_D_Dsply"],           # DAS status [0|3]
     "DasWarn_D_Dsply": stock_values["DasWarn_D_Dsply"],             # DAS warning [0|3]
     "AhbHiBeam_D_Rq": stock_values["AhbHiBeam_D_Rq"],               # AHB status [0|3]
-    "Set_Me_X1": stock_values["Set_Me_X1"],                         # [0|15]
+    "Passthru_63": stock_values["Passthru_63"],                     # [0|15]
+    "Passthru_48": stock_values["Passthru_48"],                     # [0|1]
   }
   return packer.make_can_msg("IPMA_Data", 0, values)
 
