@@ -114,6 +114,7 @@ class CarInterfaceBase(ABC):
     ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
+    ret.autoResumeSng = True    # car is able to automatically resume in stop and go
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
