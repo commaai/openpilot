@@ -40,9 +40,9 @@ class CarState(CarStateBase):
     ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
     ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
     ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
-    ret.leftBlinker = cp.vl["TURN_SWITCH"]["TURN_LEFT_SWITCH"] == 1
-    ret.rightBlinker = cp.vl["TURN_SWITCH"]["TURN_RIGHT_SWITCH"] == 1
 
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(100, cp.vl["TURN_SWITCH"]["TURN_LEFT_SWITCH"] == 1,
+                                                                       cp.vl["TURN_SWITCH"]["TURN_RIGHT_SWITCH"] == 1)
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
