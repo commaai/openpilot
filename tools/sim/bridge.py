@@ -548,4 +548,4 @@ if __name__ == "__main__":
   finally:
     # Try cleaning up the wide camera param
     # in case users want to use replay after
-    Params().delete("WideCameraOnly")
+    Params().remove("WideCameraOnly")
