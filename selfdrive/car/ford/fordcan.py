@@ -51,7 +51,7 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
   return packer.make_can_msg("LateralMotionControl", 0, values)
 
 
-def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bool, stock_values):
+def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bool, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC IPMA/LKAS status.
 
@@ -79,7 +79,7 @@ def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bo
   return packer.make_can_msg("IPMA_Data", 0, values)
 
 
-def create_acc_ui_command(packer, main_on: bool, enabled: bool, stock_values):
+def create_acc_ui_command(packer, main_on: bool, enabled: bool, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC adaptive cruise, forward collision
   warning and traffic jam assist status.
