@@ -14,7 +14,7 @@ if arch == "larch64":
       cameras,
     ], LIBS=libs)
 
-if GetOption("test"):
+if GetOption("test") and arch == "x86_64":
   env.Program('test/ae_gray_test', [
       'test/ae_gray_test.cc',
       'cameras/camera_common.cc',

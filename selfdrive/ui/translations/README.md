@@ -1,11 +1,6 @@
 # Multilanguage
 
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_en.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_en.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_pt.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_pt.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHT.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHT.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHS.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHS.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ko.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ja.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ja.ts)
+[![languages](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)](#)
 
 ## Contributing
 
@@ -13,7 +8,7 @@ Before getting started, make sure you have set up the openpilot Ubuntu developme
 
 ### Policy
 
-Most of the languages supported by openpilot come from and are maintained by the community via pull requests. A pull request likely to be merged is one that [fixes a translation or adds missing translations.](https://github.com/commaai/openpilot/blob/lang-policy/selfdrive/ui/translations/README.md#improving-an-existing-language)
+Most of the languages supported by openpilot come from and are maintained by the community via pull requests. A pull request likely to be merged is one that [fixes a translation or adds missing translations.](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/README.md#improving-an-existing-language)
 
 We also generally merge pull requests adding support for a new language if there are community members willing to maintain it. Maintaining a language is ensuring quality and completion of translations before each openpilot release.
 
