@@ -20,7 +20,7 @@ class Column(Enum):
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   HARNESS = "Harness"
-  AUTO_RESUME = "Resumes from a stop"
+  AUTO_RESUME = "Resume from stop"
 
 
 class Star(Enum):
@@ -137,7 +137,7 @@ class CarInfo:
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.HARNESS: self.harness.value,
-      Column.AUTO_RESUME: CP.autoResumeSng,
+      Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
     }
 
     # Set steering torque star from max lateral acceleration
