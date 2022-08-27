@@ -26,6 +26,9 @@ enum class FindFlag {
   nextEngagement,
   nextDisEngagement,
   nextUserFlag,
+  nextInfo,
+  nextWarning,
+  nextCritical
 };
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
