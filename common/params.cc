@@ -84,6 +84,7 @@ private:
 
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
+    {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
