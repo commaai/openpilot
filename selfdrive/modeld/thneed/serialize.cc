@@ -52,7 +52,7 @@ void Thneed::load(const char *filename) {
 
       cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
-      format.image_channel_data_type = CL_HALF_FLOAT;
+      format.image_channel_data_type = mobj["float32"].bool_value() ? CL_FLOAT : CL_HALF_FLOAT;
 
       cl_int errcode;
       clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
@@ -174,6 +174,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
               jj["row_pitch"] = (int)row_pitch;
               jj["size"] = (int)(height * row_pitch);
               jj["needs_load"] = false;
+              jj["float32"] = false;
 
               if (saved_objects.find(aa) == saved_objects.end()) {
                 saved_objects.insert(aa);
