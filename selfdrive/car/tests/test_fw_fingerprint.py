@@ -57,7 +57,7 @@ class TestFwFingerprint(unittest.TestCase):
           # Some HD trucks have a combined TCM and ECM
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
-              self.assertNotEqual(ecu[0], Ecu.transmission, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+              self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
 
   def test_fw_request_ecu_whitelist(self):
     for brand in set(r.brand for r in REQUESTS):
