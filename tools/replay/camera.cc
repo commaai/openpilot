@@ -55,6 +55,7 @@ void CameraServer::cameraThread(Camera &cam) {
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
+      yuv->set_frame_id(eidx.getFrameId());
       vipc_server_->send(yuv, &extra, false);
     } else {
       rError("camera[%d] failed to get frame: %lu", cam.type, eidx.getSegmentId());
