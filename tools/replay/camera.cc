@@ -57,7 +57,7 @@ void CameraServer::cameraThread(Camera &cam) {
       };
       vipc_server_->send(yuv, &extra, false);
     } else {
-      rError("camera[%d] failed to get frame:", cam.type, eidx.getSegmentId());
+      rError("camera[%d] failed to get frame: %lu", cam.type, eidx.getSegmentId());
     }
 
     cam.cached_id = id + 1;
