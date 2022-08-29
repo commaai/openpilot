@@ -54,6 +54,7 @@ class TestFwFingerprint(unittest.TestCase):
             self.assertNotIn(ecu[1], blacklisted_addrs, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
 
         elif CP.carName == "chrysler":
+          # Some HD trucks have a combined TCM and ECM
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
               self.assertNotEqual(ecu[0], Ecu.transmission, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
