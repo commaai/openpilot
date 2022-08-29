@@ -77,12 +77,12 @@ if __name__ == "__main__":
     coding_bit = 4
 
   # APA racks (MQB_PP_APA) have a different coding layout
-  if odx_file == "EV_SteerAssisVWBSMQBA\x00\x00\x00\x00":
+  elif odx_file == "EV_SteerAssisVWBSMQBA\x00\x00\x00\x00":
     coding_variant = "ZF2"
     coding_byte = 3
     coding_bit = 0
 
-  if coding_variant is None:
+  else:
     print("Configuration changes not yet supported on this EPS!")
     quit()
 
