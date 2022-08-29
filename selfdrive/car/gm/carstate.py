@@ -24,6 +24,7 @@ class CarState(CarStateBase):
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
     self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
+    self.ascm_steering_button = pt_cp.vl["ASCMSteeringButton"]
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
@@ -110,8 +111,12 @@ class CarState(CarStateBase):
       ("TurnSignals", "BCMTurnSignals"),
       ("AcceleratorPedal2", "AcceleratorPedal2"),
       ("CruiseState", "AcceleratorPedal2"),
+      ("DistanceButton", "ASCMSteeringButton"),
+      ("LKAButton", "ASCMSteeringButton"),
       ("ACCButtons", "ASCMSteeringButton"),
+      ("DriveModeButton", "ASCMSteeringButton"),
       ("RollingCounter", "ASCMSteeringButton"),
+      # ("SteeringButtonChecksum", "ASCMSteeringButton"),
       ("SteeringWheelAngle", "PSCMSteeringAngle"),
       ("SteeringWheelRate", "PSCMSteeringAngle"),
       ("FLWheelSpd", "EBCMWheelSpdFront"),
