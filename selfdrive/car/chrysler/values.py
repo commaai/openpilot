@@ -191,6 +191,7 @@ FW_VERSIONS = {
   },
 
   CAR.RAM_HD: {
+    (Ecu.transmission, 0x7e1, None): [],
     (Ecu.combinationMeter, 0x742, None): [
       b'68361606AH',
       b'68492693AD',
