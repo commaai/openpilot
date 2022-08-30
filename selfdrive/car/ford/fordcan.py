@@ -1,4 +1,4 @@
-def create_lkas_command(packer, angle_deg: float, curvature: float):
+def create_lka_command(packer, angle_deg: float, curvature: float):
   """
   Creates a CAN message for the Ford LKAS Command.
 
@@ -93,7 +93,7 @@ def create_acc_ui_command(packer, main_on: bool, enabled: bool, stock_values: di
   return packer.make_can_msg("ACCDATA_3", 0, values)
 
 
-def spam_cancel_button(packer, cancel=1):
+def create_button_command(packer, cancel = False, tja_toggle = False):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
@@ -101,6 +101,7 @@ def spam_cancel_button(packer, cancel=1):
   """
 
   values = {
-    "CcAslButtnCnclPress": cancel,  # CC cancel button
+    "CcAslButtnCnclPress": 1 if cancel else 0,      # CC cancel button
+    "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # TJA toggle button
   }
   return packer.make_can_msg("Steering_Data_FD1", 0, values)

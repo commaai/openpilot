@@ -46,7 +46,7 @@ class CarController:
 
     if CC.cruiseControl.cancel:
       # cancel stock ACC
-      can_sends.append(fordcan.spam_cancel_button(self.packer))
+      can_sends.append(fordcan.create_button_command(self.packer, cancel=True))
 
 
     ### lateral control ###
@@ -66,7 +66,7 @@ class CarController:
       precision = 0  # 0=Comfortable, 1=Precise
 
       self.apply_steer_last = apply_steer
-      can_sends.append(fordcan.create_lkas_command(self.packer, apply_steer, 0))
+      can_sends.append(fordcan.create_lka_command(self.packer, apply_steer, 0))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
                                                   0, path_angle, 0, 0))
 
