@@ -71,10 +71,7 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
     }
   }
 #endif
-  // if (prepare_only) {
-  //   return nullptr;
-  // }
-double desire_time = millis_since_boot();
+
   // if getInputBuf is not NULL, net_input_buf will be
   auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->addImage(net_input_buf, s->frame->buf_size);
@@ -86,13 +83,10 @@ double desire_time = millis_since_boot();
     s->m->addExtra(net_input_buf, s->wide_frame->buf_size);
     LOGT("Extra image added");
   }
-printf("image add time :%.2f\r\n",millis_since_boot()-desire_time);
   if (prepare_only) {
     return nullptr;
   }
-double execute_time = millis_since_boot();
   s->m->execute();
-  printf("execute time :%.2f\r\n", millis_since_boot() -execute_time );
 
   LOGT("Execution finished");
 

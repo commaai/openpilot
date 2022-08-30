@@ -156,7 +156,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
 
-    printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, meta_extra.frame_id, frame_id, frame_drop_ratio);
+    // printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, meta_extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
     last_vipc_frame_id = meta_main.frame_id;
   }

@@ -54,7 +54,7 @@ def run_loop(m):
     m.run(None, dict(zip(keys, [np.zeros(shp, dtype=np.float32) for shp in ishapes])))
 
   finish_time = time.time()
-  print("running the m.run spend ",finish_time-start_time, file=sys.stderr)
+  # print("running the m.run spend ",finish_time-start_time, file=sys.stderr)
 
   print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   last_time = 0
@@ -62,14 +62,11 @@ def run_loop(m):
     inputs = []
     for shp in ishapes:
       ts = np.product(shp)
-      #print("reshaping %s with offset %d" % (str(shp), offset), file=sys.stderr)
       inputs.append(read(ts).reshape(shp))
     ret = m.run(None, dict(zip(keys, inputs)))
-    #print(ret, file=sys.stderr)
     for r in ret:
       write(r)
     get_time = time.time()
-#    print("onnx_runner.py while done :",(get_time-last_time)*1000,file=sys.stderr)
     last_time=get_time
 
 
