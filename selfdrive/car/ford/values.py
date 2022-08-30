@@ -37,11 +37,13 @@ class CANBUS:
 
 class CAR:
   ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
+  EXPLORER_MK6 = "FORD EXPLORER 6TH GEN"
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ESCAPE_MK4: CarInfo("Ford Escape 2020", "Co-Pilot360 Assist+"),
+  CAR.EXPLORER_MK6: CarInfo("Ford Explorer 2020", "Co-Pilot360 Assist+"),
   CAR.FOCUS_MK4: CarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
 }
 
@@ -62,6 +64,23 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.EXPLORER_MK6: {
+    (Ecu.eps, 0x730, None): [
+      b'L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FOCUS_MK4: {
@@ -86,5 +105,6 @@ FW_VERSIONS = {
 
 DBC = {
   CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
+  CAR.EXPLORER_MK6: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
   CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
 }

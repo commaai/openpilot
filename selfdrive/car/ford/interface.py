@@ -33,6 +33,11 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.3  # Copied from Focus
       ret.mass = 1750 + STD_CARGO_KG
 
+    elif candidate == CAR.EXPLORER_MK6:
+      ret.wheelbase = 3.025
+      ret.steerRatio = 16.8  # learned
+      ret.mass = 2050 + STD_CARGO_KG
+
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7
       ret.steerRatio = 13.8  # learned
