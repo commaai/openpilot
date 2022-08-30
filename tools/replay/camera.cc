@@ -37,7 +37,8 @@ void CameraServer::startVipcServer() {
 void CameraServer::cameraThread(Camera &cam) {
   auto read_frame = [&](FrameReader *fr, int frame_id) {
     VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.stream_type);
-    bool ret = fr->get(frame_id, yuv_buf ? (uint8_t *)yuv_buf->addr : nullptr);
+    assert(yuv_buf);
+    bool ret = fr->get(frame_id, (uint8_t *)yuv_buf->addr);
     return ret ? yuv_buf : nullptr;
   };
 
@@ -54,9 +55,10 @@ void CameraServer::cameraThread(Camera &cam) {
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
+      yuv->set_frame_id(eidx.getFrameId());
       vipc_server_->send(yuv, &extra, false);
     } else {
-      rError("camera[%d] failed to get frame:", cam.type, eidx.getSegmentId());
+      rError("camera[%d] failed to get frame: %lu", cam.type, eidx.getSegmentId());
     }
 
     cam.cached_id = id + 1;

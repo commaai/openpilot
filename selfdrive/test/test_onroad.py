@@ -23,7 +23,7 @@ from tools.lib.logreader import LogReader
 PROCS = {
   "selfdrive.controls.controlsd": 35.0,
   "./loggerd": 10.0,
-  "./encoderd": 12.5,
+  "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
@@ -37,7 +37,7 @@ PROCS = {
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "./_soundd": 1.0,
-  "selfdrive.monitoring.dmonitoringd": 1.90,
+  "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
   "./clocksd": 0.02,

@@ -179,7 +179,7 @@ def gps_callback(gps, vehicle_state):
   ]
 
   dat.gpsLocationExternal = {
-    "timestamp": int(time.time() * 1000),
+    "unixTimestampMillis": int(time.time() * 1000),
     "flags": 1,  # valid fix
     "accuracy": 1.0,
     "verticalAccuracy": 1.0,
@@ -548,4 +548,4 @@ if __name__ == "__main__":
   finally:
     # Try cleaning up the wide camera param
     # in case users want to use replay after
-    Params().delete("WideCameraOnly")
+    Params().remove("WideCameraOnly")
