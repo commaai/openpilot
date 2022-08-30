@@ -73,6 +73,8 @@ void Thneed::load(const char *filename) {
       CL_CHECK(clSetKernelArg(to_image, 2, sizeof(cl_int), &stride));
       const size_t copy_work_size[2] = {desc.image_width, desc.image_height};
       CL_CHECK(clEnqueueNDRangeKernel(command_queue, to_image, 2, NULL, copy_work_size, NULL, 0, 0, NULL));
+      clFinish(command_queue);
+      clReleaseMemObject(clbuf_loaded);
 #endif
     }
 

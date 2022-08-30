@@ -26,7 +26,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   // ****** copy inputs
   copy_inputs(finputs);
 
-
   // ****** run commands
   clexec();
 

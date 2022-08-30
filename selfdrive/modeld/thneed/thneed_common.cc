@@ -33,7 +33,7 @@ cl_int Thneed::clexec() {
 void Thneed::copy_inputs(float **finputs) {
   //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
-    if (debug >= 1) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
+    if (debug >= 1) printf("copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
     if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
 
     // HACK
@@ -179,13 +179,15 @@ void CLQueuedKernel::debug_print(bool verbose) {
         cl_mem val = (cl_mem)(*((uintptr_t*)arg_value));
         printf(" = %p", val);
         if (val != NULL) {
-          if (arg_types[i] == "image2d_t" || arg_types[i] == "image1d_t") {
+          cl_mem_object_type obj_type;
+          clGetMemObjectInfo(val, CL_MEM_TYPE, sizeof(obj_type), &obj_type, NULL);
+          if (arg_types[i] == "image2d_t" || arg_types[i] == "image1d_t" || obj_type == CL_MEM_OBJECT_IMAGE2D) {
             cl_image_format format;
             size_t width, height, depth, array_size, row_pitch, slice_pitch;
             cl_mem buf;
             clGetImageInfo(val, CL_IMAGE_FORMAT, sizeof(format), &format, NULL);
             assert(format.image_channel_order == CL_RGBA);
-            assert(format.image_channel_data_type == CL_HALF_FLOAT);
+            assert(format.image_channel_data_type == CL_HALF_FLOAT || format.image_channel_data_type == CL_FLOAT);
             clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
             clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
             clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
