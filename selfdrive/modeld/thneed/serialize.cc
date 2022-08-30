@@ -67,13 +67,15 @@ void Thneed::load(const char *filename) {
       }
       assert(clbuf != NULL);
 #ifndef QCOM2
-      CL_CHECK(clSetKernelArg(to_image, 0, sizeof(cl_mem), &clbuf));
-      CL_CHECK(clSetKernelArg(to_image, 1, sizeof(cl_mem), &clbuf_loaded));
-      cl_int stride = mobj["row_pitch"].int_value();
-      CL_CHECK(clSetKernelArg(to_image, 2, sizeof(cl_int), &stride));
-      const size_t copy_work_size[2] = {desc.image_width, desc.image_height};
-      CL_CHECK(clEnqueueNDRangeKernel(command_queue, to_image, 2, NULL, copy_work_size, NULL, 0, 0, NULL));
-      clFinish(command_queue);
+      if (mobj["needs_load"].bool_value()) {
+        CL_CHECK(clSetKernelArg(to_image, 0, sizeof(cl_mem), &clbuf));
+        CL_CHECK(clSetKernelArg(to_image, 1, sizeof(cl_mem), &clbuf_loaded));
+        cl_int stride = mobj["row_pitch"].int_value() / (format.image_channel_data_type == CL_FLOAT ? 16 : 8);
+        CL_CHECK(clSetKernelArg(to_image, 2, sizeof(cl_int), &stride));
+        const size_t copy_work_size[2] = {desc.image_width, desc.image_height};
+        CL_CHECK(clEnqueueNDRangeKernel(command_queue, to_image, 2, NULL, copy_work_size, NULL, 0, 0, NULL));
+        clFinish(command_queue);
+      }
       clReleaseMemObject(clbuf_loaded);
 #endif
     }
@@ -179,7 +181,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
             });
 
             if (k->arg_types[i] == "image2d_t" || k->arg_types[i] == "image1d_t") {
-              cl_mem buf;
+              cl_mem buf = NULL;
               clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
               string aa = string((char *)&buf, sizeof(buf));
               jj["buffer_id"] = aa;

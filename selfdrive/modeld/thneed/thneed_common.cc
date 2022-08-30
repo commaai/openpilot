@@ -46,7 +46,7 @@ void Thneed::copy_output(float *foutput) {
     size_t sz;
     clGetMemObjectInfo(output, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
     if (debug >= 1) printf("copying %lu for output %p -> %p\n", sz, output, foutput);
-    clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL);
+    CL_CHECK(clEnqueueReadBuffer(command_queue, output, CL_TRUE, 0, sz, foutput, 0, NULL, NULL));
   } else {
     printf("CAUTION: model output is NULL, does it have no outputs?\n");
   }
@@ -75,7 +75,7 @@ CLQueuedKernel::CLQueuedKernel(Thneed *lthneed,
 
   // get args
   for (int i = 0; i < num_args; i++) {
-    char arg_name[0x100];
+    char arg_name[0x100] = {0};
     clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
     arg_names.push_back(string(arg_name));
     clGetKernelArgInfo(kernel, i, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_name), arg_name, NULL);
@@ -104,7 +104,7 @@ cl_int CLQueuedKernel::exec() {
     arg_types.clear();
 
     for (int j = 0; j < num_args; j++) {
-      char arg_name[0x100];
+      char arg_name[0x100] = {0};
       clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_NAME, sizeof(arg_name), arg_name, NULL);
       arg_names.push_back(string(arg_name));
       clGetKernelArgInfo(kernel, j, CL_KERNEL_ARG_TYPE_NAME, sizeof(arg_name), arg_name, NULL);
