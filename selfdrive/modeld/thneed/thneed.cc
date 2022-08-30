@@ -257,6 +257,9 @@ void Thneed::copy_inputs(float **finputs) {
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (debug >= 1) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
     if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+
+    // HACK
+    if (input_sizes[idx] == 16) memset((char*)inputs[idx] + 8, 0, 8);
   }
 }
 
