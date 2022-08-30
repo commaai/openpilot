@@ -198,7 +198,10 @@ void buildProcs(cereal::ProcLog::Builder &builder) {
   for (int pid : pids) {
     std::string path = "/proc/" + std::to_string(pid) + "/stat";
     if (auto stat = Parser::procStat(util::read_file(path))) {
-      proc_stats.push_back(*stat);
+      // dont push_back a zombie process, it become invalid.
+      if (stat->state != 'Z') {
+        proc_stats.push_back(*stat);
+      }
     }
   }
 
@@ -227,10 +230,6 @@ void buildProcs(cereal::ProcLog::Builder &builder) {
     auto lcmdline = l.initCmdline(extra_info.cmdline.size());
     for (size_t j = 0; j < lcmdline.size(); j++) {
       lcmdline.set(j, extra_info.cmdline[j]);
-    }
-
-    if (lcmdline.size() == 0 && r.state == 'Z') {
-      LOGW("[%d] (%s) is a zombie process", r.pid, r.name.c_str());
     }
   }
 }

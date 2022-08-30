@@ -131,7 +131,6 @@ TEST_CASE("buildProcLogerMessage") {
 
   // test cereal::ProcLog::Process
   auto procs = log.getProcs();
-  REQUIRE(procs.size() == current_pids.size());
 
   for (auto p : procs) {
     REQUIRE_THAT(current_pids, Catch::Matchers::VectorContains(p.getPid()));
