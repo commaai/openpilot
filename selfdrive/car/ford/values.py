@@ -41,8 +41,8 @@ class CAR:
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ESCAPE_MK4: CarInfo("Ford Escape 2020", "NA"),
-  CAR.FOCUS_MK4: CarInfo("Ford Focus EU 2019", "NA"),
+  CAR.ESCAPE_MK4: CarInfo("Ford Escape 2020", "Co-Pilot360 Assist+"),
+  CAR.FOCUS_MK4: CarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
 }
 
 
