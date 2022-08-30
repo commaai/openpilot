@@ -1,16 +1,20 @@
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 
 #include <unistd.h>
-
+#include <cstdlib>
 #include <cassert>
 #include <cstring>
-
+#include <vector>
+#include <chrono>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudawarping.hpp>
+
 #pragma clang diagnostic pop
 
 #include "selfdrive/common/clutil.h"
@@ -75,16 +79,26 @@ void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
   const cv::Mat transform = cv::Mat(3, 3, CV_32F, ts);
   uint32_t frame_id = 0;
   size_t buf_idx = 0;
+ //cv::cuda::Stream Stream;
+  //  double firsr_time = millis_since_boot();  
 
   while (!do_exit) {
     cv::Mat frame_mat, transformed_mat;
     video_cap >> frame_mat;
-    if (frame_mat.empty()) continue;
 
-    cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
+    cv::cuda::GpuMat gframe_mat, gtransformed_mat;
+    gframe_mat.upload(frame_mat);
+    
+    // printf("first time %.2f \r\n",millis_since_boot()-firsr_time);
+    if (frame_mat.empty()) continue;
+    
+    //cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
+    cv::cuda::warpPerspective(gframe_mat, gtransformed_mat,transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0, cv::cuda::Stream::Null());
+    // printf("second time %.2f \r\n",millis_since_boot()-firsr_time);
+    gtransformed_mat.download(transformed_mat);
 
     s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
-    s->buf.camera_bufs_metadata[buf_idx].timestamp_sof=uint64_t(s->buf.camera_bufs_metadata[buf_idx].frame_id * 0.05 * 1e9);
+    s->buf.camera_bufs_metadata[buf_idx].timestamp_sof=(uint64_t)(s->buf.camera_bufs_metadata[buf_idx].frame_id * 0.05 * 1e9);
 
     auto &buf = s->buf.camera_bufs[buf_idx];
     int transformed_size = transformed_mat.total() * transformed_mat.elemSize();
@@ -94,6 +108,8 @@ void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
 
     ++frame_id;
     buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
+    //  printf("third time %.2f \r\n",millis_since_boot()-firsr_time);
+
   }
 }
 

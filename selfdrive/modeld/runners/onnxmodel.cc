@@ -72,12 +72,18 @@ void ONNXModel::pread(float *buf, int size) {
   struct pollfd fds[1];
   fds[0].fd = pipeout[0];
   fds[0].events = POLLIN;
+  double start_time  = millis_since_boot();
+  double poll_time = 0;
   while (tr > 0) {
     int err;
     err = poll(fds, 1, 10000);  // 10 second timeout
+    poll_time = millis_since_boot();
+    printf("  pread poll time:%.2f\r\n ",poll_time - start_time);
     assert(err == 1 || (err == -1 && errno == EINTR));
     LOGD("host read remaining %d/%d poll %d", tr, size*sizeof(float), err);
+
     err = read(pipeout[0], cbuf, tr);
+    printf("  pread read time:%.2f err:%d\r\n ",millis_since_boot() - poll_time,err);
     assert(err > 0 || (err == 0 && errno == EINTR));
     cbuf += err;
     tr -= err;
@@ -116,13 +122,17 @@ void ONNXModel::addExtra(float *image_buf, int buf_size) {
 }
 
 void ONNXModel::execute() {
+  double start_time  = millis_since_boot();
+  double pwrite_time = 0;
   // order must be this
   if (image_input_buf != NULL) {
     pwrite(image_input_buf, image_buf_size);
   }
+//  printf(" excute pwrite 1 time :%.2f\r\n",millis_since_boot() -start_time );
   if (extra_input_buf != NULL) {
     pwrite(extra_input_buf, extra_buf_size);
   }
+//  printf(" excute pwrite 2 time :%.2f\r\n",millis_since_boot() -start_time );
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
   }
@@ -135,6 +145,9 @@ void ONNXModel::execute() {
   if (rnn_input_buf != NULL) {
     pwrite(rnn_input_buf, rnn_state_size);
   }
+  pwrite_time = millis_since_boot();
+  printf(" excute pwrite all time :%.2f\r\n",pwrite_time -start_time );
   pread(output, output_size);
+  printf(" excute pread time :%.2f\r\n",millis_since_boot() -pwrite_time );
 }
 
