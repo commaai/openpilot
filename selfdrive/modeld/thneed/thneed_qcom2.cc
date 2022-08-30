@@ -206,7 +206,8 @@ void CachedCommand::exec() {
 // *********** Thneed ***********
 
 Thneed::Thneed(bool do_clinit, cl_context _context) {
-  context = _context;
+  // TODO: QCOM2 actually requires a different context
+  //context = _context;
   if (do_clinit) clinit();
   assert(g_fd != -1);
   fd = g_fd;
@@ -362,13 +363,6 @@ cl_int thneed_clFinish(cl_command_queue command_queue) {
   } else {
     return clFinish(command_queue);
   }
-}
-
-cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
-  assert(count == 1);
-  cl_program ret = clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
-  g_program_source[ret] = strings[0];
-  return ret;
 }
 
 void *dlsym(void *handle, const char *symbol) {
