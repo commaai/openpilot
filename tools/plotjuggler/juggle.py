@@ -37,7 +37,7 @@ def install():
   os.mkdir(INSTALL_DIR)
 
   url = os.path.join(RELEASES_URL, m + ".tar.gz")
-  with requests.get(url, stream=True) as r, tempfile.NamedTemporaryFile() as tmp:
+  with requests.get(url, stream=True, timeout=10) as r, tempfile.NamedTemporaryFile() as tmp:
     r.raise_for_status()
     with open(tmp.name, 'wb') as tmpf:
       for chunk in r.iter_content(chunk_size=1024*1024):
