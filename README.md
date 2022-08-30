@@ -119,7 +119,7 @@ Directory Structure
         ├── debug           # Tools to help you debug and do car ports
         ├── locationd       # Precise localization and vehicle parameter estimation
         ├── loggerd         # Logger and uploader of car data
-        ├── manager         # Deamon that starts/stops all other daemons as needed
+        ├── manager         # Daemon that starts/stops all other daemons as needed
         ├── modeld          # Driving and monitoring model runners
         ├── monitoring      # Daemon to determine driver attention
         ├── navd            # Turn-by-turn navigation

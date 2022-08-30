@@ -173,7 +173,7 @@ if __name__ == "__main__":
         'driverStateV2.modelExecutionTime',
         'driverStateV2.dspExecutionTime'
       ]
-      # TODO this tolerence is absurdly large
+      # TODO this tolerance is absurdly large
       tolerance = 5e-1 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}

@@ -194,10 +194,10 @@ class RouteEngine:
     parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
 
     # Compute total remaining time and distance
-    remaning = 1.0 - along_geometry / max(step['distance'], 1)
-    total_distance = step['distance'] * remaning
-    total_time = step['duration'] * remaning
-    total_time_typical = step['duration_typical'] * remaning
+    remaining = 1.0 - along_geometry / max(step['distance'], 1)
+    total_distance = step['distance'] * remaining
+    total_time = step['duration'] * remaining
+    total_time_typical = step['duration_typical'] * remaining
 
     # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
