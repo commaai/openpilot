@@ -91,7 +91,7 @@ class CachedCommand: public CachedIoctl {
 
 class Thneed {
   public:
-    Thneed(bool do_clinit=false);
+    Thneed(bool do_clinit=false, cl_context _context = NULL);
     void stop();
     void execute(float **finputs, float *foutput, bool slow=false);
     void wait();

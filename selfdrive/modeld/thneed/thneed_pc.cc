@@ -3,7 +3,8 @@
 #include "common/clutil.h"
 #include "common/timing.h"
 
-Thneed::Thneed(bool do_clinit) {
+Thneed::Thneed(bool do_clinit, cl_context _context) {
+  context = _context;
   if (do_clinit) clinit();
   char *thneed_debug_env = getenv("THNEED_DEBUG");
   debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;

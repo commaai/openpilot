@@ -47,8 +47,8 @@ void Thneed::load(const char *filename) {
       desc.image_type = (mobj["arg_type"] == "image2d_t") ? CL_MEM_OBJECT_IMAGE2D : CL_MEM_OBJECT_IMAGE1D_BUFFER;
       desc.image_width = mobj["width"].int_value();
       desc.image_height = mobj["height"].int_value();
-      desc.image_row_pitch = mobj["row_pitch"].int_value();
 #ifdef QCOM2
+      desc.image_row_pitch = mobj["row_pitch"].int_value();
       // TODO: we are creating unused buffers on PC
       desc.buffer = clbuf;
 #endif

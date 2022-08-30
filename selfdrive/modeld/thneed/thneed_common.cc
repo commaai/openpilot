@@ -13,7 +13,7 @@ map<cl_program, string> g_program_source;
 
 void Thneed::clinit() {
   device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+  if (context == NULL) context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
   //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
   cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
   command_queue = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
@@ -21,7 +21,7 @@ void Thneed::clinit() {
 }
 
 cl_int Thneed::clexec() {
-  printf("Thneed::clexec: running %lu queued kernels\n", kq.size());
+  if (debug >= 1) printf("Thneed::clexec: running %lu queued kernels\n", kq.size());
   for (auto &k : kq) {
     if (record) ckq.push_back(k);
     cl_int ret = k->exec();

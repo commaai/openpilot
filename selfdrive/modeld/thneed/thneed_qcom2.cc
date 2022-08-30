@@ -205,7 +205,8 @@ void CachedCommand::exec() {
 
 // *********** Thneed ***********
 
-Thneed::Thneed(bool do_clinit) {
+Thneed::Thneed(bool do_clinit, cl_context _context = NULL) {
+  context = _context;
   if (do_clinit) clinit();
   assert(g_fd != -1);
   fd = g_fd;
@@ -311,15 +312,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
   }
-}
-
-void Thneed::clinit() {
-  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-  //cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
-  cl_command_queue_properties props[3] = {CL_QUEUE_PROPERTIES, 0, 0};
-  command_queue = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
-  printf("Thneed::clinit done\n");
 }
 
 // *********** OpenCL interceptor ***********
