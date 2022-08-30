@@ -16,6 +16,8 @@
 
 using namespace std;
 
+cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value);
+
 namespace json11 {
   class Json;
 }
@@ -110,9 +112,12 @@ class Thneed {
     bool record = false;
     int debug;
     int timestamp;
+
+#ifdef QCOM2
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedIoctl> > cmds;
     int fd;
+#endif
 
     // all CL kernels
     void find_inputs_outputs();

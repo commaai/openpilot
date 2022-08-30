@@ -48,16 +48,26 @@ void Thneed::load(const char *filename) {
       desc.image_width = mobj["width"].int_value();
       desc.image_height = mobj["height"].int_value();
       desc.image_row_pitch = mobj["row_pitch"].int_value();
+#ifdef QCOM2
+      // TODO: we are creating unused buffers on PC
       desc.buffer = clbuf;
-
+#endif
       cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
       format.image_channel_data_type = mobj["float32"].bool_value() ? CL_FLOAT : CL_HALF_FLOAT;
 
       cl_int errcode;
       clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
-      if (clbuf == NULL) printf("clError: %s\n", cl_get_error_string(errcode));
+      if (clbuf == NULL) {
+        printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
+          desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer
+        );
+      }
       assert(clbuf != NULL);
+#ifndef QCOM2
+      //printf("copyin buffer %p sz %d\n", &buf[ptr], sz);
+      ptr += sz;
+#endif
     }
 
     real_mem[*(cl_mem*)(mobj["id"].string_value().data())] = clbuf;
@@ -79,6 +89,7 @@ void Thneed::load(const char *filename) {
 
     cl_int cl_err;
     void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
+    if (cl_err != CL_SUCCESS) printf("clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
     assert(cl_err == CL_SUCCESS);
     inputs.push_back(ret);
   }

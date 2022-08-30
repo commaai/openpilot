@@ -23,7 +23,8 @@ common_src = [
 ]
 
 thneed_src = [
-  "thneed/thneed.cc",
+  "thneed/thneed_common.cc",
+  "thneed/thneed_qcom2.cc",
   "thneed/serialize.cc",
   "thneed/optimizer.cc",
   "runners/thneedmodel.cc",
@@ -61,11 +62,17 @@ else:
 
 common_model = lenv.Object(common_src)
 
+lenv.Program('_dmonitoringmodeld', [
+    "dmonitoringmodeld.cc",
+    "models/dmonitoring.cc",
+  ]+common_model, LIBS=libs)
+
 # build thneed model
-if use_thneed and arch == "larch64":
+if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
   #cmd = f"cd {Dir('#').abspath}/tinygrad_repo && PYOPENCL_NO_CACHE=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 FLOAT16=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
-  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && PYOPENCL_NO_CACHE=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+  #cmd = f"cd {Dir('#').abspath}/tinygrad_repo && PYOPENCL_NO_CACHE=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && NATIVE_EXPLOG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
 
   # is there a better way then listing all of tinygrad?
   lenv.Command(fn + ".thneed", [fn + ".onnx",
@@ -95,12 +102,20 @@ if use_thneed and arch == "larch64":
   #kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
   #cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
 
-lenv.Program('_dmonitoringmodeld', [
-    "dmonitoringmodeld.cc",
-    "models/dmonitoring.cc",
-  ]+common_model, LIBS=libs)
+llenv = lenv.Clone()
+if GetOption('pc_thneed'):
+  pc_thneed_src = [
+    "thneed/thneed_common.cc",
+    "thneed/thneed_pc.cc",
+    "thneed/serialize.cc",
+    "runners/thneedmodel.cc",
+  ]
+  llenv['CFLAGS'].append("-DUSE_THNEED")
+  llenv['CXXFLAGS'].append("-DUSE_THNEED")
+  common_model += llenv.Object(pc_thneed_src)
+  libs += ['dl']
 
-lenv.Program('_modeld', [
+llenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
   ]+common_model, LIBS=libs + transformations)
