@@ -45,15 +45,19 @@ class TestFwFingerprint(unittest.TestCase):
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
   def test_blacklisted_ecus(self):
-    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    blacklisted_addrs = {
+      "subaru": (0x7c4, 0x7d0),  # includes A/C ecu and an unknown ecu
+      "hyundai": (0x7e2,),  # currently collecting Ecu.vmcu fingerprints
+    }
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         CP = interfaces[car_model][0].get_params(car_model)
-        if CP.carName == 'subaru':
+        if CP.carName in blacklisted_addrs:
           for ecu in ecus.keys():
-            self.assertNotIn(ecu[1], blacklisted_addrs, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+            self.assertNotIn(ecu[1], blacklisted_addrs[CP.carName],
+                             f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
 
-        elif CP.carName == "chrysler":
+        if CP.carName == "chrysler":
           # Some HD trucks have a combined TCM and ECM
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
