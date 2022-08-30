@@ -88,6 +88,7 @@ urllib3 = "*"
 utm = "*"
 websocket_client = "*"
 hatanaka = "==2.4"
+PySide2 = "*"
 
 [requires]
 python_version = "3.8"

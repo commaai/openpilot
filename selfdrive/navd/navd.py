@@ -135,7 +135,7 @@ class RouteEngine:
 
     url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
     try:
-      resp = requests.get(url, params=params)
+      resp = requests.get(url, params=params, timeout=10)
       resp.raise_for_status()
 
       r = resp.json()
