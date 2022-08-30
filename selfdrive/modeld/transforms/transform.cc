@@ -32,7 +32,7 @@ void transform_queue(Transform* s,
   const int zero = 0;
 
   // sampled using pixel center origin
-  // (because thats how fastcv and opencv does it)
+  // (because that's how fastcv and opencv does it)
 
   mat3 projection_y = projection;
 

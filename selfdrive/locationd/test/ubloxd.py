@@ -65,7 +65,7 @@ def configure_ublox(dev):
   print("backup restore polling message (implement custom response handler!):")
   dev.configure_poll(0x09, 0x14)
 
-  print("if succesfull, send this to clear the flash:")
+  print("if successful, send this to clear the flash:")
   dev.send_message(0x09, 0x14, b"\x01\x00\x00\x00")
 
   print("send on stop:")
