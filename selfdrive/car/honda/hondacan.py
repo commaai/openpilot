@@ -61,8 +61,9 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   if car_fingerprint in HONDA_BOSCH_RADARLESS:
     acc_control_values = {
       "CONTROL_ON": control_on,
-      "CONTROL_OFF": control_off,
+      # "CONTROL_OFF": control_off,  # TODO: not sure this signal is needed
       "ACCEL_COMMAND": accel_command,
+      "STANDSTILL": standstill,
     }
     commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
   else:
