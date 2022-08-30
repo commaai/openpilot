@@ -62,7 +62,6 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
-USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -331,7 +330,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
 
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')

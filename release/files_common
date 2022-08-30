@@ -90,8 +90,6 @@ selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/can_list_to_can_capnp.cc
 selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
-selfdrive/boardd/pigeon.cc
-selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 
@@ -282,6 +280,7 @@ selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
 selfdrive/sensord/sensord
+selfdrive/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py

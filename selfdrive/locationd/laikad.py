@@ -28,7 +28,7 @@ from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
-DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache"
+DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.1
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
