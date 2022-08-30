@@ -205,7 +205,7 @@ void CachedCommand::exec() {
 
 // *********** Thneed ***********
 
-Thneed::Thneed(bool do_clinit, cl_context _context = NULL) {
+Thneed::Thneed(bool do_clinit, cl_context _context) {
   context = _context;
   if (do_clinit) clinit();
   assert(g_fd != -1);
@@ -315,17 +315,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 }
 
 // *********** OpenCL interceptor ***********
-
-cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {
-  g_args_size[make_pair(kernel, arg_index)] = arg_size;
-  if (arg_value != NULL) {
-    g_args[make_pair(kernel, arg_index)] = string((char*)arg_value, arg_size);
-  } else {
-    g_args[make_pair(kernel, arg_index)] = string("");
-  }
-  cl_int ret = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
-  return ret;
-}
 
 cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
   cl_kernel kernel,
