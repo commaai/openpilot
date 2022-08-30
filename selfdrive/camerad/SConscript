@@ -8,7 +8,7 @@ if arch == "larch64":
 else:
   env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
   if USE_WEBCAM:
-    libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']
+    libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio','opencv_cudawarping']
     cameras = ['cameras/camera_webcam.cc']
     env = env.Clone()
     env.Append(CXXFLAGS = '-DWEBCAM')

@@ -76,18 +76,18 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
   auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->addImage(net_input_buf, s->frame->buf_size);
   LOGT("Image added");
-
+  //主帧和辅帧数据一致 减少一次调用prepare add image可以节省一半
   if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
-    s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+    // auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
+
+    s->m->addExtra(net_input_buf, s->wide_frame->buf_size);
     LOGT("Extra image added");
   }
-
   if (prepare_only) {
     return nullptr;
   }
-
   s->m->execute();
+
   LOGT("Execution finished");
 
   return (ModelOutput*)&s->output;
