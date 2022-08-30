@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -19,14 +18,10 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = True
 
     # Angle-based steering
-    # TODO: use curvature control when ready
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 1.0
     tire_stiffness_factor = 1.0
-
-    # TODO: detect stop-and-go vehicles
-    stop_and_go = False
 
     if candidate == CAR.ESCAPE_MK4:
       ret.wheelbase = 2.71
@@ -57,9 +52,6 @@ class CarInterface(CarInterfaceBase):
     # TODO: detect bsm in car_fw?
     ret.enableBsm = 0x3A6 in fingerprint[0] and 0x3A7 in fingerprint[0]
 
-    # min speed to enable ACC. if car can do stop and go, then set enabling speed
-    # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1. if (stop_and_go) else 20. * CV.MPH_TO_MS
     # LCA can steer down to zero
     ret.minSteerSpeed = 0.
 
