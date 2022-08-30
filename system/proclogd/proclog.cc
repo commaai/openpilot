@@ -228,6 +228,10 @@ void buildProcs(cereal::ProcLog::Builder &builder) {
     for (size_t j = 0; j < lcmdline.size(); j++) {
       lcmdline.set(j, extra_info.cmdline[j]);
     }
+
+    if (lcmdline.size() == 0 && r.state == 'Z') {
+      LOGW("[%d] (%s) is a zombie process", r.pid, r.name.c_str());
+    }
   }
 }
 
