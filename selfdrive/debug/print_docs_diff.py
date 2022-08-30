@@ -81,10 +81,6 @@ def print_car_info_diff(path):
       changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, FOOTNOTE_TAG) for column in Column]))
 
     for new_car, base_car in car_changes:
-      # Tier changes
-      if base_car.tier != new_car.tier:
-        changes["tier"].append(f"- Tier for {base_car.name} changed! ({base_car.tier.name.title()} {ARROW_SYMBOL} {new_car.tier.name.title()})")
-
       # Column changes
       row_diff = build_column_diff(base_car, new_car)
       if ARROW_SYMBOL in row_diff:
@@ -102,10 +98,10 @@ def print_car_info_diff(path):
   if any(len(c) for c in changes.values()):
     markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
 
-    for title, category in (("## 🏅 Tier Changes", "tier"), ("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
+    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
       if len(changes[category]):
         markdown_builder.append(title)
-        if category not in ("tier", "detail"):
+        if category not in ("detail",):
           markdown_builder.append(COLUMNS)
           markdown_builder.append(COLUMN_HEADER)
         markdown_builder.extend(changes[category])

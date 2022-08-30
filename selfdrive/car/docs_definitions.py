@@ -193,4 +193,3 @@ class CarInfo:
       item += footnote_tag.format(f'{",".join(map(str, sups))}')
 
     return item
-
