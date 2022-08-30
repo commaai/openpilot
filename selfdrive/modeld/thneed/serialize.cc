@@ -64,10 +64,6 @@ void Thneed::load(const char *filename) {
         );
       }
       assert(clbuf != NULL);
-#ifndef QCOM2
-      //printf("copyin buffer %p sz %d\n", &buf[ptr], sz);
-      ptr += sz;
-#endif
     }
 
     real_mem[*(cl_mem*)(mobj["id"].string_value().data())] = clbuf;
