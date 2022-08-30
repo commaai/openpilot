@@ -83,7 +83,6 @@ if use_thneed and arch == "larch64":
     "#tinygrad_repo/tinygrad/ops.py",
     "#tinygrad_repo/tinygrad/shapetracker.py",
     "#tinygrad_repo/tinygrad/tensor.py",
-    "#tinygrad_repo/tinygrad/__init__.py",
   ], cmd)
 
   #compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
