@@ -161,20 +161,13 @@ class CarController:
         if CC.cruiseControl.cancel:
           can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
         elif CC.cruiseControl.resume:
-          if self.CP.carFingerprint == CAR.HYUNDAI_GENESIS:
-            # send resume at a max freq of 20Hz
-            if (self.frame - self.last_button_frame) * DT_CTRL > 0.05:
-              can_sends.append(hyundaican.create_clu11(self.packer, self.resume_count, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint))
-              self.resume_count += 1
-              if self.resume_count > 5:
-                self.last_button_frame = self.frame
-                self.resume_count = 0
-          else:
-            # send resume at a max freq of 10Hz
-            if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
-              # send 25 messages at a time to increases the likelihood of resume being accepted
-              can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
+          # send resume at a max freq of 20Hz
+          if (self.frame - self.last_button_frame) * DT_CTRL > 0.05:
+            can_sends.extend([hyundaican.create_clu11(self.packer, self.resume_count, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
+            self.resume_count += 1
+            if self.resume_count > 5:
               self.last_button_frame = self.frame
+              self.resume_count = 0
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
