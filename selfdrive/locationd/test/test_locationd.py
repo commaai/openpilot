@@ -62,7 +62,7 @@ class TestLocationdProc(unittest.TestCase):
 
   def test_params_gps(self):
     # first reset params
-    Params().delete('LastGPSPosition')
+    Params().remove('LastGPSPosition')
 
     self.lat = 30 + (random.random() * 10.0)
     self.lon = -70 + (random.random() * 10.0)

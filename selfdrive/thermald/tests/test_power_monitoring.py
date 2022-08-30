@@ -31,8 +31,8 @@ def pm_patch(name, value, constant=False):
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
     # Clear stored capacity before each test
-    params.delete("CarBatteryCapacity")
-    params.delete("DisablePowerDown")
+    params.remove("CarBatteryCapacity")
+    params.remove("DisablePowerDown")
 
   def mock_peripheralState(self, hw_type, car_voltage=12):
     ps = messaging.new_message('peripheralState').peripheralState
