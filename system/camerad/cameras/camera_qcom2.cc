@@ -1103,7 +1103,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   }
   if (env_ctl_exp_from_params) {
     // Override gain and exposure time
-    if (buf.cur_frame_data.frame_id % 10 == 0) {
+    if (buf.cur_frame_data.frame_id % 5 == 0) {
       std::string gain_bytes = Params().get("ExpGain");
       std::string time_bytes = Params().get("ExpTime");
       gain_idx = std::stoi(gain_bytes);
