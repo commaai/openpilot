@@ -34,6 +34,8 @@ void Thneed::copy_inputs(float **finputs) {
   //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (debug >= 1) printf("copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
+
+    // TODO: fix thneed caching
     //if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
     if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
 
@@ -223,5 +225,12 @@ cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_siz
     g_args[make_pair(kernel, arg_index)] = string("");
   }
   cl_int ret = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
+  return ret;
+}
+
+cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
+  assert(count == 1);
+  cl_program ret = clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
+  g_program_source[ret] = strings[0];
   return ret;
 }
