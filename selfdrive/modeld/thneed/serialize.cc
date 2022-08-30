@@ -14,9 +14,9 @@ void Thneed::load(const char *filename) {
 
   string buf = util::read_file(filename);
   int jsz = *(int *)buf.data();
-  string err;
+  string jsonerr;
   string jj(buf.data() + sizeof(int), jsz);
-  Json jdat = Json::parse(jj, err);
+  Json jdat = Json::parse(jj, jsonerr);
 
   map<cl_mem, cl_mem> real_mem;
   real_mem[NULL] = NULL;
@@ -51,6 +51,8 @@ void Thneed::load(const char *filename) {
       desc.image_row_pitch = mobj["row_pitch"].int_value();
       // TODO: we are creating unused buffers on PC
       desc.buffer = clbuf;
+#else
+      cl_mem clbuf_loaded = clbuf;
 #endif
       cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
@@ -64,6 +66,14 @@ void Thneed::load(const char *filename) {
         );
       }
       assert(clbuf != NULL);
+#ifndef QCOM2
+      CL_CHECK(clSetKernelArg(to_image, 0, sizeof(cl_mem), &clbuf));
+      CL_CHECK(clSetKernelArg(to_image, 1, sizeof(cl_mem), &clbuf_loaded));
+      cl_int stride = mobj["row_pitch"].int_value();
+      CL_CHECK(clSetKernelArg(to_image, 2, sizeof(cl_int), &stride));
+      const size_t copy_work_size[2] = {desc.image_width, desc.image_height};
+      CL_CHECK(clEnqueueNDRangeKernel(command_queue, to_image, 2, NULL, copy_work_size, NULL, 0, 0, NULL));
+#endif
     }
 
     real_mem[*(cl_mem*)(mobj["id"].string_value().data())] = clbuf;
