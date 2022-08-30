@@ -48,11 +48,12 @@ void Thneed::load(const char *filename) {
       desc.image_width = mobj["width"].int_value();
       desc.image_height = mobj["height"].int_value();
       desc.image_row_pitch = mobj["row_pitch"].int_value();
+      assert(sz == desc.image_height*desc.image_row_pitch);
 #ifdef QCOM2
-      // TODO: we are creating unused buffers on PC
       desc.buffer = clbuf;
 #else
-      cl_mem clbuf_loaded = clbuf;
+      // TODO: we are creating unused buffers on PC
+      clReleaseMemObject(clbuf);
 #endif
       cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
@@ -61,8 +62,11 @@ void Thneed::load(const char *filename) {
       cl_int errcode;
 
 #ifndef QCOM2
-      clbuf = clCreateImage(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
-      clReleaseMemObject(clbuf_loaded);
+      if (mobj["needs_load"].bool_value()) {
+        clbuf = clCreateImage(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
+      } else {
+        clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+      }
 #else
       clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
 #endif
