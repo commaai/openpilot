@@ -50,6 +50,7 @@ repos:
         args:
         - -rn
         - -sn
+        - --rcfile=.pylintrc
 -   repo: local
     hooks:
     -   id: cppcheck
