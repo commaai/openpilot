@@ -78,7 +78,7 @@ if GetOption('extras'):
 
 
 if GetOption('extras'):
-  # buidl updater UI
+  # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
   # build mui

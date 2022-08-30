@@ -110,8 +110,8 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   logs = logs[segment_start:segment_end]
 
   if None in logs:
-    ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
-    if ans == 'y':
+    resp = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
+    if resp == 'y':
       logs = r.qlog_paths()[segment_start:segment_end]
     else:
       print("Please try a different route or segment")

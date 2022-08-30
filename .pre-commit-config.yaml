@@ -15,6 +15,15 @@ repos:
     -   id: check-symlinks
     -   id: check-added-large-files
         args: ['--maxkb=100']
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.2.1
+    hooks:
+    -   id: codespell
+        exclude: '^(pyextra/)|(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(include/)|(selfdrive/ui/translations/.*.ts)|(selfdrive/controls/lib/cluster)'
+        args:
+        # if you've got a short variable name that's getting flagged, add it here
+        - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup
+        - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.931
     hooks:

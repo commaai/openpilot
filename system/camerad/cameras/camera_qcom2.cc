@@ -949,7 +949,7 @@ std::map<uint16_t, std::pair<int, int>> CameraState::ar0231_build_register_lut(u
   //
   // 0xAA is used to indicate the MSB of the address, 0xA5 for the LSB of the address.
   // Every byte of data (MSB and LSB) is preceded by 0x5A. Specifying an address is optional
-  // for contigous ranges. See page 27-29 of the AR0231 Developer guide for more information.
+  // for contiguous ranges. See page 27-29 of the AR0231 Developer guide for more information.
 
   int max_i[] = {1828 / 2 * 3, 1500 / 2 * 3};
   auto get_next_idx = [](int cur_idx) {
@@ -1077,7 +1077,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // It takes 3 frames for the commanded exposure settings to take effect. The first frame is already started by the time
   // we reach this function, the other 2 are due to the register buffering in the sensor.
   // Therefore we use the target EV from 3 frames ago, the grey fraction that was just measured was the result of that control action.
-  // TODO: Lower latency to 2 frames, by using the histogram outputed by the sensor we can do AE before the debayering is complete
+  // TODO: Lower latency to 2 frames, by using the histogram outputted by the sensor we can do AE before the debayering is complete
 
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
@@ -1110,7 +1110,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     // Compute optimal time for given gain
     int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
-    // Only go below recomended gain when absolutely necessary to not overexpose
+    // Only go below recommended gain when absolutely necessary to not overexpose
     if (g < ANALOG_GAIN_REC_IDX && t > 20 && g < gain_idx) {
       continue;
     }
@@ -1118,7 +1118,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     // Compute error to desired ev
     float score = std::abs(desired_ev - (t * gain)) * 10;
 
-    // Going below recomended gain needs lower penalty to not overexpose
+    // Going below recommended gain needs lower penalty to not overexpose
     float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.1;
     score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
 
