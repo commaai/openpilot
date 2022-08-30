@@ -84,7 +84,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
       QObject::connect(uiState(), &UIState::offroadTransition, m, &MapWindow::offroadTransition);
 
-      m->setFixedWidth(topWidget(this)->width() / 3);
+      m->setFixedWidth(2*(topWidget(this)->width() )/ 5);
       split->addWidget(m, 0, Qt::AlignRight);
 
       // Make map visible after adding to split

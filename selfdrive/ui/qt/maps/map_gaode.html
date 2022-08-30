@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>地点关键字 + 驾车路线规划</title>
+    <style type="text/css">
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+    </style>
+    <style type="text/css">
+        #panel {
+            position: absolute;
+            background-color: white;
+            max-height: 700px;
+            overflow-y: auto;
+            top: 10px;
+            right: 120px;
+            width: 450px;
+        }
+        #panel .amap-call {
+            background-color: #009cf9;
+            border-top-left-radius: 4px;
+   	        border-top-right-radius: 4px;
+        }
+        #panel .amap-lib-driving {
+	        border-bottom-left-radius: 4px;
+   	        border-bottom-right-radius: 4px;
+            overflow: hidden;
+        }
+        #searchdiv{
+            background: rgb(185, 237, 112);
+            padding-top: 30px;
+            padding-bottom: 10px;
+        }
+        #startPosition {
+            float: left;
+            margin-left: 30px;
+            margin-right: 50px;
+        }
+        #endPosition{
+            margin-left: 30px;
+        }
+        #searchButton{
+            margin-left: 30px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            vertical-align: middle;
+        }
+    </style>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+	<script type="text/javascript">
+	 window._AMapSecurityConfig = {
+            securityJsCode:'abc60517882c399ae635b3f41874309e',
+        } </script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=a26bcac57a0936a72e786ff7340ed738&plugin=AMap.Driving"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+</head>
+<body>
+    <div id="searchdiv" onclick="clearPanel()" >
+        <input id="searchInpu" type="button" style="width: 80px;height: 30px;margin-left: 20px;"  value="卫星地图" onclick="satelliteMap()"/>
+        <input id="searchI" type="button" style="width: 80px;height: 30px;margin-left: 10px;"  value="普通地图" onclick="removeStateMap()"/>
+        
+        
+        <input id="infoInput" type="text" style="width: 180px;height: 30px;margin-left: 30px;" placeholder=" 电影院|酒店|KTV" />
+        <input id="searchInfo" type="button" style="width: 80px;height: 30px;"  value="信息检索" onclick="searchInfo()"/>
+        <div id="startPosition" >
+            <a style="color:#000 ;"> 起始 :</a> <input id="startIn" style="width: 200px;height: 30px;" placeholder=" 请输入起点 " />
+         </div>
+         <div id="endPosition" >
+             <a style="color:#000 ;"> 终点 :</a> <input id="endIn" style="width: 200px;height: 30px;" placeholder=" 请输入终点 "/>
+          </div>
+          <div id="searchButton">
+ 
+            <a style="font-size: 20px;color: black;">驾车路线规划: </a>
+            <input id="searchInput1" type="button" style="width: 80px;height: 30px;margin-left: 20px;"  value="最快捷" onclick="searchRoute(1)"/>
+            <input id="searchInput2" type="button" style="width: 80px;height: 30px;margin-left: 50px;"  value="最经济" onclick="searchRoute(2)"/>
+            <input id="searchInput3" type="button" style="width: 80px;height: 30px;margin-left: 50px;"  value="最短距离" onclick="searchRoute(3)"/>
+            <input id="searchInput4" type="button" style="width: 80px;height: 30px;margin-left: 50px;"  value="考虑路况" onclick="searchRoute(4)"/>
+          </div>
+          
+    </div>
+    
+<div id="container"></div>
+<div id="panel" style="margin-top: 150px;margin-bottom: 80px;"></div>
+<script type="text/javascript">
+
+    //基本地图加载
+    var map = new AMap.Map("container", {
+        rotateEnable:true,
+        pitchEnable:true,
+        resizeEnable: true,
+        center: [116.397428, 39.90923],//地图中心点
+        zoom: 15, //地图显示的缩放级别
+        // mapStyle:'amap://styles/blue',
+        pitch: 50,
+        viewMode:'3D', //开启3D视图,默认为关闭
+    });
+
+    //add 3D Control bar
+  
+    AMap.plugin([
+        'AMap.ControlBar',
+    ], function(){
+
+        // 添加 3D 罗盘控制
+        map.addControl(new AMap.ControlBar({
+            position: {
+                right: '150px',
+                top: '70px'
+            },
+            showControlButton: true,  // 是否显示倾斜、旋转按钮。默认为 true
+        }));
+    });
+
+    function clearPanel(){
+        document.getElementById("panel").innerHTML=''
+    }
+
+    function searchInfo(){
+        var infoText= document.getElementById("infoInput").value
+    // search
+    AMap.plugin(["AMap.PlaceSearch"], function() {
+        var placeSearch = new AMap.PlaceSearch({ //构造地点查询类
+            pageSize: 5, // 单页显示结果条数
+            pageIndex: 1, // 页码
+            city: "010", // 兴趣点城市
+            citylimit: true,  //是否强制限制在设置的城市内搜索
+            map: map, // 展现结果的地图实例
+            panel: "panel", // 结果列表将在此容器中进行展示。
+            autoFitView: true // 是否自动调整地图视野使绘制的 Marker点都处于视口的可见范围
+        });
+        //关键字查询
+        placeSearch.search(infoText);
+    });
+    }
+
+
+    var satelliteLayer = new AMap.TileLayer.Satellite();
+    var roadLayer= new AMap.TileLayer.RoadNet();
+
+    function satelliteMap(){
+        map.add(satelliteLayer);
+        map.add(roadLayer);
+    }
+
+    function removeStateMap(){
+        map.remove(satelliteLayer);
+    }
+
+
+  function searchRoute(type){
+    
+    //清除地图所有覆盖物
+    map.clearMap();
+    //clear the div content 
+    document.getElementById("panel").innerHTML=''
+
+    // 根据起终点名称规划驾车导航路线
+    var start = document.getElementById("startIn").value
+    var end = document.getElementById("endIn").value
+    var drivingType;
+    if(type==1){
+        drivingType=AMap.DrivingPolicy.LEAST_TIME;
+    }else if(type==2){
+        drivingType=AMap.DrivingPolicy.LEAST_FEE;
+    }else if(type==3){
+        drivingType=AMap.DrivingPolicy.LEAST_DISTANCE;
+    }else{
+        drivingType=AMap.DrivingPolicy.REAL_TRAFFIC;
+    }
+
+   //构造路线导航类
+   var driving = new AMap.Driving({
+        policy: drivingType,
+        map: map,
+        panel: "panel"
+    }); 
+
+    driving.search([
+        {keyword: start,city:'null'},
+        {keyword: end,city:'null'}
+    ], function(status, result) {
+        // result 即是对应的驾车导航信息，相关数据结构文档请参考  https://lbs.amap.com/api/javascript-api/reference/route-search#m_DrivingResult
+        if (status === 'complete') {
+            log.success('绘制驾车路线完成'+result);
+        } else {
+            log.error('获取驾车数据失败：' + result);
+            alert('输入地址有误请修改后重试！');
+        }
+    });
+
+    }
+    
+</script>
+</body>
+</html>

@@ -61,7 +61,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
 
   QWebEngineView *webView = new QWebEngineView(this);
   webView->resize(800, 1150);
-  webView->load(QUrl("file:///home/zhaojb1/adas/openpilot_git/openpilot/selfdrive/ui/qt/maps/map_gl.html"));
+  webView->load(QUrl("file:///home/zhaojb1/adas/openpilot_git/openpilot/selfdrive/ui/qt/maps/map_gaode.html"));
 
   webView->show();
 }
