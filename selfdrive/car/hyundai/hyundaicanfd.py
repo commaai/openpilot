@@ -29,7 +29,7 @@ def create_buttons(packer, cnt, btn):
     "SET_ME_1": 1,
     "CRUISE_BUTTONS": btn,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", 5, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", 4, values)
 
 def create_cruise_info(packer, cruise_info_copy, cancel):
   values = cruise_info_copy
