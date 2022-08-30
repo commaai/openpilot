@@ -4,7 +4,7 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
 from common.params import Params, put_nonblocking
-from common.realtime import set_realtime_priority, DT_MDL
+from common.realtime import config_realtime_process, DT_MDL
 from common.filter_simple import FirstOrderFilter
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -111,7 +111,7 @@ class TorqueEstimator:
   def estimate_params(self):
     points = self.filtered_points.get_points(FIT_POINTS_TOTAL)
     # total least square solution as both x and y are noisy observations
-    # this is emperically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
+    # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     _, _, v = np.linalg.svd(points, full_matrices=False)
     slope, offset = -v.T[0:2, 2] / v.T[2, 2]
     _, spread = np.einsum("ik,kj -> ji", np.column_stack((points[:, 0], points[:, 2] - offset)), slope2rot(slope))
@@ -163,7 +163,7 @@ class TorqueEstimator:
 
 
 def main(sm=None, pm=None):
-  set_realtime_priority(1)
+  config_realtime_process([0, 1, 2, 3], 5)
 
   if sm is None:
     sm = messaging.SubMaster(['carControl', 'carState', 'liveLocationKalman'], poll=['liveLocationKalman'])
