@@ -2,7 +2,7 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.ford.values import CAR, TransmissionType, GearShifter
+from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -11,7 +11,7 @@ EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "ford"
@@ -46,9 +46,9 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"Unsupported car: ${candidate}")
 
-    # Auto Transmission: Gear_Shift_by_Wire_FD1
-    # TODO: detect transmission in car_fw?
-    if 0x5A in fingerprint[0]:
+    # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
+    found_ecus = [fw.ecu for fw in car_fw]
+    if Ecu.shiftByWire in found_ecus or 0x5A in fingerprint[0]:
       ret.transmissionType = TransmissionType.automatic
     else:
       ret.transmissionType = TransmissionType.manual

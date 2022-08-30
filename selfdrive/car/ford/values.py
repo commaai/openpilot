@@ -65,6 +65,8 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7E0, None): [
       b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
+    (Ecu.shiftByWire, 0x732, None): [
+    ],
   },
   CAR.EXPLORER_MK6: {
     (Ecu.eps, 0x730, None): [
@@ -86,6 +88,9 @@ FW_VERSIONS = {
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
+    (Ecu.shiftByWire, 0x732, None): [
+      b'L1MP-14G395-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
   },
   CAR.FOCUS_MK4: {
     (Ecu.eps, 0x730, None): [
@@ -102,6 +107,8 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7E0, None): [
       b'JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x732, None): [
     ],
   },
 }
