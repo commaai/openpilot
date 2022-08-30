@@ -56,6 +56,10 @@ repos:
         language: system
         types: [python]
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)'
+        args:
+        - -rn
+        - -sn
+        - --rcfile=.pylintrc
 -   repo: local
     hooks:
     -   id: cppcheck

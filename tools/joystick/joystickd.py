@@ -77,7 +77,7 @@ def send_thread(joystick):
     print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
     if "WEB" in os.environ:
       import requests
-      requests.get("http://"+os.environ["WEB"]+":5000/control/%f/%f" % tuple([joystick.axes_values[a] for a in joystick.axes_order][::-1]))
+      requests.get("http://"+os.environ["WEB"]+":5000/control/%f/%f" % tuple([joystick.axes_values[a] for a in joystick.axes_order][::-1]), timeout=None)
     rk.keep_time()
 
 def joystick_thread(use_keyboard):
