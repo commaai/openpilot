@@ -1,3 +1,4 @@
+import math
 from cereal import car
 from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
@@ -7,12 +8,17 @@ from selfdrive.car.ford.values import CarControllerParams
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def apply_ford_steer_angle_limits(apply_steer, apply_steer_last, vEgo):
+def apply_ford_steer_angle_limits(apply_steer, apply_steer_last, vEgo, VM):
   # rate limit
   steer_up = apply_steer * apply_steer_last > 0. and abs(apply_steer) > abs(apply_steer_last)
   rate_limit = CarControllerParams.STEER_RATE_LIMIT_UP if steer_up else CarControllerParams.STEER_RATE_LIMIT_DOWN
   max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
   apply_steer = clip(apply_steer, (apply_steer_last - max_angle_diff), (apply_steer_last + max_angle_diff))
+
+  # absolute limit (~0.5 rad after steer ratio)
+  apply_angle = math.radians(apply_steer) / VM.sR
+  apply_angle = clip(apply_angle, -0.4995, 0.5240)
+  apply_angle = math.degrees(apply_angle) * VM.sR
 
   return apply_steer
 
@@ -42,32 +48,30 @@ class CarController:
       # cancel stock ACC
       can_sends.append(fordcan.spam_cancel_button(self.packer))
 
-    # apply rate limits
-    new_steer = actuators.steeringAngleDeg
-    apply_steer = apply_ford_steer_angle_limits(new_steer, self.apply_steer_last, CS.out.vEgo)
+
+    ### lateral control ###
+    apply_steer = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgo, self.VM)
 
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       lca_rq = 1 if CC.latActive else 0
 
-      # use LatCtlPath_An_Actl to actuate steering for now until curvature control is implemented
-      path_angle = apply_steer
+      # use LatCtlPath_An_Actl to actuate steering
+      # path angle is the car wheel angle, not the steering wheel angle
+      path_angle = math.radians(apply_steer) / self.VM.sR
 
-      # convert steer angle to curvature
-      curvature = self.VM.calc_curvature(apply_steer, CS.out.vEgo, 0.0)
-
-      # TODO: get other actuators
-      curvature_rate = 0
-      path_offset = 0
-
+      # ramp rate: 0=Slow, 1=Medium, 2=Fast, 3=Immediately
+      # TODO: slower ramp speed when driver torque detected
       ramp_type = 3  # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
       precision = 0  # 0=Comfortable, 1=Precise
 
       self.apply_steer_last = apply_steer
-      can_sends.append(fordcan.create_lkas_command(self.packer, apply_steer, curvature))
+      can_sends.append(fordcan.create_lkas_command(self.packer, apply_steer, 0))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
-                                                  path_offset, path_angle, curvature_rate, curvature))
+                                                  0, path_angle, 0, 0))
 
+
+    ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
 
     # send lkas ui command at 1Hz or if ui state changes
