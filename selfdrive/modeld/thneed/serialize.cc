@@ -47,8 +47,8 @@ void Thneed::load(const char *filename) {
       desc.image_type = (mobj["arg_type"] == "image2d_t") ? CL_MEM_OBJECT_IMAGE2D : CL_MEM_OBJECT_IMAGE1D_BUFFER;
       desc.image_width = mobj["width"].int_value();
       desc.image_height = mobj["height"].int_value();
-#ifdef QCOM2
       desc.image_row_pitch = mobj["row_pitch"].int_value();
+#ifdef QCOM2
       // TODO: we are creating unused buffers on PC
       desc.buffer = clbuf;
 #else
@@ -59,25 +59,19 @@ void Thneed::load(const char *filename) {
       format.image_channel_data_type = mobj["float32"].bool_value() ? CL_FLOAT : CL_HALF_FLOAT;
 
       cl_int errcode;
+
+#ifndef QCOM2
+      clbuf = clCreateImage(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
+      clReleaseMemObject(clbuf_loaded);
+#else
       clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+#endif
       if (clbuf == NULL) {
         printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
           desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer
         );
       }
       assert(clbuf != NULL);
-#ifndef QCOM2
-      if (mobj["needs_load"].bool_value()) {
-        CL_CHECK(clSetKernelArg(to_image, 0, sizeof(cl_mem), &clbuf));
-        CL_CHECK(clSetKernelArg(to_image, 1, sizeof(cl_mem), &clbuf_loaded));
-        cl_int stride = mobj["row_pitch"].int_value() / (format.image_channel_data_type == CL_FLOAT ? 16 : 8);
-        CL_CHECK(clSetKernelArg(to_image, 2, sizeof(cl_int), &stride));
-        const size_t copy_work_size[2] = {desc.image_width, desc.image_height};
-        CL_CHECK(clEnqueueNDRangeKernel(command_queue, to_image, 2, NULL, copy_work_size, NULL, 0, 0, NULL));
-        clFinish(command_queue);
-      }
-      clReleaseMemObject(clbuf_loaded);
-#endif
     }
 
     real_mem[*(cl_mem*)(mobj["id"].string_value().data())] = clbuf;

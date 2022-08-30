@@ -10,9 +10,6 @@ Thneed::Thneed(bool do_clinit, cl_context _context) {
   if (do_clinit) clinit();
   char *thneed_debug_env = getenv("THNEED_DEBUG");
   debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
-
-  cl_program prg = cl_program_from_file(context, device_id, "transforms/to_image.cl", "");
-  to_image = CL_CHECK_ERR(clCreateKernel(prg, "to_image", &err));
 }
 
 cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value) {

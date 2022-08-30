@@ -117,9 +117,6 @@ class Thneed {
     unique_ptr<GPUMalloc> ram;
     vector<unique_ptr<CachedIoctl> > cmds;
     int fd;
-#else
-    // used on PC
-    cl_kernel to_image = NULL;
 #endif
 
     // all CL kernels
