@@ -3,7 +3,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from selfdrive.car.ford import fordcan
-from selfdrive.car.ford.values import CarControllerParams
+from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -49,6 +49,10 @@ class CarController:
       can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, cancel=True))
     elif CC.cruiseControl.resume:
       can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True))
+    elif CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0:
+      # if stock lane centering is active or in standby, toggle it off
+      # the stock system checks for steering pressed, and eventually disengages cruise control
+      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, tja_toggle=True, bus=CANBUS.camera))
 
 
     ### lateral control ###
