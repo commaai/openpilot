@@ -14,8 +14,8 @@ public:
   void execute();
   void* getInputBuf();
   void* getExtraBuf();
-  Thneed *thneed = NULL;
 private:
+  Thneed *thneed = NULL;
   bool recorded;
   bool use_extra;
 
