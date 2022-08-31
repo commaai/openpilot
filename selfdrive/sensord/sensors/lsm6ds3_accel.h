@@ -7,20 +7,25 @@
 
 // Registers of the chip
 #define LSM6DS3_ACCEL_I2C_REG_ID        0x0F
+#define LSM6DS3_ACCEL_I2C_REG_INT1_CTRL 0x0D
 #define LSM6DS3_ACCEL_I2C_REG_CTRL1_XL  0x10
+#define LSM6DS3_ACCEL_I2C_REG_STAT_REG  0x1E
 #define LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL 0x28
 
 // Constants
 #define LSM6DS3_ACCEL_CHIP_ID        0x69
 #define LSM6DS3TRC_ACCEL_CHIP_ID     0x6A
 #define LSM6DS3_ACCEL_ODR_104HZ      (0b0100 << 4)
+#define LSM6DS3_ACCEL_INT1_DRDY_XL   0b1
+#define LSM6DS3_ACCEL_DRDY_XLDA      0b1
 
 
 class LSM6DS3_Accel : public I2CSensor {
+  int gpio_nr;
   uint8_t get_device_address() {return LSM6DS3_ACCEL_I2C_ADDR;}
   cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 public:
-  LSM6DS3_Accel(I2CBus *bus);
+  LSM6DS3_Accel(I2CBus *bus, int gpio_nr);
   int init();
   void get_event(cereal::SensorEventData::Builder &event);
 };
