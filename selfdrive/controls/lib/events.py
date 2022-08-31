@@ -31,7 +31,8 @@ class Priority(IntEnum):
 class ET:
   ENABLE = 'enable'
   PRE_ENABLE = 'preEnable'
-  OVERRIDE = 'override'
+  OVERRIDE_LAT = 'overrideLat'
+  OVERRIDE_LONG = 'overrideLong'
   NO_ENTRY = 'noEntry'
   WARNING = 'warning'
   USER_DISABLE = 'userDisable'
@@ -623,7 +624,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.gasPressedOverride: {
-    ET.OVERRIDE: Alert(
+    ET.OVERRIDE_LONG: Alert(
+      "",
+      "",
+      AlertStatus.normal, AlertSize.none,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1),
+  },
+
+  EventName.steerOverride: {
+    ET.OVERRIDE_LAT: Alert(
       "",
       "",
       AlertStatus.normal, AlertSize.none,
