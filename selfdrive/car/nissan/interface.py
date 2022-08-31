@@ -13,6 +13,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
+    ret.autoResumeSng = False
 
     ret.steerLimitTimer = 1.0
 

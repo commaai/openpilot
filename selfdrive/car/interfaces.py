@@ -107,11 +107,14 @@ class CarInterfaceBase(ABC):
     ret = car.CarParams.new_message()
     ret.carFingerprint = candidate
 
+    # Car docs fields
+    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
+    ret.autoResumeSng = True  # describes whether car can resume from a stop automatically
+
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
-    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
