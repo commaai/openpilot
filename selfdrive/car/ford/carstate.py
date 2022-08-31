@@ -203,7 +203,8 @@ class CarState(CarStateBase):
       ("DasStats_D_Dsply", "IPMA_Data"),            # DAS status
       ("DasWarn_D_Dsply", "IPMA_Data"),             # DAS warning
       ("AhbHiBeam_D_Rq", "IPMA_Data"),              # AHB status
-      ("Set_Me_X1", "IPMA_Data"),
+      ("Passthru_63", "IPMA_Data"),
+      ("Passthru_48", "IPMA_Data"),
     ]
 
     checks = [
