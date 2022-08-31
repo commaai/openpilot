@@ -1,5 +1,5 @@
 import crcmod
-from common.numpy_fast import interp
+#from common.numpy_fast import interp
 from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
@@ -89,12 +89,17 @@ def create_acc_commands(packer, enabled, accel, accel_error, idx, lead_visible, 
     "TauGapSet": 4,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
-    # Using a fake lead enables more decel or accel
+    # Using a fake lead seems to make braking to a stop more consistent
+    # Changing the distance and relative speed of the fake lead seems
+    # to make it lag less in certain cases (faster lead less lag on accel),
+    # but the patterns aren't clear yet and there is so much state and logic
+    # abs module
+
     "ObjValid": 1,
     "ACC_ObjStatus": 1,
     "ACC_ObjLatPos": 0,
-    "ACC_ObjRelSpd": interp(accel_error, [0.0, 1.0], [0.0, 10.0]),
-    "ACC_ObjDist": interp(accel_error, [0.0, 1.0], [0.0, 20.0]),
+    "ACC_ObjRelSpd": 0.0,
+    "ACC_ObjDist": 1.0,
   }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
