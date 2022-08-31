@@ -70,9 +70,9 @@ class CarController:
       path_angle = math.radians(apply_angle) / CarControllerParams.STEER_RATIO
 
       # ramp rate: 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      # TODO: slower ramp speed when driver torque detected
-      ramp_type = 3  # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      precision = 1  # 0=Comfortable, 1=Precise
+      # TODO: try slower ramp speed when driver torque detected
+      ramp_type = 3
+      precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
       self.apply_angle_last = apply_angle
       can_sends.append(fordcan.create_lka_command(self.packer, apply_angle, 0))
