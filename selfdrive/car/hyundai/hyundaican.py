@@ -81,7 +81,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, accel_error, idx, lead_visible, set_speed, stopping, gas_pressed):
+def create_acc_commands(packer, enabled, accel, starting, idx, lead_visible, set_speed, stopping, gas_pressed):
   commands = []
 
   scc11_values = {
@@ -98,8 +98,8 @@ def create_acc_commands(packer, enabled, accel, accel_error, idx, lead_visible, 
     "ObjValid": 1,
     "ACC_ObjStatus": 1,
     "ACC_ObjLatPos": 0,
-    "ACC_ObjRelSpd": 0.0,
-    "ACC_ObjDist": 1.0,
+    "ACC_ObjRelSpd": 10 if starting else -5.0,
+    "ACC_ObjDist": 20 if starting else 1.0,
   }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 

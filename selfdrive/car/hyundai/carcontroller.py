@@ -122,13 +122,13 @@ class CarController:
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         accel = actuators.accel
-        accel_error = accel - CS.out.aEgo
+        starting = CS.out.vEgo < self.CP.vEgoStarting and accel > 0.0
 
         accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
         stopping = actuators.longControlState == LongCtrlState.stopping
         set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, accel_error, int(self.frame / 2),
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, starting, int(self.frame / 2),
                                                         hud_control.leadVisible, set_speed_in_units, stopping, CS.out.gasPressed))
         self.accel = accel
 
