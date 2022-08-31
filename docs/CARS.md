@@ -6,7 +6,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 
 # 205 Supported Cars
 
-|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from a stop|Harness|
+|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
 |Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|

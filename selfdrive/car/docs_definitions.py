@@ -19,7 +19,7 @@ class Column(Enum):
   FSR_LONGITUDINAL = "No ACC accel below"
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
-  AUTO_RESUME = "Resume from a stop"
+  AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
 
 
