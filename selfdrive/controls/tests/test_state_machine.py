@@ -94,7 +94,6 @@ class TestStateMachine(unittest.TestCase):
     # Given current state's event type, we should maintain state
     for state in ALL_STATES:
       for ev in MAINTAIN_STATES[state]:
-        print(ev)
         self.controlsd.state = state
         self.controlsd.events.add(make_event([ev]))
         self.controlsd.state_transition(self.CS)
