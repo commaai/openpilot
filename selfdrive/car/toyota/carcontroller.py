@@ -10,6 +10,9 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# LKAS allows user torque above threshold for 50 frames before permanently faulting
+MAX_USER_TORQUE = 500
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -52,14 +55,11 @@ class CarController:
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
-    # cut steering to prevent a permanent LKAS fault
-    lat_active = CC.latActive and abs(CS.out.steeringTorque) < 500
-
-    if not lat_active:
+    if CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE:
+      apply_steer_req = 1
+    else:
       apply_steer = 0
       apply_steer_req = 0
-    else:
-      apply_steer_req = 1
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
