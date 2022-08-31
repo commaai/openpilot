@@ -8,7 +8,7 @@ from selfdrive.car.ford.values import CANBUS, CarControllerParams
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo, VM):
+def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
   # rate limit
   steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
   rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
@@ -57,7 +57,7 @@ class CarController:
 
     ### lateral control ###
     if CC.latActive:
-      apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, self.VM)
+      apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
     else:
       apply_angle = CS.out.steeringAngleDeg
 
