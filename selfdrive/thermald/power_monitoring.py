@@ -130,10 +130,9 @@ class PowerMonitoring:
       return False
 
     now = sec_since_boot()
-    panda_charging = (peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client)
 
     should_shutdown = False
     # Wait until we have shut down charging before powering down
-    should_shutdown |= (not panda_charging and self.should_disable_charging(ignition, in_car, offroad_timestamp))
+    should_shutdown |= self.should_disable_charging(ignition, in_car, offroad_timestamp)
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
     return should_shutdown

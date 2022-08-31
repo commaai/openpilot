@@ -500,23 +500,9 @@ void peripheral_control_thread(Panda *panda) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-    if (!Hardware::PC() && sm.updated("deviceState")) {
-      // Charging mode
-      bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
-      if (charging_disabled != prev_charging_disabled) {
-        if (charging_disabled) {
-          panda->set_usb_power_mode(cereal::PeripheralState::UsbPowerMode::CLIENT);
-          LOGW("TURN OFF CHARGING!\n");
-        } else {
-          panda->set_usb_power_mode(cereal::PeripheralState::UsbPowerMode::CDP);
-          LOGW("TURN ON CHARGING!\n");
-        }
-        prev_charging_disabled = charging_disabled;
-      }
-    }
-
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
+
     if (sm.updated("deviceState")) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
@@ -541,6 +527,7 @@ void peripheral_control_thread(Panda *panda) {
         ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
       }
     }
+
     // Disable ir_pwr on front frame timeout
     uint64_t cur_t = nanos_since_boot();
     if (cur_t - last_front_frame_t > 1e9) {
