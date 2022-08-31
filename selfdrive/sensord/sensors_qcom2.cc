@@ -27,7 +27,7 @@
 
 ExitHandler do_exit;
 std::mutex pm_mutex;
-uint64_t last_ts;
+uint64_t last_ts = 0;
 
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
