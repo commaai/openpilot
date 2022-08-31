@@ -491,7 +491,6 @@ void peripheral_control_thread(Panda *panda) {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
-  bool prev_charging_disabled = false;
   unsigned int cnt = 0;
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
