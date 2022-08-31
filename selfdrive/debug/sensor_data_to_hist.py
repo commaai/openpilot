@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 printing the gap between interrupts in a histogram to check if the
-frequency is what we expect, the bmx is not interrup driven for as we
+frequency is what we expect, the bmx is not interrupt driven for as we
 get interrupts in a 2kHz rate.
 '''
 
