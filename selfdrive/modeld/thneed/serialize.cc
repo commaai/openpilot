@@ -33,8 +33,8 @@ void Thneed::load(const char *filename) {
       assert(mobj["needs_load"].bool_value() == false);
     } else {
       if (mobj["needs_load"].bool_value()) {
-        //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
         clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, &buf[ptr], NULL);
+        if (debug >= 1) printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
         ptr += sz;
       } else {
         // TODO: is there a faster way to init zeroed out buffers?
