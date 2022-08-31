@@ -30,17 +30,16 @@ cl_int Thneed::clexec() {
   return clFinish(command_queue);
 }
 
-void Thneed::copy_inputs(float **finputs) {
-  //cl_int ret;
+void Thneed::copy_inputs(float **finputs, bool internal) {
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (debug >= 1) printf("copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
 
-    // TODO: fix thneed caching
-    //if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
-    if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
-
-    // HACK
-    //if (input_sizes[idx] == 16) memset((char*)inputs[idx] + 8, 0, 8);
+    if (internal) {
+      // if it's internal, using memcpy is fine since the buffer sync is cached in the ioctl layer
+      if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+    } else {
+      if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
+    }
   }
 }
 
