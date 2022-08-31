@@ -220,7 +220,7 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine, Ecu.transmission],
+    whitelist_ecus=[Ecu.esp, Ecu.hcp, Ecu.engine, Ecu.transmission],
   ),
   Request(
     "chrysler",

@@ -34,7 +34,7 @@
 // - The internal panda will always be the first panda
 // - Consecutive pandas will be sorted based on panda type, and then serial number
 // Connecting:
-// - If a panda connection is dropped, boardd wil reconnect to all pandas
+// - If a panda connection is dropped, boardd will reconnect to all pandas
 // - If a panda is added, we will only reconnect when we are offroad
 // CAN buses:
 // - Each panda will have it's block of 4 buses. E.g.: the second panda will use
@@ -44,7 +44,7 @@
 // Safety:
 // - SafetyConfig is a list, which is mapped to the connected pandas
 // - If there are more pandas connected than there are SafetyConfigs,
-//   the excess pandas will remain in "silent" ot "noOutput" mode
+//   the excess pandas will remain in "silent" or "noOutput" mode
 // Ignition:
 // - If any of the ignition sources in any panda is high, ignition is high
 
