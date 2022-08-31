@@ -11,11 +11,11 @@ from selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize
 State = log.ControlsState.OpenpilotState
 
 # The event types that maintain the current state
-MAINTAIN_STATES = {State.enabled: None, State.disabled: None, State.softDisabling: ET.SOFT_DISABLE,
-                   State.preEnabled: ET.PRE_ENABLE, State.overriding: ET.OVERRIDE}
+MAINTAIN_STATES = {State.enabled: (None,), State.disabled: (None,), State.softDisabling: (ET.SOFT_DISABLE,),
+                   State.preEnabled: (ET.PRE_ENABLE,), State.overriding: (ET.OVERRIDE_LAT, ET.OVERRIDE_LONG)}
 ALL_STATES = tuple(State.schema.enumerants.values())
 # The event types checked in DISABLED section of state machine
-ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE, ET.OVERRIDE)
+ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE, ET.OVERRIDE_LAT, ET.OVERRIDE_LONG)
 
 
 def make_event(event_types):
@@ -41,7 +41,7 @@ class TestStateMachine(unittest.TestCase):
 
   def test_immediate_disable(self):
     for state in ALL_STATES:
-      self.controlsd.events.add(make_event([MAINTAIN_STATES[state], ET.IMMEDIATE_DISABLE]))
+      self.controlsd.events.add(make_event([MAINTAIN_STATES[state][0], ET.IMMEDIATE_DISABLE]))
       self.controlsd.state = state
       self.controlsd.state_transition(self.CS)
       self.assertEqual(State.disabled, self.controlsd.state)
@@ -49,7 +49,7 @@ class TestStateMachine(unittest.TestCase):
 
   def test_user_disable(self):
     for state in ALL_STATES:
-      self.controlsd.events.add(make_event([MAINTAIN_STATES[state], ET.USER_DISABLE]))
+      self.controlsd.events.add(make_event([MAINTAIN_STATES[state][0], ET.USER_DISABLE]))
       self.controlsd.state = state
       self.controlsd.state_transition(self.CS)
       self.assertEqual(State.disabled, self.controlsd.state)
@@ -59,7 +59,7 @@ class TestStateMachine(unittest.TestCase):
     for state in ALL_STATES:
       if state == State.preEnabled:  # preEnabled considers NO_ENTRY instead
         continue
-      self.controlsd.events.add(make_event([MAINTAIN_STATES[state], ET.SOFT_DISABLE]))
+      self.controlsd.events.add(make_event([MAINTAIN_STATES[state][0], ET.SOFT_DISABLE]))
       self.controlsd.state = state
       self.controlsd.state_transition(self.CS)
       self.assertEqual(self.controlsd.state, State.disabled if state == State.disabled else State.softDisabling)
@@ -93,11 +93,13 @@ class TestStateMachine(unittest.TestCase):
   def test_maintain_states(self):
     # Given current state's event type, we should maintain state
     for state in ALL_STATES:
-      self.controlsd.state = state
-      self.controlsd.events.add(make_event([MAINTAIN_STATES[state]]))
-      self.controlsd.state_transition(self.CS)
-      self.assertEqual(self.controlsd.state, state)
-      self.controlsd.events.clear()
+      for ev in MAINTAIN_STATES[state]:
+        print(ev)
+        self.controlsd.state = state
+        self.controlsd.events.add(make_event([ev]))
+        self.controlsd.state_transition(self.CS)
+        self.assertEqual(self.controlsd.state, state)
+        self.controlsd.events.clear()
 
 
 if __name__ == "__main__":
