@@ -409,7 +409,6 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   }
 
   uint16_t fan_speed_rpm = panda->get_fan_speed();
-  ps.setUsbPowerMode(cereal::PeripheralState::UsbPowerMode(pandaState.usb_power_mode_pkt));
   ps.setFanSpeedRpm(fan_speed_rpm);
 
   pm->send("peripheralState", msg);
