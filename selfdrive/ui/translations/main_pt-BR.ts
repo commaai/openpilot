@@ -1029,7 +1029,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>Switch Branch</source>
-        <translation>Trocar Ramo</translation>
+        <translation>Trocar Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
@@ -1040,12 +1040,12 @@ trabalho definido</translation>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>O novo ramo será aplicado na próxima execução do atualizador.</translation>
+        <translation>A nova branch será aplicada na próxima execução do atualizador.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>Enter branch name</source>
-        <translation>Inserir o nome do ramo</translation>
+        <translation>Inserir o nome da branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
@@ -1055,7 +1055,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
         <source>Uninstall %1</source>
-        <translation>Desintalando %1</translation>
+        <translation>Desintalar o %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
