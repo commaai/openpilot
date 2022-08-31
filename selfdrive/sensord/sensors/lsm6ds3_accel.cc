@@ -4,6 +4,7 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/gpio.h"
 
 LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
