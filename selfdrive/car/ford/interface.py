@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -22,6 +23,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 1.0
     tire_stiffness_factor = 1.0
+
+    # Per-chassis tuning values, override tuning defaults here if desired
 
     if candidate == CAR.ESCAPE_MK4:
       ret.wheelbase = 2.71
@@ -47,6 +50,7 @@ class CarInterface(CarInterfaceBase):
       ret.transmissionType = TransmissionType.automatic
     else:
       ret.transmissionType = TransmissionType.manual
+      ret.minEnableSpeed = 20.0 * CV.MPH_TO_MS
 
     # BSM: Side_Detect_L_Stat, Side_Detect_R_Stat
     # TODO: detect bsm in car_fw?
@@ -55,12 +59,11 @@ class CarInterface(CarInterfaceBase):
     # LCA can steer down to zero
     ret.minSteerSpeed = 0.
 
-    ret.centerToFront = ret.wheelbase * 0.44
-
+    ret.autoResumeSng = ret.minEnableSpeed == -1
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
+    ret.centerToFront = ret.wheelbase * 0.44
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
     return ret
 
   def _update(self, c):
