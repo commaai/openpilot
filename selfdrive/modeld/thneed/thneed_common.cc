@@ -201,8 +201,8 @@ void CLQueuedKernel::debug_print(bool verbose) {
             assert(slice_pitch == 0);
 
             clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
-            size_t sz;
-            clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+            size_t sz = 0;
+            if (buf != NULL) clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
             printf(" image %zu x %zu rp %zu @ %p buffer %zu", width, height, row_pitch, buf, sz);
           } else {
             size_t sz;
