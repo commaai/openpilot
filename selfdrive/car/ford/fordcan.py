@@ -1,3 +1,6 @@
+from selfdrive.car.ford.values import CANBUS
+
+
 def create_lka_command(packer, angle_deg: float, curvature: float):
   """
   Creates a CAN message for the Ford LKAS Command.
@@ -17,7 +20,7 @@ def create_lka_command(packer, angle_deg: float, curvature: float):
     "LdwActvStats_D_Req": 0,            # LDW status [0|7]
     "LdwActvIntns_D_Req": 0,            # LDW intensity [0|3], shake alert strength
   }
-  return packer.make_can_msg("Lane_Assist_Data1", 0, values)
+  return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, values)
 
 
 def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float, curvature_rate: float, curvature: float):
@@ -45,7 +48,7 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
     "LatCtlCurv_NoRate_Actl": curvature_rate,               # Curvature rate [-0.001024|0.00102375] 1/meter^2
     "LatCtlCurv_No_Actl": curvature,                        # Curvature [-0.02|0.02094] 1/meter
   }
-  return packer.make_can_msg("LateralMotionControl", 0, values)
+  return packer.make_can_msg("LateralMotionControl", CANBUS.main, values)
 
 
 def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bool, stock_values: dict):
@@ -73,7 +76,7 @@ def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bo
     "LaActvStats_D_Dsply": lines,                           # LKAS status (lines) [0|31]
     "LaHandsOff_D_Dsply": 2 if steer_alert else 0,          # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
   }
-  return packer.make_can_msg("IPMA_Data", 0, values)
+  return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
 
 
 def create_acc_ui_command(packer, main_on: bool, enabled: bool, stock_values: dict):
@@ -90,10 +93,10 @@ def create_acc_ui_command(packer, main_on: bool, enabled: bool, stock_values: di
     **stock_values,
     "Tja_D_Stat": 2 if enabled else (1 if main_on else 0),  # TJA status: 0=Off, 1=Standby, 2=Active, 3=InterventionLeft, 4=InterventionRight, 5=WarningLeft, 6=WarningRight, 7=NotUsed [0|7]
   }
-  return packer.make_can_msg("ACCDATA_3", 0, values)
+  return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
-def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False):
+def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False, bus = CANBUS.main):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
@@ -106,4 +109,4 @@ def create_button_command(packer, stock_values: dict, cancel = False, resume = F
     "CcAsllButtnResPress": 1 if resume else 0,      # CC resume button
     "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # TJA toggle button
   }
-  return packer.make_can_msg("Steering_Data_FD1", 0, values)
+  return packer.make_can_msg("Steering_Data_FD1", bus, values)
