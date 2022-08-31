@@ -287,7 +287,7 @@ class Tici(HardwareBase):
     ]
 
     upload = [
-      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
       (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
 
       # Create class 1:20 with specified rate limit

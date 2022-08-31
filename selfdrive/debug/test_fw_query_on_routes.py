@@ -168,7 +168,7 @@ if __name__ == "__main__":
       break
 
   print()
-  # Print FW versions that need to be added seperated out by car and address
+  # Print FW versions that need to be added separated out by car and address
   for car, m in sorted(mismatches.items()):
     print(car)
     addrs = defaultdict(list)
