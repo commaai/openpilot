@@ -15,6 +15,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
+    ret.dashcamOnly = candidate in (CAR.ESCAPE_MK4, CAR.FOCUS_MK4)  # need routes
 
     # Angle-based steering
     ret.steerControlType = car.CarParams.SteerControlType.angle
