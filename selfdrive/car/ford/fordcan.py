@@ -93,7 +93,7 @@ def create_acc_ui_command(packer, main_on: bool, enabled: bool, stock_values: di
   return packer.make_can_msg("ACCDATA_3", 0, values)
 
 
-def create_button_command(packer, cancel = False, resume = False, tja_toggle = False):
+def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
@@ -101,6 +101,7 @@ def create_button_command(packer, cancel = False, resume = False, tja_toggle = F
   """
 
   values = {
+    **stock_values,
     "CcAslButtnCnclPress": 1 if cancel else 0,      # CC cancel button
     "CcAsllButtnResPress": 1 if resume else 0,      # CC resume button
     "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # TJA toggle button

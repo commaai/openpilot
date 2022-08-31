@@ -77,6 +77,8 @@ class CarState(CarStateBase):
       ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]["SodDetctLeft_D_Stat"] != 0
       ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]["SodDetctRight_D_Stat"] != 0
 
+    # Stock steering buttons so that we can passthru blinkers etc.
+    self.buttons_stock_values = cp.vl["Steering_Data_FD1"]
     # Stock values from IPMA so that we can retain some stock functionality
     self.acc_tja_status_stock_values = cp_cam.vl["ACCDATA_3"]
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
@@ -112,6 +114,38 @@ class CarState(CarStateBase):
       ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
       ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
       ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
+      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthru the remaining buttons
+      ("WiprFront_D_Stat", "Steering_Data_FD1"),
+      ("LghtAmb_D_Sns", "Steering_Data_FD1"),
+      ("AccButtnGapDecPress", "Steering_Data_FD1"),
+      ("AccButtnGapIncPress", "Steering_Data_FD1"),
+      ("AslButtnOnOffCnclPress", "Steering_Data_FD1"),
+      ("AslButtnOnOffPress", "Steering_Data_FD1"),
+      ("CcAslButtnCnclPress", "Steering_Data_FD1"),
+      ("LaSwtchPos_D_Stat", "Steering_Data_FD1"),
+      ("CcAslButtnCnclResPress", "Steering_Data_FD1"),
+      ("CcAslButtnDeny_B_Actl", "Steering_Data_FD1"),
+      ("CcAslButtnIndxDecPress", "Steering_Data_FD1"),
+      ("CcAslButtnIndxIncPress", "Steering_Data_FD1"),
+      ("CcAslButtnOffCnclPress", "Steering_Data_FD1"),
+      ("CcAslButtnOnOffCncl", "Steering_Data_FD1"),
+      ("CcAslButtnOnPress", "Steering_Data_FD1"),
+      ("CcAslButtnResDecPress", "Steering_Data_FD1"),
+      ("CcAslButtnResIncPress", "Steering_Data_FD1"),
+      ("CcAslButtnSetDecPress", "Steering_Data_FD1"),
+      ("CcAslButtnSetIncPress", "Steering_Data_FD1"),
+      ("CcAslButtnSetPress", "Steering_Data_FD1"),
+      ("CcAsllButtnResPress", "Steering_Data_FD1"),
+      ("CcButtnOffPress", "Steering_Data_FD1"),
+      ("CcButtnOnOffCnclPress", "Steering_Data_FD1"),
+      ("CcButtnOnOffPress", "Steering_Data_FD1"),
+      ("CcButtnOnPress", "Steering_Data_FD1"),
+      ("HeadLghtHiFlash_D_Actl", "Steering_Data_FD1"),
+      ("HeadLghtHiOn_B_StatAhb", "Steering_Data_FD1"),
+      ("AhbStat_B_Dsply", "Steering_Data_FD1"),
+      ("AccButtnGapTogglePress", "Steering_Data_FD1"),
+      ("WiprFrontSwtch_D_Stat", "Steering_Data_FD1"),
+      ("HeadLghtHiCtrl_D_RqAhb", "Steering_Data_FD1"),
     ]
 
     checks = [

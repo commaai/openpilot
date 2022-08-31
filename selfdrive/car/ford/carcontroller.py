@@ -46,9 +46,9 @@ class CarController:
 
     ### acc buttons ###
     if CC.cruiseControl.cancel:
-      can_sends.append(fordcan.create_button_command(self.packer, cancel=True))
+      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, cancel=True))
     elif CC.cruiseControl.resume:
-      can_sends.append(fordcan.create_button_command(self.packer, resume=True))
+      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True))
 
 
     ### lateral control ###
