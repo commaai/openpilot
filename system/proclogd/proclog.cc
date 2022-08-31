@@ -72,7 +72,7 @@ std::optional<ProcStat> procStat(std::string stat) {
   }
 
   std::string name = stat.substr(open_paren + 1, close_paren - open_paren - 1);
-  // repace space in name with _
+  // replace space in name with _
   std::replace(&stat[open_paren], &stat[close_paren], ' ', '_');
   std::istringstream iss(stat);
   std::vector<std::string> v{std::istream_iterator<std::string>(iss),
