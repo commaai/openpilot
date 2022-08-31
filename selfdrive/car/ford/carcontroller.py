@@ -44,9 +44,11 @@ class CarController:
     main_on = CS.out.cruiseState.available
     steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
+    ### acc buttons ###
     if CC.cruiseControl.cancel:
-      # cancel stock ACC
       can_sends.append(fordcan.create_button_command(self.packer, cancel=True))
+    elif CC.cruiseControl.resume:
+      can_sends.append(fordcan.create_button_command(self.packer, resume=True))
 
 
     ### lateral control ###
