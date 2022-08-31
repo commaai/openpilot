@@ -35,5 +35,6 @@ void Thneed::stop() {
 }
 
 void Thneed::find_inputs_outputs() {
+  // thneed on PC doesn't work on old style inputs/outputs
 }
 

@@ -70,7 +70,7 @@ lenv.Program('_dmonitoringmodeld', [
 # build thneed model
 if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
-  #cmd = f"cd {Dir('#').abspath}/tinygrad_repo && PYOPENCL_NO_CACHE=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 FLOAT16=1 MATMUL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+
   if GetOption('pc_thneed'):
     cmd = f"cd {Dir('#').abspath}/tinygrad_repo && NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
   else:
@@ -92,7 +92,10 @@ if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
     "#tinygrad_repo/tinygrad/ops.py",
     "#tinygrad_repo/tinygrad/shapetracker.py",
     "#tinygrad_repo/tinygrad/tensor.py",
+    "#tinygrad_repo/tinygrad/nn/__init__.py"
   ], cmd)
+
+  # old thneed compiler. TODO: remove this once tinygrad stuff is stable
 
   #compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   #cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} --in {fn}.dlc --out {fn}.thneed --binary --optimize"

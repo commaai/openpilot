@@ -37,7 +37,10 @@ void Thneed::load(const char *filename) {
         clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, &buf[ptr], NULL);
         ptr += sz;
       } else {
-        clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
+        // TODO: is there a faster way to init zeroed out buffers?
+        void *host_zeros = calloc(sz, 1);
+        clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, host_zeros, NULL);
+        free(host_zeros);
       }
     }
     assert(clbuf != NULL);
