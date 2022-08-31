@@ -385,13 +385,6 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 }
 
 void send_peripheral_state(PubMaster *pm, Panda *panda) {
-  auto pandaState_opt = panda->get_state();
-  if (!pandaState_opt) {
-    return;
-  }
-
-  health_t pandaState = *pandaState_opt;
-
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
