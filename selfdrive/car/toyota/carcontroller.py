@@ -52,7 +52,10 @@ class CarController:
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
-    if not CC.latActive:
+    # cut steering to prevent a permanent LKAS fault
+    lat_active = CC.latActive and abs(CS.out.steeringTorque) < 500
+
+    if not lat_active:
       apply_steer = 0
       apply_steer_req = 0
     else:
