@@ -30,7 +30,7 @@
 
 ExitHandler do_exit;
 std::mutex pm_mutex;
-uint64_t last_ts;
+uint64_t last_ts = 0;
 
 // filter first values (0.5sec) as those may contain inaccuracies
 uint64_t init_ts = 0;
