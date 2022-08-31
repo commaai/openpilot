@@ -1040,7 +1040,7 @@ trabalho definido</translation>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="unfinished">A nova branch será aplicada ao verificar atualizações.</translation>
+        <translation>A nova branch será aplicada ao verificar atualizações.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
