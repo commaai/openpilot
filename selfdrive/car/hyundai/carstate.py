@@ -74,6 +74,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["TCS13"]["ACCEnable"] == 0
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
+      self.main_mode = cp.vl["EMS16"]["CRUISE_LAMP_M"] == 1
     else:
       ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
@@ -304,7 +305,6 @@ class CarState(CarStateBase):
       ]
       checks += [
         ("EMS12", 100),
-        ("EMS16", 100),
       ]
 
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
@@ -319,6 +319,12 @@ class CarState(CarStateBase):
     else:
       signals.append(("CF_Lvr_Gear", "LVR12"))
       checks.append(("LVR12", 100))
+
+    if CP.openpilotLongitudinalControl:
+      signals.append(("CRUISE_LAMP_M", "EMS16"))
+
+    if CP.openpilotLongitudinalControl or CP.carFingerprint not in (HYBRID_CAR | EV_CAR):
+      checks.append(("EMS16", 100))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
