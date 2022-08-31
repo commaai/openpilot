@@ -192,9 +192,13 @@ void buildMemInfo(cereal::ProcLog::Builder &builder) {
 }
 
 void buildProcs(cereal::ProcLog::Builder &builder) {
+  // declare as static to avoid dangling pointer to ProcStat::name
+  static std::vector<ProcStat> proc_stats;
+
   auto pids = Parser::pids();
-  std::vector<ProcStat> proc_stats;
+  proc_stats.clear();
   proc_stats.reserve(pids.size());
+
   for (int pid : pids) {
     std::string path = "/proc/" + std::to_string(pid) + "/stat";
     if (auto stat = Parser::procStat(util::read_file(path))) {
