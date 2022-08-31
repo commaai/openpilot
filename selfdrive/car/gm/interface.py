@@ -49,6 +49,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
+    ret.autoResumeSng = False
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
