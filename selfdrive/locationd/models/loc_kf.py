@@ -33,7 +33,7 @@ class States():
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
   # TODO the offset is likely a translation of the sensor, not a rotation of the camera
   WIDE_FROM_DEVICE_EULER = slice(33, 36)  # wide camera offset angles in radians (tici only)
-  # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF

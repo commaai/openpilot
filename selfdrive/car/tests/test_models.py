@@ -137,7 +137,7 @@ class TestCarModelBase(unittest.TestCase):
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
-        raise Exception("unkown tuning")
+        raise Exception("unknown tuning")
 
   def test_car_interface(self):
     # TODO: also check for checksum violations from can parser

@@ -418,7 +418,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   if controlsState is not None:
     params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
   else:
-    params.delete("ReplayControlsState")
+    params.remove("ReplayControlsState")
 
   # Regen or python process
   if CP is not None:
