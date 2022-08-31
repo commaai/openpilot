@@ -89,7 +89,8 @@ def create_acc_commands(packer, enabled, accel, accel_error, idx, lead_visible, 
     "TauGapSet": 4,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
-    "ObjValid": 1,  # TODO: these two bits may allow for better longitudinal control
+    # Using a fake lead enables more decel or accel
+    "ObjValid": 1,
     "ACC_ObjStatus": 1,
     "ACC_ObjLatPos": 0,
     "ACC_ObjRelSpd": interp(accel_error, [0.0, 1.0], [0.0, 10.0]),
