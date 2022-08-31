@@ -36,11 +36,6 @@ int gpio_set(int pin_nr, bool high) {
   return util::write_file(pin_val_path, (void*)(high ? "1" : "0"), 1);
 }
 
-/*
-sudo chmod 777 /dev/gpiochip0
-echo 84 | sudo tee /sys/class/gpio/unexport
-*/
-
 int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype) {
   int fd = open(gpiochip_path.c_str(), O_RDONLY);
   if (fd < 0) {
@@ -53,9 +48,12 @@ int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype) {
   rq.lineoffset = pin_nr;
   rq.handleflags = GPIOHANDLE_REQUEST_INPUT;
 
-  // Why does it not work with rising only?
-  // rq.eventflags = (etype == EdgeType::Rising) ? GPIOEVENT_EVENT_RISING_EDGE : GPIOEVENT_EVENT_FALLING_EDGE;
+  // rq.eventflags = (etype == EdgeType::Rising) ? GPIOEVENT_REQUEST_RISING_EDGE : GPIOEVENT_REQUEST_FALLING_EDGE;
+  /* Requesting both edges as the data ready pulse from the lsm6ds sensor is
+     very short(75us) and is mostly detected as falling edge instead of rising.
+     So if it is detected as rising the following falling edge is skipped. */
   rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES;
+
   strncpy(rq.consumer_label, "sensord", std::size(rq.consumer_label) - 1);
   int ret = ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, &rq);
   if (ret == -1) {

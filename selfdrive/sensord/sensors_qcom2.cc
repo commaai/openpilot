@@ -27,6 +27,7 @@
 
 ExitHandler do_exit;
 std::mutex pm_mutex;
+uint64_t last_ts;
 
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
@@ -61,7 +62,14 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     int num_events = err / sizeof(*evdata);
     uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
-    
+
+    if ((last_ts != 0) && (ts - last_ts < 4000000)) { // 4ms
+      // skip interrupt (see: common/gpio.cc)
+      last_ts = ts;
+      continue;
+    }
+    last_ts = ts;
+
     MessageBuilder msg;
     auto orphanage = msg.getOrphanage();
     std::vector<capnp::Orphan<cereal::SensorEventData>> collected_events;
