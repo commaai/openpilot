@@ -1,4 +1,5 @@
 import crcmod
+from common.numpy_fast import interp
 from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
@@ -80,7 +81,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, jerk, idx, lead_visible, set_speed, stopping, gas_pressed):
+def create_acc_commands(packer, enabled, accel, accel_error, idx, lead_visible, set_speed, stopping, gas_pressed):
   commands = []
 
   scc11_values = {
@@ -91,8 +92,8 @@ def create_acc_commands(packer, enabled, accel, jerk, idx, lead_visible, set_spe
     "ObjValid": 1,  # TODO: these two bits may allow for better longitudinal control
     "ACC_ObjStatus": 1,
     "ACC_ObjLatPos": 0,
-    "ACC_ObjRelSpd": 0.,
-    "ACC_ObjDist": 1,
+    "ACC_ObjRelSpd": interp(accel_error, [0.0, 1.0], [0.0, 10.0]),
+    "ACC_ObjDist": interp(accel_error, [0.0, 1.0], [0.0, 20.0]),
   }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
