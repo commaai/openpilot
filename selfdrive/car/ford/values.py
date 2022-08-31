@@ -1,9 +1,11 @@
 from collections import namedtuple
+from dataclasses import dataclass
+from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.docs_definitions import CarInfo, Harness
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
@@ -43,10 +45,16 @@ class CAR:
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
 
 
+@dataclass
+class FordCarInfo(CarInfo):
+  package: str = "Co-Pilot360 Assist+"
+  harness: Enum = Harness.ford_q3
+
+
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.ESCAPE_MK4: CarInfo("Ford Escape 2020", "Co-Pilot360 Assist+"),
-  CAR.EXPLORER_MK6: CarInfo("Ford Explorer 2020-21", "Co-Pilot360 Assist+"),
-  CAR.FOCUS_MK4: CarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
+  CAR.ESCAPE_MK4: FordCarInfo("Ford Escape 2020"),
+  CAR.EXPLORER_MK6: FordCarInfo("Ford Explorer 2020-21"),
+  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
 }
 
 
