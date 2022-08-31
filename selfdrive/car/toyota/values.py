@@ -111,7 +111,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", footnotes=[Footnote.DSU]),
   CAR.AVALONH_2019: ToyotaCarInfo("Toyota Avalon Hybrid 2019-21", footnotes=[Footnote.DSU]),
-  CAR.AVALON_TSS2: ToyotaCarInfo("Toyota Avalon 2022"),
+  CAR.AVALON_TSS2: ToyotaCarInfo("Toyota Avalon 2022-23"),
   CAR.AVALONH_TSS2: ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
