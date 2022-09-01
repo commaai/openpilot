@@ -17,7 +17,6 @@
 using namespace std;
 
 cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_size, const void *arg_value);
-cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret);
 
 namespace json11 {
   class Json;
@@ -119,7 +118,6 @@ class Thneed {
 #endif
 
     // all CL kernels
-    void find_inputs_outputs();
     void copy_inputs(float **finputs, bool internal=false);
     void copy_output(float *foutput);
     cl_int clexec();
@@ -128,9 +126,8 @@ class Thneed {
     // pending CL kernels
     vector<shared_ptr<CLQueuedKernel> > ckq;
 
-    // loading and saving
+    // loading
     void load(const char *filename);
-    void save(const char *filename, bool save_binaries=false);
   private:
     void clinit();
 };
