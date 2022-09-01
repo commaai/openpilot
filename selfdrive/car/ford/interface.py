@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
 
     # Angle-based steering
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.steerActuatorDelay = 0.1
+    ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
     tire_stiffness_factor = 1.0
 
