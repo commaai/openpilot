@@ -46,6 +46,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
+    ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
@@ -99,6 +100,7 @@ class CarState(CarStateBase):
       ("Veh_V_DsplyCcSet", "EngBrakeData"),                  # PCM ACC set speed (mph)
                                                              # The units might change with IPC settings?
       ("CcStat_D_Actl", "EngBrakeData"),                     # PCM ACC status
+      ("AccStopMde_D_Rq", "EngBrakeData"),                   # PCM ACC standstill
       ("StePinComp_An_Est", "SteeringPinion_Data"),          # PSCM estimated steering angle (deg)
                                                              # Calculates steering angle (and offset) from pinion
                                                              # angle and driving measurements.
