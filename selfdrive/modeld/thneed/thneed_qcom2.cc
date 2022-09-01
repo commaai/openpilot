@@ -269,7 +269,7 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   if (debug >= 1) tb = nanos_since_boot();
 
   // ****** copy inputs
-  copy_inputs(finputs);
+  copy_inputs(finputs, true);
 
   // ****** set power constraint
   int ret;

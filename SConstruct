@@ -49,6 +49,11 @@ AddOption('--no-thneed',
           dest='no_thneed',
           help='avoid using thneed')
 
+AddOption('--pc-thneed',
+          action='store_true',
+          dest='pc_thneed',
+          help='use thneed on pc')
+
 AddOption('--no-test',
           action='store_false',
           dest='test',
