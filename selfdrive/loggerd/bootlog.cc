@@ -26,7 +26,7 @@ static kj::Array<capnp::word> build_boot_log() {
 
   // Gather output of commands
   std::vector<std::string> bootlog_commands = {
-    "[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0",
+    "[ -e /dev/nvme0 ] && nvme smart-log --output-format=json /dev/nvme0",
     "[ -x \"$(command -v journalctl)\" ] && journalctl",
   };
 
