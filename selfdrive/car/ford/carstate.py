@@ -46,6 +46,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
+    ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
     ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
 
     # gear
@@ -66,6 +67,7 @@ class CarState(CarStateBase):
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
     ret.rightBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 2
+    # TODO: block this going to the camera otherwise it will enable stock TJA
     ret.genericToggle = bool(cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"])
 
     # lock info
@@ -103,6 +105,7 @@ class CarState(CarStateBase):
                                                              # The units might change with IPC settings?
       ("CcStat_D_Actl", "EngBrakeData"),                     # PCM ACC status
       ("AccStopMde_D_Rq", "EngBrakeData"),                   # PCM ACC standstill
+      ("AccEnbl_B_RqDrv", "Cluster_Info1_FD1"),              # PCM ACC enable
       ("StePinComp_An_Est", "SteeringPinion_Data"),          # PSCM estimated steering angle (deg)
                                                              # Calculates steering angle (and offset) from pinion
                                                              # angle and driving measurements.
@@ -159,6 +162,7 @@ class CarState(CarStateBase):
       ("EngVehicleSpThrottle", 100),
       ("BrakeSnData_4", 50),
       ("EngBrakeData", 10),
+      ("Cluster_Info1_FD1", 10),
       ("SteeringPinion_Data", 100),
       ("EPAS_INFO", 50),
       ("Lane_Assist_Data3_FD1", 33),
