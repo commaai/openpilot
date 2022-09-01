@@ -358,7 +358,6 @@ cl_int thneed_clFinish(cl_command_queue command_queue) {
   Thneed *thneed = g_thneed;
 
   if (thneed != NULL && thneed->record) {
-    if (thneed->run_optimizer) thneed->optimize();
     return thneed->clexec();
   } else {
     return clFinish(command_queue);

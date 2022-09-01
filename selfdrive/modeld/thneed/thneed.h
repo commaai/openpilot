@@ -96,8 +96,6 @@ class Thneed {
     void stop();
     void execute(float **finputs, float *foutput, bool slow=false);
     void wait();
-    int optimize();
-    bool run_optimizer = false;
 
     vector<cl_mem> input_clmem;
     vector<void *> inputs;
