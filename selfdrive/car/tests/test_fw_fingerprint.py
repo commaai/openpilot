@@ -45,19 +45,29 @@ class TestFwFingerprint(unittest.TestCase):
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
   def test_blacklisted_ecus(self):
-    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    blacklisted_addrs = {
+      "subaru": (0x7c4, 0x7d0),  # includes A/C ecu and an unknown ecu
+    }
+    blacklisted_ecus = {
+      "RAM HD 5TH GEN": (Ecu.transmission,),  # Some HD trucks have a combined TCM and ECM
+      "KIA OPTIMA 2016": (Ecu.eps,),  # eps fails to respond successfully to tester present
+      "KIA OPTIMA 2019": (Ecu.eps, Ecu.fwdRadar),  # fwdRadar is spotty, skips iso-tp frames
+    }
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         CP = interfaces[car_model][0].get_params(car_model)
-        if CP.carName == 'subaru':
-          for ecu in ecus.keys():
-            self.assertNotIn(ecu[1], blacklisted_addrs, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+        for ecu in ecus.keys():
+          with self.subTest(ecu=ecu):
 
-        elif CP.carName == "chrysler":
-          # Some HD trucks have a combined TCM and ECM
-          if CP.carFingerprint.startswith("RAM HD"):
-            for ecu in ecus.keys():
-              self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
+            # Check for brand-wide blacklisted addresses
+            if CP.carName in blacklisted_addrs:
+              self.assertNotIn(ecu[1], blacklisted_addrs[CP.carName],
+                               f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+
+            # Check for single-car blacklisted ecus
+            if CP.carFingerprint in blacklisted_ecus:
+              self.assertNotIn(ecu[0], blacklisted_ecus[CP.carFingerprint],
+                               f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
 
   def test_fw_request_ecu_whitelist(self):
     for brand in set(r.brand for r in REQUESTS):
