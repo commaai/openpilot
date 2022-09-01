@@ -3,6 +3,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
+from cereal.services import service_list
 from common.gpio import gpio_read
 from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
@@ -20,6 +21,18 @@ class TestPigeond(unittest.TestCase):
 
   def tearDown(self):
     managed_processes['pigeond'].stop()
+
+  @with_processes(['pigeond'])
+  def test_frequency(self):
+    sm = messaging.SubMaster(['ubloxRaw'])
+
+    # setup time
+    time.sleep(2)
+    sm.update()
+
+    for _ in range(int(10 * service_list['ubloxRaw'].frequency)):
+      sm.update()
+      assert sm.all_checks()
 
   def test_startup_time(self):
     for n in range(5):
