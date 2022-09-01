@@ -254,7 +254,7 @@ class LongitudinalMpc:
       cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
     else:
-      raise NotImplementedError(f'Planner mode {self.mode} not recognized')
+      raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner cost set')
     self.set_cost_weights(cost_weights, constraint_cost_weights)
 
   def set_cur_state(self, v, a):
@@ -347,7 +347,7 @@ class LongitudinalMpc:
       self.source = 'e2e'
 
     else:
-      raise NotImplementedError(f'Planner mode {self.mode} not recognized')
+      raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
 
     self.yref[:,1] = x
     self.yref[:,2] = v

@@ -6,6 +6,7 @@ from common.numpy_fast import interp
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
+from common.params import Params
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longcontrol import LongCtrlState
@@ -47,7 +48,10 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class Planner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    params = Params()
+    # TODO read param in the loop for live toggling
+    mode = 'blended' if params.get_bool('EndToEndLong') else 'acc'
+    self.mpc = LongitudinalMpc(mode=mode)
 
     self.fcw = False
 
