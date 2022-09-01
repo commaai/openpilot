@@ -203,18 +203,19 @@ def initialize_pigeon(pigeon):
 def deinitialize_and_exit(pigeon):
   cloudlog.warning("Storing almanac in ublox flash")
 
-  # controlled GNSS stop
-  pigeon.send(b"\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74")
+  if pigeon is not None:
+    # controlled GNSS stop
+    pigeon.send(b"\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74")
 
-  # store almanac in flash
-  pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
-  try:
-    if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
-      cloudlog.warning("Done storing almanac")
-    else:
-      cloudlog.error("Error storing almanac")
-  except TimeoutError:
-    pass
+    # store almanac in flash
+    pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
+    try:
+      if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
+        cloudlog.warning("Done storing almanac")
+      else:
+        cloudlog.error("Error storing almanac")
+    except TimeoutError:
+      pass
 
   # turn off power and exit cleanly
   set_power(False)
@@ -222,6 +223,10 @@ def deinitialize_and_exit(pigeon):
 
 def main():
   assert TICI, "unsupported hardware for pigeond"
+
+  # register exit handler
+  pigeon = None
+  signal.signal(signal.SIGINT, lambda sig, frame: deinitialize_and_exit(pigeon))
 
   pm = messaging.PubMaster(['ubloxRaw'])
 
@@ -233,9 +238,6 @@ def main():
 
   pigeon = TTYPigeon(UBLOX_TTY)
   initialize_pigeon(pigeon)
-
-  # register exit handler
-  signal.signal(signal.SIGINT, lambda sig, frame: deinitialize_and_exit(pigeon))
 
   # start receiving data
   while True:
