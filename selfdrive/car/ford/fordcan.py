@@ -95,10 +95,13 @@ def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bo
     else:
       lines = 30  # LA_Off
 
+  # TODO: use level 1 for no sound when less severe?
+  hands_on_wheel_dsply = 2 if steer_alert else 0
+
   values = {
     **stock_values,
     "LaActvStats_D_Dsply": lines,                           # LKAS status (lines) [0|31]
-    "LaHandsOff_D_Dsply": 2 if steer_alert else 0,          # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
+    "LaHandsOff_D_Dsply": hands_on_wheel_dsply,             # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
   }
   return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
 
