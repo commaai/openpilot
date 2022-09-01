@@ -57,11 +57,14 @@ class CarInterface(CarInterfaceBase):
       ret.transmissionType = TransmissionType.automatic
 
     if candidate in CAMERA_ACC_CAR:
-      ret.openpilotLongitudinalControl = False
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      if disable_radar:
+        ret.openpilotLongitudinalControl = True
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
+
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
