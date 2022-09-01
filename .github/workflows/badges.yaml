@@ -28,6 +28,6 @@ jobs:
         git config user.email "badge-researcher@comma.ai"
         git config user.name "Badge Researcher"
 
-        git add translation_badge_*.svg
+        git add translation_badge.svg
         git commit -m "Add/Update badges"
         git push -f origin HEAD

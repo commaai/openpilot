@@ -116,7 +116,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
       pass
 
   if exception is None:
-    params.delete("LastUpdateException")
+    params.remove("LastUpdateException")
   else:
     params.put("LastUpdateException", exception)
 

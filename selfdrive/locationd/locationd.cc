@@ -476,9 +476,9 @@ bool Localizer::isGpsOK() {
 }
 
 void Localizer::determine_gps_mode(double current_time) {
-  // 1. If the pos_std is greater than what's not acceptible and localizer is in gps-mode, reset to no-gps-mode
-  // 2. If the pos_std is greater than what's not acceptible and localizer is in no-gps-mode, fake obs
-  // 3. If the pos_std is smaller than what's not acceptible, let gps-mode be whatever it is
+  // 1. If the pos_std is greater than what's not acceptable and localizer is in gps-mode, reset to no-gps-mode
+  // 2. If the pos_std is greater than what's not acceptable and localizer is in no-gps-mode, fake obs
+  // 3. If the pos_std is smaller than what's not acceptable, let gps-mode be whatever it is
   VectorXd current_pos_std = this->kf->get_P().block<STATE_ECEF_POS_ERR_LEN, STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START, STATE_ECEF_POS_ERR_START).diagonal().array().sqrt();
   if (current_pos_std.norm() > SANE_GPS_UNCERTAINTY){
     if (this->gps_mode){

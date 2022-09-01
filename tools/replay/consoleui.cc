@@ -18,6 +18,7 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
     {"space", "Pause/Resume"},
     {"e", "Next Engagement"},
     {"d", "Next Disengagement"},
+    {"t", "Next User Tag"}
   },
   {
     {"enter", "Enter seek request"},
@@ -32,6 +33,7 @@ enum Color {
   Yellow,
   Green,
   Red,
+  Cyan,
   BrightWhite,
   Engaged,
   Disengaged,
@@ -70,6 +72,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   init_pair(Color::Debug, 246, COLOR_BLACK);  // #949494
   init_pair(Color::Yellow, 184, COLOR_BLACK);
   init_pair(Color::Red, COLOR_RED, COLOR_BLACK);
+  init_pair(Color::Cyan, COLOR_CYAN, COLOR_BLACK);
   init_pair(Color::BrightWhite, 15, COLOR_BLACK);
   init_pair(Color::Disengaged, COLOR_BLUE, COLOR_BLUE);
   init_pair(Color::Engaged, 28, 28);
@@ -205,6 +208,7 @@ void ConsoleUI::displayTimelineDesc() {
       {Color::Green, " Info ", true},
       {Color::Yellow, " Warning ", true},
       {Color::Red, " Critical ", true},
+      {Color::Cyan, " User Tag ", true},
   };
   for (auto [color, name, bold] : indicators) {
     add_str(w[Win::TimelineDesc], "__", color, bold);
@@ -263,6 +267,8 @@ void ConsoleUI::updateTimeline() {
     if (type == TimelineType::Engaged) {
       mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
       mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
+    } else if (type == TimelineType::UserFlag) {
+      mvwchgat(win, 3, start_pos, end_pos - start_pos + 1, ACS_S3, Color::Cyan, NULL);
     } else {
       auto color_id = Color::Green;
       if (type != TimelineType::AlertInfo) {
@@ -336,6 +342,8 @@ void ConsoleUI::handleKey(char c) {
     replay->seekToFlag(FindFlag::nextEngagement);
   } else if (c == 'd') {
     replay->seekToFlag(FindFlag::nextDisEngagement);
+  } else if (c == 't') {
+    replay->seekToFlag(FindFlag::nextUserFlag);
   } else if (c == 'm') {
     replay->seekTo(+60, true);
   } else if (c == 'M') {
