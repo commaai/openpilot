@@ -352,7 +352,7 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
-selfdrive/modeld/models/supercombo.dlc
+selfdrive/modeld/models/supercombo.onnx
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
@@ -561,3 +561,16 @@ opendbc/vw_mqb_2010.dbc
 opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
+
+tinygrad_repo/openpilot/compile.py
+tinygrad_repo/accel/opencl/*
+tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/utils.py
+tinygrad_repo/tinygrad/llops/ops_gpu.py
+tinygrad_repo/tinygrad/llops/ops_opencl.py
+tinygrad_repo/tinygrad/helpers.py
+tinygrad_repo/tinygrad/mlops.py
+tinygrad_repo/tinygrad/ops.py
+tinygrad_repo/tinygrad/shapetracker.py
+tinygrad_repo/tinygrad/tensor.py
+tinygrad_repo/tinygrad/nn/__init__.py

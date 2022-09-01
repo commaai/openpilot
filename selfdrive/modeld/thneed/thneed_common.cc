@@ -30,17 +30,16 @@ cl_int Thneed::clexec() {
   return clFinish(command_queue);
 }
 
-void Thneed::copy_inputs(float **finputs) {
-  //cl_int ret;
+void Thneed::copy_inputs(float **finputs, bool internal) {
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (debug >= 1) printf("copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
 
-    // TODO: fix thneed caching
-    if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
-    //if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
-
-    // HACK
-    //if (input_sizes[idx] == 16) memset((char*)inputs[idx] + 8, 0, 8);
+    if (internal) {
+      // if it's internal, using memcpy is fine since the buffer sync is cached in the ioctl layer
+      if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+    } else {
+      if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
+    }
   }
 }
 
@@ -202,8 +201,8 @@ void CLQueuedKernel::debug_print(bool verbose) {
             assert(slice_pitch == 0);
 
             clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
-            size_t sz;
-            clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+            size_t sz = 0;
+            if (buf != NULL) clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
             printf(" image %zu x %zu rp %zu @ %p buffer %zu", width, height, row_pitch, buf, sz);
           } else {
             size_t sz;
