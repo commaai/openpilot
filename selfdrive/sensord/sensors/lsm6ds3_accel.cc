@@ -64,7 +64,6 @@ bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
     }
   }
 
-  uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
@@ -78,7 +77,6 @@ bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);
   event.setType(SENSOR_TYPE_ACCELEROMETER);
-  event.setTimestamp(start_time);
 
   float xyz[] = {y, -x, z};
   auto svec = event.initAcceleration();
