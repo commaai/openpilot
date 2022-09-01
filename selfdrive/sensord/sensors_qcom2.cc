@@ -98,6 +98,11 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       pm.send("sensorEvents", msg);
     }
   }
+
+  // disable interrupts on exit
+  for (Sensor *sensor : sensors) {
+    sensor->disable_interrupt();
+  }
 }
 
 int sensor_loop() {

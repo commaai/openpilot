@@ -10,6 +10,7 @@ LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSe
 int LSM6DS3_Accel::init() {
   int ret = 0;
   uint8_t buffer[1];
+  uint8_t value = 0;
 
   ret = read_register(LSM6DS3_ACCEL_I2C_REG_ID, buffer, 1);
   if(ret < 0) {
@@ -44,12 +45,28 @@ int LSM6DS3_Accel::init() {
   }
 
   // enable data ready interrupt for accel on INT1
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, LSM6DS3_ACCEL_INT1_DRDY_XL);
+  // (without resetting existing interrupts)
+  ret = read_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, &value, 1);
+  value |= LSM6DS3_ACCEL_INT1_DRDY_XL;
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value);
+
   if (ret < 0) {
     goto fail;
   }
 
 fail:
+  return ret;
+}
+
+int LSM6DS3_Accel::disable_interrupt() {
+  int ret = 0;
+
+  // disable data ready interrupt for accel on INT1
+  uint8_t value = 0;
+  ret = read_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, &value, 1);
+  value &= ~((uint8_t)(LSM6DS3_ACCEL_INT1_DRDY_XL));
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value);
+
   return ret;
 }
 

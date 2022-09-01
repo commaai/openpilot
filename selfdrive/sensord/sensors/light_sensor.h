@@ -5,4 +5,5 @@ class LightSensor : public FileSensor {
 public:
   LightSensor(std::string filename) : FileSensor(filename){};
   bool get_event(cereal::SensorEventData::Builder &event);
+  int disable_interrupt() { return 0; }
 };
