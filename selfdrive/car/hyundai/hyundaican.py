@@ -7,17 +7,6 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart):
-  with open("/data/sysstate", "r") as f:
-    sys_state = int(f.read().strip() or 0)
-  with open("/data/active_mode", "r") as f:
-    active_mode = int(f.read().strip() or 0)
-  with open("/data/ldws_usm", "r") as f:
-    ldws_usm = int(f.read().strip() or 0)
-  with open("/data/fcw_usm", "r") as f:
-    fcw_usm = int(f.read().strip() or 0)
-  with open("/data/syswarn", "r") as f:
-    syswarn = int(f.read().strip() or 0)
-
   values = lkas11
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
@@ -31,8 +20,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
                          CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
                          CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
-    values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)  # active_mode
-    values["CF_Lkas_LdwsOpt_USM"] = 2  # ldws_usm
+    values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
+    values["CF_Lkas_LdwsOpt_USM"] = 2
 
     # FcwOpt_USM 5 = Orange blinking car + lanes
     # FcwOpt_USM 4 = Orange car + lanes
@@ -40,13 +29,13 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # FcwOpt_USM 2 = Green car + lanes
     # FcwOpt_USM 1 = White car + lanes
     # FcwOpt_USM 0 = No car + lanes
-    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1  # fcw_usm
+    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
 
     # SysWarning 4 = keep hands on wheel
     # SysWarning 5 = keep hands on wheel (red)
     # SysWarning 6 = keep hands on wheel (red) + beep
     # Note: the warning is hidden while the blinkers are on
-    values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0  # syswarn
+    values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
   # Likely cars without the ability to show individual lane lines in the dash
   elif car_fingerprint in (CAR.KIA_OPTIMA,):
