@@ -70,10 +70,12 @@ class CarController:
       ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
+      offset_roll_compensation_curvature = clip(self.VM.calc_curvature(0, CS.out.vEgo, -CS.yaw_data["VehYaw_W_Actl"]), -0.02, 0.02094)
+
       self.apply_angle_last = apply_angle
       can_sends.append(fordcan.create_lka_command(self.packer, apply_angle, 0))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
-                                                  0, path_angle, 0, 0))
+                                                  0, path_angle, 0, offset_roll_compensation_curvature))
 
 
     ### ui ###
