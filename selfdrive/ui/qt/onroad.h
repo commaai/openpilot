@@ -39,6 +39,7 @@ class NvgWindow : public CameraViewWidget {
   Q_PROPERTY(bool engageable MEMBER engageable);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
   Q_PROPERTY(bool hideDM MEMBER hideDM);
+  Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
   Q_PROPERTY(int status MEMBER status);
 
 public:
@@ -62,8 +63,10 @@ private:
   bool engageable = false;
   bool dmActive = false;
   bool hideDM = false;
+  bool rightHandDM = false;
   bool has_us_speed_limit = false;
   bool has_eu_speed_limit = false;
+  bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
 
 protected:

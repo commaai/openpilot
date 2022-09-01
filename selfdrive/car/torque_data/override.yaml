@@ -22,6 +22,12 @@ COMMA BODY: [.nan, 1000, .nan]
 # Totally new cars
 KIA EV6 2022: [3.5, 2.5, 0.0]
 RAM 1500 5TH GEN: [2.0, 2.0, 0.0]
+RAM HD 5TH GEN: [1.4, 1.4, 0.0]
+SUBARU OUTBACK 6TH GEN: [2.3, 2.3, 0.11]
+CHEVROLET BOLT EUV 2022: [2.0, 2.0, 0.05]
+CHEVROLET SILVERADO 1500 2020: [1.9, 1.9, 0.112]
+VOLKSWAGEN PASSAT NMS: [2.5, 2.5, 0.1]
+HYUNDAI TUCSON HYBRID 4TH GEN: [2.5, 2.5, 0.0]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

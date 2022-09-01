@@ -275,11 +275,14 @@ class CarState(CarStateBase):
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
-    self.stock_hud = False
+    self.acc_hud = False
+    self.lkas_hud = False
     if self.CP.carFingerprint not in HONDA_BOSCH:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
-      self.stock_hud = cp_cam.vl["ACC_HUD"]
+      self.acc_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
+    if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+      self.lkas_hud = cp_cam.vl["LKAS_HUD"]
 
     if self.CP.enableBsm and self.CP.carFingerprint in (CAR.CRV_5G, ):
       # BSM messages are on B-CAN, requires a panda forwarding B-CAN messages to CAN 0
@@ -300,12 +303,15 @@ class CarState(CarStateBase):
       ("STEERING_CONTROL", 100),
     ]
 
-    if CP.carFingerprint in HONDA_BOSCH_RADARLESS and not CP.openpilotLongitudinalControl:
-      signals += [
-        ("CRUISE_SPEED", "ACC_HUD"),
-        ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
-      ]
-      checks.append(("ACC_HUD", 10))
+    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+      signals.append(("LKAS_PROBLEM", "LKAS_HUD"))
+      checks.append(("LKAS_HUD", 10))
+      if not CP.openpilotLongitudinalControl:
+        signals += [
+          ("CRUISE_SPEED", "ACC_HUD"),
+          ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+        ]
+        checks.append(("ACC_HUD", 10))
 
     elif CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND"),

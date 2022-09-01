@@ -253,8 +253,8 @@ constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + TEMPORAL_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
-  ModelFrame *frame;
-  ModelFrame *wide_frame;
+  ModelFrame *frame = nullptr;
+  ModelFrame *wide_frame = nullptr;
   std::array<float, NET_OUTPUT_SIZE> output = {};
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
@@ -268,7 +268,7 @@ struct ModelState {
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool prepare_only);
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only);
 void model_free(ModelState* s);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,

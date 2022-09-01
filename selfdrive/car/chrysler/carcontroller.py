@@ -2,7 +2,7 @@ from opendbc.can.packer import CANPacker
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
-from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams
+from selfdrive.car.chrysler.values import CAR, RAM_CARS, CarControllerParams
 
 
 class CarController:
@@ -10,7 +10,6 @@ class CarController:
     self.CP = CP
     self.apply_steer_last = 0
     self.frame = 0
-    self.steer_rate_limited = False
 
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
@@ -20,14 +19,10 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
 
-  def update(self, CC, CS, low_speed_alert):
+  def update(self, CC, CS):
     can_sends = []
 
-    # EPS faults if LKAS re-enables too quickly
-    lkas_control_bit = not low_speed_alert and (self.frame - self.last_lkas_falling_edge > 200)
     lkas_active = CC.latActive and self.lkas_control_bit_prev
-
-    # *** control msgs ***
 
     # cruise buttons
     if (self.frame - self.last_button_frame)*DT_CTRL > 0.05:
@@ -51,21 +46,35 @@ class CarController:
 
     # steering
     if self.frame % 2 == 0:
+
+      # TODO: can we make this more sane? why is it different for all the cars?
+      lkas_control_bit = self.lkas_control_bit_prev
+      if CS.out.vEgo > self.CP.minSteerSpeed:
+        lkas_control_bit = True
+      elif self.CP.carFingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
+        if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
+          lkas_control_bit = False
+      elif self.CP.carFingerprint in RAM_CARS:
+        if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
+          lkas_control_bit = False
+
+      # EPS faults if LKAS re-enables too quickly
+      lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
+
+      if not lkas_control_bit and self.lkas_control_bit_prev:
+        self.last_lkas_falling_edge = self.frame
+      self.lkas_control_bit_prev = lkas_control_bit
+
       # steer torque
       new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
       apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
-      if not lkas_active:
+      if not lkas_active or not lkas_control_bit:
         apply_steer = 0
-      self.steer_rate_limited = new_steer != apply_steer
       self.apply_steer_last = apply_steer
 
-      idx = self.frame // 2
-      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, idx))
+      can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
     self.frame += 1
-    if not lkas_control_bit and self.lkas_control_bit_prev:
-      self.last_lkas_falling_edge = self.frame
-    self.lkas_control_bit_prev = lkas_control_bit
 
     new_actuators = CC.actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX

@@ -4,8 +4,8 @@ from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.hyundai import hda2can, hyundaican
-from selfdrive.car.hyundai.values import Buttons, CarControllerParams, HDA2_CAR, CAR
+from selfdrive.car.hyundai import hyundaicanfd, hyundaican
+from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -43,7 +43,6 @@ class CarController:
 
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
-    self.steer_rate_limited = False
     self.last_button_frame = 0
     self.accel = 0
 
@@ -55,11 +54,10 @@ class CarController:
 
     # These cars have significantly more torque than most HKG.  Limit to 70% of max.
     steer = actuators.steer
-    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV):
+    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       steer = clip(steer, -0.7, 0.7)
     new_steer = int(round(steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
-    self.steer_rate_limited = new_steer != apply_steer
 
     if not CC.latActive:
       apply_steer = 0
@@ -71,24 +69,35 @@ class CarController:
 
     can_sends = []
 
-    if self.CP.carFingerprint in HDA2_CAR:
+    if self.CP.carFingerprint in CANFD_CAR:
       # steering control
-      can_sends.append(hda2can.create_lkas(self.packer, CC.enabled, self.frame, CC.latActive, apply_steer))
+      can_sends.append(hyundaicanfd.create_lkas(self.packer, self.CP, CC.enabled, CC.latActive, apply_steer))
 
-      if self.frame % 5 == 0:
-        can_sends.append(hda2can.create_cam_0x2a4(self.packer, self.frame, CS.cam_0x2a4))
+      # block LFA on HDA2
+      if self.frame % 5 == 0 and (self.CP.flags & HyundaiFlags.CANFD_HDA2):
+        can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
-      # cruise cancel
+      # LFA and HDA icons
+      if self.frame % 2 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_HDA2):
+        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, CC.enabled))
+
+      # button presses
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
+        # cruise cancel
         if CC.cruiseControl.cancel:
-          for _ in range(20):
-            can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
-          self.last_button_frame = self.frame
+          if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+            can_sends.append(hyundaicanfd.create_cruise_info(self.packer, CS.cruise_info_copy, True))
+            self.last_button_frame = self.frame
+          else:
+            for _ in range(20):
+              can_sends.append(hyundaicanfd.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
+            self.last_button_frame = self.frame
 
         # cruise standstill resume
         elif CC.cruiseControl.resume:
-          can_sends.append(hda2can.create_buttons(self.packer, CS.buttons_counter+1, Buttons.RES_ACCEL))
-          self.last_button_frame = self.frame
+          if not (self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
+            can_sends.append(hyundaicanfd.create_buttons(self.packer, CS.buttons_counter+1, Buttons.RES_ACCEL))
+            self.last_button_frame = self.frame
     else:
 
       # tester present - w/ no response (keeps radar disabled)
@@ -103,12 +112,12 @@ class CarController:
 
       if not self.CP.openpilotLongitudinalControl:
         if CC.cruiseControl.cancel:
-          can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL))
+          can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
         elif CC.cruiseControl.resume:
           # send resume at a max freq of 10Hz
           if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
             # send 25 messages at a time to increases the likelihood of resume being accepted
-            can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
+            can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
             self.last_button_frame = self.frame
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
@@ -130,7 +139,7 @@ class CarController:
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
-                                                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV,
+                                                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV, CAR.KONA_EV_2022,
                                                           CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
                                                           CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022):
         can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))

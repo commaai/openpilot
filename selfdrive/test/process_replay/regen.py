@@ -201,14 +201,15 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   params = Params()
   os.environ["LOG_ROOT"] = outdir
 
-  for msg in lr:
-    if msg.which() == 'carParams':
-      setup_env(CP=msg.carParams)
-    elif msg.which() == 'liveCalibration':
-      params.put("CalibrationParams", msg.as_builder().to_bytes())
+  # Get and setup initial state
+  CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+  controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
+  liveCalibration = [m for m in lr if m.which() == 'liveCalibration'][0]
+
+  setup_env(CP=CP, controlsState=controlsState)
+  params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
-
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
@@ -263,7 +264,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
   if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
-    raise Exception(f"Route never enabled: {segment}")
+    raise Exception(f"Route did not engage for long enough: {segment}")
 
   return seg_path
 
