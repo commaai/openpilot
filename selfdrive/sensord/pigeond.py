@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import time
 import signal
@@ -8,6 +7,7 @@ import struct
 import requests
 import urllib.parse
 from datetime import datetime
+from typing import List
 
 from cereal import messaging
 from common.params import Params
@@ -25,7 +25,7 @@ UBLOX_SOS_NACK = b"\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00"
 UBLOX_BACKUP_RESTORE_MSG = b"\xb5\x62\x09\x14\x08\x00\x03"
 UBLOX_ASSIST_ACK = b"\xb5\x62\x13\x60\x08\x00"
 
-def set_power(enabled):
+def set_power(enabled: bool) -> None:
   gpio_init(GPIO.UBLOX_SAFEBOOT_N, True)
   gpio_init(GPIO.UBLOX_PWR_EN, True)
   gpio_init(GPIO.UBLOX_RST_N, True)
@@ -35,14 +35,14 @@ def set_power(enabled):
   gpio_set(GPIO.UBLOX_RST_N, enabled)
 
 
-def add_ubx_checksum(msg):
+def add_ubx_checksum(msg: bytes) -> bytes:
   A = B = 0
   for b in msg[2:]:
     A = (A + b) % 256
     B = (B + A) % 256
   return msg + bytes([A, B])
 
-def get_assistnow_messages(token):
+def get_assistnow_messages(token: bytes) -> List[bytes]:
   # make request
   # TODO: implement adding the last known location
   r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
@@ -64,14 +64,13 @@ def get_assistnow_messages(token):
 
 
 class TTYPigeon():
-  def __init__(self, path):
-    self.path = path
+  def __init__(self):
     self.tty = serial.VTIMESerial(UBLOX_TTY, baudrate=9600, timeout=0)
 
-  def send(self, dat):
+  def send(self, dat: bytes) -> None:
     self.tty.write(dat)
 
-  def receive(self):
+  def receive(self) -> bytes:
     dat = b''
     while len(dat) < 0x1000:
       d = self.tty.read(0x40)
@@ -236,7 +235,7 @@ def main():
   set_power(True)
   time.sleep(0.5)
 
-  pigeon = TTYPigeon(UBLOX_TTY)
+  pigeon = TTYPigeon()
   initialize_pigeon(pigeon)
 
   # start receiving data

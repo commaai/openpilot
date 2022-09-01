@@ -35,16 +35,16 @@ class TestPigeond(unittest.TestCase):
       assert sm.all_checks()
 
   def test_startup_time(self):
-    for n in range(5):
+    for _ in range(5):
       sm = messaging.SubMaster(['ubloxRaw'])
       managed_processes['pigeond'].start()
 
       start_time = time.monotonic()
-      for _ in range(10):
+      for __ in range(10):
         sm.update(1 * 1000)
         if sm.updated['ubloxRaw']:
           break
-      assert sm.rcv_frame['ubloxRaw'] > 0, f"pigeond didn't start outputting messages in time"
+      assert sm.rcv_frame['ubloxRaw'] > 0, "pigeond didn't start outputting messages in time"
 
       et = time.monotonic() - start_time
       assert et < 5, f"pigeond took {et:.1f}s to start"
