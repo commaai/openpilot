@@ -83,7 +83,7 @@ class CarController:
 
     # send lkas ui command at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
-      can_sends.append(fordcan.create_lkas_ui_command(self.packer, main_on, CC.latActive, steer_alert, CS.lkas_status_stock_values))
+      can_sends.append(fordcan.create_lkas_ui_command(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
 
     # send acc ui command at 20Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
@@ -92,7 +92,7 @@ class CarController:
         # the stock system checks for steering pressed, and eventually disengages cruise control
         can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, tja_toggle=True, bus=CANBUS.camera))
 
-      can_sends.append(fordcan.create_acc_ui_command(self.packer, main_on, CC.latActive, CS.acc_tja_status_stock_values))
+      can_sends.append(fordcan.create_acc_ui_command(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
