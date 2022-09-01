@@ -157,7 +157,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_OPTIMA: HyundaiCarInfo("Kia Optima 2016-17", harness=Harness.hyundai_b),
   CAR.KIA_OPTIMA_2019: HyundaiCarInfo("Kia Optima 2019", harness=Harness.hyundai_g),
-  CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima 2017, 2019"),  # TODO: info may be incorrect
+  CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima Hybrid 2017, 2019"),  # TODO: info may be incorrect
   CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", "Smart Cruise Control (SCC)", harness=Harness.hyundai_a),
   CAR.KIA_SORENTO: [
     HyundaiCarInfo("Kia Sorento 2018", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
