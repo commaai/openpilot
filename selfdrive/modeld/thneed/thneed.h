@@ -122,7 +122,7 @@ class Thneed {
 
     // all CL kernels
     void find_inputs_outputs();
-    void copy_inputs(float **finputs);
+    void copy_inputs(float **finputs, bool internal=false);
     void copy_output(float *foutput);
     cl_int clexec();
     vector<shared_ptr<CLQueuedKernel> > kq;
