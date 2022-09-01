@@ -37,7 +37,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # Note: the warning is hidden while the blinkers are on
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
-  # Likely cars without the ability to show individual lane lines in the dash
+  # Likely cars lacking the ability to show individual lane lines in the dash
   elif car_fingerprint in (CAR.KIA_OPTIMA,):
     # SysWarning 4 = keep hands on wheel + beep
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
