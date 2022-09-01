@@ -225,49 +225,37 @@ class LongitudinalMpc:
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
 
+  def set_cost_weights(self, cost_weights, constraint_cost_weights):
+    W = np.asfortranarray(np.diag(cost_weights))
+    for i in range(N):
+      # TODO don't hardcode A_CHANGE_COST idx
+      # reduce the cost on (a-a_prev) later in the horizon.
+      W[4,4] = W[4,4] * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      self.solver.cost_set(i, 'W', W)
+    # Setting the slice without the copy make the array not contiguous,
+    # causing issues with the C interface.
+    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
+
+    # Set L2 slack cost on lower bound constraints
+    Zl = np.array(constraint_cost_weights)
+    for i in range(N):
+      self.solver.cost_set(i, 'Zl', Zl)
+
   def set_weights(self, prev_accel_constraint=True):
     if self.e2e:
-      self.set_weights_for_xva_policy()
-      self.params[:,0] = -10.
-      self.params[:,1] = 10.
-      self.params[:,2] = 1e5
+      cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
+      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
     else:
-      self.set_weights_for_lead_policy(prev_accel_constraint)
-
-  def set_weights_for_lead_policy(self, prev_accel_constraint=True):
-    a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
-    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]))
-    for i in range(N):
-      # reduce the cost on (a-a_prev) later in the horizon.
-      W[4,4] = a_change_cost * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
-      self.solver.cost_set(i, 'W', W)
-    # Setting the slice without the copy make the array not contiguous,
-    # causing issues with the C interface.
-    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
-
-    # Set L2 slack cost on lower bound constraints
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
-    for i in range(N):
-      self.solver.cost_set(i, 'Zl', Zl)
-
-  def set_weights_for_xva_policy(self):
-    W = np.asfortranarray(np.diag([0., 0.2, 0.25, 1., 0.0, .1]))
-    for i in range(N):
-      self.solver.cost_set(i, 'W', W)
-    # Setting the slice without the copy make the array not contiguous,
-    # causing issues with the C interface.
-    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
-
-    # Set L2 slack cost on lower bound constraints
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
-    for i in range(N):
-      self.solver.cost_set(i, 'Zl', Zl)
+      a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
+      cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]
+      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
+    self.set_cost_weights(cost_weights, constraint_cost_weights)
 
   def set_cur_state(self, v, a):
     v_prev = self.x0[1]
     self.x0[1] = v
     self.x0[2] = a
-    if abs(v_prev - v) > 2.: # probably only helps if v < v_prev
+    if abs(v_prev - v) > 2.:  # probably only helps if v < v_prev
       for i in range(0, N+1):
         self.solver.set(i, 'x', self.x0)
 
@@ -345,6 +333,10 @@ class LongitudinalMpc:
       self.crash_cnt = 0
 
   def update_with_xva(self, x, v, a):
+    self.params[:,0] = -10.
+    self.params[:,1] = 10.
+    self.params[:,2] = 1e5
+
     # v, and a are in local frame, but x is wrt the x[0] position
     # In >90degree turns, x goes to 0 (and may even be -ve)
     # So, we use integral(v) + x[0] to obtain the forward-distance
