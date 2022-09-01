@@ -47,7 +47,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # SysState 3 = green car + lanes, green steering wheel
     # SysState 4 = green car + lanes
     values["CF_Lkas_LdwsSysState"] = 3 if enabled else 1
-    values["CF_Lkas_LdwsOpt_USM"] = 2  # 2 shows LKAS icon
+    values["CF_Lkas_LdwsOpt_USM"] = 2  # non-2 changes above SysState definition
 
     # these have no effect
     values["CF_Lkas_LdwsActivemode"] = 0
