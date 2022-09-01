@@ -59,6 +59,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.BODY_KNEE:
       signals += [
+        ("FAULT", "KNEE_VAR_VALUES"),
         ("SPEED_L", "KNEE_MOTORS_DATA"),
         ("SPEED_R", "KNEE_MOTORS_DATA"),
         ("LEFT_ANGLE_SENSOR", "KNEE_MOTORS_ANGLE"),
@@ -68,6 +69,8 @@ class CarState(CarStateBase):
       checks += [
         ("KNEE_MOTORS_DATA", 100),
         ("KNEE_MOTORS_ANGLE", 100),
+        ("KNEE_VAR_VALUES", 10),
+        ("KNEE_DATA", 1),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
