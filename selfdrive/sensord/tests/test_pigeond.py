@@ -10,7 +10,6 @@ from selfdrive.manager.process_config import managed_processes
 from system.hardware import TICI
 from system.hardware.tici.pins import GPIO
 
-TEST_TIMESPAN = 10
 
 # TODO: test TTFF when we have good A-GNSS
 class TestPigeond(unittest.TestCase):

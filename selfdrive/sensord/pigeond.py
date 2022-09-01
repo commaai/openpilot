@@ -7,7 +7,7 @@ import struct
 import requests
 import urllib.parse
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from cereal import messaging
 from common.params import Params
@@ -79,10 +79,10 @@ class TTYPigeon():
         break
     return dat
 
-  def set_baud(self, baud):
+  def set_baud(self, baud: int) -> None:
     self.tty.baudrate = baud
 
-  def wait_for_ack(self, ack=UBLOX_ACK, nack=UBLOX_NACK, timeout=0.5):
+  def wait_for_ack(self, ack: bytes = UBLOX_ACK, nack: bytes = UBLOX_NACK, timeout: float = 0.5) -> bool:
     dat = b''
     st = time.monotonic()
     while True:
@@ -98,11 +98,11 @@ class TTYPigeon():
         raise TimeoutError('No response from ublox')
       time.sleep(0.001)
 
-  def send_with_ack(self, dat, ack=UBLOX_ACK, nack=UBLOX_NACK):
+  def send_with_ack(self, dat: bytes, ack: bytes = UBLOX_ACK, nack: bytes = UBLOX_NACK) -> None:
     self.send(dat)
     self.wait_for_ack(ack, nack)
 
-  def wait_for_backup_restore_status(self, timeout=1):
+  def wait_for_backup_restore_status(self, timeout: float = 1.) -> int:
     dat = b''
     st = time.monotonic()
     while True:
@@ -116,7 +116,7 @@ class TTYPigeon():
       time.sleep(0.001)
 
 
-def initialize_pigeon(pigeon):
+def initialize_pigeon(pigeon: TTYPigeon) -> None:
   # try initializing a few times
   for _ in range(10):
     try:
@@ -199,7 +199,7 @@ def initialize_pigeon(pigeon):
     except TimeoutError:
       cloudlog.warning("Initialization failed, trying again!")
 
-def deinitialize_and_exit(pigeon):
+def deinitialize_and_exit(pigeon: Optional[TTYPigeon]):
   cloudlog.warning("Storing almanac in ublox flash")
 
   if pigeon is not None:
