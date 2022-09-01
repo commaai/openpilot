@@ -190,8 +190,8 @@ def gen_long_ocp():
 
 
 class LongitudinalMpc:
-  def __init__(self, e2e=False):
-    self.e2e = e2e
+  def __init__(self, mode='acc'):
+    self.mode = mode
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset()
     self.source = SOURCES[2]
@@ -242,13 +242,15 @@ class LongitudinalMpc:
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights(self, prev_accel_constraint=True):
-    if self.e2e:
-      cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
-      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
-    else:
+    if self.mode == 'acc':
       a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
       cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
+    elif self.mode == 'e2e':
+      cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
+      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
+    else:
+      raise NotImplementedError(f'Planner mode {self.mode} not recognized')
     self.set_cost_weights(cost_weights, constraint_cost_weights)
 
   def set_cur_state(self, v, a):
