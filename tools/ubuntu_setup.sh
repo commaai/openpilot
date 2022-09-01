@@ -66,7 +66,8 @@ function install_ubuntu_common_requirements() {
     libqt5x11extras5-dev \
     libreadline-dev \
     libdw1 \
-    valgrind
+    valgrind \
+    nvme-cli
 }
 
 # Install Ubuntu 22.04 LTS packages
