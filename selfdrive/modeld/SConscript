@@ -26,7 +26,6 @@ thneed_src = [
   "thneed/thneed_common.cc",
   "thneed/thneed_qcom2.cc",
   "thneed/serialize.cc",
-  "thneed/optimizer.cc",
   "runners/thneedmodel.cc",
 ]
 
