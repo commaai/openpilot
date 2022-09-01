@@ -82,6 +82,7 @@ SENSOR_BUS = 1
 I2C_ADDR_LSM = 0x6A
 LSM_INT_GPIO = 84
 
+
 def read_sensor_events(duration_sec):
   sensor_events = messaging.sub_sock("sensorEvents", timeout=0.1)
   start_time_sec = time.monotonic()
@@ -275,6 +276,57 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
     state_two = get_proc_interrupts(LSM_INT_GPIO)
     assert state_one == state_two, "Interrupts received after sensord stop!"
+
+
+
+  @with_processes(['sensord'])
+  def test_events_check(self):
+    # verify if all sensors produce enough events
+    events = read_sensor_events(3)
+
+    sensor_events = dict()
+    for event in events:
+      for measurement in event.sensorEvents:
+        # Filter out unset events
+        if measurement.version == 0:
+          continue
+
+        if measurement.type in sensor_events:
+          sensor_events[measurement.type] += 1
+        else:
+          sensor_events[measurement.type] = 1
+
+    print(sensor_events)
+
+    # it is aimed for a 100Hz rate so no measurements should be far off
+    # the sensors in the non interrupt loop have a slightly lower rate (~96Hz)
+    for s in sensor_events:
+      self.assertFalse(sensor_events[s] < 282) # 94Hz
+
+
+  @with_processes(['sensord'])
+  def test_logmonottime_timestamp(self):
+    # ensure diff logMonotime and timestamp is rather small
+    # -> published when created
+    events = read_sensor_events(3)
+
+    tdiffs = list()
+    for event in events:
+      for measurement in event.sensorEvents:
+        # Filter out unset events
+        if measurement.version == 0:
+          continue
+
+        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
+        # negative values might occur, as non interrupt packages created
+        # before the sensor is read
+
+    avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
+
+    print(f"Avg Timestamp to LogMonoTime delay: {avg_diff}")
+    print(f"Max Timestamp to LogMonoTime delay: {max(tdiffs)}")
+    self.assertTrue(max(tdiffs) < 10*10**6 and avg_diff < 5*10**6) # 10ms, 5ms
+    # NOTE: gotta be careful with non relieable tests
 
 
 if __name__ == "__main__":
