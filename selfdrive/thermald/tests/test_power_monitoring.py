@@ -145,10 +145,8 @@ class TestPowerMonitoring(unittest.TestCase):
       for i in range(TEST_TIME):
         pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          print(pm.car_voltage_mV, VBATT_PAUSE_CHARGING*1e3)
-          print(pm.should_shutdown(ignition, True, ssb, False), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
-          self.assertEqual(pm.should_shutdown(ignition, True, ssb, False), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
-      self.assertTrue(pm.should_shutdown(ignition, True, ssb, False))
+          self.assertEqual(pm.should_shutdown(ignition, True, ssb, True), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
+      self.assertTrue(pm.should_shutdown(ignition, True, ssb, True))
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
