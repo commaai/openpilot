@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from common.realtime import sec_since_boot
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 from system.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
@@ -50,6 +50,7 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
+MAX_ACCEL = 2.0
 T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
@@ -246,6 +247,9 @@ class LongitudinalMpc:
       a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
       cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
+    elif self.mode == 'blended':
+      cost_weights = [0., 1.0, 0.0, 0.0, 0.0, 1.0]
+      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
     elif self.mode == 'e2e':
       cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
@@ -303,24 +307,54 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
-    # set accel limits in params
-    self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
-    self.params[:,1] = self.cruise_max_a
-
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
-    # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
-    # when the leads are no factor.
-    v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
-    v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.05)
-    v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               v_lower,
-                               v_upper)
-    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped)
+    # Update in ACC mode or ACC/e2e blend
+    if self.mode == 'acc':
+      self.params[:,0] = MIN_ACCEL if self.status else self.cruise_min_a
+      self.params[:,1] = self.cruise_max_a
+
+      # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
+      # when the leads are no factor.
+      v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
+      v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.05)
+      v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
+                                 v_lower,
+                                 v_upper)
+      cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped)
+      x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
+      self.source = SOURCES[np.argmin(x_obstacles[0])]
+
+      # These are not used in ACC mode
+      x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
+
+    elif self.mode == 'blended':
+      self.params[:,0] = MIN_ACCEL
+      self.params[:,1] = MAX_ACCEL
+
+      x_obstacles = np.column_stack([lead_0_obstacle,
+                                     lead_1_obstacle])
+      cruise_target = T_IDXS * v_cruise + x[0]
+      xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
+      x = np.cumsum(np.insert(xforward, 0, x[0]))
+
+      x_and_cruise = np.column_stack([x, cruise_target])
+      x = np.min(x_and_cruise, axis=1)
+
+    else:
+      raise NotImplementedError(f'Planner mode {self.mode} not recognized')
+
+    self.yref[:,1] = x
+    self.yref[:,2] = v
+    self.yref[:,3] = a
+    self.yref[:,5] = j
+    for i in range(N):
+      self.solver.set(i, "yref", self.yref[i])
+    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
