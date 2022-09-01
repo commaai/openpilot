@@ -26,6 +26,22 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
 
+    self.cluster_speed_factor = 1
+    if CP.carFingerprint in (CAR.RAV4H_TSS2_2022,):
+      self.cluster_speed_factor = 1.035
+    elif CP.carFingerprint in (CAR.RAV4_TSS2,):
+      self.cluster_speed_factor = 1.033
+    elif CP.carFingerprint in (CAR.RAV4H_TSS2, CAR.RAV4_TSS2_2022, CAR.MIRAI):
+      self.cluster_speed_factor = 1.031
+    elif CP.carFingerprint in (CAR.PRIUS, CAR.LEXUS_RX_TSS2, CAR.PRIUS_TSS2, CAR.HIGHLANDERH, CAR.LEXUS_RXH, CAR.HIGHLANDER, CAR.LEXUS_ESH, CAR.HIGHLANDER, CAR.LEXUS_RX, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ES_TSS2):
+      self.cluster_speed_factor = 1.024
+    elif CP.carFingerprint in (CAR.SIENNA, CAR.COROLLA_TSS2, CAR.CAMRY, CAR.CAMRYH, CAR.AVALON_2019, CAR.CAMRYH_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH_TSS2, CAR.CAMRY_TSS2, CAR.AVALONH_2019):
+      self.cluster_speed_factor = 1.016
+    elif CP.carFingerprint in (CAR.CHR, CAR.LEXUS_RXH_TSS2, CAR.AVALON_TSS2, CAR.AVALON, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH, CAR.RAV4H, CAR.LEXUS_NX):
+      self.cluster_speed_factor = 1.01
+    elif CP.carFingerprint in (CAR.RAV4,):
+      self.cluster_speed_factor = 1.006
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -105,7 +121,7 @@ class CarState(CarStateBase):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    ret.vEgoCluster = ret.vEgoRaw * 1.03
+    ret.vEgoCluster = ret.vEgoRaw * self.cluster_speed_factor
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
