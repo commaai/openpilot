@@ -177,7 +177,6 @@ def thermald_thread(end_event, hw_queue):
     modem_temps=[],
   )
 
-  current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   should_start_prev = False
   in_car = False
@@ -239,7 +238,6 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.modemTempC = last_hw_state.modem_temps
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
-    current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
     max_comp_temp = temp_filter.update(
       max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
