@@ -106,7 +106,7 @@ FW_VERSIONS = {
   CAR.LEGACY: {
     (Ecu.esp, 0x7b0, None): [
       b'\xa1\\  x04\x01',
-      b'\xa1\\  x03\x03'
+      b'\xa1  \x03\x03'
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x11\x00',
@@ -114,7 +114,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00e\x80\x00\x1f@ \x19\x00',
-      b'\x00\x00e\x9a\x00\x1f@ \x19\x00',
+      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00'
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xde\"a0\x07',
