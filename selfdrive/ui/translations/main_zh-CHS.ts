@@ -1192,7 +1192,7 @@ location set</source>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
-        <source>🌮 End-to-end longitudinal control (pre-alpha) 🌮</source>
+        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

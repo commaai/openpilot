@@ -55,7 +55,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     },
     {
       "EndToEndLong",
-      tr("🌮 End-to-end longitudinal control (pre-alpha) 🌮"),
+      tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
       tr("Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental."),
       "../assets/offroad/icon_road.png",
     },
