@@ -171,7 +171,7 @@ class CarInterfaceBase(ABC):
     else:
       self.v_ego_cluster_seen = True
 
-    if ret.cruiseState.speedCluster == -1:
+    if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration

@@ -1,4 +1,3 @@
-import math
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -98,7 +97,6 @@ class CarState(CarStateBase):
       cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
 
     # UI_SET_SPEED is always non-zero when main is on, hide until first enable
-    ret.cruiseState.speedCluster = 0
     if ret.cruiseState.speed != 0:
       is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
