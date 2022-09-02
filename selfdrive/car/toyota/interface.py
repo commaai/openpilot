@@ -64,6 +64,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.COROLLA:
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
+      ret.steerActuatorDelay = 0.24  # COROLLA has larger delay
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
 
