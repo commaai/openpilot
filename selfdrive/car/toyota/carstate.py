@@ -121,7 +121,7 @@ class CarState(CarStateBase):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    ret.vEgoCluster = ret.vEgoRaw * self.cluster_speed_factor
+    ret.vEgoCluster = ret.vEgo * self.cluster_speed_factor
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
