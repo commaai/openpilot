@@ -185,7 +185,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Volkswagen|Arteon 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|Arteon eHybrid 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|Arteon R 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Atlas 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Atlas 2018-23[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|Atlas Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|California 2021[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|Caravelle 2020[<sup>7</sup>](#footnotes)|Driver Assistance|Stock|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
