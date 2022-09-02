@@ -1108,7 +1108,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
       time_bytes = Params().get("CameraDebugExpTime");
   }
 
-  if (gain_bytes.size() && time_bytes.size()) {
+  if (gain_bytes.size() > 0 && time_bytes.size() > 0) {
     // Override gain and exposure time
     gain_idx = std::stoi(gain_bytes);
     exposure_time = std::stoi(time_bytes);
