@@ -17,8 +17,9 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
   planned_stop = (v_target < CP.vEgoStopping and
                   v_target_1sec < CP.vEgoStopping and
                   not accelerating)
-  is_stopped = v_ego < CP.vEgoStopping
-  stopping_condition = planned_stop or is_stopped
+  stay_stopped = (v_ego < CP.vEgoStopping and
+               (brake_pressed or cruise_standstill))
+  stopping_condition = planned_stop or stay_stopped
 
   starting_condition = (v_target_1sec > CP.vEgoStarting and
                         accelerating and
