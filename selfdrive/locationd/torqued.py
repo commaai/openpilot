@@ -159,7 +159,7 @@ class TorqueEstimator:
         steer = np.interp(t, np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
         if np.all(active) and (not np.any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
-          self.filtered_points.add_point(steer, lateral_acc)
+          self.filtered_points.add_point(float(steer), float(lateral_acc))
 
 
 def main(sm=None, pm=None):
