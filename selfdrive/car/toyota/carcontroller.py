@@ -1,5 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip, interp
+from common.filter_simple import FirstOrderFilter
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
@@ -23,6 +24,7 @@ class CarController:
     self.standstill_req = False
 
     self.packer = CANPacker(dbc_name)
+    self.pitch = FirstOrderFilter(0., 0.09, 0.01)
     self.gas = 0
     self.accel = 0
 
@@ -91,6 +93,8 @@ class CarController:
     #   can_sends.append(create_steer_command(self.packer, 0, 0, self.frame // 2))
     #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, self.frame // 2))
 
+    self.pitch.update(CC.orientationNED[1])
+
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
@@ -99,7 +103,7 @@ class CarController:
       # Toyota is hesitant to respond to acceleration requests if PERMIT_BRAKING is 1
       # ORIG: permit_braking = int(CS.out.vEgo < 0.2 or pcm_accel_cmd <= 0.1 or actuators.futureAccel < 0.6)
 
-      coasting_accel = CC.orientationNED[1] * ACCELERATION_DUE_TO_GRAVITY + 0.2  # offset threshold
+      coasting_accel = self.pitch.x * ACCELERATION_DUE_TO_GRAVITY + 0.2  # offset threshold
       permit_braking = int(CS.out.vEgo < 0.1 or actuators.accel < coasting_accel or actuators.futureAccel < coasting_accel)
 
       # Lexus IS uses a different cancellation message
