@@ -6,6 +6,7 @@ from common.numpy_fast import interp
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
+from common.params import Params
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longcontrol import LongCtrlState
@@ -47,7 +48,10 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class Planner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    params = Params()
+    # TODO read param in the loop for live toggling
+    mode = 'blended' if params.get_bool('EndToEndLong') else 'acc'
+    self.mpc = LongitudinalMpc(mode=mode)
 
     self.fcw = False
 
@@ -122,7 +126,8 @@ class Planner:
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 5
+    # TODO write fcw in e2e_long mode
+    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5
     if self.fcw:
       cloudlog.info("FCW triggered")
 
