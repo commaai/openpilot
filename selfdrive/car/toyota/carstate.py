@@ -118,7 +118,12 @@ class CarState(CarStateBase):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
-    ret.vEgoCluster = ret.vEgo * self.cluster_speed_factor
+    # ret.vEgoCluster = ret.vEgo * self.cluster_speed_factor
+    cluster_speed_factor = CV.KPH_TO_MS if is_metric else CV.KPH_TO_MS * 1.05
+    ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE"]["UI_SPEED"] * cluster_speed_factor
+    # TODO: user reported this signal can be 1 when stopped rarely. make sure this isn't an issue from data
+    if ret.standstill:
+      ret.vEgoCluster = 0
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
@@ -174,6 +179,7 @@ class CarState(CarStateBase):
       ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
       ("PARKING_BRAKE", "BODY_CONTROL_STATE"),
       ("UNITS", "BODY_CONTROL_STATE_2"),
+      ("UI_SPEED", "BODY_CONTROL_STATE_2"),
       ("TC_DISABLED", "ESP_CONTROL"),
       ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
