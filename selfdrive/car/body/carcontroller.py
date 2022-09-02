@@ -15,9 +15,9 @@ MAX_TURN_INTEGRATOR = 10.0  # meters
 
 MAX_TORQUE_KNEE = 400
 MAX_TORQUE_HIP = 200
-MAX_KNEE_TORQUE_RATE = 20
-MAX_ANGLE_INTEGRATOR_KNEE = 10
-MAX_ANGLE_INTEGRATOR_HIP = 10
+MAX_KNEE_TORQUE_RATE = 5
+MAX_ANGLE_INTEGRATOR_KNEE = 1.0
+MAX_ANGLE_INTEGRATOR_HIP = 1.0
 
 
 class CarController:
@@ -37,8 +37,8 @@ class CarController:
     self.torque_left_wheel_filtered = 0.
     self.torque_right_wheel_filtered = 0.
 
-    self.knee_angle_pid = PIDController(40, k_i=12, rate=1/DT_CTRL)
-    self.hip_angle_pid = PIDController(40, k_i=4, rate=1/DT_CTRL)
+    self.knee_angle_pid = PIDController(10, k_i=0.2, rate=1/DT_CTRL)
+    self.hip_angle_pid = PIDController(10, k_i=0.2, rate=1/DT_CTRL)
 
     self.torque_knee_filtered = 0.
     self.torque_hip_filtered = 0.
