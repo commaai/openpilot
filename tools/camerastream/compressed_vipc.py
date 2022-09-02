@@ -86,7 +86,7 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
       print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Decode video streams and broacast on VisionIPC")
+  parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
   parser.add_argument("addr", help="Address of comma three")
   parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")

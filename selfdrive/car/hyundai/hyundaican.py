@@ -37,12 +37,26 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # Note: the warning is hidden while the blinkers are on
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
+  # Likely cars lacking the ability to show individual lane lines in the dash
+  elif car_fingerprint in (CAR.KIA_OPTIMA,):
+    # SysWarning 4 = keep hands on wheel + beep
+    values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
+
+    # SysState 0 = no icons
+    # SysState 1-2 = white car + lanes
+    # SysState 3 = green car + lanes, green steering wheel
+    # SysState 4 = green car + lanes
+    values["CF_Lkas_LdwsSysState"] = 3 if enabled else 1
+    values["CF_Lkas_LdwsOpt_USM"] = 2  # non-2 changes above SysState definition
+
+    # these have no effect
+    values["CF_Lkas_LdwsActivemode"] = 0
+    values["CF_Lkas_FcwOpt_USM"] = 0
+
   elif car_fingerprint == CAR.HYUNDAI_GENESIS:
     # This field is actually LdwsActivemode
     # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
-  elif car_fingerprint == CAR.KIA_OPTIMA:
-    values["CF_Lkas_LdwsActivemode"] = 0
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 

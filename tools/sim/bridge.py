@@ -353,7 +353,7 @@ class CarlaBridge:
 
     vehicle_state = VehicleState()
 
-    # reenable IMU
+    # re-enable IMU
     imu_bp = blueprint_library.find('sensor.other.imu')
     imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
     imu.listen(lambda imu: imu_callback(imu, vehicle_state))
@@ -555,4 +555,4 @@ if __name__ == "__main__":
   finally:
     # Try cleaning up the wide camera param
     # in case users want to use replay after
-    Params().delete("WideCameraOnly")
+    Params().remove("WideCameraOnly")

@@ -14,9 +14,9 @@ void Thneed::load(const char *filename) {
 
   string buf = util::read_file(filename);
   int jsz = *(int *)buf.data();
-  string err;
+  string jsonerr;
   string jj(buf.data() + sizeof(int), jsz);
-  Json jdat = Json::parse(jj, err);
+  Json jdat = Json::parse(jj, jsonerr);
 
   map<cl_mem, cl_mem> real_mem;
   real_mem[NULL] = NULL;
@@ -33,11 +33,14 @@ void Thneed::load(const char *filename) {
       assert(mobj["needs_load"].bool_value() == false);
     } else {
       if (mobj["needs_load"].bool_value()) {
-        //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
         clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, &buf[ptr], NULL);
+        if (debug >= 1) printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
         ptr += sz;
       } else {
-        clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
+        // TODO: is there a faster way to init zeroed out buffers?
+        void *host_zeros = calloc(sz, 1);
+        clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, host_zeros, NULL);
+        free(host_zeros);
       }
     }
     assert(clbuf != NULL);
@@ -48,13 +51,33 @@ void Thneed::load(const char *filename) {
       desc.image_width = mobj["width"].int_value();
       desc.image_height = mobj["height"].int_value();
       desc.image_row_pitch = mobj["row_pitch"].int_value();
+      assert(sz == desc.image_height*desc.image_row_pitch);
+#ifdef QCOM2
       desc.buffer = clbuf;
-
-      cl_image_format format;
+#else
+      // TODO: we are creating unused buffers on PC
+      clReleaseMemObject(clbuf);
+#endif
+      cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
-      format.image_channel_data_type = CL_HALF_FLOAT;
+      format.image_channel_data_type = mobj["float32"].bool_value() ? CL_FLOAT : CL_HALF_FLOAT;
 
-      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, NULL);
+      cl_int errcode;
+
+#ifndef QCOM2
+      if (mobj["needs_load"].bool_value()) {
+        clbuf = clCreateImage(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
+      } else {
+        clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+      }
+#else
+      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+#endif
+      if (clbuf == NULL) {
+        printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
+          desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer
+        );
+      }
       assert(clbuf != NULL);
     }
 
@@ -65,6 +88,30 @@ void Thneed::load(const char *filename) {
   for (const auto &[name, source] : jdat["programs"].object_items()) {
     if (debug >= 1) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
     g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
+  }
+
+  for (auto &obj : jdat["inputs"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    input_clmem.push_back(aa);
+    input_sizes.push_back(sz);
+    printf("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
+
+    cl_int cl_err;
+    void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
+    if (cl_err != CL_SUCCESS) printf("clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
+    assert(cl_err == CL_SUCCESS);
+    inputs.push_back(ret);
+  }
+
+  for (auto &obj : jdat["outputs"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    printf("Thneed::save: adding output with size %d\n", sz);
+    // TODO: support multiple outputs
+    output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    assert(output != NULL);
   }
 
   for (auto &obj : jdat["binaries"].array_items()) {
@@ -135,7 +182,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
             });
 
             if (k->arg_types[i] == "image2d_t" || k->arg_types[i] == "image1d_t") {
-              cl_mem buf;
+              cl_mem buf = NULL;
               clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
               string aa = string((char *)&buf, sizeof(buf));
               jj["buffer_id"] = aa;
@@ -149,6 +196,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
               jj["row_pitch"] = (int)row_pitch;
               jj["size"] = (int)(height * row_pitch);
               jj["needs_load"] = false;
+              jj["float32"] = false;
 
               if (saved_objects.find(aa) == saved_objects.end()) {
                 saved_objects.insert(aa);
