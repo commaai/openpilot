@@ -27,20 +27,17 @@ class CarState(CarStateBase):
     self.acc_type = 1
 
     self.cluster_speed_factor = 1
-    if CP.carFingerprint in (CAR.RAV4H_TSS2_2022,):
-      self.cluster_speed_factor = 1.035
-    elif CP.carFingerprint in (CAR.RAV4_TSS2,):
-      self.cluster_speed_factor = 1.033
-    elif CP.carFingerprint in (CAR.RAV4H_TSS2, CAR.RAV4_TSS2_2022, CAR.MIRAI):
-      self.cluster_speed_factor = 1.031
-    elif CP.carFingerprint in (CAR.PRIUS, CAR.LEXUS_RX_TSS2, CAR.PRIUS_TSS2, CAR.HIGHLANDERH, CAR.LEXUS_RXH, CAR.HIGHLANDER, CAR.LEXUS_ESH, CAR.HIGHLANDER, CAR.LEXUS_RX, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ES_TSS2):
-      self.cluster_speed_factor = 1.024
-    elif CP.carFingerprint in (CAR.SIENNA, CAR.COROLLA_TSS2, CAR.CAMRY, CAR.CAMRYH, CAR.AVALON_2019, CAR.CAMRYH_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH_TSS2, CAR.CAMRY_TSS2, CAR.AVALONH_2019):
-      self.cluster_speed_factor = 1.016
-    elif CP.carFingerprint in (CAR.CHR, CAR.LEXUS_RXH_TSS2, CAR.AVALON_TSS2, CAR.AVALON, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH, CAR.RAV4H, CAR.LEXUS_NX):
+    if CP.carFingerprint in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.HIGHLANDERH):
+      self.cluster_speed_factor = 1.03
+    elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.HIGHLANDER, CAR.PRIUS_TSS2, CAR.LEXUS_RXH):
+      self.cluster_speed_factor = 1.025
+    elif CP.carFingerprint in (CAR.COROLLA, CAR.LEXUS_ESH, CAR.COROLLA_TSS2, CAR.CAMRYH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ES_TSS2, CAR.AVALON, CAR.CAMRY, CAR.AVALON_2019, CAR.HIGHLANDER_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH_TSS2):
+      self.cluster_speed_factor = 1.02
+    elif CP.carFingerprint in (CAR.LEXUS_RX_TSS2, CAR.CHR, CAR.CAMRYH_TSS2, CAR.AVALONH_2019, CAR.CAMRY_TSS2, CAR.AVALON_TSS2, CAR.LEXUS_RXH_TSS2):
+      self.cluster_speed_factor = 1.015
+    # TODO: unclear if we need to set a factor for these cars
+    elif CP.carFingerprint in (CAR.SIENNA, CAR.RAV4H, CAR.RAV4, CAR.LEXUS_NX_TSS2):
       self.cluster_speed_factor = 1.01
-    elif CP.carFingerprint in (CAR.RAV4,):
-      self.cluster_speed_factor = 1.006
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
