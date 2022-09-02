@@ -50,6 +50,11 @@ class CarController:
     elif CC.cruiseControl.resume:
       can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True))
 
+    # if stock lane centering is active or in standby, toggle it off
+    # the stock system checks for steering pressed, and eventually disengages cruise control
+    if (self.frame % 200) == 0 and CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0:
+      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, tja_toggle=True, bus=CANBUS.camera))
+
 
     ### lateral control ###
     if CC.latActive:
@@ -87,11 +92,6 @@ class CarController:
 
     # send acc ui command at 20Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      if CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0:
-        # if stock lane centering is active or in standby, toggle it off
-        # the stock system checks for steering pressed, and eventually disengages cruise control
-        can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, tja_toggle=True, bus=CANBUS.camera))
-
       can_sends.append(fordcan.create_acc_ui_command(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
