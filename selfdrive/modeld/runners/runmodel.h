@@ -1,4 +1,5 @@
 #pragma once
+#include "common/clutil.h"
 class RunModel {
 public:
   virtual ~RunModel() {}

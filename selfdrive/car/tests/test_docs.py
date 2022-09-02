@@ -4,7 +4,7 @@ import unittest
 
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import Column, Star
+from selfdrive.car.docs_definitions import Column, Harness, Star
 from selfdrive.car.honda.values import CAR as HONDA
 
 
@@ -13,7 +13,7 @@ class TestCarDocs(unittest.TestCase):
     self.all_cars = get_all_car_info()
 
   def test_generator(self):
-    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE, False)
+    generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
     with open(CARS_MD_OUT, "r") as f:
       current_cars_md = f.read()
 
@@ -55,6 +55,14 @@ class TestCarDocs(unittest.TestCase):
     for car in self.all_cars:
       with self.subTest(car=car):
         self.assertIsNone(re.search(r"\d{4}-\d{4}", car.name), f"Format years correctly: {car.name}")
+
+  def test_harnesses(self):
+    for car in self.all_cars:
+      with self.subTest(car=car):
+        if car.name == "comma body":
+          raise unittest.SkipTest
+
+        self.assertNotIn(car.harness, [None, Harness.none], f"Need to specify car harness: {car.name}")
 
 
 if __name__ == "__main__":

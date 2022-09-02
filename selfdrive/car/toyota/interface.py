@@ -218,6 +218,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
 
     if not ret.openpilotLongitudinalControl:
+      ret.autoResumeSng = False
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
     # we can't use the fingerprint to detect this reliably, since

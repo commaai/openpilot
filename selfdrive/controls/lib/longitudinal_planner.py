@@ -53,11 +53,30 @@ class Planner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, DT_MDL)
+    self.t_uniform = np.arange(0.0, T_IDXS_MPC[-1] + 0.5, 0.5)
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
+
+  def parse_model(self, model_msg):
+    if (len(model_msg.position.x) == 33 and
+       len(model_msg.velocity.x) == 33 and
+       len(model_msg.acceleration.x) == 33):
+      x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x)
+      v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x)
+      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
+      # Uniform interp so gradient is less noisy
+      a_sparse = np.interp(self.t_uniform, T_IDXS, model_msg.acceleration.x)
+      j_sparse = np.gradient(a_sparse, self.t_uniform)
+      j = np.interp(T_IDXS_MPC, self.t_uniform, j_sparse)
+    else:
+      x = np.zeros(len(T_IDXS_MPC))
+      v = np.zeros(len(T_IDXS_MPC))
+      a = np.zeros(len(T_IDXS_MPC))
+      j = np.zeros(len(T_IDXS_MPC))
+    return x, v, a, j
 
   def update(self, sm):
     v_ego = sm['carState'].vEgo
@@ -95,7 +114,8 @@ class Planner:
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
+    x, v, a, j = self.parse_model(sm['modelV2'])
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, x, v, a, j)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
