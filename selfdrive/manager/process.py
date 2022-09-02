@@ -115,9 +115,11 @@ class ManagerProcess(ABC):
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool=True, block: bool=True) -> Optional[int]:
+  def stop(self, retry: bool=True, block: bool=True, join: bool=True) -> Optional[int]:
     if self.proc is None:
       return None
+    if retry or block:
+      join = True
 
     if self.proc.exitcode is None:
       if not self.shutting_down:
@@ -129,7 +131,8 @@ class ManagerProcess(ABC):
         if not block:
           return None
 
-      join_process(self.proc, 5)
+      if join:
+        join_process(self.proc, 5)
 
       # If process failed to die send SIGKILL or reboot
       if self.proc.exitcode is None and retry:
@@ -285,7 +288,7 @@ class DaemonProcess(ManagerProcess):
 
     params.put(self.param_name, str(proc.pid))
 
-  def stop(self, retry=True, block=True) -> None:
+  def stop(self, retry: bool=True, block: bool=True, join: bool=True) -> Optional[int]:
     pass
 
 
@@ -293,6 +296,8 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
                    not_run: Optional[List[str]]=None) -> None:
   if not_run is None:
     not_run = []
+
+  should_stop = []
 
   for p in procs:
     # Conditions that make a process run
@@ -312,6 +317,11 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
     if run:
       p.start()
     else:
-      p.stop(block=False)
+      should_stop.append(p)
+      p.stop(retry=False, block=False, join=False)
 
     p.check_watchdog(started)
+
+  # join and retry if needed
+  for p in should_stop:
+    p.stop(block=False)
