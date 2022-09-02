@@ -113,26 +113,12 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
 
-    is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
-
     # UI_SET_SPEED is always non-zero when main is on, hide until first enable
     ret.cruiseState.speedCluster = 0
     if ret.cruiseState.speed != 0:
+      is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
-
-    # Dash applies some hysteresis
-    # ret.vEgoCluster = ret.vEgo * self.cluster_speed_factor
-    v_ego_cluster = ret.vEgo * 1.019  # 1.02 is too high
-    if v_ego_cluster > self.v_ego_cluster_steady + self.v_ego_cluster_hyst:
-      self.v_ego_cluster_steady = v_ego_cluster - self.v_ego_cluster_hyst
-    elif v_ego_cluster < self.v_ego_cluster_steady - self.v_ego_cluster_hyst:
-      self.v_ego_cluster_steady = v_ego_cluster + self.v_ego_cluster_hyst
-
-    ret.vEgoCluster = self.v_ego_cluster_steady
-    # TODO: user reported this signal can be 1 when stopped rarely. make sure this isn't an issue from data
-    if ret.standstill:
-      ret.vEgoCluster = 0
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
