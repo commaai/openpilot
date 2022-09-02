@@ -12,7 +12,7 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 HISTORY = 5  # secs
 RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego', 'carState_t', 'carControl_t']
-POINTS_PER_BUCKET = 3000
+POINTS_PER_BUCKET = 2000
 MIN_POINTS_TOTAL = 4000
 FIT_POINTS_TOTAL = 3000
 MIN_VEL = 15  # m/s
@@ -57,10 +57,10 @@ class PointBuckets:
         break
 
   def get_points(self, num_points=None):
-    points = np.array([v for sublist in self.buckets.values() for v in list(sublist)])
+    points = [v for sublist in self.buckets.values() for v in list(sublist)]
     if num_points is None:
       return points
-    return points[np.random.choice(len(points), min(len(points), num_points), replace=False)]
+    return np.array(points)[np.random.choice(len(points), min(len(points), num_points), replace=False)]
 
   def load_points(self, points):
     for x, _, y in points:
@@ -218,11 +218,11 @@ def main(sm=None, pm=None):
       liveTorqueParameters.decay = estimator.decay
       liveTorqueParameters.maxResets = estimator.resets > MAX_RESETS
 
+      if sm.frame % 5 == 0:  # 4Hz driven by liveLocationKalman
+        pm.send('liveTorqueParameters', msg)
       if sm.frame % 1200 == 0:  # once a minute
-        liveTorqueParameters.points = estimator.filtered_points.get_points().tolist()
+        liveTorqueParameters.points = estimator.filtered_points.get_points()
         put_nonblocking("LiveTorqueParameters", msg.to_bytes())
-
-      pm.send('liveTorqueParameters', msg)
 
 
 if __name__ == "__main__":
