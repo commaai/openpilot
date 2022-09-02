@@ -248,13 +248,13 @@ class LongitudinalMpc:
       cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, a_change_cost, J_EGO_COST]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     elif self.mode == 'blended':
-      cost_weights = [0., 1.0, 0.0, 0.0, 0.0, 1.0]
-      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
+      cost_weights = [0., 0.2, 0.25, 1.0, 0.0, 1.0]
+      constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 5.0]
     elif self.mode == 'e2e':
       cost_weights = [0., 0.2, 0.25, 1., 0.0, .1]
       constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0]
     else:
-      raise NotImplementedError(f'Planner mode {self.mode} not recognized')
+      raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner cost set')
     self.set_cost_weights(cost_weights, constraint_cost_weights)
 
   def set_cur_state(self, v, a):
@@ -347,7 +347,7 @@ class LongitudinalMpc:
       self.source = 'e2e'
 
     else:
-      raise NotImplementedError(f'Planner mode {self.mode} not recognized')
+      raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
 
     self.yref[:,1] = x
     self.yref[:,2] = v
@@ -357,8 +357,6 @@ class LongitudinalMpc:
       self.solver.set(i, "yref", self.yref[i])
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
 
-    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
-    self.source = SOURCES[np.argmin(x_obstacles[0])]
     self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.prev_a)
 
