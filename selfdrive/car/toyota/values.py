@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, Star
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -89,7 +89,7 @@ class Footnote(Enum):
   DSU = CarFootnote(
     "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
     "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
-    Column.LONGITUDINAL, star=Star.HALF)
+    Column.LONGITUDINAL)
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
     Column.FSR_LONGITUDINAL)
@@ -718,6 +718,7 @@ FW_VERSIONS = {
       b'\x03312N6000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
+      b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x02312K4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02312U5000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -783,6 +784,7 @@ FW_VERSIONS = {
       b'\x01896637626000\x00\x00\x00\x00',
       b'\x01896637648000\x00\x00\x00\x00',
       b'\x01896637643000\x00\x00\x00\x00',
+      b'\x02896630A21000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZJ5000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZN8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZQ3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -827,6 +829,7 @@ FW_VERSIONS = {
       b'F152612A10\x00\x00\x00\x00\x00\x00',
       b'F152612D00\x00\x00\x00\x00\x00\x00',
       b'F152616011\x00\x00\x00\x00\x00\x00',
+      b'F152616060\x00\x00\x00\x00\x00\x00',
       b'F152642540\x00\x00\x00\x00\x00\x00',
       b'F152676293\x00\x00\x00\x00\x00\x00',
       b'F152676303\x00\x00\x00\x00\x00\x00',
@@ -972,15 +975,16 @@ FW_VERSIONS = {
       b'\x01F152648J6000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
-      b'\x01896630EE4000\x00\x00\x00\x00',
-      b'\x01896630EE6000\x00\x00\x00\x00',
       b'\x01896630E67000\x00\x00\x00\x00',
       b'\x01896630EA1000\x00\x00\x00\x00',
-      b'\x01896630EA1000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
+      b'\x01896630EE4000\x00\x00\x00\x00',
+      b'\x01896630EE4100\x00\x00\x00\x00',
+      b'\x01896630EE6000\x00\x00\x00\x00',
       b'\x02896630E66000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
+      b'\x02896630E66100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
+      b'\x01896630EA1000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630EB3000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630EB3100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
-      b'\x02896630E66100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
@@ -1264,6 +1268,7 @@ FW_VERSIONS = {
       b'\x02896634A18100\x00\x00\x00\x00897CF1201001\x00\x00\x00\x00',
       b'\x02896634A43000\x00\x00\x00\x00897CF4201001\x00\x00\x00\x00',
       b'\x02896634A47000\x00\x00\x00\x00897CF4201001\x00\x00\x00\x00',
+      b'\x028966342Z8000\x00\x00\x00\x00897CF1201001\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F15260R210\x00\x00\x00\x00\x00\x00',

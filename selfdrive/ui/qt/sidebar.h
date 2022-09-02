@@ -43,6 +43,7 @@ protected:
     {cereal::DeviceState::NetworkType::CELL5_G, tr("5G")}
   };
 
+  const QRect home_btn = QRect(60, 860, 180, 180);
   const QRect settings_btn = QRect(50, 35, 200, 117);
   const QColor good_color = QColor(255, 255, 255);
   const QColor warning_color = QColor(218, 202, 37);
@@ -52,4 +53,7 @@ protected:
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
   int net_strength = 0;
+
+private:
+  std::unique_ptr<PubMaster> pm;
 };
