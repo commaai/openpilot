@@ -26,18 +26,21 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
 
-    self.cluster_speed_factor = 1
-    if CP.carFingerprint in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.HIGHLANDERH):
-      self.cluster_speed_factor = 1.03
-    elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.HIGHLANDER, CAR.PRIUS_TSS2, CAR.LEXUS_RXH):
-      self.cluster_speed_factor = 1.025
-    elif CP.carFingerprint in (CAR.COROLLA, CAR.LEXUS_ESH, CAR.COROLLA_TSS2, CAR.CAMRYH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ES_TSS2, CAR.AVALON, CAR.CAMRY, CAR.AVALON_2019, CAR.HIGHLANDER_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH_TSS2):
-      self.cluster_speed_factor = 1.02
-    elif CP.carFingerprint in (CAR.LEXUS_RX_TSS2, CAR.CHR, CAR.CAMRYH_TSS2, CAR.AVALONH_2019, CAR.CAMRY_TSS2, CAR.AVALON_TSS2, CAR.LEXUS_RXH_TSS2):
-      self.cluster_speed_factor = 1.015
-    # TODO: unclear if we need to set a factor for these cars
-    elif CP.carFingerprint in (CAR.SIENNA, CAR.RAV4H, CAR.RAV4, CAR.LEXUS_NX_TSS2):
-      self.cluster_speed_factor = 1.01
+    self.v_ego_cluster_steady = 0
+    self.v_ego_cluster_hyst = CV.KPH_TO_MS / 2.  # or MPH_TO_MS / 2, both are very close
+
+    # self.cluster_speed_factor = 1
+    # if CP.carFingerprint in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.HIGHLANDERH):
+    #   self.cluster_speed_factor = 1.03
+    # elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.HIGHLANDER, CAR.PRIUS_TSS2, CAR.LEXUS_RXH):
+    #   self.cluster_speed_factor = 1.025
+    # elif CP.carFingerprint in (CAR.COROLLA, CAR.LEXUS_ESH, CAR.COROLLA_TSS2, CAR.CAMRYH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ES_TSS2, CAR.AVALON, CAR.CAMRY, CAR.AVALON_2019, CAR.HIGHLANDER_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH_TSS2):
+    #   self.cluster_speed_factor = 1.02
+    # elif CP.carFingerprint in (CAR.LEXUS_RX_TSS2, CAR.CHR, CAR.CAMRYH_TSS2, CAR.AVALONH_2019, CAR.CAMRY_TSS2, CAR.AVALON_TSS2, CAR.LEXUS_RXH_TSS2):
+    #   self.cluster_speed_factor = 1.015
+    # # TODO: unclear if we need to set a factor for these cars
+    # elif CP.carFingerprint in (CAR.SIENNA, CAR.RAV4H, CAR.RAV4, CAR.LEXUS_NX_TSS2):
+    #   self.cluster_speed_factor = 1.01
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -118,9 +121,15 @@ class CarState(CarStateBase):
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
+    # Dash applies some hysteresis
     # ret.vEgoCluster = ret.vEgo * self.cluster_speed_factor
-    cluster_speed_factor = CV.KPH_TO_MS if is_metric else CV.KPH_TO_MS * 1.05
-    ret.vEgoCluster = cp.vl["BODY_CONTROL_STATE"]["UI_SPEED"] * cluster_speed_factor
+    v_ego_cluster = ret.vEgo * 1.019  # 1.02 is too high
+    if v_ego_cluster > self.v_ego_cluster_steady + self.v_ego_cluster_hyst:
+      self.v_ego_cluster_steady = v_ego_cluster - self.v_ego_cluster_hyst
+    elif v_ego_cluster < self.v_ego_cluster_steady - self.v_ego_cluster_hyst:
+      self.v_ego_cluster_steady = v_ego_cluster + self.v_ego_cluster_hyst
+
+    ret.vEgoCluster = self.v_ego_cluster_steady
     # TODO: user reported this signal can be 1 when stopped rarely. make sure this isn't an issue from data
     if ret.standstill:
       ret.vEgoCluster = 0
@@ -179,7 +188,6 @@ class CarState(CarStateBase):
       ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
       ("PARKING_BRAKE", "BODY_CONTROL_STATE"),
       ("UNITS", "BODY_CONTROL_STATE_2"),
-      ("UI_SPEED", "BODY_CONTROL_STATE_2"),
       ("TC_DISABLED", "ESP_CONTROL"),
       ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
