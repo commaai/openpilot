@@ -1198,7 +1198,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>让驾驶神经网络直接控制油门和刹车，openpilot 将会模仿人类司机的驾驶方式。</translation>
+        <translation>让驾驶神经网络直接控制油门和刹车，openpilot 将会模仿人类司机的驾驶方式。早期试用版。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
