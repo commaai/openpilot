@@ -1199,12 +1199,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 End-to-end longitudinal (experimental) 🌮</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deixe o modelo de direção controlar o acelerador e o freio, o openpilot dirigirá da maneira como ele entende que um humano o faria. Super experimental.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
