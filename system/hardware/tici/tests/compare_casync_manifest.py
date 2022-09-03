@@ -17,7 +17,7 @@ def get_chunk_download_size(chunk):
   if os.path.isfile(path):
     return os.path.getsize(path)
   else:
-    r = requests.head(path)
+    r = requests.head(path, timeout=10)
     r.raise_for_status()
     return int(r.headers['content-length'])
 
