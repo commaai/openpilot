@@ -16,7 +16,7 @@ from system.version import get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.longcontrol import LongControl
@@ -50,6 +50,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
+ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
@@ -160,14 +161,14 @@ class Controls:
     self.state = State.disabled
     self.enabled = False
     self.active = False
-    self.can_rcv_error = False
+    self.can_rcv_timeout = False
     self.soft_disable_timer = 0
-    self.v_cruise_kph = 255
-    self.v_cruise_cluster_kph = 255
+    self.v_cruise_kph = V_CRUISE_INITIAL
+    self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
-    self.can_rcv_error_counter = 0
+    self.can_rcv_timeout_counter = 0
     self.last_blinker_frame = 0
     self.distance_traveled = 0
     self.last_functional_fan_frame = 0
@@ -203,6 +204,16 @@ class Controls:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
 
+  def set_initial_state(self):
+    if REPLAY:
+      controls_state = Params().get("ReplayControlsState")
+      if controls_state is not None:
+        controls_state = log.ControlsState.from_bytes(controls_state)
+        self.v_cruise_kph = controls_state.vCruise
+
+      if self.sm['pandaStates'][0].controlsAllowed:
+        self.state = State.enabled
+
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
@@ -217,6 +228,11 @@ class Controls:
     if not self.initialized:
       self.events.add(EventName.controlsInitializing)
       return
+
+    # Block resume if cruise never previously enabled
+    resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
+    if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL and resume_pressed:
+      self.events.add(EventName.resumeBlocked)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
@@ -323,19 +339,19 @@ class Controls:
     # generic catch-all. ideally, a more specific event should be added above instead
     has_disable_events = self.events.any(ET.NO_ENTRY) and (self.events.any(ET.SOFT_DISABLE) or self.events.any(ET.IMMEDIATE_DISABLE))
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
-    if (not self.sm.all_checks() or self.can_rcv_error) and no_system_errors:
+    if (not self.sm.all_checks() or self.can_rcv_timeout) and no_system_errors:
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
         self.events.add(EventName.commIssueAvgFreq)
-      else:  # invalid or can_rcv_error.
+      else:  # invalid or can_rcv_timeout.
         self.events.add(EventName.commIssue)
 
       logs = {
         'invalid': [s for s, valid in self.sm.valid.items() if not valid],
         'not_alive': [s for s, alive in self.sm.alive.items() if not alive],
         'not_freq_ok': [s for s, freq_ok in self.sm.freq_ok.items() if not freq_ok],
-        'can_error': self.can_rcv_error,
+        'can_rcv_timeout': self.can_rcv_timeout,
       }
       if logs != self.logged_comm_issue:
         cloudlog.event("commIssue", error=True, **logs)
@@ -417,19 +433,17 @@ class Controls:
       if all_valid or timed_out or SIMULATION:
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+
         self.initialized = True
-
-        if REPLAY and self.sm['pandaStates'][0].controlsAllowed:
-          self.state = State.enabled
-
+        self.set_initial_state()
         Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:
-      self.can_rcv_error_counter += 1
-      self.can_rcv_error = True
+      self.can_rcv_timeout_counter += 1
+      self.can_rcv_timeout = True
     else:
-      self.can_rcv_error = False
+      self.can_rcv_timeout = False
 
     # When the panda and controlsd do not agree on controls_allowed
     # we want to disengage openpilot. However the status from the panda goes through
@@ -452,18 +466,18 @@ class Controls:
 
     self.v_cruise_kph_last = self.v_cruise_kph
 
-    # if stock cruise is completely disabled, then we can use our own set speed logic
-    if not self.CP.pcmCruise:
-      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
-                                          self.button_timers, self.enabled, self.is_metric)
-      self.v_cruise_cluster_kph = self.v_cruise_kph
-    else:
-      if CS.cruiseState.available:
+    if CS.cruiseState.available:
+      # if stock cruise is completely disabled, then we can use our own set speed logic
+      if not self.CP.pcmCruise:
+        self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.vEgo, CS.gasPressed, CS.buttonEvents,
+                                            self.button_timers, self.enabled, self.is_metric)
+        self.v_cruise_cluster_kph = self.v_cruise_kph
+      else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
-      else:
-        self.v_cruise_kph = 0
-        self.v_cruise_cluster_kph = 0
+    else:
+      self.v_cruise_kph = V_CRUISE_INITIAL
+      self.v_cruise_cluster_kph = V_CRUISE_INITIAL
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -626,8 +640,13 @@ class Controls:
       if len(dpath_points):
         # Check if we deviated from the path
         # TODO use desired vs actual curvature
-        left_deviation = actuators.steer > 0 and dpath_points[0] < -0.20
-        right_deviation = actuators.steer < 0 and dpath_points[0] > 0.20
+        if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+          steering_value = actuators.steeringAngleDeg
+        else:
+          steering_value = actuators.steer
+
+        left_deviation = steering_value > 0 and dpath_points[0] < -0.20
+        right_deviation = steering_value < 0 and dpath_points[0] > 0.20
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
@@ -766,7 +785,7 @@ class Controls:
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
-    controlsState.canErrorCounter = self.can_rcv_error_counter
+    controlsState.canErrorCounter = self.can_rcv_timeout_counter
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:

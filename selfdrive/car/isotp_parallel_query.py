@@ -135,6 +135,7 @@ class IsoTpParallelQuery:
             if self.debug:
               cloudlog.warning(f"iso-tp query response pending: {tx_addr}")
           else:
+            response_timeouts[tx_addr] = 0
             request_done[tx_addr] = True
             cloudlog.warning(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 

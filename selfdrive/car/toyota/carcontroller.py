@@ -109,28 +109,29 @@ class CarController:
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, self.frame // 2))
       self.gas = interceptor_gas_cmd
 
-    # ui mesg is at 1Hz but we send asap if:
-    # - there is something to display
-    # - there is something to stop displaying
-    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+    if self.CP.carFingerprint != CAR.PRIUS_V:
+      # ui mesg is at 1Hz but we send asap if:
+      # - there is something to display
+      # - there is something to stop displaying
+      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+      steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
-    send_ui = False
-    if ((fcw_alert or steer_alert) and not self.alert_active) or \
-       (not (fcw_alert or steer_alert) and self.alert_active):
-      send_ui = True
-      self.alert_active = not self.alert_active
-    elif pcm_cancel_cmd:
-      # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
-      send_ui = True
+      send_ui = False
+      if ((fcw_alert or steer_alert) and not self.alert_active) or \
+         (not (fcw_alert or steer_alert) and self.alert_active):
+        send_ui = True
+        self.alert_active = not self.alert_active
+      elif pcm_cancel_cmd:
+        # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
+        send_ui = True
 
-    if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
-      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
-                                         hud_control.rightLaneVisible, hud_control.leftLaneDepart,
-                                         hud_control.rightLaneDepart, CC.enabled))
+      if self.frame % 100 == 0 or send_ui:
+        can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
+                                           hud_control.rightLaneVisible, hud_control.leftLaneDepart,
+                                           hud_control.rightLaneDepart, CC.enabled))
 
-    if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
-      can_sends.append(create_fcw_command(self.packer, fcw_alert))
+      if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
+        can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:

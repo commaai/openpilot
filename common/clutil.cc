@@ -78,7 +78,8 @@ cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const ch
 }
 
 cl_program cl_program_from_source(cl_context ctx, cl_device_id device_id, const std::string& src, const char* args) {
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, (const char*[]){src.c_str()}, NULL, &err));
+  const char *csrc = src.c_str();
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithSource(ctx, 1, &csrc, NULL, &err));
   if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
     cl_print_build_errors(prg, device_id);
     assert(0);
@@ -87,7 +88,7 @@ cl_program cl_program_from_source(cl_context ctx, cl_device_id device_id, const 
 }
 
 cl_program cl_program_from_binary(cl_context ctx, cl_device_id device_id, const uint8_t* binary, size_t length, const char* args) {
-  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &length, (const uint8_t*[]){binary}, NULL, &err));
+  cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &length, &binary, NULL, &err));
   if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
     cl_print_build_errors(prg, device_id);
     assert(0);

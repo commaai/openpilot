@@ -31,8 +31,8 @@ def pm_patch(name, value, constant=False):
 class TestPowerMonitoring(unittest.TestCase):
   def setUp(self):
     # Clear stored capacity before each test
-    params.delete("CarBatteryCapacity")
-    params.delete("DisablePowerDown")
+    params.remove("CarBatteryCapacity")
+    params.remove("DisablePowerDown")
 
   def mock_peripheralState(self, hw_type, car_voltage=12):
     ps = messaging.new_message('peripheralState').peripheralState
@@ -129,8 +129,8 @@ class TestPowerMonitoring(unittest.TestCase):
       while ssb <= start_time + MOCKED_MAX_OFFROAD_TIME:
         pm.calculate(peripheralState, ignition)
         if (ssb - start_time) % 1000 == 0 and ssb < start_time + MOCKED_MAX_OFFROAD_TIME:
-          self.assertFalse(pm.should_disable_charging(ignition, True, start_time))
-      self.assertTrue(pm.should_disable_charging(ignition, True, start_time))
+          self.assertFalse(pm.should_shutdown(ignition, True, start_time, False))
+      self.assertTrue(pm.should_shutdown(ignition, True, start_time, False))
 
   # Test to check policy of stopping charging when the car voltage is too low
   @parameterized.expand(ALL_PANDA_TYPES)
@@ -145,8 +145,8 @@ class TestPowerMonitoring(unittest.TestCase):
       for i in range(TEST_TIME):
         pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertEqual(pm.should_disable_charging(ignition, True, ssb), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
-      self.assertTrue(pm.should_disable_charging(ignition, True, ssb))
+          self.assertEqual(pm.should_shutdown(ignition, True, ssb, True), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
+      self.assertTrue(pm.should_shutdown(ignition, True, ssb, True))
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
@@ -161,8 +161,8 @@ class TestPowerMonitoring(unittest.TestCase):
       for i in range(TEST_TIME):
         pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertFalse(pm.should_disable_charging(ignition, True, ssb))
-      self.assertFalse(pm.should_disable_charging(ignition, True, ssb))
+          self.assertFalse(pm.should_shutdown(ignition, True, ssb, False))
+      self.assertFalse(pm.should_shutdown(ignition, True, ssb, False))
 
   # Test to check policy of not stopping charging when ignition
   def test_ignition(self):
@@ -176,8 +176,8 @@ class TestPowerMonitoring(unittest.TestCase):
       for i in range(TEST_TIME):
         pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertFalse(pm.should_disable_charging(ignition, True, ssb))
-      self.assertFalse(pm.should_disable_charging(ignition, True, ssb))
+          self.assertFalse(pm.should_shutdown(ignition, True, ssb, False))
+      self.assertFalse(pm.should_shutdown(ignition, True, ssb, False))
 
   # Test to check policy of not stopping charging when harness is not connected
   def test_harness_connection(self):
@@ -192,8 +192,8 @@ class TestPowerMonitoring(unittest.TestCase):
       for i in range(TEST_TIME):
         pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertFalse(pm.should_disable_charging(ignition, False,ssb))
-      self.assertFalse(pm.should_disable_charging(ignition, False, ssb))
+          self.assertFalse(pm.should_shutdown(ignition, False, ssb, False))
+      self.assertFalse(pm.should_shutdown(ignition, False, ssb, False))
 
 if __name__ == "__main__":
   unittest.main()
