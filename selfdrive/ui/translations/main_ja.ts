@@ -1195,12 +1195,12 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 実験的な機能：エンドツーエンド ACC 🌮</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>α版：ドライビング AI がアクセルとブレーキを直接的な制御します。openpilot は、人間がアクセルとブレーキの制御する方法を真似します。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
