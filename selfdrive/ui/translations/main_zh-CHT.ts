@@ -1195,7 +1195,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation🌮 端對端神經網路縱向控制（實驗性功能） 🌮></translation>
+        <translation>🌮 端對端神經網路縱向控制（實驗性功能） 🌮</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
