@@ -10,9 +10,8 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 
-// We assume that all pins have already been exported on boot,
-// and that we have permission to write to them.
-
+// Assumed that all interrupt pins are unexported and rights are given to
+// read from gpiochip0.
 const std::string gpiochip_path = "/dev/gpiochip0";
 
 int gpio_init(int pin_nr, bool output) {

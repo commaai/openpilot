@@ -67,7 +67,7 @@ int LSM6DS3_Gyro::disable_interrupt() {
   // disable data ready interrupt for accel on INT1
   uint8_t value = 0;
   ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
-  value &= ~((uint8_t)LSM6DS3_GYRO_INT1_DRDY_G);
+  value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
   ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
 
   return ret;

@@ -64,7 +64,7 @@ int LSM6DS3_Accel::disable_interrupt() {
   // disable data ready interrupt for accel on INT1
   uint8_t value = 0;
   ret = read_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, &value, 1);
-  value &= ~((uint8_t)(LSM6DS3_ACCEL_INT1_DRDY_XL));
+  value &= ~(LSM6DS3_ACCEL_INT1_DRDY_XL);
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value);
 
   return ret;
