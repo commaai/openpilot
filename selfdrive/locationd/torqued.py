@@ -53,7 +53,7 @@ class PointBuckets:
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
       if (x >= bound_min) and (x < bound_max):
-        self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
+        self.buckets[(bound_min, bound_max)].append([x, y])
         break
 
   def get_points(self, num_points=None):
@@ -63,7 +63,7 @@ class PointBuckets:
     return np.array(points)[np.random.choice(len(points), min(len(points), num_points), replace=False)]
 
   def load_points(self, points):
-    for x, _, y in points:
+    for x, y in points:
       self.add_point(x, y)
 
 
@@ -112,6 +112,7 @@ class TorqueEstimator:
     points = self.filtered_points.get_points(FIT_POINTS_TOTAL)
     # total least square solution as both x and y are noisy observations
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
+    points = np.insert(points, 1, 1.0, axis=1)
     _, _, v = np.linalg.svd(points, full_matrices=False)
     slope, offset = -v.T[0:2, 2] / v.T[2, 2]
     _, spread = np.einsum("ik,kj -> ji", np.column_stack((points[:, 0], points[:, 2] - offset)), slope2rot(slope))
