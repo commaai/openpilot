@@ -20,7 +20,7 @@ FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
 COMMA BODY: [.nan, 1000, .nan]
 
 # Oscillating steering wheel
-TOYOTA COROLLA 2017: [.nan, .nan, 0.06144842935]
+TOYOTA COROLLA 2017: [3.1, 1.84, 0.06]
 
 # Totally new cars
 KIA EV6 2022: [3.5, 2.5, 0.0]
