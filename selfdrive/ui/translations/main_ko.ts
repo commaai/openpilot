@@ -210,7 +210,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="193"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot은 좌우측은 4° 이내, 위쪽 5° 아래쪽은 8° 이내로 장치를 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋은 거의 필요하지 않습니다.</translation>
+        <translation>openpilot은 좌우측은 4° 이내, 위쪽은 5° 아래쪽은 8° 이내로 장치를 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋은 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="204"/>
@@ -842,7 +842,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>입력된 URL이 유효하고 장치의 인터넷 연결이 잘 되어 있는지 확인합니다.</translation>
+        <translation>입력된 URL이 유효하고 장치의 네트워크 연결이 잘 되어 있는지 확인하세요.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
@@ -1160,7 +1160,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="35"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>어댑티브 크루즈 컨트롤 및 차선 유지 운전자 보조를 위해 openpilot 시스템을 사용하십시오. 이 기능을 사용하려면 항상 주의를 기울여야 합니다. 이 설정을 변경하면 차량 전원이 꺼질 때 적용됩니다.</translation>
+        <translation>어댑티브 크루즈 컨트롤 및 차선 유지 운전자 보조를 위해 openpilot 시스템을 사용하십시오. 이 기능을 사용하려면 항상 주의를 기울여야 합니다. 설정변경은 장치 재부팅후 적용됩니다.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="40"/>
@@ -1200,7 +1200,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>주행모델이 가감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
+        <translation>주행모델이 가속과 감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
@@ -1240,7 +1240,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="91"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot은 차량 레이더를 비활성화하고 가감속 제어를합니다. 경고: 차량의 AEB가 비활성화됩니다!</translation>
+        <translation>openpilot은 차량의 레이더를 비활성화하고 가속과 감속을 제어합니다. 경고: 차량의 AEB가 비활성화됩니다!</translation>
     </message>
 </context>
 <context>
