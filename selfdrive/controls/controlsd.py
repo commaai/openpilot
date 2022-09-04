@@ -388,7 +388,7 @@ class Controls:
     for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
       try:
         msg = m.androidLog.message
-        if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
+        if any(err in msg for err in {"ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED"}):
           csid = msg.split("CSID:")[-1].split(" ")[0]
           evt = CSID_MAP.get(csid, None)
           if evt is not None:

@@ -577,7 +577,7 @@ class GOPFrameReader(BaseFrameReader):
     if num + count > self.frame_count:
       raise ValueError(f"{num + count} > {self.frame_count}")
 
-    if pix_fmt not in ("nv12", "yuv420p", "rgb24", "yuv444p"):
+    if pix_fmt not in {"nv12", "yuv420p", "rgb24", "yuv444p"}:
       raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     ret = [self._get_one(num + i, pix_fmt) for i in range(count)]
