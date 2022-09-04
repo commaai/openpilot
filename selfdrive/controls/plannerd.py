@@ -16,13 +16,8 @@ def plannerd_thread(sm=None, pm=None):
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
-  use_lanelines = False
-  wide_camera = params.get_bool('WideCameraOnly')
-
-  cloudlog.event("e2e mode", on=use_lanelines)
-
   longitudinal_planner = Planner(CP)
-  lateral_planner = LateralPlanner(CP, use_lanelines=use_lanelines, wide_camera=wide_camera)
+  lateral_planner = LateralPlanner(CP)
 
   if sm is None:
     sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],
