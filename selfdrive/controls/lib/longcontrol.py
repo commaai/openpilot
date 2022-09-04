@@ -25,6 +25,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                         accelerating and
                         not cruise_standstill and
                         not brake_pressed)
+  started_condition = v_ego > CP.vEgoStarting
 
   if not active:
     long_control_state = LongCtrlState.off
@@ -39,7 +40,17 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
 
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition:
+        long_control_state = LongCtrlState.starting
+    
+    elif long_control_state == LongCtrlState.starting:
+      if stopping_condition:
+        long_control_state = LongCtrlState.stopping
+      elif started_condition:
         long_control_state = LongCtrlState.pid
+
+
+
+
 
   return long_control_state
 
@@ -96,7 +107,7 @@ class LongControl:
       output_accel = 0.
 
     # tracking objects and driving
-    elif self.long_control_state == LongCtrlState.pid:
+    elif self.long_control_state == LongCtrlState.pid or self.long_control_state == LongCtrlState.starting:
       self.v_pid = v_target_now
       error = self.v_pid - CS.vEgo
       output_accel = self.pid.update(error, speed=CS.vEgo, feedforward=a_target)
