@@ -30,12 +30,10 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
-    stop_and_go = False
     steering_angle_deadzone_deg = 0.0
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
 
     if candidate == CAR.PRIUS:
-      stop_and_go = True
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
@@ -47,7 +45,6 @@ class CarInterface(CarInterfaceBase):
           CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
 
     elif candidate == CAR.PRIUS_V:
-      stop_and_go = True
       ret.wheelbase = 2.78
       ret.steerRatio = 17.4
       tire_stiffness_factor = 0.5533
@@ -55,7 +52,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
 
     elif candidate in (CAR.RAV4, CAR.RAV4H):
-      stop_and_go = True if (candidate in CAR.RAV4H) else False
       ret.wheelbase = 2.65
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
@@ -68,7 +64,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RXH, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       ret.wheelSpeedFactor = 1.035
@@ -77,7 +72,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate in (CAR.CHR, CAR.CHRH):
-      stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
@@ -85,7 +79,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_F)
 
     elif candidate in (CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
@@ -94,7 +87,6 @@ class CarInterface(CarInterfaceBase):
         set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 2.8194  # average of 109.8 and 112.2 in
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
@@ -104,7 +96,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019, CAR.AVALON_TSS2, CAR.AVALONH_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
-      stop_and_go = candidate != CAR.AVALON
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
@@ -112,7 +103,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_H)
 
     elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
-      stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
@@ -127,14 +117,12 @@ class CarInterface(CarInterfaceBase):
           break
 
     elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
 
     elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
-      stop_and_go = True
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -142,7 +130,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
 
     elif candidate == CAR.SIENNA:
-      stop_and_go = True
       ret.wheelbase = 3.03
       ret.steerRatio = 15.5
       tire_stiffness_factor = 0.444
@@ -157,7 +144,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate == CAR.LEXUS_CTH:
-      stop_and_go = True
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
       tire_stiffness_factor = 0.517
@@ -165,7 +151,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_M)
 
     elif candidate in (CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -173,7 +158,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate == CAR.PRIUS_TSS2:
-      stop_and_go = True
       ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRatio from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
@@ -181,7 +165,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_N)
 
     elif candidate == CAR.MIRAI:
-      stop_and_go = True
       ret.wheelbase = 2.91
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.8
@@ -189,7 +172,6 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_C)
 
     elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       tire_stiffness_factor = 0.444
@@ -228,7 +210,8 @@ class CarInterface(CarInterfaceBase):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else MIN_ACC_SPEED
+    stop_and_go = candidate not in ({CAR.RAV4, CAR.COROLLA, CAR.AVALON, CAR.LEXUS_IS, CAR.LEXUS_RC}) or ret.enableGasInterceptor
+    ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
 
     if ret.enableGasInterceptor:
       set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
