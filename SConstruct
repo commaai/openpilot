@@ -10,10 +10,6 @@ AGNOS = TICI
 
 Decider('MD5-timestamp')
 
-AddOption('--test',
-          action='store_true',
-          help='build test files')
-
 AddOption('--extras',
           action='store_true',
           help='build misc extras, like setup and installer files')
@@ -53,6 +49,17 @@ AddOption('--no-thneed',
           dest='no_thneed',
           help='avoid using thneed')
 
+AddOption('--pc-thneed',
+          action='store_true',
+          dest='pc_thneed',
+          help='use thneed on pc')
+
+AddOption('--no-test',
+          action='store_false',
+          dest='test',
+          default=os.path.islink(Dir('#laika/').abspath),
+          help='skip building test files')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -60,7 +67,6 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
-USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -253,7 +259,7 @@ def abspath(x):
     # rpath works elsewhere
     return x[0].path.rsplit("/", 1)[1][:-3]
 
-# Cython build enviroment
+# Cython build environment
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
@@ -329,7 +335,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
 
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')

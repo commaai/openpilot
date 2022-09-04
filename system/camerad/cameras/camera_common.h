@@ -40,6 +40,7 @@ const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
 const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
+const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
 
 typedef struct CameraInfo {
   uint32_t frame_width, frame_height;
@@ -94,7 +95,6 @@ private:
 public:
   cl_command_queue q;
   FrameMetadata cur_frame_data;
-  VisionBuf *cur_rgb_buf;
   VisionBuf *cur_yuv_buf;
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;

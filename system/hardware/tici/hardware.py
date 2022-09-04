@@ -287,7 +287,7 @@ class Tici(HardwareBase):
     ]
 
     upload = [
-      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
       (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
 
       # Create class 1:20 with specified rate limit
@@ -372,7 +372,6 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
     os.system("sudo poweroff")
 
   def get_thermal_config(self):

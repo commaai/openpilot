@@ -1,11 +1,10 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_enable_events, scale_rot_inertia, scale_tire_stiffness, \
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, \
                           gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
-
 
 EventName = car.CarEvent.EventName
 
@@ -198,6 +197,7 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unsupported car {candidate}")
 
+    ret.autoResumeSng = ret.minEnableSpeed == -1
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
@@ -225,7 +225,6 @@ class CarInterface(CarInterfaceBase):
       if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.speedTooLow)
 
-    events.events.extend(create_button_enable_events(ret.buttonEvents, pcm_cruise=self.CP.pcmCruise))
     ret.events = events.to_msg()
 
     return ret
