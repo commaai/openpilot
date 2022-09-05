@@ -2,13 +2,11 @@
 
 import time
 import unittest
-import math
+import numpy
 
 import cereal.messaging as messaging
 from system.hardware import TICI
 from selfdrive.test.helpers import with_processes
-
-TEST_SENORS_PRESENT_TIMESPAN = 10
 
 SENSOR_CONFIGURATIONS = (
   {
@@ -60,17 +58,24 @@ def read_sensor_events(duration_sec):
   return events
 
 
+def get_filter_bounds(values, percent):
+  values.sort()
+  median = int(len(values)/2)
+  lb = median - int(len(values)*percent/2)
+  ub = median + int(len(values)*percent/2)
+  return (lb, ub)
+
+
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     if not TICI:
       raise unittest.SkipTest
 
-
   @with_processes(['sensord'])
   def test_sensors_present(self):
     # verify correct sensors configuration
-    events = read_sensor_events(TEST_SENORS_PRESENT_TIMESPAN)
+    events = read_sensor_events(10)
 
     seen = set()
     for event in events:
@@ -81,7 +86,6 @@ class TestSensord(unittest.TestCase):
         seen.add((str(measurement.source), measurement.which()))
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
-
 
   @with_processes(['sensord'])
   def test_lsm6ds3_100Hz(self):
@@ -102,53 +106,40 @@ class TestSensord(unittest.TestCase):
         if str(measurement.source).startswith("lsm6ds3"):
           data_points.add(measurement.timestamp)
 
-    # 3s/10ms = 300 samples, check for that (may vary slightly)
-    print("lsm6ds3 measurements: {}".format(len(data_points)))
-    self.assertTrue(len(data_points) > 290 and len(data_points) < 310)
-
     data_list = list(data_points)
     data_list.sort()
 
     # Calc differences between measurements
     tdiffs = list()
-    lt = data_list[-1]
-    for t in data_list[:-1][::-1]:
-      tdiffs.append(lt - t)
+    lt = data_list[0]
+    for t in data_list[1:]:
+      tdiffs.append(t - lt)
       lt = t
 
-    print("min/max Diff: {}/{}s".format(min(tdiffs[1:-1]), max(tdiffs[1:-1])))
+    # filter 10% of the data to remove outliers
+    lb, ub = get_filter_bounds(tdiffs, 0.9)
+    diffs = tdiffs[lb:ub]
+    avg_diff = sum(diffs)/len(diffs)
+    assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold"
 
-    # check time between interrupts, those should be consistent in the ~10ms rate
-    # a few above are ok
-    above_th = list(filter(lambda d: d >= 10*10**6, tdiffs))
-    print(f"Above Threshold: {above_th}")
-    self.assertTrue(len(above_th) < 10)
+    # standard deviation
+    stddev = numpy.std(diffs)
+    assert stddev < 50000, f"Standard-dev to big {stddev}"
 
-    # get standard diff to have more overview
-    dmean = sum(tdiffs)/len(tdiffs)
-    ddev = 0
-    for d in tdiffs:
-        ddev += (dmean - d)**2
-    ddev /= len(tdiffs)
-    ddev = round(math.sqrt(ddev), 4)
-    print(f"Standard-dev: {ddev}")
-    self.assertTrue(ddev < 50000)
-
-    # get out Frequency
+    # calculate average frequency
     avg_freq = 0
-    for td in tdiffs:
+    for td in diffs:
       avg_freq += 1/td * 10**9
-    avg_freq /= len(tdiffs)
-    print("avg Freq: {}".format(round(avg_freq, 4)))
+    avg_freq /= len(diffs)
 
     # lsm6ds3 sensor is set to trigger at 104Hz rate so it cant get higher,
     # it also shouldnt be lower than 100 Hz, delay comes from the reading
     self.assertTrue(avg_freq > 100 and avg_freq < 104)
-
+    assert avg_freq > 100 and avg_freq < 104, f"Avg_freq out of bounds {avg_freq}"
 
   @with_processes(['sensord'])
   def test_events_check(self):
-    # verify if all sensors produce enough events
+    # verify if all sensors produce events
     events = read_sensor_events(3)
 
     sensor_events = dict()
@@ -163,13 +154,8 @@ class TestSensord(unittest.TestCase):
         else:
           sensor_events[measurement.type] = 1
 
-    print(sensor_events)
-
-    # it is aimed for a 100Hz rate so no measurements should be far off
-    # the sensors in the non interrupt loop have a slightly lower rate (~96Hz)
     for s in sensor_events:
-      self.assertFalse(sensor_events[s] < 282) # 94Hz
-
+      assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
 
   @with_processes(['sensord'])
   def test_logmonottime_timestamp(self):
@@ -188,12 +174,13 @@ class TestSensord(unittest.TestCase):
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
 
-    avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
+    # filter 10% of the data to remove outliers
+    lb, ub = get_filter_bounds(tdiffs, 0.9)
+    diffs = tdiffs[lb:ub]
+    avg_diff = round(sum(diffs)/len(diffs), 4)
 
-    print(f"Avg Timestamp to LogMonoTime delay: {avg_diff}")
-    print(f"Max Timestamp to LogMonoTime delay: {max(tdiffs)}")
-    self.assertTrue(max(tdiffs) < 10*10**6 and avg_diff < 5*10**6) # 10ms, 5ms
-    # NOTE: gotta be careful with non relieable tests
+    assert max(diffs) < 10*10**6, f"packet took { max(diffs):.1f}ns for publishing"
+    assert avg_diff < 4*10**6, f"Avg packet diff: {avg_diff:.1f}ns"
 
 
 if __name__ == "__main__":
