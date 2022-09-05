@@ -145,9 +145,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
     QString currentLang = QString::fromStdString(Params().get("LanguageSetting"));
-    if (currentLang.isEmpty()) {
-      currentLang = "main_en";
-    }
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
     if (!selection.isEmpty()) {
       // put language setting, exit Qt UI, and trigger fast restart
