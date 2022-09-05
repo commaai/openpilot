@@ -945,37 +945,37 @@ location set</source>
         <translation>車輛通訊</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="37"/>
+        <location filename="../qt/sidebar.h" line="36"/>
         <source>--</source>
         <translation>--</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="38"/>
+        <location filename="../qt/sidebar.h" line="37"/>
         <source>Wi-Fi</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="39"/>
+        <location filename="../qt/sidebar.h" line="38"/>
         <source>ETH</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="40"/>
+        <location filename="../qt/sidebar.h" line="39"/>
         <source>2G</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="41"/>
+        <location filename="../qt/sidebar.h" line="40"/>
         <source>3G</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="42"/>
+        <location filename="../qt/sidebar.h" line="41"/>
         <source>LTE</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.h" line="43"/>
+        <location filename="../qt/sidebar.h" line="42"/>
         <source>5G</source>
         <translation></translation>
     </message>
