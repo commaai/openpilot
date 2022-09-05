@@ -40,6 +40,7 @@ def manager_init() -> None:
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "1"),
     ("HasAcceptedTerms", "0"),
+    ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
   ]
   if not PC:
