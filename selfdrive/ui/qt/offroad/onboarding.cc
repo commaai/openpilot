@@ -13,7 +13,7 @@
 
 const QRect dm_yes = QRect(650, 780, 460, 150);
 const QRect dm_no = QRect(LEFT_MARGIN, 780, 460, 150);
-
+const QRect restart_training = QRect(108, 804, 426, 164);
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
@@ -29,7 +29,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
       Params().putBool("RecordFront", dm_yes.contains(e->x(), e->y()));
     }
     currentIndex += 1;
-  } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
+  } else if (currentIndex == (boundingRect.size() - 1) && restart_training.contains(e->x(), e->y())) {
     currentIndex = 0;
   }
 
@@ -180,8 +180,8 @@ void TrainingGuide::step17(QPainter &p) {
 void TrainingGuide::step18(QPainter &p) {
   drawBody(p, tr("Congratulations!You have completed openpilot training."),
            tr("This guid can be replayed at any time from the device settings.To read more about openpilot,read the wiki and join the community at discord.comma.ai."));
-  drawButton(p, boundingRect[0], tr("Restart"), Qt::black, Qt::white);
-  drawButton(p, boundingRect[0], tr("Finish Traning"), Qt::white, Qt::black);
+  drawButton(p, restart_training, tr("Restart"), Qt::black, Qt::white);
+  drawButton(p, boundingRect[18], tr("Finish Traning"), Qt::white, Qt::black);
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {

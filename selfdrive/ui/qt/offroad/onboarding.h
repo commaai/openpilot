@@ -97,7 +97,6 @@ private:
     continueBtnWide,
     continueBtnWide,
     QRect(630, 804, 626, 164),
-    QRect(108, 804, 426, 164),
   };
 
   QString img_path;
