@@ -1197,22 +1197,22 @@ trabalho definido</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="58"/>
+        <location filename="../qt/offroad/settings.cc" line="64"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
         <translation>🌮 End-to-end longitudinal (experimental) 🌮</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="59"/>
+        <location filename="../qt/offroad/settings.cc" line="65"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
         <translation>Deixe o modelo de direção controlar o acelerador e o freio, o openpilot dirigirá da maneira como ele entende que um humano o faria. Super experimental.</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="64"/>
+        <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="65"/>
+        <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Quando ativado, pressionar o pedal do acelerador desacionará o openpilot.</translation>
     </message>
