@@ -155,7 +155,7 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="126"/>
         <source>Review Training Guide</source>
-        <translation>Revisar o Treinamento</translation>
+        <translation>Revisar Guia de Treinamento</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="126"/>
@@ -185,17 +185,17 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="144"/>
         <source>Change Language</source>
-        <translation>Mudar Linguagem</translation>
+        <translation>Alterar Idioma</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="144"/>
         <source>CHANGE</source>
-        <translation>MUDAR</translation>
+        <translation>ALTERAR</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="148"/>
         <source>Select a language</source>
-        <translation>Selecione uma linguagem</translation>
+        <translation>Selecione o Idioma</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="168"/>
@@ -989,12 +989,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="242"/>
         <source>Git Branch</source>
-        <translation>Ramo Git</translation>
+        <translation>Git Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="243"/>
         <source>Git Commit</source>
-        <translation>Commit Git</translation>
+        <translation>Último commit</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="244"/>
@@ -1029,7 +1029,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
         <source>Switch Branch</source>
-        <translation>Trocar Branch</translation>
+        <translation>Alterar Branch</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="259"/>
