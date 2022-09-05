@@ -50,18 +50,12 @@ git add -f .
 git commit -a -m "openpilot v$VERSION release"
 git branch --set-upstream-to=origin/$RELEASE_BRANCH
 
-# Build panda firmware
-pushd panda/
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
-mv board/obj/panda.bin.signed /tmp/panda.bin.signed
-mv board/obj/panda_h7.bin.signed /tmp/panda_h7.bin.signed
-popd
-
 # Build
 export PYTHONPATH="$BUILD_DIR"
-scons -j$(nproc)
+export CERT=/data/pandaextra/certs/release
+RELEASE=1 scons -j$(nproc)
 
-# Ensure no submodules in release
+# Ensure no submodules in release branches
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
   echo "submodules found:"
   git submodule--helper list
@@ -76,14 +70,9 @@ find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
-rm -rf panda/board panda/certs panda/crypto
+rm -rf panda/board panda/certs panda/crypto panda/board/bootstub*
 rm -rf .sconsign.dblite Jenkinsfile release/
 rm selfdrive/modeld/models/supercombo.onnx
-
-# Move back signed panda fw
-mkdir -p panda/board/obj
-mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
-mv /tmp/panda_h7.bin.signed panda/board/obj/panda_h7.bin.signed
 
 # Restore third_party
 git checkout third_party/
@@ -95,16 +84,7 @@ touch prebuilt
 git add -f .
 git commit --amend -m "openpilot v$VERSION"
 
-# Run tests
-TEST_FILES="tools/"
-cd $SOURCE_DIR
-cp -pR -n --parents $TEST_FILES $BUILD_DIR/
-cd $BUILD_DIR
-RELEASE=1 selfdrive/test/test_onroad.py
-#selfdrive/manager/test/test_manager.py
-selfdrive/car/tests/test_car_interfaces.py
-rm -rf $TEST_FILES
-
+# Push
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
   git push -f origin $RELEASE_BRANCH

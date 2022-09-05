@@ -60,7 +60,11 @@ pipeline {
       }
       steps {
         phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+          //["build release staging branches", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+          ["build release staging branches", "$SOURCE_DIR/release/build_release.sh"],
+          ["test manager", "python selfdrive/manager/test/test_manager.py"],
+          ["test onroad", "cd selfdrive/test/ && RELEASE=1 ./test_onroad.py"],
+          ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
         ])
       }
     }
