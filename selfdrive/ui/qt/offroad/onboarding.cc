@@ -11,9 +11,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-const QRect dm_yes = QRect(650, 780, 460, 150);
-const QRect dm_no = QRect(LEFT_MARGIN, 780, 460, 150);
-const QRect restart_training = QRect(108, 804, 426, 164);
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
@@ -33,7 +30,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
     currentIndex = 0;
   }
 
-  if (currentIndex >= (boundingRect.size() - 1)) {
+  if (currentIndex > (boundingRect.size() - 1)) {
     emit completedTraining();
   } else {
     image.load(img_path + "step" + QString::number(currentIndex) + ".png");
@@ -181,7 +178,7 @@ void TrainingGuide::step18(QPainter &p) {
   drawBody(p, tr("Congratulations!You have completed openpilot training."),
            tr("This guid can be replayed at any time from the device settings.To read more about openpilot,read the wiki and join the community at discord.comma.ai."));
   drawButton(p, restart_training, tr("Restart"), Qt::black, Qt::white);
-  drawButton(p, boundingRect[18], tr("Finish Traning"), Qt::white, Qt::black);
+  drawButton(p, finish_training, tr("Finish Traning"), Qt::white, Qt::black);
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {

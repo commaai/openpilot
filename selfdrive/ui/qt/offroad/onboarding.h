@@ -10,11 +10,6 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
-const qreal TOP_MARGIN = 100;
-const qreal LEFT_MARGIN = 100;
-const qreal BOTTOM_MARGIN = 100;
-const qreal RIGHT_MARGIN = 800;
-
 class TrainingGuide : public QFrame {
   Q_OBJECT
 
@@ -22,6 +17,11 @@ public:
   explicit TrainingGuide(QWidget *parent = 0);
 
 private:
+  static constexpr qreal TOP_MARGIN = 100;
+  static constexpr qreal LEFT_MARGIN = 100;
+  static constexpr qreal BOTTOM_MARGIN = 100;
+  static constexpr qreal RIGHT_MARGIN = 800;
+
   void showEvent(QShowEvent *event) override;
   void drawButton(QPainter &p, const QRect &rect, const QString(&text), const QColor &bg, const QColor &f);
   void drawBody(QPainter &p, const QString &title, const QString &text, const QString &foot = {}, int right_margin = RIGHT_MARGIN, bool has_icon = true);
@@ -51,6 +51,11 @@ private:
   QImage image;
   int currentIndex = 0;
 
+  const QRect dm_yes = QRect(650, 780, 460, 150);
+  const QRect dm_no = QRect(LEFT_MARGIN, 780, 460, 150);
+  const QRect restart_training = QRect(108, 804, 426, 164);
+  const QRect finish_training = QRect(630, 804, 626, 164);
+
   // Bounding boxes for each training guide step
   const QRect continueBtnStandard = {1620, 0, 300, 1080};
   QVector<QRect> boundingRectStandard {
@@ -63,7 +68,7 @@ private:
     QRect(1613, 665, 178, 153),
     QRect(1220, 0, 420, 730),
     QRect(1335, 499, 440, 147),
-    QRect(112, 820, 996, 148),
+    dm_no,
     QRect(1412, 199, 316, 333),
     continueBtnStandard,
     QRect(1237, 63, 683, 1017),
@@ -72,12 +77,11 @@ private:
     QRect(1253, 519, 383, 228),
     continueBtnStandard,
     continueBtnStandard,
-    QRect(630, 804, 626, 164),
-    QRect(108, 804, 426, 164),
+    finish_training,
   };
 
   const QRect continueBtnWide = {1840, 0, 320, 1080};
-  QVector<QRect> boundingRectWide {
+  const QVector<QRect> boundingRectWide {
     QRect(112, 804, 618, 164),
     continueBtnWide,
     continueBtnWide,
@@ -87,7 +91,7 @@ private:
     QRect(1814, 621, 211, 170),
     QRect(1350, 0, 497, 755),
     QRect(1553, 516, 406, 112),
-    QRect(112, 804, 1126, 164),
+    dm_no,
     QRect(1598, 199, 316, 333),
     continueBtnWide,
     QRect(1364, 90, 796, 990),
@@ -96,7 +100,7 @@ private:
     QRect(1379, 511, 391, 243),
     continueBtnWide,
     continueBtnWide,
-    QRect(630, 804, 626, 164),
+    finish_training,
   };
 
   QString img_path;
