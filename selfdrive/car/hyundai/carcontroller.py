@@ -133,6 +133,13 @@ class CarController:
         accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
         stopping = actuators.longControlState == LongCtrlState.stopping
+        starting_from_stop = actuators.longControlState == LongCtrlState.pid and accel > 0.01 and CS.brake_control_active and CS.out.standstill
+        if starting_from_stop:
+          # command big accel until brakes release to start quickly from a stop
+          # ESC seems to integrate accel command based on upper jerk limit
+          # and the longer you sit stopped the more accel you have to request to get going
+          accel = 2.0
+          jerk = -12.7
         set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
                                                         hud_control.leadVisible, set_speed_in_units, stopping, CS.out.gasPressed))
