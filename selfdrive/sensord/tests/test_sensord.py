@@ -105,6 +105,14 @@ def get_proc_interrupts(int_pin):
   return ""
 
 
+def get_filter_bounds(values, percent):
+  values.sort()
+  median = int(len(values)/2)
+  lb = median - int(len(values)*percent/2)
+  ub = median + int(len(values)*percent/2)
+  return (lb, ub)
+
+
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -281,7 +289,7 @@ class TestSensord(unittest.TestCase):
 
   @with_processes(['sensord'])
   def test_events_check(self):
-    # verify if all sensors produce enough events
+    # verify if all sensors produce events
     events = read_sensor_events(3)
 
     sensor_events = dict()
@@ -296,13 +304,8 @@ class TestSensord(unittest.TestCase):
         else:
           sensor_events[measurement.type] = 1
 
-    print(sensor_events)
-
-    # it is aimed for a 100Hz rate so no measurements should be far off
-    # the sensors in the non interrupt loop have a slightly lower rate (~96Hz)
     for s in sensor_events:
-      self.assertFalse(sensor_events[s] < 282) # 94Hz
-
+      assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
 
   @with_processes(['sensord'])
   def test_logmonottime_timestamp(self):
@@ -321,12 +324,13 @@ class TestSensord(unittest.TestCase):
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
 
-    avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
+    # filter 10% of the data to remove outliers
+    lb, ub = get_filter_bounds(tdiffs, 0.9)
+    diffs = tdiffs[lb:ub]
+    avg_diff = round(sum(diffs)/len(diffs), 4)
 
-    print(f"Avg Timestamp to LogMonoTime delay: {avg_diff}")
-    print(f"Max Timestamp to LogMonoTime delay: {max(tdiffs)}")
-    self.assertTrue(max(tdiffs) < 10*10**6 and avg_diff < 5*10**6) # 10ms, 5ms
-    # NOTE: gotta be careful with non relieable tests
+    assert max(diffs) < 10*10**6, f"packet took { max(diffs):.1f}ns for publishing"
+    assert avg_diff < 4*10**6, f"Avg packet diff: {avg_diff:.1f}ns"
 
 
 if __name__ == "__main__":
