@@ -21,12 +21,12 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   }
   click_timer.restart();
 
-  if (boundingRect[currentIndex].contains(e->x(), e->y())) {
+  if (boundingRect[currentIndex].contains(e->pos())) {
     if (currentIndex == 9) {
-      Params().putBool("RecordFront", dm_yes.contains(e->x(), e->y()));
+      Params().putBool("RecordFront", dm_yes.contains(e->pos()));
     }
     currentIndex += 1;
-  } else if (currentIndex == (boundingRect.size() - 1) && restart_training.contains(e->x(), e->y())) {
+  } else if (currentIndex == (boundingRect.size() - 1) && restart_training.contains(e->pos())) {
     currentIndex = 0;
   }
 
@@ -145,7 +145,7 @@ void TrainingGuide::step16(QPainter &p) {
 
 void TrainingGuide::step17(QPainter &p) {
   drawBody(p, tr("openpilot cannot:"),
-           tr("✔️ Stay engaged while the driver is distracted.\n✔️ See other cars during a lane change.\n✔️ Stop for red lights,stop signs or pedestrians.\n✔️ React to unsafe situations like close vehicle cut-ins or road hazards."));
+           tr("☓ Stay engaged while the driver is distracted.\n☓ See other cars during a lane change.\n☓ Stop for red lights,stop signs or pedestrians.\n☓ React to unsafe situations like close vehicle cut-ins or road hazards."));
 }
 
 void TrainingGuide::step18(QPainter &p) {
