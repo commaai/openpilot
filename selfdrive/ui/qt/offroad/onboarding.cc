@@ -47,32 +47,6 @@ void TrainingGuide::showEvent(QShowEvent *event) {
   click_timer.start();
 }
 
-void TrainingGuide::drawBody(QPainter &p, const QString &title, const QString &text, const QString &foot, int right_margin, bool has_icon) {
-  // draw title
-  configFont(p, "Inter", 80, "SemiBold");
-  const qreal icon_width = has_icon ? 200 : 0;
-  QRect rc = rect().adjusted(LEFT_MARGIN + icon_width, TOP_MARGIN, -right_margin, -BOTTOM_MARGIN);
-  p.drawText(rc, Qt::AlignLeft | Qt::AlignTop, title);
-  int body_y = rc.y() + getTextRect(p, Qt::AlignLeft | Qt::AlignTop, title).height();
-
-  // draw text
-  configFont(p, "Inter", 60, "Regular");
-  p.drawText(rect().adjusted(LEFT_MARGIN, body_y + 50, -right_margin, -BOTTOM_MARGIN), text);
-
-  // draw footer
-  configFont(p, "Inter", 55, "SemiBold");
-  p.drawText(rect().adjusted(LEFT_MARGIN, rect().height() - BOTTOM_MARGIN - 200, -right_margin, -BOTTOM_MARGIN), Qt::AlignBottom, foot);
-}
-
-void TrainingGuide::drawButton(QPainter &p, const QRect &rect, const QString &text, const QColor &bg, const QColor &f) {
-  p.setBrush(bg);
-  p.setPen(Qt::NoPen);
-  p.drawRoundedRect(rect, 16, 16);
-  p.setPen(f);
-  configFont(p, "Inter", 55, "SemiBold");
-  p.drawText(rect, Qt::AlignCenter, text);
-}
-
 void TrainingGuide::step0(QPainter &p) {
   drawBody(p, tr("Welcome to openpilot alpha"),
            tr("It is important to understand the functionality and limitations of the openpilot alpha software before testing"),
@@ -181,6 +155,32 @@ void TrainingGuide::step18(QPainter &p) {
   drawButton(p, finish_training, tr("Finish Traning"), Qt::white, Qt::black);
 }
 
+void TrainingGuide::drawBody(QPainter &p, const QString &title, const QString &text, const QString &foot, int right_margin, bool has_icon) {
+  // draw title
+  configFont(p, "Inter", 80, "SemiBold");
+  const qreal icon_width = has_icon ? 200 : 0;
+  QRect rc = rect().adjusted(LEFT_MARGIN + icon_width, TOP_MARGIN, -right_margin, -BOTTOM_MARGIN);
+  p.drawText(rc, Qt::AlignLeft | Qt::AlignTop, title);
+  int body_y = rc.y() + getTextRect(p, Qt::AlignLeft | Qt::AlignTop, title).height();
+
+  // draw text
+  configFont(p, "Inter", 60, "Regular");
+  p.drawText(rect().adjusted(LEFT_MARGIN, body_y + 50, -right_margin, -BOTTOM_MARGIN), text);
+
+  // draw footer
+  configFont(p, "Inter", 55, "SemiBold");
+  p.drawText(rect().adjusted(LEFT_MARGIN, rect().height() - BOTTOM_MARGIN - 200, -right_margin, -BOTTOM_MARGIN), Qt::AlignBottom, foot);
+}
+
+void TrainingGuide::drawButton(QPainter &p, const QRect &rect, const QString &text, const QColor &bg, const QColor &f) {
+  p.setBrush(bg);
+  p.setPen(Qt::NoPen);
+  p.drawRoundedRect(rect, 16, 16);
+  p.setPen(f);
+  configFont(p, "Inter", 55, "SemiBold");
+  p.drawText(rect, Qt::AlignCenter, text);
+}
+
 void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
@@ -213,9 +213,9 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   }
 
   // progress bar
-  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {
+  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 1)) {
     const int h = 20;
-    const int w = (currentIndex / (float)(boundingRect.size() - 2)) * width();
+    const int w = (currentIndex / (float)(boundingRect.size() - 1)) * width();
     painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
   }
 }
