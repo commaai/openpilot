@@ -132,8 +132,8 @@ class TestSensord(unittest.TestCase):
       avg_freq += 1/td * 10**9
     avg_freq /= len(diffs)
 
-    # lsm6ds3 sensor is set to trigger at 104Hz rate so it cant get higher,
-    # it also shouldnt be lower than 100 Hz, delay comes from the reading
+    # lsm6ds3 sensor is set to trigger at 104Hz rate so it can't get higher,
+    # it also shouldn't be lower than 100 Hz, delay comes from the reading
     self.assertTrue(avg_freq > 100 and avg_freq < 104)
     assert avg_freq > 100 and avg_freq < 104, f"Avg_freq out of bounds {avg_freq}"
 
