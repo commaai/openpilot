@@ -21,6 +21,7 @@ private:
   static constexpr qreal LEFT_MARGIN = 100;
   static constexpr qreal BOTTOM_MARGIN = 100;
   static constexpr qreal RIGHT_MARGIN = 800;
+  typedef void (TrainingGuide::*paintFunction)(QPainter &p);
 
   void showEvent(QShowEvent *event) override;
   void drawButton(QPainter &p, const QRect &rect, const QString(&text), const QColor &bg, const QColor &f);
@@ -56,55 +57,56 @@ private:
   const QRect restart_training = QRect(108, 804, 426, 164);
   const QRect finish_training = QRect(630, 804, 626, 164);
 
+  // auto d = TrainingGuide::step0;
   // Bounding boxes for each training guide step
   const QRect continueBtnStandard = {1620, 0, 300, 1080};
-  QVector<QRect> boundingRectStandard {
-    QRect(112, 804, 619, 150),
-    continueBtnStandard,
-    continueBtnStandard,
-    QRect(1476, 565, 253, 308),
-    QRect(1501, 529, 184, 108),
-    continueBtnStandard,
-    QRect(1613, 665, 178, 153),
-    QRect(1220, 0, 420, 730),
-    QRect(1335, 499, 440, 147),
-    dm_no.united(dm_yes),
-    QRect(1412, 199, 316, 333),
-    continueBtnStandard,
-    QRect(1237, 63, 683, 1017),
-    continueBtnStandard,
-    QRect(1455, 110, 313, 860),
-    QRect(1253, 519, 383, 228),
-    continueBtnStandard,
-    continueBtnStandard,
-    finish_training,
+  QVector<QPair<paintFunction, QRect>> standardPages {
+    {&TrainingGuide::step0, QRect(112, 804, 619, 150)},
+    {&TrainingGuide::step1, continueBtnStandard},
+    {&TrainingGuide::step2, continueBtnStandard},
+    {&TrainingGuide::step3, QRect(1476, 565, 253, 308)},
+    {&TrainingGuide::step4, QRect(1501, 529, 184, 108)},
+    {&TrainingGuide::step5, continueBtnStandard},
+    {&TrainingGuide::step6, QRect(1613, 665, 178, 153)},
+    {&TrainingGuide::step7, QRect(1220, 0, 420, 730)},
+    {&TrainingGuide::step8, QRect(1335, 499, 440, 147)},
+    {&TrainingGuide::step9, dm_no.united(dm_yes)},
+    {&TrainingGuide::step10, QRect(1412, 199, 316, 333)},
+    {&TrainingGuide::step11, continueBtnStandard},
+    {&TrainingGuide::step12, QRect(1237, 63, 683, 1017)},
+    {&TrainingGuide::step13, continueBtnStandard},
+    {&TrainingGuide::step14, QRect(1455, 110, 313, 860)},
+    {&TrainingGuide::step15, QRect(1253, 519, 383, 228)},
+    {&TrainingGuide::step16, continueBtnStandard},
+    {&TrainingGuide::step17, continueBtnStandard},
+    {&TrainingGuide::step18, finish_training},
   };
 
   const QRect continueBtnWide = {1840, 0, 320, 1080};
-  const QVector<QRect> boundingRectWide {
-    QRect(112, 804, 618, 164),
-    continueBtnWide,
-    continueBtnWide,
-    QRect(1641, 558, 210, 313),
-    QRect(1662, 528, 184, 108),
-    continueBtnWide,
-    QRect(1814, 621, 211, 170),
-    QRect(1350, 0, 497, 755),
-    QRect(1553, 516, 406, 112),
-    dm_no.united(dm_yes),
-    QRect(1598, 199, 316, 333),
-    continueBtnWide,
-    QRect(1364, 90, 796, 990),
-    continueBtnWide,
-    QRect(1593, 114, 318, 853),
-    QRect(1379, 511, 391, 243),
-    continueBtnWide,
-    continueBtnWide,
-    finish_training,
+  const QVector<QPair<paintFunction, QRect>> widePages {
+    {&TrainingGuide::step0, QRect(112, 804, 618, 164)},
+    {&TrainingGuide::step1, continueBtnWide},
+    {&TrainingGuide::step2, continueBtnWide},
+    {&TrainingGuide::step3, QRect(1641, 558, 210, 313)},
+    {&TrainingGuide::step4, QRect(1662, 528, 184, 108)},
+    {&TrainingGuide::step5, continueBtnWide},
+    {&TrainingGuide::step6, QRect(1814, 621, 211, 170)},
+    {&TrainingGuide::step7, QRect(1350, 0, 497, 755)},
+    {&TrainingGuide::step8, QRect(1553, 516, 406, 112)},
+    {&TrainingGuide::step9, dm_no.united(dm_yes)},
+    {&TrainingGuide::step10, QRect(1598, 199, 316, 333)},
+    {&TrainingGuide::step11, continueBtnWide},
+    {&TrainingGuide::step12, QRect(1364, 90, 796, 990)},
+    {&TrainingGuide::step13, continueBtnWide},
+    {&TrainingGuide::step14, QRect(1593, 114, 318, 853)},
+    {&TrainingGuide::step15, QRect(1379, 511, 391, 243)},
+    {&TrainingGuide::step16, continueBtnWide},
+    {&TrainingGuide::step17, continueBtnWide},
+    {&TrainingGuide::step18, finish_training},
   };
 
   QString img_path;
-  QVector<QRect> boundingRect;
+  QVector<QPair<paintFunction, QRect>> pages;
   QElapsedTimer click_timer;
 
 signals:

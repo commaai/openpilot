@@ -21,16 +21,16 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   }
   click_timer.restart();
 
-  if (boundingRect[currentIndex].contains(e->pos())) {
+  if (pages[currentIndex].second.contains(e->pos())) {
     if (currentIndex == 9) {
       Params().putBool("RecordFront", dm_yes.contains(e->pos()));
     }
     currentIndex += 1;
-  } else if (currentIndex == (boundingRect.size() - 1) && restart_training.contains(e->pos())) {
+  } else if (currentIndex == (pages.size() - 1) && restart_training.contains(e->pos())) {
     currentIndex = 0;
   }
 
-  if (currentIndex > (boundingRect.size() - 1)) {
+  if (currentIndex > (pages.size() - 1)) {
     emit completedTraining();
   } else {
     image.load(img_path + "step" + QString::number(currentIndex) + ".png");
@@ -40,7 +40,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
 void TrainingGuide::showEvent(QShowEvent *event) {
   img_path = width() == WIDE_WIDTH ? "../assets/training_wide/" : "../assets/training/";
-  boundingRect = width() == WIDE_WIDTH ? boundingRectWide : boundingRectStandard;
+  pages = width() == WIDE_WIDTH ? widePages : standardPages;
 
   currentIndex = 0;
   image.load(img_path + "step0.png");
@@ -51,7 +51,7 @@ void TrainingGuide::step0(QPainter &p) {
   drawBody(p, tr("Welcome to openpilot alpha"),
            tr("It is important to understand the functionality and limitations of the openpilot alpha software before testing"),
            {}, 500, false);
-  drawButton(p, boundingRect[0], tr("Begin training"), Qt::white, Qt::black);
+  drawButton(p, pages[0].second, tr("Begin training"), Qt::white, Qt::black);
 }
 
 void TrainingGuide::step1(QPainter &p) {
@@ -157,9 +157,9 @@ void TrainingGuide::step18(QPainter &p) {
 
 void TrainingGuide::drawBody(QPainter &p, const QString &title, const QString &text, const QString &foot, int right_margin, bool has_icon) {
   // draw title
-  configFont(p, "Inter", 80, "SemiBold");
   const qreal icon_width = has_icon ? 200 : 0;
   QRect rc = rect().adjusted(LEFT_MARGIN + icon_width, TOP_MARGIN, -right_margin, -BOTTOM_MARGIN);
+  configFont(p, "Inter", 80, "SemiBold");
   p.drawText(rc, Qt::AlignLeft | Qt::AlignTop, title);
   int body_y = rc.y() + getTextRect(p, Qt::AlignLeft | Qt::AlignTop, title).height();
 
@@ -184,40 +184,19 @@ void TrainingGuide::drawButton(QPainter &p, const QRect &rect, const QString &te
 void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
+  int page_idx = std::clamp(currentIndex, 0, pages.size() - 1);
   QRect bg(0, 0, painter.device()->width(), painter.device()->height());
   painter.fillRect(bg, QColor("#000000"));
 
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
-  switch (currentIndex) {
-    case 0: step0(painter); break;
-    case 1: step1(painter); break;
-    case 2: step2(painter); break;
-    case 3: step3(painter); break;
-    case 4: step4(painter); break;
-    case 5: step5(painter); break;
-    case 6: step6(painter); break;
-    case 7: step7(painter); break;
-    case 8: step8(painter); break;
-    case 9: step9(painter); break;
-    case 10: step10(painter); break;
-    case 11: step11(painter); break;
-    case 12: step12(painter); break;
-    case 13: step13(painter); break;
-    case 14: step14(painter); break;
-    case 15: step15(painter); break;
-    case 16: step16(painter); break;
-    case 17: step17(painter); break;
-    case 18: step18(painter); break;
-  }
 
+  (this->*(pages[page_idx].first))(painter);
   // progress bar
-  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 1)) {
-    const int h = 20;
-    const int w = (currentIndex / (float)(boundingRect.size() - 1)) * width();
-    painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
-  }
+  const int h = 20;
+  const int w = (page_idx / (float)(pages.size() - 1)) * width();
+  painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
