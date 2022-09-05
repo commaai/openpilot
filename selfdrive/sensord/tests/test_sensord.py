@@ -72,7 +72,7 @@ class TestSensord(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
-  @with_processes(['sensord'])
+  #@with_processes(['sensord'])
   def test_sensors_present(self):
     # verify correct sensors configuration
     events = read_sensor_events(10)
@@ -87,7 +87,7 @@ class TestSensord(unittest.TestCase):
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
-  @with_processes(['sensord'])
+  #@with_processes(['sensord'])
   def test_lsm6ds3_100Hz(self):
     # verify samples arrive in a 100Hz rate
     events = read_sensor_events(3) # 3sec (about 300 measurements)
@@ -137,7 +137,7 @@ class TestSensord(unittest.TestCase):
     self.assertTrue(avg_freq > 100 and avg_freq < 104)
     assert avg_freq > 100 and avg_freq < 104, f"Avg_freq out of bounds {avg_freq}"
 
-  @with_processes(['sensord'])
+  #@with_processes(['sensord'])
   def test_events_check(self):
     # verify if all sensors produce events
     events = read_sensor_events(3)
@@ -157,7 +157,7 @@ class TestSensord(unittest.TestCase):
     for s in sensor_events:
       assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
 
-  @with_processes(['sensord'])
+  #@with_processes(['sensord'])
   def test_logmonottime_timestamp(self):
     # ensure diff logMonotime and timestamp is rather small
     # -> published when created
