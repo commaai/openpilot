@@ -994,7 +994,7 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="243"/>
         <source>Git Commit</source>
-        <translation>Último commit</translation>
+        <translation>Último Commit</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="244"/>
