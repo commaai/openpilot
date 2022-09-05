@@ -11,6 +11,9 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
+const QRect dm_yes = QRect(650, 780, 460, 150);
+const QRect dm_no = QRect(LEFT_MARGIN, 780, 460, 150);
+
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
@@ -23,8 +26,7 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
     if (currentIndex == 9) {
-      const QRect yes = QRect(707, 804, 531, 164);
-      Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
+      Params().putBool("RecordFront", dm_yes.contains(e->x(), e->y()));
     }
     currentIndex += 1;
   } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
@@ -48,6 +50,140 @@ void TrainingGuide::showEvent(QShowEvent *event) {
   click_timer.start();
 }
 
+void TrainingGuide::drawBody(QPainter &p, const QString &title, const QString &text, const QString &foot, int right_margin, bool has_icon) {
+  // draw title
+  configFont(p, "Inter", 80, "SemiBold");
+  const qreal icon_width = has_icon ? 200 : 0;
+  QRect rc = rect().adjusted(LEFT_MARGIN + icon_width, TOP_MARGIN, -right_margin, -BOTTOM_MARGIN);
+  p.drawText(rc, Qt::AlignLeft | Qt::AlignTop, title);
+  int body_y = rc.y() + getTextRect(p, Qt::AlignLeft | Qt::AlignTop, title).height();
+
+  // draw text
+  configFont(p, "Inter", 60, "Regular");
+  p.drawText(rect().adjusted(LEFT_MARGIN, body_y + 50, -right_margin, -BOTTOM_MARGIN), text);
+
+  // draw footer
+  configFont(p, "Inter", 55, "SemiBold");
+  p.drawText(rect().adjusted(LEFT_MARGIN, rect().height() - BOTTOM_MARGIN - 200, -right_margin, -BOTTOM_MARGIN), Qt::AlignBottom, foot);
+}
+
+void TrainingGuide::drawButton(QPainter &p, const QRect &rect, const QString &text, const QColor &bg, const QColor &f) {
+  p.setBrush(bg);
+  p.setPen(Qt::NoPen);
+  p.drawRoundedRect(rect, 16, 16);
+  p.setPen(f);
+  configFont(p, "Inter", 55, "SemiBold");
+  p.drawText(rect, Qt::AlignCenter, text);
+}
+
+void TrainingGuide::step0(QPainter &p) {
+  drawBody(p, tr("Welcome to openpilot alpha"),
+           tr("It is important to understand the functionality and limitations of the openpilot alpha software before testing"),
+           {}, 500, false);
+  drawButton(p, boundingRect[0], tr("Begin training"), Qt::white, Qt::black);
+}
+
+void TrainingGuide::step1(QPainter &p) {
+  drawBody(p, tr("What is openpilot"),
+           tr("openpilot is an advanced driver assistance program.A driver assistance system is not a self-driving car.This means openpilot is designed to work with you,not without you.your attention is required at all times to drive with openpilot"));
+}
+
+void TrainingGuide::step2(QPainter &p) {
+  drawBody(p, tr("Before we continue,please confirm the following"),
+           tr("✔️ I will keep my eyes on the road.\n\n✔️ I will be ready to take over at any time.\n\n✔️ I will be ready to take over at any time!"));
+}
+
+void TrainingGuide::step3(QPainter &p) {
+  drawBody(p, tr("The Driving Path"),
+           tr("openpilot uses the road-facing camera to plan the best path to drive.\n\nAlongside this path,lane lines are displayed in white and road edges are displayed in red."),
+           tr("Tap the driving path to continue"));
+}
+
+void TrainingGuide::step4(QPainter &p) {
+  drawBody(p, tr("The Lead Car Indicator"),
+           tr("The lead car indicator is displayed as a triangle under the lead car.openpilot can detect 2 cars simultaneously.The second triangle will appear when a cut-in is detected.if no triangle is present,your car may be using its stock ACC system,and some openpilot features may not be available."),
+           tr("Tap the lead car indicator"));
+}
+void TrainingGuide::step5(QPainter &p) {
+  drawBody(p, tr("How to engage and control openpilot"),
+           tr("openpilot is controlled using your car's cruise control inputs,which are usually located eigher on the steering wheel or on a control level near the steering column."));
+}
+void TrainingGuide::step6(QPainter &p) {
+  drawBody(p, tr("Engage openpilot"),
+           tr("When you are already to engage openpilot at a comfortable speed,engage the cruise control system and press \"SET\" to begin.A green border will appear around the screen whenever openpilot is engaged."),
+           tr("Tap \"SET\" in the image to continue"));
+}
+
+void TrainingGuide::step7(QPainter &p) {
+  drawBody(p, tr("Driver Monitoring"),
+           tr("openpilot monitors your awareness through the device's driving-facing camera.if openpilot senses that your eyes aren't on the road,the system will go through a series of alerts and actions."),
+           tr("Tap the driver to continue"));
+}
+
+void TrainingGuide::step8(QPainter &p) {
+  drawBody(p, tr("Distracted Driving"),
+           tr("You must pay attention at all times.If you are distracted,openpilot will show alerts of increasing severity,and you will be locked out from engaging.if the problem persists,the system will begin decelerating the vehicle"),
+           tr("Tap the alert to continue"));
+}
+
+void TrainingGuide::step9(QPainter &p) {
+  drawBody(p, tr("Improve Driver Monitoring"),
+           tr("Help improve driver monitoring by including your driving data in the traning data set.Your preference can be changed at any time in Settings.Would you like to share your data?"));
+  drawButton(p, dm_no, tr("No"), Qt::black, Qt::white);
+  drawButton(p, dm_yes, tr("Yes"), Qt::white, Qt::black);
+}
+
+void TrainingGuide::step10(QPainter &p) {
+  drawBody(p, tr("Adjust the max speed"),
+           tr("You can adjust your maximum speed by pressing + or - on your vehicle's cruise control inputs.The max speed is shown in the upper left corner of the display."),
+           tr("Tap the max speed continue"));
+}
+
+void TrainingGuide::step11(QPainter &p) {
+  drawBody(p, tr("How to change lanes with openpilot"),
+           tr("If you are traveling above 30 mph,openpilot can perform a lane change.Keep in mind that it is not capable of checking if a lane change is safe.This is your job.Once initiated,openpilot will change lanes regardless if another vehicle is present."));
+}
+
+void TrainingGuide::step12(QPainter &p) {
+  drawBody(p, tr("Perform Lane Change"),
+           tr("With openpilot engaged,turn on your signal and check your surroudings.When it's safe,gently nudge the steering wheel towards your desired lane.The sequence of turn signal and wheel nudge will prompt openpilot to change lanes."),
+           tr("Tap the steering wheel continue"));
+}
+
+void TrainingGuide::step13(QPainter &p) {
+  drawBody(p, tr("How to disengage openpilot"),
+           tr("When you encounter a potentially unsafe situation or need to exit a highway,disengage openpilot by pressing the brake pedal."));
+}
+
+void TrainingGuide::step14(QPainter &p) {
+  drawBody(p, tr("Limited Features"),
+           tr("Keep in mind that openpilot will not recognize certain scenarios including stop lights,close cut-ins,or pedestrians.\n\nYou must stay alert and always be ready to retake control of the vehicle."),
+           tr("Tap the light to continue"));
+}
+
+void TrainingGuide::step15(QPainter &p) {
+  drawBody(p, tr("Disengage openpilot"),
+           tr("While openpilot is engaged,you may keep your hands on the wheel to override steering controls.Both steering and distance to the lead car will be managed by openpilot until the brake pendal is pressed to disengage."),
+           tr("Tap the brake pedal to continue"));
+}
+
+void TrainingGuide::step16(QPainter &p) {
+  drawBody(p, tr("Let's review.openpilot can:"),
+           tr("✔️ Determine a path to drive.\n✔️ Maintain a maximum speed.\n✔️ Maintain a safe distance from a lead car.\n✔️ Change lanes with driver assistance"));
+}
+
+void TrainingGuide::step17(QPainter &p) {
+  drawBody(p, tr("openpilot cannot:"),
+           tr("✔️ Stay engaged while the driver is distracted.\n✔️ See other cars during a lane change.\n✔️ Stop for red lights,stop signs or pedestrians.\n✔️ React to unsafe situations like close vehicle cut-ins or road hazards."));
+}
+
+void TrainingGuide::step18(QPainter &p) {
+  drawBody(p, tr("Congratulations!You have completed openpilot training."),
+           tr("This guid can be replayed at any time from the device settings.To read more about openpilot,read the wiki and join the community at discord.comma.ai."));
+  drawButton(p, boundingRect[0], tr("Restart"), Qt::black, Qt::white);
+  drawButton(p, boundingRect[0], tr("Finish Traning"), Qt::white, Qt::black);
+}
+
 void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
@@ -57,6 +193,27 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
+  switch (currentIndex) {
+    case 0: step0(painter); break;
+    case 1: step1(painter); break;
+    case 2: step2(painter); break;
+    case 3: step3(painter); break;
+    case 4: step4(painter); break;
+    case 5: step5(painter); break;
+    case 6: step6(painter); break;
+    case 7: step7(painter); break;
+    case 8: step8(painter); break;
+    case 9: step9(painter); break;
+    case 10: step10(painter); break;
+    case 11: step11(painter); break;
+    case 12: step12(painter); break;
+    case 13: step13(painter); break;
+    case 14: step14(painter); break;
+    case 15: step15(painter); break;
+    case 16: step16(painter); break;
+    case 17: step17(painter); break;
+    case 18: step18(painter); break;
+  }
 
   // progress bar
   if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {

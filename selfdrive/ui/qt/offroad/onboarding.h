@@ -10,6 +10,11 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
+const qreal TOP_MARGIN = 100;
+const qreal LEFT_MARGIN = 100;
+const qreal BOTTOM_MARGIN = 100;
+const qreal RIGHT_MARGIN = 800;
+
 class TrainingGuide : public QFrame {
   Q_OBJECT
 
@@ -18,6 +23,28 @@ public:
 
 private:
   void showEvent(QShowEvent *event) override;
+  void drawButton(QPainter &p, const QRect &rect, const QString(&text), const QColor &bg, const QColor &f);
+  void drawBody(QPainter &p, const QString &title, const QString &text, const QString &foot = {}, int right_margin = RIGHT_MARGIN, bool has_icon = true);
+  void step0(QPainter &p);
+  void step1(QPainter &p);
+  void step2(QPainter &p);
+  void step3(QPainter &p);
+  void step4(QPainter &p);
+  void step5(QPainter &p);
+  void step6(QPainter &p);
+  void step7(QPainter &p);
+  void step8(QPainter &p);
+  void step9(QPainter &p);
+  void step10(QPainter &p);
+  void step11(QPainter &p);
+  void step12(QPainter &p);
+  void step13(QPainter &p);
+  void step14(QPainter &p);
+  void step15(QPainter &p);
+  void step16(QPainter &p);
+  void step17(QPainter &p);
+  void step18(QPainter &p);
+
   void paintEvent(QPaintEvent *event) override;
   void mouseReleaseEvent(QMouseEvent* e) override;
 
@@ -27,7 +54,7 @@ private:
   // Bounding boxes for each training guide step
   const QRect continueBtnStandard = {1620, 0, 300, 1080};
   QVector<QRect> boundingRectStandard {
-    QRect(112, 804, 619, 166),
+    QRect(112, 804, 619, 150),
     continueBtnStandard,
     continueBtnStandard,
     QRect(1476, 565, 253, 308),
