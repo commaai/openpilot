@@ -1200,7 +1200,7 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>α版：ドライビング AI がアクセルとブレーキを直接的な制御します。openpilot は、人間がアクセルとブレーキの制御する方法を真似します。</translation>
+        <translation>α版：ドライビング AI がアクセルとブレーキを直接的に制御します。openpilot は、人間がアクセルとブレーキの制御する方法を真似します。</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="64"/>
