@@ -39,8 +39,11 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
         long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
-      if starting_condition:
+      if starting_condition and CP.startingState:
         long_control_state = LongCtrlState.starting
+      elif starting_condition:
+        long_control_state = LongCtrlState.pid
+
     
     elif long_control_state == LongCtrlState.starting:
       if stopping_condition:
@@ -96,7 +99,6 @@ class LongControl:
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
-    # Update state machine
     output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_1sec, CS.brakePressed,
@@ -106,19 +108,19 @@ class LongControl:
       self.reset(CS.vEgo)
       output_accel = 0.
 
-    # tracking objects and driving
-    elif self.long_control_state == LongCtrlState.pid or self.long_control_state == LongCtrlState.starting:
+    elif self.long_control_state == LongCtrlState.stopping:
+      if output_accel > self.CP.stopAccel:
+        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
+      self.reset(CS.vEgo)
+
+    elif self.long_control_state == LongCtrlState.starting:
+      output_accel = self.CP.startAccel
+      self.reset(CS.vEgo)
+
+    elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target_now
       error = self.v_pid - CS.vEgo
       output_accel = self.pid.update(error, speed=CS.vEgo, feedforward=a_target)
-
-    # Intention is to stop, switch to a different brake control until we stop
-    elif self.long_control_state == LongCtrlState.stopping:
-      # Keep applying brakes until the car is stopped
-      if not CS.standstill or output_accel > self.CP.stopAccel:
-        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-      output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-      self.reset(CS.vEgo)
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
