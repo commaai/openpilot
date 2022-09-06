@@ -1,21 +1,16 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
+set -e
 
 # git diff --name-status origin/release3-staging | grep "^A" | less
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-cd $DIR
-
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
-if [ -f /TICI ]; then
-  FILES_SRC="release/files_tici"
-  RELEASE_BRANCH=release3-staging
-  DASHCAM_BRANCH=dashcam3-staging
-else
-  exit 0
-fi
+FILES_SRC="release/files_tici"
+RELEASE_BRANCH=release3-staging
+DASHCAM_BRANCH=dashcam3-staging
 
 # set git identity
 source $DIR/identity.sh
@@ -33,14 +28,15 @@ git checkout --orphan $RELEASE_BRANCH
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
+if [ ! -z "$(git clean -xdf -n)" ]; then
+  echo "source directory is dirty. git clean -xdf and try again."
+  exit 1
+fi
 cp -pR --parents $(cat release/files_common) $BUILD_DIR/
 cp -pR --parents $(cat $FILES_SRC) $BUILD_DIR/
 
 # in the directory
 cd $BUILD_DIR
-
-rm -f panda/board/obj/panda.bin.signed
-rm -f panda/board/obj/panda_h7.bin.signed
 
 VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
 echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
@@ -70,7 +66,7 @@ find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
-rm -rf panda/board panda/certs panda/crypto panda/board/bootstub*
+rm -rf panda/certs panda/crypto panda/board/bootstub*
 rm -rf .sconsign.dblite Jenkinsfile
 rm selfdrive/modeld/models/supercombo.onnx
 
