@@ -218,39 +218,6 @@ Thneed::Thneed(bool do_clinit, cl_context _context) {
   debug = (thneed_debug_env != NULL) ? atoi(thneed_debug_env) : 0;
 }
 
-void Thneed::stop() {
-  find_inputs_outputs();
-  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
-  record = false;
-}
-
-void Thneed::find_inputs_outputs() {
-  cl_int err;
-  if (inputs.size() > 0) return;
-
-  // save the global inputs/outputs
-  for (auto &k : kq) {
-    for (int i = 0; i < k->num_args; i++) {
-      if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
-        cl_mem aa = *(cl_mem*)(k->args[i].data());
-        input_clmem.push_back(aa);
-
-        size_t sz;
-        clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-        input_sizes.push_back(sz);
-
-        void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &err);
-        assert(err == CL_SUCCESS);
-        inputs.push_back(ret);
-      }
-
-      if (k->name == "image2d_to_buffer_float" && k->arg_names[i] == "output") {
-        output = *(cl_mem*)(k->args[i].data());
-      }
-    }
-  }
-}
-
 void Thneed::wait() {
   struct kgsl_device_waittimestamp_ctxtid wait;
   wait.context_id = context_id;
@@ -312,76 +279,5 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   if (debug >= 1) {
     te = nanos_since_boot();
     printf("model exec in %lu us\n", (te-tb)/1000);
-  }
-}
-
-// *********** OpenCL interceptor ***********
-
-cl_int thneed_clEnqueueNDRangeKernel(cl_command_queue command_queue,
-  cl_kernel kernel,
-  cl_uint work_dim,
-  const size_t *global_work_offset,
-  const size_t *global_work_size,
-  const size_t *local_work_size,
-  cl_uint num_events_in_wait_list,
-  const cl_event *event_wait_list,
-  cl_event *event) {
-
-  Thneed *thneed = g_thneed;
-
-  // SNPE doesn't use these
-  assert(num_events_in_wait_list == 0);
-  assert(global_work_offset == NULL);
-  assert(event_wait_list == NULL);
-
-  cl_int ret = 0;
-  if (thneed != NULL && thneed->record) {
-    if (thneed->context == NULL) {
-      thneed->command_queue = command_queue;
-      clGetKernelInfo(kernel, CL_KERNEL_CONTEXT, sizeof(thneed->context), &thneed->context, NULL);
-      clGetContextInfo(thneed->context, CL_CONTEXT_DEVICES, sizeof(thneed->device_id), &thneed->device_id, NULL);
-    }
-
-    // if we are recording, we don't actually enqueue the kernel
-    thneed->kq.push_back(unique_ptr<CLQueuedKernel>(new CLQueuedKernel(thneed, kernel, work_dim, global_work_size, local_work_size)));
-    *event = NULL;
-  } else {
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, work_dim,
-      global_work_offset, global_work_size, local_work_size,
-      num_events_in_wait_list, event_wait_list, event);
-  }
-
-  return ret;
-}
-
-cl_int thneed_clFinish(cl_command_queue command_queue) {
-  Thneed *thneed = g_thneed;
-
-  if (thneed != NULL && thneed->record) {
-    if (thneed->run_optimizer) thneed->optimize();
-    return thneed->clexec();
-  } else {
-    return clFinish(command_queue);
-  }
-}
-
-void *dlsym(void *handle, const char *symbol) {
-#ifdef QCOM2
-  void *(*my_dlsym)(void *handle, const char *symbol) = (void *(*)(void *handle, const char *symbol))((uintptr_t)dlopen + DLSYM_OFFSET);
-#else
-  #error "Unsupported platform for thneed"
-#endif
-  if (memcmp("REAL_", symbol, 5) == 0) {
-    return my_dlsym(handle, symbol+5);
-  } else if (strcmp("clFinish", symbol) == 0) {
-    return (void*)thneed_clFinish;
-  } else if (strcmp("clEnqueueNDRangeKernel", symbol) == 0) {
-    return (void*)thneed_clEnqueueNDRangeKernel;
-  } else if (strcmp("clSetKernelArg", symbol) == 0) {
-    return (void*)thneed_clSetKernelArg;
-  } else if (strcmp("clCreateProgramWithSource", symbol) == 0) {
-    return (void*)thneed_clCreateProgramWithSource;
-  } else {
-    return my_dlsym(handle, symbol);
   }
 }
