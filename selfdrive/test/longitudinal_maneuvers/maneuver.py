@@ -54,7 +54,7 @@ class Maneuver():
         valid = False
 
       if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
-        print('Planner not starting!')
+        print('LongitudinalPlanner not starting!')
         valid = False
 
     print("maneuver end", valid)
