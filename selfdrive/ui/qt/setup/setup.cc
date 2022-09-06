@@ -371,16 +371,14 @@ void Setup::showEvent(QShowEvent *event) {
   if (std::exchange(initialized, true) == true) return;
 
   // select language
-  QString currentLang = "main_en";
   QMap<QString, QString> langs = getSupportedLanguages();
-  QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
+  QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), "", this);
   if (!selection.isEmpty()) {
-    currentLang = langs[selection];
-    Params().put("LanguageSetting", currentLang.toStdString());
-  }
-
-  if (translator.load(":/" + currentLang)) {
-    qApp->installTranslator(&translator);
+    QString selectedLang = langs[selection];
+    Params().put("LanguageSetting", selectedLang.toStdString());
+    if (translator.load(":/" + selectedLang)) {
+      qApp->installTranslator(&translator);
+    }
   }
 
   std::stringstream buffer;
