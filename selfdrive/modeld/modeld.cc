@@ -109,7 +109,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       }
     } else {
       // Use single camera
-      buf_extra = buf_main;
+      buf_extra = nullptr;
       meta_extra = meta_main;
     }
 
