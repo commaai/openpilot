@@ -709,8 +709,10 @@ class Controls:
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
     if len(desire_prediction) and ldw_allowed:
-      right_lane_visible = model_v2.laneLineProbs[2] > 0.5
-      left_lane_visible = model_v2.laneLineProbs[1] > 0.5
+      in_lane_change = self.sm['lateralPlan'].laneChangeState in (LaneChangeState.laneChangeStarting,
+                                                                  LaneChangeState.laneChangeFinishing)
+      right_lane_visible = model_v2.laneLineProbs[2] > 0.5 and not in_lane_change
+      left_lane_visible = model_v2.laneLineProbs[1] > 0.5 and not in_lane_change
       l_lane_change_prob = desire_prediction[Desire.laneChangeLeft - 1]
       r_lane_change_prob = desire_prediction[Desire.laneChangeRight - 1]
 
