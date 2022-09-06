@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
 TMP_TRANSLATIONS_DIR = os.path.join(TRANSLATIONS_DIR, "tmp")
+LOCATION_TAG = "<location "
 
 
 class TestTranslations(unittest.TestCase):
@@ -26,13 +27,13 @@ class TestTranslations(unittest.TestCase):
 
   @staticmethod
   def _read_translation_file(path, file):
-    with open(os.path.join(path, f"{file}.ts"), "rb") as f:
+    with open(os.path.join(path, f"{file}.ts"), "r") as f:
       # fix relative path depth
-      tr_file = f.read().replace(b"filename=\"../../", b"filename=\"../")
+      tr_file = f.read().replace("filename=\"../../", "filename=\"../")
 
-    # ignore line numbers while checking if translations are updated
-    tr_text = [line for line in tr_file.splitlines() if not line.strip().startswith(b"<location ")]
-    return b"\n".join(tr_text)
+    # ignore line numbers when checking if translations are updated
+    tr_text = [line for line in tr_file.splitlines() if not line.strip().startswith(LOCATION_TAG)]
+    return "\n".join(tr_text)
 
   def test_missing_translation_files(self):
     for name, file in self.translation_files.items():
@@ -59,14 +60,14 @@ class TestTranslations(unittest.TestCase):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
-        self.assertTrue(b"<translation type=\"unfinished\">" not in cur_translations,
+        self.assertTrue("<translation type=\"unfinished\">" not in cur_translations,
                         f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
 
   def test_vanished_translations(self):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
-        self.assertTrue(b"<translation type=\"vanished\">" not in cur_translations,
+        self.assertTrue("<translation type=\"vanished\">" not in cur_translations,
                         f"{file} ({name}) translation file has obsolete translations. Run selfdrive/ui/update_translations.py --vanish to remove them")
 
   def test_plural_translations(self):
