@@ -1193,12 +1193,12 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 端对端神经网络纵向控制（实验性功能） 🌮</translation>
+        <translation>🌮 端对端纵向控制（实验性功能） 🌮</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>让驾驶神经网络模型直接控制油门和刹车，openpilot将会模仿人类司机的驾驶方式。该功能仍非常实验性。</translation>
+        <translation>让驾驶模型直接控制油门和刹车，openpilot将会模仿人类司机的驾驶方式。该功能仍非常实验性。</translation>
     </message>
     <message>
         <location line="-7"/>
