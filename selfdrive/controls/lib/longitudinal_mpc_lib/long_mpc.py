@@ -24,7 +24,7 @@ SOURCES = ['lead0', 'lead1', 'cruise', 'e2e']
 
 X_DIM = 3
 U_DIM = 1
-PARAM_DIM = 4
+PARAM_DIM = 6
 COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
@@ -37,6 +37,7 @@ J_EGO_COST = 5.0
 A_CHANGE_COST = 200.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
+LEAD_DANGER_FACTOR = 0.75
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
@@ -58,8 +59,8 @@ STOP_DISTANCE = 6.0
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
 
-def get_safe_obstacle_distance(v_ego):
-  return (v_ego**2) / (2 * COMFORT_BRAKE) + T_FOLLOW * v_ego + STOP_DISTANCE
+def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW):
+  return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
 
 def desired_follow_distance(v_ego, v_lead):
   return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
@@ -124,11 +125,13 @@ def gen_long_ocp():
   a_min, a_max = ocp.model.p[0], ocp.model.p[1]
   x_obstacle = ocp.model.p[2]
   prev_a = ocp.model.p[3]
+  lead_t_follow = ocp.model.p[4]
+  lead_danger_factor = ocp.model.p[5]
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
-  desired_dist_comfort = get_safe_obstacle_distance(v_ego)
+  desired_dist_comfort = get_safe_obstacle_distance(v_ego, lead_t_follow)
 
   # The main cost in normal operation is how close you are to the "desired" distance
   # from an obstacle at every timestep. This obstacle can be a lead car
@@ -149,7 +152,7 @@ def gen_long_ocp():
   constraints = vertcat(v_ego,
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
+                        ((x_obstacle - x_ego) - lead_danger_factor * (desired_dist_comfort)) / (v_ego + 10.))
   ocp.model.con_h_expr = constraints
 
   x0 = np.zeros(X_DIM)
@@ -317,6 +320,7 @@ class LongitudinalMpc:
     if self.mode == 'acc':
       self.params[:,0] = MIN_ACCEL if self.status else self.cruise_min_a
       self.params[:,1] = self.cruise_max_a
+      self.params[:,5] = LEAD_DANGER_FACTOR
 
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
@@ -335,6 +339,7 @@ class LongitudinalMpc:
     elif self.mode == 'blended':
       self.params[:,0] = MIN_ACCEL
       self.params[:,1] = MAX_ACCEL
+      self.params[:,5] = 1.0
 
       x_obstacles = np.column_stack([lead_0_obstacle,
                                      lead_1_obstacle])
@@ -371,6 +376,8 @@ class LongitudinalMpc:
     self.params[:,0] = -10.
     self.params[:,1] = 10.
     self.params[:,2] = 1e5
+    self.params[:,4] = T_FOLLOW
+    self.params[:,5] = LEAD_DANGER_FACTOR
 
     # v, and a are in local frame, but x is wrt the x[0] position
     # In >90degree turns, x goes to 0 (and may even be -ve)
