@@ -444,7 +444,6 @@ class CarState(CarStateBase):
       ]
       checks += [
         ("CRUISE_INFO", 50),
-        ("ACCELERATOR", 100),
       ]
     else:
       signals += [
