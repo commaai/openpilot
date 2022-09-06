@@ -85,6 +85,10 @@ class CarController:
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
 
+    # handle UI messages
+    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+
     # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
     # if self.frame % 2 == 0:
     #   can_sends.append(create_steer_command(self.packer, 0, 0, self.frame // 2))
@@ -113,9 +117,6 @@ class CarController:
       # ui mesg is at 1Hz but we send asap if:
       # - there is something to display
       # - there is something to stop displaying
-      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-      steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
-
       send_ui = False
       if ((fcw_alert or steer_alert) and not self.alert_active) or \
          (not (fcw_alert or steer_alert) and self.alert_active):
