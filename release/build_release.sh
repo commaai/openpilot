@@ -71,7 +71,7 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto panda/board/bootstub*
-rm -rf .sconsign.dblite Jenkinsfile release/
+rm -rf .sconsign.dblite Jenkinsfile
 rm selfdrive/modeld/models/supercombo.onnx
 
 # Restore third_party
