@@ -6,6 +6,7 @@
 
 #include <QApplication>
 #include <QLabel>
+#include <QTranslator>
 #include <QVBoxLayout>
 
 #include <curl/curl.h>
@@ -363,6 +364,32 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
+}
+
+void Setup::showEvent(QShowEvent *event) {
+  static bool initialized = false;
+  if (std::exchange(initialized, true) == true) return;
+
+  // select language
+  QMap<QString, QString> langs = {
+      {"English", "main_en"},
+      {"Português", "main_pt-BR"},
+      {"中文（繁體）", "main_zh-CHT"},
+      {"中文（简体）", "main_zh-CHS"},
+      {"한국어", "main_ko"},
+      {"日本語", "main_ja"}};
+  QString currentLang = "main_en";
+  QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
+  if (!selection.isEmpty()) {
+    currentLang = langs[selection];
+    Params().put("LanguageSetting", currentLang.toStdString());
+  }
+
+  QTranslator translator;
+  if (translator.load(":/" + currentLang)) {
+    qApp->installTranslator(&translator);
+  }
+
   std::stringstream buffer;
   buffer << std::ifstream("/sys/class/hwmon/hwmon1/in1_input").rdbuf();
   float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;

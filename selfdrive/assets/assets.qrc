@@ -13,5 +13,11 @@
   <file>offroad/icon_wifi_strength_medium.svg</file>
   <file>offroad/icon_wifi_strength_high.svg</file>
   <file>offroad/icon_wifi_strength_full.svg</file>
+  <file alias="main_en">../ui/translations/main_en.qm</file>
+  <file alias="main_pt-BR">../ui/translations/main_pt-BR.qm</file>
+  <file alias="main_zh-CHS">../ui/translations/main_zh-CHS.qm</file>
+  <file alias="main_zh-CHT">../ui/translations/main_zh-CHT.qm</file>
+  <file alias="main_ko">../ui/translations/main_ko.qm</file>
+  <file alias="main_ja">../ui/translations/main_ja.qm</file>
 </qresource>
 </RCC>

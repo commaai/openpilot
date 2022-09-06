@@ -34,6 +34,12 @@ if maps:
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets, qt_util] + base_libs
 
+# build translation files
+translation_sources = Glob("#selfdrive/ui/translations/*.ts", strings=True)
+translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
+lrelease = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
+qt_env.Command(translation_targets, translation_sources, f"{lrelease} $SOURCES")
+
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
@@ -61,13 +67,6 @@ qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 if GetOption('test'):
   qt_src.remove("main.cc")  # replaced by test_runner
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
-
-
-# build translation files
-translation_sources = Glob("#selfdrive/ui/translations/*.ts", strings=True)
-translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
-lrelease = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
-qt_env.Command(translation_targets, translation_sources, f"{lrelease} $SOURCES")
 
 
 # setup and factory resetter

@@ -9,6 +9,7 @@ class Setup : public QStackedWidget {
 
 public:
   explicit Setup(QWidget *parent = 0);
+  void showEvent(QShowEvent *event);
 
 private:
   QWidget *low_voltage();
