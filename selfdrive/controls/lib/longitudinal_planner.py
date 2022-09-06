@@ -48,10 +48,11 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
-    params = Params()
-    # TODO read param in the loop for live toggling
-    mode = 'blended' if params.get_bool('EndToEndLong') else 'acc'
-    self.mpc = LongitudinalMpc(mode=mode)
+    self.params = Params()
+    self.param_read_counter = 0
+
+    self.mpc = LongitudinalMpc()
+    self.read_param()
 
     self.fcw = False
 
@@ -63,6 +64,9 @@ class LongitudinalPlanner:
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
+
+  def read_param(self):
+    self.mpc.mode = 'blended' if self.params.get_bool('EndToEndLong') else 'acc'
 
   def parse_model(self, model_msg):
     if (len(model_msg.position.x) == 33 and
@@ -83,8 +87,11 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm):
-    v_ego = sm['carState'].vEgo
+    if self.param_read_counter % 50 == 0:
+      self.read_param()
+    self.param_read_counter += 1
 
+    v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
