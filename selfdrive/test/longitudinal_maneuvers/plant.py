@@ -14,7 +14,7 @@ class Plant():
   messaging_initialized = False
 
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
-               only_lead2=False, only_radar=False, e2e=False):
+               only_lead2=False, only_radar=False):
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
@@ -44,10 +44,6 @@ class Plant():
 
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
-    from common.params import Params
-
-    params = Params()
-    params.put_bool("EndToEndLong", e2e)
 
     self.planner = Planner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
 

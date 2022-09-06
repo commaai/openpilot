@@ -17,7 +17,6 @@ class Maneuver():
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
     self.ensure_start = kwargs.get("ensure_start", False)
-    self.e2e = kwargs.get("e2e", False)
 
     self.duration = duration
     self.title = title
@@ -29,7 +28,6 @@ class Maneuver():
       distance_lead=self.distance_lead,
       only_lead2=self.only_lead2,
       only_radar=self.only_radar,
-      e2e=self.e2e,
     )
 
     valid = True
