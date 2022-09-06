@@ -10,6 +10,8 @@ from cereal import log
 from system.hardware import TICI, HARDWARE
 from selfdrive.manager.process_config import managed_processes
 
+TEST_TIMESPAN = 10
+
 SENSOR_CONFIGURATIONS = (
   {
     ('bmx055', 'acceleration'),
@@ -337,3 +339,4 @@ class TestSensord(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
+
