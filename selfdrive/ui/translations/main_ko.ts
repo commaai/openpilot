@@ -855,7 +855,7 @@ location set</source>
         <translation>다시 시작</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="376"/>
+        <location filename="../qt/setup/setup.cc" line="375"/>
         <source>Select a language</source>
         <translation type="unfinished">언어를 선택하세요</translation>
     </message>

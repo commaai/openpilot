@@ -855,7 +855,7 @@ location set</source>
         <translation>最初からやり直す</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="376"/>
+        <location filename="../qt/setup/setup.cc" line="375"/>
         <source>Select a language</source>
         <translation type="unfinished">言語を選択</translation>
     </message>

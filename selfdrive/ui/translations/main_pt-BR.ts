@@ -859,7 +859,7 @@ trabalho definido</translation>
         <translation>Inicializar</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="376"/>
+        <location filename="../qt/setup/setup.cc" line="375"/>
         <source>Select a language</source>
         <translation type="unfinished">Selecione uma linguagem</translation>
     </message>
