@@ -6,6 +6,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
+from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longitudinal_planner import Planner
 
 
@@ -13,7 +14,7 @@ class Plant():
   messaging_initialized = False
 
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
-               only_lead2=False, only_radar=False):
+               only_lead2=False, only_radar=False, e2e=False):
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
@@ -43,6 +44,11 @@ class Plant():
 
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
+    from common.params import Params
+
+    params = Params()
+    params.put_bool("EndToEndLong", e2e)
+
     self.planner = Planner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
 
   def current_time(self):
@@ -87,6 +93,18 @@ class Plant():
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
+
+    position = log.ModelDataV2.XYZTData.new_message()
+    position.x = [float(x) for x in (self.speed + 1.0) * np.array(T_IDXS)]
+    model.modelV2.position = position
+    velocity = log.ModelDataV2.XYZTData.new_message()
+    velocity.x = [float(x) for x in (self.speed + 1.0) * np.ones_like(T_IDXS)]
+    model.modelV2.velocity = velocity
+    acceleration = log.ModelDataV2.XYZTData.new_message()
+    acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
+    model.modelV2.acceleration = acceleration
+
+
 
     control.controlsState.longControlState = LongCtrlState.pid
     control.controlsState.vCruise = float(v_cruise * 3.6)
