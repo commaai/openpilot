@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from collections import deque
+from collections import deque, defaultdict
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
@@ -11,7 +11,6 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 
 HISTORY = 5  # secs
-RAW_QUEUE_FIELDS = ['active', 'steer_override', 'steer_torque', 'vego', 'carState_t', 'carControl_t']
 POINTS_PER_BUCKET = 2000
 MIN_POINTS_TOTAL = 4000
 FIT_POINTS_TOTAL = 3000
@@ -19,8 +18,8 @@ MIN_VEL = 15  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 SANITY_FACTOR = 0.5
 STEER_MIN_THRESHOLD = 0.02
-FILTER_DECAY = 50
-MAX_DECAY = 250
+MIN_FILTER_DECAY = 50
+MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
@@ -38,17 +37,17 @@ def slope2rot(slope):
 class PointBuckets:
   def __init__(self, x_bounds, min_points):
     self.x_bounds = x_bounds
-    self.buckets = {bounds: deque(maxlen=POINTS_PER_BUCKET) for bounds in x_bounds}
+    self.buckets = defaultdict(lambda: deque(maxlen=POINTS_PER_BUCKET))
     self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
 
-  def bucket_len(self):
+  def bucket_lengths(self):
     return [len(v) for v in self.buckets.values()]
 
   def __len__(self):
-    return sum(self.bucket_len())
+    return sum(self.bucket_lengths())
 
   def is_valid(self):
-    return np.all([len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())]) and (self.__len__() >= MIN_POINTS_TOTAL)
+    return all([len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())]) and (self.__len__() >= MIN_POINTS_TOTAL)
 
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
@@ -96,7 +95,7 @@ class TorqueEstimator:
         'frictionCoefficient': self.offline_friction_coeff,
         'points': []
       }
-      self.decay = FILTER_DECAY
+      self.decay = MIN_FILTER_DECAY
     self.filtered_params = {}
     for param in initial_params:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
@@ -104,8 +103,8 @@ class TorqueEstimator:
     self.filtered_points.load_points(initial_params['points'])
 
   def reset(self):
-    self.resets += 1
-    self.raw_points = {k: deque(maxlen=self.hist_len) for k in RAW_QUEUE_FIELDS}
+    self.resets += 1.0
+    self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
     self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
   def estimate_params(self):
@@ -122,7 +121,7 @@ class TorqueEstimator:
     return slope, offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution
 
   def update_params(self, params):
-    self.decay = min(self.decay + DT_MDL, MAX_DECAY)
+    self.decay = min(self.decay + DT_MDL, MAX_FILTER_DECAY)
     for param, value in params.items():
       self.filtered_params[param].update(value)
       self.filtered_params[param].update_alpha(self.decay)
@@ -132,7 +131,7 @@ class TorqueEstimator:
 
   def is_sane(self, lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution=np.array([0.5, 0.5]), lat_acc_data_distribution=np.array([0.5, 0.5])):
     min_factor, max_factor = 1.0 - SANITY_FACTOR, 1.0 + SANITY_FACTOR
-    if np.any(steer_data_distribution < MIN_DATA_PERC) or np.any(lat_acc_data_distribution < MIN_DATA_PERC):
+    if any(steer_data_distribution < MIN_DATA_PERC) or any(lat_acc_data_distribution < MIN_DATA_PERC):
       return False
     if lat_accel_factor is None or lat_accel_offset is None or friction_coeff is None:
       return False
@@ -159,8 +158,45 @@ class TorqueEstimator:
         vego = np.interp(t, np.array(self.raw_points['carState_t']) + self.lag, self.raw_points['vego'])
         steer = np.interp(t, np.array(self.raw_points['carControl_t']) + self.lag, self.raw_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
-        if np.all(active) and (not np.any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
+        if all(active) and (not any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(float(steer), float(lateral_acc))
+
+  def get_msg(self, valid=True):
+    msg = messaging.new_message('liveTorqueParameters')
+    msg.valid = valid
+    liveTorqueParameters = msg.liveTorqueParameters
+
+    if self.filtered_points.is_valid():
+      try:
+        lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution = self.estimate_params()
+      except np.linalg.LinAlgError as e:
+        lat_accel_factor = lat_accel_offset = friction_coeff = None
+        cloudlog.exception(f"Error computing live torque params: {e}")
+
+      if self.is_sane(lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution):
+        liveTorqueParameters.liveValid = True
+        liveTorqueParameters.latAccelFactorRaw = float(lat_accel_factor)
+        liveTorqueParameters.latAccelOffsetRaw = float(lat_accel_offset)
+        liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
+        self.update_params({'lat_accel_factor': lat_accel_factor, 'lat_accel_offset': lat_accel_offset, 'frictionCoefficient': friction_coeff})
+      else:
+        cloudlog.exception("live torque params are numerically unstable")
+        liveTorqueParameters.liveValid = False
+        # estimator.reset()
+    else:
+      liveTorqueParameters.liveValid = False
+    liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['lat_accel_factor'].x)
+    liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['lat_accel_offset'].x)
+    liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
+    liveTorqueParameters.totalBucketPoints = len(self.filtered_points)
+    liveTorqueParameters.decay = self.decay
+    liveTorqueParameters.maxResets = self.resets
+    return msg
+
+  def __exit__(self, *args):
+    msg = self.get_msg()
+    msg.liveTorqueParameters.points = self.filtered_points.get_points()
+    put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
 
 def main(sm=None, pm=None):
@@ -185,45 +221,8 @@ def main(sm=None, pm=None):
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
 
-    if sm.updated['liveLocationKalman']:
-      # print(sm.frame, [len(v) for v in estimator.filtered_points.buckets.values()])
-      msg = messaging.new_message('liveTorqueParameters')
-      msg.valid = sm.all_checks()
-      liveTorqueParameters = msg.liveTorqueParameters
-
-      if estimator.filtered_points.is_valid():
-        try:
-          lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution = estimator.estimate_params()
-          # print(lat_accel_factor, lat_accel_offset, friction_coeff)
-        except Exception as e:
-          # print(e)
-          lat_accel_factor = lat_accel_offset = friction_coeff = None
-          cloudlog.exception(f"Error computing live torque params: {e}")
-
-        if estimator.is_sane(lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution):
-          liveTorqueParameters.liveValid = True
-          liveTorqueParameters.latAccelFactorRaw = float(lat_accel_factor)
-          liveTorqueParameters.latAccelOffsetRaw = float(lat_accel_offset)
-          liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
-          estimator.update_params({'lat_accel_factor': lat_accel_factor, 'lat_accel_offset': lat_accel_offset, 'frictionCoefficient': friction_coeff})
-        else:
-          cloudlog.exception("live torque params are numerically unstable")
-          liveTorqueParameters.liveValid = False
-          # estimator.reset()
-      else:
-        liveTorqueParameters.liveValid = False
-      liveTorqueParameters.latAccelFactorFiltered = float(estimator.filtered_params['lat_accel_factor'].x)
-      liveTorqueParameters.latAccelOffsetFiltered = float(estimator.filtered_params['lat_accel_offset'].x)
-      liveTorqueParameters.frictionCoefficientFiltered = float(estimator.filtered_params['frictionCoefficient'].x)
-      liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
-      liveTorqueParameters.decay = estimator.decay
-      liveTorqueParameters.maxResets = estimator.resets > MAX_RESETS
-
-      if sm.frame % 5 == 0:  # 4Hz driven by liveLocationKalman
-        pm.send('liveTorqueParameters', msg)
-      if sm.frame % 1200 == 0:  # once a minute
-        liveTorqueParameters.points = estimator.filtered_points.get_points()
-        put_nonblocking("LiveTorqueParameters", msg.to_bytes())
+    if (sm.updated['liveLocationKalman']) and (sm.frame % 5 == 0):  # 4Hz driven by liveLocationKalman
+      pm.send('liveTorqueParameters', estimator.get_msg(sm.all_checks()))
 
 
 if __name__ == "__main__":
