@@ -324,6 +324,8 @@ class TestSensord(unittest.TestCase):
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
 
+    assert len(tdiffs) != 0, "No sensor data collected"
+
     # filter 10% of the data to remove outliers
     lb, ub = get_filter_bounds(tdiffs, 0.9)
     diffs = tdiffs[lb:ub]
