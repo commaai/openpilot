@@ -116,11 +116,16 @@ pipeline {
           }
           steps {
             phone_steps("tici", [
-              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
+              // test master-ci build
+              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
+
+              // build a release branch and do the tests there
+              ["build release", "$SOURCE_DIR/release/build_release.sh"],
+              ["check dirty", "release/check-dirty.sh"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
-              ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+              ["onroad tests", "cd selfdrive/test/ && RELEASE=1 ./test_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
           }
