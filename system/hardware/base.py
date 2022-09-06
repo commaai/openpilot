@@ -79,10 +79,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_usb_present(self):
-    pass
-
-  @abstractmethod
   def get_current_power_draw(self):
     pass
 

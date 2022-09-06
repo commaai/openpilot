@@ -49,6 +49,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
+    ret.autoResumeSng = False
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -73,7 +74,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
-    ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+    ret.minSteerSpeed = 10 * CV.KPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594

@@ -59,6 +59,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
     },
+    {
+      "EndToEndLong",
+      tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
+      tr("Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental."),
+      "../assets/offroad/icon_road.png",
+    },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",
