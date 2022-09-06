@@ -16,6 +16,7 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 const std::string USER_AGENT = "AGNOSSetup-";
@@ -371,14 +372,8 @@ void Setup::showEvent(QShowEvent *event) {
   if (std::exchange(initialized, true) == true) return;
 
   // select language
-  QMap<QString, QString> langs = {
-      {"English", "main_en"},
-      {"Português", "main_pt-BR"},
-      {"中文（繁體）", "main_zh-CHT"},
-      {"中文（简体）", "main_zh-CHS"},
-      {"한국어", "main_ko"},
-      {"日本語", "main_ja"}};
   QString currentLang = "main_en";
+  QMap<QString, QString> langs = getSupportedLanguages();
   QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
   if (!selection.isEmpty()) {
     currentLang = langs[selection];
