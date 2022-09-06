@@ -458,7 +458,7 @@ location set</source>
         <translation>選択</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="333"/>
+        <location filename="../qt/widgets/input.cc" line="332"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>

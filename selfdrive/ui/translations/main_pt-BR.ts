@@ -459,7 +459,7 @@ trabalho definido</translation>
         <translation>Selecione</translation>
     </message>
     <message>
-        <location filename="../qt/widgets/input.cc" line="333"/>
+        <location filename="../qt/widgets/input.cc" line="332"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
