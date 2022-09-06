@@ -73,26 +73,26 @@ class TorqueEstimator:
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
 
     self.offline_friction_coeff = 0.0
-    self.offline_slope = 0.0
+    self.offline_lat_accel_factor = 0.0
     self.resets = 0.0
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction_coeff = CP.lateralTuning.torque.friction
-      self.offline_slope = CP.lateralTuning.torque.slope
+      self.offline_lat_accel_factor = CP.lateralTuning.torque.lat_accel_factor
 
     params = log.Event.from_bytes(params).liveTorqueParameters if params is not None else None
-    if params is not None and self.is_sane(params.slopeFiltered, params.offsetFiltered, params.frictionCoefficientFiltered):
+    if params is not None and self.is_sane(params.latAccelFactorFiltered, params.latAccelOffsetFiltered, params.frictionCoefficientFiltered):
       initial_params = {
-        'slope': params.slopeFiltered,
-        'offset': params.offsetFiltered,
+        'lat_accel_factor': params.latAccelFactorFiltered,
+        'lat_accel_offset': params.latAccelOffsetFiltered,
         'frictionCoefficient': params.frictionCoefficientFiltered,
         'points': params.points
       }
       self.decay = params.decay
     else:
       initial_params = {
-        'slope': self.offline_slope,
-        'offset': 0.0,
+        'lat_accel_factor': self.offline_lat_accel_factor,
+        'lat_accel_offset': 0.0,
         'frictionCoefficient': self.offline_friction_coeff,
         'points': []
       }
@@ -130,15 +130,15 @@ class TorqueEstimator:
   def car_sane(self, params, fingerprint):
     return False if params.get('carFingerprint', None) != fingerprint else True
 
-  def is_sane(self, slope, offset, friction_coeff, steer_data_distribution=np.array([0.5, 0.5]), lat_acc_data_distribution=np.array([0.5, 0.5])):
+  def is_sane(self, lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution=np.array([0.5, 0.5]), lat_acc_data_distribution=np.array([0.5, 0.5])):
     min_factor, max_factor = 1.0 - SANITY_FACTOR, 1.0 + SANITY_FACTOR
     if np.any(steer_data_distribution < MIN_DATA_PERC) or np.any(lat_acc_data_distribution < MIN_DATA_PERC):
       return False
-    if slope is None or offset is None or friction_coeff is None:
+    if lat_accel_factor is None or lat_accel_offset is None or friction_coeff is None:
       return False
-    if np.isnan(slope) or np.isnan(offset) or np.isnan(friction_coeff):
+    if np.isnan(lat_accel_factor) or np.isnan(lat_accel_offset) or np.isnan(friction_coeff):
       return False
-    return ((max_factor * self.offline_slope) >= slope >= (min_factor * self.offline_slope)) & \
+    return ((max_factor * self.offline_lat_accel_factor) >= lat_accel_factor >= (min_factor * self.offline_lat_accel_factor)) & \
       ((max_factor * self.offline_friction_coeff) >= friction_coeff >= (min_factor * self.offline_friction_coeff))
 
   def handle_log(self, t, which, msg):
@@ -193,27 +193,27 @@ def main(sm=None, pm=None):
 
       if estimator.filtered_points.is_valid():
         try:
-          slope, offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution = estimator.estimate_params()
-          # print(slope, offset, friction_coeff)
+          lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution = estimator.estimate_params()
+          # print(lat_accel_factor, lat_accel_offset, friction_coeff)
         except Exception as e:
           # print(e)
-          slope = offset = friction_coeff = None
+          lat_accel_factor = lat_accel_offset = friction_coeff = None
           cloudlog.exception(f"Error computing live torque params: {e}")
 
-        if estimator.is_sane(slope, offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution):
+        if estimator.is_sane(lat_accel_factor, lat_accel_offset, friction_coeff, steer_data_distribution, lat_acc_data_distribution):
           liveTorqueParameters.liveValid = True
-          liveTorqueParameters.slopeRaw = float(slope)
-          liveTorqueParameters.offsetRaw = float(offset)
+          liveTorqueParameters.latAccelFactorRaw = float(lat_accel_factor)
+          liveTorqueParameters.latAccelOffsetRaw = float(lat_accel_offset)
           liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
-          estimator.update_params({'slope': slope, 'offset': offset, 'frictionCoefficient': friction_coeff})
+          estimator.update_params({'lat_accel_factor': lat_accel_factor, 'lat_accel_offset': lat_accel_offset, 'frictionCoefficient': friction_coeff})
         else:
           cloudlog.exception("live torque params are numerically unstable")
           liveTorqueParameters.liveValid = False
           # estimator.reset()
       else:
         liveTorqueParameters.liveValid = False
-      liveTorqueParameters.slopeFiltered = float(estimator.filtered_params['slope'].x)
-      liveTorqueParameters.offsetFiltered = float(estimator.filtered_params['offset'].x)
+      liveTorqueParameters.latAccelFactorFiltered = float(estimator.filtered_params['lat_accel_factor'].x)
+      liveTorqueParameters.latAccelOffsetFiltered = float(estimator.filtered_params['lat_accel_offset'].x)
       liveTorqueParameters.frictionCoefficientFiltered = float(estimator.filtered_params['frictionCoefficient'].x)
       liveTorqueParameters.totalBucketPoints = len(estimator.filtered_points)
       liveTorqueParameters.decay = estimator.decay
