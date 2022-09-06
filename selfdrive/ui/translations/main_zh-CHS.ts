@@ -750,110 +750,110 @@ location set</source>
 <context>
     <name>Setup</name>
     <message>
-        <location filename="../qt/setup/setup.cc" line="74"/>
+        <location filename="../qt/setup/setup.cc" line="75"/>
         <source>WARNING: Low Voltage</source>
         <translation>警告：低电压</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="80"/>
+        <location filename="../qt/setup/setup.cc" line="81"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
         <translation>请使用car harness线束为您的设备供电，或自行承担风险。</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="93"/>
+        <location filename="../qt/setup/setup.cc" line="94"/>
         <source>Power off</source>
         <translation>关机</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="100"/>
-        <location filename="../qt/setup/setup.cc" line="183"/>
-        <location filename="../qt/setup/setup.cc" line="269"/>
+        <location filename="../qt/setup/setup.cc" line="101"/>
+        <location filename="../qt/setup/setup.cc" line="184"/>
+        <location filename="../qt/setup/setup.cc" line="270"/>
         <source>Continue</source>
         <translation>继续</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="118"/>
+        <location filename="../qt/setup/setup.cc" line="119"/>
         <source>Getting Started</source>
         <translation>开始设置</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="123"/>
+        <location filename="../qt/setup/setup.cc" line="124"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
         <translation>开始旅程之前，让我们完成安装并介绍一些细节。</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="148"/>
+        <location filename="../qt/setup/setup.cc" line="149"/>
         <source>Connect to Wi-Fi</source>
         <translation>连接到WiFi</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="166"/>
-        <location filename="../qt/setup/setup.cc" line="264"/>
+        <location filename="../qt/setup/setup.cc" line="167"/>
+        <location filename="../qt/setup/setup.cc" line="265"/>
         <source>Back</source>
         <translation>返回</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="183"/>
+        <location filename="../qt/setup/setup.cc" line="184"/>
         <source>Continue without Wi-Fi</source>
         <translation>不连接WiFi并继续</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="185"/>
+        <location filename="../qt/setup/setup.cc" line="186"/>
         <source>Waiting for internet</source>
         <translation>等待网络连接</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="239"/>
+        <location filename="../qt/setup/setup.cc" line="240"/>
         <source>Choose Software to Install</source>
         <translation>选择要安装的软件</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="249"/>
+        <location filename="../qt/setup/setup.cc" line="250"/>
         <source>Dashcam</source>
         <translation>Dashcam（行车记录仪）</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="254"/>
+        <location filename="../qt/setup/setup.cc" line="255"/>
         <source>Custom Software</source>
         <translation>自定义软件</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="282"/>
+        <location filename="../qt/setup/setup.cc" line="283"/>
         <source>Enter URL</source>
         <translation>输入网址</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="282"/>
+        <location filename="../qt/setup/setup.cc" line="283"/>
         <source>for Custom Software</source>
         <translation>以下载自定义软件</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="304"/>
+        <location filename="../qt/setup/setup.cc" line="305"/>
         <source>Downloading...</source>
         <translation>正在下载……</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="316"/>
+        <location filename="../qt/setup/setup.cc" line="317"/>
         <source>Download Failed</source>
         <translation>下载失败</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="322"/>
+        <location filename="../qt/setup/setup.cc" line="323"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
         <translation>请确保互联网连接良好且输入的URL有效。</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="335"/>
+        <location filename="../qt/setup/setup.cc" line="336"/>
         <source>Reboot device</source>
         <translation>重启设备</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="342"/>
+        <location filename="../qt/setup/setup.cc" line="343"/>
         <source>Start over</source>
         <translation>重来</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="382"/>
+        <location filename="../qt/setup/setup.cc" line="377"/>
         <source>Select a language</source>
         <translation type="unfinished">选择语言</translation>
     </message>

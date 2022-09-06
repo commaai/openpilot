@@ -756,110 +756,110 @@ trabalho definido</translation>
 <context>
     <name>Setup</name>
     <message>
-        <location filename="../qt/setup/setup.cc" line="74"/>
+        <location filename="../qt/setup/setup.cc" line="75"/>
         <source>WARNING: Low Voltage</source>
         <translation>ALERTA: Baixa Voltagem</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="80"/>
+        <location filename="../qt/setup/setup.cc" line="81"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
         <translation>Ligue seu dispositivo em um carro com um chicote ou prossiga por sua conta e risco.</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="93"/>
+        <location filename="../qt/setup/setup.cc" line="94"/>
         <source>Power off</source>
         <translation>Desligar</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="100"/>
-        <location filename="../qt/setup/setup.cc" line="183"/>
-        <location filename="../qt/setup/setup.cc" line="269"/>
+        <location filename="../qt/setup/setup.cc" line="101"/>
+        <location filename="../qt/setup/setup.cc" line="184"/>
+        <location filename="../qt/setup/setup.cc" line="270"/>
         <source>Continue</source>
         <translation>Continuar</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="118"/>
+        <location filename="../qt/setup/setup.cc" line="119"/>
         <source>Getting Started</source>
         <translation>Começando</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="123"/>
+        <location filename="../qt/setup/setup.cc" line="124"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
         <translation>Antes de pegarmos a estrada, vamos terminar a instalação e cobrir alguns detalhes.</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="148"/>
+        <location filename="../qt/setup/setup.cc" line="149"/>
         <source>Connect to Wi-Fi</source>
         <translation>Conectar ao Wi-Fi</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="166"/>
-        <location filename="../qt/setup/setup.cc" line="264"/>
+        <location filename="../qt/setup/setup.cc" line="167"/>
+        <location filename="../qt/setup/setup.cc" line="265"/>
         <source>Back</source>
         <translation>Voltar</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="183"/>
+        <location filename="../qt/setup/setup.cc" line="184"/>
         <source>Continue without Wi-Fi</source>
         <translation>Continuar sem Wi-Fi</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="185"/>
+        <location filename="../qt/setup/setup.cc" line="186"/>
         <source>Waiting for internet</source>
         <translation>Esperando pela internet</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="239"/>
+        <location filename="../qt/setup/setup.cc" line="240"/>
         <source>Choose Software to Install</source>
         <translation>Escolher Software para Instalar</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="249"/>
+        <location filename="../qt/setup/setup.cc" line="250"/>
         <source>Dashcam</source>
         <translation>Dashcam</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="254"/>
+        <location filename="../qt/setup/setup.cc" line="255"/>
         <source>Custom Software</source>
         <translation>Sofware Customizado</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="282"/>
+        <location filename="../qt/setup/setup.cc" line="283"/>
         <source>Enter URL</source>
         <translation>Preencher URL</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="282"/>
+        <location filename="../qt/setup/setup.cc" line="283"/>
         <source>for Custom Software</source>
         <translation>para o Software Customizado</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="304"/>
+        <location filename="../qt/setup/setup.cc" line="305"/>
         <source>Downloading...</source>
         <translation>Baixando...</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="316"/>
+        <location filename="../qt/setup/setup.cc" line="317"/>
         <source>Download Failed</source>
         <translation>Download Falhou</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="322"/>
+        <location filename="../qt/setup/setup.cc" line="323"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
         <translation>Garanta que a URL inserida é valida, e uma boa conexão à internet.</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="335"/>
+        <location filename="../qt/setup/setup.cc" line="336"/>
         <source>Reboot device</source>
         <translation>Reiniciar Dispositivo</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="342"/>
+        <location filename="../qt/setup/setup.cc" line="343"/>
         <source>Start over</source>
         <translation>Inicializar</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="382"/>
+        <location filename="../qt/setup/setup.cc" line="377"/>
         <source>Select a language</source>
         <translation type="unfinished">Selecione uma linguagem</translation>
     </message>
