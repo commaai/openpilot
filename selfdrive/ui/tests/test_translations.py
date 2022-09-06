@@ -27,13 +27,12 @@ class TestTranslations(unittest.TestCase):
 
   @staticmethod
   def _read_translation_file(path, file):
-    with open(os.path.join(path, f"{file}.ts"), "r") as f:
-      # fix relative path depth
-      tr_file = f.read().replace("filename=\"../../", "filename=\"../")
-
-    # ignore line numbers when checking if translations are updated
-    tr_text = [line for line in tr_file.splitlines() if not line.strip().startswith(LOCATION_TAG)]
-    return "\n".join(tr_text)
+    tr_file = os.path.join(path, f"{file}.ts")
+    with open(tr_file, "r") as f:
+      # ignore locations when checking if translations are updated
+      lines = [line for line in f.read().splitlines() if
+               not line.strip().startswith(LOCATION_TAG)]
+      return "\n".join(lines)
 
   def test_missing_translation_files(self):
     for name, file in self.translation_files.items():
