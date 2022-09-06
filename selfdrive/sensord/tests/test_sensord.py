@@ -287,7 +287,7 @@ class TestSensord(unittest.TestCase):
 
 
 
-  #@with_processes(['sensord'])
+  @with_processes(['sensord'])
   def test_events_check(self):
     # verify if all sensors produce events
     events = read_sensor_events(3)
@@ -307,7 +307,7 @@ class TestSensord(unittest.TestCase):
     for s in sensor_events:
       assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
 
-  #@with_processes(['sensord'])
+  @with_processes(['sensord'])
   def test_logmonottime_timestamp(self):
     # ensure diff logMonotime and timestamp is rather small
     # -> published when created
