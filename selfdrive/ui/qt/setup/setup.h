@@ -2,6 +2,7 @@
 
 #include <QStackedWidget>
 #include <QString>
+#include <QTranslator>
 #include <QWidget>
 
 class Setup : public QStackedWidget {
@@ -21,6 +22,7 @@ private:
 
   QWidget *failed_widget;
   QWidget *downloading_widget;
+  QTranslator translator;
 
 signals:
   void finished(bool success);

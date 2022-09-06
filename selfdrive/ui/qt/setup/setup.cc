@@ -6,7 +6,6 @@
 
 #include <QApplication>
 #include <QLabel>
-#include <QTranslator>
 #include <QVBoxLayout>
 
 #include <curl/curl.h>
@@ -380,7 +379,6 @@ void Setup::showEvent(QShowEvent *event) {
     Params().put("LanguageSetting", currentLang.toStdString());
   }
 
-  QTranslator translator;
   if (translator.load(":/" + currentLang)) {
     qApp->installTranslator(&translator);
   }

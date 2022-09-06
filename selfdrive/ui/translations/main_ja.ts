@@ -752,110 +752,110 @@ location set</source>
 <context>
     <name>Setup</name>
     <message>
-        <location filename="../qt/setup/setup.cc" line="75"/>
+        <location filename="../qt/setup/setup.cc" line="74"/>
         <source>WARNING: Low Voltage</source>
         <translation>警告：低電圧</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="81"/>
+        <location filename="../qt/setup/setup.cc" line="80"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
         <translation>自己責任でハーネスから電源を供給してください。</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="94"/>
+        <location filename="../qt/setup/setup.cc" line="93"/>
         <source>Power off</source>
         <translation>電源を切る</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="101"/>
-        <location filename="../qt/setup/setup.cc" line="184"/>
-        <location filename="../qt/setup/setup.cc" line="270"/>
+        <location filename="../qt/setup/setup.cc" line="100"/>
+        <location filename="../qt/setup/setup.cc" line="183"/>
+        <location filename="../qt/setup/setup.cc" line="269"/>
         <source>Continue</source>
         <translation>続ける</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="119"/>
+        <location filename="../qt/setup/setup.cc" line="118"/>
         <source>Getting Started</source>
         <translation>はじめに</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="124"/>
+        <location filename="../qt/setup/setup.cc" line="123"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
         <translation>その前に、インストールを完了し、いくつかの詳細を説明します。</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="149"/>
+        <location filename="../qt/setup/setup.cc" line="148"/>
         <source>Connect to Wi-Fi</source>
         <translation>Wi-Fi に接続</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="167"/>
-        <location filename="../qt/setup/setup.cc" line="265"/>
+        <location filename="../qt/setup/setup.cc" line="166"/>
+        <location filename="../qt/setup/setup.cc" line="264"/>
         <source>Back</source>
         <translation>戻る</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="184"/>
+        <location filename="../qt/setup/setup.cc" line="183"/>
         <source>Continue without Wi-Fi</source>
         <translation>Wi-Fi に未接続で続行</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="186"/>
+        <location filename="../qt/setup/setup.cc" line="185"/>
         <source>Waiting for internet</source>
         <translation>インターネット接続を待機中</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="240"/>
+        <location filename="../qt/setup/setup.cc" line="239"/>
         <source>Choose Software to Install</source>
         <translation>インストールするソフトウェアを選びます</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="250"/>
+        <location filename="../qt/setup/setup.cc" line="249"/>
         <source>Dashcam</source>
         <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="255"/>
+        <location filename="../qt/setup/setup.cc" line="254"/>
         <source>Custom Software</source>
         <translation>カスタムソフトウェア</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="283"/>
+        <location filename="../qt/setup/setup.cc" line="282"/>
         <source>Enter URL</source>
         <translation>URL を入力</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="283"/>
+        <location filename="../qt/setup/setup.cc" line="282"/>
         <source>for Custom Software</source>
         <translation>カスタムソフトウェア</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="305"/>
+        <location filename="../qt/setup/setup.cc" line="304"/>
         <source>Downloading...</source>
         <translation>ダウンロード中...</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="317"/>
+        <location filename="../qt/setup/setup.cc" line="316"/>
         <source>Download Failed</source>
         <translation>ダウンロード失敗</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="323"/>
+        <location filename="../qt/setup/setup.cc" line="322"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
         <translation>入力された URL を確認し、デバイスがインターネットに接続されていることを確認してください。</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="336"/>
+        <location filename="../qt/setup/setup.cc" line="335"/>
         <source>Reboot device</source>
         <translation>デバイスを再起動</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="343"/>
+        <location filename="../qt/setup/setup.cc" line="342"/>
         <source>Start over</source>
         <translation>最初からやり直す</translation>
     </message>
     <message>
-        <location filename="../qt/setup/setup.cc" line="377"/>
+        <location filename="../qt/setup/setup.cc" line="376"/>
         <source>Select a language</source>
         <translation type="unfinished">言語を選択</translation>
     </message>
