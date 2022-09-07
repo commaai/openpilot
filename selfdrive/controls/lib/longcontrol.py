@@ -1,7 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from selfdrive.controls.lib.drive_helpers import CONTROL_N
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.modeld.constants import T_IDXS
 
@@ -44,7 +44,6 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       elif starting_condition:
         long_control_state = LongCtrlState.pid
 
-    
     elif long_control_state == LongCtrlState.starting:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
@@ -119,8 +118,20 @@ class LongControl:
 
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target_now
+
+      # Toyota starts braking more when it thinks you want to stop
+      # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
+      # TODO too complex, needs to be simplified and tested on toyotas
+      prevent_overshoot = not self.CP.stoppingControl and CS.vEgo < 1.5 and v_target_1sec < 0.7 and v_target_1sec < self.v_pid
+      deadzone = interp(CS.vEgo, self.CP.longitudinalTuning.deadzoneBP, self.CP.longitudinalTuning.deadzoneV)
+      freeze_integrator = prevent_overshoot
+
       error = self.v_pid - CS.vEgo
-      output_accel = self.pid.update(error, speed=CS.vEgo, feedforward=a_target)
+      error_deadzone = apply_deadzone(error, deadzone)
+      output_accel = self.pid.update(error_deadzone, speed=CS.vEgo,
+                                     feedforward=a_target,
+                                     freeze_integrator=freeze_integrator)
+
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
