@@ -25,6 +25,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
     ret.radarOffCan = True
+    ret.experimentalLongitudinalAvailable = True  # FIXME: Do something better than force this on
 
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
