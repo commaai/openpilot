@@ -11,6 +11,11 @@ map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
 
+void Thneed::stop() {
+  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
+  record = false;
+}
+
 void Thneed::clinit() {
   device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   if (context == NULL) context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -30,17 +35,16 @@ cl_int Thneed::clexec() {
   return clFinish(command_queue);
 }
 
-void Thneed::copy_inputs(float **finputs) {
-  //cl_int ret;
+void Thneed::copy_inputs(float **finputs, bool internal) {
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (debug >= 1) printf("copying %lu -- %p -> %p (cl %p)\n", input_sizes[idx], finputs[idx], inputs[idx], input_clmem[idx]);
 
-    // TODO: fix thneed caching
-    if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
-    //if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
-
-    // HACK
-    //if (input_sizes[idx] == 16) memset((char*)inputs[idx] + 8, 0, 8);
+    if (internal) {
+      // if it's internal, using memcpy is fine since the buffer sync is cached in the ioctl layer
+      if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+    } else {
+      if (finputs[idx] != NULL) CL_CHECK(clEnqueueWriteBuffer(command_queue, input_clmem[idx], CL_TRUE, 0, input_sizes[idx], finputs[idx], 0, NULL, NULL));
+    }
   }
 }
 
@@ -132,23 +136,6 @@ cl_int CLQueuedKernel::exec() {
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 }
 
-uint64_t CLQueuedKernel::benchmark() {
-  uint64_t ret = 0;
-  int old_record = thneed->record;
-  thneed->record = 0;
-  clFinish(thneed->command_queue);
-  // TODO: benchmarking at a lower level will make this more accurate
-  for (int i = 0; i < 10; i++) {
-    uint64_t sb = nanos_since_boot();
-    exec();
-    clFinish(thneed->command_queue);
-    uint64_t et = nanos_since_boot() - sb;
-    if (ret == 0 || et < ret) ret = et;
-  }
-  thneed->record = old_record;
-  return ret;
-}
-
 void CLQueuedKernel::debug_print(bool verbose) {
   printf("%p %56s -- ", kernel, name.c_str());
   for (int i = 0; i < work_dim; i++) {
@@ -202,8 +189,8 @@ void CLQueuedKernel::debug_print(bool verbose) {
             assert(slice_pitch == 0);
 
             clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
-            size_t sz;
-            clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
+            size_t sz = 0;
+            if (buf != NULL) clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
             printf(" image %zu x %zu rp %zu @ %p buffer %zu", width, height, row_pitch, buf, sz);
           } else {
             size_t sz;
@@ -225,12 +212,5 @@ cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_siz
     g_args[make_pair(kernel, arg_index)] = string("");
   }
   cl_int ret = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
-  return ret;
-}
-
-cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
-  assert(count == 1);
-  cl_program ret = clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
-  g_program_source[ret] = strings[0];
   return ret;
 }

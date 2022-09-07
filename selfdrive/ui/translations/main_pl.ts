@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="th_TH">
+<TS version="2.1" language="pl_PL">
 <context>
     <name>AbstractAlert</name>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="25"/>
         <source>Close</source>
-        <translation>ปิด</translation>
+        <translation>Zamknij</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="30"/>
         <source>Snooze Update</source>
-        <translation>เลื่อนการอัปเดต</translation>
+        <translation>Zaktualizuj później</translation>
     </message>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="41"/>
         <source>Reboot and Update</source>
-        <translation>รีบูตและอัปเดต</translation>
+        <translation>Uruchom ponownie i zaktualizuj</translation>
     </message>
 </context>
 <context>
@@ -24,53 +24,53 @@
     <message>
         <location filename="../qt/offroad/networking.cc" line="121"/>
         <source>Back</source>
-        <translation>ย้อนกลับ</translation>
+        <translation>Wróć</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="129"/>
         <source>Enable Tethering</source>
-        <translation>ปล่อยฮอตสปอต</translation>
+        <translation>Włącz hotspot osobisty</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <source>Tethering Password</source>
-        <translation>รหัสผ่านฮอตสปอต</translation>
+        <translation>Hasło do hotspotu</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="134"/>
         <location filename="../qt/offroad/networking.cc" line="161"/>
         <source>EDIT</source>
-        <translation>แก้ไข</translation>
+        <translation>EDYTUJ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="136"/>
         <source>Enter new tethering password</source>
-        <translation>ป้อนรหัสผ่านฮอตสปอตใหม่</translation>
+        <translation>Wprowadź nowe hasło do hotspotu</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="144"/>
         <source>IP Address</source>
-        <translation>หมายเลขไอพี</translation>
+        <translation>Adres IP</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="153"/>
         <source>Enable Roaming</source>
-        <translation>เปิดใช้งานโรมมิ่ง</translation>
+        <translation>Włącz roaming danych</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="161"/>
         <source>APN Setting</source>
-        <translation>ตั้งค่า APN</translation>
+        <translation>Ustawienia APN</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>Enter APN</source>
-        <translation>ป้อนค่า APN</translation>
+        <translation>Wprowadź APN</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="165"/>
         <source>leave blank for automatic configuration</source>
-        <translation>เว้นว่างเพื่อตั้งค่าอัตโนมัติ</translation>
+        <translation>Pozostaw puste, aby użyć domyślnej konfiguracji</translation>
     </message>
 </context>
 <context>
@@ -79,12 +79,12 @@
         <location filename="../qt/widgets/input.cc" line="221"/>
         <location filename="../qt/widgets/input.cc" line="226"/>
         <source>Ok</source>
-        <translation>ตกลง</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="226"/>
         <source>Cancel</source>
-        <translation>ยกเลิก</translation>
+        <translation>Anuluj</translation>
     </message>
 </context>
 <context>
@@ -92,17 +92,17 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>คุณต้องยอมรับเงื่อนไขและข้อตกลง เพื่อใช้งาน openpilot</translation>
+        <translation>Aby korzystać z openpilota musisz zaakceptować regulamin.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="149"/>
         <source>Back</source>
-        <translation>ย้อนกลับ</translation>
+        <translation>Wróć</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="154"/>
         <source>Decline, uninstall %1</source>
-        <translation>ปฏิเสธ และถอนการติดตั้ง %1</translation>
+        <translation>Odrzuć, odinstaluj %1</translation>
     </message>
 </context>
 <context>
@@ -110,152 +110,152 @@
     <message>
         <location filename="../qt/offroad/settings.cc" line="100"/>
         <source>Dongle ID</source>
-        <translation>Dongle ID</translation>
+        <translation>ID adaptera</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="100"/>
         <source>N/A</source>
-        <translation>ไม่มี</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="101"/>
         <source>Serial</source>
-        <translation>ซีเรียล</translation>
+        <translation>Numer seryjny</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>Driver Camera</source>
-        <translation>กล้องฝั่งคนขับ</translation>
+        <translation>Kamera kierowcy</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="105"/>
         <source>PREVIEW</source>
-        <translation>แสดงภาพ</translation>
+        <translation>PODGLĄD</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="106"/>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>ดูภาพตัวอย่างกล้องที่หันเข้าหาคนขับเพื่อให้แน่ใจว่าการตรวจสอบคนขับมีทัศนวิสัยที่ดี (รถต้องดับเครื่องยนต์)</translation>
+        <translation>Wyświetl podgląd z kamery skierowanej na kierowcę, aby upewnić się, że monitoring kierowcy ma dobry zakres widzenia. (pojazd musi być wyłączony)</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
         <source>Reset Calibration</source>
-        <translation>รีเซ็ตการคาลิเบรท</translation>
+        <translation>Zresetuj kalibrację</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="110"/>
         <source>RESET</source>
-        <translation>รีเซ็ต</translation>
+        <translation>ZRESETUJ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="113"/>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตการคาลิเบรท?</translation>
+        <translation>Czy na pewno chcesz zresetować kalibrację?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
         <source>Review Training Guide</source>
-        <translation>ทบทวนคู่มือการใช้งาน</translation>
+        <translation>Zapoznaj się z samouczkiem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
         <source>REVIEW</source>
-        <translation>ทบทวน</translation>
+        <translation>ZAPOZNAJ SIĘ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="120"/>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>ตรวจสอบกฎ คุณสมบัติ และข้อจำกัดของ openpilot</translation>
+        <translation>Zapoznaj się z zasadami, funkcjami i ograniczeniami openpilota</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="122"/>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการทบทวนคู่มือการใช้งาน?</translation>
+        <translation>Czy na pewno chcesz się zapoznać z samouczkiem?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="130"/>
         <source>Regulatory</source>
-        <translation>ระเบียบข้อบังคับ</translation>
+        <translation>Regulacja</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="130"/>
         <source>VIEW</source>
-        <translation>ดู</translation>
+        <translation>WIDOK</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="138"/>
         <source>Change Language</source>
-        <translation>เปลี่ยนภาษา</translation>
+        <translation>Zmień język</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="138"/>
         <source>CHANGE</source>
-        <translation>เปลี่ยน</translation>
+        <translation>ZMIEŃ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="142"/>
         <source>Select a language</source>
-        <translation>เลือกภาษา</translation>
+        <translation>Wybierz język</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="162"/>
         <source>Reboot</source>
-        <translation>รีบูต</translation>
+        <translation>Uruchom ponownie</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="167"/>
         <source>Power Off</source>
-        <translation>ปิดเครื่อง</translation>
+        <translation>Wyłącz</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="187"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot กำหนดให้ติดตั้งอุปกรณ์ โดยสามารถเอียงด้านซ้ายหรือขวาไม่เกิน 4° และเอียงขึ้นด้านบนไม่เกิน 5° หรือเอียงลงด้านล่างไม่เกิน 8° openpilot ทำการคาลิเบรทอย่างต่อเนื่อง แทบจะไม่จำเป็นต้องทำการรีเซ็ตการคาลิเบรท</translation>
+        <translation>openpilot wymaga, aby urządzenie było zamontowane z maksymalnym odchyłem 4° poziomo, 5° w górę oraz 8° w dół. openpilot jest ciągle kalibrowany, rzadko konieczne jest resetowania urządzenia.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="198"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> อุปกรณ์ของคุณเอียงไปทาง %2 %1° และ %4 %3°</translation>
+        <translation> Twoje urządzenie jest skierowane %1° %2 oraz %3° %4.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>down</source>
-        <translation>ด้านล่าง</translation>
+        <translation>w dół</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="199"/>
         <source>up</source>
-        <translation>ด้านบน</translation>
+        <translation>w górę</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="200"/>
         <source>left</source>
-        <translation>ด้านซ้าย</translation>
+        <translation>w lewo</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="200"/>
         <source>right</source>
-        <translation>ด้านขวา</translation>
+        <translation>w prawo</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="211"/>
         <source>Are you sure you want to reboot?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการรีบูต?</translation>
+        <translation>Czy na pewno chcesz uruchomić ponownie urządzenie?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="218"/>
         <source>Disengage to Reboot</source>
-        <translation>ยกเลิกระบบช่วยขับเพื่อรีบูต</translation>
+        <translation>Aby uruchomić ponownie, odłącz sterowanie</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="224"/>
         <source>Are you sure you want to power off?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการปิดเครื่อง?</translation>
+        <translation>Czy na pewno chcesz wyłączyć urządzenie?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="231"/>
         <source>Disengage to Power Off</source>
-        <translation>ยกเลิกระบบช่วยขับเพื่อปิดเครื่อง</translation>
+        <translation>Aby wyłączyć urządzenie, odłącz sterowanie</translation>
     </message>
 </context>
 <context>
@@ -263,32 +263,32 @@
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="37"/>
         <source>Drives</source>
-        <translation>การขับขี่</translation>
+        <translation>Przejazdy</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="39"/>
         <source>Hours</source>
-        <translation>ชั่วโมง</translation>
+        <translation>Godziny</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="44"/>
         <source>ALL TIME</source>
-        <translation>ทั้งหมด</translation>
+        <translation>CAŁKOWICIE</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.cc" line="46"/>
         <source>PAST WEEK</source>
-        <translation>สัปดาห์ที่ผ่านมา</translation>
+        <translation>OSTATNI TYDZIEŃ</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
         <source>KM</source>
-        <translation>กิโลเมตร</translation>
+        <translation>KM</translation>
     </message>
     <message>
         <location filename="../qt/widgets/drive_stats.h" line="15"/>
         <source>Miles</source>
-        <translation>ไมล์</translation>
+        <translation>Mile</translation>
     </message>
 </context>
 <context>
@@ -296,7 +296,7 @@
     <message>
         <location filename="../qt/offroad/driverview.cc" line="55"/>
         <source>camera starting</source>
-        <translation>กำลังเปิดกล้อง</translation>
+        <translation>uruchamianie kamery</translation>
     </message>
 </context>
 <context>
@@ -304,13 +304,15 @@
     <message>
         <location filename="../qt/widgets/input.cc" line="71"/>
         <source>Cancel</source>
-        <translation>ยกเลิก</translation>
+        <translation>Anuluj</translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/widgets/input.cc" line="168"/>
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>ต้องการอย่างน้อย %n ตัวอักษร!</numerusform>
+            <numerusform>Wpisana wartość powinna składać się przynajmniej z %n znaku!</numerusform>
+            <numerusform>Wpisana wartość powinna skłądać się przynajmniej z %n znaków!</numerusform>
+            <numerusform>Wpisana wartość powinna skłądać się przynajmniej z %n znaków!</numerusform>
         </translation>
     </message>
 </context>
@@ -319,22 +321,22 @@
     <message>
         <location filename="../installer/installer.cc" line="56"/>
         <source>Installing...</source>
-        <translation>กำลังติดตั้ง...</translation>
+        <translation>Instalowanie...</translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="144"/>
         <source>Receiving objects: </source>
-        <translation>กำลังรับข้อมูล: </translation>
+        <translation>Odbieranie obiektów: </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="145"/>
         <source>Resolving deltas: </source>
-        <translation>การแก้ไขเดลต้า: </translation>
+        <translation>Rozwiązywanie różnic: </translation>
     </message>
     <message>
         <location filename="../installer/installer.cc" line="146"/>
         <source>Updating files: </source>
-        <translation>กำลังอัปเดตไฟล์: </translation>
+        <translation>Aktualizacja plików: </translation>
     </message>
 </context>
 <context>
@@ -342,27 +344,27 @@
     <message>
         <location filename="../qt/maps/map.cc" line="621"/>
         <source>eta</source>
-        <translation>eta</translation>
+        <translation>przewidywany czas</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="631"/>
         <source>min</source>
-        <translation>นาที</translation>
+        <translation>min</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="635"/>
         <source>hr</source>
-        <translation>ชม.</translation>
+        <translation>godz</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="655"/>
         <source>km</source>
-        <translation>กม.</translation>
+        <translation>km</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="658"/>
         <source>mi</source>
-        <translation>ไมล์</translation>
+        <translation>mi</translation>
     </message>
 </context>
 <context>
@@ -370,22 +372,22 @@
     <message>
         <location filename="../qt/maps/map.cc" line="421"/>
         <source> km</source>
-        <translation> กม.</translation>
+        <translation> km</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="424"/>
         <source> m</source>
-        <translation> ม.</translation>
+        <translation> m</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="432"/>
         <source> mi</source>
-        <translation> ไมล์</translation>
+        <translation> mi</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="435"/>
         <source> ft</source>
-        <translation> ฟุต</translation>
+        <translation> ft</translation>
     </message>
 </context>
 <context>
@@ -393,48 +395,48 @@
     <message>
         <location filename="../qt/maps/map_settings.cc" line="62"/>
         <source>Current Destination</source>
-        <translation>ปลายทางปัจจุบัน</translation>
+        <translation>Miejsce docelowe</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="66"/>
         <source>CLEAR</source>
-        <translation>ล้างข้อมูล</translation>
+        <translation>WYCZYŚĆ</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="81"/>
         <source>Recent Destinations</source>
-        <translation>ปลายทางล่าสุด</translation>
+        <translation>Ostatnie miejsca docelowe</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="95"/>
         <source>Try the Navigation Beta</source>
-        <translation>ลองใช้ระบบนำทาง (เบต้า)</translation>
+        <translation>Wypróbuj nawigację w wersji beta</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="107"/>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>รับการแสดงเส้นทางแบบเลี้ยวต่อเลี้ยว และอื่นๆ ด้วยการสมัครบริการ
-comma prime สมัครเลย: https://connect.comma.ai</translation>
+        <translation>Odblokuj nawigację zakręt po zakęcie i wiele więcej subskrybując
+comma prime. Zarejestruj się teraz: https://connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="164"/>
         <source>No home
 location set</source>
-        <translation>ยังไม่ได้กำหนด
-ตำแหน่งของบ้าน</translation>
+        <translation>Lokalizacja domu
+nie została ustawiona</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="169"/>
         <source>No work
 location set</source>
-        <translation>ยังไม่ได้กำหนด
-ตำแหน่งของที่ทำงาน</translation>
+        <translation>Miejsce pracy
+nie zostało ustawione</translation>
     </message>
     <message>
         <location filename="../qt/maps/map_settings.cc" line="282"/>
         <source>no recent destinations</source>
-        <translation>ไม่พบปลายทางล่าสุด</translation>
+        <translation>brak ostatnich miejsc docelowych</translation>
     </message>
 </context>
 <context>
@@ -442,12 +444,12 @@ location set</source>
     <message>
         <location filename="../qt/maps/map.cc" line="178"/>
         <source>Map Loading</source>
-        <translation>กำลังโหลดแผนที่</translation>
+        <translation>Ładowanie Mapy</translation>
     </message>
     <message>
         <location filename="../qt/maps/map.cc" line="195"/>
         <source>Waiting for GPS</source>
-        <translation>กำลังรอสัญญาณ GPS</translation>
+        <translation>Oczekiwanie na sygnał GPS</translation>
     </message>
 </context>
 <context>
@@ -455,12 +457,12 @@ location set</source>
     <message>
         <location filename="../qt/widgets/input.cc" line="300"/>
         <source>Select</source>
-        <translation>เลือก</translation>
+        <translation>Wybierz</translation>
     </message>
     <message>
         <location filename="../qt/widgets/input.cc" line="333"/>
         <source>Cancel</source>
-        <translation>ยกเลิก</translation>
+        <translation>Anuluj</translation>
     </message>
 </context>
 <context>
@@ -468,23 +470,23 @@ location set</source>
     <message>
         <location filename="../qt/offroad/networking.cc" line="30"/>
         <source>Advanced</source>
-        <translation>ขั้นสูง</translation>
+        <translation>Zaawansowane</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <source>Enter password</source>
-        <translation>ใส่รหัสผ่าน</translation>
+        <translation>Wprowadź hasło</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="87"/>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>for &quot;%1&quot;</source>
-        <translation>สำหรับ &quot;%1&quot;</translation>
+        <translation>do &quot;%1&quot;</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="97"/>
         <source>Wrong password</source>
-        <translation>รหัสผ่านผิด</translation>
+        <translation>Niepoprawne hasło</translation>
     </message>
 </context>
 <context>
@@ -492,30 +494,30 @@ location set</source>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
-        <translation>กม./ชม.</translation>
+        <translation>km/h</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
         <source>mph</source>
-        <translation>ไมล์/ชม.</translation>
+        <translation>mph</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="286"/>
         <location filename="../qt/onroad.cc" line="289"/>
         <source>MAX</source>
-        <translation>สูงสุด</translation>
+        <translation>MAX</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="333"/>
         <location filename="../qt/onroad.cc" line="336"/>
         <source>SPEED</source>
-        <translation>ความเร็ว</translation>
+        <translation>PRĘDKOŚĆ</translation>
     </message>
     <message>
         <location filename="../qt/onroad.cc" line="339"/>
         <location filename="../qt/onroad.cc" line="342"/>
         <source>LIMIT</source>
-        <translation>จำกัด</translation>
+        <translation>OGRANICZENIE</translation>
     </message>
 </context>
 <context>
@@ -523,17 +525,17 @@ location set</source>
     <message>
         <location filename="../qt/home.cc" line="114"/>
         <source>UPDATE</source>
-        <translation>อัปเดต</translation>
+        <translation>UAKTUALNIJ</translation>
     </message>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERTS</source>
-        <translation> การแจ้งเตือน</translation>
+        <translation> ALERTY</translation>
     </message>
     <message>
         <location filename="../qt/home.cc" line="205"/>
         <source> ALERT</source>
-        <translation> การแจ้งเตือน</translation>
+        <translation> ALERT</translation>
     </message>
 </context>
 <context>
@@ -541,22 +543,22 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="86"/>
         <source>Pair your device to your comma account</source>
-        <translation>จับคู่อุปกรณ์ของคุณกับบัญชี comma ของคุณ</translation>
+        <translation>Sparuj swoje urzadzenie ze swoim kontem comma</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="97"/>
         <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>ไปที่ https://connect.comma.ai ด้วยโทรศัพท์ของคุณ</translation>
+        <translation>Wejdź na stronę https://connect.comma.ai na swoim telefonie</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="98"/>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation>กดที่ &quot;add new device&quot; และสแกนคิวอาร์โค้ดทางด้านขวา</translation>
+        <translation>Kliknij &quot;add new device&quot; i zeskanuj kod QR znajdujący się po prawej stronie</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="99"/>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>จดจำ connect.comma.ai โดยการเพิ่มไปยังหน้าจอโฮม เพื่อใช้งานเหมือนเป็นแอปพลิเคชัน</translation>
+        <translation>Dodaj connect.comma.ai do zakładek na swoim ekranie początkowym, aby korzystać z niej jak z aplikacji</translation>
     </message>
 </context>
 <context>
@@ -564,32 +566,32 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="187"/>
         <source>Upgrade Now</source>
-        <translation>อัพเกรดเดี๋ยวนี้</translation>
+        <translation>Uaktualnij teraz</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="192"/>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>สมัครสมาชิก comma prime ได้ที่ connect.comma.ai</translation>
+        <translation>Zostań członkiem comma prime na connect.comma.ai</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="199"/>
         <source>PRIME FEATURES:</source>
-        <translation>คุณสมบัติของ PRIME:</translation>
+        <translation>FUNKCJE PRIME:</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Remote access</source>
-        <translation>การเข้าถึงระยะไกล</translation>
+        <translation>Zdalny dostęp</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>1 year of storage</source>
-        <translation>จัดเก็บข้อมูลนาน 1 ปี</translation>
+        <translation>1 rok przechowywania danych</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="204"/>
         <source>Developer perks</source>
-        <translation>สิทธิพิเศษสำหรับนักพัฒนา</translation>
+        <translation>Udogodnienia dla programistów</translation>
     </message>
 </context>
 <context>
@@ -597,7 +599,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="126"/>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ สมัครสำเร็จ</translation>
+        <translation>✓ ZASUBSKRYBOWANO</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="132"/>
@@ -612,7 +614,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="151"/>
         <source>COMMA POINTS</source>
-        <translation>คะแนน COMMA</translation>
+        <translation>COMMA POINTS</translation>
     </message>
 </context>
 <context>
@@ -620,17 +622,17 @@ location set</source>
     <message>
         <location filename="../qt/text.cc" line="36"/>
         <source>Reboot</source>
-        <translation>รีบูต</translation>
+        <translation>Uruchom Ponownie</translation>
     </message>
     <message>
         <location filename="../qt/text.cc" line="41"/>
         <source>Exit</source>
-        <translation>ปิด</translation>
+        <translation>Wyjdź</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="21"/>
         <source>dashcam</source>
-        <translation>กล้องติดรถยนต์</translation>
+        <translation>wideorejestrator</translation>
     </message>
     <message>
         <location filename="../qt/util.cc" line="21"/>
@@ -641,21 +643,27 @@ location set</source>
         <location filename="../qt/util.cc" line="82"/>
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>%n นาทีที่แล้ว</numerusform>
+            <numerusform>%n minutę temu</numerusform>
+            <numerusform>%n minuty temu</numerusform>
+            <numerusform>%n minut temu</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="85"/>
         <source>%n hour(s) ago</source>
         <translation>
-            <numerusform>%n ชั่วโมงที่แล้ว</numerusform>
+            <numerusform>% godzinę temu</numerusform>
+            <numerusform>%n godziny temu</numerusform>
+            <numerusform>%n godzin temu</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../qt/util.cc" line="88"/>
         <source>%n day(s) ago</source>
         <translation>
-            <numerusform>%n วันที่แล้ว</numerusform>
+            <numerusform>%n dzień temu</numerusform>
+            <numerusform>%n dni temu</numerusform>
+            <numerusform>%n dni temu</numerusform>
         </translation>
     </message>
 </context>
@@ -664,47 +672,47 @@ location set</source>
     <message>
         <location filename="../qt/setup/reset.cc" line="29"/>
         <source>Reset failed. Reboot to try again.</source>
-        <translation>การรีเซ็ตล้มเหลว รีบูตเพื่อลองอีกครั้ง</translation>
+        <translation>Wymazywanie zakończone niepowodzeniem. Aby spróbować ponownie, uruchom ponownie urządzenie.</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="34"/>
         <source>Are you sure you want to reset your device?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตอุปกรณ์?</translation>
+        <translation>Czy na pewno chcesz wymazać urządzenie?</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="38"/>
         <source>Resetting device...</source>
-        <translation>กำลังรีเซ็ตอุปกรณ์...</translation>
+        <translation>Wymazywanie urządzenia...</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="53"/>
         <source>System Reset</source>
-        <translation>รีเซ็ตระบบ</translation>
+        <translation>Przywróć do ustawień fabrycznych</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="59"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>มีการสั่งรีเซ็ตระบบ กดยืนยันเพื่อลบข้อมูลและการตั้งค่าทั้งหมด กดยกเลิกเพื่อบูตเข้าระบบตามปกติ</translation>
+        <translation>Przywracanie do ustawień fabrycznych. Wciśnij potwierdź, aby usunąć wszystkie dane oraz ustawienia. Wciśnij anuluj, aby wznowić uruchamianie.</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="68"/>
         <source>Cancel</source>
-        <translation>ยกเลิก</translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="72"/>
         <source>Reboot</source>
-        <translation>รีบูต</translation>
+        <translation>Uruchom ponownie</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="80"/>
         <source>Confirm</source>
-        <translation>ยืนยัน</translation>
+        <translation>Potwiedź</translation>
     </message>
     <message>
         <location filename="../qt/setup/reset.cc" line="88"/>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>ไม่สามารถเมานต์พาร์ติชั่นข้อมูล กดยืนยันเพื่อรีเซ็ตอุปกรณ์ของคุณ</translation>
+        <translation>Partycja nie została zamontowana poprawnie. Wciśnij potwierdź, aby uruchomić ponownie urządzenie.</translation>
     </message>
 </context>
 <context>
@@ -712,7 +720,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/input.cc" line="258"/>
         <source>Ok</source>
-        <translation>ตกลง</translation>
+        <translation>Ok</translation>
     </message>
 </context>
 <context>
@@ -720,33 +728,33 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="332"/>
         <source>×</source>
-        <translation>×</translation>
+        <translation>x</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="358"/>
         <source>Device</source>
-        <translation>อุปกรณ์</translation>
+        <translation>Urządzenie</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="359"/>
         <location filename="../qt/offroad/settings.cc" line="398"/>
         <source>Network</source>
-        <translation>เครือข่าย</translation>
+        <translation>Sieć</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="360"/>
         <source>Toggles</source>
-        <translation>ตัวเลือก</translation>
+        <translation>Przełączniki</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="361"/>
         <source>Software</source>
-        <translation>ซอฟต์แวร์</translation>
+        <translation>Oprogramowanie</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="366"/>
         <source>Navigation</source>
-        <translation>การนำทาง</translation>
+        <translation>Nawigacja</translation>
     </message>
 </context>
 <context>
@@ -754,105 +762,105 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="73"/>
         <source>WARNING: Low Voltage</source>
-        <translation>คำเตือน: แรงดันแบตเตอรี่ต่ำ</translation>
+        <translation>OSTRZEŻENIE: Niskie Napięcie</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>โปรดต่ออุปกรณ์ของคุณเข้ากับสายควบคุมในรถยนต์ หรือดำเนินการด้วยความเสี่ยงของคุณเอง</translation>
+        <translation>Podłącz swoje urządzenie do zasilania poprzez podłączenienie go do pojazdu lub kontynuuj na własną odpowiedzialność.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="92"/>
         <source>Power off</source>
-        <translation>ปิดเครื่อง</translation>
+        <translation>Wyłącz</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="99"/>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <location filename="../qt/setup/setup.cc" line="268"/>
         <source>Continue</source>
-        <translation>ดำเนินการต่อ</translation>
+        <translation>Kontynuuj</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="117"/>
         <source>Getting Started</source>
-        <translation>เริ่มกันเลย</translation>
+        <translation>Zacznij</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="122"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>ก่อนออกเดินทาง เรามาทำการติดตั้งซอฟต์แวร์ และตรวจสอบการตั้งค่า</translation>
+        <translation>Zanim ruszysz w drogę, dokończ instalację i podaj kilka szczegółów.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="147"/>
         <source>Connect to Wi-Fi</source>
-        <translation>เชื่อมต่อ Wi-Fi</translation>
+        <translation>Połącz z Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="165"/>
         <location filename="../qt/setup/setup.cc" line="263"/>
         <source>Back</source>
-        <translation>ย้อนกลับ</translation>
+        <translation>Wróć</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="182"/>
         <source>Continue without Wi-Fi</source>
-        <translation>ดำเนินการต่อโดยไม่ใช้ Wi-Fi</translation>
+        <translation>Kontynuuj bez połączenia z Wif-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="184"/>
         <source>Waiting for internet</source>
-        <translation>กำลังรอสัญญาณอินเตอร์เน็ต</translation>
+        <translation>Oczekiwanie na połączenie sieciowe</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="238"/>
         <source>Choose Software to Install</source>
-        <translation>เลือกซอฟต์แวร์ที่จะติดตั้ง</translation>
+        <translation>Wybierz oprogramowanie do instalacji</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="248"/>
         <source>Dashcam</source>
-        <translation>กล้องติดรถยนต์</translation>
+        <translation>Wideorejestrator</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="253"/>
         <source>Custom Software</source>
-        <translation>ซอฟต์แวร์ที่กำหนดเอง</translation>
+        <translation>Własne oprogramowanie</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>Enter URL</source>
-        <translation>ป้อน URL</translation>
+        <translation>Wprowadź adres URL</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="281"/>
         <source>for Custom Software</source>
-        <translation>สำหรับซอฟต์แวร์ที่กำหนดเอง</translation>
+        <translation>do własnego oprogramowania</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="303"/>
         <source>Downloading...</source>
-        <translation>กำลังดาวน์โหลด...</translation>
+        <translation>Pobieranie...</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="315"/>
         <source>Download Failed</source>
-        <translation>ดาวน์โหลดล้มเหลว</translation>
+        <translation>Pobieranie nie powiodło się</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="321"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>ตรวจสอบให้แน่ใจว่า URL ที่ป้อนนั้นถูกต้อง และอุปกรณ์เชื่อมต่ออินเทอร์เน็ตอยู่</translation>
+        <translation>Upewnij się, że wpisany adres URL jest poprawny, a połączenie internetowe działa poprawnie.</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="334"/>
         <source>Reboot device</source>
-        <translation>รีบูตอุปกรณ์</translation>
+        <translation>Uruchom ponownie</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="341"/>
         <source>Start over</source>
-        <translation>เริ่มต้นใหม่</translation>
+        <translation>Zacznij od początku</translation>
     </message>
 </context>
 <context>
@@ -860,89 +868,89 @@ location set</source>
     <message>
         <location filename="../qt/widgets/prime.cc" line="233"/>
         <source>Finish Setup</source>
-        <translation>ตั้งค่าเสร็จสิ้น</translation>
+        <translation>Zakończ konfigurację</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="239"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>จับคู่อุปกรณ์ของคุณกับ comma connect (connect.comma.ai) และรับข้อเสนอ comma prime ของคุณ</translation>
+        <translation>Sparuj swoje urządzenie z comma connect (connect.comma.ai) i wybierz swoją ofertę comma prime.</translation>
     </message>
     <message>
         <location filename="../qt/widgets/prime.cc" line="246"/>
         <source>Pair device</source>
-        <translation>จับคู่อุปกรณ์</translation>
+        <translation>Sparuj urządzenie</translation>
     </message>
 </context>
 <context>
     <name>Sidebar</name>
     <message>
-        <location filename="../qt/sidebar.cc" line="67"/>
-        <location filename="../qt/sidebar.cc" line="69"/>
+        <location filename="../qt/sidebar.cc" line="74"/>
+        <location filename="../qt/sidebar.cc" line="76"/>
         <source>CONNECT</source>
-        <translation>เชื่อมต่อ</translation>
+        <translation>POŁĄCZENIE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="67"/>
+        <location filename="../qt/sidebar.cc" line="74"/>
         <source>OFFLINE</source>
-        <translation>ออฟไลน์</translation>
+        <translation>OFFLINE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="69"/>
-        <location filename="../qt/sidebar.cc" line="82"/>
+        <location filename="../qt/sidebar.cc" line="76"/>
+        <location filename="../qt/sidebar.cc" line="89"/>
         <source>ONLINE</source>
-        <translation>ออนไลน์</translation>
+        <translation>ONLINE</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="69"/>
+        <location filename="../qt/sidebar.cc" line="76"/>
         <source>ERROR</source>
-        <translation>เกิดข้อผิดพลาด</translation>
+        <translation>BŁĄD</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="73"/>
-        <location filename="../qt/sidebar.cc" line="76"/>
-        <location filename="../qt/sidebar.cc" line="78"/>
+        <location filename="../qt/sidebar.cc" line="80"/>
+        <location filename="../qt/sidebar.cc" line="83"/>
+        <location filename="../qt/sidebar.cc" line="85"/>
         <source>TEMP</source>
-        <translation>อุณหภูมิ</translation>
+        <translation>TEMP</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="73"/>
+        <location filename="../qt/sidebar.cc" line="80"/>
         <source>HIGH</source>
-        <translation>สูง</translation>
+        <translation>WYSOKA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="76"/>
+        <location filename="../qt/sidebar.cc" line="83"/>
         <source>GOOD</source>
-        <translation>ดี</translation>
+        <translation>DOBRA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="78"/>
+        <location filename="../qt/sidebar.cc" line="85"/>
         <source>OK</source>
-        <translation>พอใช้</translation>
+        <translation>OK</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="82"/>
+        <location filename="../qt/sidebar.cc" line="89"/>
         <source>VEHICLE</source>
-        <translation>รถยนต์</translation>
+        <translation>POJAZD</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="84"/>
+        <location filename="../qt/sidebar.cc" line="91"/>
         <source>NO</source>
-        <translation>ไม่พบ</translation>
+        <translation>BRAK</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="84"/>
+        <location filename="../qt/sidebar.cc" line="91"/>
         <source>PANDA</source>
         <translation>PANDA</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="86"/>
+        <location filename="../qt/sidebar.cc" line="93"/>
         <source>GPS</source>
-        <translation>จีพีเอส</translation>
+        <translation>GPS</translation>
     </message>
     <message>
-        <location filename="../qt/sidebar.cc" line="86"/>
+        <location filename="../qt/sidebar.cc" line="93"/>
         <source>SEARCH</source>
-        <translation>ค้นหา</translation>
+        <translation>SZUKAJ</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="37"/>
@@ -952,7 +960,7 @@ location set</source>
     <message>
         <location filename="../qt/sidebar.h" line="38"/>
         <source>Wi-Fi</source>
-        <translation>Wi-Fi</translation>
+        <translation>Wi-FI</translation>
     </message>
     <message>
         <location filename="../qt/sidebar.h" line="39"/>
@@ -985,89 +993,89 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="236"/>
         <source>Git Branch</source>
-        <translation>Git Branch</translation>
+        <translation>Gałąź Git</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="237"/>
         <source>Git Commit</source>
-        <translation>Git Commit</translation>
+        <translation>Git commit</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="238"/>
         <source>OS Version</source>
-        <translation>เวอร์ชันระบบปฏิบัติการ</translation>
+        <translation>Wersja systemu</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="239"/>
         <source>Version</source>
-        <translation>เวอร์ชั่น</translation>
+        <translation>Wersja</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="240"/>
         <source>Last Update Check</source>
-        <translation>ตรวจสอบการอัปเดตล่าสุด</translation>
+        <translation>Ostatnie sprawdzenie aktualizacji</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="240"/>
         <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>ครั้งสุดท้ายที่ openpilot ตรวจสอบการอัปเดตสำเร็จ ตัวอัปเดตจะทำงานในขณะที่รถดับเครื่องอยู่เท่านั้น</translation>
+        <translation>Ostatni raz kiedy openpilot znalazł aktualizację. Aktualizator może być uruchomiony wyłącznie wtedy, kiedy pojazd jest wyłączony.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="241"/>
         <source>Check for Update</source>
-        <translation>ตรวจสอบการอัปเดต</translation>
+        <translation>Sprawdź uaktualnienia</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="246"/>
         <source>CHECKING</source>
-        <translation>กำลังตรวจสอบ</translation>
+        <translation>SPRAWDZANIE</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>Switch Branch</source>
-        <translation>เปลี่ยน Branch</translation>
+        <translation>Zmień gąłąź</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <source>ENTER</source>
-        <translation>เปลี่ยน</translation>
+        <translation>WPROWADŹ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="253"/>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>Branch ใหม่จะถูกติดตั้งในครั้งต่อไปที่ตัวอัปเดตทำงาน</translation>
+        <translation>Nowa gałąź będzie pobrana przy następnym uruchomieniu aktualizatora.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="255"/>
         <source>Enter branch name</source>
-        <translation>ใส่ชื่อ Branch</translation>
+        <translation>Wprowadź nazwę gałęzi</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
         <source>Uninstall %1</source>
-        <translation>ถอนการติดตั้ง %1</translation>
+        <translation>Odinstaluj %1</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="266"/>
         <source>UNINSTALL</source>
-        <translation>ถอนการติดตั้ง</translation>
+        <translation>ODINSTALUJ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="268"/>
         <source>Are you sure you want to uninstall?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง?</translation>
+        <translation>Czy na pewno chcesz odinstalować?</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="285"/>
         <source>failed to fetch update</source>
-        <translation>โหลดข้อมูลอัปเดตไม่สำเร็จ</translation>
+        <translation>pobieranie aktualizacji zakończone niepowodzeniem</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="286"/>
         <location filename="../qt/offroad/settings.cc" line="307"/>
         <source>CHECK</source>
-        <translation>ตรวจสอบ</translation>
+        <translation>SPRAWDŹ</translation>
     </message>
 </context>
 <context>
@@ -1075,48 +1083,48 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>SSH Keys</source>
-        <translation>คีย์ SSH</translation>
+        <translation>Klucze SSH</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="7"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>คำเตือน: สิ่งนี้ให้สิทธิ์ SSH เข้าถึงคีย์สาธารณะทั้งหมดใน GitHub ของคุณ อย่าป้อนชื่อผู้ใช้ GitHub อื่นนอกเหนือจากของคุณเอง พนักงาน comma จะไม่ขอให้คุณเพิ่มชื่อผู้ใช้ GitHub ของพวกเขา</translation>
+        <translation>Ostrzeżenie: To spowoduje przekazanie dostępu do wszystkich Twoich publicznych kuczy z ustawień GitHuba. Nigdy nie wprowadzaj nazwy użytkownika innej niż swoja. Pracownik comma NIGDY nie poprosi o dodanie swojej nazwy uzytkownika.</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="13"/>
         <location filename="../qt/widgets/ssh_keys.cc" line="37"/>
         <source>ADD</source>
-        <translation>เพิ่ม</translation>
+        <translation>DODAJ</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="14"/>
         <source>Enter your GitHub username</source>
-        <translation>ป้อนชื่อผู้ใช้ GitHub ของคุณ</translation>
+        <translation>Wpisz swoją nazwę użytkownika GitHub</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="16"/>
         <source>LOADING</source>
-        <translation>กำลังโหลด</translation>
+        <translation>ŁADOWANIE</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="34"/>
         <source>REMOVE</source>
-        <translation>ลบ</translation>
+        <translation>USUŃ</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="50"/>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>ชื่อผู้ใช้ &apos;%1&apos; ไม่มีคีย์บน GitHub</translation>
+        <translation>Użytkownik &apos;%1&apos; nie posiada żadnych kluczy na GitHubie</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="54"/>
         <source>Request timed out</source>
-        <translation>ตรวจสอบไม่สำเร็จ เนื่องจากใช้เวลามากเกินไป</translation>
+        <translation>Limit czasu rządania</translation>
     </message>
     <message>
         <location filename="../qt/widgets/ssh_keys.cc" line="56"/>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>ไม่พบชื่อผู้ใช้ &apos;%1&apos; บน GitHub</translation>
+        <translation>Użytkownik &apos;%1&apos; nie istnieje na GitHubie</translation>
     </message>
 </context>
 <context>
@@ -1124,7 +1132,7 @@ location set</source>
     <message>
         <location filename="../qt/widgets/ssh_keys.h" line="13"/>
         <source>Enable SSH</source>
-        <translation>เปิดใช้งาน SSH</translation>
+        <translation>Włącz SSH</translation>
     </message>
 </context>
 <context>
@@ -1132,22 +1140,22 @@ location set</source>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="79"/>
         <source>Terms &amp; Conditions</source>
-        <translation>ข้อตกลงและเงื่อนไข</translation>
+        <translation>Regulamin</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="107"/>
         <source>Decline</source>
-        <translation>ปฏิเสธ</translation>
+        <translation>Odrzuć</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="111"/>
         <source>Scroll to accept</source>
-        <translation>เลื่อนเพื่อตอบรับข้อตกลง</translation>
+        <translation>Przewiń w dół, aby zaakceptować</translation>
     </message>
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="126"/>
         <source>Agree</source>
-        <translation>ยอมรับ</translation>
+        <translation>Zaakceptuj</translation>
     </message>
 </context>
 <context>
@@ -1155,82 +1163,82 @@ location set</source>
     <message>
         <location filename="../qt/offroad/settings.cc" line="34"/>
         <source>Enable openpilot</source>
-        <translation>เปิดใช้งาน openpilot</translation>
+        <translation>Włącz openpilota</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="35"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>ใช้ระบบ openpilot สำหรับระบบควบคุมความเร็วอัตโนมัติ และระบบช่วยควบคุมรถให้อยู่ในเลน คุณจำเป็นต้องให้ความสนใจตลอดเวลาที่ใช้คุณสมบัตินี้ การเปลี่ยนการตั้งค่านี้จะมีผลเมื่อคุณดับเครื่องยนต์</translation>
+        <translation>Użyj openpilota do zachowania bezpiecznego odstępu między pojazdami i do asystowania w utrzymywaniu pasa ruchu. Twoja pełna uwaga jest wymagana przez cały czas korzystania z tej funkcji. Ustawienie to może być wdrożone wyłącznie wtedy, gdy pojazd jest wyłączony.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="40"/>
         <source>Enable Lane Departure Warnings</source>
-        <translation>เปิดใช้งานการเตือนการออกนอกเลน</translation>
+        <translation>Włącz ostrzeganie przed zmianą pasa ruchu</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="41"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>รับการแจ้งเตือนให้เลี้ยวกลับเข้าเลนเมื่อรถของคุณตรวจพบการข้ามช่องจราจรโดยไม่เปิดสัญญาณไฟเลี้ยวในขณะขับขี่ที่ความเร็วเกิน 31 ไมล์ต่อชั่วโมง (50 กม./ชม)</translation>
+        <translation>Otrzymuj alerty o powrocie na właściwy pas, kiedy Twój pojazd przekroczy linię bez włączonego kierunkowskazu jadąc powyżej 50 km/h (31 mph).</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="46"/>
         <source>Use Metric System</source>
-        <translation>ใช้ระบบเมตริก</translation>
+        <translation>Korzystaj z systemu metrycznego</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="47"/>
         <source>Display speed in km/h instead of mph.</source>
-        <translation>แสดงความเร็วเป็น กม./ชม. แทน ไมล์/ชั่วโมง</translation>
+        <translation>Wyświetl prędkość w km/h zamiast mph.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="52"/>
         <source>Record and Upload Driver Camera</source>
-        <translation>บันทึกและอัปโหลดภาพจากกล้องคนขับ</translation>
+        <translation>Nagraj i prześlij nagranie z kamery kierowcy</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="53"/>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation>อัปโหลดข้อมูลจากกล้องที่หันหน้าไปทางคนขับ และช่วยปรับปรุงอัลกอริธึมการตรวจสอบผู้ขับขี่</translation>
+        <translation>Prześlij dane z kamery skierowanej na kierowcę i pomóż poprawiać algorytm monitorowania kierowcy.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="58"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>ยกเลิกระบบช่วยขับเมื่อเหยียบคันเร่ง</translation>
+        <translation>Odłącz poprzez naciśnięcie gazu</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="59"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>เมื่อเปิดใช้งาน การกดแป้นคันเร่งจะเป็นการยกเลิกระบบช่วยขับโดย openpilot</translation>
+        <translation>Po włączeniu, naciśnięcie na pedał gazu odłączy openpilota.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="65"/>
         <source>Show ETA in 24h Format</source>
-        <translation>แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
+        <translation>Pokaż oczekiwany czas dojazdu w formacie 24-godzinnym</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="66"/>
         <source>Use 24h format instead of am/pm</source>
-        <translation>ใช้รูปแบบเวลา 24 ชั่วโมง แทน am/pm</translation>
+        <translation>Korzystaj z formatu 24-godzinnego zamiast 12-godzinnego</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="71"/>
         <source>Show Map on Left Side of UI</source>
-        <translation>แสดงแผนที่ที่ด้านซ้ายของหน้าจอ</translation>
+        <translation>Pokaż mapę po lewej stronie ekranu</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="72"/>
         <source>Show map on left side when in split screen view.</source>
-        <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
+        <translation>Pokaż mapę po lewej stronie kiedy ekran jest podzielony.</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="84"/>
         <source>openpilot Longitudinal Control</source>
-        <translation>openpilot การควบคุมการเร่งและลดความเร็ว</translation>
+        <translation>Kontrola wzdłużna openpilota</translation>
     </message>
     <message>
         <location filename="../qt/offroad/settings.cc" line="85"/>
         <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot จะปิดการใช้งานเรดาร์ของรถ และจะเข้าควบคุมการเร่งและเบรก คำเตือน: สิ่งนี้จะปิดระบบ AEB!</translation>
+        <translation>openpilot wyłączy radar samochodu i przejmie kontrolę nad gazem i hamulcem. Ostrzeżenie: wyłączony zostanie system AEB!</translation>
     </message>
 </context>
 <context>
@@ -1238,42 +1246,42 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="23"/>
         <source>Update Required</source>
-        <translation>จำเป็นต้องอัปเดต</translation>
+        <translation>Wymagana Aktualizacja</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="29"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>จำเป็นต้องมีการอัปเดตระบบปฏิบัติการ เชื่อมต่ออุปกรณ์ของคุณกับ Wi-Fi เพื่อประสบการณ์การอัปเดตที่เร็วที่สุด ขนาดดาวน์โหลดประมาณ 1GB</translation>
+        <translation>Wymagana aktualizacja systemu operacyjnego. Aby przyspieszyć proces aktualizacji połącz swoje urzeądzenie do Wi-Fi. Rozmiar pobieranej paczki wynosi około 1GB.</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="40"/>
         <source>Connect to Wi-Fi</source>
-        <translation>เชื่อมต่อกับ Wi-Fi</translation>
+        <translation>Połącz się z Wi-Fi</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="47"/>
         <source>Install</source>
-        <translation>ติดตั้ง</translation>
+        <translation>Zainstaluj</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="64"/>
         <source>Back</source>
-        <translation>ย้อนกลับ</translation>
+        <translation>Wróć</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="80"/>
         <source>Loading...</source>
-        <translation>กำลังโหลด...</translation>
+        <translation>Ładowanie...</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="94"/>
         <source>Reboot</source>
-        <translation>รีบูต</translation>
+        <translation>Uruchom ponownie</translation>
     </message>
     <message>
         <location filename="../qt/setup/updater.cc" line="164"/>
         <source>Update failed</source>
-        <translation>การอัปเดตล้มเหลว</translation>
+        <translation>Aktualizacja nie powiodła się</translation>
     </message>
 </context>
 <context>
@@ -1282,22 +1290,22 @@ location set</source>
         <location filename="../qt/offroad/networking.cc" line="210"/>
         <location filename="../qt/offroad/networking.cc" line="263"/>
         <source>Scanning for networks...</source>
-        <translation>กำลังสแกนหาเครือข่าย...</translation>
+        <translation>Wyszukiwanie sieci...</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="289"/>
         <source>CONNECTING...</source>
-        <translation>กำลังเชื่อมต่อ...</translation>
+        <translation>ŁĄCZENIE...</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="296"/>
         <source>FORGET</source>
-        <translation>เลิกใช้</translation>
+        <translation>ZAPOMNIJ</translation>
     </message>
     <message>
         <location filename="../qt/offroad/networking.cc" line="299"/>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>เลิกใช้เครือข่าย Wi-Fi &quot;%1&quot;?</translation>
+        <translation>Czy chcesz zapomnieć sieć &quot;%1&quot;?</translation>
     </message>
 </context>
 </TS>

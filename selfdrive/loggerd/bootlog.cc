@@ -26,9 +26,12 @@ static kj::Array<capnp::word> build_boot_log() {
 
   // Gather output of commands
   std::vector<std::string> bootlog_commands = {
-    "[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0",
     "[ -x \"$(command -v journalctl)\" ] && journalctl",
   };
+
+  if (Hardware::TICI()) {
+    bootlog_commands.push_back("[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0");
+  }
 
   auto commands = boot.initCommands().initEntries(bootlog_commands.size());
   for (int j = 0; j < bootlog_commands.size(); j++) {
