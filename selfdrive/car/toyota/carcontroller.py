@@ -12,7 +12,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # constants for fault workaround
 MAX_STEER_RATE = 100  # deg/s
-MAX_STEER_RATE_FRAMES = 19
+MAX_STEER_RATE_FRAMES = 18  # control frames allowed where steering rate >= MAX_STEER_RATE
 
 
 class CarController:
@@ -58,9 +58,7 @@ class CarController:
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
-    # EPS_STATUS->LKA_STATE either goes to 21 or 25 on rising edge of a steering fault and
-    # the value seems to describe how many frames the steering rate was above 100 deg/s, so
-    # cut torque with some margin for the lower state
+    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
       self.steer_rate_counter += 1
     else:
@@ -70,7 +68,7 @@ class CarController:
     if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
-    elif self.steer_rate_counter >= MAX_STEER_RATE_FRAMES:
+    elif (self.steer_rate_counter - 1) >= MAX_STEER_RATE_FRAMES:
       apply_steer_req = 0
       self.steer_rate_counter = 0
 
