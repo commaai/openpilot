@@ -91,6 +91,22 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
   }
+
+  QObject::connect(toggles["EndToEndLong"], &ParamControl::toggleFlipped, [=](bool state) {
+    auto cp_bytes = params.get("CarParams");
+    if (!cp_bytes.empty()) {
+      // TODO: handle alignment
+      capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr(reinterpret_cast<capnp::word*>(cp_bytes.data()), cp_bytes.size()));
+      cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+      if (CP.getDisableRadarAvailable()) {
+        Params().putBool("DisableRadar", state);
+      } else {
+        params.remove("DisableRadar");
+      }
+    } else {
+      params.remove("DisableRadar");
+    }
+  });
 }
 
 void TogglesPanel::showEvent(QShowEvent *event) {
@@ -99,7 +115,7 @@ void TogglesPanel::showEvent(QShowEvent *event) {
   auto toggle = toggles["EndToEndLong"];
   const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
 
-  auto cp_bytes = Params().get("CarParams");
+  auto cp_bytes = params.get("CarParams");
   if (!cp_bytes.empty()) {
     // TODO: handle alignment
     capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr(reinterpret_cast<capnp::word*>(cp_bytes.data()), cp_bytes.size()));

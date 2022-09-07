@@ -14,7 +14,7 @@ if __name__ == "__main__":
     CP = cps[0].carParams.as_builder()
   else:
     CP = car.CarParams.new_message()
-    CP.openpilotLongitudinalControl = False
+    CP.openpilotLongitudinalControl = True
     CP.disableRadarAvailable = False
 
   cp_bytes = CP.to_bytes()
