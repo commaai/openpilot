@@ -2,8 +2,8 @@
 
 #include <cassert>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
 
 MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus) : I2CSensor(bus) {}
 

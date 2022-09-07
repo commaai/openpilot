@@ -18,13 +18,17 @@ class CAR:
   BODY = "COMMA BODY"
 
 CAR_INFO: Dict[str, CarInfo] = {
-  CAR.BODY: CarInfo("comma body", package="All", good_torque=True),
+  CAR.BODY: CarInfo("comma body", package="All"),
 }
 
 FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
+      b'0.0.01',
       b'02/27/2022'
+    ],
+    (Ecu.debug, 0x721, None): [
+      b'166bd860' # git hash of the firmware used
     ],
   },
 }

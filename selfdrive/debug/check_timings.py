@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-# type: ignore
+
 import sys
 import time
 import numpy as np
+from typing import DefaultDict, Deque
 from collections import defaultdict, deque
 
 import cereal.messaging as messaging
 
 socks = {s: messaging.sub_sock(s, conflate=False) for s in sys.argv[1:]}
-ts = defaultdict(lambda: deque(maxlen=100))
+ts: DefaultDict[str, Deque[float]] = defaultdict(lambda: deque(maxlen=100))
 
 if __name__ == "__main__":
   while True:

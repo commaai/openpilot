@@ -6,60 +6,61 @@
 #include <eigen3/Eigen/Dense>
 
 #include "cereal/messaging/messaging.h"
+#include "common/transformations/orientation.hpp"
+
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/clutil.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
+
 
 ExitHandler do_exit;
 
-mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera, bool bigmodel_frame) {
+mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camera, bool bigmodel_frame) {
   /*
      import numpy as np
-     from common.transformations.model import medmodel_frame_from_road_frame
-     medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
-     ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
+     from common.transformations.model import medmodel_frame_from_calib_frame
+     medmodel_frame_from_calib_frame = medmodel_frame_from_calib_frame[:, :3]
+     calib_from_smedmodel_frame = np.linalg.inv(medmodel_frame_from_calib_frame)
   */
-  static const auto ground_from_medmodel_frame = (Eigen::Matrix<float, 3, 3>() <<
+  static const auto calib_from_medmodel = (Eigen::Matrix<float, 3, 3>() <<
      0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
-    -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
-    -1.84808520e-20, 9.00738606e-04, -4.28751576e-02).finished();
+     1.09890110e-03, 0.00000000e+00, -2.81318681e-01,
+    -2.25466395e-20, 1.09890110e-03,-5.23076923e-02).finished();
 
-  static const auto ground_from_sbigmodel_frame = (Eigen::Matrix<float, 3, 3>() <<
+  static const auto calib_from_sbigmodel = (Eigen::Matrix<float, 3, 3>() <<
      0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
-    -2.19780220e-03,  4.11497335e-19,  5.62637363e-01,
-    -5.46146580e-20,  1.80147721e-03, -2.73464241e-01).finished();
+     2.19780220e-03,  4.11497335e-19, -5.62637363e-01,
+    -6.66298828e-20,  2.19780220e-03, -3.33626374e-01).finished();
+  
+  static const auto view_from_device = (Eigen::Matrix<float, 3, 3>() <<
+     0.0,  1.0,  0.0,
+     0.0,  0.0,  1.0,
+     1.0,  0.0,  0.0).finished();
+
 
   const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
-  static const mat3 yuv_transform = get_model_yuv_transform();
+  Eigen::Matrix<float, 3, 3, Eigen::RowMajor>  device_from_calib = euler2rot(device_from_calib_euler).cast <float> ();
+  auto calib_from_model = bigmodel_frame ? calib_from_sbigmodel : calib_from_medmodel;
+  auto camera_from_calib = cam_intrinsics * view_from_device * device_from_calib;
+  auto warp_matrix = camera_from_calib * calib_from_model;
 
-  auto ground_from_model_frame = bigmodel_frame ? ground_from_sbigmodel_frame : ground_from_medmodel_frame;
-  auto camera_frame_from_road_frame = cam_intrinsics * extrinsics;
-  Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
-  camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
-  camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
-  camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
-
-  auto warp_matrix = camera_frame_from_ground * ground_from_model_frame;
   mat3 transform = {};
   for (int i=0; i<3*3; i++) {
     transform.v[i] = warp_matrix(i / 3, i % 3);
   }
+  static const mat3 yuv_transform = get_model_yuv_transform();
   return matmul3(yuv_transform, transform);
-}
-
-static uint64_t get_ts(const VisionIpcBufExtra &extra) {
-  return Hardware::TICI() ? extra.timestamp_sof : extra.timestamp_eof;
 }
 
 
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -80,7 +81,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
   while (!do_exit) {
     // Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while (get_ts(meta_main) < get_ts(meta_extra) + 25000000ULL) {
+    while (meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000ULL) {
       buf_main = vipc_client_main.recv(&meta_main);
       if (buf_main == nullptr)  break;
     }
@@ -94,7 +95,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       // Keep receiving extra frames until frame id matches main camera
       do {
         buf_extra = vipc_client_extra.recv(&meta_extra);
-      } while (buf_extra != nullptr && get_ts(meta_main) > get_ts(meta_extra) + 25000000ULL);
+      } while (buf_extra != nullptr && meta_main.timestamp_sof > meta_extra.timestamp_sof + 25000000ULL);
 
       if (buf_extra == nullptr) {
         LOGE("vipc_client_extra no frame");
@@ -115,16 +116,16 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // TODO: path planner timeout?
     sm.update(0);
     int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    bool is_rhd = ((bool)sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
     if (sm.updated("liveCalibration")) {
-      auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
-      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-      for (int i = 0; i < 4*3; i++) {
-        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
+      auto rpy_calib = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+      Eigen::Vector3d device_from_calib_euler;
+      for (int i=0; i<3; i++) {
+        device_from_calib_euler(i) = rpy_calib[i];
       }
-
-      model_transform_main = update_calibration(extrinsic_matrix_eigen, main_wide_camera, false);
-      model_transform_extra = update_calibration(extrinsic_matrix_eigen, Hardware::TICI(), true);
+      model_transform_main = update_calibration(device_from_calib_euler, main_wide_camera, false);
+      model_transform_extra = update_calibration(device_from_calib_euler, true, true);
       live_calib_seen = true;
     }
 
@@ -132,11 +133,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     if (desire >= 0 && desire < DESIRE_LEN) {
       vec_desire[desire] = 1.0;
     }
-
-    double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire);
-    double mt2 = millis_since_boot();
-    float model_execution_time = (mt2 - mt1) / 1000.0;
 
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
@@ -148,10 +144,22 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     run_count++;
 
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
+    bool prepare_only = vipc_dropped_frames > 0;
 
-    model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
-                  kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
-    posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+    if (prepare_only) {
+      LOGE("skipping model eval. Dropped %d frames", vipc_dropped_frames);
+    }
+
+    double mt1 = millis_since_boot();
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, prepare_only);
+    double mt2 = millis_since_boot();
+    float model_execution_time = (mt2 - mt1) / 1000.0;
+
+    if (model_output != nullptr) {
+      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
+      posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
+    }
 
     //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
     last = mt1;
@@ -164,12 +172,12 @@ int main(int argc, char **argv) {
     int ret;
     ret = util::set_realtime_priority(54);
     assert(ret == 0);
-    util::set_core_affinity({Hardware::EON() ? 2 : 7});
+    util::set_core_affinity({7});
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-  bool use_extra_client = Hardware::TICI() && !main_wide_camera;
+  bool main_wide_camera = Params().getBool("WideCameraOnly");
+  bool use_extra_client = !main_wide_camera;  // set for single camera mode
 
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

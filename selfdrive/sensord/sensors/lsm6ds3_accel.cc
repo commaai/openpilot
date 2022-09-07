@@ -2,8 +2,8 @@
 
 #include <cassert>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
 
 LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
@@ -27,7 +27,7 @@ int LSM6DS3_Accel::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  // TODO: set scale and bandwith. Default is +- 2G, 50 Hz
+  // TODO: set scale and bandwidth. Default is +- 2G, 50 Hz
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ);
   if (ret < 0) {
     goto fail;

@@ -5,7 +5,7 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/params.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
@@ -51,12 +51,14 @@ void HomeWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
   // switch to the generic robot UI
-  if (onroad->isVisible() && sm["carParams"].getCarParams().getNotCar()) {
+  if (onroad->isVisible() && !body->isEnabled() && sm["carParams"].getCarParams().getNotCar()) {
+    body->setEnabled(true);
     slayout->setCurrentWidget(body);
   }
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
+  body->setEnabled(false);
   sidebar->setVisible(offroad);
   if (offroad) {
     slayout->setCurrentWidget(home);
@@ -82,6 +84,19 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
   }
 }
 
+void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
+  HomeWindow::mousePressEvent(e);
+  const SubMaster &sm = *(uiState()->sm);
+  if (sm["carParams"].getCarParams().getNotCar()) {
+    if (onroad->isVisible()) {
+      slayout->setCurrentWidget(body);
+    } else if (body->isVisible()) {
+      slayout->setCurrentWidget(onroad);
+    }
+    showSidebar(false);
+  }
+}
+
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
@@ -96,7 +111,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   date = new QLabel();
   header_layout->addWidget(date, 1, Qt::AlignHCenter | Qt::AlignLeft);
 
-  update_notif = new QPushButton("UPDATE");
+  update_notif = new QPushButton(tr("UPDATE"));
   update_notif->setVisible(false);
   update_notif->setStyleSheet("background-color: #364DEF;");
   QObject::connect(update_notif, &QPushButton::clicked, [=]() { center_layout->setCurrentIndex(1); });
@@ -187,6 +202,6 @@ void OffroadHome::refresh() {
   update_notif->setVisible(updateAvailable);
   alert_notif->setVisible(alerts);
   if (alerts) {
-    alert_notif->setText(QString::number(alerts) + (alerts > 1 ? " ALERTS" : " ALERT"));
+    alert_notif->setText(QString::number(alerts) + (alerts > 1 ? tr(" ALERTS") : tr(" ALERT")));
   }
 }

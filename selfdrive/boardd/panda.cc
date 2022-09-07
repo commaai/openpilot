@@ -8,9 +8,9 @@
 
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
-#include "selfdrive/common/gpio.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
+#include "common/gpio.h"
+#include "common/swaglog.h"
+#include "common/util.h"
 
 static int init_usb_ctx(libusb_context **context) {
   assert(context != nullptr);
@@ -247,7 +247,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
   return transferred;
 }
 
-void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param) {
+void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param) {
   usb_write(0xdc, (uint16_t)safety_model, safety_param);
 }
 
@@ -340,10 +340,6 @@ void Panda::set_power_saving(bool power_saving) {
 
 void Panda::enable_deepsleep() {
   usb_write(0xfb, 0, 0);
-}
-
-void Panda::set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode) {
-  usb_write(0xe6, (uint16_t)power_mode, 0);
 }
 
 void Panda::send_heartbeat(bool engaged) {

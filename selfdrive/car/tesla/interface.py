@@ -42,7 +42,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
-    ret.steerRateCost = 0.5
 
     if candidate in (CAR.AP2_MODELS, CAR.AP1_MODELS):
       ret.mass = 2100. + STD_CARGO_KG
@@ -57,20 +56,12 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def update(self, c, can_strings):
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
-    events = self.create_common_events(ret)
+    ret.events = self.create_common_events(ret).to_msg()
 
-    ret.events = events.to_msg()
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   def apply(self, c):
-    ret = self.CC.update(c, self.CS, self.frame, c.actuators, c.cruiseControl.cancel)
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS)

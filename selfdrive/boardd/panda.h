@@ -73,7 +73,7 @@ class Panda {
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
-  void set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param=0);
+  void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
   void set_alternative_experience(uint16_t alternative_experience);
   void set_rtc(struct tm sys_time);
   struct tm get_rtc();
@@ -86,7 +86,6 @@ class Panda {
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void enable_deepsleep();
-  void set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode);
   void send_heartbeat(bool engaged);
   void set_can_speed_kbps(uint16_t bus, uint16_t speed);
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);

@@ -68,3 +68,12 @@ public:
   explicit RichTextDialog(const QString &prompt_text, const QString &btn_text, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
 };
+
+class MultiOptionDialog : public QDialogBase {
+  Q_OBJECT
+
+public:
+  explicit MultiOptionDialog(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent);
+  static QString getSelection(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent);
+  QString selection;
+};

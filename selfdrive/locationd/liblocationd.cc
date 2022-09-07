@@ -7,11 +7,10 @@ extern "C" {
     return new Localizer();
   }
 
-  void localizer_get_message_bytes(Localizer *localizer, uint64_t logMonoTime,
-    bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid, char *buff, size_t buff_size)
-  {
+  void localizer_get_message_bytes(Localizer *localizer, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid,
+                                   char *buff, size_t buff_size) {
     MessageBuilder msg_builder;
-    kj::ArrayPtr<char> arr = localizer->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK, msgValid).asChars();
+    kj::ArrayPtr<char> arr = localizer->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, msgValid).asChars();
     assert(buff_size >= arr.size());
     memcpy(buff, arr.begin(), arr.size());
   }

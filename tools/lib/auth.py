@@ -46,8 +46,8 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
       return
 
     query = self.path.split('?', 1)[-1]
-    query = parse_qs(query, keep_blank_values=True)
-    self.server.query_params = query
+    query_parsed = parse_qs(query, keep_blank_values=True)
+    self.server.query_params = query_parsed
 
     self.send_response(200)
     self.send_header('Content-type', 'text/plain')

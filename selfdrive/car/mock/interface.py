@@ -2,7 +2,7 @@
 import math
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.swaglog import cloudlog
+from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
+  def _update(self, c):
     # get basic data from phone and gps since CAN isn't connected
     sensors = messaging.recv_sock(self.sensor)
     if sensors is not None:
@@ -63,7 +63,6 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
-    ret.canValid = True
 
     # speeds
     ret.vEgo = self.speed
@@ -83,7 +82,7 @@ class CarInterface(CarInterfaceBase):
     curvature = self.yaw_rate / max(self.speed, 1.)
     ret.steeringAngleDeg = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
-    return ret.as_reader()
+    return ret
 
   def apply(self, c):
     # in mock no carcontrols

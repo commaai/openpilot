@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab tab_name="tab1" containers="1">
+   <Container>
+    <DockSplitter sizes="0.250298;0.250298;0.249106;0.250298" orientation="-" count="4">
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range bottom="-2.900899" top="3.526047" left="825.563261" right="1415.827546"/>
+       <limitY/>
+       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#1f77b4"/>
+       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#d62728"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range bottom="-4.577789" top="3.642392" left="825.563261" right="1415.827546"/>
+       <limitY/>
+       <curve name="Actual lateral accel (roll compensated)" color="#1ac938"/>
+       <curve name="Desired lateral accel (roll compensated)" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range bottom="-1.134948" top="1.052072" left="825.563261" right="1415.827546"/>
+       <limitY/>
+       <curve name="/carControl/actuatorsOutput/steer" color="#9467bd">
+        <transform name="Scale/Offset" alias="/carControl/actuatorsOutput/steer[Scale/Offset]">
+         <options time_offset="0" value_scale="-1" value_offset="0"/>
+        </transform>
+       </curve>
+       <curve name="/controlsState/lateralControlState/torqueState/f" color="#1f77b4"/>
+       <curve name="/carState/steeringPressed" color="#ff000f"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range bottom="-1.373608" top="56.208012" left="825.563261" right="1415.827546"/>
+       <limitY/>
+       <curve name="carState.vEgo mph" color="#d62728"/>
+       <curve name="carState.vEgo kmh" color="#1ac938"/>
+       <curve name="/carState/vEgo" color="#ff7f0e"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations>
+  <snippet name="carState.vEgo kmh">
+   <global></global>
+   <function>return value * 3.6</function>
+   <linked_source>/carState/vEgo</linked_source>
+  </snippet>
+  <snippet name="carState.vEgo mph">
+   <global></global>
+   <function>return value * 2.23694</function>
+   <linked_source>/carState/vEgo</linked_source>
+  </snippet>
+  <snippet name="Desired lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/desiredCurvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="Actual lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/curvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+ </customMathEquations>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

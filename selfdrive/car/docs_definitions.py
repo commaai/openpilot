@@ -1,25 +1,26 @@
-from cereal import car
+import re
 from collections import namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Union, no_type_check
+from typing import Dict, List, Optional, Tuple, Union
 
+from cereal import car
+from common.conversions import Conversions as CV
 
-class Tier(Enum):
-  GOLD = "The best openpilot experience. Great highway driving and beyond."
-  SILVER = "A solid highway driving experience, but is limited by stock longitudinal. May be upgraded in the future."
-  BRONZE = "A good highway experience, but may have limited performance in traffic and on sharp turns."
+GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
+MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
 
 class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
-  LONGITUDINAL = "openpilot ACC"
-  FSR_LONGITUDINAL = "Stop and Go"
-  FSR_STEERING = "Steer to 0"
+  LONGITUDINAL = "ACC"
+  FSR_LONGITUDINAL = "No ACC accel below"
+  FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
-  MAINTAINED = "Actively Maintained"
+  AUTO_RESUME = "Resume from stop"
+  HARNESS = "Harness"
 
 
 class Star(Enum):
@@ -28,17 +29,79 @@ class Star(Enum):
   EMPTY = "empty"
 
 
-StarColumns = list(Column)[3:]
-CarFootnote = namedtuple("CarFootnote", ["text", "column", "star"], defaults=[None])
+class Harness(Enum):
+  nidec = "Honda Nidec"
+  bosch_a = "Honda Bosch A"
+  bosch_b = "Honda Bosch B"
+  toyota = "Toyota"
+  subaru_a = "Subaru A"
+  subaru_b = "Subaru B"
+  fca = "FCA"
+  ram = "Ram"
+  vw = "VW"
+  j533 = "J533"
+  hyundai_a = "Hyundai A"
+  hyundai_b = "Hyundai B"
+  hyundai_c = "Hyundai C"
+  hyundai_d = "Hyundai D"
+  hyundai_e = "Hyundai E"
+  hyundai_f = "Hyundai F"
+  hyundai_g = "Hyundai G"
+  hyundai_h = "Hyundai H"
+  hyundai_i = "Hyundai I"
+  hyundai_j = "Hyundai J"
+  hyundai_k = "Hyundai K"
+  hyundai_l = "Hyundai L"
+  hyundai_m = "Hyundai M"
+  hyundai_n = "Hyundai N"
+  hyundai_o = "Hyundai O"
+  hyundai_p = "Hyundai P"
+  hyundai_q = "Hyundai Q"
+  custom = "Developer"
+  obd_ii = "OBD-II"
+  gm = "GM"
+  nissan_a = "Nissan A"
+  nissan_b = "Nissan B"
+  mazda = "Mazda"
+  ford_q3 = "Ford Q3"
+  ford_q4 = "Ford Q4"
+  none = "None"
 
 
-def get_footnote(footnotes: Optional[List[Enum]], column: Column) -> Optional[Enum]:
-  # Returns applicable footnote given current column
-  if footnotes is not None:
-    for fn in footnotes:
-      if fn.value.column == column:
-        return fn
-  return None
+CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
+
+
+def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
+  # Returns applicable footnotes given current column
+  return [fn for fn in footnotes if fn.value.column == column]
+
+
+# TODO: store years as a list
+def get_year_list(years):
+  years_list = []
+  if len(years) == 0:
+    return years_list
+
+  for year in years.split(','):
+    year = year.strip()
+    if len(year) == 4:
+      years_list.append(str(year))
+    elif "-" in year and len(year) == 7:
+      start, end = year.split("-")
+      years_list.extend(map(str, range(int(start), int(f"20{end}") + 1)))
+    else:
+      raise Exception(f"Malformed year string: {years}")
+  return years_list
+
+
+def split_name(name: str) -> Tuple[str, str, str]:
+  make, model = name.split(" ", 1)
+  years = ""
+  match = re.search(MODEL_YEARS_RE, model)
+  if match is not None:
+    years = model[match.start():]
+    model = model[:match.start() - 1]
+  return make, model, years
 
 
 @dataclass
@@ -46,59 +109,85 @@ class CarInfo:
   name: str
   package: str
   video_link: Optional[str] = None
-  footnotes: Optional[List[Enum]] = None
+  footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
-  good_torque: bool = False
+  harness: Enum = Harness.none
 
-  def init(self, CP: car.CarParams, non_tested_cars: List[str], all_footnotes: Dict[Enum, int]):
+  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     # TODO: set all the min steer speeds in carParams and remove this
-    min_steer_speed = CP.minSteerSpeed
     if self.min_steer_speed is not None:
-      min_steer_speed = self.min_steer_speed
-      assert CP.minSteerSpeed == 0, f"Minimum steer speed set in both CarInfo and CarParams for {CP.carFingerprint}"
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+    else:
+      self.min_steer_speed = CP.minSteerSpeed
 
     # TODO: set all the min enable speeds in carParams correctly and remove this
-    min_enable_speed = CP.minEnableSpeed
-    if self.min_enable_speed is not None:
-      min_enable_speed = self.min_enable_speed
+    if self.min_enable_speed is None:
+      self.min_enable_speed = CP.minEnableSpeed
 
-    self.make, self.model = self.name.split(' ', 1)
+    self.car_name = CP.carName
+    self.car_fingerprint = CP.carFingerprint
+    self.make, self.model, self.years = split_name(self.name)
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      # StarColumns
-      Column.LONGITUDINAL: CP.openpilotLongitudinalControl and not CP.radarOffCan,
-      Column.FSR_LONGITUDINAL: min_enable_speed <= 0.,
-      Column.FSR_STEERING: min_steer_speed <= 0.,
-      Column.STEERING_TORQUE: self.good_torque,
-      Column.MAINTAINED: CP.carFingerprint not in non_tested_cars,
+      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
+      Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
+      Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
+      Column.STEERING_TORQUE: Star.EMPTY,
+      Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
+      Column.HARNESS: self.harness.value,
     }
 
-    if CP.notCar:
-      for col in StarColumns:
-        self.row[col] = True
+    # Set steering torque star from max lateral acceleration
+    assert CP.maxLateralAccel > 0.1
+    if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
+      self.row[Column.STEERING_TORQUE] = Star.FULL
 
     self.all_footnotes = all_footnotes
-    for column in StarColumns:
-      self.row[column] = Star.FULL if self.row[column] else Star.EMPTY
+    self.year_list = get_year_list(self.years)
+    self.detail_sentence = self.get_detail_sentence(CP)
 
-      # Demote if footnote specifies a star
-      footnote = get_footnote(self.footnotes, column)
-      if footnote is not None and footnote.value.star is not None:
-        self.row[column] = footnote.value.star
+    return self
 
-    self.tier = {5: Tier.GOLD, 4: Tier.SILVER}.get(list(self.row.values()).count(Star.FULL), Tier.BRONZE)
+  def get_detail_sentence(self, CP):
+    if not CP.notCar:
+      sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
 
-  @no_type_check
+      if self.min_steer_speed > self.min_enable_speed:
+        alc = f" <strong>above {self.min_steer_speed * CV.MS_TO_MPH:.0f} mph</strong>," if self.min_steer_speed > 0 else " <strong>at all speeds</strong>,"
+      else:
+        alc = ""
+
+      # Exception for cars which do not auto-resume yet
+      acc = ""
+      if self.min_enable_speed > 0:
+        acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
+      elif CP.autoResumeSng:
+        acc = " <strong>that automatically resumes from a stop</strong>"
+
+      if self.row[Column.STEERING_TORQUE] != Star.FULL:
+        sentence_builder += " This car may not be able to take tight turns on its own."
+
+      return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
+
+    else:
+      if CP.carFingerprint == "COMMA BODY":
+        return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
+      else:
+        raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
+
   def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
-    if column in StarColumns:
+    if isinstance(item, Star):
       item = star_icon.format(item.value)
+    elif column == Column.MODEL and len(self.years):
+      item += f" {self.years}"
 
-    footnote = get_footnote(self.footnotes, column)
-    if footnote is not None:
-      item += footnote_tag.format(self.all_footnotes[footnote])
+    footnotes = get_footnotes(self.footnotes, column)
+    if len(footnotes):
+      sups = sorted([self.all_footnotes[fn] for fn in footnotes])
+      item += footnote_tag.format(f'{",".join(map(str, sups))}')
 
     return item

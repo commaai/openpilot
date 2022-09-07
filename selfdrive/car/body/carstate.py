@@ -20,6 +20,9 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = any([cp.vl['VAR_VALUES']['MOTOR_ERR_L'], cp.vl['VAR_VALUES']['MOTOR_ERR_R'],
                                    cp.vl['VAR_VALUES']['FAULT']])
 
+    ret.charging = cp.vl["BODY_DATA"]["CHARGER_CONNECTED"] == 1
+    ret.fuelGauge = cp.vl["BODY_DATA"]["BATT_PERCENTAGE"] / 100
+
     # irrelevant for non-car
     ret.gearShifter = car.CarState.GearShifter.drive
     ret.cruiseState.enabled = True
@@ -44,6 +47,8 @@ class CarState(CarStateBase):
       ("MOTOR_ERR_R", "VAR_VALUES"),
       ("MCU_TEMP", "BODY_DATA"),
       ("BATT_VOLTAGE", "BODY_DATA"),
+      ("BATT_PERCENTAGE", "BODY_DATA"),
+      ("CHARGER_CONNECTED", "BODY_DATA"),
     ]
 
     checks = [
