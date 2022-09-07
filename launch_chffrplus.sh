@@ -84,7 +84,7 @@ function launch {
 
   # start manager
   cd selfdrive/manager
-  ./build.py && ./manager.py > tmux_log.txt
+  ./build.py && ./manager.py
 
   # if broken, keep on screen error
   while true; do sleep 1; done
