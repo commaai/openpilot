@@ -466,9 +466,16 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     if (acceleration.getZ().size() > 16) {
       acceleration_future = acceleration.getX()[16];  // 2.5 seconds
     }
-    start_hue = 55;
-    // speed up: 110, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 20, 110), 0);
+    start_hue = 60;
+    // speed up: 120, slow down: 0
+    end_hue = fmax(fmin(start_hue + acceleration_future * 30, 120), 0);
+
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    end_hue = int(end_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
     const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
     float orientation_future = 0;
@@ -478,13 +485,15 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
     start_hue = 148;
     // straight: 112, in turns: 70
     end_hue = fmax(70, 112 - (orientation_future * 420));
-  }
-  // FIXME: painter.drawPolygon can be slow if hue is not rounded
-  end_hue = int(end_hue * 100 + 0.5) / 100;
 
-  bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.94, 0.51, 0.4));
-  bg.setColorAt(0.75 / 1.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-  bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    end_hue = int(end_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+  }
+
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
 
