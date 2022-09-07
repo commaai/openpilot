@@ -37,6 +37,7 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
+    lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
     # gas and brake
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -59,8 +60,6 @@ class CarController:
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
-
-    lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
