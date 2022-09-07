@@ -123,7 +123,9 @@ class CarController:
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         accel = actuators.accel
-        jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 0.0
+
+        #TODO unclear if this is needed
+        jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
 
         accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
