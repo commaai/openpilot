@@ -67,7 +67,7 @@ class CarController:
     if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
-    elif (self.steer_rate_counter - 1) >= MAX_STEER_RATE_FRAMES:
+    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
       apply_steer_req = 0
       self.steer_rate_counter = 0
 
