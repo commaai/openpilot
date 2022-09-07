@@ -59,6 +59,8 @@ public:
 private:
   Params params;
   std::map<std::string, ParamControl*> toggles;
+
+  void updateToggles();
 };
 
 class SoftwarePanel : public ListWidget {

@@ -93,7 +93,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   QObject::connect(toggles["EndToEndLong"], &ParamControl::toggleFlipped, [=](bool state) {
-    auto cp_bytes = params.get("CarParams");
+    auto cp_bytes = params.get("CarParamsPersistent");
     if (!cp_bytes.empty()) {
       AlignedBuffer aligned_buf;
       capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
@@ -107,24 +107,35 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       params.remove("ExperimentalLongitudinalEnabled");
     }
   });
+
+  connect(uiState(), &UIState::offroadTransition, [=]() {
+    updateToggles();
+  });
 }
 
 void TogglesPanel::showEvent(QShowEvent *event) {
+  updateToggles();
+}
 
+void TogglesPanel::updateToggles() {
   // update e2e toggle
   auto toggle = toggles["EndToEndLong"];
   const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
 
-  auto cp_bytes = params.get("CarParams");
+  auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-    if (CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable()) {
+
+    const bool exp_long = CP.getExperimentalLongitudinalAvailable();
+    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+
+    if (op_long) {
       // normal description and toggle
       params.remove("ExperimentalLongitudinalEnabled");
       toggle->setDescription(e2e_description);
-    } else if (CP.getExperimentalLongitudinalAvailable()) {
+    } else if (exp_long) {
       toggle->setDescription("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br><br>" + e2e_description);
       if (params.getBool("EndToEndLong") && !params.getBool("ExperimentalLongitudinalEnabled")) {
         params.remove("EndToEndLong");
@@ -135,8 +146,9 @@ void TogglesPanel::showEvent(QShowEvent *event) {
       params.remove("ExperimentalLongitudinalEnabled");
       toggle->setDescription("<b>openpilot longitudinal control is not currently available for this car.</b><br><br>" + e2e_description);
     }
+
     toggle->refresh();
-    toggle->setEnabled(CP.getOpenpilotLongitudinalControl() || CP.getExperimentalLongitudinalAvailable());
+    toggle->setEnabled(op_long || (exp_long && !uiState()->scene.started));
   }
 }
 
