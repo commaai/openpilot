@@ -123,7 +123,7 @@ class TestSensord(unittest.TestCase):
         if str(measurement.source).startswith("lsm6ds3"):
           data_points.add(measurement.timestamp)
 
-    assert len(data_points) != 0, f"No lsm6ds3 sensor events"
+    assert len(data_points) != 0, "No lsm6ds3 sensor events"
 
     data_list = list(data_points)
     data_list.sort()
