@@ -155,7 +155,7 @@
     <message>
         <location line="+7"/>
         <source>Review Training Guide</source>
-        <translation>Revisar o Treinamento</translation>
+        <translation>Revisar Guia de Treinamento</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -185,17 +185,17 @@
     <message>
         <location line="+8"/>
         <source>Change Language</source>
-        <translation>Mudar Linguagem</translation>
+        <translation>Alterar Idioma</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>CHANGE</source>
-        <translation>MUDAR</translation>
+        <translation>ALTERAR</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Select a language</source>
-        <translation>Selecione uma linguagem</translation>
+        <translation>Selecione o Idioma</translation>
     </message>
     <message>
         <location line="+20"/>
@@ -989,12 +989,12 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/settings.cc" line="-130"/>
         <source>Git Branch</source>
-        <translation>Ramo Git</translation>
+        <translation>Git Branch</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Git Commit</source>
-        <translation>Commit Git</translation>
+        <translation>Último Commit</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1029,7 +1029,7 @@ trabalho definido</translation>
     <message>
         <location line="+7"/>
         <source>Switch Branch</source>
-        <translation>Trocar Branch</translation>
+        <translation>Alterar Branch</translation>
     </message>
     <message>
         <location line="+0"/>
