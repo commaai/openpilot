@@ -99,7 +99,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
       cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
       if (CP.getExperimentalLongitudinalAvailable()) {
-        Params().putBool("ExperimentalLongitudinalEnabled", state);
+        params.putBool("ExperimentalLongitudinalEnabled", state);
       } else {
         params.remove("ExperimentalLongitudinalEnabled");
       }
