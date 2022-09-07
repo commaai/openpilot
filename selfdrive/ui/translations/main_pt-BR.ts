@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+145"/>
+        <location filename="../qt/offroad/settings.cc" line="+159"/>
         <source>Dongle ID</source>
         <translation>Dongle ID</translation>
     </message>
@@ -1157,7 +1157,7 @@ trabalho definido</translation>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-318"/>
+        <location filename="../qt/offroad/settings.cc" line="-332"/>
         <source>Enable openpilot</source>
         <translation>Ativar openpilot</translation>
     </message>
@@ -1202,16 +1202,12 @@ trabalho definido</translation>
         <translation>🌮 End-to-end longitudinal (experimental) 🌮</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+59"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="vanished">Deixe o modelo de direção controlar o acelerador e o freio, o openpilot dirigirá da maneira como ele entende que um humano o faria. Super experimental.</translation>
-    </message>
-    <message>
-        <location line="-58"/>
+        <location line="-65"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>
@@ -1239,14 +1235,6 @@ trabalho definido</translation>
         <location line="+1"/>
         <source>Show map on left side when in split screen view.</source>
         <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="vanished">openpilot Controle Longitudinal</translation>
-    </message>
-    <message>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation type="vanished">openpilot desativará o radar do carro e assumirá o controle do acelerador e freios. Atenção: isso desativa AEB!</translation>
     </message>
 </context>
 <context>
