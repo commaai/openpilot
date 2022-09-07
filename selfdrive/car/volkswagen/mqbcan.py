@@ -51,6 +51,19 @@ def acc_control_status_value(main_switch_on, acc_faulted, long_active):
   return tsk_status
 
 
+def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
+  if acc_faulted:
+    hud_status = 6
+  elif long_active:
+    hud_status = 3
+  elif main_switch_on:
+    hud_status = 2
+  else:
+    hud_status = 0
+
+  return hud_status
+
+
 def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
   commands = []
 
@@ -82,11 +95,11 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
   return commands
 
 
-def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, pass_through_data):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible, pass_through_data):
   commands = []
 
   acc_02_values = {
-    "ACC_Status_Anzeige": 3 if acc_status == 5 else acc_status,
+    "ACC_Status_Anzeige": acc_hud_status,
     "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,

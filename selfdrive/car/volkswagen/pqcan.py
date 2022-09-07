@@ -72,9 +72,9 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
   packer.make_can_msg("ACC_System", bus, values)
 
 
-def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, pass_through_data=None):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible, pass_through_data=None):
   values = {
-    "ACA_StaACC": acc_status,
+    "ACA_StaACC": acc_hud_status,
     "ACA_Zeitluecke": 2,
     "ACA_V_Wunsch": set_speed,
     "ACA_gemZeitl": 8 if lead_visible else 0,
