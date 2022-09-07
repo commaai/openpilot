@@ -6,11 +6,11 @@ from common.params import Params
 
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
-def run_cruise_simulation(cruise, t_end=100., e2e=False):
+def run_cruise_simulation(cruise, t_end=20.):
   man = Maneuver(
     '',
     duration=t_end,
-    initial_speed=float(0.),
+    initial_speed=max(cruise - 1., 0.0),
     lead_relevancy=True,
     initial_distance_lead=100,
     cruise_values=[cruise],
