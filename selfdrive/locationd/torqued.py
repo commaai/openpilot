@@ -77,7 +77,7 @@ class TorqueEstimator:
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction_coeff = CP.lateralTuning.torque.friction
-      self.offline_lat_accel_factor = CP.lateralTuning.torque.lat_accel_factor
+      self.offline_lat_accel_factor = CP.lateralTuning.torque.latAccelFactor
 
     params = log.Event.from_bytes(params).liveTorqueParameters if params is not None else None
     if params is not None and self.is_sane(params.latAccelFactorFiltered, params.latAccelOffsetFiltered, params.frictionCoefficientFiltered):
