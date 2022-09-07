@@ -2,9 +2,11 @@
 
 import time
 import unittest
-import numpy
+import numpy as np
+from collections import namedtuple
 
 import cereal.messaging as messaging
+from cereal import log
 from system.hardware import TICI
 from selfdrive.test.helpers import with_processes
 
@@ -45,26 +47,47 @@ SENSOR_CONFIGURATIONS = (
   },
 )
 
-SENSOR_TYPE_AMBIENT_TEMPERATURE = 13
+Sensor = log.SensorEventData.SensorSource
+SensorConfig = namedtuple('SensorConfig', ['type', 'min_samples', 'sanity_min', 'sanity_max'])
+ALL_SENSORS = {
+  Sensor.rpr0521: {
+    SensorConfig("light", 100, 0, 150),
+  },
 
+  Sensor.lsm6ds3: {
+    SensorConfig("acceleration", 100, 5, 15),
+    SensorConfig("gyroUncalibrated", 100, 0, .2),
+    SensorConfig("temperature", 100, 0, 60),
+  },
+
+  Sensor.lsm6ds3trc: {
+    SensorConfig("acceleration", 100, 5, 15),
+    SensorConfig("gyroUncalibrated", 100, 0, .2),
+    SensorConfig("temperature", 100, 0, 60),
+  },
+
+  Sensor.bmx055: {
+    SensorConfig("acceleration", 100, 5, 15),
+    SensorConfig("gyroUncalibrated", 100, 0, .2),
+    SensorConfig("magneticUncalibrated", 100, 0, 300),
+    SensorConfig("temperature", 100, 0, 60),
+  },
+
+  Sensor.mmc5603nj: {
+    SensorConfig("magneticUncalibrated", 100, 0, 300),
+  }
+}
 
 def read_sensor_events(duration_sec):
   sensor_events = messaging.sub_sock("sensorEvents", timeout=0.1)
-  start_time_sec = time.time()
+  start_time_sec = time.monotonic()
   events = []
-  while time.time() - start_time_sec < duration_sec:
+  while time.monotonic() - start_time_sec < duration_sec:
     events += messaging.drain_sock(sensor_events)
     time.sleep(0.01)
+
+  assert len(events) != 0, "No sensor events collected"
   return events
-
-
-def get_filter_bounds(values, percent):
-  values.sort()
-  median = int(len(values)/2)
-  lb = median - int(len(values)*percent/2)
-  ub = median + int(len(values)*percent/2)
-  return (lb, ub)
-
 
 class TestSensord(unittest.TestCase):
   @classmethod
@@ -80,64 +103,40 @@ class TestSensord(unittest.TestCase):
     seen = set()
     for event in events:
       for measurement in event.sensorEvents:
-        # Filter out unset events
-        if measurement.version == 0:
-          continue
         seen.add((str(measurement.source), measurement.which()))
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
   @with_processes(['sensord'])
   def test_lsm6ds3_100Hz(self):
-    # verify samples arrive in a 100Hz rate
+    # verify measurements are sampled and published at a 100Hz rate
     events = read_sensor_events(3) # 3sec (about 300 measurements)
 
     data_points = set()
     for event in events:
       for measurement in event.sensorEvents:
-        # Filter out unset events
-        if measurement.version == 0:
-          continue
 
         # skip lsm6ds3 temperature measurements
-        if measurement.type == SENSOR_TYPE_AMBIENT_TEMPERATURE:
+        if measurement.which() == 'temperature':
           continue
 
         if str(measurement.source).startswith("lsm6ds3"):
           data_points.add(measurement.timestamp)
 
+    assert len(data_points) != 0, f"No lsm6ds3 sensor events"
+
     data_list = list(data_points)
     data_list.sort()
+    tdiffs = np.diff(data_list)
 
-    assert len(data_list) != 0, "No sensor data collected"
+    high_delay_diffs = list(filter(lambda d: d >= 10*10**6, tdiffs))
+    assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
 
-    # Calc differences between measurements
-    tdiffs = list()
-    lt = data_list[0]
-    for t in data_list[1:]:
-      tdiffs.append(t - lt)
-      lt = t
-
-    # filter 10% of the data to remove outliers
-    lb, ub = get_filter_bounds(tdiffs, 0.9)
-    diffs = tdiffs[lb:ub]
-    avg_diff = sum(diffs)/len(diffs)
+    avg_diff = sum(tdiffs)/len(tdiffs)
     assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold"
 
-    # standard deviation
-    stddev = numpy.std(diffs)
-    assert stddev < 50000, f"Standard-dev to big {stddev}"
-
-    # calculate average frequency
-    avg_freq = 0
-    for td in diffs:
-      avg_freq += 1/td * 10**9
-    avg_freq /= len(diffs)
-
-    # lsm6ds3 sensor is set to trigger at 104Hz rate so it can't get higher,
-    # it also shouldn't be lower than 100 Hz, delay comes from the reading
-    self.assertTrue(avg_freq > 100 and avg_freq < 104)
-    assert avg_freq > 100 and avg_freq < 104, f"Avg_freq out of bounds {avg_freq}"
+    stddev = np.std(tdiffs)
+    assert stddev < 60*10**3, f"Standard-dev to big {stddev}"
 
   @with_processes(['sensord'])
   def test_events_check(self):
@@ -147,9 +146,6 @@ class TestSensord(unittest.TestCase):
     sensor_events = dict()
     for event in events:
       for measurement in event.sensorEvents:
-        # Filter out unset events
-        if measurement.version == 0:
-          continue
 
         if measurement.type in sensor_events:
           sensor_events[measurement.type] += 1
@@ -160,32 +156,62 @@ class TestSensord(unittest.TestCase):
       assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
 
   @with_processes(['sensord'])
-  def test_logmonottime_timestamp(self):
-    # ensure diff logMonotime and timestamp is rather small
-    # -> published when created
+  def test_logmonottime_timestamp_diff(self):
+    # ensure diff between the message logMonotime and sample timestamp is small
     events = read_sensor_events(3)
 
     tdiffs = list()
     for event in events:
       for measurement in event.sensorEvents:
-        # Filter out unset events
-        if measurement.version == 0:
-          continue
 
-        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
+        diff = abs(event.logMonoTime - measurement.timestamp)
+        tdiffs.append(diff)
 
-    assert len(tdiffs) != 0, "No sensor data collected"
+    high_delay_diffs = list(filter(lambda d: d >= 10*10**6, tdiffs))
+    assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
 
-    # filter 10% of the data to remove outliers
-    lb, ub = get_filter_bounds(tdiffs, 0.9)
-    diffs = tdiffs[lb:ub]
-    avg_diff = round(sum(diffs)/len(diffs), 4)
-
-    assert max(diffs) < 10*10**6, f"packet took { max(diffs):.1f}ns for publishing"
+    avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
     assert avg_diff < 4*10**6, f"Avg packet diff: {avg_diff:.1f}ns"
 
+    stddev = np.std(tdiffs)
+    assert stddev < 1.5*10**6, f"Timing diffs have to high stddev: {stddev}"
+
+  @with_processes(['sensord'])
+  def test_sensor_values_sanity_check(self):
+
+    events = read_sensor_events(2)
+
+    sensor_values = dict()
+    for event in events:
+      for m in event.sensorEvents:
+        key = (m.source.raw, m.which())
+        values = getattr(m, m.which())
+        if hasattr(values, 'v'):
+          values = values.v
+        values = np.atleast_1d(values)
+
+        if key in sensor_values:
+          sensor_values[key].append(values)
+        else:
+          sensor_values[key] = [values]
+
+    # Sanity check sensor values and counts
+    for sensor, stype in sensor_values:
+
+      for s in ALL_SENSORS[sensor]:
+        if s.type != stype:
+          continue
+
+        key = (sensor, s.type)
+        val_cnt = len(sensor_values[key])
+        err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {s.min_samples}"
+        assert val_cnt > s.min_samples, err_msg
+
+        mean_norm = np.mean(np.linalg.norm(sensor_values[key], axis=1))
+        err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {mean_norm} is not between {s.sanity_min} and {s.sanity_max}"
+        assert s.sanity_min <= mean_norm <= s.sanity_max, err_msg
 
 if __name__ == "__main__":
   unittest.main()
