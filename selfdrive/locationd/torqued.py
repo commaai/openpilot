@@ -24,7 +24,7 @@ LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
 MAX_RESETS = 5.0
-MIN_DATA_PERC = 0.3
+MIN_DATA_PERC = 0.25
 MIN_ENGAGE_BUFFER = 2  # secs
 
 
@@ -101,6 +101,7 @@ class TorqueEstimator:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
     self.reset()
     self.filtered_points.load_points(initial_params['points'])
+    # ToDo: check if car has changed and reset (do not load old points if this is a new car)
 
   def reset(self):
     self.resets += 1.0
@@ -125,9 +126,6 @@ class TorqueEstimator:
     for param, value in params.items():
       self.filtered_params[param].update(value)
       self.filtered_params[param].update_alpha(self.decay)
-
-  def car_sane(self, params, fingerprint):
-    return False if params.get('carFingerprint', None) != fingerprint else True
 
   def is_sane(self, latAccelFactor, latAccelOffset, friction_coeff, steer_data_distribution=np.array([0.5, 0.5]), lat_acc_data_distribution=np.array([0.5, 0.5])):
     min_factor, max_factor = 1.0 - SANITY_FACTOR, 1.0 + SANITY_FACTOR
@@ -193,7 +191,7 @@ class TorqueEstimator:
     liveTorqueParameters.maxResets = self.resets
     return msg
 
-  def __exit__(self, *args):
+  def __del__(self, *args):
     msg = self.get_msg()
     msg.liveTorqueParameters.points = self.filtered_points.get_points()
     put_nonblocking("LiveTorqueParameters", msg.to_bytes())
