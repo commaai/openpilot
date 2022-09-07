@@ -26,6 +26,7 @@ MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
 MAX_RESETS = 5.0
 MIN_DATA_PERC = 0.25
 MIN_ENGAGE_BUFFER = 2  # secs
+TORQUED_TAG = "v0.1"
 
 
 def slope2rot(slope):
@@ -79,8 +80,12 @@ class TorqueEstimator:
       self.offline_friction = CP.lateralTuning.torque.friction
       self.offline_latAccelFactor = CP.lateralTuning.torque.latAccelFactor
 
+    self.reset()
     params = log.Event.from_bytes(params).liveTorqueParameters if params is not None else None
-    if params is not None and self.is_sane(params.latAccelFactorFiltered, params.latAccelOffsetFiltered, params.frictionCoefficientFiltered):
+    if params is not None and\
+       self.is_sane(params.latAccelFactorFiltered, params.latAccelOffsetFiltered, params.frictionCoefficientFiltered) and\
+       params.tag == TORQUED_TAG:
+       # ToDo: check if car has changed and reset (do not load old points if this is a new car)
       initial_params = {
         'latAccelFactor': params.latAccelFactorFiltered,
         'latAccelOffset': params.latAccelOffsetFiltered,
@@ -88,6 +93,7 @@ class TorqueEstimator:
         'points': params.points
       }
       self.decay = params.decay
+      self.filtered_points.load_points(initial_params['points'])
     else:
       initial_params = {
         'latAccelFactor': self.offline_latAccelFactor,
@@ -99,9 +105,6 @@ class TorqueEstimator:
     self.filtered_params = {}
     for param in initial_params:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
-    self.reset()
-    self.filtered_points.load_points(initial_params['points'])
-    # ToDo: check if car has changed and reset (do not load old points if this is a new car)
 
   def reset(self):
     self.resets += 1.0
@@ -163,6 +166,7 @@ class TorqueEstimator:
     msg = messaging.new_message('liveTorqueParameters')
     msg.valid = valid
     liveTorqueParameters = msg.liveTorqueParameters
+    liveTorqueParameters.tag = TORQUED_TAG
 
     if self.filtered_points.is_valid():
       try:
