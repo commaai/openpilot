@@ -10,9 +10,12 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-# constants for fault workaround
+# EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
-MAX_STEER_RATE_FRAMES = 18  # control frames allowed where steering rate >= MAX_STEER_RATE
+MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
+
+# EPS allows user torque above threshold for 50 frames before permanently faulting
+MAX_USER_TORQUE = 500
 
 
 class CarController:
@@ -34,6 +37,7 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
+    lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
     # gas and brake
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -58,13 +62,13 @@ class CarController:
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-    if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
       self.steer_rate_counter += 1
     else:
       self.steer_rate_counter = 0
 
     apply_steer_req = 1
-    if not CC.latActive:
+    if not lat_active:
       apply_steer = 0
       apply_steer_req = 0
     elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
