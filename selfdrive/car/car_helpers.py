@@ -177,7 +177,7 @@ def get_car(logcan, sendcan):
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
-  experimental_long = Params().get_bool("DisableRadar")
+  experimental_long = Params().get_bool("ExperimentalLongitudinalEnabled")
 
   CarInterface, CarController, CarState = interfaces[candidate]
   CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long)

@@ -99,12 +99,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
       cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
       if (CP.getExperimentalLongitudinalAvailable()) {
-        Params().putBool("DisableRadar", state);
+        Params().putBool("ExperimentalLongitudinalEnabled", state);
       } else {
-        params.remove("DisableRadar");
+        params.remove("ExperimentalLongitudinalEnabled");
       }
     } else {
-      params.remove("DisableRadar");
+      params.remove("ExperimentalLongitudinalEnabled");
     }
   });
 }
@@ -122,17 +122,17 @@ void TogglesPanel::showEvent(QShowEvent *event) {
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
     if (CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable()) {
       // normal description and toggle
-      params.remove("DisableRadar");
+      params.remove("ExperimentalLongitudinalEnabled");
       toggle->setDescription(e2e_description);
     } else if (CP.getExperimentalLongitudinalAvailable()) {
       toggle->setDescription("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br><br>" + e2e_description);
-      if (params.getBool("EndToEndLong") && !params.getBool("DisableRadar")) {
+      if (params.getBool("EndToEndLong") && !params.getBool("ExperimentalLongitudinalEnabled")) {
         params.remove("EndToEndLong");
       }
     } else {
       // no long for now
       params.remove("EndToEndLong");
-      params.remove("DisableRadar");
+      params.remove("ExperimentalLongitudinalEnabled");
       toggle->setDescription("<b>openpilot longitudinal control is not currently available for this car.</b><br><br>" + e2e_description);
     }
     toggle->refresh();
