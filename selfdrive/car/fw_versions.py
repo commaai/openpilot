@@ -16,7 +16,7 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
-ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
 
 def p16(val):
@@ -96,6 +96,11 @@ CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf132)
 CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
 
 CHRYSLER_RX_OFFSET = -0x280
 
@@ -208,12 +213,20 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
     rx_offset=CHRYSLER_RX_OFFSET,
   ),
   Request(
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+  ),
+  Request(
+    "chrysler",
+    [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+    [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Ford
   Request(
@@ -227,7 +240,7 @@ REQUESTS: List[Request] = [
     [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
     bus=0,
-    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
+    whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
   ),
 ]
 
@@ -315,7 +328,7 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_versions = fw_versions_dict.get(addr, set())
-      if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
+      if ecu_type == Ecu.abs and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
 
       # On some Toyota models, the engine can show on two different addresses

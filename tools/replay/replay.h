@@ -24,10 +24,14 @@ enum REPLAY_FLAGS {
 
 enum class FindFlag {
   nextEngagement,
-  nextDisEngagement
+  nextDisEngagement,
+  nextUserFlag,
+  nextInfo,
+  nextWarning,
+  nextCritical
 };
 
-enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical };
+enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 
 class Replay : public QObject {
   Q_OBJECT
@@ -60,7 +64,7 @@ signals:
   void streamStarted();
 
 protected slots:
-  void segmentLoadFinished(bool sucess);
+  void segmentLoadFinished(bool success);
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
