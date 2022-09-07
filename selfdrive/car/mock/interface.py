@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
     # get basic data from phone and gps since CAN isn't connected
     gyro_sensor = messaging.recv_sock(self.gyro)
     if gyro_sensor is not None:
-      self.yaw_rate_meas = -gyro_sensor.gyro.v[0]
+      self.yaw_rate_meas = -gyro_sensor.sensorEvent.gyroUncalibrated.v[0]
 
     gps = messaging.recv_sock(self.gps)
     if gps is not None:
