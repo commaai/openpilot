@@ -38,54 +38,68 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   return packer.make_can_msg("GRA_ACC_01", bus, values)
 
 
-def create_acc_02_control(packer, bus, acc_status, set_speed, lead_distance):
-  values = {
+def acc_control_status_value(main_switch_on, acc_faulted, long_active):
+  if acc_faulted:
+    tsk_status = 6
+  elif long_active:
+    tsk_status = 3
+  elif main_switch_on:
+    tsk_status = 2
+  else:
+    tsk_status = 0
+
+  return tsk_status
+
+
+def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
+  commands = []
+
+  acc_06_values = {
+    "ACC_Typ": 2,  # FIXME: require SnG during refactoring, re-enable FtS later
+    "ACC_Status_ACC": acc_status,
+    "ACC_StartStopp_Info": enabled,
+    "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
+    "ACC_zul_Regelabw_unten": 0.1,  # FIXME: reintroduce comfort band support
+    "ACC_zul_Regelabw_oben": 0.1,  # FIXME: reintroduce comfort band support
+    "ACC_neg_Sollbeschl_Grad_02": 4.0 if enabled else 0,
+    "ACC_pos_Sollbeschl_Grad_02": 4.0 if enabled else 0,
+    "ACC_Anfahren": 0,  # FIXME: minspeed > 0 during refactor
+    "ACC_Anhalten": 0,  # FIXME: minspeed > 0 during refactor
+  }
+  commands.append(packer.make_can_msg("ACC_06", bus, acc_06_values))
+
+  acc_07_values = {
+    "ACC_Distance_to_Stop": 20.46,  # FIXME: default value, minspeed > 0 during refactor
+    "ACC_Hold_Request": 0,  # FIXME: default value, minspeed > 0 during refactor
+    "ACC_Freewheel_Type": 2 if enabled else 0,
+    "ACC_Hold_Type": 0,  # FIXME: default value, minspeed > 0 during refactor
+    "ACC_Hold_Release": 0,  # FIXME: default value, minspeed > 0 during refactor
+    "ACC_Accel_Secondary": 3.02,  # not using this unless and until we understand its impact
+    "ACC_Accel_TSK": accel if enabled else 3.01,
+  }
+  commands.append(packer.make_can_msg("ACC_07", bus, acc_07_values))
+
+  return commands
+
+
+def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, pass_through_data):
+  commands = []
+
+  acc_02_values = {
     "ACC_Status_Anzeige": 3 if acc_status == 5 else acc_status,
     "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
-    "ACC_Abstandsindex": lead_distance,
+    "ACC_Abstandsindex": 512 if lead_visible else 0,  # FIXME: will break analog clusters during refactor
   }
-
-  return packer.make_can_msg("ACC_02", bus, values)
-
-
-def create_acc_04_control(packer, bus, acc_04_stock_values):
-  values = acc_04_stock_values.copy()
+  commands.append(packer.make_can_msg("ACC_02", bus, acc_02_values))
 
   # Suppress disengagement alert from stock radar when OP long is in use, but passthru FCW/AEB alerts
-  if values["ACC_Texte_braking_guard"] == 4:
-    values["ACC_Texte_braking_guard"] = 0
+  acc_04_values = pass_through_data.copy()
+  if acc_04_values["ACC_Texte_braking_guard"] == 4:
+    acc_04_values["ACC_Texte_braking_guard"] = 0
 
-  return packer.make_can_msg("ACC_04", bus, values)
+  commands.append(packer.make_can_msg("ACC_04", bus, acc_04_values))
 
+  return commands
 
-def create_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopping, acc_starting, cb_pos, cb_neg, acc_type):
-  values = {
-    "ACC_Typ": acc_type,
-    "ACC_Status_ACC": acc_status,
-    "ACC_StartStopp_Info": enabled,
-    "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
-    "ACC_zul_Regelabw_unten": cb_neg,
-    "ACC_zul_Regelabw_oben": cb_pos,
-    "ACC_neg_Sollbeschl_Grad_02": 4.0 if enabled else 0,
-    "ACC_pos_Sollbeschl_Grad_02": 4.0 if enabled else 0,
-    "ACC_Anfahren": acc_starting,
-    "ACC_Anhalten": acc_stopping,
-  }
-
-  return packer.make_can_msg("ACC_06", bus, values)
-
-
-def create_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance):
-  values = {
-    "ACC_Distance_to_Stop": stopping_distance,
-    "ACC_Hold_Request": acc_hold_request,
-    "ACC_Freewheel_Type": 2 if enabled else 0,
-    "ACC_Hold_Type": acc_hold_type,
-    "ACC_Hold_Release": acc_hold_release,
-    "ACC_Accel_Secondary": 3.02,  # not using this unless and until we understand its impact
-    "ACC_Accel_TSK": accel if enabled else 3.01,
-  }
-
-  return packer.make_can_msg("ACC_07", bus, values)

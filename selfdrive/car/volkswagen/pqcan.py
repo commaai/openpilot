@@ -35,7 +35,7 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
-def tsk_status_value(main_switch_on, acc_faulted, long_active):
+def acc_control_status_value(main_switch_on, acc_faulted, long_active):
   if long_active:
     tsk_status = 1
   elif main_switch_on:
@@ -59,20 +59,20 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, adr_status, accel):
+def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
   values = {
-    "ACS_Sta_ADR": adr_status,
-    "ACS_StSt_Info": adr_status != 1,
+    "ACS_Sta_ADR": acc_status,
+    "ACS_StSt_Info": acc_status != 1,
     "ACS_Typ_ACC": 0,  # TODO: this is ACC "basic", find a way to detect FtS support (1)
-    "ACS_Sollbeschl": accel if adr_status == 1 else 3.01,
-    "ACS_zul_Regelabw": 0.2 if adr_status == 1 else 1.27,
-    "ACS_max_AendGrad": 3.0 if adr_status == 1 else 5.08,
+    "ACS_Sollbeschl": accel if acc_status == 1 else 3.01,
+    "ACS_zul_Regelabw": 0.2 if acc_status == 1 else 1.27,
+    "ACS_max_AendGrad": 3.0 if acc_status == 1 else 5.08,
   }
 
-  return packer.make_can_msg("ACC_System", bus, values)
+  packer.make_can_msg("ACC_System", bus, values)
 
 
-def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible):
+def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible, pass_through_data=None):
   values = {
     "ACA_StaACC": acc_status,
     "ACA_Zeitluecke": 2,

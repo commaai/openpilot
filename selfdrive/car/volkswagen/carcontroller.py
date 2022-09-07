@@ -15,6 +15,7 @@ class CarController:
     self.CP = CP
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.carFingerprint in PQ_CARS else mqbcan
+    self.pass_through_enabled = CP.carFingerprint not in PQ_CARS
     self.packer_pt = CANPacker(dbc_name)
 
     self.apply_steer_last = 0
@@ -27,60 +28,7 @@ class CarController:
   def update(self, CC, CS, ext_bus):
     actuators = CC.actuators
     hud_control = CC.hudControl
-
     can_sends = []
-
-    # **** Acceleration and Braking Controls ******************************** #
-
-    if CS.CP.openpilotLongitudinalControl:
-      if self.frame % self.CCP.ACC_CONTROL_STEP == 0:
-        if CS.tsk_status in [2, 3, 4, 5]:
-          acc_status = 3 if CC.longActive else 2
-        else:
-          acc_status = CS.tsk_status
-
-        accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0
-
-        # FIXME: this needs to become a proper state machine
-        acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance = False, False, 0, 20.46
-        if actuators.longControlState == LongCtrlState.stopping and CS.out.vEgo < 0.2:
-          self.acc_stopping = True
-          acc_hold_request = True
-          if CS.out.cruiseState.standstill:
-            acc_hold_type = 1  # hold
-            stopping_distance = 3.5
-          else:
-            acc_hold_type = 3  # hold_standby
-            stopping_distance = 0.5
-        elif CC.longActive:
-          if self.acc_stopping:
-            self.acc_starting = True
-            self.acc_stopping = False
-          self.acc_starting &= CS.out.vEgo < 1.5
-          acc_hold_release = self.acc_starting
-          acc_hold_type = 4 if self.acc_starting and CS.out.vEgo < 0.1 else 0  # startup
-        else:
-          self.acc_stopping, self.acc_starting = False, False
-
-        cb_pos = 0.0 if hud_control.leadVisible or CS.out.vEgo < 2.0 else 0.1  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
-        cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
-
-        can_sends.append(self.CCS.create_acc_06_control(self.packer_pt, CANBUS.pt, CC.longActive, acc_status,
-                                                                 accel, self.acc_stopping, self.acc_starting,
-                                                                 cb_pos, cb_neg, CS.acc_type))
-        can_sends.append(self.CCS.create_acc_07_control(self.packer_pt, CANBUS.pt, CC.longActive,
-                                                                 accel, acc_hold_request, acc_hold_release,
-                                                                 acc_hold_type, stopping_distance))
-
-      if self.frame % self.CCP.ACC_HUD_STEP == 0:
-        if hud_control.leadVisible:
-          lead_distance = 512 if CS.digital_cluster_installed else 8  # TODO: look up actual distance to lead
-        else:
-          lead_distance = 0
-
-        can_sends.append(self.CCS.create_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
-                                                                 hud_control.setSpeed * CV.MS_TO_KPH, lead_distance))
-        can_sends.append(self.CCS.create_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values))
 
     # **** Steering Controls ************************************************ #
 
@@ -125,9 +73,9 @@ class CarController:
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      tsk_status = self.CCS.tsk_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
+      acc_status = self.CCS.acc_control_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
       accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0
-      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, tsk_status, accel))
+      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CC.longActive, acc_status, accel))
 
     # **** HUD Controls ***************************************************** #
 
@@ -141,8 +89,9 @@ class CarController:
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
-      can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
-                                                       hud_control.leadVisible))
+      pass_through_data = CS.acc_04_stock_values if self.pass_through_enabled else None
+      can_sends.extend(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
+                                                       hud_control.leadVisible, pass_through_data))
 
     # **** Stock ACC Button Controls **************************************** #
 

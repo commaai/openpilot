@@ -75,6 +75,7 @@ class CarInterface(CarInterfaceBase):
       if disable_radar and ret.networkLocation == NetworkLocation.gateway:
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
+        ret.minEnableSpeed = 5 * CV.MPH_TO_MS  # FIXME: temp hack during refactor
         if ret.transmissionType == TransmissionType.manual:
           ret.minEnableSpeed = 4.5  # FIXME: estimated, fine-tune
 
