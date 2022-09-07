@@ -141,6 +141,7 @@ class Controls:
     cp_bytes = self.CP.to_bytes()
     params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
+    put_nonblocking("CarParamsPersistent", cp_bytes)
 
     self.CC = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()

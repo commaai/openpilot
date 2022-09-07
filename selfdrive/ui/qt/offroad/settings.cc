@@ -149,6 +149,8 @@ void TogglesPanel::updateToggles() {
 
     toggle->refresh();
     toggle->setEnabled(op_long || (exp_long && !uiState()->scene.started));
+  } else {
+    toggle->setDescription(e2e_description);
   }
 }
 
