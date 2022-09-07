@@ -90,11 +90,14 @@ class Plant():
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
+    # Simulate model predicting slightly faster speed
+    # this is to ensure lead policy is effective when model
+    # does not predict slowdown in e2e mode
     position = log.ModelDataV2.XYZTData.new_message()
-    position.x = [float(x) for x in (self.speed + 1.0) * np.array(T_IDXS)]
+    position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
     model.modelV2.position = position
     velocity = log.ModelDataV2.XYZTData.new_message()
-    velocity.x = [float(x) for x in (self.speed + 1.0) * np.ones_like(T_IDXS)]
+    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]
     model.modelV2.velocity = velocity
     acceleration = log.ModelDataV2.XYZTData.new_message()
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
