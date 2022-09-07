@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+106"/>
+        <location filename="../qt/offroad/settings.cc" line="+159"/>
         <source>Dongle ID</source>
         <translation>Dongle ID</translation>
     </message>
@@ -1153,7 +1153,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-279"/>
+        <location filename="../qt/offroad/settings.cc" line="-332"/>
         <source>Enable openpilot</source>
         <translation>openpilot 사용</translation>
     </message>
@@ -1198,12 +1198,12 @@ location set</source>
         <translation>🌮 e2e long 사용 (매우 실험적) 🌮 </translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>주행모델이 가속과 감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
+        <location line="+59"/>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-65"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>가속페달 조작시 해제</translation>
     </message>
@@ -1231,16 +1231,6 @@ location set</source>
         <location line="+1"/>
         <source>Show map on left side when in split screen view.</source>
         <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>openpilot Longitudinal Control</source>
-        <translation>openpilot Longitudinal Control</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot은 차량&apos;의 레이더를 무력화시키고 가속페달과 브레이크의 제어를 인계받을 것이다. 경고: AEB를 비활성화합니다!</translation>
     </message>
 </context>
 <context>

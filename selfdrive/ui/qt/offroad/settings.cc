@@ -28,7 +28,7 @@
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
-  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
@@ -62,7 +62,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "EndToEndLong",
       tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
-      tr("Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental."),
+      "",
       "../assets/offroad/icon_road.png",
     },
 #ifdef ENABLE_MAPS
@@ -82,22 +82,75 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   };
 
-  Params params;
-
-  if (params.getBool("DisableRadar_Allow")) {
-    toggles.push_back({
-      "DisableRadar",
-      tr("openpilot Longitudinal Control"),
-      tr("openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!"),
-      "../assets/offroad/icon_speed_limit.png",
-    });
-  }
-
-  for (auto &[param, title, desc, icon] : toggles) {
+  for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
+
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
+
     addItem(toggle);
+    toggles[param.toStdString()] = toggle;
+  }
+
+  QObject::connect(toggles["EndToEndLong"], &ParamControl::toggleFlipped, [=](bool state) {
+    auto cp_bytes = params.get("CarParamsPersistent");
+    if (!cp_bytes.empty()) {
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+      cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+      if (CP.getExperimentalLongitudinalAvailable()) {
+        params.putBool("ExperimentalLongitudinalEnabled", state);
+      } else {
+        params.remove("ExperimentalLongitudinalEnabled");
+      }
+    } else {
+      params.remove("ExperimentalLongitudinalEnabled");
+    }
+  });
+
+  connect(uiState(), &UIState::offroadTransition, [=]() {
+    updateToggles();
+  });
+}
+
+void TogglesPanel::showEvent(QShowEvent *event) {
+  updateToggles();
+}
+
+void TogglesPanel::updateToggles() {
+  // update e2e toggle
+  auto toggle = toggles["EndToEndLong"];
+  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+
+  auto cp_bytes = params.get("CarParamsPersistent");
+  if (!cp_bytes.empty()) {
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+
+    const bool exp_long = CP.getExperimentalLongitudinalAvailable();
+    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+
+    if (op_long) {
+      // normal description and toggle
+      params.remove("ExperimentalLongitudinalEnabled");
+      toggle->setDescription(e2e_description);
+    } else if (exp_long) {
+      toggle->setDescription("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br><br>" + e2e_description);
+      if (params.getBool("EndToEndLong") && !params.getBool("ExperimentalLongitudinalEnabled")) {
+        params.remove("EndToEndLong");
+      }
+    } else {
+      // no long for now
+      params.remove("EndToEndLong");
+      params.remove("ExperimentalLongitudinalEnabled");
+      toggle->setDescription("<b>openpilot longitudinal control is not currently available for this car.</b><br><br>" + e2e_description);
+    }
+
+    toggle->refresh();
+    toggle->setEnabled(op_long || (exp_long && !uiState()->scene.started));
+  } else {
+    toggle->setDescription(e2e_description);
   }
 }
 

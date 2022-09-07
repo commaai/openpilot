@@ -21,14 +21,15 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "hyundai"
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = disable_radar and (candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR))
+    ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+    ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 

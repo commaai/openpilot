@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+106"/>
+        <location filename="../qt/offroad/settings.cc" line="+159"/>
         <source>Dongle ID</source>
         <translation>设备ID（Dongle ID）</translation>
     </message>
@@ -1151,7 +1151,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-279"/>
+        <location filename="../qt/offroad/settings.cc" line="-332"/>
         <source>Enable openpilot</source>
         <translation>启用openpilot</translation>
     </message>
@@ -1196,12 +1196,12 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
+        <location line="+59"/>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-65"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>踩油门时取消控制</translation>
     </message>
@@ -1229,16 +1229,6 @@ location set</source>
         <location line="+1"/>
         <source>Show map on left side when in split screen view.</source>
         <translation>在分屏模式中，将地图置于屏幕左侧。</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>openpilot Longitudinal Control</source>
-        <translation>openpilot纵向控制</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot将禁用车辆的雷达并接管油门和刹车的控制。警告：AEB将被禁用！</translation>
     </message>
 </context>
 <context>
