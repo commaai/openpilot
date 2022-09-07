@@ -91,12 +91,10 @@ class CarController:
 
     # **** Stock ACC Button Controls **************************************** #
 
-    if self.CP.pcmCruise and self.frame % self.CCP.GRA_ACC_STEP == 0:
+    if self.CP.pcmCruise and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
       idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
-      if CC.cruiseControl.cancel:
-        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, cancel=True))
-      elif CC.cruiseControl.resume:
-        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, resume=True))
+      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx,
+                                                           cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
