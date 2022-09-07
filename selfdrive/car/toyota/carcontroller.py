@@ -10,6 +10,10 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# constants for fault workaround
+MAX_STEER_RATE = 100  # deg/s
+MAX_STEER_RATE_FRAMES = 18  # control frames allowed where steering rate >= MAX_STEER_RATE
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -20,6 +24,7 @@ class CarController:
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
+    self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -52,11 +57,19 @@ class CarController:
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
+    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
+    if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+      self.steer_rate_counter += 1
+    else:
+      self.steer_rate_counter = 0
+
+    apply_steer_req = 1
     if not CC.latActive:
       apply_steer = 0
       apply_steer_req = 0
-    else:
-      apply_steer_req = 1
+    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+      apply_steer_req = 0
+      self.steer_rate_counter = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
