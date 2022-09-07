@@ -138,6 +138,15 @@ REQUESTS: List[Request] = [
     [HYUNDAI_VERSION_REQUEST_MULTI],
     [HYUNDAI_VERSION_RESPONSE],
   ),
+  # CAN-FD Hyundai
+  # FIXME: querying fwdRadar on OBD bus can be spotty, query on pt bus instead
+  Request(
+    "hyundai",
+    [HYUNDAI_VERSION_REQUEST_LONG],
+    [HYUNDAI_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.fwdRadar],
+    bus=4,
+  ),
   # Honda
   Request(
     "honda",
