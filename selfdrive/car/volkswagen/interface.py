@@ -73,7 +73,8 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
-      if disable_radar and ret.networkLocation == NetworkLocation.gateway:
+      if experimental_long and ret.networkLocation == NetworkLocation.gateway:
+        ret.experimentalLongitudinalAvailable = True
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
         ret.minEnableSpeed = 5 * CV.MPH_TO_MS  # FIXME: temp hack during refactor
