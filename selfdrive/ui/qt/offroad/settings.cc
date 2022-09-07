@@ -28,7 +28,7 @@
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
-  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
@@ -62,7 +62,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "EndToEndLong",
       tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
-      tr("Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental."),
+      "",
       "../assets/offroad/icon_road.png",
     },
 #ifdef ENABLE_MAPS
@@ -82,22 +82,45 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   };
 
-  Params params;
-
-  if (params.getBool("DisableRadar_Allow")) {
-    toggles.push_back({
-      "DisableRadar",
-      tr("openpilot Longitudinal Control"),
-      tr("openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!"),
-      "../assets/offroad/icon_speed_limit.png",
-    });
-  }
-
-  for (auto &[param, title, desc, icon] : toggles) {
+  for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
+
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
+
     addItem(toggle);
+    toggles[param.toStdString()] = toggle;
+  }
+}
+
+void TogglesPanel::showEvent(QShowEvent *event) {
+
+  // update e2e toggle
+  auto toggle = toggles["EndToEndLong"];
+  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+
+  auto cp_bytes = Params().get("CarParams");
+  if (!cp_bytes.empty()) {
+    // TODO: handle alignment
+    capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr(reinterpret_cast<capnp::word*>(cp_bytes.data()), cp_bytes.size()));
+    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+    if (CP.getOpenpilotLongitudinalControl() && !CP.getDisableRadarAvailable()) {
+      // normal description and toggle
+      params.remove("DisableRadar");
+      toggle->setDescription(e2e_description);
+    } else if (CP.getDisableRadarAvailable()) {
+      toggle->setDescription("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br><br>" + e2e_description);
+      if (params.getBool("EndToEndLong") && !params.getBool("DisableRadar")) {
+        params.remove("EndToEndLong");
+      }
+    } else {
+      // no long for now
+      params.remove("EndToEndLong");
+      params.remove("DisableRadar");
+      toggle->setDescription("<b>openpilot longitudinal control is not currently available for this car.</b><br><br>" + e2e_description);
+    }
+    toggle->refresh();
+    toggle->setEnabled(CP.getOpenpilotLongitudinalControl() || CP.getDisableRadarAvailable());
   }
 }
 

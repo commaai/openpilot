@@ -54,6 +54,11 @@ class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(SettingsWindow *parent);
+  void showEvent(QShowEvent *event) override;
+
+private:
+  Params params;
+  std::map<std::string, ParamControl*> toggles;
 };
 
 class SoftwarePanel : public ListWidget {

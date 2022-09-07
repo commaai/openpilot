@@ -40,6 +40,7 @@ class CarInterface(CarInterfaceBase):
       if candidate not in HONDA_BOSCH_RADARLESS:
         # Disable the radar and let openpilot control longitudinal
         # WARNING: THIS DISABLES AEB!
+        ret.disableRadarAvailable = True
         ret.openpilotLongitudinalControl = disable_radar
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl

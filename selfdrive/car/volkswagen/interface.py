@@ -52,6 +52,7 @@ class CarInterface(CarInterfaceBase):
       if disable_radar and ret.networkLocation == NetworkLocation.gateway:
         # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
         # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
+        ret.disableRadarAvailable = True
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
 

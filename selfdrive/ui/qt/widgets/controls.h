@@ -105,7 +105,10 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
+  void setEnabled(bool enabled) {
+    toggle.setEnabled(enabled);
+    toggle.update();
+  }
 
 signals:
   void toggleFlipped(bool state);
@@ -126,10 +129,14 @@ public:
     });
   }
 
-  void showEvent(QShowEvent *event) override {
+  void refresh() {
     if (params.getBool(key) != toggle.on) {
       toggle.togglePosition();
     }
+  };
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
   };
 
 private:
