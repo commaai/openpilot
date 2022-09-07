@@ -11,7 +11,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STEER_FAULT_MAX_ANGLE = 85  # EPS max is 90
-STEER_FAULT_MAX_FRAMES = 90  # EPS counter is 95
+STEER_FAULT_MAX_FRAMES = 39  # EPS counter is 95
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -44,8 +44,6 @@ class CarController:
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
-    self.cut_steer_frames = 0
-    self.cut_steer = False
     self.frame = 0
 
     self.apply_steer_last = 0
@@ -112,24 +110,16 @@ class CarController:
         if self.frame % 100 == 0:
           can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-      if CC.latActive and abs(CS.out.steeringAngleDeg) > STEER_FAULT_MAX_ANGLE:
+      if CC.latActive and abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
         self.angle_limit_counter += 1
       else:
         self.angle_limit_counter = 0
 
       # stop requesting torque to avoid 90 degree fault and hold torque with induced temporary fault
-      # two cycles avoids race conditions every few minutes
-      if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES:
-        self.cut_steer = True
-      elif self.cut_steer_frames > 1:
-        self.cut_steer_frames = 0
-        self.cut_steer = False
-
       cut_steer_temp = False
-      if self.cut_steer:
+      if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES:
         cut_steer_temp = True
         self.angle_limit_counter = 0
-        self.cut_steer_frames += 1
 
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
                                      cut_steer_temp, CS.lkas11, sys_warning, sys_state, CC.enabled,
