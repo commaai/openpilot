@@ -166,8 +166,11 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
       } else if (flag == FindFlag::nextDisEngagement && end_ts > cur_ts) {
         return end_ts;
       }
-    } else if (type == TimelineType::UserFlag) {
-      if (flag == FindFlag::nextUserFlag && start_ts > cur_ts) {
+    } else if (start_ts > cur_ts) {
+      if ((flag == FindFlag::nextUserFlag && type == TimelineType::UserFlag) ||
+          (flag == FindFlag::nextInfo && type == TimelineType::AlertInfo) ||
+          (flag == FindFlag::nextWarning && type == TimelineType::AlertWarning) ||
+          (flag == FindFlag::nextCritical && type == TimelineType::AlertCritical)) {
         return start_ts;
       }
     }

@@ -4,6 +4,7 @@
 <context>
     <name>InputDialog</name>
     <message numerus="yes">
+        <location filename="../qt/widgets/input.cc" line="+168"/>
         <source>Need at least %n character(s)!</source>
         <translation>
             <numerusform>Need at least %n character!</numerusform>
@@ -14,6 +15,7 @@
 <context>
     <name>QObject</name>
     <message numerus="yes">
+        <location filename="../qt/util.cc" line="+82"/>
         <source>%n minute(s) ago</source>
         <translation>
             <numerusform>%n minute ago</numerusform>
@@ -21,6 +23,7 @@
         </translation>
     </message>
     <message numerus="yes">
+        <location line="+3"/>
         <source>%n hour(s) ago</source>
         <translation>
             <numerusform>%n hour ago</numerusform>
@@ -28,6 +31,7 @@
         </translation>
     </message>
     <message numerus="yes">
+        <location line="+3"/>
         <source>%n day(s) ago</source>
         <translation>
             <numerusform>%n day ago</numerusform>
