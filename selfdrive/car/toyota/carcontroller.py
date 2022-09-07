@@ -10,9 +10,9 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-# constants for steering fault workarounds
+# EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
-MAX_STEER_RATE_FRAMES = 18  # control frames allowed where steering rate >= MAX_STEER_RATE
+MAX_STEER_RATE_FRAMES = 18  # control frames where steering rate >= MAX_STEER_RATE
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
