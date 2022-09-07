@@ -1290,6 +1290,8 @@ FW_VERSIONS = {
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
       b'\xf1\x8758520GI010\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
+      b'\xf1\x00NE1 IEB \x08 104!\x04\x05 58520-GI000',
+      b'\xf1\x8758520GI000\xf1\x00NE1 IEB \x08 104!\x04\x05 58520-GI000',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
@@ -1301,6 +1303,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
+      b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.06 99211-GI000 210813',
     ],
   },
   CAR.TUCSON_HYBRID_4TH_GEN: {
