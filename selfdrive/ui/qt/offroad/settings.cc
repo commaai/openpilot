@@ -95,10 +95,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(toggles["EndToEndLong"], &ParamControl::toggleFlipped, [=](bool state) {
     auto cp_bytes = params.get("CarParams");
     if (!cp_bytes.empty()) {
-      // TODO: handle alignment
-      capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr(reinterpret_cast<capnp::word*>(cp_bytes.data()), cp_bytes.size()));
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
       cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-      if (CP.getDisableRadarAvailable()) {
+      if (CP.getExperimentalLongitudinalAvailable()) {
         Params().putBool("DisableRadar", state);
       } else {
         params.remove("DisableRadar");
@@ -117,14 +117,14 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 
   auto cp_bytes = params.get("CarParams");
   if (!cp_bytes.empty()) {
-    // TODO: handle alignment
-    capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr(reinterpret_cast<capnp::word*>(cp_bytes.data()), cp_bytes.size()));
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-    if (CP.getOpenpilotLongitudinalControl() && !CP.getDisableRadarAvailable()) {
+    if (CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable()) {
       // normal description and toggle
       params.remove("DisableRadar");
       toggle->setDescription(e2e_description);
-    } else if (CP.getDisableRadarAvailable()) {
+    } else if (CP.getExperimentalLongitudinalAvailable()) {
       toggle->setDescription("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br><br>" + e2e_description);
       if (params.getBool("EndToEndLong") && !params.getBool("DisableRadar")) {
         params.remove("EndToEndLong");
@@ -136,7 +136,7 @@ void TogglesPanel::showEvent(QShowEvent *event) {
       toggle->setDescription("<b>openpilot longitudinal control is not currently available for this car.</b><br><br>" + e2e_description);
     }
     toggle->refresh();
-    toggle->setEnabled(CP.getOpenpilotLongitudinalControl() || CP.getDisableRadarAvailable());
+    toggle->setEnabled(CP.getOpenpilotLongitudinalControl() || CP.getExperimentalLongitudinalAvailable());
   }
 }
 
