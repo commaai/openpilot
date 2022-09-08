@@ -93,6 +93,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarBatteryCapacity", PERSISTENT},
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
+    {"CarParamsPersistent", PERSISTENT},
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
@@ -101,8 +102,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
     {"EndToEndLong", PERSISTENT},
-    {"DisableRadar_Allow", PERSISTENT},
-    {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
+    {"ExperimentalLongitudinalEnabled", PERSISTENT}, // WARNING: THIS MAY DISABLE AEB
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
     {"DongleId", PERSISTENT},
