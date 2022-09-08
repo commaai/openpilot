@@ -240,7 +240,7 @@ REQUESTS: List[Request] = [
     [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
     bus=0,
-    whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
+    whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
   ),
 ]
 
