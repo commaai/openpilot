@@ -61,7 +61,10 @@ class CarInterfaceBase(ABC):
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
+
     self.cluster_speed_steady = 0.0
+    self.cluster_speed_factor = 1.0
+    self.cluster_speed_hyst = 0.0
 
     self.CS = None
     self.can_parsers = []
@@ -151,10 +154,10 @@ class CarInterfaceBase(ABC):
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   def apply_cluster_speed_hysteresis(self, v_ego):
-    if v_ego > self.cluster_speed_steady + self.CS.cluster_speed_hyst:
-      self.cluster_speed_steady = v_ego - self.CS.cluster_speed_hyst
-    elif v_ego < self.cluster_speed_steady - self.CS.cluster_speed_hyst:
-      self.cluster_speed_steady = v_ego + self.CS.cluster_speed_hyst
+    if v_ego > self.cluster_speed_steady + self.cluster_speed_hyst:
+      self.cluster_speed_steady = v_ego - self.cluster_speed_hyst
+    elif v_ego < self.cluster_speed_steady - self.cluster_speed_hyst:
+      self.cluster_speed_steady = v_ego + self.cluster_speed_hyst
 
     return self.cluster_speed_steady
 
@@ -175,7 +178,7 @@ class CarInterfaceBase(ABC):
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
     # Apply hysteresis to cluster ego speed
-    ret.vEgoCluster = self.apply_cluster_speed_hysteresis(ret.vEgo * self.CS.cluster_speed_factor)
+    ret.vEgoCluster = self.apply_cluster_speed_hysteresis(ret.vEgo * self.cluster_speed_factor)
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
@@ -276,9 +279,6 @@ class CarStateBase(ABC):
     self.right_blinker_cnt = 0
     self.left_blinker_prev = False
     self.right_blinker_prev = False
-
-    self.cluster_speed_factor = 1.0
-    self.cluster_speed_hyst = 0.0
 
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
