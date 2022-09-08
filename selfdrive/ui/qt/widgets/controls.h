@@ -105,7 +105,10 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
+  void setEnabled(bool enabled) {
+    toggle.setEnabled(enabled);
+    toggle.update();
+  }
 
 signals:
   void toggleFlipped(bool state);
@@ -121,15 +124,19 @@ class ParamControl : public ToggleControl {
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
-    QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
+    QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       params.putBool(key, state);
     });
   }
 
-  void showEvent(QShowEvent *event) override {
+  void refresh() {
     if (params.getBool(key) != toggle.on) {
       toggle.togglePosition();
     }
+  };
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
   };
 
 private:

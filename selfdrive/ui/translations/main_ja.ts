@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+106"/>
+        <location filename="../qt/offroad/settings.cc" line="+159"/>
         <source>Dongle ID</source>
         <translation>ドングル番号 (Dongle ID)</translation>
     </message>
@@ -1153,7 +1153,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-279"/>
+        <location filename="../qt/offroad/settings.cc" line="-332"/>
         <source>Enable openpilot</source>
         <translation>openpilot を有効化</translation>
     </message>
@@ -1198,12 +1198,12 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
+        <location line="+59"/>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-65"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>ｱｸｾﾙ踏むと openpilot をｷｬﾝｾﾙ</translation>
     </message>
@@ -1231,16 +1231,6 @@ location set</source>
         <location line="+1"/>
         <source>Show map on left side when in split screen view.</source>
         <translation>分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>openpilot Longitudinal Control</source>
-        <translation>openpilot 縦方向制御</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot は、車のレーダーを無効化し、アクセルとブレーキの制御を引き継ぎます。注意：AEB を無効化にします！</translation>
     </message>
 </context>
 <context>
