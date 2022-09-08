@@ -122,6 +122,13 @@ class CarState(CarStateBase):
     else:
       self.cluster_speed_factor = self._cluster_speed_factor
 
+    with open('/data/hyst', 'r') as f:
+      self.v_ego_cluster_hyst = float(f.read().strip() or 0)
+
+    with open('/data/fact', 'r') as f:
+      self.cluster_speed_factor = float(f.read().strip() or 0)
+
+
     # UI_SET_SPEED is always non-zero when main is on, hide until first enable
     if ret.cruiseState.speed != 0:
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
