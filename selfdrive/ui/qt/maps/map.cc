@@ -4,16 +4,11 @@
 #include <cmath>
 
 #include <QDebug>
-#include <QFileInfo>
-#include <QPainterPath>
+#include <QPainter>
 
-#include "common/swaglog.h"
 #include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
-#include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/ui.h"
-
 
 const int PAN_TIMEOUT = 100;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
@@ -35,16 +30,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_instructions = new MapInstructions(this);
   QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
   QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
-  map_instructions->setFixedWidth(width());
-  map_instructions->setVisible(false);
-
-  map_eta = new MapETA(this);
-  QObject::connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
-
-  const int h = 120;
-  map_eta->setFixedHeight(h);
-  map_eta->move(25, 1080 - h - bdr_s*2);
-  map_eta->setVisible(false);
+  QObject::connect(this, &MapWindow::ETAChanged, map_instructions, &MapInstructions::updateETA);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position) {
@@ -161,7 +147,6 @@ void MapWindow::updateState(const UIState &s) {
 
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
-
     // Only open the map on setting destination the first time
     if (allow_open) {
       setVisible(true); // Show map on destination set/change
@@ -175,14 +160,14 @@ void MapWindow::updateState(const UIState &s) {
 
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
-    map_instructions->showError(tr("Map Loading"));
+    map_instructions->setError(tr("Map Loading"));
     return;
   }
 
   initLayers();
 
   if (locationd_valid || laikad_valid) {
-    map_instructions->noError();
+    map_instructions->setError("");
 
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
@@ -192,7 +177,7 @@ void MapWindow::updateState(const UIState &s) {
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
     m_map->updateSource("carPosSource", carPosSource);
   } else {
-    map_instructions->showError(tr("Waiting for GPS"));
+    map_instructions->setError(tr("Waiting for GPS"));
   }
 
   if (pan_counter == 0) {
@@ -241,7 +226,8 @@ void MapWindow::updateState(const UIState &s) {
 
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
-  map_instructions->setFixedWidth(width());
+  map_instructions->setFixedSize({w, h});
+  map_instructions->eta_doc.setTextWidth(w);
 }
 
 void MapWindow::initializeGL() {
@@ -275,8 +261,7 @@ void MapWindow::clearRoute() {
     m_map->setPitch(MIN_PITCH);
   }
 
-  map_instructions->hideIfNoError();
-  map_eta->setVisible(false);
+  map_instructions->eta_doc.setHtml("");
   allow_open = true;
 }
 
@@ -361,59 +346,77 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+  eta_doc.setUndoRedoEnabled(false);
+  eta_doc.setUseDesignMetrics(true);
+  eta_doc.setDefaultTextOption(QTextOption(Qt::AlignHCenter));
   is_rhd = Params().getBool("IsRhdDetected");
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(11, 50, 11, 11);
-  {
-    QVBoxLayout *layout = new QVBoxLayout;
-    icon_01 = new QLabel;
-    layout->addWidget(icon_01);
-    layout->addStretch();
-    main_layout->addLayout(layout);
+}
+
+void MapInstructions::paintEvent(QPaintEvent *event) {
+  const int left_margin = 11, top_margin = 50;
+  QPainter p(this);
+  p.setPen(Qt::white);
+
+  if (!error_str.isEmpty()) {
+    QRect rc(0, 0, width(), 200);
+    p.fillRect(rc, QColor(0, 0, 0, 150));
+    configFont(p, "Inter", 90, "Regular");
+    p.drawText(rc, Qt::AlignCenter, error_str);
+    return;
+  }
+  
+  int header_height = 0;
+  if (!icon.isNull()) header_height += icon.height();
+  else {
+    if (!distance_str.isEmpty()) header_height += 100;
+    if (!primary_str.isEmpty()) header_height += 70;
+  }
+  if (!secondary_str.isEmpty()) header_height += 60;
+  if (!lanes.empty()) header_height += 140;
+
+  if (header_height == 0) return;
+
+  p.fillRect(QRect{0, 0, width(), header_height + top_margin}, QColor(0, 0, 0, 150));
+  int icon_width = 0;
+  if (!icon.isNull()) {
+    p.drawPixmap(left_margin, top_margin, icon);
+    icon_width += icon.width();
   }
 
-  {
-    QVBoxLayout *layout = new QVBoxLayout;
-
-    distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 90px;)");
-    layout->addWidget(distance);
-
-    primary = new QLabel;
-    primary->setStyleSheet(R"(font-size: 60px;)");
-    primary->setWordWrap(true);
-    layout->addWidget(primary);
-
-    secondary = new QLabel;
-    secondary->setStyleSheet(R"(font-size: 50px;)");
-    secondary->setWordWrap(true);
-    layout->addWidget(secondary);
-
-    lane_widget = new QWidget;
-    lane_widget->setFixedHeight(125);
-
-    lane_layout = new QHBoxLayout(lane_widget);
-    layout->addWidget(lane_widget);
-
-    main_layout->addLayout(layout);
+  int v_pos = top_margin;
+  if (!distance_str.isEmpty()) {
+    configFont(p, "Inter", 90, "Regular");
+    v_pos += 90;
+    p.drawText(left_margin + icon_width, v_pos, distance_str);
   }
 
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-family: "Inter";
-    }
-  )");
+  if (!primary_str.isEmpty()) {
+    configFont(p, "Inter", 60, "Regular");
+    v_pos += 80;
+    p.drawText(left_margin + icon_width, v_pos, primary_str);
+  }
+  if (!secondary_str.isEmpty()) {
+    configFont(p, "Inter", 50, "Regular");
+    v_pos += 80;
+    p.drawText(left_margin + icon_width, v_pos, secondary_str);
+  }
 
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
-  setAutoFillBackground(true);
-  setPalette(pal);
+  int x = left_margin + icon_width;
+  for (const QString &fn : lanes) {
+    p.drawPixmap(x, v_pos, loadPixmap(fn, {125, 125}, Qt::IgnoreAspectRatio));
+    x += 125;
+  }
+
+  p.translate(0, height()-100);
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(0, 0, 0, 150));
+  qreal txt_width = eta_doc.idealWidth();
+  p.drawRoundedRect((width() - txt_width) / 2 - 20, 0, txt_width + 40, 90, 16, 16);
+  eta_doc.drawContents(&p);
 }
 
 void MapInstructions::updateDistance(float d) {
   d = std::max(d, 0.0f);
-  QString distance_str;
 
   if (uiState()->scene.is_metric) {
     if (d > 500) {
@@ -435,42 +438,12 @@ void MapInstructions::updateDistance(float d) {
       distance_str += tr(" ft");
     }
   }
-
-  distance->setAlignment(Qt::AlignLeft);
-  distance->setText(distance_str);
-}
-
-void MapInstructions::showError(QString error_text) {
-  primary->setText("");
-  distance->setText(error_text);
-  distance->setAlignment(Qt::AlignCenter);
-
-  secondary->setVisible(false);
-  icon_01->setVisible(false);
-
-  this->error = true;
-  lane_widget->setVisible(false);
-
-  setVisible(true);
-}
-
-void MapInstructions::noError() {
-  error = false;
+  update();
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
-  // Word wrap widgets need fixed width
-  primary->setFixedWidth(width() - 250);
-  secondary->setFixedWidth(width() - 250);
-
-
-  // Show instruction text
-  QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
-  QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
-
-  primary->setText(primary_str);
-  secondary->setVisible(secondary_str.length() > 0);
-  secondary->setText(secondary_str);
+  primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
+  secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
 
   // Show arrow with direction
   QString type = QString::fromStdString(instruction.getManeuverType());
@@ -496,14 +469,12 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (is_rhd) {
       pix = pix.transformed(QTransform().scale(-1, 1));
     }
-    icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
-    icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    icon_01->setVisible(true);
+    icon = pix;
   }
 
   // Show lanes
+  lanes.clear();
   bool has_lanes = false;
-  clearLayout(lane_layout);
   for (auto const &lane: instruction.getLanes()) {
     has_lanes = true;
     bool active = lane.getActive();
@@ -529,110 +500,34 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!active) {
       fn += "_inactive";
     }
-
-    auto icon = new QLabel;
-    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    lane_layout->addWidget(icon);
+    lanes.push_back(fn + ICON_SUFFIX);
   }
-  lane_widget->setVisible(has_lanes);
-
-  show();
-  resize(sizeHint());
+  update();
 }
 
-
-void MapInstructions::hideIfNoError() {
-  if (!error) {
-    hide();
-  }
-}
-
-MapETA::MapETA(QWidget * parent) : QWidget(parent) {
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(40, 25, 40, 25);
-
-  {
-    QHBoxLayout *layout = new QHBoxLayout;
-    eta = new QLabel;
-    eta->setAlignment(Qt::AlignCenter);
-    eta->setStyleSheet("font-weight:600");
-
-    eta_unit = new QLabel;
-    eta_unit->setAlignment(Qt::AlignCenter);
-
-    layout->addWidget(eta);
-    layout->addWidget(eta_unit);
-    main_layout->addLayout(layout);
-  }
-  main_layout->addSpacing(40);
-  {
-    QHBoxLayout *layout = new QHBoxLayout;
-    time = new QLabel;
-    time->setAlignment(Qt::AlignCenter);
-
-    time_unit = new QLabel;
-    time_unit->setAlignment(Qt::AlignCenter);
-
-    layout->addWidget(time);
-    layout->addWidget(time_unit);
-    main_layout->addLayout(layout);
-  }
-  main_layout->addSpacing(40);
-  {
-    QHBoxLayout *layout = new QHBoxLayout;
-    distance = new QLabel;
-    distance->setAlignment(Qt::AlignCenter);
-    distance->setStyleSheet("font-weight:600");
-
-    distance_unit = new QLabel;
-    distance_unit->setAlignment(Qt::AlignCenter);
-
-    layout->addWidget(distance);
-    layout->addWidget(distance_unit);
-    main_layout->addLayout(layout);
-  }
-
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-family: "Inter";
-      font-size: 70px;
-    }
-  )");
-
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
-  setAutoFillBackground(true);
-  setPalette(pal);
-}
-
-
-void MapETA::updateETA(float s, float s_typical, float d) {
+void MapInstructions::updateETA(float s, float s_typical, float d) {
   if (d < MANEUVER_TRANSITION_THRESHOLD) {
-    hide();
+    eta_doc.setHtml("");
     return;
   }
 
-  // ETA
+  QString eta, eta_unit, time;
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   if (params.getBool("NavSettingTime24h")) {
-    eta->setText(eta_time.toString("HH:mm"));
-    eta_unit->setText(tr("eta"));
+    eta = eta_time.toString("HH:mm");
+    eta_unit = tr("eta");
   } else {
     auto t = eta_time.toString("h:mm a").split(' ');
-    eta->setText(t[0]);
-    eta_unit->setText(t[1]);
+    eta = t[0];
+    eta_unit = t[1];
   }
 
   // Remaining time
   if (s < 3600) {
-    time->setText(QString::number(int(s / 60)));
-    time_unit->setText(tr("min"));
+    time = QString::number(int(s / 60)) + tr("min");
   } else {
     int hours = int(s) / 3600;
-    time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)).rightJustified(2, '0'));
-    time_unit->setText(tr("hr"));
+    time = QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)).rightJustified(2, '0') + tr("hr");
   }
 
   QString color;
@@ -644,44 +539,12 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     color = "#25DA6E";
   }
 
-  time->setStyleSheet(QString(R"(color: %1; font-weight:600;)").arg(color));
-  time_unit->setStyleSheet(QString(R"(color: %1;)").arg(color));
-
   // Distance
-  QString distance_str;
-  float num = 0;
-  if (uiState()->scene.is_metric) {
-    num = d / 1000.0;
-    distance_unit->setText(tr("km"));
-  } else {
-    num = d * METER_TO_MILE;
-    distance_unit->setText(tr("mi"));
-  }
+  float num = uiState()->scene.is_metric ? (d / 1000.0) : (d * METER_TO_MILE);
+  QString unit = uiState()->scene.is_metric ? tr("km") : tr("mi");
+  QString distance = QString().setNum(num, 'f', num < 100 ? 1 : 0) + unit;
 
-  distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
-  distance->setText(distance_str);
-
-  show();
-  adjustSize();
-  repaint();
-  adjustSize();
-
-  // Rounded corners
-  const int radius = 25;
-  const auto r = rect();
-
-  // Top corners rounded
-  QPainterPath path;
-  path.setFillRule(Qt::WindingFill);
-  path.addRoundedRect(r, radius, radius);
-
-  // Bottom corners not rounded
-  path.addRect(r.marginsRemoved(QMargins(0, radius, 0, 0)));
-
-  // Set clipping mask
-  QRegion mask = QRegion(path.simplified().toFillPolygon().toPolygon());
-  setMask(mask);
-
-  // Center
-  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - bdr_s*2);
+  eta_doc.setHtml(QString("<font style=\"font-family:Inner;font-size:70px;color:white;\"><b>%1</b>%2 <font color=\"%3\"><b>%4</b></font>  %5</font>")
+  .arg(eta).arg(eta_unit).arg(color).arg(time).arg(distance));
+  update();
 }

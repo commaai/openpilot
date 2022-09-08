@@ -5,7 +5,6 @@
 #include <QGeoCoordinate>
 #include <QGestureEvent>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QMap>
 #include <QMapboxGL>
 #include <QMouseEvent>
@@ -15,53 +14,31 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QtGlobal>
+#include <QTextDocument>
 
 #include "cereal/messaging/messaging.h"
 #include "common/params.h"
-#include "common/util.h"
 #include "selfdrive/ui/ui.h"
 
 class MapInstructions : public QWidget {
   Q_OBJECT
 
 private:
-  QLabel *distance;
-  QLabel *primary;
-  QLabel *secondary;
-  QLabel *icon_01;
-  QWidget *lane_widget;
-  QHBoxLayout *lane_layout;
-  bool error = false;
+  void paintEvent(QPaintEvent* event) override;
   bool is_rhd = false;
+  QString error_str, primary_str, secondary_str, distance_str, icon_fn_str;
+  QPixmap icon;
+  std::vector<QString> lanes;
+  Params params;
 
 public:
+  QTextDocument eta_doc;
   MapInstructions(QWidget * parent=nullptr);
-  void showError(QString error);
-  void noError();
-  void hideIfNoError();
+  inline void setError(QString error) { error_str = error; }
 
 public slots:
   void updateDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
-};
-
-class MapETA : public QWidget {
-  Q_OBJECT
-
-private:
-  QLabel *eta;
-  QLabel *eta_unit;
-  QLabel *time;
-  QLabel *time_unit;
-  QLabel *distance;
-  QLabel *distance_unit;
-  Params params;
-
-public:
-  MapETA(QWidget * parent=nullptr);
-
-public slots:
   void updateETA(float seconds, float seconds_typical, float distance);
 };
 
@@ -91,7 +68,6 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
 
   bool m_sourceAdded = false;
-
   bool loaded_once = false;
   bool allow_open = true;
 
@@ -108,7 +84,6 @@ private:
   bool locationd_valid = false;
 
   MapInstructions* map_instructions;
-  MapETA* map_eta;
 
   void clearRoute();
   uint64_t route_rcv_frame = 0;
@@ -124,4 +99,3 @@ signals:
   void instructionsChanged(cereal::NavInstruction::Reader instruction);
   void ETAChanged(float seconds, float seconds_typical, float distance);
 };
-
