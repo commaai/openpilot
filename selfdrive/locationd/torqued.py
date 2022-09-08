@@ -195,7 +195,7 @@ class TorqueEstimator:
     liveTorqueParameters.maxResets = self.resets
     return msg
 
-  def __del__(self, *args):
+  def __del__(self):
     msg = self.get_msg()
     msg.liveTorqueParameters.points = self.filtered_points.get_points()
     params_reader = Params()
