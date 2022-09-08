@@ -3,9 +3,8 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import dbc_dict, Fpv2Config
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_versions import Fpv2Config
 Ecu = car.CarParams.Ecu
 
 

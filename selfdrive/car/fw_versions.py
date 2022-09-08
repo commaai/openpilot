@@ -25,11 +25,6 @@ def p16(val):
   return struct.pack("!H", val)
 
 
-@dataclass
-class Fpv2Config:
-  extra_ecus: Set[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]]
-
-
 TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
 TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40, 0x0])
 

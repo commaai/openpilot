@@ -1,15 +1,21 @@
 # functions common among cars
 import capnp
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Set, Tuple
 
 from cereal import car
 from common.numpy_fast import clip
-from typing import Dict, List
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+
+
+@dataclass
+class Fpv2Config:
+  extra_ecus: Set[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]]
 
 
 def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
