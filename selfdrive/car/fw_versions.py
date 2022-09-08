@@ -17,6 +17,7 @@ from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+EXTRA_ECUS = get_interface_attr('EXTRA_ECUS', ignore_none=True)
 
 
 def p16(val):
@@ -445,7 +446,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
   # Each brand can define extra ECUs to query for data collection
-  for brand, ecus in get_interface_attr('EXTRA_ECUS', ignore_none=True).items():
+  for brand, ecus in EXTRA_ECUS.items():
     versions[brand]["debug"] = {ecu: [] for ecu in ecus}
 
   if query_brand is not None:
