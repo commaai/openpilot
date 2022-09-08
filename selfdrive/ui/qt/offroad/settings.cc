@@ -207,7 +207,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
 
   // power buttons
-  QHBoxLayout *power_layout = new QHBoxLayout();
+  QWidget *power_widget = new QWidget;
+  QHBoxLayout *power_layout = new QHBoxLayout(power_widget);
   power_layout->setSpacing(30);
 
   QPushButton *reboot_btn = new QPushButton(tr("Reboot"));
@@ -230,7 +231,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     #poweroff_btn { height: 120px; border-radius: 15px; background-color: #E22C2C; }
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
-  addItem(power_layout);
+  addItem(power_widget);
 }
 
 void DevicePanel::updateCalibDescription() {
