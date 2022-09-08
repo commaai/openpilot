@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-from collections import deque, defaultdict
+import sys
+import signal
 import numpy as np
+from collections import deque, defaultdict
+
 import cereal.messaging as messaging
 from cereal import car, log
 from common.params import Params
@@ -162,7 +165,7 @@ class TorqueEstimator:
         if all(active) and (not any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(float(steer), float(lateral_acc))
 
-  def get_msg(self, valid=True):
+  def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
     msg.valid = valid
     liveTorqueParameters = msg.liveTorqueParameters
@@ -187,6 +190,10 @@ class TorqueEstimator:
         # estimator.reset()
     else:
       liveTorqueParameters.liveValid = False
+
+    if with_points:
+      liveTorqueParameters.points = self.filtered_points.get_points()
+
     liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['latAccelFactor'].x)
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
     liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
@@ -194,12 +201,6 @@ class TorqueEstimator:
     liveTorqueParameters.decay = self.decay
     liveTorqueParameters.maxResets = self.resets
     return msg
-
-  def __del__(self):
-    msg = self.get_msg()
-    msg.liveTorqueParameters.points = self.filtered_points.get_points()
-    params_reader = Params()
-    params_reader.put("LiveTorqueParameters", msg.to_bytes())
 
 
 def main(sm=None, pm=None):
@@ -211,10 +212,17 @@ def main(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['liveTorqueParameters'])
 
-  params_reader = Params()
-  CP = car.CarParams.from_bytes(params_reader.get("CarParams", block=True))
-  torque_params = params_reader.get("LiveTorqueParameters")
+  params = Params()
+  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  torque_params = params.get("LiveTorqueParameters")
   estimator = TorqueEstimator(CP, torque_params)
+
+  def cache_params(torque_estimator):
+    cloudlog.warning("caching torque params")
+    msg = torque_estimator.get_msg(with_points=True)
+    Params().put("LiveTorqueParameters", msg.to_bytes())
+    sys.exit(0)
+  signal.signal(signal.SIGINT, lambda sig, frame: cache_params(estimator))
 
   while True:
     sm.update()
@@ -224,8 +232,9 @@ def main(sm=None, pm=None):
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
 
-    if (sm.updated['liveLocationKalman']) and (sm.frame % 5 == 0):  # 4Hz driven by liveLocationKalman
-      pm.send('liveTorqueParameters', estimator.get_msg(sm.all_checks()))
+    # 4Hz driven by liveLocationKalman
+    if sm.frame % 5 == 0:
+      pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
 
 
 if __name__ == "__main__":
