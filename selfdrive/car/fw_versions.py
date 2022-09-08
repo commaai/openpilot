@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import capnp
 import struct
 import traceback
 from collections import defaultdict
