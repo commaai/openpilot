@@ -24,7 +24,11 @@ signals:
 protected:
   void paintEvent(QPaintEvent *event) override;
   void resizeEvent(QResizeEvent* event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  void mouseReleaseEvent(QMouseEvent *event) override {
+    if (rect().contains(event->pos())) {
+      emit clicked();
+    }
+  }
   QString lastText_, elidedText_;
 };
 
@@ -101,7 +105,10 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
+  void setEnabled(bool enabled) {
+    toggle.setEnabled(enabled);
+    toggle.update();
+  }
 
 signals:
   void toggleFlipped(bool state);
@@ -117,15 +124,19 @@ class ParamControl : public ToggleControl {
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
-    QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
+    QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       params.putBool(key, state);
     });
   }
 
-  void showEvent(QShowEvent *event) override {
+  void refresh() {
     if (params.getBool(key) != toggle.on) {
       toggle.togglePosition();
     }
+  };
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
   };
 
 private:
@@ -153,9 +164,12 @@ private:
     QPainter p(this);
     p.setPen(Qt::gray);
     for (int i = 0; i < inner_layout.count() - 1; ++i) {
-      QRect r = inner_layout.itemAt(i)->geometry();
-      int bottom = r.bottom() + inner_layout.spacing() / 2;
-      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      QWidget *widget = inner_layout.itemAt(i)->widget();
+      if (widget->isVisible()) {
+        QRect r = inner_layout.itemAt(i)->geometry();
+        int bottom = r.bottom() + inner_layout.spacing() / 2;
+        p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      }
     }
   }
   QVBoxLayout outer_layout;

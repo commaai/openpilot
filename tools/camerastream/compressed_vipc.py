@@ -73,6 +73,10 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
           continue
         assert len(frames) == 1
         img_yuv = frames[0].to_ndarray(format=av.video.format.VideoFormat('yuv420p')).flatten()
+        uv_offset = H*W
+        y = img_yuv[:uv_offset]
+        uv = img_yuv[uv_offset:].reshape(2, -1).ravel('F')
+        img_yuv = np.hstack((y, uv))
 
       vipc_server.send(vst, img_yuv.data, cnt, int(time_q[0]*1e9), int(time.monotonic()*1e9))
       cnt += 1
@@ -82,7 +86,7 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
       print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Decode video streams and broacast on VisionIPC")
+  parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
   parser.add_argument("addr", help="Address of comma three")
   parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")

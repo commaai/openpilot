@@ -54,6 +54,13 @@ class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(SettingsWindow *parent);
+  void showEvent(QShowEvent *event) override;
+
+private:
+  Params params;
+  std::map<std::string, ParamControl*> toggles;
+
+  void updateToggles();
 };
 
 class SoftwarePanel : public ListWidget {
@@ -71,6 +78,7 @@ private:
   LabelControl *versionLbl;
   LabelControl *lastUpdateLbl;
   ButtonControl *updateBtn;
+  ButtonControl *branchSwitcherBtn;
 
   Params params;
   QFileSystemWatcher *fs_watch;
