@@ -272,10 +272,6 @@ FINGERPRINTS = {
   }],
 }
 
-# Ecus added for data collection
-EXTRA_ECUS = {
-  (Ecu.vcu, 0x7e2, None),  # vehicle control unit (transmission and engine in EVs)
-}
 
 FW_VERSIONS = {
   CAR.IONIQ: {
