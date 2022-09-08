@@ -139,7 +139,7 @@ class TestSensord(unittest.TestCase):
     assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold"
 
     stddev = np.std(tdiffs)
-    assert stddev < 10**6, f"Standard-dev to big {stddev}"
+    assert stddev < 1.5*10**6, f"Standard-dev to big {stddev}"
 
   @with_processes(['sensord'])
   def test_events_check(self):
