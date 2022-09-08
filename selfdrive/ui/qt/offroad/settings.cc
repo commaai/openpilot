@@ -65,6 +65,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "",
       "../assets/offroad/icon_road.png",
     },
+    {
+      "ExperimentalLongitudinalEnabled",
+      tr("Experimental openpilot longitudinal control"),
+      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
+      "../assets/offroad/icon_road.png",
+    },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",
@@ -92,23 +98,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggles[param.toStdString()] = toggle;
   }
 
-  QObject::connect(toggles["EndToEndLong"], &ParamControl::toggleFlipped, [=](bool state) {
-    auto cp_bytes = params.get("CarParamsPersistent");
-    if (!cp_bytes.empty()) {
-      AlignedBuffer aligned_buf;
-      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
-      cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-      if (CP.getExperimentalLongitudinalAvailable()) {
-        params.putBool("ExperimentalLongitudinalEnabled", state);
-      } else {
-        params.remove("ExperimentalLongitudinalEnabled");
-      }
-    } else {
-      params.remove("ExperimentalLongitudinalEnabled");
-    }
-  });
-
-  connect(uiState(), &UIState::offroadTransition, [=]() {
+  connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
     updateToggles();
   });
 }
@@ -118,8 +108,8 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updateToggles() {
-  // update e2e toggle
-  auto toggle = toggles["EndToEndLong"];
+  auto e2e_toggle = toggles["EndToEndLong"];
+  auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
 
   auto cp_bytes = params.get("CarParamsPersistent");
@@ -128,29 +118,26 @@ void TogglesPanel::updateToggles() {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
-    const bool exp_long = CP.getExperimentalLongitudinalAvailable();
-    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable());
 
-    if (op_long) {
+    if (CP.getOpenpilotLongitudinalControl() || params.getBool("ExperimentalLongitudinalEnabled")) {
       // normal description and toggle
       params.remove("ExperimentalLongitudinalEnabled");
-      toggle->setDescription(e2e_description);
-    } else if (exp_long) {
-      toggle->setDescription("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br><br>" + e2e_description);
-      if (params.getBool("EndToEndLong") && !params.getBool("ExperimentalLongitudinalEnabled")) {
-        params.remove("EndToEndLong");
-      }
+      e2e_toggle->setDescription(e2e_description);
+      e2e_toggle->setEnabled(true);
     } else {
       // no long for now
       params.remove("EndToEndLong");
-      params.remove("ExperimentalLongitudinalEnabled");
-      toggle->setDescription("<b>openpilot longitudinal control is not currently available for this car.</b><br><br>" + e2e_description);
+      const QString no_long = "openpilot longitudinal control is not currently available for this car.";
+      const QString exp_long = "Enable experimental longitudinal control to enable e2e long.";
+      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
+      e2e_toggle->setEnabled(false);
     }
 
-    toggle->refresh();
-    toggle->setEnabled(op_long || (exp_long && !uiState()->scene.started));
+    e2e_toggle->refresh();
   } else {
-    toggle->setDescription(e2e_description);
+    e2e_toggle->setDescription(e2e_description);
+    op_long_toggle->setVisible(false);
   }
 }
 
