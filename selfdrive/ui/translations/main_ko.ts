@@ -70,7 +70,7 @@
     <message>
         <location line="+0"/>
         <source>leave blank for automatic configuration</source>
-        <translation>자동설정을 하려면 공백으로 두세요</translation>
+        <translation>자동설정하려면 공백으로 두세요</translation>
     </message>
 </context>
 <context>
@@ -92,7 +92,7 @@
     <message>
         <location filename="../qt/offroad/onboarding.cc" line="+140"/>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>openpilot을 사용하려면 이용 약관에 동의해야 합니다.</translation>
+        <translation>openpilot을 사용하려면 이용약관에 동의해야 합니다.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -140,7 +140,7 @@
     <message>
         <location line="+4"/>
         <source>Reset Calibration</source>
-        <translation>캘리브레이션 재설정</translation>
+        <translation>캘리브레이션</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -155,7 +155,7 @@
     <message>
         <location line="+7"/>
         <source>Review Training Guide</source>
-        <translation>트레이닝 가이드 다시보기</translation>
+        <translation>트레이닝 가이드</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -210,12 +210,12 @@
     <message>
         <location line="+20"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot은 장치를 좌측 또는 우측은 4° 이내, 위쪽 5° 또는 아래쪽은 8° 이내로 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋이 거의 필요하지 않습니다.</translation>
+        <translation>openpilot은 좌우측은 4° 이내, 위쪽은 5° 아래쪽은 8° 이내로 장치를 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋은 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <location line="+11"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> 사용자의 장치가 %1° %2 및 %3° %4를 가리키고 있습니다.</translation>
+        <translation> 사용자의 장치가 %1° %2 및 %3° %4 위치에 설치되어있습니다.</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -479,7 +479,7 @@ location set</source>
         <location line="+0"/>
         <location line="+10"/>
         <source>for &quot;%1&quot;</source>
-        <translation>하기위한 &quot;%1&quot;</translation>
+        <translation>&quot;%1&quot;에 접속하려면 인증이 필요합니다</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -684,7 +684,7 @@ location set</source>
     <message>
         <location line="+6"/>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>장치를 초기화 합니다. 확인버튼을 누르면 모든 내용과 설정이 초기화됩니다. 취소를 누르면 다시 부팅합니다.</translation>
+        <translation>장치를 초기화 합니다. 확인버튼을 누르면 모든 내용과 설정이 초기화됩니다. 부팅을 재개하려면 취소를 누르세요.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -797,7 +797,7 @@ location set</source>
     <message>
         <location line="-81"/>
         <source>Continue without Wi-Fi</source>
-        <translation>wifi 없이 계속</translation>
+        <translation>wifi 연결없이 계속하기</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -842,7 +842,7 @@ location set</source>
     <message>
         <location line="+6"/>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>입력된 URL이 유효하고 장치의 인터넷 연결이 잘 되어 있는지 확인합니다.</translation>
+        <translation>입력된 URL이 유효하고 장치의 네트워크 연결이 잘 되어 있는지 확인하세요.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -1080,7 +1080,7 @@ location set</source>
     <message>
         <location line="+0"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>경고：이렇게 하면 GitHub 설정의 모든 공용 키에 대한 SSH 액세스 권한이 부여됩니다. 자신의 사용자 이름이 아닌 GitHub 사용자 이름을 입력하지 마십시오. comma 직원은 GitHub 사용자 이름을 추가하도록 요청하지 않습니다.</translation>
+        <translation>경고: 허용으로 설정하면 GitHub 설정의 모든 공용 키에 대한 SSH 액세스 권한이 부여됩니다. GitHub 사용자 ID 이외에는 입력하지 마십시오. comma에서는 GitHub ID를 추가하라는 요청을 하지 않습니다.</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -1160,7 +1160,7 @@ location set</source>
     <message>
         <location line="+1"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>어댑티브 크루즈 컨트롤 및 차선 유지 운전자 보조를 위해 openpilot 시스템을 사용하십시오. 이 기능을 사용하려면 항상 주의를 기울여야 합니다. 이 설정을 변경하면 차량 전원이 꺼질 때 적용됩니다.</translation>
+        <translation>어댑티브 크루즈 컨트롤 및 차선 유지 운전자 보조를 위해 openpilot 시스템을 사용하십시오. 이 기능을 사용하려면 항상 주의를 기울여야 합니다. 설정변경은 장치 재부팅후 적용됩니다.</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1170,7 +1170,7 @@ location set</source>
     <message>
         <location line="+1"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>차량이 50km/h(31mph) 이상의 속도로 주행하는 동안 방향 지시등이 활성화되지 않은 상태에서 감지된 차선 위를 주행할 경우 차선이탈 경고를 사용합니다.</translation>
+        <translation>차량이 50km/h(31mph) 이상의 속도로 주행하는 동안 방향지시등 없이 감지된 차선 위를 주행할 경우 차선이탈 경고를 표시합니다.</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1195,22 +1195,22 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 e2e long 사용 (매우 실험적) 🌮 </translation>
+        <translation>🌮 e2e 롱컨트롤 사용 (매우 실험적) 🌮 </translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 롱컨트롤 (실험적)</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;경고: openpilot 롱컨트롤은 실험적인 기능으로 차량의 AEB를 비활성화합니다.&lt;/b&gt;</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>주행모델이 가속과 감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
     </message>
     <message>
         <location line="-55"/>
@@ -1253,7 +1253,7 @@ location set</source>
     <message>
         <location line="+6"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>OS 업데이트가 필요합니다. 장치를 wifi에 연결하여 가장 빠른 업데이트 경험을 제공합니다. 다운로드 크기는 약 1GB입니다.</translation>
+        <translation>OS 업데이트가 필요합니다. 장치를 wifi에 연결하면 가장 빠른 업데이트 경험을 제공합니다. 다운로드 크기는 약 1GB입니다.</translation>
     </message>
     <message>
         <location line="+11"/>
