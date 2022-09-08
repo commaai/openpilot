@@ -50,7 +50,7 @@ QMapbox::CoordinatesCollections model_to_collection(
   return {QMapbox::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c) {
+QMapbox::CoordinatesCollections coordinate_to_collection(const QMapbox::Coordinate &c) {
   QMapbox::Coordinates coordinates{c};
   return {QMapbox::CoordinatesCollection{coordinates}};
 }
@@ -63,7 +63,7 @@ QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp:
   return {QMapbox::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordinate> coordinate_list) {
+QMapbox::CoordinatesCollections coordinate_list_to_collection(const QList<QGeoCoordinate> &coordinate_list) {
   QMapbox::Coordinates coordinates;
   for (auto &c : coordinate_list) {
     coordinates.push_back({c.latitude(), c.longitude()});
@@ -113,7 +113,7 @@ QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString)
   return path;
 }
 
-std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
+std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &param) {
   QString json_str = QString::fromStdString(Params().get(param));
   if (json_str.isEmpty()) return {};
 
