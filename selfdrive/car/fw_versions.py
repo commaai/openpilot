@@ -352,7 +352,6 @@ def match_fw_to_car_exact(fw_versions_dict):
 
       if not any([found_version in expected_versions for found_version in found_versions]):
         invalid.append(candidate)
-        print('invalid: {}'.format(candidate))
         break
 
   return set(candidates.keys()) - set(invalid)
