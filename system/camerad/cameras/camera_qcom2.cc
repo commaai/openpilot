@@ -302,18 +302,15 @@ int CameraState::sensors_init() {
   switch (camera_num) {
     case 0:
       // port 0
-      //i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
-      i2c_info->slave_addr = 0x36*2;
+      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C; // 6C = 0x36*2
       break;
     case 1:
       // port 1
-      //i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x36;
-      i2c_info->slave_addr = 0x20;
+      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x20;
       break;
     case 2:
       // port 2
-      //i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x34;
-      i2c_info->slave_addr = 0x36*2;
+      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C;
       break;
   }
 
@@ -653,6 +650,7 @@ void CameraState::camera_open() {
   LOGD("-- Probing sensor %d", camera_num);
   ret = sensors_init();
   if (ret != 0) {
+    // TODO: use build flag instead?
     LOGD("AR0231 init failed, trying OX03C10");
     camera_id = CAMERA_ID_OX03C10;
     ret = sensors_init();
@@ -1204,21 +1202,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
       {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
-
-
-    // if gain is sub 1, we have to use exposure to mimic sub 1 gains
-    /*int32_t real_exposure_time = (gain < 1.0) ? (exposure_time*gain) : exposure_time;
-    // invert real_exposure_time, max exposure is 2
-    real_exposure_time = (exposure_time >= 0x7cf) ? 2 : (0x7cf - exposure_time);
-    uint32_t real_gain = int((10*log10(fmax(1.0, gain)))/0.3);
-
-    //printf("%d expose: %d gain: %f = %d\n", camera_num, exposure_time, gain, real_gain);
-    struct i2c_random_wr_payload exp_reg_array[] = {
-      {0x000c, real_exposure_time&0xFF}, {0x000d, real_exposure_time>>8},
-      {0x0010, real_exposure_time&0xFF}, {0x0011, real_exposure_time>>8},
-      {0x0018, real_gain&0xFF}, {0x0019, real_gain>>8},
-    };
-    sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);*/
   }
 }
 
