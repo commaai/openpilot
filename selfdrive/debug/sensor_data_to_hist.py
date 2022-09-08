@@ -7,6 +7,7 @@ get interrupts in a 2kHz rate.
 
 import argparse
 import sys
+import numpy as np
 from collections import defaultdict
 
 from tools.lib.logreader import LogReader
@@ -17,34 +18,35 @@ import matplotlib.pyplot as plt
 SRC_BMX = "bmx055"
 SRC_LSM = "lsm6ds3"
 
-
 def parseEvents(log_reader):
   bmx_data = defaultdict(list)
   lsm_data = defaultdict(list)
 
   for m in log_reader:
     # only sensorEvents
-    if m.which() != 'sensorEvents':
+    # (accelerometer, gyroscope, magnetometer, lightSensor, temperatureSensor)
+    if m.which() != 'sensorEvent':
       continue
 
-    for se in m.sensorEvents:
-      # convert data to dictionary
-      d = se.to_dict()
+    # convert data to dictionary
+    d = m.sensorEvent.to_dict()
 
-      if d["timestamp"] == 0:
-        continue # empty event?
+    print(m.sensorEvent.which())
 
-      if d["source"] == SRC_BMX and "acceleration" in d:
-        bmx_data["accel"].append(d["timestamp"] / 1e9)
+    if d["timestamp"] == 0:
+      continue # empty event?
 
-      if d["source"] == SRC_BMX and "gyroUncalibrated" in d:
-        bmx_data["gyro"].append(d["timestamp"] / 1e9)
+    if d["source"] == SRC_BMX and "acceleration" in d:
+      bmx_data["accel"].append(d["timestamp"] / 1e9)
 
-      if d["source"] == SRC_LSM and "acceleration" in d:
-        lsm_data["accel"].append(d["timestamp"] / 1e9)
+    if d["source"] == SRC_BMX and "gyroUncalibrated" in d:
+      bmx_data["gyro"].append(d["timestamp"] / 1e9)
 
-      if d["source"] == SRC_LSM and "gyroUncalibrated" in d:
-        lsm_data["gyro"].append(d["timestamp"] / 1e9)
+    if d["source"] == SRC_LSM and "acceleration" in d:
+      lsm_data["accel"].append(d["timestamp"] / 1e9)
+
+    if d["source"] == SRC_LSM and "gyroUncalibrated" in d:
+      lsm_data["gyro"].append(d["timestamp"] / 1e9)
 
   return bmx_data, lsm_data
 
@@ -54,11 +56,7 @@ def cleanData(data):
     return [], []
 
   data.sort()
-  prev = data[0]
-  diffs = []
-  for v in data[1:]:
-    diffs.append(v - prev)
-    prev = v
+  diffs = np.diff(data)
   return data, diffs
 
 
