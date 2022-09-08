@@ -44,6 +44,18 @@ class TestFwFingerprint(unittest.TestCase):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
+  def test_sorted_fw_versions(self):
+    passed = True
+
+    for car_model, ecus in FW_VERSIONS.items():
+      for ecu, ecu_fw in ecus.items():
+        sorted_ecu_fw = sorted(ecu_fw)
+        if ecu_fw != sorted_ecu_fw:
+          passed = False
+          print(f"{car_model}: Ecu.{ECU_NAME[ecu[0]]} FW versions not sorted")
+
+    self.assertTrue(passed)
+
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
