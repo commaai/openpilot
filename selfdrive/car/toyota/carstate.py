@@ -116,7 +116,6 @@ class CarState(CarStateBase):
     is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
 
     # UI_SET_SPEED is always non-zero when main is on, hide until first enable
-    ret.cruiseState.speedCluster = 0
     if ret.cruiseState.speed != 0:
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
@@ -133,6 +132,8 @@ class CarState(CarStateBase):
     # TODO: user reported this signal can be 1 when stopped rarely. make sure this isn't an issue from data
     if ret.standstill:
       ret.vEgoCluster = 0
+
+
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 

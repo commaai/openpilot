@@ -58,8 +58,8 @@ class CarState(CarStateBase):
     )
 
     # button presses
-    ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
-    ret.rightBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(200, cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1,
+                                                                       cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2)
     ret.genericToggle = cp.vl["STEERING_LEVERS"]["HIGH_BEAM_PRESSED"] == 1
 
     # steering wheel

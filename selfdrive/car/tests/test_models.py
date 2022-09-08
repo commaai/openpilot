@@ -67,7 +67,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    disable_radar = False
+    experimental_long = False
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
@@ -93,7 +93,7 @@ class TestCarModelBase(unittest.TestCase):
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
-            disable_radar = True
+            experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
@@ -105,7 +105,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
