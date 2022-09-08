@@ -217,12 +217,13 @@ def main(sm=None, pm=None):
   torque_params = params.get("LiveTorqueParameters")
   estimator = TorqueEstimator(CP, torque_params)
 
-  def cache_params(torque_estimator):
+  def cache_params(sig, torque_estimator):
+    signal.signal(sig, signal.SIG_DFL)
     cloudlog.warning("caching torque params")
     msg = torque_estimator.get_msg(with_points=True)
     Params().put("LiveTorqueParameters", msg.to_bytes())
     sys.exit(0)
-  signal.signal(signal.SIGINT, lambda sig, frame: cache_params(estimator))
+  signal.signal(signal.SIGINT, lambda sig, frame: cache_params(sig, estimator))
 
   while True:
     sm.update()
