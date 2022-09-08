@@ -44,17 +44,16 @@ class TestFwFingerprint(unittest.TestCase):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
-  def test_fpv2_configs(self):
+  def test_data_collection_ecus(self):
     for brand, car_models in VERSIONS.items():
       fpv2_config = FPV2_CONFIGS.get(brand, None)
       if fpv2_config is None:
         continue
 
-      with self.subTest("Data collection ECUs"):
-        for car_model, ecus in car_models.items():
-          with self.subTest(car_model=car_model):
-            self.assertFalse(any([ecu in ecus for ecu in fpv2_config.extra_ecus]),
-                             f'{car_model}: Fingerprints contain ECU added for data collection')
+      for car_model, ecus in car_models.items():
+        with self.subTest(car_model=car_model):
+          self.assertFalse(any([ecu in ecus for ecu in fpv2_config.extra_ecus]),
+                           f'{car_model}: Fingerprints contain ECU added for data collection')
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
