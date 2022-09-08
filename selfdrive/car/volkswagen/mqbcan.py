@@ -72,10 +72,10 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
     "ACC_Status_ACC": acc_status,
     "ACC_StartStopp_Info": enabled,
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
-    "ACC_zul_Regelabw_unten": 0.25,  # FIXME: reintroduce comfort band support
-    "ACC_zul_Regelabw_oben": 0.25,  # FIXME: reintroduce comfort band support
-    "ACC_neg_Sollbeschl_Grad_02": 4.0 if enabled else 0,
-    "ACC_pos_Sollbeschl_Grad_02": 4.0 if enabled else 0,
+    "ACC_zul_Regelabw_unten": 0.1,  # FIXME: reintroduce comfort band support
+    "ACC_zul_Regelabw_oben": 0.1,  # FIXME: reintroduce comfort band support
+    "ACC_neg_Sollbeschl_Grad_02": 1.0 if enabled else 0,
+    "ACC_pos_Sollbeschl_Grad_02": 1.0 if enabled else 0,
     "ACC_Anfahren": 0,  # FIXME: minspeed > 0 during refactor
     "ACC_Anhalten": 0,  # FIXME: minspeed > 0 during refactor
   }
