@@ -173,10 +173,13 @@ void MapWindow::updateState(const UIState &s) {
     return;
   }
 
-  loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
-    map_instructions->showError(tr("Map Loading"));
-    return;
+    if ((loaded_once = m_map->isFullyLoaded()) == true) {
+      map_instructions->noError();
+    } else {
+      map_instructions->showError(tr("Map Loading"));
+      return;
+    }
   }
 
   initLayers();
@@ -455,7 +458,11 @@ void MapInstructions::showError(QString error_text) {
 }
 
 void MapInstructions::noError() {
-  error = false;
+  if (error) {
+    error = false;
+    distance->setText("");
+    hide();
+  }
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
