@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QFileInfo>
 #include <QPainterPath>
+#include <QPixmapCache>
 
 #include "common/swaglog.h"
 #include "common/transformations/coordinates.hpp"
@@ -492,11 +493,17 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       }
     }
 
-    QPixmap pix(fn);
-    if (is_rhd) {
-      pix = pix.transformed(QTransform().scale(-1, 1));
+    QPixmap pm;
+    if (!QPixmapCache::find(fn + is_rhd, &pm)) {
+      pm.load(fn);
+      if (is_rhd) {
+        pm = pm.transformed(QTransform().scale(-1, 1));
+      }
+      pm.scaledToWidth(200, Qt::SmoothTransformation);
+      QPixmapCache::insert(fn + is_rhd, pm);
     }
-    icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
+
+    icon_01->setPixmap(pm);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
   }
@@ -530,8 +537,14 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "_inactive";
     }
 
+    QPixmap pm;
+    if (!QPixmapCache::find(fn, &pm)) {
+      pm = loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio);
+      QPixmapCache::insert(fn, pm);
+    }
+    
     auto icon = new QLabel;
-    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
+    icon->setPixmap(pm);
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }
