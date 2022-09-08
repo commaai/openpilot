@@ -25,7 +25,6 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
     ret.radarOffCan = True
-    ret.experimentalLongitudinalAvailable = True  # FIXME: Do something better than force this on
 
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
@@ -50,13 +49,6 @@ class CarInterface(CarInterfaceBase):
       # Panda ALLOW_DEBUG firmware required.
       ret.dashcamOnly = True
 
-      if experimental_long and ret.networkLocation == NetworkLocation.gateway:
-        # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
-        # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
-        ret.experimentalLongitudinalAvailable = True
-        ret.openpilotLongitudinalControl = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
-
     else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
@@ -74,14 +66,6 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
-      if experimental_long and ret.networkLocation == NetworkLocation.gateway:
-        ret.experimentalLongitudinalAvailable = True
-        ret.openpilotLongitudinalControl = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
-        ret.minEnableSpeed = 5 * CV.MPH_TO_MS  # FIXME: temp hack during refactor
-        if ret.transmissionType == TransmissionType.manual:
-          ret.minEnableSpeed = 4.5  # FIXME: estimated, fine-tune
-
     # Global lateral tuning defaults, can be overridden per-vehicle
 
     ret.steerActuatorDelay = 0.1
@@ -96,7 +80,18 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
+    if experimental_long:
+      # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
+      # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
+      ret.openpilotLongitudinalControl = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
+      ret.minEnableSpeed = 5 * CV.MPH_TO_MS  # FIXME: temp hack during refactor
+      if ret.transmissionType == TransmissionType.manual:
+        ret.minEnableSpeed = 4.5  # FIXME: estimated, fine-tune
+
     ret.pcmCruise = not ret.openpilotLongitudinalControl
+    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway
+    ret.longitudinalActuatorDelayLowerBound = 0.5  # s
     ret.longitudinalActuatorDelayUpperBound = 0.5  # s
     ret.stoppingControl = True
     ret.vEgoStopping = 1.0
