@@ -30,8 +30,6 @@ camerad
 .. autodoxygenindex::
    :project: system_camerad_cameras
 .. autodoxygenindex::
-   :project: system_camerad_transforms
-.. autodoxygenindex::
    :project: system_camerad_imgproc
 
 locationd
@@ -74,8 +72,6 @@ modeld
    :project: selfdrive_modeld_transforms
 .. autodoxygenindex::
    :project: selfdrive_modeld_models
-.. autodoxygenindex::
-   :project: selfdrive_modeld_thneed
 .. autodoxygenindex::
    :project: selfdrive_modeld_runners
 

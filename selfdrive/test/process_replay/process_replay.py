@@ -14,6 +14,7 @@ from cereal import car, log
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
+from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
@@ -27,7 +28,7 @@ TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name'], defaults=({}, {}, ""))
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name', "field_tolerances"], defaults=({}, {}, "", {}))
 
 
 def wait_for_event(evt):
@@ -239,7 +240,7 @@ def ublox_rcv_callback(msg):
 
 
 def laika_rcv_callback(msg, CP, cfg, fsm):
-  if msg.ubloxGnss.which() == "measurementReport":
+  if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
   else:
     return [], True
@@ -279,7 +280,7 @@ CONFIGS = [
     proc_name="plannerd",
     pub_sub={
       "modelV2": ["lateralPlan", "longitudinalPlan"],
-      "carState": [], "controlsState": [], "radarState": [],
+      "carControl": [], "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params,
@@ -352,6 +353,7 @@ CONFIGS = [
     subtest_name="Offline",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
+      "clocks": []
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
@@ -364,6 +366,7 @@ CONFIGS = [
     proc_name="laikad",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
+      "clocks": []
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
@@ -382,7 +385,7 @@ def replay_process(cfg, lr, fingerprint=None):
       return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def setup_env(simulation=False, CP=None, cfg=None):
+def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -411,6 +414,12 @@ def setup_env(simulation=False, CP=None, cfg=None):
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
 
+  # Initialize controlsd with a controlsState packet
+  if controlsState is not None:
+    params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
+  else:
+    params.remove("ReplayControlsState")
+
   # Regen or python process
   if CP is not None:
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
@@ -437,13 +446,25 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
+  controlsState = None
+  initialized = False
+  for msg in lr:
+    if msg.which() == 'controlsState':
+      controlsState = msg.controlsState
+      if initialized:
+        break
+    elif msg.which() == 'carEvents':
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+  assert controlsState is not None and initialized, "controlsState never initialized"
+
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
-    setup_env(cfg=cfg)
+    setup_env(cfg=cfg, controlsState=controlsState)
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-    setup_env(CP=CP, cfg=cfg)
+    setup_env(CP=CP, cfg=cfg, controlsState=controlsState)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -546,11 +567,17 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
 
 def check_enabled(msgs):
+  cur_enabled_count = 0
+  max_enabled_count = 0
   for msg in msgs:
     if msg.which() == "carParams":
       if msg.carParams.notCar:
         return True
     elif msg.which() == "controlsState":
       if msg.controlsState.active:
-        return True
-  return False
+        cur_enabled_count += 1
+      else:
+        cur_enabled_count = 0
+      max_enabled_count = max(max_enabled_count, cur_enabled_count)
+
+  return max_enabled_count > int(10. / DT_CTRL)

@@ -33,7 +33,7 @@ class States():
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
   # TODO the offset is likely a translation of the sensor, not a rotation of the camera
   WIDE_FROM_DEVICE_EULER = slice(33, 36)  # wide camera offset angles in radians (tici only)
-  # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
@@ -91,22 +91,6 @@ class LocKalman():
                        0.05**2, 0.05**2, 0.05**2,
                        0.01**2, 0.01**2, 0.01**2])
 
-  # process noise
-  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.1**2, 0.1**2, 0.1**2,
-               (.1)**2, (0.0)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.02 / 100)**2,
-               3**2, 3**2, 3**2,
-               0.001**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
-               (.1)**2, (.01)**2,
-               0.005**2,
-               (0.02 / 100)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
 
   # measurements that need to pass mahalanobis distance outlier rejector
   maha_test_kinds = [ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
@@ -345,8 +329,28 @@ class LocKalman():
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
 
-  def __init__(self, generated_dir, N=4):
+  def __init__(self, generated_dir, N=4, erratic_clock=False):
     name = f"{self.name}_{N}"
+
+
+    # process noise
+    clock_error_drift = 100.0 if erratic_clock else 0.1
+    self.Q = np.diag([0.03**2, 0.03**2, 0.03**2,
+                      0.0**2, 0.0**2, 0.0**2,
+                      0.0**2, 0.0**2, 0.0**2,
+                      0.1**2, 0.1**2, 0.1**2,
+                      (clock_error_drift)**2, (0)**2,
+                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                      (0.02 / 100)**2,
+                      3**2, 3**2, 3**2,
+                      0.001**2,
+                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
+                      (.1)**2, (.01)**2,
+                      0.005**2,
+                      (0.02 / 100)**2,
+                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
                       ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),

@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, STEER_THRESHOLD, CAR, PREGLOBAL_CARS
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS
 
 
 class CarState(CarStateBase):
@@ -13,7 +13,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
     ret.gas = cp.vl["Throttle"]["Throttle_Pedal"] / 255.
@@ -21,13 +21,15 @@ class CarState(CarStateBase):
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
     else:
-      ret.brakePressed = cp.vl["Brake_Status"]["Brake"] == 1
+      cp_brakes = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
+      ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
 
+    cp_wheels = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
     ret.wheelSpeeds = self.get_wheel_speeds(
-      cp.vl["Wheel_Speeds"]["FL"],
-      cp.vl["Wheel_Speeds"]["FR"],
-      cp.vl["Wheel_Speeds"]["RL"],
-      cp.vl["Wheel_Speeds"]["RR"],
+      cp_wheels.vl["Wheel_Speeds"]["FL"],
+      cp_wheels.vl["Wheel_Speeds"]["FR"],
+      cp_wheels.vl["Wheel_Speeds"]["RL"],
+      cp_wheels.vl["Wheel_Speeds"]["RR"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
@@ -35,8 +37,8 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(
-      50, cp.vl["Dashlights"]["LEFT_BLINKER"], cp.vl["Dashlights"]["RIGHT_BLINKER"])
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
+                                                                          cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
@@ -47,11 +49,18 @@ class CarState(CarStateBase):
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.car_fingerprint]
+    ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
+    
+    steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 80
+    ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
-    ret.cruiseState.enabled = cp.vl["CruiseControl"]["Cruise_Activated"] != 0
-    ret.cruiseState.available = cp.vl["CruiseControl"]["Cruise_On"] != 0
+    cp_cruise = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
+    ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
+    ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+
+    if self.car_fingerprint not in PREGLOBAL_CARS:
+      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
 
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
        (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
@@ -71,28 +80,74 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
-    self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
+
+    cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+    self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
+    self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
 
     return ret
+
+  @staticmethod
+  def get_common_global_signals():
+    signals = [
+      ("Cruise_On", "CruiseControl"),
+      ("Cruise_Activated", "CruiseControl"),
+      ("FL", "Wheel_Speeds"),
+      ("FR", "Wheel_Speeds"),
+      ("RL", "Wheel_Speeds"),
+      ("RR", "Wheel_Speeds"),
+      ("Brake", "Brake_Status"),
+    ]
+    checks = [
+      ("CruiseControl", 20),
+      ("Wheel_Speeds", 50),
+      ("Brake_Status", 50),
+    ]
+
+    return signals, checks
+
+  @staticmethod
+  def get_global_es_distance_signals():
+    signals = [
+      ("COUNTER", "ES_Distance"),
+      ("Signal1", "ES_Distance"),
+      ("Cruise_Fault", "ES_Distance"),
+      ("Cruise_Throttle", "ES_Distance"),
+      ("Signal2", "ES_Distance"),
+      ("Car_Follow", "ES_Distance"),
+      ("Signal3", "ES_Distance"),
+      ("Cruise_Soft_Disable", "ES_Distance"),
+      ("Signal7", "ES_Distance"),
+      ("Cruise_Brake_Active", "ES_Distance"),
+      ("Distance_Swap", "ES_Distance"),
+      ("Cruise_EPB", "ES_Distance"),
+      ("Signal4", "ES_Distance"),
+      ("Close_Distance", "ES_Distance"),
+      ("Signal5", "ES_Distance"),
+      ("Cruise_Cancel", "ES_Distance"),
+      ("Cruise_Set", "ES_Distance"),
+      ("Cruise_Resume", "ES_Distance"),
+      ("Signal6", "ES_Distance"),
+    ]
+    checks = [
+      ("ES_Distance", 20),
+    ]
+
+    return signals, checks
 
   @staticmethod
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
       ("Steer_Torque_Sensor", "Steering_Torque"),
+      ("Steer_Torque_Output", "Steering_Torque"),
       ("Steering_Angle", "Steering_Torque"),
       ("Steer_Error_1", "Steering_Torque"),
-      ("Cruise_On", "CruiseControl"),
-      ("Cruise_Activated", "CruiseControl"),
       ("Brake_Pedal", "Brake_Pedal"),
       ("Throttle_Pedal", "Throttle"),
       ("LEFT_BLINKER", "Dashlights"),
       ("RIGHT_BLINKER", "Dashlights"),
       ("SEATBELT_FL", "Dashlights"),
-      ("FL", "Wheel_Speeds"),
-      ("FR", "Wheel_Speeds"),
-      ("RL", "Wheel_Speeds"),
-      ("RR", "Wheel_Speeds"),
       ("DOOR_OPEN_FR", "BodyInfo"),
       ("DOOR_OPEN_FL", "BodyInfo"),
       ("DOOR_OPEN_RR", "BodyInfo"),
@@ -105,7 +160,6 @@ class CarState(CarStateBase):
       ("Throttle", 100),
       ("Dashlights", 10),
       ("Brake_Pedal", 50),
-      ("Wheel_Speeds", 50),
       ("Transmission", 100),
       ("Steering_Torque", 50),
       ("BodyInfo", 1),
@@ -121,35 +175,46 @@ class CarState(CarStateBase):
       checks.append(("BSD_RCTA", 17))
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
+      if CP.carFingerprint not in GLOBAL_GEN2:
+        signals += CarState.get_common_global_signals()[0]
+        checks += CarState.get_common_global_signals()[1]
+
       signals += [
         ("Steer_Warning", "Steering_Torque"),
-        ("Brake", "Brake_Status"),
         ("UNITS", "Dashlights"),
       ]
 
       checks += [
         ("Dashlights", 10),
         ("BodyInfo", 10),
-        ("Brake_Status", 50),
-        ("CruiseControl", 20),
       ]
     else:
-      signals.append(("UNITS", "Dash_State2"))
-
-      checks.append(("Dash_State2", 1))
-
-    if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
+      signals += [
+        ("FL", "Wheel_Speeds"),
+        ("FR", "Wheel_Speeds"),
+        ("RL", "Wheel_Speeds"),
+        ("RR", "Wheel_Speeds"),
+        ("UNITS", "Dash_State2"),
+        ("Cruise_On", "CruiseControl"),
+        ("Cruise_Activated", "CruiseControl"),
+      ]
       checks += [
-        ("Dashlights", 20),
-        ("BodyInfo", 1),
-        ("CruiseControl", 50),
+        ("Wheel_Speeds", 50),
+        ("Dash_State2", 1),
       ]
 
-    if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
-      checks += [
-        ("Dashlights", 10),
-        ("CruiseControl", 50),
-      ]
+      if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
+        checks += [
+          ("Dashlights", 20),
+          ("BodyInfo", 1),
+          ("CruiseControl", 50),
+        ]
+
+      if CP.carFingerprint in (CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
+        checks += [
+          ("Dashlights", 10),
+          ("CruiseControl", 50),
+        ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
@@ -173,7 +238,7 @@ class CarState(CarStateBase):
         ("Standstill_2", "ES_Distance"),
         ("Cruise_Fault", "ES_Distance"),
         ("Signal5", "ES_Distance"),
-        ("Counter", "ES_Distance"),
+        ("COUNTER", "ES_Distance"),
         ("Signal6", "ES_Distance"),
         ("Cruise_Button", "ES_Distance"),
         ("Signal7", "ES_Distance"),
@@ -185,28 +250,34 @@ class CarState(CarStateBase):
       ]
     else:
       signals = [
-        ("Cruise_Set_Speed", "ES_DashStatus"),
+        ("Counter", "ES_DashStatus"),
+        ("PCB_Off", "ES_DashStatus"),
+        ("LDW_Off", "ES_DashStatus"),
+        ("Signal1", "ES_DashStatus"),
+        ("Cruise_State_Msg", "ES_DashStatus"),
+        ("LKAS_State_Msg", "ES_DashStatus"),
+        ("Signal2", "ES_DashStatus"),
+        ("Cruise_Soft_Disable", "ES_DashStatus"),
+        ("EyeSight_Status_Msg", "ES_DashStatus"),
+        ("Signal3", "ES_DashStatus"),
+        ("Cruise_Distance", "ES_DashStatus"),
+        ("Signal4", "ES_DashStatus"),
         ("Conventional_Cruise", "ES_DashStatus"),
+        ("Signal5", "ES_DashStatus"),
+        ("Cruise_Disengaged", "ES_DashStatus"),
+        ("Cruise_Activated", "ES_DashStatus"),
+        ("Signal6", "ES_DashStatus"),
+        ("Cruise_Set_Speed", "ES_DashStatus"),
+        ("Cruise_Fault", "ES_DashStatus"),
+        ("Cruise_On", "ES_DashStatus"),
+        ("Display_Own_Car", "ES_DashStatus"),
+        ("Brake_Lights", "ES_DashStatus"),
+        ("Car_Follow", "ES_DashStatus"),
+        ("Signal7", "ES_DashStatus"),
+        ("Far_Distance", "ES_DashStatus"),
+        ("Cruise_State", "ES_DashStatus"),
 
-        ("Counter", "ES_Distance"),
-        ("Signal1", "ES_Distance"),
-        ("Cruise_Fault", "ES_Distance"),
-        ("Cruise_Throttle", "ES_Distance"),
-        ("Signal2", "ES_Distance"),
-        ("Car_Follow", "ES_Distance"),
-        ("Signal3", "ES_Distance"),
-        ("Cruise_Brake_Active", "ES_Distance"),
-        ("Distance_Swap", "ES_Distance"),
-        ("Cruise_EPB", "ES_Distance"),
-        ("Signal4", "ES_Distance"),
-        ("Close_Distance", "ES_Distance"),
-        ("Signal5", "ES_Distance"),
-        ("Cruise_Cancel", "ES_Distance"),
-        ("Cruise_Set", "ES_Distance"),
-        ("Cruise_Resume", "ES_Distance"),
-        ("Signal6", "ES_Distance"),
-
-        ("Counter", "ES_LKAS_State"),
+        ("COUNTER", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),
@@ -225,8 +296,21 @@ class CarState(CarStateBase):
 
       checks = [
         ("ES_DashStatus", 10),
-        ("ES_Distance", 20),
         ("ES_LKAS_State", 10),
       ]
 
+      if CP.carFingerprint not in GLOBAL_GEN2:
+        signals += CarState.get_global_es_distance_signals()[0]
+        checks += CarState.get_global_es_distance_signals()[1]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+
+  @staticmethod
+  def get_body_can_parser(CP):
+    if CP.carFingerprint in GLOBAL_GEN2:
+      signals, checks = CarState.get_common_global_signals()
+      signals += CarState.get_global_es_distance_signals()[0]
+      checks += CarState.get_global_es_distance_signals()[1]
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
+
+    return None

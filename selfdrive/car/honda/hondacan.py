@@ -20,7 +20,7 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   return 0
 
 
-def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -42,10 +42,10 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
     "AEB_STATUS": 0,
   }
   bus = get_pt_bus(car_fingerprint)
-  return packer.make_can_msg("BRAKE_COMMAND", bus, values, idx)
+  return packer.make_can_msg("BRAKE_COMMAND", bus, values)
 
 
-def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
@@ -67,7 +67,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_
     "STANDSTILL": standstill,
     "STANDSTILL_RELEASE": standstill_release,
   }
-  commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values, idx))
+  commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
 
   acc_control_on_values = {
     "SET_TO_3": 0x03,
@@ -76,21 +76,21 @@ def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, car_
     "SET_TO_75": 0x75,
     "SET_TO_30": 0x30,
   }
-  commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values, idx))
+  commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
 
   return commands
 
 
-def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, idx, radar_disabled):
+def create_steering_control(packer, apply_steer, lkas_active, car_fingerprint, radar_disabled):
   values = {
     "STEER_TORQUE": apply_steer if lkas_active else 0,
     "STEER_TORQUE_REQUEST": lkas_active,
   }
   bus = get_lkas_cmd_bus(car_fingerprint, radar_disabled)
-  return packer.make_can_msg("STEERING_CONTROL", bus, values, idx)
+  return packer.make_can_msg("STEERING_CONTROL", bus, values)
 
 
-def create_bosch_supplemental_1(packer, car_fingerprint, idx):
+def create_bosch_supplemental_1(packer, car_fingerprint):
   # non-active params
   values = {
     "SET_ME_X04": 0x04,
@@ -98,10 +98,10 @@ def create_bosch_supplemental_1(packer, car_fingerprint, idx):
     "SET_ME_X10": 0x10,
   }
   bus = get_lkas_cmd_bus(car_fingerprint)
-  return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values, idx)
+  return packer.make_can_msg("BOSCH_SUPPLEMENTAL_1", bus, values)
 
 
-def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stock_hud):
+def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
   radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
@@ -125,11 +125,11 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stoc
       acc_hud_values['PCM_SPEED'] = pcm_speed * CV.MS_TO_KPH
       acc_hud_values['PCM_GAS'] = hud.pcm_accel
       acc_hud_values['SET_ME_X01'] = 1
-      acc_hud_values['FCM_OFF'] = stock_hud['FCM_OFF']
-      acc_hud_values['FCM_OFF_2'] = stock_hud['FCM_OFF_2']
-      acc_hud_values['FCM_PROBLEM'] = stock_hud['FCM_PROBLEM']
-      acc_hud_values['ICONS'] = stock_hud['ICONS']
-    commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values, idx))
+      acc_hud_values['FCM_OFF'] = acc_hud['FCM_OFF']
+      acc_hud_values['FCM_OFF_2'] = acc_hud['FCM_OFF_2']
+      acc_hud_values['FCM_PROBLEM'] = acc_hud['FCM_PROBLEM']
+      acc_hud_values['ICONS'] = acc_hud['ICONS']
+    commands.append(packer.make_can_msg("ACC_HUD", bus_pt, acc_hud_values))
 
   lkas_hud_values = {
     'SET_ME_X41': 0x41,
@@ -141,34 +141,36 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, idx, stoc
   if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
     lkas_hud_values['LANE_LINES'] = 3
     lkas_hud_values['DASHED_LANES'] = hud.lanes_visible
+    # car likely needs to see LKAS_PROBLEM fall within a specific time frame, so forward from camera
+    lkas_hud_values['LKAS_PROBLEM'] = lkas_hud['LKAS_PROBLEM']
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
     lkas_hud_values['SET_ME_X48'] = 0x48
 
   if CP.flags & HondaFlags.BOSCH_EXT_HUD and not CP.openpilotLongitudinalControl:
-    commands.append(packer.make_can_msg('LKAS_HUD_A', bus_lkas, lkas_hud_values, idx))
-    commands.append(packer.make_can_msg('LKAS_HUD_B', bus_lkas, lkas_hud_values, idx))
+    commands.append(packer.make_can_msg('LKAS_HUD_A', bus_lkas, lkas_hud_values))
+    commands.append(packer.make_can_msg('LKAS_HUD_B', bus_lkas, lkas_hud_values))
   else:
-    commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values, idx))
+    commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values))
 
   if radar_disabled and CP.carFingerprint in HONDA_BOSCH:
     radar_hud_values = {
       'CMBS_OFF': 0x01,
       'SET_TO_1': 0x01,
     }
-    commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values, idx))
+    commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values))
 
     if CP.carFingerprint == CAR.CIVIC_BOSCH:
-      commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", bus_pt, {}, idx))
+      commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", bus_pt, {}))
 
   return commands
 
 
-def spam_buttons_command(packer, button_val, idx, car_fingerprint):
+def spam_buttons_command(packer, button_val, car_fingerprint):
   values = {
     'CRUISE_BUTTONS': button_val,
     'CRUISE_SETTING': 0,
   }
   # send buttons to camera on radarless cars
   bus = 2 if car_fingerprint in HONDA_BOSCH_RADARLESS else get_pt_bus(car_fingerprint)
-  return packer.make_can_msg("SCM_BUTTONS", bus, values, idx)
+  return packer.make_can_msg("SCM_BUTTONS", bus, values)

@@ -46,19 +46,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .registers_offset = 0,
     .frame_offset = AR0231_REGISTERS_HEIGHT,
     .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
-
-    .bayer = true,
-    .bayer_flip = 1,
-    .hdr = false,
   },
   [CAMERA_ID_IMX390] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE,
-
-    .bayer = true,
-    .bayer_flip = 1,
-    .hdr = false,
   },
 };
 
@@ -614,7 +606,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 // ******************* camera *******************
 
-void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, bool enabled_) {
+void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, bool enabled_) {
   multi_cam_state = multi_cam_state_;
   camera_id = camera_id_;
   camera_num = camera_num_;
@@ -638,7 +630,7 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[gain_idx] * exposure_time;
 
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
 }
 
 void CameraState::camera_open() {
@@ -833,9 +825,9 @@ void CameraState::camera_open() {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_RGB_DRIVER, VISION_STREAM_DRIVER, !env_disable_driver);
-  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_RGB_ROAD, VISION_STREAM_ROAD, !env_disable_road);
-  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_RGB_WIDE_ROAD, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
+  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_DRIVER, !env_disable_driver);
+  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_ROAD, !env_disable_road);
+  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
@@ -957,7 +949,7 @@ std::map<uint16_t, std::pair<int, int>> CameraState::ar0231_build_register_lut(u
   //
   // 0xAA is used to indicate the MSB of the address, 0xA5 for the LSB of the address.
   // Every byte of data (MSB and LSB) is preceded by 0x5A. Specifying an address is optional
-  // for contigous ranges. See page 27-29 of the AR0231 Developer guide for more information.
+  // for contiguous ranges. See page 27-29 of the AR0231 Developer guide for more information.
 
   int max_i[] = {1828 / 2 * 3, 1500 / 2 * 3};
   auto get_next_idx = [](int cur_idx) {
@@ -1085,7 +1077,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // It takes 3 frames for the commanded exposure settings to take effect. The first frame is already started by the time
   // we reach this function, the other 2 are due to the register buffering in the sensor.
   // Therefore we use the target EV from 3 frames ago, the grey fraction that was just measured was the result of that control action.
-  // TODO: Lower latency to 2 frames, by using the histogram outputed by the sensor we can do AE before the debayering is complete
+  // TODO: Lower latency to 2 frames, by using the histogram outputted by the sensor we can do AE before the debayering is complete
 
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
@@ -1110,35 +1102,51 @@ void CameraState::set_camera_exposure(float grey_frac) {
     enable_dc_gain = false;
   }
 
-  // Simple brute force optimizer to choose sensor parameters
-  // to reach desired EV
-  for (int g = std::max((int)ANALOG_GAIN_MIN_IDX, gain_idx - 1); g <= std::min((int)ANALOG_GAIN_MAX_IDX, gain_idx + 1); g++) {
-    float gain = sensor_analog_gains[g] * (enable_dc_gain ? DC_GAIN : 1);
+  std::string gain_bytes, time_bytes;
+  if (env_ctrl_exp_from_params) {
+      gain_bytes = Params().get("CameraDebugExpGain");
+      time_bytes = Params().get("CameraDebugExpTime");
+  }
 
-    // Compute optimal time for given gain
-    int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
+  if (gain_bytes.size() > 0 && time_bytes.size() > 0) {
+    // Override gain and exposure time
+    gain_idx = std::stoi(gain_bytes);
+    exposure_time = std::stoi(time_bytes);
 
-    // Only go below recomended gain when absolutely necessary to not overexpose
-    if (g < ANALOG_GAIN_REC_IDX && t > 20 && g < gain_idx) {
-      continue;
-    }
+    new_g = gain_idx;
+    new_t = exposure_time;
+    enable_dc_gain = false;
+  } else {
+    // Simple brute force optimizer to choose sensor parameters
+    // to reach desired EV
+    for (int g = std::max((int)ANALOG_GAIN_MIN_IDX, gain_idx - 1); g <= std::min((int)ANALOG_GAIN_MAX_IDX, gain_idx + 1); g++) {
+      float gain = sensor_analog_gains[g] * (enable_dc_gain ? DC_GAIN : 1);
 
-    // Compute error to desired ev
-    float score = std::abs(desired_ev - (t * gain)) * 10;
+      // Compute optimal time for given gain
+      int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
-    // Going below recomended gain needs lower penalty to not overexpose
-    float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.1;
-    score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
+      // Only go below recommended gain when absolutely necessary to not overexpose
+      if (g < ANALOG_GAIN_REC_IDX && t > 20 && g < gain_idx) {
+        continue;
+      }
 
-    // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
+      // Compute error to desired ev
+      float score = std::abs(desired_ev - (t * gain)) * 10;
 
-    // Small penalty on changing gain
-    score += std::abs(g - gain_idx) * (score + 1.0) / 10.0;
+      // Going below recommended gain needs lower penalty to not overexpose
+      float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.1;
+      score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
 
-    if (score < best_ev_score) {
-      new_t = t;
-      new_g = g;
-      best_ev_score = score;
+      // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
+
+      // Small penalty on changing gain
+      score += std::abs(g - gain_idx) * (score + 1.0) / 10.0;
+
+      if (score < best_ev_score) {
+        new_t = t;
+        new_g = g;
+        best_ev_score = score;
+      }
     }
   }
 
@@ -1233,9 +1241,7 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
+
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);
   }
@@ -1248,9 +1254,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
-    framed.setImage(get_frame_image(b));
-  } else if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
+  if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
     framed.setImage(get_raw_frame_image(b));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");

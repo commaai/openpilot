@@ -18,6 +18,7 @@ NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
 NM_DEV = NM + '.Device'
 NM_DEV_WL = NM + '.Device.Wireless'
+NM_DEV_STATS = NM + '.Device.Statistics'
 NM_AP = NM + '.AccessPoint'
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
 
@@ -49,6 +50,7 @@ class NMMetered(IntEnum):
   NM_METERED_GUESS_NO = 4
 
 TIMEOUT = 0.1
+REFRESH_RATE_MS = 1000
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -142,6 +144,10 @@ class Tici(HardwareBase):
   def get_wlan(self):
     wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
     return self.bus.get_object(NM, wlan_path)
+
+  def get_wwan(self):
+    wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
+    return self.bus.get_object(NM, wwan_path)
 
   def get_sim_info(self):
     modem = self.get_modem()
@@ -281,7 +287,7 @@ class Tici(HardwareBase):
     ]
 
     upload = [
-      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
       (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
 
       # Create class 1:20 with specified rate limit
@@ -366,7 +372,6 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
@@ -504,13 +509,28 @@ class Tici(HardwareBase):
 
     return r
 
+  def get_modem_data_usage(self):
+    try:
+      wwan = self.get_wwan()
+
+      # Ensure refresh rate is set so values don't go stale
+      refresh_rate = wwan.Get(NM_DEV_STATS, 'RefreshRateMs', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if refresh_rate != REFRESH_RATE_MS:
+        u = type(refresh_rate)
+        wwan.Set(NM_DEV_STATS, 'RefreshRateMs', u(REFRESH_RATE_MS), dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+
+      tx = wwan.Get(NM_DEV_STATS, 'TxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      rx = wwan.Get(NM_DEV_STATS, 'RxBytes', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      return int(tx), int(rx)
+    except Exception:
+      return -1, -1
+
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
 
     gpio_set(GPIO.STM_RST_N, 1)
     time.sleep(2)
     gpio_set(GPIO.STM_RST_N, 0)
-
 
   def recover_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)

@@ -52,6 +52,12 @@ void OnroadWindow::updateState(const UIState &s) {
     alerts->updateAlert(alert, bgColor);
   }
 
+  if (s.scene.map_on_left) {
+    split->setDirection(QBoxLayout::LeftToRight);
+  } else {
+    split->setDirection(QBoxLayout::RightToLeft);
+  }
+
   nvg->updateState(s);
 
   if (bg != bgColor) {
@@ -80,7 +86,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       QObject::connect(uiState(), &UIState::offroadTransition, m, &MapWindow::offroadTransition);
 
       m->setFixedWidth(topWidget(this)->width() / 2);
-      split->addWidget(m, 0, Qt::AlignRight);
+      split->insertWidget(0, m);
 
       // Make map visible after adding to split
       m->offroadTransition(offroad);
@@ -178,13 +184,23 @@ void NvgWindow::updateState(const UIState &s) {
 
   const auto cs = sm["controlsState"].getControlsState();
 
-  float set_speed = cs_alive ? cs.getVCruise() : SET_SPEED_NA;
+  // Handle older routes where vCruiseCluster is not set
+  float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
+  float set_speed = cs_alive ? v_cruise : SET_SPEED_NA;
   bool cruise_set = set_speed > 0 && (int)set_speed != SET_SPEED_NA;
   if (cruise_set && !s.scene.is_metric) {
     set_speed *= KM_TO_MILE;
   }
 
-  float cur_speed = cs_alive ? std::max<float>(0.0, sm["carState"].getCarState().getVEgo()) : 0.0;
+  // Handle older routes where vEgoCluster is not set
+  float v_ego;
+  if (sm["carState"].getCarState().getVEgoCluster() == 0.0 && !v_ego_cluster_seen) {
+    v_ego = sm["carState"].getCarState().getVEgo();
+  } else {
+    v_ego = sm["carState"].getCarState().getVEgoCluster();
+    v_ego_cluster_seen = true;
+  }
+  float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
   cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
@@ -207,6 +223,7 @@ void NvgWindow::updateState(const UIState &s) {
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+    setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
 
   if (s.scene.calibration_valid) {
@@ -296,7 +313,7 @@ void NvgWindow::drawHud(QPainter &p) {
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
     const int border_width = 6;
-    const int sign_width = (speedLimitStr.size() >= 3) ? 199 : 148;
+    const int sign_width = rect_width - 24;
     const int sign_height = 186;
 
     // White outer square
@@ -371,7 +388,8 @@ void NvgWindow::drawHud(QPainter &p) {
 
   // dm icon
   if (!hideDM) {
-    drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
+    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
+    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
   p.restore();
@@ -441,19 +459,41 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
-  float orientation_future = 0;
-  if (orientation.getZ().size() > 16) {
-    orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
-  }
-  // straight: 112, in turns: 70
-  float curve_hue = fmax(70, 112 - (orientation_future * 420));
-  // FIXME: painter.drawPolygon can be slow if hue is not rounded
-  curve_hue = int(curve_hue * 100 + 0.5) / 100;
+  float start_hue, end_hue;
+  if (scene.end_to_end_long) {
+    const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
+    float acceleration_future = 0;
+    if (acceleration.getZ().size() > 16) {
+      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+    }
+    start_hue = 60;
+    // speed up: 120, slow down: 0
+    end_hue = fmax(fmin(start_hue + acceleration_future * 30, 120), 0);
 
-  bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-  bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
-  bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    end_hue = int(end_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+  } else {
+    const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
+    float orientation_future = 0;
+    if (orientation.getZ().size() > 16) {
+      orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
+    }
+    start_hue = 148;
+    // straight: 112, in turns: 70
+    end_hue = fmax(70, 112 - (orientation_future * 420));
+
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    end_hue = int(end_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+  }
+
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
 

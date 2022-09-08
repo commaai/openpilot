@@ -79,10 +79,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_usb_present(self):
-    pass
-
-  @abstractmethod
   def get_current_power_draw(self):
     pass
 
@@ -144,3 +140,6 @@ class HardwareBase(ABC):
 
   def recover_internal_panda(self):
     pass
+
+  def get_modem_data_usage(self):
+    return -1, -1

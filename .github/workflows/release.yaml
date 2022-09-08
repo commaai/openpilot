@@ -12,7 +12,7 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
     - name: Wait for green check mark
-      uses: commaai/wait-on-check-action@f16fc3bb6cd4886520b4e9328db1d42104d5cadc
+      uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
       with:
         ref: master
         wait-interval: 30

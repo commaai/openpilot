@@ -1,6 +1,9 @@
 #include "selfdrive/ui/qt/util.h"
 
 #include <QApplication>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLayoutItem>
 #include <QStyleOption>
 #include <QPainterPath>
@@ -36,6 +39,19 @@ std::optional<QString> getDongleId() {
   }
 }
 
+QMap<QString, QString> getSupportedLanguages() {
+  QFile f("translations/languages.json");
+  f.open(QIODevice::ReadOnly | QIODevice::Text);
+  QString val = f.readAll();
+
+  QJsonObject obj = QJsonDocument::fromJson(val.toUtf8()).object();
+  QMap<QString, QString> map;
+  for (auto key : obj.keys()) {
+    map[key] = obj[key].toString();
+  }
+  return map;
+}
+
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
   QFont f(family);
   f.setPixelSize(size);
@@ -63,13 +79,13 @@ QString timeAgo(const QDateTime &date) {
     s = "now";
   } else if (diff < 60 * 60) {
     int minutes = diff / 60;
-    s = QObject::tr("%1 minute%2 ago").arg(minutes).arg(minutes > 1 ? "s" : "");
+    s = QObject::tr("%n minute(s) ago", "", minutes);
   } else if (diff < 60 * 60 * 24) {
     int hours = diff / (60 * 60);
-    s = QObject::tr("%1 hour%2 ago").arg(hours).arg(hours > 1 ? "s" : "");
+    s = QObject::tr("%n hour(s) ago", "", hours);
   } else if (diff < 3600 * 24 * 7) {
     int days = diff / (60 * 60 * 24);
-    s = QObject::tr("%1 day%2 ago").arg(days).arg(days > 1 ? "s" : "");
+    s = QObject::tr("%n day(s) ago", "", days);
   } else {
     s = date.date().toString();
   }
@@ -90,9 +106,18 @@ void setQtSurfaceFormat() {
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
+void sigTermHandler(int s) {
+  std::signal(s, SIG_DFL);
+  qApp->quit();
+}
+
 void initApp(int argc, char *argv[]) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
+
+  // setup signal handlers to exit gracefully
+  std::signal(SIGINT, sigTermHandler);
+  std::signal(SIGTERM, sigTermHandler);
 
 #ifdef __APPLE__
   {
@@ -137,7 +162,7 @@ QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMo
   }
 }
 
-QRect getTextRect(QPainter &p, int flags, QString text) {
+QRect getTextRect(QPainter &p, int flags, const QString &text) {
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
   return fm.boundingRect(init_rect, flags, text);

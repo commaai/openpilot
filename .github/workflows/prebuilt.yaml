@@ -9,7 +9,7 @@ env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
 
-  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
       docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
@@ -25,7 +25,7 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
-      uses: commaai/wait-on-check-action@f16fc3bb6cd4886520b4e9328db1d42104d5cadc
+      uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
       with:
         ref: master
         wait-interval: 30

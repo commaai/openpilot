@@ -16,6 +16,7 @@ class Maneuver():
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
+    self.ensure_start = kwargs.get("ensure_start", False)
 
     self.duration = duration
     self.title = title
@@ -26,7 +27,7 @@ class Maneuver():
       speed=self.speed,
       distance_lead=self.distance_lead,
       only_lead2=self.only_lead2,
-      only_radar=self.only_radar
+      only_radar=self.only_radar,
     )
 
     valid = True
@@ -50,6 +51,10 @@ class Maneuver():
 
       if d_rel < .4 and (self.only_radar or prob > 0.5):
         print("Crashed!!!!")
+        valid = False
+
+      if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
+        print('LongitudinalPlanner not starting!')
         valid = False
 
     print("maneuver end", valid)

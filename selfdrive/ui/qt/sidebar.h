@@ -3,7 +3,6 @@
 #include <QFrame>
 #include <QMap>
 
-#include "common/params.h"
 #include "selfdrive/ui/ui.h"
 
 typedef QPair<QPair<QString, QString>, QColor> ItemStatus;
@@ -34,22 +33,25 @@ protected:
 
   QPixmap home_img, settings_img;
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
-    {cereal::DeviceState::NetworkType::NONE, "--"},
-    {cereal::DeviceState::NetworkType::WIFI, "Wi-Fi"},
-    {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
-    {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
-    {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
-    {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
-    {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
+    {cereal::DeviceState::NetworkType::NONE, tr("--")},
+    {cereal::DeviceState::NetworkType::WIFI, tr("Wi-Fi")},
+    {cereal::DeviceState::NetworkType::ETHERNET, tr("ETH")},
+    {cereal::DeviceState::NetworkType::CELL2_G, tr("2G")},
+    {cereal::DeviceState::NetworkType::CELL3_G, tr("3G")},
+    {cereal::DeviceState::NetworkType::CELL4_G, tr("LTE")},
+    {cereal::DeviceState::NetworkType::CELL5_G, tr("5G")}
   };
 
+  const QRect home_btn = QRect(60, 860, 180, 180);
   const QRect settings_btn = QRect(50, 35, 200, 117);
   const QColor good_color = QColor(255, 255, 255);
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
 
-  Params params;
   ItemStatus connect_status, panda_status, temp_status;
   QString net_type;
   int net_strength = 0;
+
+private:
+  std::unique_ptr<PubMaster> pm;
 };
