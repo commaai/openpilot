@@ -341,7 +341,7 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="+621"/>
+        <location filename="../qt/maps/map.cc" line="+628"/>
         <source>eta</source>
         <translation>eta</translation>
     </message>
@@ -369,7 +369,7 @@
 <context>
     <name>MapInstructions</name>
     <message>
-        <location line="-237"/>
+        <location line="-241"/>
         <source> km</source>
         <translation> km</translation>
     </message>
@@ -441,12 +441,12 @@ trabalho definido</translation>
 <context>
     <name>MapWindow</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="-257"/>
+        <location filename="../qt/maps/map.cc" line="-258"/>
         <source>Map Loading</source>
         <translation>Carregando Mapa</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+18"/>
         <source>Waiting for GPS</source>
         <translation>Esperando por GPS</translation>
     </message>

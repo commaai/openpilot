@@ -340,7 +340,7 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="+621"/>
+        <location filename="../qt/maps/map.cc" line="+628"/>
         <source>eta</source>
         <translation>予定到着時間</translation>
     </message>
@@ -368,7 +368,7 @@
 <context>
     <name>MapInstructions</name>
     <message>
-        <location line="-237"/>
+        <location line="-241"/>
         <source> km</source>
         <translation> ｷﾛﾒｰﾄﾙ</translation>
     </message>
@@ -440,12 +440,12 @@ location set</source>
 <context>
     <name>MapWindow</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="-257"/>
+        <location filename="../qt/maps/map.cc" line="-258"/>
         <source>Map Loading</source>
         <translation>マップを読み込んでいます</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+18"/>
         <source>Waiting for GPS</source>
         <translation>GPS信号を探しています</translation>
     </message>
