@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+    ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR | CANFD_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
@@ -43,13 +43,15 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 1.
 
     ret.stoppingControl = True
-    ret.vEgoStopping = 1.0
+    ret.startingState = True
+    ret.vEgoStarting = 0.1
+    ret.startAccel = 2.0
 
-    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kpV = [0.5]
     ret.longitudinalTuning.kiV = [0.0]
-    ret.stopAccel = 0.0
 
-    ret.longitudinalActuatorDelayUpperBound = 1.0  # s
+    ret.longitudinalActuatorDelayLowerBound = 0.5  # s
+    ret.longitudinalActuatorDelayUpperBound = 0.5  # s
     if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
