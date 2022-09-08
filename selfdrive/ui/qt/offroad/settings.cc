@@ -69,7 +69,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "ExperimentalLongitudinalEnabled",
       tr("Experimental openpilot longitudinal control"),
       tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
-      "../assets/offroad/icon_road.png",
+      "../assets/offroad/icon_speed_limit.png",
     },
 #ifdef ENABLE_MAPS
     {
@@ -118,20 +118,25 @@ void TogglesPanel::updateToggles() {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
+    if (!CP.getExperimentalLongitudinalAvailable()) {
+      params.remove("ExperimentalLongitudinalEnabled");
+    }
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable());
 
-    if (CP.getOpenpilotLongitudinalControl() || params.getBool("ExperimentalLongitudinalEnabled")) {
+    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+    const bool exp_long_enabled = CP.getExperimentalLongitudinalAvailable() && params.getBool("ExperimentalLongitudinalEnabled");
+    if (op_long || exp_long_enabled) {
       // normal description and toggle
-      params.remove("ExperimentalLongitudinalEnabled");
-      e2e_toggle->setDescription(e2e_description);
       e2e_toggle->setEnabled(true);
+      e2e_toggle->setDescription(e2e_description);
     } else {
       // no long for now
-      params.remove("EndToEndLong");
-      const QString no_long = "openpilot longitudinal control is not currently available for this car.";
-      const QString exp_long = "Enable experimental longitudinal control to enable e2e long.";
-      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
       e2e_toggle->setEnabled(false);
+      params.remove("EndToEndLong");
+
+      const QString no_long = "openpilot longitudinal control is not currently available for this car.";
+      const QString exp_long = "Enable experimental longitudinal control to enable this.";
+      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
     }
 
     e2e_toggle->refresh();

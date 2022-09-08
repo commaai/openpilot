@@ -164,9 +164,12 @@ private:
     QPainter p(this);
     p.setPen(Qt::gray);
     for (int i = 0; i < inner_layout.count() - 1; ++i) {
-      QRect r = inner_layout.itemAt(i)->geometry();
-      int bottom = r.bottom() + inner_layout.spacing() / 2;
-      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      QWidget *widget = inner_layout.itemAt(i)->widget();
+      if (widget->isVisible()) {
+        QRect r = inner_layout.itemAt(i)->geometry();
+        int bottom = r.bottom() + inner_layout.spacing() / 2;
+        p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      }
     }
   }
   QVBoxLayout outer_layout;
