@@ -3,7 +3,7 @@ from collections import deque, defaultdict
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
-from common.params import Params, put_nonblocking
+from common.params import Params
 from common.realtime import config_realtime_process, DT_MDL
 from common.filter_simple import FirstOrderFilter
 from system.swaglog import cloudlog
@@ -198,7 +198,8 @@ class TorqueEstimator:
   def __del__(self, *args):
     msg = self.get_msg()
     msg.liveTorqueParameters.points = self.filtered_points.get_points()
-    put_nonblocking("LiveTorqueParameters", msg.to_bytes())
+    params_reader = Params()
+    params_reader.put("LiveTorqueParameters", msg.to_bytes())
 
 
 def main(sm=None, pm=None):
