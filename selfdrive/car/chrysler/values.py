@@ -3,8 +3,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict, Fpv2Config
+from panda.python import uds
+from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -129,13 +132,47 @@ FINGERPRINTS = {
   }],
 }
 
-FPV2_CONFIG = Fpv2Config(extra_ecus={
-  # Ecus added for data collection
-  (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
-  (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
-})
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+
+CHRYSLER_RX_OFFSET = -0x280
+
+FPV2_CONFIG = Fpv2Config(
+  requests=[
+    Request(
+      "chrysler",
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      rx_offset=CHRYSLER_RX_OFFSET,
+    ),
+    Request(
+      "chrysler",
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+    ),
+    Request(
+      "chrysler",
+      [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+      [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
+  CAR.PACIFICA_2019_HYBRID: {
+    (Ecu.hcp, 0x7e2, None): [],
+    (Ecu.abs, 0x7e4, None): [],
+  },
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294063AH',
