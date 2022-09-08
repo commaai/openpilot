@@ -13,6 +13,7 @@ Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
+EXTRA_ECUS = get_interface_attr("EXTRA_ECUS", ignore_none=True)
 
 
 class TestFwFingerprint(unittest.TestCase):
@@ -44,11 +45,18 @@ class TestFwFingerprint(unittest.TestCase):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
+  def test_data_collection_ecus(self):
+    for brand, car_models in VERSIONS.items():
+      if brand not in EXTRA_ECUS:
+        continue
+
+      for car_model, ecus in car_models.items():
+        with self.subTest(car_model=car_model):
+          extra_ecus = EXTRA_ECUS[brand]
+          self.assertFalse(any([ecu in ecus for ecu in extra_ecus]), f'{car_model}: Fingerprints contain ECU in data collection')
+
   def test_blacklisted_ecus(self):
-    blacklisted_addrs = {
-      "subaru": (0x7c4, 0x7d0),  # includes A/C ecu and an unknown ecu
-      "hyundai": (0x7e2,),  # currently collecting Ecu.vcu fingerprints
-    }
+    blacklisted_addrs = {"subaru": (0x7c4, 0x7d0)}  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         CP = interfaces[car_model][0].get_params(car_model)
