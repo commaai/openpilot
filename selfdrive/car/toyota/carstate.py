@@ -26,10 +26,9 @@ class CarState(CarStateBase):
     self.low_speed_lockout = False
     self.acc_type = 1
 
-    self.v_ego_cluster_steady = 0
     self.v_ego_cluster_hyst = CV.KPH_TO_MS / 2.  # or MPH_TO_MS / 2, both are very close
 
-    # self.cluster_speed_factor = 1
+    self.cluster_speed_factor = 1.018
     # if CP.carFingerprint in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.HIGHLANDERH):
     #   self.cluster_speed_factor = 1.03
     # elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.HIGHLANDER, CAR.PRIUS_TSS2, CAR.LEXUS_RXH):
@@ -119,21 +118,6 @@ class CarState(CarStateBase):
     if ret.cruiseState.speed != 0:
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
-
-    # Dash applies some hysteresis
-    # ret.vEgoCluster = ret.vEgo * self.cluster_speed_factor
-    v_ego_cluster = ret.vEgo * 1.019  # 1.02 is too high
-    if v_ego_cluster > self.v_ego_cluster_steady + self.v_ego_cluster_hyst:
-      self.v_ego_cluster_steady = v_ego_cluster - self.v_ego_cluster_hyst
-    elif v_ego_cluster < self.v_ego_cluster_steady - self.v_ego_cluster_hyst:
-      self.v_ego_cluster_steady = v_ego_cluster + self.v_ego_cluster_hyst
-
-    ret.vEgoCluster = self.v_ego_cluster_steady
-    # TODO: user reported this signal can be 1 when stopped rarely. make sure this isn't an issue from data
-    if ret.standstill:
-      ret.vEgoCluster = 0
-
-
 
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 

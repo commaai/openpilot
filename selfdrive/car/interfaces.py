@@ -62,6 +62,10 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
 
+    self.cluster_speed_factor = 1.0
+    self.cluster_speed_steady = 0.0
+    self.cluster_speed_hyst = 0.0
+
     self.CS = None
     self.can_parsers = []
     if CarState is not None:
@@ -149,6 +153,14 @@ class CarInterfaceBase(ABC):
     tune.torque.friction = params['FRICTION']
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
+  def apply_cluster_speed_hysteresis(self, v_ego):
+    if v_ego > self.cluster_speed_steady + self.cluster_speed_hyst:
+      self.cluster_speed_steady = v_ego - self.cluster_speed_hyst
+    elif v_ego < self.cluster_speed_steady - self.cluster_speed_hyst:
+      self.cluster_speed_steady = v_ego + self.cluster_speed_hyst
+
+    return self.cluster_speed_steady
+
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
@@ -165,8 +177,8 @@ class CarInterfaceBase(ABC):
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
-    if ret.vEgoCluster == -1:
-      ret.vEgoCluster = ret.vEgo
+    # Apply hysteresis to cluster ego speed
+    ret.vEgoCluster = self.apply_cluster_speed_hysteresis(ret.vEgo * self.cluster_speed_factor)
 
     if ret.cruiseState.speedCluster == -1:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
