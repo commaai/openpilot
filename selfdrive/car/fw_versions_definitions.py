@@ -125,7 +125,6 @@ class Request:
 @dataclass
 class Fpv2Config:
   requests: List[Request]
-  extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
 
 
 REQUESTS: List[Request] = [
@@ -432,10 +431,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-
-  # Each brand can define extra ECUs to query for data collection
-  for brand, config in FPV2_CONFIGS.items():
-    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
 
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
