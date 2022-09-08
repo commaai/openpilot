@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import capnp
 import struct
 import traceback
 from collections import defaultdict
@@ -17,11 +18,16 @@ from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
-EXTRA_ECUS = get_interface_attr('EXTRA_ECUS', ignore_none=True)
+FPV2_CONFIGS = get_interface_attr('FPV2_CONFIG', ignore_none=True)
 
 
 def p16(val):
   return struct.pack("!H", val)
+
+
+@dataclass
+class Fpv2Config:
+  extra_ecus: Set[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]]
 
 
 TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
@@ -446,8 +452,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
   # Each brand can define extra ECUs to query for data collection
-  for brand, ecus in EXTRA_ECUS.items():
-    versions[brand]["debug"] = {ecu: [] for ecu in ecus}
+  for brand, config in FPV2_CONFIGS.items():
+    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
 
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}

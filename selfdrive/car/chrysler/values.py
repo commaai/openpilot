@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_versions import Fpv2Config
 Ecu = car.CarParams.Ecu
 
 
@@ -129,11 +130,11 @@ FINGERPRINTS = {
   }],
 }
 
-# Ecus added for data collection
-EXTRA_ECUS = {
+FPV2_CONFIG = Fpv2Config(extra_ecus={
+  # Ecus added for data collection
   (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
   (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
-}
+})
 
 FW_VERSIONS = {
   CAR.RAM_1500: {
