@@ -17,6 +17,7 @@ from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+IGNORED_ECUS = get_interface_attr("IGNORED_ECUS", ignore_none=True)
 
 
 def p16(val):
@@ -321,12 +322,18 @@ def match_fw_to_car_exact(fw_versions_dict):
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
   invalid = []
-  candidates = FW_VERSIONS
+  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  candidates = {car: (brand, fws) for brand, cars in versions.items() for car, fws in cars.items()}
 
-  for candidate, fws in candidates.items():
+  for candidate, (brand, fws) in candidates.items():
     for ecu, expected_versions in fws.items():
       ecu_type = ecu[0]
       addr = ecu[1:]
+
+      # Ignore ecus in the database for data collection
+      if ecu_type in IGNORED_ECUS.get(brand, set()):
+        continue
+
       found_versions = fw_versions_dict.get(addr, set())
       if ecu_type == Ecu.abs and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
@@ -337,10 +344,6 @@ def match_fw_to_car_exact(fw_versions_dict):
 
       # Ignore non essential ecus
       if ecu_type not in ESSENTIAL_ECUS and not len(found_versions):
-        continue
-
-      # Ignore ecus in the database for data collection
-      if len(expected_versions) == 0:
         continue
 
       # Virtual debug ecu doesn't need to match the database
