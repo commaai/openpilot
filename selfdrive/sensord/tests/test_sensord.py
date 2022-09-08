@@ -82,18 +82,6 @@ SENSOR_BUS = 1
 I2C_ADDR_LSM = 0x6A
 LSM_INT_GPIO = 84
 
-
-def read_sensor_events(duration_sec):
-  sensor_events = messaging.sub_sock("sensorEvents", timeout=0.1)
-  start_time_sec = time.monotonic()
-  events = []
-  while time.monotonic() - start_time_sec < duration_sec:
-    events += messaging.drain_sock(sensor_events)
-    time.sleep(0.01)
-
-  assert len(events) != 0, "No sensor events collected"
-  return events
-
 def get_proc_interrupts(int_pin):
   with open("/proc/interrupts") as f:
     lines = f.read().split("\n")
@@ -104,6 +92,24 @@ def get_proc_interrupts(int_pin):
 
   return ""
 
+def read_sensor_events(sensor_types, duration_sec):
+
+  esocks = {}
+  events = {}
+  for stype in sensor_types:
+    esocks[stype] = messaging.sub_sock(stype, timeout=0.1)
+    events[stype] = []
+
+  start_time_sec = time.monotonic()
+  while time.monotonic() - start_time_sec < duration_sec:
+    for esock in esocks:
+      events[esock] += messaging.drain_sock(esocks[esock])
+    time.sleep(0.01)
+
+  for etype in events:
+    assert len(events[etype]) != 0, f"No {etype} events collected"
+
+  return events
 
 def get_filter_bounds(values, percent):
   values.sort()
@@ -184,14 +190,10 @@ class TestSensord(unittest.TestCase):
     for event in  self.events:
       for measurement in event.sensorEvents:
 
-        # filter unset events (bmx magn)
-        if measurement.version == 0:
-          continue
-
-        if measurement.type in sensor_events:
-          sensor_events[measurement.type] += 1
+        if measurement.sensorEvent.type in sensor_events:
+          sensor_events[measurement.sensorEvent.type] += 1
         else:
-          sensor_events[measurement.type] = 1
+          sensor_events[measurement.sensorEvent.type] = 1
 
     for s in sensor_events:
       err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
@@ -228,16 +230,13 @@ class TestSensord(unittest.TestCase):
     assert stddev < 2*10**6, f"Timing diffs have to high stddev: {stddev}"
 
   def test_sensor_values_sanity_check(self):
+
     sensor_values = dict()
-    for event in self.events:
-      for m in event.sensorEvents:
+    for etype in self.events:
+      for m in self.events[etype]:
+        key = (m.sensorEvent.source.raw, m.sensorEvent.which())
+        values = getattr(m.sensorEvent, m.sensorEvent.which())
 
-        # filter unset events (bmx magn)
-        if m.version == 0:
-          continue
-
-        key = (m.source.raw, m.which())
-        values = getattr(m, m.which())
         if hasattr(values, 'v'):
           values = values.v
         values = np.atleast_1d(values)
@@ -284,56 +283,6 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
     state_two = get_proc_interrupts(LSM_INT_GPIO)
     assert state_one == state_two, "Interrupts received after sensord stop!"
-
-
-
-  @with_processes(['sensord'])
-  def test_events_check(self):
-    # verify if all sensors produce events
-    events = read_sensor_events(3)
-
-    sensor_events = dict()
-    for event in events:
-      for measurement in event.sensorEvents:
-        # Filter out unset events
-        if measurement.version == 0:
-          continue
-
-        if measurement.type in sensor_events:
-          sensor_events[measurement.type] += 1
-        else:
-          sensor_events[measurement.type] = 1
-
-    for s in sensor_events:
-      assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
-
-  @with_processes(['sensord'])
-  def test_logmonottime_timestamp(self):
-    # ensure diff logMonotime and timestamp is rather small
-    # -> published when created
-    events = read_sensor_events(3)
-
-    tdiffs = list()
-    for event in events:
-      for measurement in event.sensorEvents:
-        # Filter out unset events
-        if measurement.version == 0:
-          continue
-
-        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
-        # negative values might occur, as non interrupt packages created
-        # before the sensor is read
-
-    assert len(tdiffs) != 0, "No sensor data collected"
-
-    # filter 10% of the data to remove outliers
-    lb, ub = get_filter_bounds(tdiffs, 0.9)
-    diffs = tdiffs[lb:ub]
-    avg_diff = round(sum(diffs)/len(diffs), 4)
-
-    assert max(diffs) < 10*10**6, f"packet took { max(diffs):.1f}ns for publishing"
-    assert avg_diff < 4*10**6, f"Avg packet diff: {avg_diff:.1f}ns"
-
 
 if __name__ == "__main__":
   unittest.main()
