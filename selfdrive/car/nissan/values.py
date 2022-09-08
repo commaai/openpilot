@@ -2,9 +2,12 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 from enum import Enum
 
+from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -74,6 +77,41 @@ FINGERPRINTS = {
     },
   ]
 }
+
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+
+NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
+NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
+
+NISSAN_VERSION_REQUEST_STANDARD = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+NISSAN_VERSION_RESPONSE_STANDARD = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+
+NISSAN_RX_OFFSET = 0x20
+
+FPV2_CONFIG = Fpv2Config(
+  requests=[
+    Request(
+      "nissan",
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+    ),
+    Request(
+      "nissan",
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+      rx_offset=NISSAN_RX_OFFSET,
+    ),
+    Request(
+      "nissan",
+      [NISSAN_VERSION_REQUEST_STANDARD],
+      [NISSAN_VERSION_RESPONSE_STANDARD],
+      rx_offset=NISSAN_RX_OFFSET,
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ALTIMA: {

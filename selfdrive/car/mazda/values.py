@@ -2,9 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
+from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -50,6 +53,7 @@ class LKAS_LIMITS:
   DISABLE_SPEED = 45    # kph
   ENABLE_SPEED = 52     # kph
 
+
 class Buttons:
   NONE = 0
   SET_PLUS = 1
@@ -58,8 +62,23 @@ class Buttons:
   CANCEL = 4
 
 
+MAZDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+MAZDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+
+FPV2_CONFIG = Fpv2Config(
+  requests=[
+    Request(
+      "mazda",
+      [MAZDA_VERSION_REQUEST],
+      [MAZDA_VERSION_RESPONSE],
+    ),
+  ],
+)
+
 FW_VERSIONS = {
-  CAR.CX5_2022 : {
+  CAR.CX5_2022: {
     (Ecu.eps, 0x730, None): [
       b'KSD5-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],

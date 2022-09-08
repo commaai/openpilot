@@ -227,7 +227,6 @@ FPV2_CONFIG = Fpv2Config(
   ],
 )
 
-
 FW_VERSIONS = {
   CAR.AVALON: {
     (Ecu.abs, 0x7b0, None): [

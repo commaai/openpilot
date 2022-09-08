@@ -3,9 +3,12 @@ from typing import Dict
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, TESTER_PRESENT_REQUEST, TESTER_PRESENT_RESPONSE, UDS_VERSION_REQUEST, UDS_VERSION_RESPONSE
+
 Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
+
 
 class CarControllerParams:
   ANGLE_DELTA_BP = [0., 5., 15.]
@@ -14,12 +17,25 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
+
 class CAR:
   BODY = "COMMA BODY"
+
 
 CAR_INFO: Dict[str, CarInfo] = {
   CAR.BODY: CarInfo("comma body", package="All"),
 }
+
+FPV2_CONFIG = Fpv2Config(
+  requests=[
+    Request(
+      "body",
+      [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
+      [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
+      bus=0,
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.BODY: {

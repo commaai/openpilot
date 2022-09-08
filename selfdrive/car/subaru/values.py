@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
+from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16, TESTER_PRESENT_REQUEST, TESTER_PRESENT_RESPONSE
 
 Ecu = car.CarParams.Ecu
 
@@ -71,6 +73,20 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
 }
 
+SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+
+FPV2_CONFIG = Fpv2Config(
+  requests=[
+    Request(
+      "subaru",
+      [TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ASCENT: {
