@@ -132,14 +132,14 @@ class TestSensord(unittest.TestCase):
     data_list.sort()
     tdiffs = np.diff(data_list)
 
-    high_delay_diffs = list(filter(lambda d: d >= 10*10**6, tdiffs))
+    high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
     assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
 
     avg_diff = sum(tdiffs)/len(tdiffs)
     assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold"
 
     stddev = np.std(tdiffs)
-    assert stddev < 600*10**3, f"Standard-dev to big {stddev}"
+    assert stddev < 10**6, f"Standard-dev to big {stddev}"
 
   @with_processes(['sensord'])
   def test_events_check(self):
@@ -179,14 +179,14 @@ class TestSensord(unittest.TestCase):
         tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
         # before the sensor is read
 
-    high_delay_diffs = list(filter(lambda d: d >= 10*10**6, tdiffs))
-    assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
+    high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
+    assert len(high_delay_diffs) < 15, f"Too many high delay packages: {high_delay_diffs}"
 
     avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
     assert avg_diff < 4*10**6, f"Avg packet diff: {avg_diff:.1f}ns"
 
     stddev = np.std(tdiffs)
-    assert stddev < 1.5*10**6, f"Timing diffs have to high stddev: {stddev}"
+    assert stddev < 2*10**6, f"Timing diffs have to high stddev: {stddev}"
 
   @with_processes(['sensord'])
   def test_sensor_values_sanity_check(self):
