@@ -52,7 +52,9 @@ class TestFwFingerprint(unittest.TestCase):
         sorted_ecu_fw = sorted(ecu_fw)
         if ecu_fw != sorted_ecu_fw:
           passed = False
-          print(f"{car_model}: Ecu.{ECU_NAME[ecu[0]]} FW versions not sorted")
+          print(f"{car_model}: Ecu.{ECU_NAME[ecu[0]]} FW versions not sorted, expected:")
+          for fw in sorted_ecu_fw:
+            print(f"      {fw},")
 
     self.assertTrue(passed)
 
