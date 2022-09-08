@@ -327,7 +327,6 @@ def match_fw_to_car_exact(fw_versions_dict):
     for ecu, expected_versions in fws.items():
       ecu_type = ecu[0]
       addr = ecu[1:]
-
       found_versions = fw_versions_dict.get(addr, set())
       if ecu_type == Ecu.abs and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
