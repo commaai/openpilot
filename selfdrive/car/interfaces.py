@@ -85,7 +85,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     pass
 
   @staticmethod
