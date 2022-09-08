@@ -6,14 +6,13 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import REQUESTS, match_fw_to_car
+from selfdrive.car.fw_versions import REQUESTS, FPV2_CONFIGS, match_fw_to_car
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
-EXTRA_ECUS = get_interface_attr("EXTRA_ECUS", ignore_none=True)
 
 
 class TestFwFingerprint(unittest.TestCase):
@@ -45,15 +44,17 @@ class TestFwFingerprint(unittest.TestCase):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
-  def test_data_collection_ecus(self):
+  def test_fpv2_configs(self):
     for brand, car_models in VERSIONS.items():
-      if brand not in EXTRA_ECUS:
+      fpv2_config = FPV2_CONFIGS.get(brand, None)
+      if fpv2_config is None:
         continue
 
-      for car_model, ecus in car_models.items():
-        with self.subTest(car_model=car_model):
-          extra_ecus = EXTRA_ECUS[brand]
-          self.assertFalse(any([ecu in ecus for ecu in extra_ecus]), f'{car_model}: Fingerprints contain ECU in data collection')
+      with self.subTest("Data collection ECUs"):
+        for car_model, ecus in car_models.items():
+          with self.subTest(car_model=car_model):
+            self.assertFalse(any([ecu in ecus for ecu in fpv2_config.extra_ecus]),
+                             f'{car_model}: Fingerprints contain ECU added for data collection')
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
