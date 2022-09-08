@@ -11,12 +11,15 @@ EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
+    if car_fw is None:
+      car_fw = []
+
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "ford"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
     ret.dashcamOnly = True
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
     # Angle-based steering
     ret.steerControlType = car.CarParams.SteerControlType.angle
