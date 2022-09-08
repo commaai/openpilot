@@ -103,6 +103,9 @@ class TestSensord(unittest.TestCase):
     seen = set()
     for event in events:
       for measurement in event.sensorEvents:
+        # filter unset events (bmx magn)
+        if measurement.version == 0:
+          continue
         seen.add((str(measurement.source), measurement.which()))
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
@@ -136,7 +139,7 @@ class TestSensord(unittest.TestCase):
     assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold"
 
     stddev = np.std(tdiffs)
-    assert stddev < 100*10**3, f"Standard-dev to big {stddev}"
+    assert stddev < 600*10**3, f"Standard-dev to big {stddev}"
 
   @with_processes(['sensord'])
   def test_events_check(self):
@@ -146,6 +149,10 @@ class TestSensord(unittest.TestCase):
     sensor_events = dict()
     for event in events:
       for measurement in event.sensorEvents:
+
+        # filter unset events (bmx magn)
+        if measurement.version == 0:
+          continue
 
         if measurement.type in sensor_events:
           sensor_events[measurement.type] += 1
@@ -164,10 +171,13 @@ class TestSensord(unittest.TestCase):
     for event in events:
       for measurement in event.sensorEvents:
 
+        # filter unset events (bmx magn)
+        if measurement.version == 0:
+          continue
+
         # negative values might occur, as non interrupt packages created
+        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
         # before the sensor is read
-        diff = abs(event.logMonoTime - measurement.timestamp)
-        tdiffs.append(diff)
 
     high_delay_diffs = list(filter(lambda d: d >= 10*10**6, tdiffs))
     assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
@@ -186,6 +196,11 @@ class TestSensord(unittest.TestCase):
     sensor_values = dict()
     for event in events:
       for m in event.sensorEvents:
+
+        # filter unset events (bmx magn)
+        if m.version == 0:
+          continue
+
         key = (m.source.raw, m.which())
         values = getattr(m, m.which())
         if hasattr(values, 'v'):
