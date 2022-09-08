@@ -124,10 +124,10 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
-//  ListWidget *list = new ListWidget(this);
+  ListWidget *list = new ListWidget(this);
   // Enable tethering layout
   tetheringToggle = new ToggleControl(tr("Enable Tethering"), "", "", wifi->isTetheringEnabled());
-//  list->addItem(tetheringToggle);
+  list->addItem(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
 
   // Change tethering password
@@ -138,15 +138,15 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
       wifi->changeTetheringPassword(pass);
     }
   });
-//  list->addItem(editPasswordButton);
+  list->addItem(editPasswordButton);
 
   // IP address
   ipLabel = new LabelControl(tr("IP Address"), wifi->ipv4_address);
-//  list->addItem(ipLabel);
+  list->addItem(ipLabel);
 
   // SSH keys
-//  list->addItem(new SshToggle());
-//  list->addItem(new SshControl());
+  list->addItem(new SshToggle());
+  list->addItem(new SshControl());
 
   // Roaming toggle
   const bool roamingEnabled = params.getBool("GsmRoaming");
@@ -155,7 +155,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     params.putBool("GsmRoaming", state);
     wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")));
   });
-//  list->addItem(roamingToggle);
+  list->addItem(roamingToggle);
 
   // APN settings
   ButtonControl *editApnButton = new ButtonControl(tr("APN Setting"), tr("EDIT"));
@@ -171,12 +171,12 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     }
     wifi->updateGsmSettings(roamingEnabled, apn);
   });
-//  list->addItem(editApnButton);
+  list->addItem(editApnButton);
 
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")));
 
-//  main_layout->addWidget(new ScrollView(list, this));
+  main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
 }
 

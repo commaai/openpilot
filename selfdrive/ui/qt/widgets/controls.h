@@ -5,7 +5,6 @@
 #include <QLabel>
 #include <QPainter>
 #include <QPushButton>
-#include <QDebug>
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
@@ -165,20 +164,10 @@ private:
     p.setPen(Qt::gray);
     for (int i = 0; i < inner_layout.count() - 1; ++i) {
       QWidget *widget = inner_layout.itemAt(i)->widget();
-      qDebug() << "i" << i;
-      qDebug() << "widget";
-      qDebug() << widget;
-      qDebug() << "geometry";
-      qDebug() << inner_layout.itemAt(i)->geometry();
-//      qDebug() << "isVisible";
-      qDebug() << "name";
-//      qDebug() << widget->objectName();
-//      qDebug() << widget->isVisible();
       if (widget->isVisible()) {
         QRect r = inner_layout.itemAt(i)->geometry();
         int bottom = r.bottom() + inner_layout.spacing() / 2;
         p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
-        qDebug() << "draw line from" << r.left() + 40 << bottom << r.right() - 40 << bottom;
       }
     }
   }
