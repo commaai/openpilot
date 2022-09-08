@@ -28,7 +28,7 @@
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
-  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
@@ -62,8 +62,14 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "EndToEndLong",
       tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
-      tr("Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental."),
+      "",
       "../assets/offroad/icon_road.png",
+    },
+    {
+      "ExperimentalLongitudinalEnabled",
+      tr("Experimental openpilot longitudinal control"),
+      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
+      "../assets/offroad/icon_speed_limit.png",
     },
 #ifdef ENABLE_MAPS
     {
@@ -82,22 +88,61 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   };
 
-  Params params;
-
-  if (params.getBool("DisableRadar_Allow")) {
-    toggles.push_back({
-      "DisableRadar",
-      tr("openpilot Longitudinal Control"),
-      tr("openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!"),
-      "../assets/offroad/icon_speed_limit.png",
-    });
-  }
-
-  for (auto &[param, title, desc, icon] : toggles) {
+  for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
+
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
+
     addItem(toggle);
+    toggles[param.toStdString()] = toggle;
+  }
+
+  connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
+    updateToggles();
+  });
+}
+
+void TogglesPanel::showEvent(QShowEvent *event) {
+  updateToggles();
+}
+
+void TogglesPanel::updateToggles() {
+  auto e2e_toggle = toggles["EndToEndLong"];
+  auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
+  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+
+  auto cp_bytes = params.get("CarParamsPersistent");
+  if (!cp_bytes.empty()) {
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+
+    if (!CP.getExperimentalLongitudinalAvailable()) {
+      params.remove("ExperimentalLongitudinalEnabled");
+    }
+    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable());
+
+    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+    const bool exp_long_enabled = CP.getExperimentalLongitudinalAvailable() && params.getBool("ExperimentalLongitudinalEnabled");
+    if (op_long || exp_long_enabled) {
+      // normal description and toggle
+      e2e_toggle->setEnabled(true);
+      e2e_toggle->setDescription(e2e_description);
+    } else {
+      // no long for now
+      e2e_toggle->setEnabled(false);
+      params.remove("EndToEndLong");
+
+      const QString no_long = "openpilot longitudinal control is not currently available for this car.";
+      const QString exp_long = "Enable experimental longitudinal control to enable this.";
+      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
+    }
+
+    e2e_toggle->refresh();
+  } else {
+    e2e_toggle->setDescription(e2e_description);
+    op_long_toggle->setVisible(false);
   }
 }
 
