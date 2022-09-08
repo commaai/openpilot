@@ -14,7 +14,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    self.cluster_speed_hyst = CV.KPH_TO_MS / 2.
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
     if CP.carFingerprint in (CAR.RAV4H_TSS2_2022, CAR.MIRAI, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.PRIUS_TSS2):
       self.cluster_speed_factor = 1.028
     elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.LEXUS_ESH, CAR.HIGHLANDERH, CAR.COROLLAH_TSS2, CAR.HIGHLANDER):

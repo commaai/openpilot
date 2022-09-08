@@ -64,7 +64,7 @@ class CarInterfaceBase(ABC):
 
     self.cluster_speed_steady = 0.0
     self.cluster_speed_factor = 1.0
-    self.cluster_speed_hyst = 0.0
+    self.cluster_speed_hyst_gap = 0.0
 
     self.CS = None
     self.can_parsers = []
@@ -154,10 +154,10 @@ class CarInterfaceBase(ABC):
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   def apply_cluster_speed_hysteresis(self, v_ego):
-    if v_ego > self.cluster_speed_steady + self.cluster_speed_hyst:
-      self.cluster_speed_steady = v_ego - self.cluster_speed_hyst
-    elif v_ego < self.cluster_speed_steady - self.cluster_speed_hyst:
-      self.cluster_speed_steady = v_ego + self.cluster_speed_hyst
+    if v_ego > self.cluster_speed_steady + self.cluster_speed_hyst_gap:
+      self.cluster_speed_steady = v_ego - self.cluster_speed_hyst_gap
+    elif v_ego < self.cluster_speed_steady - self.cluster_speed_hyst_gap:
+      self.cluster_speed_steady = v_ego + self.cluster_speed_hyst_gap
 
     return self.cluster_speed_steady
 
