@@ -1273,6 +1273,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_EV6: {
     (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00CV  IEB \x03 101!\x10\x18 58520-CV100',
       b'\xf1\x8758520CV100\xf1\x00CV  IEB \x02 101!\x10\x18 58520-CV100',
     ],
     (Ecu.eps, 0x7d4, None): [
