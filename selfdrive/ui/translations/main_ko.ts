@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+159"/>
+        <location filename="../qt/offroad/settings.cc" line="+151"/>
         <source>Dongle ID</source>
         <translation>Dongle ID</translation>
     </message>
@@ -1153,7 +1153,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-332"/>
+        <location filename="../qt/offroad/settings.cc" line="-324"/>
         <source>Enable openpilot</source>
         <translation>openpilot 사용</translation>
     </message>
@@ -1198,12 +1198,22 @@ location set</source>
         <translation>🌮 e2e long 사용 (매우 실험적) 🌮 </translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+6"/>
+        <source>Experimental openpilot longitudinal control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-65"/>
+        <location line="-55"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>가속페달 조작시 해제</translation>
     </message>
@@ -1213,7 +1223,7 @@ location set</source>
         <translation>활성화된 경우 가속 페달을 누르면 openpilot이 해제됩니다.</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+18"/>
         <source>Show ETA in 24h Format</source>
         <translation>24시간 형식으로 도착예정시간 표시</translation>
     </message>

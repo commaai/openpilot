@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+159"/>
+        <location filename="../qt/offroad/settings.cc" line="+151"/>
         <source>Dongle ID</source>
         <translation>ドングル番号 (Dongle ID)</translation>
     </message>
@@ -1153,7 +1153,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-332"/>
+        <location filename="../qt/offroad/settings.cc" line="-324"/>
         <source>Enable openpilot</source>
         <translation>openpilot を有効化</translation>
     </message>
@@ -1198,12 +1198,22 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+6"/>
+        <source>Experimental openpilot longitudinal control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-65"/>
+        <location line="-55"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>ｱｸｾﾙ踏むと openpilot をｷｬﾝｾﾙ</translation>
     </message>
@@ -1213,7 +1223,7 @@ location set</source>
         <translation>有効な場合は、アクセルを踏むと openpilot をキャンセルします。</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+18"/>
         <source>Show ETA in 24h Format</source>
         <translation>24時間表示</translation>
     </message>
