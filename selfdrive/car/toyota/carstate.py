@@ -27,18 +27,23 @@ class CarState(CarStateBase):
 
     self.v_ego_cluster_hyst = CV.KPH_TO_MS / 2.  # or MPH_TO_MS / 2, both are very close
 
-    self.cluster_speed_factor = 1.018
-    # if CP.carFingerprint in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.HIGHLANDERH):
-    #   self.cluster_speed_factor = 1.03
-    # elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.HIGHLANDER, CAR.PRIUS_TSS2, CAR.LEXUS_RXH):
-    #   self.cluster_speed_factor = 1.025
+    # self._cluster_speed_factor = 1.018
+    if CP.carFingerprint in (CAR.CAMRYH_TSS2, CAR.COROLLA_TSS2):
+      self._cluster_speed_factor = 1.017
+    elif CP.carFingerprint in (CAR.PRIUS,):
+      self._cluster_speed_factor = 1.025
+
+    # if CP.carFingerprint in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.MIRAI, CAR.LEXUS_RX_TSS2):
+    #   self._cluster_speed_factor = 1.03
+    # elif CP.carFingerprint in (CAR.PRIUS, CAR.PRIUS_V, CAR.HIGHLANDER, CAR.PRIUS_TSS2, CAR.LEXUS_RXH, CAR.HIGHLANDERH):
+    #   self._cluster_speed_factor = 1.025
     # elif CP.carFingerprint in (CAR.COROLLA, CAR.LEXUS_ESH, CAR.COROLLA_TSS2, CAR.CAMRYH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ES_TSS2, CAR.AVALON, CAR.CAMRY, CAR.AVALON_2019, CAR.HIGHLANDER_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH_TSS2):
-    #   self.cluster_speed_factor = 1.02
+    #   self._cluster_speed_factor = 1.02
     # elif CP.carFingerprint in (CAR.LEXUS_RX_TSS2, CAR.CHR, CAR.CAMRYH_TSS2, CAR.AVALONH_2019, CAR.CAMRY_TSS2, CAR.AVALON_TSS2, CAR.LEXUS_RXH_TSS2):
-    #   self.cluster_speed_factor = 1.015
+    #   self._cluster_speed_factor = 1.015
     # # TODO: unclear if we need to set a factor for these cars
-    # elif CP.carFingerprint in (CAR.SIENNA, CAR.RAV4H, CAR.RAV4, CAR.LEXUS_NX_TSS2):
-    #   self.cluster_speed_factor = 1.01
+    # # elif CP.carFingerprint in (CAR.SIENNA, CAR.RAV4H, CAR.RAV4, CAR.LEXUS_NX_TSS2):
+    # #   self._cluster_speed_factor = 1.01
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -111,9 +116,14 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
 
+    is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
+    if is_metric:
+      self.cluster_speed_factor = self._cluster_speed_factor * 2
+    else:
+      self.cluster_speed_factor = self._cluster_speed_factor
+
     # UI_SET_SPEED is always non-zero when main is on, hide until first enable
     if ret.cruiseState.speed != 0:
-      is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
       conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
 
@@ -128,7 +138,7 @@ class CarState(CarStateBase):
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
     if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
-       (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
+      (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
