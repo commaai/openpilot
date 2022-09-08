@@ -12,7 +12,7 @@ import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
 from system.swaglog import cloudlog
-from system.version import get_short_branch
+from system.version import is_tested_branch, get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
@@ -134,10 +134,14 @@ class Controls:
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
+    if is_tested_branch():
+      self.CP.experimentalLongitudinalAvailable = False
+
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
     params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
+    put_nonblocking("CarParamsPersistent", cp_bytes)
 
     self.CC = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
