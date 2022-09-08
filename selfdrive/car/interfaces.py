@@ -180,7 +180,7 @@ class CarInterfaceBase(ABC):
     # Apply hysteresis to cluster ego speed
     ret.vEgoCluster = self.apply_cluster_speed_hysteresis(ret.vEgo * self.cluster_speed_factor)
 
-    if ret.cruiseState.speedCluster == -1:
+    if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
