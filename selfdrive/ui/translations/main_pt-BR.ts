@@ -341,7 +341,7 @@
 <context>
     <name>MapETA</name>
     <message>
-        <location filename="../qt/maps/map.cc" line="+621"/>
+        <location filename="../qt/maps/map.cc" line="+634"/>
         <source>eta</source>
         <translation>eta</translation>
     </message>
@@ -369,7 +369,7 @@
 <context>
     <name>MapInstructions</name>
     <message>
-        <location line="-237"/>
+        <location line="-249"/>
         <source> km</source>
         <translation> km</translation>
     </message>
