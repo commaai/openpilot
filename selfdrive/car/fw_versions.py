@@ -10,13 +10,15 @@ from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+
 FPV2_CONFIGS = get_interface_attr('FPV2_CONFIG', ignore_none=True)
+VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 REQUESTS = [(brand, r) for brand, config in FPV2_CONFIGS.items() for r in config.requests]
+MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 
 
 def chunks(l, n=128):
@@ -35,9 +37,8 @@ def build_fw_dict(fw_versions, filter_brand=None):
 
 
 def get_brand_addrs():
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   brand_addrs = defaultdict(set)
-  for brand, cars in versions.items():
+  for brand, cars in VERSIONS.items():
     for fw in cars.values():
       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
   return brand_addrs
@@ -99,24 +100,25 @@ def match_fw_to_car_exact(fw_versions_dict):
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
+      config = FPV2_CONFIGS[MODEL_TO_BRAND[candidate]]
       ecu_type = ecu[0]
       addr = ecu[1:]
+
       found_versions = fw_versions_dict.get(addr, set())
-      if ecu_type == Ecu.abs and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
-        continue
+      if not len(found_versions):
+        # Some models can sometimes miss an ecu, or show on two different addresses
+        if candidate in config.missing_ecus.get(ecu_type, []):
+          continue
 
-      # On some Toyota models, the engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in (TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS) and not len(found_versions):
-        continue
+        # Ignore non essential ecus
+        if ecu_type not in ESSENTIAL_ECUS:
+          continue
 
-      # Ignore non essential ecus
-      if ecu_type not in ESSENTIAL_ECUS and not len(found_versions):
-        continue
+        # Virtual debug ecu doesn't need to match the database
+        if ecu_type == Ecu.debug:
+          continue
 
-      # Virtual debug ecu doesn't need to match the database
-      if ecu_type == Ecu.debug:
-        continue
-
+      # Invalidate if no versions for ecu match database
       if not any([found_version in expected_versions for found_version in found_versions]):
         invalid.append(candidate)
         break
@@ -132,11 +134,10 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
-  brands = get_interface_attr('FW_VERSIONS', ignore_none=True).keys()
   for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
-    for brand in brands:
+    for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
       matches |= match_func(fw_versions_dict)
 
@@ -150,13 +151,12 @@ def get_present_ecus(logcan, sendcan):
   queries = list()
   parallel_queries = list()
   responses = set()
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
   for brand, r in REQUESTS:
-    if brand not in versions:
+    if brand not in VERSIONS:
       continue
 
-    for brand_versions in versions[brand].values():
+    for brand_versions in VERSIONS[brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
@@ -216,7 +216,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+  versions = VERSIONS.copy()
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
 

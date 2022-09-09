@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+import capnp
 from dataclasses import dataclass, field
 import struct
-from typing import List
+from typing import Dict, List
 
 import panda.python.uds as uds
 
@@ -48,3 +49,4 @@ class Request:
 @dataclass
 class Fpv2Config:
   requests: List[Request]
+  missing_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
