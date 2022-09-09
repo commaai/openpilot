@@ -56,16 +56,23 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-const float DC_GAIN = 2.5;
+const float DC_GAIN = 1;
+/*
 const float sensor_analog_gains[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
   3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0, // 4, 5, 6, 7
   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0, // 8, 9, 10, 11
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
+*/
+const float sensor_analog_gains[] = {
+  1.0, 2.0, 3.0, 4.0, // 0, 1, 2, 3
+  5, 6, 7, 8, // 4, 5, 6, 7
+  9, 10, 11, 12,
+  13, 14, 15};
 
-const int ANALOG_GAIN_MIN_IDX = 0x1; // 0.25x
+const int ANALOG_GAIN_MIN_IDX = 0x0; // 0.25x
 const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
-const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
+const int ANALOG_GAIN_MAX_IDX = 0xE; // 4.0x
 
 // const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
 // const int EXPOSURE_TIME_MAX = 0x0855; // with HDR, slowest ss, 40ms
@@ -628,8 +635,8 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   request_id_last = 0;
   skipped = true;
 
-  min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX];
-  max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
+  min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX] * EV_FACTOR;
+  max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN * EV_FACTOR;
   target_grey_fraction = 0.3;
 
   dc_gain_enabled = false;
@@ -1138,7 +1145,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
       float gain = sensor_analog_gains[g] * (enable_dc_gain ? DC_GAIN : 1);
 
       // Compute optimal time for given gain
-      int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
+      int t = std::clamp(int(std::round(desired_ev / gain / EV_FACTOR)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
       // Only go below recommended gain when absolutely necessary to not overexpose
       if (g < ANALOG_GAIN_REC_IDX && t > 20 && g < gain_idx) {
@@ -1146,7 +1153,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
       }
 
       // Compute error to desired ev
-      float score = std::abs(desired_ev - (t * gain)) * 10;
+      float score = std::abs(desired_ev - (t * gain * EV_FACTOR)) * 10;
 
       // Going below recommended gain needs lower penalty to not overexpose
       float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.1;
@@ -1203,7 +1210,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     uint32_t spd_time = hcg_time / 2;
     uint32_t vs_time = std::min(hcg_time / 4, VS_TIME_MAX);
 
-    uint32_t real_gain = gain*0x100;
+    uint32_t real_gain = new_g*0x100;
     struct i2c_random_wr_payload exp_reg_array[] = {
 
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},

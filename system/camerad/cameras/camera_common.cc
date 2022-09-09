@@ -133,6 +133,13 @@ bool CameraBuf::acquire() {
 
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
+  if (camera_state->camera_num == 1 && 0) {
+    printf("saving raw camera_buf with %zu \n", cur_camera_buf->len);
+    FILE *save_file = fopen("/tmp/camera.raw", "wb");
+    fwrite(cur_camera_buf->addr, cur_camera_buf->len, sizeof(uint8_t), save_file);
+    fclose(save_file);
+  }
+
   debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
 
   clWaitForEvents(1, &event);
