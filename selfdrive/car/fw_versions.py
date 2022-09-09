@@ -217,7 +217,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
 
