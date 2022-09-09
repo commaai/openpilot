@@ -118,7 +118,6 @@ def match_fw_to_car_exact(fw_versions_dict):
         if ecu_type == Ecu.debug:
           continue
 
-      # Invalidate if no versions for ecu match database
       if not any([found_version in expected_versions for found_version in found_versions]):
         invalid.append(candidate)
         break
@@ -153,9 +152,6 @@ def get_present_ecus(logcan, sendcan):
   responses = set()
 
   for brand, r in REQUESTS:
-    if brand not in VERSIONS:
-      continue
-
     for brand_versions in VERSIONS[brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
