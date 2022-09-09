@@ -147,20 +147,17 @@ CHRYSLER_RX_OFFSET = -0x280
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      "chrysler",
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
       rx_offset=CHRYSLER_RX_OFFSET,
     ),
     Request(
-      "chrysler",
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
     ),
     Request(
-      "chrysler",
       [CHRYSLER_SOFTWARE_VERSION_REQUEST],
       [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.transmission],

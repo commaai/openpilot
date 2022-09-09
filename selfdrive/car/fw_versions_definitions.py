@@ -41,7 +41,6 @@ DEFAULT_RX_OFFSET = 0x8
 
 @dataclass
 class Request:
-  brand: str
   request: List[bytes]
   response: List[bytes]
   whitelist_ecus: List[int] = field(default_factory=list)

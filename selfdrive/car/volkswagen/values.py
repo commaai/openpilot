@@ -256,14 +256,12 @@ VOLKSWAGEN_RX_OFFSET = 0x6a
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      "volkswagen",
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
       rx_offset=VOLKSWAGEN_RX_OFFSET,
     ),
     Request(
-      "volkswagen",
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.transmission],

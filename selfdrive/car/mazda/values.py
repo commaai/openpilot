@@ -70,7 +70,6 @@ MAZDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      "mazda",
       [MAZDA_VERSION_REQUEST],
       [MAZDA_VERSION_RESPONSE],
     ),

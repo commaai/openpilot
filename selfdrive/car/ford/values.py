@@ -71,13 +71,11 @@ FORD_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      "ford",
       [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
       [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine],
     ),
     Request(
-      "ford",
       [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
       [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
       bus=0,

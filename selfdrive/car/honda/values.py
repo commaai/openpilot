@@ -146,7 +146,6 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      "honda",
       [UDS_VERSION_REQUEST],
       [UDS_VERSION_RESPONSE],
     ),
