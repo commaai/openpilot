@@ -221,7 +221,7 @@ FPV2_CONFIG = Fpv2Config(
     ),
   ],
   non_essential_ecus={
-    # TODO: On some models, abs can sometimes be missing
+    # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS],
