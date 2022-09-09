@@ -28,6 +28,7 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
+    self.pcm_cancel_frame = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -79,6 +80,9 @@ class CarController:
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
     if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
+
+    if pcm_cancel_cmd:
+      self.pcm_cancel_frame = self.frame
 
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and self.CP.carFingerprint not in NO_STOP_TIMER_CAR:
@@ -132,18 +136,26 @@ class CarController:
       # - there is something to stop displaying
       fcw_alert = hud_control.visualAlert == VisualAlert.fcw
       steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+      chime = False
 
       send_ui = False
       if ((fcw_alert or steer_alert) and not self.alert_active) or \
          (not (fcw_alert or steer_alert) and self.alert_active):
         send_ui = True
         self.alert_active = not self.alert_active
-      elif pcm_cancel_cmd:
-        # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
+
+      # forcing the pcm to disengage causes a bad fault sound so mask with a silent alert when possible.
+      # it helps to send for a few frames after the cancel ends to fully get rid of the fault sound
+      elif self.frame - self.pcm_cancel_frame < 10:
         send_ui = True
+        # only play chime for TSS2 when at a stop and pressing brake
+        if self.CP.carFingerprint in TSS2_CAR and CS.out.standstill and CS.out.brakePressed:
+          chime = True
+        else:
+          steer_alert = True
 
       if self.frame % 100 == 0 or send_ui:
-        can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
+        can_sends.append(create_ui_command(self.packer, steer_alert, chime, hud_control.leftLaneVisible,
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                            hud_control.rightLaneDepart, CC.enabled))
 
