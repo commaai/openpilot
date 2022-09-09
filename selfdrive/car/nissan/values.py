@@ -95,7 +95,7 @@ FW_VERSIONS = {
       b'5SH1BDB\x04\x18\x00\x00\x00\x00\x00_-?\x04\x91\xf2\x00\x00\x00\x80',
       b'5SK0ADB\x04\x18\x00\x00\x00\x00\x00_(5\x07\x9aQ\x00\x00\x00\x80',
     ],
-    (Ecu.esp, 0x740, None): [
+    (Ecu.abs, 0x740, None): [
       b'476605SH1D',
       b'476605SK2A',
     ],
@@ -112,7 +112,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x707, None): [
       b'284N86FR2A',
     ],
-    (Ecu.esp, 0x740, None): [
+    (Ecu.abs, 0x740, None): [
       b'6FU1BD\x11\x02\x00\x02e\x95e\x80iX#\x01\x00\x00\x00\x00\x00\x80',
       b'6FU0AD\x11\x02\x00\x02e\x95e\x80iQ#\x01\x00\x00\x00\x00\x00\x80',
     ],

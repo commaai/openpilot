@@ -35,6 +35,7 @@ class CAR:
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
+  LEGACY = "SUBARU LEGACY 7TH GEN"
 
   # Pre-global
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
@@ -52,6 +53,7 @@ class SubaruCarInfo(CarInfo):
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
   CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", harness=Harness.subaru_b),
+  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", harness=Harness.subaru_b),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -72,7 +74,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
 
 FW_VERSIONS = {
   CAR.ASCENT: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa5 \x19\x02\x00',
       b'\xa5 !\002\000',
       b'\xf1\x82\xa5 \x19\x02\x00',
@@ -101,8 +103,30 @@ FW_VERSIONS = {
       b'\x01\xfe\xf7\x00\x00',
     ],
   },
+  CAR.LEGACY: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa1\\  x04\x01',
+      b'\xa1  \x03\x03'
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x9b\xc0\x11\x00',
+      b'\x9b\xc0\x11\x02'
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00e\x80\x00\x1f@ \x19\x00',
+      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xde\"a0\x07',
+      b'\xe2"aq\x07'
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xa5\xf6\x05@\x00',
+      b'\xa7\xf6\x04@\x00'
+    ],
+  },
   CAR.IMPREZA: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\x7a\x94\x3f\x90\x00',
       b'\xa2 \x185\x00',
       b'\xa2 \x193\x00',
@@ -177,7 +201,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.IMPREZA_2020: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa2 \0314\000',
       b'\xa2 \0313\000',
       b'\xa2 !i\000',
@@ -215,7 +239,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa3 \x18\x14\x00',
       b'\xa3  \024\000',
       b'\xa3 \031\024\000',
@@ -250,7 +274,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER_PREGLOBAL: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
       b'\xf1\x00\xbb\x0c\x04',
     ],
@@ -279,7 +303,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEGACY_PREGLOBAL: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'k\x97D\x00',
       b'[\xba\xc4\x03',
       b'{\x97D\x00',
@@ -309,7 +333,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK_PREGLOBAL: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'{\x9a\xac\x00',
       b'k\x97\xac\x00',
       b'\x5b\xf7\xbc\x03',
@@ -363,7 +387,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK_PREGLOBAL_2018: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
       b'\x8b\x9a\xac\x00',
       b'\x9b\x97\xac\x00',
@@ -406,7 +430,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa1  \x06\x01',
       b'\xa1  \a\x00',
       b'\xa1  \b\001',
@@ -448,29 +472,18 @@ FW_VERSIONS = {
   },
 }
 
-STEER_THRESHOLD = {
-  CAR.ASCENT: 80,
-  CAR.IMPREZA: 80,
-  CAR.IMPREZA_2020: 80,
-  CAR.FORESTER: 80,
-  CAR.OUTBACK: 80,
-  CAR.FORESTER_PREGLOBAL: 75,
-  CAR.LEGACY_PREGLOBAL: 75,
-  CAR.OUTBACK_PREGLOBAL: 75,
-  CAR.OUTBACK_PREGLOBAL_2018: 75,
-}
-
 DBC = {
   CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
+  CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-GLOBAL_GEN2 = (CAR.OUTBACK, )
+GLOBAL_GEN2 = (CAR.OUTBACK, CAR.LEGACY)
 PREGLOBAL_CARS = (CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018)

@@ -16,12 +16,14 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
+    self.buttons_counter = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
+    self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
@@ -80,7 +82,7 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      ret.cruiseState.speed = (cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] / 16) * CV.KPH_TO_MS
+      ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
 
     return ret
 
@@ -109,6 +111,7 @@ class CarState(CarStateBase):
       ("AcceleratorPedal2", "AcceleratorPedal2"),
       ("CruiseState", "AcceleratorPedal2"),
       ("ACCButtons", "ASCMSteeringButton"),
+      ("RollingCounter", "ASCMSteeringButton"),
       ("SteeringWheelAngle", "PSCMSteeringAngle"),
       ("SteeringWheelRate", "PSCMSteeringAngle"),
       ("FLWheelSpd", "EBCMWheelSpdFront"),

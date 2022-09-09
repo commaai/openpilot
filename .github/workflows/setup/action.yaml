@@ -1,0 +1,45 @@
+name: 'openpilot env setup'
+
+env:
+  BASE_IMAGE: openpilot-base
+  DOCKER_REGISTRY: ghcr.io/commaai
+  BUILD: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+
+inputs:
+  save-cache:
+    default: false
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
+    - shell: bash
+      run: git lfs pull
+
+    # build cache
+    - id: date
+      shell: bash
+      run: echo "::set-output name=date::$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d')"
+    - shell: bash
+      run: echo "${{ steps.date.outputs.date }}"
+    - shell: bash
+      run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
+      if: github.ref != 'refs/heads/master' || inputs.save-cache == 'false'
+    - id: scons-cache
+      # TODO: change the version to the released version
+      # when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ steps.date.outputs.date }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ steps.date.outputs.date }}-
+          scons-
+
+    # build our docker image
+    - shell: bash
+      run: eval "$BUILD"

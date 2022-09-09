@@ -16,7 +16,7 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
-ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
 
 def p16(val):
@@ -96,6 +96,11 @@ CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf132)
 CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
 
 CHRYSLER_RX_OFFSET = -0x280
 
@@ -208,12 +213,20 @@ REQUESTS: List[Request] = [
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
     rx_offset=CHRYSLER_RX_OFFSET,
   ),
   Request(
     "chrysler",
     [CHRYSLER_VERSION_REQUEST],
     [CHRYSLER_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+  ),
+  Request(
+    "chrysler",
+    [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+    [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.engine, Ecu.transmission],
   ),
   # Ford
   Request(
@@ -227,7 +240,7 @@ REQUESTS: List[Request] = [
     [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
     [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
     bus=0,
-    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
+    whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
   ),
 ]
 
@@ -315,7 +328,7 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_versions = fw_versions_dict.get(addr, set())
-      if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
+      if ecu_type == Ecu.abs and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
         continue
 
       # On some Toyota models, the engine can show on two different addresses
@@ -337,17 +350,21 @@ def match_fw_to_car_exact(fw_versions_dict):
   return set(candidates.keys()) - set(invalid)
 
 
-def match_fw_to_car(fw_versions, allow_fuzzy=True):
+def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   # Try exact matching first
-  exact_matches = [(True, match_fw_to_car_exact)]
+  exact_matches = []
+  if allow_exact:
+    exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
+  brands = get_interface_attr('FW_VERSIONS', ignore_none=True).keys()
   for exact_match, match_func in exact_matches:
-    # TODO: For each brand, attempt to fingerprint using only FW returned from its queries
+    # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
-    fw_versions_dict = build_fw_dict(fw_versions, filter_brand=None)
-    matches |= match_func(fw_versions_dict)
+    for brand in brands:
+      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict)
 
     if len(matches):
       return exact_match, matches
@@ -416,9 +433,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
-
-    # TODO: Until erroneous FW versions are removed, try to fingerprint on all possible combinations so far
-    _, matches = match_fw_to_car(all_car_fw, allow_fuzzy=False)
+    # Try to match using FW returned from this brand only
+    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
       break
 

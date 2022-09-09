@@ -130,6 +130,11 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
+  CAR.PACIFICA_2019_HYBRID: {
+    (Ecu.hcp, 0x7e2, None): [],
+    (Ecu.abs, 0x7e4, None): [],
+  },
+
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294063AH',
@@ -144,7 +149,7 @@ FW_VERSIONS = {
       b'68428609AB',
       b'68500728AA',
     ],
-    (Ecu.esp, 0x747, None): [
+    (Ecu.abs, 0x747, None): [
       b'68432418AD',
       b'68432418AB',
       b'68436004AE',
@@ -170,6 +175,7 @@ FW_VERSIONS = {
       b'68448163AJ',
       b'68500630AD',
       b'68539650AD',
+      b'68378758AM ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
@@ -199,7 +205,7 @@ FW_VERSIONS = {
       b'68428503AA',
       b'68428505AA',
     ],
-    (Ecu.esp, 0x747, None): [
+    (Ecu.abs, 0x747, None): [
       b'68334977AH',
       b'68504022AB',
       b'68530686AB',

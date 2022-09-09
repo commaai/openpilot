@@ -133,7 +133,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, s
       break;
     }
     packets.push_back(pkt);
-    // some stream seems to contian no keyframes
+    // some stream seems to contain no keyframes
     key_frames_count_ += pkt->flags & AV_PKT_FLAG_KEY;
   }
   valid_ = valid_ && !packets.empty();
