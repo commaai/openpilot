@@ -25,12 +25,7 @@
   #define GPIO_LSM_INT          0
 #endif
 
-enum EdgeType {
-  Rising,
-  Falling,
-};
-
 int gpio_init(int pin_nr, bool output);
 int gpio_set(int pin_nr, bool high);
 
-int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype);
+int gpiochip_get_ro_value_fd(int pin_nr);

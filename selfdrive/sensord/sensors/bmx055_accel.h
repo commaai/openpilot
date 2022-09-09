@@ -34,5 +34,4 @@ public:
   BMX055_Accel(I2CBus *bus);
   int init();
   bool get_event(cereal::SensorEventData::Builder &event);
-  int disable_interrupt() { return 0; }
 };
