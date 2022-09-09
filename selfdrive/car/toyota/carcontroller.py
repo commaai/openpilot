@@ -148,7 +148,7 @@ class CarController:
       # fully get rid of the fault sound by sending for a few frames after the fault ends
       elif self.frame - self.pcm_cancel_frame < 10:
         send_ui = True
-        # only play chime for TSS2 when at a stop and pressing brake
+        # only play chime for TSS2 when pressing brake at a stop
         if self.CP.carFingerprint in TSS2_CAR and CS.out.standstill and CS.out.brakePressed:
           chime = True
         else:
