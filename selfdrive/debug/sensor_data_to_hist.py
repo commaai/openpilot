@@ -24,8 +24,9 @@ def parseEvents(log_reader):
 
   for m in log_reader:
     # only sensorEvents
-    # (accelerometer, gyroscope, magnetometer, lightSensor, temperatureSensor)
-    if m.which() != 'sensorEvent':
+    sensor_services = ['accelerometer', 'gyroscope', 'magnetometer',
+                       'lightSensor', 'temperatureSensor']
+    if m.which() in sensor_services:
       continue
 
     # convert data to dictionary
