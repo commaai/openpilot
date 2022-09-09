@@ -3,8 +3,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict, Fpv2Config
+from panda.python import uds
+from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -129,11 +132,43 @@ FINGERPRINTS = {
   }],
 }
 
-FPV2_CONFIG = Fpv2Config(extra_ecus={
-  # Ecus added for data collection
-  (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
-  (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
-})
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+
+CHRYSLER_RX_OFFSET = -0x280
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      rx_offset=CHRYSLER_RX_OFFSET,
+    ),
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+    ),
+    Request(
+      [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+      [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+    ),
+  ],
+
+  extra_ecus=[
+    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+  ],
+)
 
 FW_VERSIONS = {
   CAR.RAM_1500: {
