@@ -107,7 +107,7 @@ def match_fw_to_car_exact(fw_versions_dict):
       found_versions = fw_versions_dict.get(addr, set())
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
-        if candidate in config.missing_ecus.get(ecu_type, []):
+        if candidate in config.non_essential_ecus.get(ecu_type, []):
           continue
 
         # Ignore non essential ecus

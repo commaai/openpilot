@@ -220,7 +220,7 @@ FPV2_CONFIG = Fpv2Config(
       bus=0,
     ),
   ],
-  missing_ecus={
+  non_essential_ecus={
     # TODO: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
