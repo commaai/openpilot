@@ -16,6 +16,7 @@ from system.swaglog import cloudlog
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 FPV2_CONFIGS = get_interface_attr('FPV2_CONFIG', ignore_none=True)
+REQUESTS = [(brand, r) for brand, config in FPV2_CONFIGS.items() for r in config.requests]
 
 
 def chunks(l, n=128):
@@ -151,11 +152,11 @@ def get_present_ecus(logcan, sendcan):
   responses = set()
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
-  for r in REQUESTS:
-    if r.brand not in versions:
+  for brand, r in REQUESTS:
+    if brand not in versions:
       continue
 
-    for brand_versions in versions[r.brand].values():
+    for brand_versions in versions[brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
@@ -184,9 +185,9 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
-  brand_matches = {r.brand: set() for r in REQUESTS}
+  brand_matches = {brand: set() for brand, _ in REQUESTS}
 
-  brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
+  brand_rx_offsets = set((brand, r.rx_offset) for brand, r in REQUESTS)
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
@@ -216,10 +217,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
-
-  # Each brand can define extra ECUs to query for data collection
-  for brand, config in FPV2_CONFIGS.items():
-    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
 
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
@@ -251,40 +248,33 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  if query_brand is not None:
-    requests = FPV2_CONFIGS[query_brand].requests
-  else:
-    requests = [r for config in FPV2_CONFIGS.values() for r in config.requests]
-
-  # requests = [r for r in REQUESTS if query_brand is None or r.brand == query_brand]
-  # requests = [config.requests for brand, config in FPV2_CONFIGS.items() if query_brand is None or brand == query_brand]
+  requests = [(brand, r) for brand, r in REQUESTS if query_brand is None or brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
-      for brand, config in FPV2_CONFIGS.items():
-        for r in requests:
-          try:
-            addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
-                     (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
+      for brand, r in requests:
+        try:
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
+                   (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
-            if addrs:
-              query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-              for (addr, rx_addr), version in query.get_data(timeout).items():
-                f = car.CarParams.CarFw.new_message()
+          if addrs:
+            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
+            for (addr, rx_addr), version in query.get_data(timeout).items():
+              f = car.CarParams.CarFw.new_message()
 
-                f.ecu = ecu_types.get((r.brand, addr[0], addr[1]), Ecu.unknown)
-                f.fwVersion = version
-                f.address = addr[0]
-                f.responseAddress = rx_addr
-                f.request = r.request
-                f.brand = r.brand
-                f.bus = r.bus
+              f.ecu = ecu_types.get((brand, addr[0], addr[1]), Ecu.unknown)
+              f.fwVersion = version
+              f.address = addr[0]
+              f.responseAddress = rx_addr
+              f.request = r.request
+              f.brand = brand
+              f.bus = r.bus
 
-                if addr[1] is not None:
-                  f.subAddress = addr[1]
+              if addr[1] is not None:
+                f.subAddress = addr[1]
 
-                car_fw.append(f)
-          except Exception:
-            cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+              car_fw.append(f)
+        except Exception:
+          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   return car_fw
 
