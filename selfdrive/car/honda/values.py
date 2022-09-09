@@ -6,7 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, StandardQueries as SQ
+from selfdrive.car.fpv2_definitions import Fpv2Config, Request, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
