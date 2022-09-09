@@ -6,7 +6,7 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FPV2_CONFIGS, match_fw_to_car
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -61,17 +61,17 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_missing_versions_and_configs(self):
     brand_versions = set(VERSIONS)
-    brand_configs = set(FPV2_CONFIGS)
+    brand_configs = set(FW_QUERY_CONFIGS)
     if len(brand_configs - brand_versions):
       with self.subTest():
         self.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
 
     if len(brand_versions - brand_configs):
       with self.subTest():
-        self.fail(f"Brands do not implement FPV2_CONFIG: {brand_versions - brand_configs}")
+        self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
   def test_fw_request_ecu_whitelist(self):
-    for brand, config in FPV2_CONFIGS.items():
+    for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
         whitelisted_ecus = set([ecu for r in config.requests for ecu in r.whitelist_ecus])
         brand_ecus = set([fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw])

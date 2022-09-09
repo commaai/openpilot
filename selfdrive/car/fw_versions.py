@@ -15,9 +15,9 @@ from system.swaglog import cloudlog
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
-FPV2_CONFIGS = get_interface_attr('FPV2_CONFIG', ignore_none=True)
+FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
-REQUESTS = [(brand, r) for brand, config in FPV2_CONFIGS.items() for r in config.requests]
+REQUESTS = [(brand, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 
 
@@ -100,7 +100,7 @@ def match_fw_to_car_exact(fw_versions_dict):
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
-      config = FPV2_CONFIGS[MODEL_TO_BRAND[candidate]]
+      config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
       ecu_type = ecu[0]
       addr = ecu[1:]
 

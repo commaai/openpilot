@@ -26,7 +26,7 @@ CAR_INFO: Dict[str, CarInfo] = {
   CAR.BODY: CarInfo("comma body", package="All"),
 }
 
-FPV2_CONFIG = FwQueryConfig(
+FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
       [SQ.TESTER_PRESENT_REQUEST, SQ.UDS_VERSION_REQUEST],
