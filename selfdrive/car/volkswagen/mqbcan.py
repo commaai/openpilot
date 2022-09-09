@@ -91,7 +91,7 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, 
     acc_hold_type = 0
 
   acc_07_values = {
-    "ACC_Distance_to_Stop": 0.5 if stopping else 20.46,
+    "ACC_Distance_to_Stop": 1.0 if stopping else 20.46,
     "ACC_Hold_Request": stopping,
     "ACC_Freewheel_Type": 2 if enabled else 0,
     "ACC_Hold_Type": acc_hold_type,
