@@ -67,19 +67,29 @@ if __name__ == "__main__":
     print("Timeout fetching data from EPS")
     quit()
 
-  coding_variant, current_coding_array = None, None
+  coding_variant, current_coding_array, coding_byte, coding_bit = None, None, 0, 0
+  coding_length = len(current_coding)
+
   # EV_SteerAssisMQB covers the majority of MQB racks (EPS_MQB_ZFLS)
-  # APA racks (MQB_PP_APA) have a different coding layout, which should
-  # be easy to support once we identify the specific config bit
   if odx_file == "EV_SteerAssisMQB\x00":
     coding_variant = "ZF"
-    current_coding_array = struct.unpack("!4B", current_coding)
-    hca_enabled = (current_coding_array[0] & (1 << 4) != 0)
-    hca_text = ("DISABLED", "ENABLED")[hca_enabled]
-    print(f"   Lane Assist:  {hca_text}")
+    coding_byte = 0
+    coding_bit = 4
+
+  # APA racks (MQB_PP_APA) have a different coding layout
+  elif odx_file == "EV_SteerAssisVWBSMQBA\x00\x00\x00\x00":
+    coding_variant = "APA"
+    coding_byte = 3
+    coding_bit = 0
+
   else:
     print("Configuration changes not yet supported on this EPS!")
     quit()
+
+  current_coding_array = struct.unpack(f"!{coding_length}B", current_coding)
+  hca_enabled = (current_coding_array[coding_byte] & (1 << coding_bit) != 0)
+  hca_text = ("DISABLED", "ENABLED")[hca_enabled]
+  print(f"   Lane Assist:  {hca_text}")
 
   try:
     params = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION).decode("utf-8")
@@ -101,14 +111,14 @@ if __name__ == "__main__":
   if args.action in ["enable", "disable"]:
     print("\nAttempting configuration update")
 
-    assert(coding_variant == "ZF")  # revisit when we have the APA rack coding bit
+    assert(coding_variant in ("ZF", "APA")) 
     # ZF EPS config coding length can be anywhere from 1 to 4 bytes, but the
     # bit we care about is always in the same place in the first byte
     if args.action == "enable":
-      new_byte_0 = current_coding_array[0] | (1 << 4)
+      new_byte = current_coding_array[coding_byte] | (1 << coding_bit)
     else:
-      new_byte_0 = current_coding_array[0] & ~(1 << 4)
-    new_coding = new_byte_0.to_bytes(1, "little") + current_coding[1:]
+      new_byte = current_coding_array[coding_byte] & ~(1 << coding_bit)
+    new_coding = current_coding[0:coding_byte] + new_byte.to_bytes(1, "little") + current_coding[coding_byte+1:]
 
     try:
       seed = uds_client.security_access(ACCESS_TYPE_LEVEL_1.REQUEST_SEED)  # type: ignore
