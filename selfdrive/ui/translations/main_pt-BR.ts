@@ -108,7 +108,7 @@
 <context>
     <name>DevicePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+106"/>
+        <location filename="../qt/offroad/settings.cc" line="+151"/>
         <source>Dongle ID</source>
         <translation>Dongle ID</translation>
     </message>
@@ -1157,7 +1157,7 @@ trabalho definido</translation>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-279"/>
+        <location filename="../qt/offroad/settings.cc" line="-324"/>
         <source>Enable openpilot</source>
         <translation>Ativar openpilot</translation>
     </message>
@@ -1202,12 +1202,22 @@ trabalho definido</translation>
         <translation>🌮 End-to-end longitudinal (experimental) 🌮</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Let the driving model control the gas and brakes, openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>Deixe o modelo de direção controlar o acelerador e o freio, o openpilot dirigirá da maneira como ele entende que um humano o faria. Super experimental.</translation>
+        <location line="+6"/>
+        <source>Experimental openpilot longitudinal control</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="+1"/>
+        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-55"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>
@@ -1217,7 +1227,7 @@ trabalho definido</translation>
         <translation>Quando ativado, pressionar o pedal do acelerador desacionará o openpilot.</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+18"/>
         <source>Show ETA in 24h Format</source>
         <translation>Mostrar ETA em formato 24h</translation>
     </message>
@@ -1235,16 +1245,6 @@ trabalho definido</translation>
         <location line="+1"/>
         <source>Show map on left side when in split screen view.</source>
         <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>openpilot Longitudinal Control</source>
-        <translation>openpilot Controle Longitudinal</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation>openpilot desativará o radar do carro e assumirá o controle do acelerador e freios. Atenção: isso desativa AEB!</translation>
     </message>
 </context>
 <context>
