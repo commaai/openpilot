@@ -12,6 +12,7 @@ def p16(val):
 
 
 class StdQueries:
+  # FW queries
   TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
   TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40, 0x0])
 
@@ -35,6 +36,13 @@ class StdQueries:
 
   OBD_VERSION_REQUEST = b'\x09\x04'
   OBD_VERSION_RESPONSE = b'\x49\x04'
+
+  # VIN queries
+  OBD_VIN_REQUEST = b'\x09\x02'
+  OBD_VIN_RESPONSE = b'\x49\x02\x01'
+
+  UDS_VIN_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + struct.pack("!H", uds.DATA_IDENTIFIER_TYPE.VIN)
+  UDS_VIN_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + struct.pack("!H", uds.DATA_IDENTIFIER_TYPE.VIN)
 
 
 @dataclass
