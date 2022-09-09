@@ -8,7 +8,7 @@ from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fpv2_definitions import Fpv2Config, Request, p16
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -253,7 +253,7 @@ VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 
 
 VOLKSWAGEN_RX_OFFSET = 0x6a
 
-FPV2_CONFIG = Fpv2Config(
+FPV2_CONFIG = FwQueryConfig(
   requests=[
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],

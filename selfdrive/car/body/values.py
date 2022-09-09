@@ -3,7 +3,7 @@ from typing import Dict
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-from selfdrive.car.fpv2_definitions import Fpv2Config, Request, StandardQueries as SQ
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 
@@ -26,7 +26,7 @@ CAR_INFO: Dict[str, CarInfo] = {
   CAR.BODY: CarInfo("comma body", package="All"),
 }
 
-FPV2_CONFIG = Fpv2Config(
+FPV2_CONFIG = FwQueryConfig(
   requests=[
     Request(
       [SQ.TESTER_PRESENT_REQUEST, SQ.UDS_VERSION_REQUEST],

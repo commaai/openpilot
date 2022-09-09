@@ -6,7 +6,7 @@ from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fpv2_definitions import Fpv2Config, Request, p16
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -91,7 +91,7 @@ NISSAN_VERSION_RESPONSE_STANDARD = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFI
 
 NISSAN_RX_OFFSET = 0x20
 
-FPV2_CONFIG = Fpv2Config(
+FPV2_CONFIG = FwQueryConfig(
   requests=[
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],

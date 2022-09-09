@@ -7,7 +7,7 @@ from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fpv2_definitions import Fpv2Config, Request, p16, StandardQueries as SQ
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
@@ -68,7 +68,7 @@ FORD_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
 FORD_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
 
-FPV2_CONFIG = Fpv2Config(
+FPV2_CONFIG = FwQueryConfig(
   requests=[
     Request(
       [SQ.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
