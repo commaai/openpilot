@@ -28,6 +28,8 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
+    self.ui_frame_offset = 0
+    self.last_pcm_cancel_cmd = False
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -142,7 +144,14 @@ class CarController:
         # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
         send_ui = True
 
-      if self.frame % 100 == 0 or send_ui:
+      # Ensure we don't clear visual alert too soon after cancel for a silent disengage
+      if not pcm_cancel_cmd and self.last_pcm_cancel_cmd:
+        self.ui_frame_offset = (self.frame % 100) - 1
+
+      self.last_pcm_cancel_cmd = pcm_cancel_cmd
+
+      if (self.frame - self.ui_frame_offset) % 100 == 0 or send_ui:
+        print('SENDING UI CANCEL: {}, FRAME: {}'.format(pcm_cancel_cmd, self.frame))
         can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                            hud_control.rightLaneDepart, CC.enabled))
