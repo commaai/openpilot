@@ -144,8 +144,8 @@ class CarController:
         send_ui = True
         self.alert_active = not self.alert_active
 
-      # forcing the pcm to disengage causes a bad fault sound so mask with a silent alert when possible.
-      # it helps to send for a few frames after the cancel ends to fully get rid of the fault sound
+      # forcing the pcm to disengage causes a bad fault sound so mask with a silent alert.
+      # fully get rid of the fault sound by sending for a few frames after the fault ends
       elif self.frame - self.pcm_cancel_frame < 10:
         send_ui = True
         # only play chime for TSS2 when at a stop and pressing brake
