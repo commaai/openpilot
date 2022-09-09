@@ -29,7 +29,8 @@ def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilde
   for b in buttonEvents:
     # do enable on both accel and decel buttons
     if not pcm_cruise:
-      if b.type in (ButtonType.setCruise, ButtonType.resumeCruise, ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
+      # FIXME: temp hack to engage on set/resume only, VW should not engage on accel/decel, make this configurable
+      if b.type in (ButtonType.setCruise, ButtonType.resumeCruise) and not b.pressed:
         events.append(EventName.buttonEnable)
     # do disable on button down
     if b.type == ButtonType.cancel and b.pressed:
