@@ -44,7 +44,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
         long_control_state = LongCtrlState.pid
 
     elif long_control_state == LongCtrlState.starting:
-      if stopping_condition:
+      if planned_stop:
         long_control_state = LongCtrlState.stopping
       elif started_condition:
         long_control_state = LongCtrlState.pid
