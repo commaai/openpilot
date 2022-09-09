@@ -9,6 +9,8 @@ import cereal.messaging as messaging
 from cereal import log
 from system.hardware import TICI
 from selfdrive.test.helpers import with_processes
+from selfdrive.manager.process_config import managed_processes
+from smbus2 import SMBus
 
 SENSOR_CONFIGURATIONS = (
   {
@@ -78,6 +80,10 @@ ALL_SENSORS = {
   }
 }
 
+SENSOR_BUS = 1
+I2C_ADDR_LSM = 0x6A
+LSM_INT_GPIO = 84
+
 def read_sensor_events(duration_sec):
   sensor_events = messaging.sub_sock("sensorEvents", timeout=0.1)
   start_time_sec = time.monotonic()
@@ -88,6 +94,18 @@ def read_sensor_events(duration_sec):
 
   assert len(events) != 0, "No sensor events collected"
   return events
+
+def get_proc_interrupts(int_pin):
+
+  with open("/proc/interrupts") as f:
+    lines = f.read().split("\n")
+
+  for line in lines:
+    if f" {int_pin} " in line:
+      return ''.join(list(filter(lambda e: e != '', line.split(' ')))[1:6])
+
+  return ""
+
 
 class TestSensord(unittest.TestCase):
   @classmethod
@@ -160,7 +178,8 @@ class TestSensord(unittest.TestCase):
           sensor_events[measurement.type] = 1
 
     for s in sensor_events:
-      assert sensor_events[s] > 200, f"Sensor {s}: {sensor_events[s]} < 200 events"
+      err_msg = f"Sensor {s}: 200 < {sensor_events[s]} < 400 events"
+      assert sensor_events[s] > 200 and sensor_events[s] < 400, err_msg
 
   @with_processes(['sensord'])
   def test_logmonottime_timestamp_diff(self):
@@ -227,6 +246,30 @@ class TestSensord(unittest.TestCase):
         mean_norm = np.mean(np.linalg.norm(sensor_values[key], axis=1))
         err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {mean_norm} is not between {s.sanity_min} and {s.sanity_max}"
         assert s.sanity_min <= mean_norm <= s.sanity_max, err_msg
+
+  def test_sensor_verify_no_interrupts_after_stop(self):
+
+    managed_processes["sensord"].start()
+    time.sleep(1)
+
+    # check if the interrupts are enableds
+    with SMBus(SENSOR_BUS, force=True) as bus:
+      int1_ctrl_reg = bus.read_byte_data(I2C_ADDR_LSM, 0x0D)
+      assert int1_ctrl_reg == 3, "Interrupts not enabled!"
+
+    managed_processes["sensord"].stop()
+
+    # check if the interrupts got disabled
+    with SMBus(SENSOR_BUS, force=True) as bus:
+      int1_ctrl_reg = bus.read_byte_data(I2C_ADDR_LSM, 0x0D)
+      assert int1_ctrl_reg == 0, "Interrupts not disabled!"
+
+    # read /proc/interrupts to verify no more interrupts are received
+    state_one = get_proc_interrupts(LSM_INT_GPIO)
+    time.sleep(1)
+    state_two = get_proc_interrupts(LSM_INT_GPIO)
+    assert state_one == state_two, "Interrupts received after sensord stop!"
+
 
 if __name__ == "__main__":
   unittest.main()
