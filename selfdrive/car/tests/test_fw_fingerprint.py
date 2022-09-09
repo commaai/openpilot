@@ -59,10 +59,16 @@ class TestFwFingerprint(unittest.TestCase):
             for ecu in ecus.keys():
               self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
 
-  def test_fpv2_config(self):
-    for brand in VERSIONS:
-      with self.subTest(brand=brand):
-        self.assertIn(brand, FPV2_CONFIGS.keys(), f"{brand} does not define a FPV2_CONFIG")
+  def test_missing_versions_and_configs(self):
+    brand_versions = set(VERSIONS)
+    brand_configs = set(FPV2_CONFIGS)
+    if len(brand_configs - brand_versions):
+      with self.subTest():
+        self.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
+
+    if len(brand_versions - brand_configs):
+      with self.subTest():
+        self.fail(f"Brands do not implement FPV2_CONFIG: {brand_versions - brand_configs}")
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FPV2_CONFIGS.items():
