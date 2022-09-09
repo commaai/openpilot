@@ -21,8 +21,6 @@ class CarController:
     self.frame = 0
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
-    self.acc_starting = False
-    self.acc_stopping = False
 
   def update(self, CC, CS, ext_bus):
     actuators = CC.actuators
