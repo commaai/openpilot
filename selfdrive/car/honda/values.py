@@ -6,7 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, UDS_VERSION_REQUEST, UDS_VERSION_RESPONSE
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -146,8 +146,8 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      [UDS_VERSION_REQUEST],
-      [UDS_VERSION_RESPONSE],
+      [SQ.UDS_VERSION_REQUEST],
+      [SQ.UDS_VERSION_RESPONSE],
     ),
   ],
 )

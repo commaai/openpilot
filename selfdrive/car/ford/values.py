@@ -7,7 +7,7 @@ from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16, TESTER_PRESENT_REQUEST, TESTER_PRESENT_RESPONSE
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
@@ -71,13 +71,13 @@ FORD_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-      [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+      [SQ.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+      [SQ.TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine],
     ),
     Request(
-      [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-      [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+      [SQ.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+      [SQ.TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
       bus=0,
       whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
     ),

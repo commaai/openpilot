@@ -6,7 +6,7 @@ from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16, TESTER_PRESENT_REQUEST, TESTER_PRESENT_RESPONSE
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, p16, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 
@@ -81,8 +81,8 @@ SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      [TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
-      [TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      [SQ.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [SQ.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
   ],
 )

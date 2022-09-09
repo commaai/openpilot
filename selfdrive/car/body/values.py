@@ -3,7 +3,7 @@ from typing import Dict
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, TESTER_PRESENT_REQUEST, TESTER_PRESENT_RESPONSE, UDS_VERSION_REQUEST, UDS_VERSION_RESPONSE
+from selfdrive.car.fw_versions_definitions import Fpv2Config, Request, StandardQueries as SQ
 
 Ecu = car.CarParams.Ecu
 
@@ -29,8 +29,8 @@ CAR_INFO: Dict[str, CarInfo] = {
 FPV2_CONFIG = Fpv2Config(
   requests=[
     Request(
-      [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
-      [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
+      [SQ.TESTER_PRESENT_REQUEST, SQ.UDS_VERSION_REQUEST],
+      [SQ.TESTER_PRESENT_RESPONSE, SQ.UDS_VERSION_RESPONSE],
       bus=0,
     ),
   ],
