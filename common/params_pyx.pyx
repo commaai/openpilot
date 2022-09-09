@@ -90,7 +90,7 @@ cdef class Params:
     with nogil:
       self.p.putBool(k, val)
 
-  def delete(self, key):
+  def remove(self, key):
     cdef string k = self.check_key(key)
     with nogil:
       self.p.remove(k)

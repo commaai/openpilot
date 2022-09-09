@@ -108,32 +108,19 @@ class PowerMonitoring:
   def get_car_battery_capacity(self) -> int:
     return int(self.car_battery_capacity_uWh)
 
-  # See if we need to disable charging
-  def should_disable_charging(self, ignition: bool, in_car: bool, offroad_timestamp: Optional[float]) -> bool:
-    if offroad_timestamp is None:
-      return False
-
-    now = sec_since_boot()
-    disable_charging = False
-    disable_charging |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
-    disable_charging |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3)) and (self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3))
-    disable_charging |= (self.car_battery_capacity_uWh <= 0)
-    disable_charging &= not ignition
-    disable_charging &= (not self.params.get_bool("DisablePowerDown"))
-    disable_charging &= in_car
-    disable_charging |= self.params.get_bool("ForcePowerDown")
-    return disable_charging
-
   # See if we need to shutdown
-  def should_shutdown(self, peripheralState, ignition, in_car, offroad_timestamp, started_seen):
+  def should_shutdown(self, ignition: bool, in_car: bool, offroad_timestamp: Optional[float], started_seen: bool):
     if offroad_timestamp is None:
       return False
 
     now = sec_since_boot()
-    panda_charging = (peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client)
-
     should_shutdown = False
-    # Wait until we have shut down charging before powering down
-    should_shutdown |= (not panda_charging and self.should_disable_charging(ignition, in_car, offroad_timestamp))
+    should_shutdown |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
+    should_shutdown |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3)) and (self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3))
+    should_shutdown |= (self.car_battery_capacity_uWh <= 0)
+    should_shutdown &= not ignition
+    should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
+    should_shutdown &= in_car
+    should_shutdown |= self.params.get_bool("ForcePowerDown")
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
     return should_shutdown

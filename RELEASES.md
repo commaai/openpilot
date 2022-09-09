@@ -1,3 +1,8 @@
+Version 0.8.17 (2022-XX-XX)
+========================
+* New driving model
+  * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
+
 Version 0.8.16 (2022-08-26)
 ========================
 * New driving model
@@ -73,7 +78,7 @@ Version 0.8.14 (2022-06-01)
 Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
-   * Retuned driver pose learner for relaxed driving positions
+   * Re-tuned driver pose learner for relaxed driving positions
    * Added reliance on driving model to be more scene adaptive
    * Matched strictness between comma two and comma three
  * Improved performance in turns by compensating for the road bank angle
@@ -219,7 +224,7 @@ Version 0.8.4 (2021-05-17)
  * Delay controls start until system is ready
  * Fuzzy car identification, enabled with Community Features toggle
  * Localizer optimized for increased precision and less CPU usage
- * Retuned lateral control to be more aggressive when model is confident
+ * Re-tuned lateral control to be more aggressive when model is confident
  * Toyota Mirai 2021 support
  * Lexus NX 300 2020 support thanks to goesreallyfast!
  * Volkswagen Atlas 2018-19 support thanks to jyoung8607!
@@ -384,7 +389,7 @@ Version 0.7 (2019-12-13)
  * Improve GM longitudinal control: proper computations for 15Hz radar
  * Move GM port, Toyota with DSU removed, comma pedal in community features; toggle switch required
  * Remove upload over cellular toggle: only upload qlog and qcamera files if not on wifi
- * Refactor Panda code towards ISO26262 and SIL2 compliancy
+ * Refactor Panda code towards ISO26262 and SIL2 compliance
  * Forward stock FCW for Honda Nidec
  * Volkswagen port now standard: comma Harness intercepts stock camera
 

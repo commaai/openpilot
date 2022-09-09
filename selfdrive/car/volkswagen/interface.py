@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
     ret.radarOffCan = True
@@ -49,9 +49,10 @@ class CarInterface(CarInterfaceBase):
       # Panda ALLOW_DEBUG firmware required.
       ret.dashcamOnly = True
 
-      if disable_radar and ret.networkLocation == NetworkLocation.gateway:
+      if experimental_long and ret.networkLocation == NetworkLocation.gateway:
         # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
         # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
+        ret.experimentalLongitudinalAvailable = True
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
 
@@ -197,6 +198,7 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unsupported car {candidate}")
 
+    ret.autoResumeSng = ret.minEnableSpeed == -1
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,

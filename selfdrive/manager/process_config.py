@@ -45,6 +45,7 @@ procs = [
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
+  PythonProcess("pigeond", "selfdrive.sensord.pigeond", enabled=TICI),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
   PythonProcess("thermald", "selfdrive.thermald.thermald", offroad=True),
