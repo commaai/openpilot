@@ -198,14 +198,12 @@ VectorXd Localizer::get_stdev() {
 void Localizer::handle_sensor(double current_time, const cereal::SensorEventData::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
 
-  const cereal::SensorEventData::Reader& sensor_reading = log;
-
   // Ignore empty readings (e.g. in case the magnetometer had no data ready)
-  if (sensor_reading.getTimestamp() == 0) {
+  if (log.getTimestamp() == 0) {
     return;
   }
 
-  double sensor_time = 1e-9 * sensor_reading.getTimestamp();
+  double sensor_time = 1e-9 * log.getTimestamp();
 
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
@@ -214,13 +212,13 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   // TODO: handle messages from two IMUs at the same time
-  if (sensor_reading.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
+  if (log.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
     return;
   }
 
   // Gyro Uncalibrated
-  if (sensor_reading.getSensor() == SENSOR_GYRO_UNCALIBRATED && sensor_reading.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
-    auto v = sensor_reading.getGyroUncalibrated().getV();
+  if (log.getSensor() == SENSOR_GYRO_UNCALIBRATED && log.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
+    auto v = log.getGyroUncalibrated().getV();
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
     if (meas.norm() < ROTATION_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
@@ -228,8 +226,8 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   // Accelerometer
-  if (sensor_reading.getSensor() == SENSOR_ACCELEROMETER && sensor_reading.getType() == SENSOR_TYPE_ACCELEROMETER) {
-    auto v = sensor_reading.getAcceleration().getV();
+  if (log.getSensor() == SENSOR_ACCELEROMETER && log.getType() == SENSOR_TYPE_ACCELEROMETER) {
+    auto v = log.getAcceleration().getV();
 
     // TODO: reduce false positives and re-enable this check
     // check if device fell, estimate 10 for g
@@ -440,8 +438,10 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
   this->time_check(t);
-  if (log.isSensorEvent()) {
-    this->handle_sensor(t, log.getSensorEvent());
+  if (log.isAccelerometer()) {
+    this->handle_sensor(t, log.getAccelerometer());
+  } else if (log.isGyroscope()) {
+    this->handle_sensor(t, log.getGyroscope());
   } else if (log.isGpsLocation()) {
     this->handle_gps(t, log.getGpsLocation());
   } else if (log.isGpsLocationExternal()) {
