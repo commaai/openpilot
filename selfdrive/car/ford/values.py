@@ -11,7 +11,7 @@ Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
-AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
+AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'angle_rate_points'])
 
 
 class CarControllerParams:
@@ -26,8 +26,8 @@ class CarControllerParams:
   STEER_RATIO = 2.75  # Approximate ratio between LatCtlPath_An_Actl and steering angle in radians
   STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold in Newton-meters
 
-  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
-  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], angle_rate_points=[500., 80., 15.])
+  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], angle_rate_points=[500., 350., 40.])
 
 
 class RADAR:
