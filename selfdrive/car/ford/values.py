@@ -23,7 +23,7 @@ class CarControllerParams:
   ACC_UI_STEP = 5
 
   STEER_RATIO = 2.75
-  STEER_DRIVER_ALLOWANCE = 0.8
+  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold 0.8 Nm
 
   RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
   RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])

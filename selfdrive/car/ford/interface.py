@@ -6,9 +6,6 @@ from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
-EventName = car.CarEvent.EventName
-
-
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):

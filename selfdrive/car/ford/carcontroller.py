@@ -57,30 +57,46 @@ class CarController:
 
 
     ### lateral control ###
-    if CC.latActive:
-      apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
-    else:
-      apply_angle = CS.out.steeringAngleDeg
+    # Ford lane centering command uses a third order polynomial to describe the road centerline.
+    # The polynomial is defined by the following coefficients:
+    #   c0: lateral offset between the vehicle and the centerline
+    #   c1: heading angle between the vehicle and the centerline
+    #   c2: curvature of the centerline
+    #   c3: rate of change of curvature of the centerline
+    # As the EPS controller combines this information with other sensor data, the steering angle
+    # cannot be easily controlled. A closed loop controller is used to achieve the desired steering
+    # angle.
 
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
-      lca_rq = 1 if CC.latActive else 0
+      steer_error = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
+
+      if CC.latActive:
+        lca_rq = 1
+        # TODO: PID controller
+        new_steer = actuators.steeringAngleDeg
+        apply_angle = apply_ford_steer_angle_limits(new_steer, self.apply_angle_last, CS.out.vEgo)
+      else:
+        lca_rq = 0
+        apply_angle = CS.out.steeringAngleDeg
 
       # use LatCtlPath_An_Actl to actuate steering
-      # path angle is the car wheel angle, not the steering wheel angle
       path_angle = math.radians(apply_angle) / CarControllerParams.STEER_RATIO
 
-      # ramp rate: 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      # TODO: try slower ramp speed when driver torque detected
-      ramp_type = 3
-      precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
-
-      offset_roll_compensation_curvature = clip(self.VM.calc_curvature(0, CS.out.vEgo, -CS.yaw_data["VehYaw_W_Actl"]), -0.02, 0.02094)
+      # set slower ramp type when small steering angle change
+      # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
+      if steer_error < 3.0:
+        ramp_type = 0
+      elif steer_error < 6.0:
+        ramp_type = 1
+      else:
+        ramp_type = 2
+      precision = 1  # 0=Comfortable, 1=Precise
 
       self.apply_angle_last = apply_angle
-      can_sends.append(fordcan.create_lka_command(self.packer, apply_angle, 0))
+      can_sends.append(fordcan.create_lka_command(self.packer, 0, 0))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
-                                                  0, path_angle, 0, offset_roll_compensation_curvature))
+                                                  0, path_angle, 0, 0))
 
 
     ### ui ###
@@ -99,7 +115,7 @@ class CarController:
     self.steer_alert_last = steer_alert
 
     new_actuators = actuators.copy()
-    new_actuators.steeringAngleDeg = apply_angle
+    new_actuators.steeringAngleDeg = self.apply_angle_last
 
     self.frame += 1
     return new_actuators, can_sends
