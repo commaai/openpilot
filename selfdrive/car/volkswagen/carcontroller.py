@@ -15,7 +15,6 @@ class CarController:
     self.CP = CP
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.carFingerprint in PQ_CARS else mqbcan
-    self.pass_through_enabled = CP.carFingerprint not in PQ_CARS
     self.packer_pt = CANPacker(dbc_name)
 
     self.apply_steer_last = 0
@@ -92,9 +91,8 @@ class CarController:
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
-      pass_through_data = CS.acc_04_stock_values if self.pass_through_enabled else None
       can_sends.extend(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
-                                                       hud_control.leadVisible, pass_through_data))
+                                                       hud_control.leadVisible))
 
     # **** Stock ACC Button Controls **************************************** #
 

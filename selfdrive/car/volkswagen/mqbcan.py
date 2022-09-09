@@ -104,7 +104,7 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, 
   return commands
 
 
-def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible, pass_through_data):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
   commands = []
 
   acc_02_values = {
@@ -115,13 +115,6 @@ def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible,
     "ACC_Abstandsindex": 512 if lead_visible else 0,  # FIXME: will break analog clusters during refactor
   }
   commands.append(packer.make_can_msg("ACC_02", bus, acc_02_values))
-
-  # Suppress disengagement alert from stock radar when OP long is in use, but passthru FCW/AEB alerts
-  acc_04_values = pass_through_data.copy()
-  if acc_04_values["ACC_Texte_braking_guard"] == 4:
-    acc_04_values["ACC_Texte_braking_guard"] = 0
-
-  commands.append(packer.make_can_msg("ACC_04", bus, acc_04_values))
 
   return commands
 

@@ -106,7 +106,6 @@ class CarState(CarStateBase):
     ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
 
     # Update ACC radar status.
-    self.acc_04_stock_values = ext_cp.vl["ACC_04"]
     self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
     self.tsk_status = pt_cp.vl["TSK_06"]["TSK_Status"]
     if self.tsk_status == 2:
@@ -487,10 +486,6 @@ class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
     ("ACC_Wunschgeschw", "ACC_02"),              # ACC set speed
-    ("ACC_Charisma_FahrPr", "ACC_04"),           # Driving profile selection
-    ("ACC_Charisma_Status", "ACC_04"),           # Driving profile status
-    ("ACC_Charisma_Umschaltung", "ACC_04"),      # Driving profile switching
-    ("ACC_Texte_braking_guard", "ACC_04"),       # Part of ACC driver alerts in instrument cluster
     ("ACC_Typ", "ACC_06"),                       # Basic vs F2S vs SNG
     ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
@@ -500,7 +495,6 @@ class MqbExtraSignals:
     ("ACC_06", 50),                                 # From J428 ACC radar control module
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
-    ("ACC_04", 17),                                 # From J428 ACC radar control module
   ]
   bsm_radar_signals = [
     ("SWA_Infostufe_SWA_li", "SWA_01"),          # Blind spot object info, left
