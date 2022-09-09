@@ -96,7 +96,7 @@ fail:
   return ret;
 }
 
-bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
 
   if (has_interrupt_enabled()) {
     // INT1 shared with accel, check STATUS_REG who triggered
@@ -116,15 +116,20 @@ bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   float y = DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
   float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
+  auto event = msg.initEvent().initGyroscope();
   event.setSource(source);
   event.setVersion(2);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
+  if (ts != 0) {
+    event.setTimestamp(ts);
+  }
 
   float xyz[] = {y, -x, z};
   auto svec = event.initGyroUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
 
+  service = PM_GYRO;
   return true;
 }

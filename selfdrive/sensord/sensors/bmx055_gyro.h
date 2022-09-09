@@ -36,6 +36,6 @@ class BMX055_Gyro : public I2CSensor {
 public:
   BMX055_Gyro(I2CBus *bus);
   int init();
-  bool get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0);
   int shutdown();
 };

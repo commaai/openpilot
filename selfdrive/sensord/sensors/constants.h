@@ -16,3 +16,9 @@
 #define SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED 14
 #define SENSOR_TYPE_MAGNETIC_FIELD  SENSOR_TYPE_GEOMAGNETIC_FIELD
 #define SENSOR_TYPE_GYROSCOPE_UNCALIBRATED 16
+
+constexpr const char* PM_GYRO =  "gyroscope";
+constexpr const char* PM_ACCEL = "accelerometer";
+constexpr const char* PM_MAGN =  "magnetometer";
+constexpr const char* PM_LIGHT = "lightSensor";
+constexpr const char* PM_TEMP =  "temperatureSensor";

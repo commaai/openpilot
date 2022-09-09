@@ -223,7 +223,7 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
 }
 
 
-bool BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Magn::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
@@ -234,6 +234,8 @@ bool BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
 
   bool parsed = parse_xyz(buffer, &_x, &_y, &z);
   if (parsed) {
+
+    auto event = msg.initEvent().initMagnetometer();
     event.setSource(cereal::SensorEventData::SensorSource::BMX055);
     event.setVersion(2);
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);
@@ -252,6 +254,8 @@ bool BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
     auto svec = event.initMagneticUncalibrated();
     svec.setV(xyz);
     svec.setStatus(true);
+
+    service = PM_MAGN;
   }
 
   // The BMX055 Magnetometer has no FIFO mode. Self running mode only goes

@@ -31,8 +31,7 @@ fail:
   return ret;
 }
 
-bool LSM6DS3_Temp::get_event(cereal::SensorEventData::Builder &event) {
-
+bool LSM6DS3_Temp::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[2];
   int len = read_register(LSM6DS3_TEMP_I2C_REG_OUT_TEMP_L, buffer, sizeof(buffer));
@@ -41,11 +40,13 @@ bool LSM6DS3_Temp::get_event(cereal::SensorEventData::Builder &event) {
   float scale = (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) ? 256.0f : 16.0f;
   float temp = 25.0f + read_16_bit(buffer[0], buffer[1]) / scale;
 
+  auto event = msg.initEvent().initTemperatureSensor();
   event.setSource(source);
   event.setVersion(1);
   event.setType(SENSOR_TYPE_AMBIENT_TEMPERATURE);
   event.setTimestamp(start_time);
   event.setTemperature(temp);
 
+  service = PM_TEMP;
   return true;
 }

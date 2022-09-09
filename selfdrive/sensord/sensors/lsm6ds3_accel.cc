@@ -93,7 +93,7 @@ fail:
   return ret;
 }
 
-bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
+bool LSM6DS3_Accel::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
 
   if (has_interrupt_enabled()) {
     // INT1 shared with gyro, check STATUS_REG who triggered
@@ -113,15 +113,20 @@ bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
   float y = read_16_bit(buffer[2], buffer[3]) * scale;
   float z = read_16_bit(buffer[4], buffer[5]) * scale;
 
+  auto event = msg.initEvent().initAccelerometer();
   event.setSource(source);
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);
   event.setType(SENSOR_TYPE_ACCELEROMETER);
+  if (ts != 0) {
+    event.setTimestamp(ts);
+  }
 
   float xyz[] = {y, -x, z};
   auto svec = event.initAcceleration();
   svec.setV(xyz);
   svec.setStatus(true);
 
+  service = PM_ACCEL;
   return true;
 }

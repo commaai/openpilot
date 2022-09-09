@@ -28,35 +28,10 @@
 
 #define I2C_BUS_IMU 1
 
-constexpr const char* PM_GYRO =  "gyroscope";
-constexpr const char* PM_ACCEL = "accelerometer";
-constexpr const char* PM_MAGN =  "magnetometer";
-constexpr const char* PM_LIGHT = "lightSensor";
-constexpr const char* PM_TEMP =  "temperatureSensor";
-
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
-void send_message(PubMaster& pm, MessageBuilder& msg, int sensor_type) {
-  std::string service;
-  switch(sensor_type) {
-    case SENSOR_TYPE_GYROSCOPE:
-    case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED:
-      service = PM_GYRO; break;
-    case SENSOR_TYPE_ACCELEROMETER:
-      service = PM_ACCEL; break;
-    case SENSOR_TYPE_LIGHT:
-      service = PM_LIGHT; break;
-    case SENSOR_TYPE_MAGNETIC_FIELD:
-    case SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED:
-      service = PM_MAGN; break;
-    case SENSOR_TYPE_AMBIENT_TEMPERATURE:
-      service = PM_TEMP; break;
-    default:
-      // should never happen
-      return;
-  }
-
+void send_message(PubMaster& pm, MessageBuilder& msg, std::string &service) {
   {
     std::lock_guard<std::mutex> lock(pm_mutex);
     pm.send(service.c_str(), msg);
