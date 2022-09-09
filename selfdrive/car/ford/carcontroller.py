@@ -69,12 +69,10 @@ class CarController:
 
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
-      steer_error = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
-
       if CC.latActive:
+        new_steer = actuators.steeringAngleDeg + actuators.steer * CarControllerParams.STEER_MAX
+
         lca_rq = 1
-        # TODO: PID controller
-        new_steer = actuators.steeringAngleDeg
         apply_angle = apply_ford_steer_angle_limits(new_steer, self.apply_angle_last, CS.out.vEgo)
       else:
         lca_rq = 0
@@ -85,9 +83,10 @@ class CarController:
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      if steer_error < 3.0:
+      angle_error = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
+      if angle_error < 3.0:
         ramp_type = 0
-      elif steer_error < 6.0:
+      elif angle_error < 6.0:
         ramp_type = 1
       else:
         ramp_type = 2

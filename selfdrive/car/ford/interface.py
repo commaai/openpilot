@@ -18,11 +18,15 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = True
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
-    # Angle-based steering
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    # Angle-based steering, but we use PID to correct for angle error
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
     tire_stiffness_factor = 1.0
+    ret.lateralTuning.pid.kpBP = [0.]
+    ret.lateralTuning.pid.kiBP = [0.]
+    ret.lateralTuning.pid.kf = 0.
+    ret.lateralTuning.pid.kpV = [0.1]
+    ret.lateralTuning.pid.kiV = [0.]
 
     if candidate == CAR.ESCAPE_MK4:
       ret.wheelbase = 2.71

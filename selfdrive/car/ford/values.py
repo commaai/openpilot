@@ -22,8 +22,9 @@ class CarControllerParams:
   # Message: ACCDATA_3
   ACC_UI_STEP = 5
 
-  STEER_RATIO = 2.75
-  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold 0.8 Nm
+  STEER_MAX = 5  # Max correction angle in degrees
+  STEER_RATIO = 2.75  # Approximate ratio between LatCtlPath_An_Actl and steering angle in radians
+  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold in Newton-meters
 
   RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
   RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
