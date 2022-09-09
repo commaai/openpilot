@@ -8,8 +8,9 @@ from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
-Ecu = car.CarParams.Ecu
-TransmissionType = car.CarParams.TransmissionType
+CarParams = car.CarParams
+Ecu = CarParams.Ecu
+TransmissionType = CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
