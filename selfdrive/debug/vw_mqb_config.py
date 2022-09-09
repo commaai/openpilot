@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
   # APA racks (MQB_PP_APA) have a different coding layout
   elif odx_file == "EV_SteerAssisVWBSMQBA\x00\x00\x00\x00":
-    coding_variant = "ZF2"
+    coding_variant = "APA"
     coding_byte = 3
     coding_bit = 0
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
   if args.action in ["enable", "disable"]:
     print("\nAttempting configuration update")
 
-    assert(coding_variant in ('ZF', 'ZF2')) 
+    assert(coding_variant in ("ZF", "APA")) 
     # ZF EPS config coding length can be anywhere from 1 to 4 bytes, but the
     # bit we care about is always in the same place in the first byte
     if args.action == "enable":
