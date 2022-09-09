@@ -59,7 +59,7 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
+def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, starting, standstill):
   values = {
     "ACS_Sta_ADR": acc_status,
     "ACS_StSt_Info": acc_status != 1,

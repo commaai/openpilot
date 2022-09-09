@@ -84,17 +84,17 @@ class CarInterface(CarInterfaceBase):
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
-      ret.minEnableSpeed = 5 * CV.MPH_TO_MS  # FIXME: temp hack during refactor
       if ret.transmissionType == TransmissionType.manual:
-        ret.minEnableSpeed = 4.5  # FIXME: estimated, fine-tune
+        ret.minEnableSpeed = 4.5
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
     ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway
     ret.longitudinalActuatorDelayLowerBound = 0.5  # s
     ret.longitudinalActuatorDelayUpperBound = 0.5  # s
     ret.stoppingControl = True
+    ret.startingState = True
+    ret.vEgoStarting = 1.0
     ret.vEgoStopping = 1.0
-    ret.stopAccel = -1.0
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 

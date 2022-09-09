@@ -64,7 +64,7 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
+def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, starting, standstill):
   commands = []
 
   acc_06_values = {
@@ -74,19 +74,28 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel):
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
     "ACC_zul_Regelabw_unten": 0.1,  # FIXME: reintroduce comfort band support
     "ACC_zul_Regelabw_oben": 0.1,  # FIXME: reintroduce comfort band support
-    "ACC_neg_Sollbeschl_Grad_02": 1.0 if enabled else 0,
-    "ACC_pos_Sollbeschl_Grad_02": 1.0 if enabled else 0,
-    "ACC_Anfahren": 0,  # FIXME: minspeed > 0 during refactor
-    "ACC_Anhalten": 0,  # FIXME: minspeed > 0 during refactor
+    "ACC_neg_Sollbeschl_Grad_02": 4.0 if enabled else 0,
+    "ACC_pos_Sollbeschl_Grad_02": 4.0 if enabled else 0,
+    "ACC_Anfahren": starting,
+    "ACC_Anhalten": stopping,
   }
   commands.append(packer.make_can_msg("ACC_06", bus, acc_06_values))
 
+  if starting:
+    acc_hold_type = 4  # hold release / startup
+  elif standstill:
+    acc_hold_type = 3  # hold standby
+  elif stopping:
+    acc_hold_type = 1  # hold
+  else:
+    acc_hold_type = 0
+
   acc_07_values = {
-    "ACC_Distance_to_Stop": 20.46,  # FIXME: default value, minspeed > 0 during refactor
-    "ACC_Hold_Request": 0,  # FIXME: default value, minspeed > 0 during refactor
+    "ACC_Distance_to_Stop": 0.5 if stopping else 20.46,
+    "ACC_Hold_Request": stopping,
     "ACC_Freewheel_Type": 2 if enabled else 0,
-    "ACC_Hold_Type": 0,  # FIXME: default value, minspeed > 0 during refactor
-    "ACC_Hold_Release": 0,  # FIXME: default value, minspeed > 0 during refactor
+    "ACC_Hold_Type": acc_hold_type,
+    "ACC_Hold_Release": starting,
     "ACC_Accel_Secondary": 3.02,  # not using this unless and until we understand its impact
     "ACC_Accel_TSK": accel if enabled else 3.01,
   }
