@@ -60,8 +60,8 @@ class TestFwFingerprint(unittest.TestCase):
               self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
 
   def test_missing_versions_and_configs(self):
-    brand_versions = set(VERSIONS)
-    brand_configs = set(FW_QUERY_CONFIGS)
+    brand_versions = set(VERSIONS.keys())
+    brand_configs = set(FW_QUERY_CONFIGS.keys())
     if len(brand_configs - brand_versions):
       with self.subTest():
         self.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
