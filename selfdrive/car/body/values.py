@@ -50,7 +50,7 @@ FW_VERSIONS = {
       b'0.3.00a',
     ],
     (Ecu.debug, 0x721, None): [
-      b'9037beb4' # git hash of the firmware used
+      b'aa58fccd' # git hash of the firmware used
     ],
   },
   CAR.BODY_KNEE: {
@@ -58,14 +58,14 @@ FW_VERSIONS = {
       b'0.3.00b',
     ],
     (Ecu.debug, 0x721, None): [
-      b'9037beb4'
+      b'aa58fccd'
     ],
     # knee ECUs
     (Ecu.engine, 0x730, None): [
       b'0.3.00b',
     ],
     (Ecu.debug, 0x731, None): [
-      b'9037beb4'
+      b'aa58fccd'
     ],
   },
 }
