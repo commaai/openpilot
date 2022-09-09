@@ -7,7 +7,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StandardQueries as SQ
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -205,18 +205,18 @@ TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [SQ.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
-      [SQ.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
       bus=0,
     ),
     Request(
-      [SQ.SHORT_TESTER_PRESENT_REQUEST, SQ.OBD_VERSION_REQUEST],
-      [SQ.SHORT_TESTER_PRESENT_RESPONSE, SQ.OBD_VERSION_RESPONSE],
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
       bus=0,
     ),
     Request(
-      [SQ.TESTER_PRESENT_REQUEST, SQ.DEFAULT_DIAGNOSTIC_REQUEST, SQ.EXTENDED_DIAGNOSTIC_REQUEST, SQ.UDS_VERSION_REQUEST],
-      [SQ.TESTER_PRESENT_RESPONSE, SQ.DEFAULT_DIAGNOSTIC_RESPONSE, SQ.EXTENDED_DIAGNOSTIC_RESPONSE, SQ.UDS_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
     ),
   ],

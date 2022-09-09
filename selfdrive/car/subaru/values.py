@@ -6,7 +6,7 @@ from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16, StandardQueries as SQ
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -81,8 +81,8 @@ SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [SQ.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
-      [SQ.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
   ],
 )

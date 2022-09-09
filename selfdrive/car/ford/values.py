@@ -7,7 +7,7 @@ from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16, StandardQueries as SQ
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16, StdQueries
 
 Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
@@ -71,13 +71,13 @@ FORD_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [SQ.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-      [SQ.TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine],
     ),
     Request(
-      [SQ.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-      [SQ.TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
       bus=0,
       whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
     ),

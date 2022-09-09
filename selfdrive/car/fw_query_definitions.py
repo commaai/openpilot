@@ -11,7 +11,7 @@ def p16(val):
   return struct.pack("!H", val)
 
 
-class StandardQueries:
+class StdQueries:
   TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
   TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40, 0x0])
 

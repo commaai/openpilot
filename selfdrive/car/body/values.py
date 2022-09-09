@@ -3,7 +3,7 @@ from typing import Dict
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StandardQueries as SQ
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -29,8 +29,8 @@ CAR_INFO: Dict[str, CarInfo] = {
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [SQ.TESTER_PRESENT_REQUEST, SQ.UDS_VERSION_REQUEST],
-      [SQ.TESTER_PRESENT_RESPONSE, SQ.UDS_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
     ),
   ],
