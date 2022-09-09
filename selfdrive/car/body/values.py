@@ -34,6 +34,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
   ],
+  ecus={(0x720, None): Ecu.engine, (0x721, None): Ecu.debug, (0x7e0, 0xf): Ecu.fwdRadar},
 )
 
 FW_VERSIONS = {

@@ -224,21 +224,17 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
-  ecu_types = {}
 
-  for brand, brand_versions in versions.items():
-    for c in brand_versions.values():
-      for ecu_type, addr, sub_addr in c.keys():
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types:
-          ecu_types[a] = ecu_type
-
-        if sub_addr is None:
-          if a not in parallel_addrs:
-            parallel_addrs.append(a)
-        else:
-          if [a] not in addrs:
-            addrs.append([a])
+  # TODO: can we just do this in one step/loop below somehow (and simply)?
+  for brand, config in FW_QUERY_CONFIGS.items():
+    for (addr, sub_addr), ecu in config.ecus.items():
+      a = (brand, addr, sub_addr)
+      if sub_addr is None:
+        if a not in parallel_addrs:
+          parallel_addrs.append(a)
+      else:
+        if [a] not in addrs:
+          addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
 
@@ -249,15 +245,17 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
     for addr_chunk in chunks(addr):
       for brand, r in requests:
         try:
+          config = FW_QUERY_CONFIGS[brand]
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
-                   (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
+                   (len(r.whitelist_ecus) == 0 or config.ecus[(a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             for (addr, rx_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types.get((brand, addr[0], addr[1]), Ecu.unknown)
+              # TODO: verify it should always be in ecus dict
+              f.ecu = config.ecus.get((addr[0], addr[1]), Ecu.unknown)
               f.fwVersion = version
               f.address = addr[0]
               f.responseAddress = rx_addr
