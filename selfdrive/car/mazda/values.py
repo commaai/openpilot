@@ -3,10 +3,9 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
-from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -62,16 +61,11 @@ class Buttons:
   CANCEL = 4
 
 
-MAZDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-MAZDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [MAZDA_VERSION_REQUEST],
-      [MAZDA_VERSION_RESPONSE],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
     ),
   ],
 )
