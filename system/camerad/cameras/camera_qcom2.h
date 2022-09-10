@@ -6,6 +6,7 @@
 
 #include <media/cam_req_mgr.h>
 
+#include "system/camerad/cameras/camera.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
 #include "common/params.h"
@@ -16,7 +17,7 @@
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
-  CameraInfo ci;
+  std::unique_ptr<AbstractCamera> camera;
   bool enabled;
 
   std::mutex exp_lock;
@@ -27,21 +28,7 @@ public:
   int gain_idx;
   float analog_gain_frac;
 
-  int exposure_time_min;
-  int exposure_time_max;
-
-  float dc_gain_factor;
-  int dc_gain_max_weight;
-  float dc_gain_on_grey;
-  float dc_gain_off_grey;
-
-  float sensor_analog_gains[16];
-  int analog_gain_min_idx;
-  int analog_gain_max_idx;
-  int analog_gain_rec_idx;
-
   float cur_ev[3];
-  float min_ev, max_ev;
 
   float measured_grey_fraction;
   float target_grey_fraction;
@@ -59,7 +46,7 @@ public:
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
   void camera_set_parameters();
   void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
 
   std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
@@ -79,7 +66,6 @@ public:
   int frame_id_last;
   int idx_offset;
   bool skipped;
-  int camera_id;
 
   CameraBuf buf;
   MemoryManager mm;
@@ -90,13 +76,9 @@ private:
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();
 
-  int sensors_init();
+  int sensors_init(int camera_id);
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
-
-  // Register parsing
-  std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
-  std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(uint8_t *data);
+  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type);
 };
 
 typedef struct MultiCameraState {

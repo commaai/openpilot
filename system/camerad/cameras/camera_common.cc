@@ -31,7 +31,7 @@ class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
     char args[4096];
-    const CameraInfo *ci = &s->ci;
+    const CameraInfo *ci = &s->camera->ci;
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
@@ -39,7 +39,7 @@ public:
              "-DIS_OX=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, b->rgb_stride, buf_width, uv_offset,
-             s->camera_id==CAMERA_ID_OX03C10 ? 1 : 0, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
+             s->camera->id==CAMERA_ID_OX03C10 ? 1 : 0, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
@@ -68,7 +68,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server = v;
   this->yuv_type = init_yuv_type;
 
-  const CameraInfo *ci = &s->ci;
+  const CameraInfo *ci = &s->camera->ci;
   camera_state = s;
   frame_buf_count = frame_cnt;
 
