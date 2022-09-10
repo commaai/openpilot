@@ -70,6 +70,10 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
+  # TODO: Test to make sure all version ecus exist in config.ecus
+
+  # TODO: Test to make sure all config.ecus exist in versions (no data collection ecus)
+
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
