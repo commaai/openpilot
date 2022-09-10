@@ -3,9 +3,12 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
 from cereal import car
+from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -272,6 +275,26 @@ FINGERPRINTS = {
   }],
 }
 
+HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf100)  # Long description
+HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
+  p16(0xf100)
+HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_MULTI],
+      [HYUNDAI_VERSION_RESPONSE],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.IONIQ: {

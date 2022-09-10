@@ -4,9 +4,11 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -242,6 +244,30 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
 # tuners sometimes tamper with that field (e.g. 8V0 9C0 BB0 1 from COBB/EQT). Tampered
 # ECU SW part numbers are invalid for vehicle ID and compatibility checks. Try to have
 # them repaired by the tuner before including them in openpilot.
+
+VOLKSWAGEN_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+VOLKSWAGEN_RX_OFFSET = 0x6a
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [VOLKSWAGEN_VERSION_REQUEST_MULTI],
+      [VOLKSWAGEN_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
+      rx_offset=VOLKSWAGEN_RX_OFFSET,
+    ),
+    Request(
+      [VOLKSWAGEN_VERSION_REQUEST_MULTI],
+      [VOLKSWAGEN_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ARTEON_MK1: {
