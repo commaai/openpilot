@@ -52,17 +52,23 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       VisionBuf buf_info = vipc_client.buffers[0];
       LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
 
-      // main encoder
-      encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                     cam_info.fps, cam_info.bitrate,
-                                     cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                     buf_info.width, buf_info.height, false));
-      // qcamera encoder
-      if (cam_info.has_qcamera) {
-        encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                       qcam_info.fps, qcam_info.bitrate,
-                                       qcam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                       qcam_info.frame_width, qcam_info.frame_height, false));
+      if (buf_info.width > 0 && buf_info.height > 0) {
+        // main encoder
+        encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+                                      cam_info.fps, cam_info.bitrate,
+                                      cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
+                                      buf_info.width, buf_info.height, false));
+        // qcamera encoder
+        if (cam_info.has_qcamera) {
+          encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
+                                        qcam_info.fps, qcam_info.bitrate,
+                                        qcam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
+                                        qcam_info.frame_width, qcam_info.frame_height, false));
+        }
+      } else {
+        LOGE("not initting empty encoder");
+        s->max_waiting--;
+        break;
       }
     }
 
