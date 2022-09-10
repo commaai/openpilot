@@ -22,11 +22,11 @@ def create_adas_keepalive(bus):
   dat = b"\x00\x00\x00\x00\x00\x00\x00"
   return [make_can_msg(0x409, dat, bus), make_can_msg(0x40a, dat, bus)]
 
-def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_stop):
+def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
   values = {
-    "GasRegenCmdActive": acc_engaged,
+    "GasRegenCmdActive": enabled,
     "RollingCounter": idx,
-    "GasRegenCmdActiveInv": 1 - acc_engaged,
+    "GasRegenCmdActiveInv": 1 - enabled,
     "GasRegenCmd": throttle,
     "GasRegenFullStopActive": at_full_stop,
     "GasRegenAlwaysOne": 1,
@@ -69,15 +69,15 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_s
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight, fcw):
+def create_acc_dashboard_command(packer, bus, enabled, target_speed_kph, lead_car_in_sight, fcw):
   target_speed = min(target_speed_kph, 255)
 
   values = {
     "ACCAlwaysOne" : 1,
     "ACCResumeButton" : 0,
     "ACCSpeedSetpoint" : target_speed,
-    "ACCGapLevel" : 3 * acc_engaged,  # 3 "far", 0 "inactive"
-    "ACCCmdActive" : acc_engaged,
+    "ACCGapLevel" : 3 * enabled,  # 3 "far", 0 "inactive"
+    "ACCCmdActive" : enabled,
     "ACCAlwaysOne2" : 1,
     "ACCLeadCar" : lead_car_in_sight,
     "FCWAlert": 0x3 if fcw else 0
