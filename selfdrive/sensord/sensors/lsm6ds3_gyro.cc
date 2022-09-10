@@ -10,20 +10,6 @@
 
 LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
-LSM6DS3_Gyro::~LSM6DS3_Gyro() {
-  int ret = 0;
-
-  // disable data ready interrupt for accel on INT1
-  uint8_t value = 0;
-  ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
-  value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
-  ret |= set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
-  if (ret) {
-    LOGE("Disable lsm6ds3 gyroscope interrupt failed: %d", ret);
-  }
-
-}
-
 int LSM6DS3_Gyro::init() {
   int ret = 0;
   uint8_t buffer[1];

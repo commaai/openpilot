@@ -27,7 +27,6 @@ class LSM6DS3_Accel : public I2CSensor {
   cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 public:
   LSM6DS3_Accel(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
-  ~LSM6DS3_Accel();
   int init();
   bool get_event(cereal::SensorEventData::Builder &event);
   int shutdown();
