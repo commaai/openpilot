@@ -8,7 +8,7 @@
 LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 LSM6DS3_Accel::~LSM6DS3_Accel() {
-  int result = 0;
+  int ret = 0;
 
   // disable data ready interrupt for accel on INT1
   uint8_t value = 0;
