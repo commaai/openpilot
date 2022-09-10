@@ -41,6 +41,7 @@ routes = [
   CarTestRoute("221c253375af4ee9|2022-06-15--18-38-24", CHRYSLER.RAM_1500),
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
 
+  CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),

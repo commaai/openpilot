@@ -132,7 +132,7 @@ class CarInfo:
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
+      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable else "Stock",
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,

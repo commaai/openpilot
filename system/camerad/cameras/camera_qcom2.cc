@@ -1101,14 +1101,18 @@ void CameraState::set_camera_exposure(float grey_frac) {
   } else if (enable_dc_gain && target_grey > 0.3) {
     enable_dc_gain = false;
   }
+
+  std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
+      gain_bytes = Params().get("CameraDebugExpGain");
+      time_bytes = Params().get("CameraDebugExpTime");
+  }
+
+  if (gain_bytes.size() > 0 && time_bytes.size() > 0) {
     // Override gain and exposure time
-    if (buf.cur_frame_data.frame_id % 5 == 0) {
-      std::string gain_bytes = Params().get("CameraDebugExpGain");
-      std::string time_bytes = Params().get("CameraDebugExpTime");
-      gain_idx = std::stoi(gain_bytes);
-      exposure_time = std::stoi(time_bytes);
-    }
+    gain_idx = std::stoi(gain_bytes);
+    exposure_time = std::stoi(time_bytes);
+
     new_g = gain_idx;
     new_t = exposure_time;
     enable_dc_gain = false;
