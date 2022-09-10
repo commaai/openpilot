@@ -341,6 +341,9 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+  setAttribute(Qt::WA_NoSystemBackground);
+  setAttribute(Qt::WA_TranslucentBackground);
+  setAttribute(Qt::WA_TransparentForMouseEvents);
   eta_doc.setUndoRedoEnabled(false);
   eta_doc.setUseDesignMetrics(true);
   eta_doc.setDefaultTextOption(QTextOption(Qt::AlignHCenter));
