@@ -28,9 +28,6 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
-uint64_t init_ts = 0;
-constexpr uint64_t measure_delay = 500*1e6;
-
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
@@ -75,11 +72,6 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
       auto event = orphan.get();
       if (!sensor->get_event(event)) {
-        continue;
-      }
-
-      if (ts - init_ts < measure_delay) {
-        // filter first values (0.5sec) as those may contain inaccuracies
         continue;
       }
 
@@ -178,8 +170,6 @@ int sensor_loop() {
 
   PubMaster pm({"sensorEvents"});
 
-  init_ts = nanos_since_boot();
-
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
   std::thread lsm_interrupt_thread(&interrupt_loop, lsm6ds3_accel.gpio_fd, std::ref(lsm_interrupt_sensors), std::ref(pm));
@@ -195,11 +185,6 @@ int sensor_loop() {
     for (int i = 0; i < num_events; i++) {
       auto event = sensor_events[i];
       sensors[i]->get_event(event);
-    }
-
-    if (nanos_since_boot() - init_ts < measure_delay) {
-      // filter first values (0.5sec) as those may contain inaccuracies
-      continue;
     }
 
     {
