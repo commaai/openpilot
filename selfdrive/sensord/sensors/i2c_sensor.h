@@ -25,11 +25,7 @@ private:
 
 public:
   I2CSensor(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
-  ~I2CSensor() {
-    if (gpio_fd != -1) {
-      close(gpio_fd);
-    }
-  }
+  ~I2CSensor();
   int read_register(uint register_address, uint8_t *buffer, uint8_t len);
   int set_register(uint register_address, uint8_t data);
   int init_gpio();

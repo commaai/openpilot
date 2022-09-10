@@ -31,8 +31,8 @@ int LSM6DS3_Gyro::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  if (init_gpio() == -1) {
-    ret = -1;
+  ret = init_gpio();
+  if (ret < 0) {
     goto fail;
   }
 
@@ -50,12 +50,12 @@ int LSM6DS3_Gyro::init() {
   // enable data ready interrupt for gyro on INT1
   // (without resetting existing interrupts)
   ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
-  value |= LSM6DS3_GYRO_INT1_DRDY_G;
-  ret |= set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
-
   if (ret < 0) {
     goto fail;
   }
+
+  value |= LSM6DS3_GYRO_INT1_DRDY_G;
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
 
 fail:
   return ret;
@@ -69,6 +69,9 @@ int LSM6DS3_Gyro::shutdown() {
   ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
   value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
   ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
+  if (ret) {
+    LOGE("Could not disable lsm6ds3 gyroscope interrupt!\n")
+  }
 
   return ret;
 }
