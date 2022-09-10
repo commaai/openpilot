@@ -363,6 +363,7 @@ void MapInstructions::paintEvent(QPaintEvent *event) {
     return;
   }
 
+  // TODO: auto calc height
   int header_height = 0;
   if (!icon.isNull()) header_height += icon.height();
   else {
