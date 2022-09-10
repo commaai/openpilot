@@ -69,9 +69,10 @@ public:
 
   void sensors_start();
 
-  void camera_open();
+  void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
   void camera_set_parameters();
-  void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, bool enabled);
+  void camera_map_bufs(MultiCameraState *s);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
 
   std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);

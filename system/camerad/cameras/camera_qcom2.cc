@@ -684,12 +684,24 @@ void CameraState::camera_set_parameters() {
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight) * sensor_analog_gains[gain_idx] * exposure_time;
 }
 
-void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServer * v, int camera_id_, int camera_num_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, bool enabled_) {
-  multi_cam_state = multi_cam_state_;
-  camera_id = camera_id_;
-  camera_num = camera_num_;
-  enabled = enabled_;
+void CameraState::camera_map_bufs(MultiCameraState *s) {
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    // configure ISP to put the image in place
+    struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
+    mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
+    mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
+    int ret = do_cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+  }
+  enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
+}
+
+void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, int camera_id_, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type) {
   if (!enabled) return;
+  camera_id = camera_id_;
 
   LOGD("camera init %d", camera_num);
   assert(camera_id < std::size(cameras_supported));
@@ -702,9 +714,13 @@ void CameraState::camera_init(MultiCameraState *multi_cam_state_, VisionIpcServe
   camera_set_parameters();
 
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
+  camera_map_bufs(s);
 }
 
-void CameraState::camera_open() {
+void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num_, bool enabled_) {
+  multi_cam_state = multi_cam_state_;
+  camera_num = camera_num_;
+  enabled = enabled_;
   if (!enabled) return;
 
   int ret;
@@ -717,12 +733,12 @@ void CameraState::camera_open() {
 
   // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
+  camera_id = CAMERA_ID_AR0231;
   ret = sensors_init();
   if (ret != 0) {
     // TODO: use build flag instead?
     LOGD("AR0231 init failed, trying OX03C10");
     camera_id = CAMERA_ID_OX03C10;
-    camera_set_parameters();
     ret = sensors_init();
   }
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
@@ -885,29 +901,15 @@ void CameraState::camera_open() {
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
 
-  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-    // configure ISP to put the image in place
-    struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
-    mem_mgr_map_cmd.num_hdl = 1;
-    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
-    mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-    LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
-    buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
-  }
-
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
   //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
   //LOGD("start sensor: %d", ret);
-
-  enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, CAMERA_ID_AR0231, 2, 20, device_id, ctx, VISION_STREAM_DRIVER, !env_disable_driver);
-  s->road_cam.camera_init(s, v, CAMERA_ID_AR0231, 1, 20, device_id, ctx, VISION_STREAM_ROAD, !env_disable_road);
-  s->wide_road_cam.camera_init(s, v, CAMERA_ID_AR0231, 0, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD, !env_disable_wide_road);
+  s->driver_cam.camera_init(s, v, s->driver_cam.camera_id, 20, device_id, ctx, VISION_STREAM_DRIVER);
+  s->road_cam.camera_init(s, v, s->road_cam.camera_id, 20, device_id, ctx, VISION_STREAM_ROAD);
+  s->wide_road_cam.camera_init(s, v, s->wide_road_cam.camera_id, 20, device_id, ctx, VISION_STREAM_WIDE_ROAD);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
@@ -953,11 +955,11 @@ void cameras_open(MultiCameraState *s) {
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   LOGD("req mgr subscribe: %d", ret);
 
-  s->driver_cam.camera_open();
+  s->driver_cam.camera_open(s, 2, !env_disable_driver);
   LOGD("driver camera opened");
-  s->road_cam.camera_open();
+  s->road_cam.camera_open(s, 1, !env_disable_road);
   LOGD("road camera opened");
-  s->wide_road_cam.camera_open();
+  s->wide_road_cam.camera_open(s, 0, !env_disable_wide_road);
   LOGD("wide road camera opened");
 }
 
