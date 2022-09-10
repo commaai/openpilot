@@ -63,6 +63,6 @@ class Request:
 class FwQueryConfig:
   requests: List[Request]
   # Addresses to query and their Ecu mapping
-  ecus: Dict[Tuple[int, Optional[int]], capnp.lib.capnp._EnumModule] = field(default_factory=dict)  # TODO: remove default
+  ecus: Dict[Tuple[int, Optional[int]], capnp.lib.capnp._EnumModule]
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
