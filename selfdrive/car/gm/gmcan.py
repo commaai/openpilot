@@ -41,26 +41,30 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
 
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
 
-def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
-  mode = 0x1
-  if apply_brake > 0:
-    mode = 0xa
-    if at_full_stop:
-      mode = 0xd
+def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_stop, at_full_stop):
+  # mode never enters 0xb (11) on Bolt EUV, only the four defined below
+  # TODO: experiment with at_full_stop. could it be LongCtrlState.stopping?
+  mode = 1
+  if enabled:
+    mode = 9
+    if apply_brake > 0:
+      mode = 10
+      if at_full_stop:
+        mode = 13
 
-    # TODO: this is to have GM bringing the car to complete stop,
-    # but currently it conflicts with OP controls, so turned off.
-    #elif near_stop:
-    #  mode = 0xb
+      # TODO: this is to have GM bringing the car to complete stop,
+      # but currently it conflicts with OP controls, so turned off.
+      #elif near_stop:
+      #  mode = 0xb
 
   brake = (0x1000 - apply_brake) & 0xfff
   checksum = (0x10000 - (mode << 12) - brake - idx) & 0xffff
 
   values = {
-    "RollingCounter" : idx,
-    "FrictionBrakeMode" : mode,
+    "RollingCounter": idx,
+    "FrictionBrakeMode": mode,
     "FrictionBrakeChecksum": checksum,
-    "FrictionBrakeCmd" : -apply_brake
+    "FrictionBrakeCmd": -apply_brake
   }
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)

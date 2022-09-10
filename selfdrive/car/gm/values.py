@@ -25,18 +25,23 @@ class CarControllerParams:
 
   # Volt gasbrake lookups
   # TODO: These values should be confirmed on non-Volt vehicles
+  # 3072 is reportedly slow on ICE
+  # TODO: need to find what is 2 m/s/s on Bolt/other cars
   MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
   ZERO_GAS = 2048  # Coasting
   MAX_BRAKE = 350  # ~ -3.5 m/s^2 with regen
-  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
+  MAX_ACC_REGEN = 1514  # TODO: see if paddle regen is 1514
+  INACTIVE_GAS_REGEN = 1554  # Max ACC regen is slightly less than max paddle regen
 
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
-  ACCEL_MAX = 2.  # m/s^2
-  ACCEL_MIN = -4.  # m/s^2
+  ACCEL_MAX = 1.6  # m/s^2
+  # TODO: setting this to -4 meant we'd apply less brake than we should?
+  # it does not multiply against MAX_BRAKE, it'd only change the breakpoint...
+  ACCEL_MIN = -3.5  # m/s^2
 
   EV_GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
   EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
