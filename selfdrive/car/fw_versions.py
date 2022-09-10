@@ -37,14 +37,6 @@ def build_fw_dict(fw_versions, filter_brand=None):
   return dict(fw_versions_dict)
 
 
-def get_brand_addrs():
-  brand_addrs = defaultdict(set)
-  for brand, cars in VERSIONS.items():
-    for fw in cars.values():
-      brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
-  return brand_addrs
-
-
 def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
@@ -152,9 +144,9 @@ def get_present_ecus(logcan, sendcan):
   parallel_queries = list()
   responses = set()
 
-  for brand, r in REQUESTS:
-    for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in brand_versions:
+  for brand, config in FW_QUERY_CONFIGS.items():
+    for r in config.requests:
+      for (addr, sub_addr), ecu_type in config.ecus.items():
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
@@ -181,15 +173,14 @@ def get_present_ecus(logcan, sendcan):
 def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
-  brand_addrs = get_brand_addrs()
   brand_matches = {brand: set() for brand, _ in REQUESTS}
-
   brand_rx_offsets = set((brand, r.rx_offset) for brand, r in REQUESTS)
+
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
       a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), sub_addr)
-      if a in brand_addrs[brand]:
+      if a in FW_QUERY_CONFIGS[brand].ecus:
         brand_matches[brand].add(a)
 
   return brand_matches
@@ -227,7 +218,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # TODO: can we just do this in one step/loop below somehow (and simply)?
   for brand, config in FW_QUERY_CONFIGS.items():
-    for (addr, sub_addr), ecu in config.ecus.items():
+    for addr, sub_addr in config.ecus.keys():
       a = (brand, addr, sub_addr)
       if sub_addr is None:
         if a not in parallel_addrs:
