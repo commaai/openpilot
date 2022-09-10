@@ -27,12 +27,16 @@
 
 ExitHandler do_exit;
 std::mutex pm_mutex;
-uint64_t last_ts = 0;
+
+uint64_t init_ts = 0;
+constexpr uint64_t measure_delay = 500*1e6;
 
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
+
+  uint64_t offset = nanos_since_epoch() - nanos_since_boot();
 
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
@@ -60,15 +64,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     }
 
     int num_events = err / sizeof(*evdata);
-    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
-
-    if ((last_ts != 0) && (ts - last_ts < 4000000)) { // 4ms
-      // skip interrupt (see: common/gpio.cc)
-      last_ts = ts;
-      continue;
-    }
-    last_ts = ts;
 
     MessageBuilder msg;
     auto orphanage = msg.getOrphanage();
@@ -78,10 +74,17 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     for (Sensor *sensor : sensors) {
       auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
       auto event = orphan.get();
-      if (sensor->get_event(event)) {
-        event.setTimestamp(ts);
-        collected_events.push_back(kj::mv(orphan));
+      if (!sensor->get_event(event)) {
+        continue;
       }
+
+      if (ts - init_ts < measure_delay) {
+        // filter first values (0.5sec) as those may contain inaccuracies
+        continue;
+      }
+
+      event.setTimestamp(ts);
+      collected_events.push_back(kj::mv(orphan));
     }
 
     if (collected_events.size() == 0) {
@@ -170,6 +173,8 @@ int sensor_loop() {
 
   PubMaster pm({"sensorEvents"});
 
+  init_ts = nanos_since_boot();
+
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
   std::thread lsm_interrupt_thread(&interrupt_loop, lsm6ds3_accel.gpio_fd, std::ref(lsm_interrupt_sensors), std::ref(pm));
@@ -185,6 +190,11 @@ int sensor_loop() {
     for (int i = 0; i < num_events; i++) {
       auto event = sensor_events[i];
       sensors[i]->get_event(event);
+    }
+
+    if (nanos_since_boot() - init_ts < measure_delay) {
+      // filter first values (0.5sec) as those may contain inaccuracies
+      continue;
     }
 
     {
