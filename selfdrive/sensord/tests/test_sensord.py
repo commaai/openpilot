@@ -4,13 +4,13 @@ import time
 import unittest
 import numpy as np
 from collections import namedtuple
+from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
 from system.hardware import TICI
 from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
-from smbus2 import SMBus
 
 SENSOR_CONFIGURATIONS = (
   {
