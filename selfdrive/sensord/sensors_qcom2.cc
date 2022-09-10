@@ -101,6 +101,11 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       pm.send("sensorEvents", msg);
     }
   }
+
+  // poweroff sensors, disable interrupts
+  for (Sensor *sensor : sensors) {
+    sensor->shutdown();
+  }
 }
 
 int sensor_loop() {
