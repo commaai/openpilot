@@ -78,5 +78,6 @@ repos:
     hooks:
     -   id: test_translations
         name: test translations
-        entry: python selfdrive/ui/tests/test_translations.py
+        entry: selfdrive/ui/tests/test_translations.py
         language: python
+        pass_filenames: false
