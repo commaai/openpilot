@@ -294,6 +294,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
     ),
   ],
+  ecus={},
 )
 
 FW_VERSIONS = {

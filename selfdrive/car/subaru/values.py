@@ -85,6 +85,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
   ],
+  ecus={},
 )
 
 FW_VERSIONS = {

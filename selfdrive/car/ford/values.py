@@ -76,6 +76,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
     ),
   ],
+  ecus={},
 )
 
 FW_VERSIONS = {

@@ -103,6 +103,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       rx_offset=NISSAN_RX_OFFSET,
     ),
   ],
+  ecus={},
 )
 
 FW_VERSIONS = {

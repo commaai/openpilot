@@ -150,6 +150,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
     ),
   ],
+  ecus={},
 )
 
 FW_VERSIONS = {

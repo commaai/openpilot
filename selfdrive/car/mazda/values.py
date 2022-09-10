@@ -68,6 +68,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
     ),
   ],
+  ecus={},
 )
 
 FW_VERSIONS = {

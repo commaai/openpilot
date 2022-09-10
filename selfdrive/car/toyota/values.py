@@ -220,6 +220,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
   ],
+  ecus={},
   non_essential_ecus={
     # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
