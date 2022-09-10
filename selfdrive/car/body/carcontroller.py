@@ -132,9 +132,9 @@ class CarController:
       torque_hip = int(np.clip(self.torque_hip_filtered, -MAX_TORQUE_HIP, MAX_TORQUE_HIP))
 
       # Extra safety for when training stands attached(temporary):
-      if angle_measured_knee <= 30 and torque_knee > 0:
+      if angle_measured_knee <= 30 and torque_knee < 0:
         torque_knee = 0
-      elif angle_measured_knee >= 330 and torque_knee < 0:
+      elif angle_measured_knee >= 330 and torque_knee > 0:
         torque_knee = 0
 
       # Do not try to balance if knee and hip have excessive angle on start
