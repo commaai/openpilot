@@ -9,6 +9,7 @@ from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButt
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 class CarController:
@@ -76,7 +77,7 @@ class CarController:
 
         idx = (self.frame // 4) % 4
 
-        at_full_stop = CC.longActive and CS.out.standstill
+        at_full_stop = CC.longActive and CS.out.standstill and actuators.longControlState == LongCtrlState.stopping
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
 
         friction_brake_bus = CanBus.POWERTRAIN if self.CP.carFingerprint in CAMERA_ACC_CAR else CanBus.CHASSIS
