@@ -1,13 +1,5 @@
 name: 'openpilot env setup'
 
-env:
-  BASE_IMAGE: openpilot-base
-  DOCKER_REGISTRY: ghcr.io/commaai
-  BUILD: |
-      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
-
 inputs:
   save-cache:
     default: false
@@ -42,4 +34,4 @@ runs:
 
     # build our docker image
     - shell: bash
-      run: eval "$BUILD"
+      run: eval ${{ env.BUILD }}
