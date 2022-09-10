@@ -32,11 +32,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
   QObject::connect(this, &MapWindow::ETAChanged, map_instructions, &MapInstructions::updateETA);
 
-  auto last_gps_position = coordinate_from_param("LastGPSPosition");
-  if (last_gps_position) {
-    last_position = *last_gps_position;
-  }
-
+  last_position = coordinate_from_param("LastGPSPosition");
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
 }
@@ -168,7 +164,6 @@ void MapWindow::updateState(const UIState &s) {
 
   if (locationd_valid || laikad_valid) {
     map_instructions->setError("");
-
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
     QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
@@ -364,7 +359,7 @@ void MapInstructions::paintEvent(QPaintEvent *event) {
     p.drawText(rc, Qt::AlignCenter, error_str);
     return;
   }
-  
+
   int header_height = 0;
   if (!icon.isNull()) header_height += icon.height();
   else {
@@ -420,22 +415,17 @@ void MapInstructions::updateDistance(float d) {
 
   if (uiState()->scene.is_metric) {
     if (d > 500) {
-      distance_str.setNum(d / 1000, 'f', 1);
-      distance_str += tr(" km");
+      distance_str = QString::number(d / 1000, 'f', 1) + tr(" km");
     } else {
-      distance_str.setNum(50 * int(d / 50));
-      distance_str += tr(" m");
+      distance_str = QString::number(50 * int(d / 50)) + tr(" m");
     }
   } else {
     float miles = d * METER_TO_MILE;
     float feet = d * METER_TO_FOOT;
-
     if (feet > 500) {
-      distance_str.setNum(miles, 'f', 1);
-      distance_str += tr(" mi");
+      distance_str = QString::number(miles, 'f', 1) + tr(" mi");
     } else {
-      distance_str.setNum(50 * int(feet / 50));
-      distance_str += tr(" ft");
+      distance_str = QString::number(50 * int(feet / 50)) + tr(" ft");
     }
   }
   update();
@@ -542,7 +532,7 @@ void MapInstructions::updateETA(float s, float s_typical, float d) {
   // Distance
   float num = uiState()->scene.is_metric ? (d / 1000.0) : (d * METER_TO_MILE);
   QString unit = uiState()->scene.is_metric ? tr("km") : tr("mi");
-  QString distance = QString().setNum(num, 'f', num < 100 ? 1 : 0) + unit;
+  QString distance = QString::number(num, 'f', num < 100 ? 1 : 0) + unit;
 
   eta_doc.setHtml(QString("<font style=\"font-family:Inner;font-size:70px;color:white;\"><b>%1</b>%2 <font color=\"%3\"><b>%4</b></font>  %5</font>")
   .arg(eta).arg(eta_unit).arg(color).arg(time).arg(distance));

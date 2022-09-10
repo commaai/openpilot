@@ -26,7 +26,7 @@ class MapInstructions : public QWidget {
 private:
   void paintEvent(QPaintEvent* event) override;
   bool is_rhd = false;
-  QString error_str, primary_str, secondary_str, distance_str, icon_fn_str;
+  QString error_str, primary_str, secondary_str, distance_str;
   QPixmap icon;
   std::vector<QString> lanes;
   Params params;
