@@ -10,6 +10,7 @@ if arch == "larch64":
   env.Program('camerad', [
       'main.cc',
       'cameras/camera_common.cc',
+      'cameras/camera_util.cc',
       'imgproc/utils.cc',
       cameras,
     ], LIBS=libs)
