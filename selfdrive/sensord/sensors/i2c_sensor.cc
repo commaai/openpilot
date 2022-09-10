@@ -31,7 +31,7 @@ int I2CSensor::init_gpio() {
     return 0;
   }
 
-  gpio_fd = gpiochip_get_ro_value_fd(gpio_nr, EdgeType::Rising);
+  gpio_fd = gpiochip_get_ro_value_fd(gpio_nr);
   if (gpio_fd < 0) {
     return -1;
   }
