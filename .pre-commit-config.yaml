@@ -79,5 +79,5 @@ repos:
     -   id: test_translations
         name: test translations
         entry: selfdrive/ui/tests/test_translations.py
-        language: python
+        language: script
         pass_filenames: false
