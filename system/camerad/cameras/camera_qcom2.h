@@ -36,6 +36,7 @@ public:
 
   int exposure_time;
   bool dc_gain_enabled;
+  int dc_gain_weight;
   float analog_gain_frac;
 
   float cur_ev[3];
