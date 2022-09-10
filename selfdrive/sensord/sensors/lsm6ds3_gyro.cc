@@ -67,12 +67,19 @@ int LSM6DS3_Gyro::shutdown() {
   // disable data ready interrupt for accel on INT1
   uint8_t value = 0;
   ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
-  value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
-  ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
-  if (ret) {
-    LOGE("Could not disable lsm6ds3 gyroscope interrupt!\n")
+  if (ret < 0) {
+    goto fail;
   }
 
+  value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
+  if (ret < 0) {
+    goto fail;
+  }
+  return ret;
+
+fail:
+  LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
   return ret;
 }
 
