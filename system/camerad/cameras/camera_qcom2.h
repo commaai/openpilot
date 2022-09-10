@@ -7,24 +7,11 @@
 #include <media/cam_req_mgr.h>
 
 #include "system/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_util.h"
 #include "common/params.h"
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
-
-class MemoryManager {
-  public:
-    void init(int _video0_fd) { video0_fd = _video0_fd; }
-    void *alloc(int len, uint32_t *handle);
-    void free(void *ptr);
-    ~MemoryManager();
-  private:
-    std::mutex lock;
-    std::map<void *, uint32_t> handle_lookup;
-    std::map<void *, int> size_lookup;
-    std::map<int, std::queue<void *> > cached_allocations;
-    int video0_fd;
-};
 
 class CameraState {
 public:
