@@ -67,7 +67,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    disable_radar = False
+    experimental_long = False
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
@@ -93,7 +93,7 @@ class TestCarModelBase(unittest.TestCase):
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
-            disable_radar = True
+            experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
@@ -105,7 +105,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -234,6 +234,9 @@ class TestCarModelBase(unittest.TestCase):
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
+      if self.CP.carName in ("honda", "toyota"):
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
@@ -263,8 +266,6 @@ class TestCarModelBase(unittest.TestCase):
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
-        # TODO: fix standstill mismatches for other makes
-        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       CS_prev = CS
 
