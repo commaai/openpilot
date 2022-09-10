@@ -5,11 +5,11 @@
     <name>AbstractAlert</name>
     <message>
         <location filename="../qt/widgets/offroad_alerts.cc" line="+25"/>
-        <source>Clos</source>
+        <source>Close</source>
         <translation>닫기</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+5"/>
         <source>Snooze Update</source>
         <translation>업데이트 일시중지</translation>
     </message>
