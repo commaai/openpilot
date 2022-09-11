@@ -9,6 +9,7 @@ from cereal import car
 from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.fw_query_definitions import FwQueryConfig
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
 
@@ -203,18 +204,14 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  # versions = VERSIONS.copy()
-  # if query_brand is not None:
-  #   versions = {query_brand: versions[query_brand]}
-  #
-  # if extra is not None:
-  #   versions.update(extra)
+def get_fw_versions(logcan, sendcan, query_brand=None, extra_config=None, timeout=0.1, debug=False, progress=False):
+  configs = FW_QUERY_CONFIGS.copy()
+  if extra_config is not None:
+    configs['debug'] = extra_config
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
 
-  # TODO: can we just do this in one step/loop below somehow (and simply)?
   for brand, config in FW_QUERY_CONFIGS.items():
     if query_brand is not None and brand != query_brand:
       continue
@@ -273,15 +270,14 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   sendcan = messaging.pub_sock('sendcan')
 
-  extra: Any = None
+  extra_config: Optional[FwQueryConfig] = None
   if args.scan:
-    extra = {}
+    extra_config = FwQueryConfig(requests=[r for _, r in REQUESTS], ecus={})
     # Honda
     for i in range(256):
-      extra[(Ecu.unknown, 0x18da00f1 + (i << 8), None)] = []
-      extra[(Ecu.unknown, 0x700 + i, None)] = []
-      extra[(Ecu.unknown, 0x750, i)] = []
-    extra = {"any": {"debug": extra}}
+      extra_config.ecus[(0x18da00f1 + (i << 8), None)] = Ecu.unknown
+      extra_config.ecus[(0x700 + i, None)] = Ecu.unknown
+      extra_config.ecus[(0x750, i)] = Ecu.unknown
 
   time.sleep(1.)
 
@@ -293,7 +289,7 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra_config=extra_config, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
