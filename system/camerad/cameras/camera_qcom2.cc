@@ -139,13 +139,12 @@ void CameraState::sensors_poke(int request_id) {
   pkt->header.request_id = request_id;
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
+  mm.free(pkt);
+
   if (ret != 0) {
     LOGE("** sensor %d FAILED poke, disabling", camera_num);
     enabled = false;
-    return;
   }
-
-  mm.free(pkt);
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
@@ -171,14 +170,13 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
+  mm.free(i2c_random_wr);
+  mm.free(pkt);
+
   if (ret != 0) {
     LOGE("** sensor %d FAILED i2c, disabling", camera_num);
     enabled = false;
-    return;
   }
-
-  mm.free(i2c_random_wr);
-  mm.free(pkt);
 }
 
 static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
