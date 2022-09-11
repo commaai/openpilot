@@ -204,62 +204,53 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  versions = VERSIONS.copy()
-  if query_brand is not None:
-    versions = {query_brand: versions[query_brand]}
-
-  if extra is not None:
-    versions.update(extra)
-
-  # Extract ECU addresses to query from fingerprints
-  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
-  addrs = []
-  parallel_addrs = []
-
-  # TODO: can we just do this in one step/loop below somehow (and simply)?
-  for brand, config in FW_QUERY_CONFIGS.items():
-    for addr, sub_addr in config.ecus.keys():
-      a = (brand, addr, sub_addr)
-      if sub_addr is None:
-        if a not in parallel_addrs:
-          parallel_addrs.append(a)
-      else:
-        if [a] not in addrs:
-          addrs.append([a])
-
-  addrs.insert(0, parallel_addrs)
+  # versions = VERSIONS.copy()
+  # if query_brand is not None:
+  #   versions = {query_brand: versions[query_brand]}
+  #
+  # if extra is not None:
+  #   versions.update(extra)
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [(brand, r) for brand, r in REQUESTS if query_brand is None or brand == query_brand]
-  for addr in tqdm(addrs, disable=not progress):
-    for addr_chunk in chunks(addr):
-      for brand, r in requests:
-        try:
-          config = FW_QUERY_CONFIGS[brand]
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
-                   (len(r.whitelist_ecus) == 0 or config.ecus[(a, s)] in r.whitelist_ecus)]
 
-          if addrs:
-            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (addr, rx_addr), version in query.get_data(timeout).items():
-              f = car.CarParams.CarFw.new_message()
+  # TODO: can we just do this in one step/loop below somehow (and simply)?
+  for brand, config in FW_QUERY_CONFIGS.items():
+    # Extract ECU addresses to query from fingerprints
+    # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
+    addrs = []
+    parallel_addrs = list({(addr, sub_addr) for addr, sub_addr in config.ecus if sub_addr is None})
 
-              # TODO: verify it should always be in ecus dict
-              f.ecu = config.ecus.get((addr[0], addr[1]), Ecu.unknown)
-              f.fwVersion = version
-              f.address = addr[0]
-              f.responseAddress = rx_addr
-              f.request = r.request
-              f.brand = brand
-              f.bus = r.bus
+    for addr, sub_addr in config.ecus.keys():
+      a = (addr, sub_addr)
+      if sub_addr is not None:
+        if [a] not in addrs:
+          addrs.append([a])
 
-              if addr[1] is not None:
-                f.subAddress = addr[1]
+    addrs.insert(0, parallel_addrs)
 
-              car_fw.append(f)
-        except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+    for r in config.requests:
+      try:
+        query_addrs = [(a, s) for (b, a, s) in addrs if (len(r.whitelist_ecus) == 0 or config.ecus[(a, s)] in r.whitelist_ecus)]
+        query = IsoTpParallelQuery(sendcan, logcan, r.bus, query_addrs, r.request, r.response, r.rx_offset, debug=debug)
+        for (addr, rx_addr), version in query.get_data(timeout).items():
+          f = car.CarParams.CarFw.new_message()
+
+          # TODO: verify it should always be in ecus dict
+          f.ecu = config.ecus.get((addr[0], addr[1]), Ecu.unknown)
+          f.fwVersion = version
+          f.address = addr[0]
+          f.responseAddress = rx_addr
+          f.request = r.request
+          f.brand = brand
+          f.bus = r.bus
+
+          if addr[1] is not None:
+            f.subAddress = addr[1]
+
+          car_fw.append(f)
+      except Exception:
+        cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
   return car_fw
 
