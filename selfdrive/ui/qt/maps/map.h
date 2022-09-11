@@ -36,8 +36,6 @@ public:
   QTextDocument eta_doc;
   MapInstructions(QWidget * parent=nullptr);
   inline void setError(QString error) { error_str = error; }
-
-public slots:
   void updateDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
   void updateETA(float seconds, float seconds_typical, float distance);
@@ -94,9 +92,4 @@ private slots:
 
 public slots:
   void offroadTransition(bool offroad);
-
-signals:
-  void distanceChanged(float distance);
-  void instructionsChanged(cereal::NavInstruction::Reader instruction);
-  void ETAChanged(float seconds, float seconds_typical, float distance);
 };

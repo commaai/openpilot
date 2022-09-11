@@ -26,12 +26,7 @@ const QString ICON_SUFFIX = ".png";
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
-  // Instructions
   map_instructions = new MapInstructions(this);
-  QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
-  QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
-  QObject::connect(this, &MapWindow::ETAChanged, map_instructions, &MapInstructions::updateETA);
-
   last_position = coordinate_from_param("LastGPSPosition");
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
@@ -191,12 +186,12 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.updated("navInstruction")) {
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
-      emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
+      map_instructions->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (locationd_valid || laikad_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
-        emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
-        emit instructionsChanged(i);
+        map_instructions->updateDistance(i.getManeuverDistance());
+        map_instructions->updateInstructions(i);
       }
     } else {
       m_map->setPitch(MIN_PITCH);
