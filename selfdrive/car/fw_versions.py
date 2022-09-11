@@ -144,7 +144,7 @@ def get_present_ecus(logcan, sendcan):
   parallel_queries = list()
   responses = set()
 
-  for brand, config in FW_QUERY_CONFIGS.items():
+  for config in FW_QUERY_CONFIGS.values():
     for r in config.requests:
       for (addr, sub_addr), ecu_type in config.ecus.items():
         # Only query ecus in whitelist if whitelist is not empty
