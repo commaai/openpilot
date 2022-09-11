@@ -8,8 +8,7 @@ import signal
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from tools.lib.route import Route
-from tools.lib.logreader import MultiLogIterator
+from tools.lib.logreader import logreader_from_route_or_segment
 
 def sigint_handler(signal, frame):
   exit(0)
@@ -133,9 +132,8 @@ if __name__ == "__main__":
   tool = SteeringAccuracyTool(args)
 
   if args.route is not None:
-    print(f"loading route {args.route}...")
-    route = Route(args.route)
-    lr = MultiLogIterator(route.log_paths())
+    print(f"loading {args.route}...")
+    lr = logreader_from_route_or_segment(args.route, sort_by_time=True)
 
     sm = {}
     for msg in lr:
