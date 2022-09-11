@@ -25,6 +25,7 @@ class MapInstructions : public QWidget {
 
 private:
   void paintEvent(QPaintEvent* event) override;
+  int drawInstructions(QPainter &p, bool draw);
   bool is_rhd = false;
   QString error_str, primary_str, secondary_str, distance_str;
   QPixmap icon;

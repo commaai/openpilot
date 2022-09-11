@@ -216,6 +216,7 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
+
   }
 }
 
@@ -351,7 +352,6 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
 }
 
 void MapInstructions::paintEvent(QPaintEvent *event) {
-  const int left_margin = 11, top_margin = 50;
   QPainter p(this);
   p.setPen(Qt::white);
 
@@ -363,55 +363,63 @@ void MapInstructions::paintEvent(QPaintEvent *event) {
     return;
   }
 
-  // TODO: auto calc height
-  int header_height = 0;
-  if (!icon.isNull()) header_height += icon.height();
-  else {
-    if (!distance_str.isEmpty()) header_height += 100;
-    if (!primary_str.isEmpty()) header_height += 70;
+  // draw instructions
+  int header_height = drawInstructions(p, true);
+  if (header_height > 0) {
+    p.fillRect(QRect{0, 0, width(), header_height}, QColor(0, 0, 0, 150));
+    drawInstructions(p, false);
   }
-  if (!secondary_str.isEmpty()) header_height += 60;
-  if (!lanes.empty()) header_height += 140;
 
-  if (header_height == 0) return;
+  // draw ETA
+  if (!eta_doc.isEmpty()) {
+    p.translate(0, height() - 100);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(0, 0, 0, 150));
+    qreal txt_width = eta_doc.idealWidth();
+    p.drawRoundedRect((width() - txt_width) / 2 - 20, 0, txt_width + 40, 90, 16, 16);
+    eta_doc.drawContents(&p);
+  }
+}
 
-  p.fillRect(QRect{0, 0, width(), header_height + top_margin}, QColor(0, 0, 0, 150));
-  int icon_width = 0;
+static QRect drawText(QPainter &p, const QRect &rect, const QString &font_family, int font_size, const QString &text, bool draw,
+                      int flags = Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap) {
+  configFont(p, "Inter", font_size, font_family);
+  QRect text_rect = p.fontMetrics().boundingRect(rect, flags, text);
+  if (draw) p.drawText(text_rect, flags, text);
+  return text_rect;
+}
+
+int MapInstructions::drawInstructions(QPainter &p, bool draw) {
+  const int h_margin = 10, v_margin = 50;
+  QRect r = rect().adjusted(h_margin, v_margin, -h_margin, -v_margin);
+
+  int icon_height = 0;
   if (!icon.isNull()) {
-    p.drawPixmap(left_margin, top_margin, icon);
-    icon_width += icon.width();
+    if (draw) p.drawPixmap(h_margin, v_margin, icon);
+    r.adjust(icon.width(), 0, 0, 0);
+    icon_height = icon.height();
   }
 
-  int v_pos = top_margin;
   if (!distance_str.isEmpty()) {
-    configFont(p, "Inter", 90, "Regular");
-    v_pos += 90;
-    p.drawText(left_margin + icon_width, v_pos, distance_str);
+    r.setY(drawText(p, r, "Regular", 90, distance_str, draw).bottom());
   }
-
   if (!primary_str.isEmpty()) {
-    configFont(p, "Inter", 60, "Regular");
-    v_pos += 80;
-    p.drawText(left_margin + icon_width, v_pos, primary_str);
+    r.setY(drawText(p, r, "Regular", 60, primary_str, draw).bottom());
   }
   if (!secondary_str.isEmpty()) {
-    configFont(p, "Inter", 50, "Regular");
-    v_pos += 80;
-    p.drawText(left_margin + icon_width, v_pos, secondary_str);
+    r.setY(drawText(p, r, "Regular", 50, secondary_str, draw).bottom());
   }
 
-  int x = left_margin + icon_width;
-  for (const QString &fn : lanes) {
-    p.drawPixmap(x, v_pos, loadPixmap(fn, {125, 125}, Qt::IgnoreAspectRatio));
-    x += 125;
+  if (!lanes.empty()) {
+    if (draw) {
+      for (int i = 0, x = r.x(); i < lanes.size(); ++i, x += 125) {
+        p.drawPixmap(x, r.y(), loadPixmap(lanes[i], {125, 125}, Qt::IgnoreAspectRatio));
+      }
+    }
+    r.setY(r.y() + 125);
   }
-
-  p.translate(0, height()-100);
-  p.setPen(Qt::NoPen);
-  p.setBrush(QColor(0, 0, 0, 150));
-  qreal txt_width = eta_doc.idealWidth();
-  p.drawRoundedRect((width() - txt_width) / 2 - 20, 0, txt_width + 40, 90, 16, 16);
-  eta_doc.drawContents(&p);
+  // returns the total height of the instructions
+  return std::max(r.y() > v_margin ? r.y() : 0, icon_height);
 }
 
 void MapInstructions::updateDistance(float d) {
@@ -501,7 +509,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
 void MapInstructions::updateETA(float s, float s_typical, float d) {
   if (d < MANEUVER_TRANSITION_THRESHOLD) {
-    eta_doc.setHtml("");
+    eta_doc.clear();
     return;
   }
 
