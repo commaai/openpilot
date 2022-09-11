@@ -9,18 +9,10 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
-  # rate limit
   steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
   rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
   max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.angle_rate_points) / CarControllerParams.LKAS_STEER_STEP
-  apply_angle = clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
-
-  # absolute limit (LatCtlPath_An_Actl)
-  apply_path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
-  apply_path_angle = clip(apply_path_angle, -0.5, 0.5235)
-  apply_angle = math.degrees(apply_path_angle) * CarControllerParams.LKAS_STEER_RATIO
-
-  return apply_angle
+  return clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
 
 
 class CarController:
@@ -30,7 +22,7 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.frame = 0
 
-    self.apply_angle_last = 0
+    self.apply_angle_last = 0.
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
@@ -65,10 +57,15 @@ class CarController:
       lca_rq = 0
       apply_angle = 0.
 
+
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
+      apply_steer = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
+
       # use LatCtlPath_An_Actl to actuate steering
-      path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
+      path_angle = clip(apply_steer, -0.5, 0.5235)
+
+      self.apply_angle_last = math.degrees(path_angle) * CarControllerParams.LKAS_STEER_RATIO
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
@@ -83,10 +80,9 @@ class CarController:
         ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
-      self.apply_angle_last = apply_angle
-      can_sends.append(fordcan.create_lka_command(self.packer, 0, 0))
+      can_sends.append(fordcan.create_lka_command(self.packer, 0., 0.))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
-                                                  0, path_angle, 0, 0))
+                                                  0., path_angle, 0., 0.))
 
 
     ### ui ###
