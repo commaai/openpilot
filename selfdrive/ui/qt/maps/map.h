@@ -4,15 +4,12 @@
 
 #include <QGeoCoordinate>
 #include <QGestureEvent>
-#include <QHBoxLayout>
-#include <QMap>
 #include <QMapboxGL>
 #include <QMouseEvent>
 #include <QOpenGLWidget>
 #include <QPixmap>
 #include <QScopedPointer>
 #include <QString>
-#include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QTextDocument>
 
@@ -35,7 +32,7 @@ private:
 public:
   QTextDocument eta_doc;
   MapInstructions(QWidget * parent=nullptr);
-  inline void setError(QString error) { error_str = error; }
+  inline void setError(QString error) { error_str = error; update(); }
   void updateDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
   void updateETA(float seconds, float seconds_typical, float distance);
@@ -57,7 +54,6 @@ private:
   QScopedPointer<QMapboxGL> m_map;
 
   void initLayers();
-
   void mousePressEvent(QMouseEvent *ev) final;
   void mouseDoubleClickEvent(QMouseEvent *ev) final;
   void mouseMoveEvent(QMouseEvent *ev) final;

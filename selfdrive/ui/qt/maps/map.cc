@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/maps/map.h"
 
 #include <eigen3/Eigen/Dense>
-#include <cmath>
 
 #include <QDebug>
 #include <QPainter>
@@ -211,7 +210,6 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
-
   }
 }
 
@@ -359,10 +357,10 @@ void MapInstructions::paintEvent(QPaintEvent *event) {
   }
 
   // draw instructions
-  int header_height = drawInstructions(p, true);
+  int header_height = drawInstructions(p, false);
   if (header_height > 0) {
     p.fillRect(QRect{0, 0, width(), header_height}, QColor(0, 0, 0, 150));
-    drawInstructions(p, false);
+    drawInstructions(p, true);
   }
 
   // draw ETA
@@ -395,21 +393,13 @@ int MapInstructions::drawInstructions(QPainter &p, bool draw) {
     icon_height = icon.height();
   }
 
-  if (!distance_str.isEmpty()) {
-    r.setY(drawText(p, r, "Regular", 90, distance_str, draw).bottom());
-  }
-  if (!primary_str.isEmpty()) {
-    r.setY(drawText(p, r, "Regular", 60, primary_str, draw).bottom());
-  }
-  if (!secondary_str.isEmpty()) {
-    r.setY(drawText(p, r, "Regular", 50, secondary_str, draw).bottom());
-  }
+  if (!distance_str.isEmpty()) r.setY(drawText(p, r, "Regular", 90, distance_str, draw).bottom());
+  if (!primary_str.isEmpty()) r.setY(drawText(p, r, "Regular", 60, primary_str, draw).bottom());
+  if (!secondary_str.isEmpty()) r.setY(drawText(p, r, "Regular", 50, secondary_str, draw).bottom());
 
   if (!lanes.empty()) {
-    if (draw) {
-      for (int i = 0, x = r.x(); i < lanes.size(); ++i, x += 125) {
-        p.drawPixmap(x, r.y(), loadPixmap(lanes[i], {125, 125}, Qt::IgnoreAspectRatio));
-      }
+    for (int i = 0, x = r.x(); draw && i < lanes.size(); ++i, x += 125) {
+      p.drawPixmap(x, r.y(), loadPixmap(lanes[i], {125, 125}, Qt::IgnoreAspectRatio));
     }
     r.setY(r.y() + 125);
   }
@@ -421,19 +411,13 @@ void MapInstructions::updateDistance(float d) {
   d = std::max(d, 0.0f);
 
   if (uiState()->scene.is_metric) {
-    if (d > 500) {
-      distance_str = QString::number(d / 1000, 'f', 1) + tr(" km");
-    } else {
-      distance_str = QString::number(50 * int(d / 50)) + tr(" m");
-    }
+    distance_str = (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
+                             : QString::number(50 * int(d / 50)) + tr(" m");
   } else {
     float miles = d * METER_TO_MILE;
     float feet = d * METER_TO_FOOT;
-    if (feet > 500) {
-      distance_str = QString::number(miles, 'f', 1) + tr(" mi");
-    } else {
-      distance_str = QString::number(50 * int(feet / 50)) + tr(" ft");
-    }
+    distance_str = (feet > 500) ? QString::number(miles, 'f', 1) + tr(" mi")
+                                : QString::number(50 * int(feet / 50)) + tr(" ft");
   }
   update();
 }
