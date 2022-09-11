@@ -5,9 +5,13 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void cameras_open(MultiCameraState *s) {}
 void cameras_run(MultiCameraState *s) {}
 
-typedef struct CameraState {
-  int camera_num;
+class AbstractCamera {
+public:
   CameraInfo ci;
+};
+
+typedef struct CameraState {
+  std::unique_ptr<AbstractCamera> camera;
 
   int fps;
   float digital_gain = 0;

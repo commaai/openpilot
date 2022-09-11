@@ -73,7 +73,7 @@ std::vector<struct i2c_random_wr_payload> CameraAR0231::getExposureVector(int ne
   };
 }
 
-std::map<uint16_t, std::pair<int, int>> CameraAR0231::ar0231_build_register_lut(uint8_t *data) {
+std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildREgisterLut(uint8_t *data) {
   // This function builds a lookup table from register address, to a pair of indices in the
   // buffer where to read this address. The buffer contains padding bytes,
   // as well as markers to indicate the type of the next byte.
@@ -125,9 +125,9 @@ std::map<uint16_t, std::pair<int, int>> CameraAR0231::ar0231_build_register_lut(
 }
 
 
-std::map<uint16_t, uint16_t> CameraAR0231::ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs) {
+std::map<uint16_t, uint16_t> CameraAR0231::parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs) {
   if (ar0231_register_lut.empty()) {
-    ar0231_register_lut = ar0231_build_register_lut(data);
+    ar0231_register_lut = buildREgisterLut(data);
   }
 
   std::map<uint16_t, uint16_t> registers;
@@ -138,7 +138,7 @@ std::map<uint16_t, uint16_t> CameraAR0231::ar0231_parse_registers(uint8_t *data,
   return registers;
 }
 
-static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
+static float parseTempSensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
   // See AR0231 Developer Guide - page 36
   float slope = (125.0 - 55.0) / ((float)calib1 - (float)calib2);
   float t0 = 55.0 - slope * (float)calib2;
@@ -155,12 +155,12 @@ void CameraAR0231::processRegisters(void *addr, cereal::FrameData::Builder &fram
     return;
   }
 
-  auto registers = ar0231_parse_registers(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
+  auto registers = parseRegisters(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
 
   uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
   framed.setFrameIdSensor(frame_id);
 
-  float temp_0 = ar0231_parse_temp_sensor(registers[0x30c6], registers[0x30c8], registers[0x20b0]);
-  float temp_1 = ar0231_parse_temp_sensor(registers[0x30ca], registers[0x30cc], registers[0x20b2]);
+  float temp_0 = parseTempSensor(registers[0x30c6], registers[0x30c8], registers[0x20b0]);
+  float temp_1 = parseTempSensor(registers[0x30ca], registers[0x30cc], registers[0x20b2]);
   framed.setTemperaturesC({temp_0, temp_1});
 }

@@ -78,8 +78,8 @@ public:
   void processRegisters(void *addr, cereal::FrameData::Builder &framed) override;
 
 private:
-  std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
-  std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(uint8_t *data);
+  std::map<uint16_t, uint16_t> parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs);
+  std::map<uint16_t, std::pair<int, int>> buildREgisterLut(uint8_t *data);
   std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
 };
 
