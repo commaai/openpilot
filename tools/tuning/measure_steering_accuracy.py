@@ -41,16 +41,9 @@ class SteeringAccuracyTool:
   def update(self, sm):
     self.msg_cnt += 1
 
-    if args.control_type == "pid":
-      control_state = sm['controlsState'].lateralControlState.pidState
-    elif args.control_type == "indi":
-      control_state = sm['controlsState'].lateralControlState.indiState
-    elif args.control_type == "lqr":
-      control_state = sm['controlsState'].lateralControlState.lqrState
-    elif args.control_type == "angle":
-      control_state = sm['controlsState'].lateralControlState.angleState
-    else:
-      raise ValueError("invalid lateral control type, see help")
+    lateralControlState = sm['controlsState'].lateralControlState
+    control_type = list(lateralControlState.to_dict().keys())[0]
+    control_state = lateralControlState.__getattr__(control_type)
 
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
@@ -119,7 +112,6 @@ class SteeringAccuracyTool:
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='Steering accuracy measurement tool')
-  parser.add_argument('control_type', help="[pid|indi|lqr|angle]")
   parser.add_argument('--route', help="route name")
   parser.add_argument('--addr', default='127.0.0.1', help="IP address for optional ZMQ listener, default to msgq")
   parser.add_argument('--group', default='all', help="speed group to display, [crawl|slow|medium|fast|veryfast|germany|all], default to all")
