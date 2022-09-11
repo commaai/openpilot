@@ -220,7 +220,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
   ],
-  ecus={},
+  ecus={(1968, None): Ecu.abs, (1937, None): Ecu.dsu, (1953, None): Ecu.eps, (2016, None): Ecu.engine,
+        (1872, 15): Ecu.fwdRadar, (1872, 109): Ecu.fwdCamera, (1792, None): Ecu.engine, (2001, None): Ecu.abs},
   non_essential_ecus={
     # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],

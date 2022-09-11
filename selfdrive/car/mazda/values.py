@@ -68,7 +68,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
     ),
   ],
-  ecus={},
+  ecus={(1840, None): Ecu.eps, (2016, None): Ecu.engine, (1892, None): Ecu.fwdRadar,
+        (1888, None): Ecu.abs, (1798, None): Ecu.fwdCamera, (2017, None): Ecu.transmission},
 )
 
 FW_VERSIONS = {

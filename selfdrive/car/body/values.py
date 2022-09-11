@@ -35,8 +35,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   ecus={
-    (0x720, None): Ecu.engine,
-    (0x721, None): Ecu.debug,
+    (0x720, None): Ecu.engine, (0x721, None): Ecu.debug,
   },
 )
 
