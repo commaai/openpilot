@@ -211,7 +211,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra_config=None, timeou
   # Get versions and build capnp list to put into CarParams
   car_fw = []
 
-  for brand, config in FW_QUERY_CONFIGS.items():
+  for brand, config in configs.items():
     if query_brand is not None and brand != query_brand:
       continue
 
