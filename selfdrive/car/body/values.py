@@ -34,19 +34,17 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
   ],
-  ecus={
-    (0x720, None): Ecu.engine, (0x721, None): Ecu.debug,
-  },
+  ecus={(0x720, None): Ecu.engine, (0x721, None): Ecu.debug},
 )
 
 FW_VERSIONS = {
   CAR.BODY: {
-    (Ecu.engine, 0x720, None): [
+    Ecu.engine: [
       b'0.0.01',
-      b'02/27/2022'
+      b'02/27/2022',
     ],
-    (Ecu.debug, 0x721, None): [
-      b'166bd860' # git hash of the firmware used
+    Ecu.debug: [
+      b'166bd860',  # git hash of the firmware used
     ],
   },
 }

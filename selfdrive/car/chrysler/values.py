@@ -163,32 +163,29 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.engine, Ecu.transmission],
     ),
   ],
-  ecus={(2018, None): Ecu.hcp, (2020, None): Ecu.abs, (1858, None): Ecu.combinationMeter, (1860, None): Ecu.srs,
-        (1863, None): Ecu.abs, (1875, None): Ecu.fwdRadar, (1882, None): Ecu.eps, (2016, None): Ecu.engine,
-        (2017, None): Ecu.transmission, (416992241, None): Ecu.gateway, (1889, None): Ecu.eps},
+  # Ecu.hcp and Ecu.abs are added for data collection
+  # TODO: add test?
+  ecus={(0x7e2, None): Ecu.hcp, (0x7e4, None): Ecu.abs, (0x742, None): Ecu.combinationMeter, (0x744, None): Ecu.srs,
+        (0x747, None): Ecu.abs, (0x753, None): Ecu.fwdRadar, (0x75a, None): Ecu.eps, (0x7e0, None): Ecu.engine,
+        (0x7e1, None): Ecu.transmission, (0x18dacbf1, None): Ecu.gateway, (0x761, None): Ecu.eps},
 )
 
 FW_VERSIONS = {
-  CAR.PACIFICA_2019_HYBRID: {
-    (Ecu.hcp, 0x7e2, None): [],
-    (Ecu.abs, 0x7e4, None): [],
-  },
-
   CAR.RAM_1500: {
-    (Ecu.combinationMeter, 0x742, None): [
+    Ecu.combinationMeter: [
       b'68294063AH',
       b'68294063AG',
       b'68434860AC',
       b'68527375AD',
       b'68453503AC',
     ],
-    (Ecu.srs, 0x744, None): [
+    Ecu.srs: [
       b'68441329AB',
       b'68490898AA',
       b'68428609AB',
       b'68500728AA',
     ],
-    (Ecu.abs, 0x747, None): [
+    Ecu.abs: [
       b'68432418AD',
       b'68432418AB',
       b'68436004AE',
@@ -197,7 +194,7 @@ FW_VERSIONS = {
       b'68535469AB',
       b'68438454AC',
     ],
-    (Ecu.fwdRadar, 0x753, None): [
+    Ecu.fwdRadar: [
       b'68320950AL',
       b'68320950AJ',
       b'68454268AB',
@@ -205,18 +202,18 @@ FW_VERSIONS = {
       b'04672892AB',
       b'68475160AE',
     ],
-    (Ecu.eps, 0x75A, None): [
+    Ecu.eps: [
       b'68273275AG',
       b'68469901AA',
       b'68552788AA',
     ],
-    (Ecu.engine, 0x7e0, None): [
+    Ecu.engine: [
       b'68448163AJ',
       b'68500630AD',
       b'68539650AD',
       b'68378758AM ',
     ],
-    (Ecu.transmission, 0x7e1, None): [
+    Ecu.transmission: [
       b'68360078AL',
       b'68384328AD',
       b'68360085AL',
@@ -226,7 +223,7 @@ FW_VERSIONS = {
       b'68540431AB',
       b'68484467AC',
     ],
-    (Ecu.gateway, 0x18DACBF1, None): [
+    Ecu.gateway: [
       b'68402660AB',
       b'68445283AB',
       b'68533631AB',
@@ -235,21 +232,21 @@ FW_VERSIONS = {
   },
 
   CAR.RAM_HD: {
-    (Ecu.combinationMeter, 0x742, None): [
+    Ecu.combinationMeter: [
       b'68361606AH',
       b'68492693AD',
     ],
-    (Ecu.srs, 0x744, None): [
+    Ecu.srs: [
       b'68399794AC',
       b'68428503AA',
       b'68428505AA',
     ],
-    (Ecu.abs, 0x747, None): [
+    Ecu.abs: [
       b'68334977AH',
       b'68504022AB',
       b'68530686AB',
     ],
-    (Ecu.fwdRadar, 0x753, None): [
+    Ecu.fwdRadar: [
       b'04672895AB',
       b'56029827AG',
       b'68484694AE',
@@ -258,12 +255,12 @@ FW_VERSIONS = {
       b'68421036AC',
       b'68507906AB',
     ],
-    (Ecu.engine, 0x7e0, None): [
+    Ecu.engine: [
       b'52421132AF',
       b'M2370131MB',
       b'M2421132MB',
     ],
-    (Ecu.gateway, 0x18DACBF1, None): [
+    Ecu.gateway: [
       b'68488419AB',
       b'68535476AB',
     ],

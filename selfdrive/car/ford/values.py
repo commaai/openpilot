@@ -76,72 +76,72 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
     ),
   ],
-  ecus={(1840, None): Ecu.eps, (1888, None): Ecu.abs, (1892, None): Ecu.fwdRadar,
-        (1798, None): Ecu.fwdCamera, (2016, None): Ecu.engine, (1842, None): Ecu.shiftByWire},
+  ecus={(0x730, None): Ecu.eps, (0x760, None): Ecu.abs, (0x764, None): Ecu.fwdRadar,
+        (0x706, None): Ecu.fwdCamera, (0x7e0, None): Ecu.engine, (0x732, None): Ecu.shiftByWire},
 )
 
 FW_VERSIONS = {
   CAR.ESCAPE_MK4: {
-    (Ecu.eps, 0x730, None): [
+    Ecu.eps: [
       b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.abs, 0x760, None): [
+    Ecu.abs: [
       b'LX6C-2D053-NS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdRadar, 0x764, None): [
+    Ecu.fwdRadar: [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x706, None): [
+    Ecu.fwdCamera: [
       b'LJ6T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    Ecu.engine: [
       b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.shiftByWire, 0x732, None): [
+    Ecu.shiftByWire: [
     ],
   },
   CAR.EXPLORER_MK6: {
-    (Ecu.eps, 0x730, None): [
+    Ecu.eps: [
       b'L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.abs, 0x760, None): [
+    Ecu.abs: [
       b'L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-BF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdRadar, 0x764, None): [
+    Ecu.fwdRadar: [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x706, None): [
+    Ecu.fwdCamera: [
       b'LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    Ecu.engine: [
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.shiftByWire, 0x732, None): [
+    Ecu.shiftByWire: [
       b'L1MP-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FOCUS_MK4: {
-    (Ecu.eps, 0x730, None): [
+    Ecu.eps: [
       b'JX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.abs, 0x760, None): [
+    Ecu.abs: [
       b'JX61-2D053-CJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdRadar, 0x764, None): [
+    Ecu.fwdRadar: [
       b'JX7T-14D049-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x706, None): [
+    Ecu.fwdCamera: [
       b'JX7T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.engine, 0x7E0, None): [
+    Ecu.engine: [
       b'JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.shiftByWire, 0x732, None): [
+    Ecu.shiftByWire: [
     ],
   },
 }
