@@ -144,6 +144,7 @@ def get_present_ecus(logcan, sendcan):
   parallel_queries = list()
   responses = set()
 
+  # TODO: common function for generating addrs with proper parallel/serial addrs
   for config in FW_QUERY_CONFIGS.values():
     for r in config.requests:
       for (addr, sub_addr), ecu_type in config.ecus.items():
