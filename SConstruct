@@ -79,11 +79,11 @@ lenv = {
 }
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
-cpppath = ["#system/camerad/include"]
+
 if arch == "larch64":
   lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
 
-  cpppath += [
+  cpppath = [
     "#third_party/opencl/include",
   ]
 
@@ -105,6 +105,7 @@ if arch == "larch64":
 else:
   cflags = []
   cxxflags = []
+  cpppath = []
 
   # MacOS
   if arch == "Darwin":
