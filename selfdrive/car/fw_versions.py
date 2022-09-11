@@ -216,6 +216,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # TODO: can we just do this in one step/loop below somehow (and simply)?
   for brand, config in FW_QUERY_CONFIGS.items():
+    if query_brand is not None and brand != query_brand:
+      continue
+
     # Extract ECU addresses to query from fingerprints
     # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
     addrs = []
@@ -228,10 +231,10 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           addrs.append([a])
 
     addrs.insert(0, parallel_addrs)
+    query_addrs = [(a, s) for (b, a, s) in addrs if (len(r.whitelist_ecus) == 0 or config.ecus[(a, s)] in r.whitelist_ecus)]
 
     for r in config.requests:
       try:
-        query_addrs = [(a, s) for (b, a, s) in addrs if (len(r.whitelist_ecus) == 0 or config.ecus[(a, s)] in r.whitelist_ecus)]
         query = IsoTpParallelQuery(sendcan, logcan, r.bus, query_addrs, r.request, r.response, r.rx_offset, debug=debug)
         for (addr, rx_addr), version in query.get_data(timeout).items():
           f = car.CarParams.CarFw.new_message()
