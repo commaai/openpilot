@@ -18,11 +18,9 @@
 #include "system/hardware/hw.h"
 #include "msm_media_info.h"
 
+#include "system/camerad/cameras/camera_qcom2.h"
 #ifdef QCOM2
 #include "CL/cl_ext_qcom.h"
-#include "system/camerad/cameras/camera_qcom2.h"
-#else
-#include "system/camerad/test/camera_test.h"
 #endif
 
 ExitHandler do_exit;
