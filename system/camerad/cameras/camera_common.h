@@ -81,15 +81,10 @@ class Debayer;
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
-  CameraState *camera_state;
   Debayer *debayer = nullptr;
-
   VisionStreamType yuv_type;
-
   int cur_buf_idx;
-
   SafeQueue<int> safe_queue;
-
   int frame_buf_count;
 
 public:
