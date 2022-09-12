@@ -42,7 +42,7 @@ typedef struct CameraInfo {
 
 class AbstractCamera {
 public:
-  AbstractCamera(){};
+  AbstractCamera() = default;
   virtual ~AbstractCamera(){};
   virtual int getSlaveAddress(int port) const = 0;
   virtual std::vector<i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const = 0;
@@ -83,6 +83,7 @@ public:
 private:
   std::map<uint16_t, uint16_t> parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs) const;
   std::map<uint16_t, std::pair<int, int>> buildRegisterLut(uint8_t *data) const;
+
   mutable std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
 };
 

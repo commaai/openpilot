@@ -37,7 +37,7 @@ int CameraState::clear_req_queue() {
 void CameraState::sensors_start() {
   if (!enabled) return;
   LOGD("starting sensor %d", camera_num);
-  sensors_i2c(camera->start_reg_array.data(), camera->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, camera->i2c_type);
+  sensors_i2c(camera->start_reg_array, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
 void CameraState::sensors_poke(int request_id) {
@@ -60,7 +60,7 @@ void CameraState::sensors_poke(int request_id) {
   mm.free(pkt);
 }
 
-void CameraState::sensors_i2c(const i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type) {
+void CameraState::sensors_i2c(const std::vector<i2c_random_wr_payload> &dat, int op_code) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -71,16 +71,16 @@ void CameraState::sensors_i2c(const i2c_random_wr_payload* dat, int len, int op_
   pkt->header.op_code = op_code;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
-  buf_desc[0].size = buf_desc[0].length = sizeof(struct i2c_rdwr_header) + len*sizeof(struct i2c_random_wr_payload);
+  buf_desc[0].size = buf_desc[0].length = sizeof(struct i2c_rdwr_header) + dat.size()*sizeof(struct i2c_random_wr_payload);
   buf_desc[0].type = CAM_CMD_BUF_I2C;
 
   struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
-  i2c_random_wr->header.count = len;
+  i2c_random_wr->header.count = dat.size();
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
-  i2c_random_wr->header.data_type = i2c_type;
+  i2c_random_wr->header.data_type = camera->i2c_type;
   i2c_random_wr->header.addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
-  memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
+  memcpy(i2c_random_wr->random_wr_payload, dat.data(), dat.size()*sizeof(struct i2c_random_wr_payload));
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
@@ -489,7 +489,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   LOGD("acquire sensor dev");
 
   LOG("-- Configuring sensor");
-  sensors_i2c(camera->init_array.data(), camera->init_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, camera->i2c_type);
+  sensors_i2c(camera->init_array, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
   printf("dt is %x\n", camera->in_port_info_dt);
 
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
@@ -914,7 +914,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
   auto exp_vector = camera->getExposureVector(new_g, dc_gain_enabled, exposure_time, dc_gain_weight);
-  sensors_i2c(exp_vector.data(), exp_vector.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, camera->i2c_type);
+  sensors_i2c(exp_vector, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {

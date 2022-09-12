@@ -12,7 +12,6 @@ const size_t AR0231_REGISTERS_HEIGHT = 2;
 // TODO: this extra height is universal and doesn't apply per camera
 const size_t AR0231_STATS_HEIGHT = 2 + 8;
 
-// AR0231
 CameraAR0231::CameraAR0231() {
   id = CAMERA_ID_OX03C10;
   ci = {

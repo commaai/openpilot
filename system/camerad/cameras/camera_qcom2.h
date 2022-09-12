@@ -76,7 +76,7 @@ private:
 
   int sensors_init();
   void sensors_poke(int request_id);
-  void sensors_i2c(const i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type);
+  void sensors_i2c(const std::vector<i2c_random_wr_payload> &dat, int op_code);
 };
 
 typedef struct MultiCameraState {
