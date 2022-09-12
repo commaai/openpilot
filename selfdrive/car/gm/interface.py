@@ -64,6 +64,9 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       if experimental_long:
         ret.pcmCruise = False
+        # Also can enable behind lead while stopped
+        # TODO: See if the PCM cares about lead, or only foot on brake and stopped
+        ret.minEnableSpeed = 5 * CV.KPH_TO_MS
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
 
