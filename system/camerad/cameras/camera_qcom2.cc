@@ -468,7 +468,9 @@ void CameraState::enqueue_buffer(int i, bool dp) {
     }
 
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
-    if (dp) buf.queue(i);
+    if (dp && ret == 0) {
+      buf.queue(i);
+    }
 
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
