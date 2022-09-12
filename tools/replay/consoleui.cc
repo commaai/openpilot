@@ -98,7 +98,7 @@ ConsoleUI::ConsoleUI(Replay *replay, QObject *parent) : replay(replay), sm({"car
   QObject::connect(this, &ConsoleUI::logMessageSignal, this, &ConsoleUI::logMessage);
 
   sm_timer.callOnTimeout(this, &ConsoleUI::updateStatus);
-  sm_timer.start(100);
+  sm_timer.start(200);
   getch_timer.start(1000, this);
   readyRead();
 }
