@@ -73,6 +73,7 @@ private:
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();
 
+  int sensors_init(int camera_id);
   void sensors_poke(int request_id);
   void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type);
 };
