@@ -120,10 +120,9 @@ class TestAlerts(unittest.TestCase):
     for i in range(50):
       # set the alert
       a = random.choice(list(self.offroad_alerts))
-      alert = self.offroad_alerts[a]
       set_offroad_alert(a, True, extra_text="a"*i)
 
-      expected_txt = alert['text'] + "a"*i
+      expected_txt = "a"*i
       written_txt = json.loads(params.get(a, encoding='utf8'))['text']
       self.assertTrue(expected_txt == written_txt)
 
