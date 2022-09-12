@@ -36,7 +36,7 @@ int I2CSensor::init_gpio() {
     return 0;
   }
 
-  gpio_fd = gpiochip_get_ro_value_fd(gpio_nr);
+  gpio_fd = gpiochip_get_ro_value_fd("sensord", GPIOCHIP_INT, gpio_nr);
   if (gpio_fd < 0) {
     return -1;
   }
