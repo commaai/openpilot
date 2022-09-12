@@ -14,6 +14,7 @@ const int NM_802_11_AP_SEC_GROUP_WEP40     = 0x00000010;
 const int NM_802_11_AP_SEC_GROUP_WEP104    = 0x00000020;
 const int NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100;
 const int NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200;
+const int NM_802_11_AP_SEC_KEY_MGMT_SAE    = 0x00000400;
 
 const QString NM_DBUS_PATH                          = "/org/freedesktop/NetworkManager";
 const QString NM_DBUS_PATH_SETTINGS                 = "/org/freedesktop/NetworkManager/Settings";
