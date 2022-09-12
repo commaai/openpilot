@@ -32,6 +32,7 @@ private:
   OffroadAlert* alerts_widget;
   QPushButton* alert_notif;
   QPushButton* update_notif;
+  QString locale_name;
 };
 
 class HomeWindow : public QWidget {
