@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # cycle through normal alerts
     for a in offroad_alerts:
       print("setting alert:", a)
-      set_offroad_alert(a, True)
+      set_offroad_alert(a, True, '{extra text}' if a in ('Offroad_UpdateFailed', 'Offroad_ConnectivityNeededPrompt') else None)
       time.sleep(t)
       set_offroad_alert(a, False)
 
