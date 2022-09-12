@@ -63,6 +63,21 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
 }
 
 int OffroadAlert::refresh() {
+  static std::map<std::string, QString> alerts_table = {
+      {"Offroad_TemperatureTooHigh", tr("Device temperature too high. System won't start.")},
+      {"Offroad_ConnectivityNeededPrompt", tr("Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in %1")},
+      {"Offroad_ConnectivityNeeded", tr("Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.")},
+      {"Offroad_UpdateFailed", tr("Unable to download updates\n%1")},
+      {"Offroad_InvalidTime", tr("Invalid date and time settings, system won't start. Connect to internet to set time.")},
+      {"Offroad_IsTakingSnapshot", tr("Taking camera snapshots. System won't start until finished.")},
+      {"Offroad_NeosUpdate", tr("An update to your device's operating system is downloading in the background. You will be prompted to update when it's ready to install.")},
+      {"Offroad_UnofficialHardware", tr("Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.")},
+      {"Offroad_StorageMissing", tr("NVMe drive not mounted.")},
+      {"Offroad_BadNvme", tr("Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.")},
+      {"Offroad_CarUnrecognized", tr("openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.")},
+      {"Offroad_NoFirmware", tr("openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.")},
+  };
+
   // build widgets for each offroad alert on first refresh
   if (alerts.empty()) {
     QString json = util::read_file("../controls/lib/alerts_offroad.json").c_str();
@@ -92,7 +107,8 @@ int OffroadAlert::refresh() {
     std::string bytes = params.get(key);
     if (bytes.size()) {
       auto doc_par = QJsonDocument::fromJson(bytes.c_str());
-      text = doc_par["text"].toString();
+      QString extra_text = doc_par["text"].toString();
+      text = extra_text.isEmpty() ? alerts_table[key] : alerts_table[key].arg(extra_text);
     }
     label->setText(text);
     label->setVisible(!text.isEmpty());
