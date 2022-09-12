@@ -1,9 +1,9 @@
-struct i2c_random_wr_payload start_reg_array_ar0231[] = {{0x301A, 0x91C}};
-struct i2c_random_wr_payload stop_reg_array_ar0231[] = {{0x301A, 0x918}};
-struct i2c_random_wr_payload start_reg_array_ox03c10[] = {{0x100, 1}};
-struct i2c_random_wr_payload stop_reg_array_ox03c10[] = {{0x100, 0}};
+static struct i2c_random_wr_payload start_reg_array_ar0231[] = {{0x301A, 0x91C}};
+static struct i2c_random_wr_payload stop_reg_array_ar0231[] = {{0x301A, 0x918}};
+static struct i2c_random_wr_payload start_reg_array_ox03c10[] = {{0x100, 1}};
+static struct i2c_random_wr_payload stop_reg_array_ox03c10[] = {{0x100, 0}};
 
-struct i2c_random_wr_payload init_array_ox03c10[] = {
+static struct i2c_random_wr_payload init_array_ox03c10[] = {
   {0x103, 1},
   {0x107, 1},
 
@@ -751,7 +751,7 @@ struct i2c_random_wr_payload init_array_ox03c10[] = {
   {0x5886, 0x08}, {0x5887, 0x6C},
 };
 
-struct i2c_random_wr_payload init_array_ar0231[] = {
+static struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
 
   // CLOCK Settings

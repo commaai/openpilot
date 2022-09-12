@@ -1041,4 +1041,3 @@ void cameras_run(MultiCameraState *s) {
 
   cameras_close(s);
 }
-

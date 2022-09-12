@@ -99,9 +99,6 @@ if arch == "larch64":
     "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu"
   ]
-  cpppath += [
-    "#system/camerad/include",
-  ]
   cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   rpath += ["/usr/local/lib"]
