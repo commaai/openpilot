@@ -75,7 +75,7 @@ echo 84 | sudo tee /sys/class/gpio/unexport
 int gpiochip_get_ro_value_fd(int pin_nr, EdgeType etype) {
   int fd = open(gpiochip_path.c_str(), O_RDONLY);
   if (fd < 0) {
-    LOGE("Error opening gpiochip fd")
+    LOGE("Error opening gpiochip0 fd")
     return -1;
   }
 
