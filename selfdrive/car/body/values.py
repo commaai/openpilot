@@ -1,7 +1,6 @@
 from typing import Dict, Union
 
 from cereal import car
-from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -29,16 +28,11 @@ CAR_INFO: Dict[str, Union[CarInfo, None]] = {
   CAR.BODY_KNEE: None,
 }
 
-BODY_TYPE_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_NAME_OR_ENGINE_TYPE)
-BODY_TYPE_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_NAME_OR_ENGINE_TYPE)
-
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST, BODY_TYPE_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE, BODY_TYPE_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
     ),
   ],
