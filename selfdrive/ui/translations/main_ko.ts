@@ -539,7 +539,7 @@ location set</source>
 <context>
     <name>PairingPopup</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="+86"/>
+        <location filename="../qt/widgets/prime.cc" line="+89"/>
         <source>Pair your device to your comma account</source>
         <translation>장치를 콤마 계정과 페어링합니다</translation>
     </message>
