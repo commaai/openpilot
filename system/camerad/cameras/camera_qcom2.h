@@ -17,7 +17,7 @@
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
-  std::unique_ptr<AbstractCamera> camera;
+  std::unique_ptr<const AbstractCamera> camera;
   bool enabled;
 
   std::mutex exp_lock;
@@ -76,7 +76,7 @@ private:
 
   int sensors_init();
   void sensors_poke(int request_id);
-  void sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type);
+  void sensors_i2c(const i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type);
 };
 
 typedef struct MultiCameraState {

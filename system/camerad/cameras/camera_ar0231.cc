@@ -52,7 +52,7 @@ CameraAR0231::CameraAR0231() {
   config_val_low = 19200000;
 }
 
-int CameraAR0231::getSlaveAddress(int port) {
+int CameraAR0231::getSlaveAddress(int port) const {
   assert(port >= 0 && port <= 2);
   return (int[]){0x20, 0x30, 0x20}[port];
 }
@@ -66,7 +66,7 @@ std::vector<struct i2c_random_wr_payload> CameraAR0231::getExposureVector(int ne
   };
 }
 
-std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildRegisterLut(uint8_t *data) {
+std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildRegisterLut(uint8_t *data) const {
   // This function builds a lookup table from register address, to a pair of indices in the
   // buffer where to read this address. The buffer contains padding bytes,
   // as well as markers to indicate the type of the next byte.
@@ -117,7 +117,7 @@ std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildRegisterLut(uint8_t *
   return registers;
 }
 
-std::map<uint16_t, uint16_t> CameraAR0231::parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs) {
+std::map<uint16_t, uint16_t> CameraAR0231::parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs) const {
   if (ar0231_register_lut.empty()) {
     ar0231_register_lut = buildRegisterLut(data);
   }
@@ -137,7 +137,7 @@ static float parseTempSensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg
   return t0 + slope * (float)data_reg;
 }
 
-void CameraAR0231::processRegisters(void *addr, cereal::FrameData::Builder &framed) {
+void CameraAR0231::processRegisters(void *addr, cereal::FrameData::Builder &framed) const {
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t *)addr + registers_offset;
 

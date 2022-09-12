@@ -60,7 +60,7 @@ void CameraState::sensors_poke(int request_id) {
   mm.free(pkt);
 }
 
-void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type) {
+void CameraState::sensors_i2c(const i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;

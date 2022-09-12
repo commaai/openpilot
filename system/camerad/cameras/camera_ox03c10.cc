@@ -45,7 +45,7 @@ CameraOX03C10::CameraOX03C10() {
   config_val_low = 24000000;
 }
 
-int CameraOX03C10::getSlaveAddress(int port) {
+int CameraOX03C10::getSlaveAddress(int port) const {
   assert(port >= 0 && port <= 2);
   return (int[]){0x6C, 0x20, 0x6C}[port];
 }

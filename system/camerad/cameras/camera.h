@@ -44,9 +44,9 @@ class AbstractCamera {
 public:
   AbstractCamera(){};
   virtual ~AbstractCamera(){};
-  virtual int getSlaveAddress(int port) = 0;
+  virtual int getSlaveAddress(int port) const = 0;
   virtual std::vector<i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const = 0;
-  virtual void processRegisters(void *addr, cereal::FrameData::Builder &framed) {}
+  virtual void processRegisters(void *addr, cereal::FrameData::Builder &framed) const {}
 
   CameraInfo ci;
   int id;
@@ -76,20 +76,20 @@ class CameraAR0231 : public AbstractCamera {
 public:
   CameraAR0231();
   ~CameraAR0231() {}
-  int getSlaveAddress(int port) override;
+  int getSlaveAddress(int port) const override;
   std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const override;
-  void processRegisters(void *addr, cereal::FrameData::Builder &framed) override;
+  void processRegisters(void *addr, cereal::FrameData::Builder &framed) const override;
 
 private:
-  std::map<uint16_t, uint16_t> parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs);
-  std::map<uint16_t, std::pair<int, int>> buildRegisterLut(uint8_t *data);
-  std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
+  std::map<uint16_t, uint16_t> parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs) const;
+  std::map<uint16_t, std::pair<int, int>> buildRegisterLut(uint8_t *data) const;
+  mutable std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
 };
 
 class CameraOX03C10 : public AbstractCamera {
 public:
   CameraOX03C10();
   ~CameraOX03C10() {}
-  int getSlaveAddress(int port) override;
+  int getSlaveAddress(int port) const override;
   std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const override;
 };
