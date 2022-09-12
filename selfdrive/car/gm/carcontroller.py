@@ -77,6 +77,7 @@ class CarController:
 
         idx = (self.frame // 4) % 4
 
+        # TODO: Use AcceleratorPedal2->CruiseState for this? it only changes when button is pressed
         at_full_stop = CC.longActive and CS.out.standstill and actuators.longControlState == LongCtrlState.stopping
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
 
