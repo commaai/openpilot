@@ -205,8 +205,8 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
-    # TODO: this may be incorrect, it might actually consider if there's a lead
-    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and ret.brakePressed):
+    # TODO: (generically?) allow engaging with brake pressed (not regen paddle)
+    if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
