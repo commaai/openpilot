@@ -104,7 +104,7 @@ def replay_sensor_events(slist, msgs):
 
       new_m = m.as_builder()
       new_m.logMonoTime = int(sec_since_boot() * 1e9)
-      new_m.timestamp = new_m.logMonoTime
+      getattr(new_m, m.which()).timestamp = new_m.logMonoTime
 
       pm.send(m.which(), new_m)
       rks[m.which()].keep_time()
