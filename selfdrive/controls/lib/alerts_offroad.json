@@ -1,52 +1,40 @@
 {
   "Offroad_TemperatureTooHigh": {
-    "text": "",
     "severity": 1
   },
   "Offroad_ConnectivityNeededPrompt": {
-    "text": "",
     "severity": 0,
     "_comment": "Append the number of days at the end of the text"
   },
   "Offroad_ConnectivityNeeded": {
-    "text": "",
     "severity": 1
   },
   "Offroad_UpdateFailed": {
-    "text": "",
     "severity": 1,
     "_comment": "Append the command and error to the text."
   },
   "Offroad_InvalidTime": {
-    "text": "",
     "severity": 1
   },
   "Offroad_IsTakingSnapshot": {
-    "text": "",
     "severity": 0
   },
   "Offroad_NeosUpdate": {
-    "text": "",
     "severity": 0
   },
   "Offroad_UnofficialHardware": {
-    "text": "",
     "severity": 1
   },
   "Offroad_StorageMissing": {
-    "text": "",
     "severity": 1
   },
   "Offroad_BadNvme": {
-    "text": "",
     "severity": 1
   },
   "Offroad_CarUnrecognized": {
-    "text": "",
     "severity": 0
   },
   "Offroad_NoFirmware": {
-    "text": "",
     "severity": 0
   }
 }
