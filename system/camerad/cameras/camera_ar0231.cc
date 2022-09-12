@@ -1,43 +1,40 @@
-#include "system/camerad/cameras/camera.h"
-
-#include <cassert>
-
 #include "common/swaglog.h"
 #include "common/util.h"
+#include "system/camerad/cameras/camera.h"
 
 const float sensor_analog_gains_AR0231[] = {
-  1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
-  3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0, // 4, 5, 6, 7
-  5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0, // 8, 9, 10, 11
-  7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
+    1.0 / 8.0, 2.0 / 8.0, 2.0 / 7.0, 3.0 / 7.0,  // 0, 1, 2, 3
+    3.0 / 6.0, 4.0 / 6.0, 4.0 / 5.0, 5.0 / 5.0,  // 4, 5, 6, 7
+    5.0 / 4.0, 6.0 / 4.0, 6.0 / 3.0, 7.0 / 3.0,  // 8, 9, 10, 11
+    7.0 / 2.0, 8.0 / 2.0, 8.0 / 1.0};            // 12, 13, 14, 15 = bypass
 
 const size_t AR0231_REGISTERS_HEIGHT = 2;
 // TODO: this extra height is universal and doesn't apply per camera
-const size_t AR0231_STATS_HEIGHT = 2+8;
+const size_t AR0231_STATS_HEIGHT = 2 + 8;
 
 // AR0231
 CameraAR0231::CameraAR0231() {
   id = CAMERA_ID_OX03C10;
   ci = {
-    .frame_width = FRAME_WIDTH,
-    .frame_height = FRAME_HEIGHT,
-    .frame_stride = FRAME_STRIDE,
-    .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
+      .frame_width = FRAME_WIDTH,
+      .frame_height = FRAME_HEIGHT,
+      .frame_stride = FRAME_STRIDE,
+      .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
 
-    .registers_offset = 0,
-    .frame_offset = AR0231_REGISTERS_HEIGHT,
-    .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
+      .registers_offset = 0,
+      .frame_offset = AR0231_REGISTERS_HEIGHT,
+      .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
   };
 
   dc_gain_factor = 2.5;
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.2;
   dc_gain_off_grey = 0.3;
-  exposure_time_min = 2; // with HDR, fastest ss
-  exposure_time_max = 0x0855; // with HDR, slowest ss, 40ms
-  analog_gain_min_idx = 0x1; // 0.25x
-  analog_gain_rec_idx = 0x6; // 0.8x
-  analog_gain_max_idx = 0xD; // 4.0x
+  exposure_time_min = 2;       // with HDR, fastest ss
+  exposure_time_max = 0x0855;  // with HDR, slowest ss, 40ms
+  analog_gain_min_idx = 0x1;   // 0.25x
+  analog_gain_rec_idx = 0x6;   // 0.8x
+  analog_gain_max_idx = 0xD;   // 4.0x
 
   for (int i = 0; i <= analog_gain_max_idx; i++) {
     sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
@@ -45,13 +42,8 @@ CameraAR0231::CameraAR0231() {
   min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
 
-  for (auto &v : start_reg_array_ar0231) {
-    start_reg_array.push_back(v);
-  }
-
-  for (auto &v : init_array_ar0231) {
-    init_array.push_back(v);
-  }
+  start_reg_array.assign(std::begin(start_reg_array_ar0231), std::end(start_reg_array_ar0231));
+  init_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
 
   i2c_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   in_port_info_dt = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
@@ -60,8 +52,9 @@ CameraAR0231::CameraAR0231() {
   config_val_low = 19200000;
 }
 
-CameraAR0231::~CameraAR0231() {
-
+int CameraAR0231::getSlaveAddress(int port) {
+  assert(port >= 0 && port <= 2);
+  return (int[]){0x20, 0x30, 0x20}[port];
 }
 
 std::vector<struct i2c_random_wr_payload> CameraAR0231::getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const {
@@ -84,13 +77,13 @@ std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildRegisterLut(uint8_t *
 
   int max_i[] = {1828 / 2 * 3, 1500 / 2 * 3};
   auto get_next_idx = [](int cur_idx) {
-    return (cur_idx % 3 == 1) ? cur_idx + 2 : cur_idx + 1; // Every third byte is padding
+    return (cur_idx % 3 == 1) ? cur_idx + 2 : cur_idx + 1;  // Every third byte is padding
   };
 
   std::map<uint16_t, std::pair<int, int>> registers;
   for (int register_row = 0; register_row < 2; register_row++) {
     uint8_t *registers_raw = data + ci.frame_stride * register_row;
-    assert(registers_raw[0] == 0x0a); // Start of line
+    assert(registers_raw[0] == 0x0a);  // Start of line
 
     int value_tag_count = 0;
     int first_val_idx = 0;
@@ -102,12 +95,12 @@ std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildRegisterLut(uint8_t *
       uint8_t tag = registers_raw[i];
       uint16_t val = registers_raw[val_idx];
 
-      if (tag == 0xAA) { // Register MSB tag
+      if (tag == 0xAA) {  // Register MSB tag
         cur_addr = val << 8;
-      } else if (tag == 0xA5) { // Register LSB tag
+      } else if (tag == 0xA5) {  // Register LSB tag
         cur_addr |= val;
-        cur_addr -= 2; // Next value tag will increment address again
-      } else if (tag == 0x5A) { // Value tag
+        cur_addr -= 2;           // Next value tag will increment address again
+      } else if (tag == 0x5A) {  // Value tag
 
         // First tag
         if (value_tag_count % 2 == 0) {
@@ -123,7 +116,6 @@ std::map<uint16_t, std::pair<int, int>> CameraAR0231::buildRegisterLut(uint8_t *
   }
   return registers;
 }
-
 
 std::map<uint16_t, uint16_t> CameraAR0231::parseRegisters(uint8_t *data, std::initializer_list<uint16_t> addrs) {
   if (ar0231_register_lut.empty()) {
@@ -145,7 +137,6 @@ static float parseTempSensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg
   return t0 + slope * (float)data_reg;
 }
 
-
 void CameraAR0231::processRegisters(void *addr, cereal::FrameData::Builder &framed) {
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
   uint8_t *data = (uint8_t *)addr + registers_offset;
@@ -156,7 +147,6 @@ void CameraAR0231::processRegisters(void *addr, cereal::FrameData::Builder &fram
   }
 
   auto registers = parseRegisters(data, {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc});
-
   uint32_t frame_id = ((uint32_t)registers[0x2000] << 16) | registers[0x2002];
   framed.setFrameIdSensor(frame_id);
 

@@ -35,13 +35,9 @@ CameraOX03C10::CameraOX03C10() {
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
 
-  for (auto &v : start_reg_array_ox03c10) {
-    start_reg_array.push_back(v);
-  }
+  start_reg_array.assign(std::begin(start_reg_array_ox03c10), std::end(start_reg_array_ox03c10));
+  init_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
 
-  for (auto &v : init_array_ox03c10) {
-    init_array.push_back(v);
-  }
   i2c_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
   in_port_info_dt = 0x2c;  // one is 0x2a, two are 0x2b
   reg_addr = 0x300a;
@@ -49,7 +45,9 @@ CameraOX03C10::CameraOX03C10() {
   config_val_low = 24000000;
 }
 
-CameraOX03C10::~CameraOX03C10() {
+int CameraOX03C10::getSlaveAddress(int port) {
+  assert(port >= 0 && port <= 2);
+  return (int[]){0x6C, 0x20, 0x6C}[port];
 }
 
 std::vector<struct i2c_random_wr_payload> CameraOX03C10::getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const {

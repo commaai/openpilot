@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -43,7 +44,8 @@ class AbstractCamera {
 public:
   AbstractCamera(){};
   virtual ~AbstractCamera(){};
-  virtual std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const = 0;
+  virtual int getSlaveAddress(int port) = 0;
+  virtual std::vector<i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const = 0;
   virtual void processRegisters(void *addr, cereal::FrameData::Builder &framed) {}
 
   CameraInfo ci;
@@ -73,7 +75,8 @@ public:
 class CameraAR0231 : public AbstractCamera {
 public:
   CameraAR0231();
-  ~CameraAR0231();
+  ~CameraAR0231() {}
+  int getSlaveAddress(int port) override;
   std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const override;
   void processRegisters(void *addr, cereal::FrameData::Builder &framed) override;
 
@@ -86,6 +89,7 @@ private:
 class CameraOX03C10 : public AbstractCamera {
 public:
   CameraOX03C10();
-  ~CameraOX03C10();
+  ~CameraOX03C10() {}
+  int getSlaveAddress(int port) override;
   std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const override;
 };

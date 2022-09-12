@@ -101,7 +101,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   return (struct cam_cmd_power *)(unconditional_wait + 1);
 };
 
-int CameraState::sensors_init(int camera_id) {
+int CameraState::sensors_init() {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
@@ -117,20 +117,7 @@ int CameraState::sensors_init(int camera_id) {
   auto probe = (struct cam_cmd_probe *)(i2c_info + 1);
 
   probe->camera_id = camera_num;
-  switch (camera_num) {
-    case 0:
-      // port 0
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C; // 6C = 0x36*2
-      break;
-    case 1:
-      // port 1
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x20;
-      break;
-    case 2:
-      // port 2
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C;
-      break;
-  }
+  i2c_info->slave_addr = camera->getSlaveAddress(camera_num);
 
   // 0(I2C_STANDARD_MODE) = 100khz, 1(I2C_FAST_MODE) = 400khz
   //i2c_info->i2c_freq_mode = I2C_STANDARD_MODE;
@@ -473,16 +460,13 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
-  ret = sensors_init(CAMERA_ID_AR0231);
+  camera.reset(new CameraAR0231());
+  ret = sensors_init();
   if (ret != 0) {
     // TODO: use build flag instead?
     LOGD("AR0231 init failed, trying OX03C10");
-    ret = sensors_init(CAMERA_ID_OX03C10);
-    if (ret == 0) {
-      camera = std::make_unique<CameraOX03C10>();
-    }
-  } else {
-    camera = std::make_unique<CameraAR0231>();
+    camera.reset(new CameraOX03C10());
+    ret = sensors_init();
   }
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
   if (ret != 0) {
