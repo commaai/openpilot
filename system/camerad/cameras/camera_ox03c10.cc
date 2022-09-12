@@ -52,11 +52,6 @@ CameraOX03C10::CameraOX03C10() {
 CameraOX03C10::~CameraOX03C10() {
 }
 
-int CameraOX03C10::getSlaveAddress(int port) {
-  assert(port >=0 && port <= 2);
-  return (int[]){0x6C, 0x20, 0x6C}[port];
-}
-
 std::vector<struct i2c_random_wr_payload> CameraOX03C10::getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const {
   static constexpr uint32_t ox03c10_analog_gains_reg[] = {
       0x100, 0x140, 0x150, 0x190,

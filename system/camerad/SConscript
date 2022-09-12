@@ -5,7 +5,7 @@ libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', cereal, messaging, 'zmq
 cenv = env.Clone()
 cenv['CPPPATH'].append('include/')
 
-camera_obj = cenv.Object(['cameras/camera_qcom2.cc', 'cameras/camera.cc', 'cameras/camera_ar0231.cc','cameras/camera_ox03c10.cc','cameras/camera_common.cc', 'cameras/camera_util.cc'])
+camera_obj = cenv.Object(['cameras/camera_qcom2.cc',   'cameras/camera_ar0231.cc','cameras/camera_ox03c10.cc','cameras/camera_common.cc', 'cameras/camera_util.cc'])
 cenv.Program('camerad', [
     'main.cc',
     camera_obj,
