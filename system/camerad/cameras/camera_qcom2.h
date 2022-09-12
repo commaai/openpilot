@@ -66,7 +66,6 @@ public:
   bool skipped;
 
   CameraBuf buf;
-  MemoryManager mm;
 
 private:
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);

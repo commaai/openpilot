@@ -43,7 +43,7 @@ void CameraState::sensors_start() {
 void CameraState::sensors_poke(int request_id) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
-  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)camera->mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 0;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
@@ -57,14 +57,14 @@ void CameraState::sensors_poke(int request_id) {
     return;
   }
 
-  mm.free(pkt);
+  camera->mm.free(pkt);
 }
 
 void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op_code, camera_sensor_i2c_type i2c_type) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)camera->mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 1;
   pkt->kmd_cmd_buf_index = -1;
   pkt->header.size = size;
@@ -74,7 +74,7 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
   buf_desc[0].size = buf_desc[0].length = sizeof(struct i2c_rdwr_header) + len*sizeof(struct i2c_random_wr_payload);
   buf_desc[0].type = CAM_CMD_BUF_I2C;
 
-  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+  struct cam_cmd_i2c_random_wr *i2c_random_wr = (struct cam_cmd_i2c_random_wr *)camera->mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   i2c_random_wr->header.count = len;
   i2c_random_wr->header.op_code = 1;
   i2c_random_wr->header.cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR;
@@ -89,131 +89,8 @@ void CameraState::sensors_i2c(struct i2c_random_wr_payload* dat, int len, int op
     return;
   }
 
-  mm.free(i2c_random_wr);
-  mm.free(pkt);
-}
-
-static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
-  cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = delay_ms;
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  return (struct cam_cmd_power *)(unconditional_wait + 1);
-};
-
-int CameraState::sensors_init(int camera_id) {
-  uint32_t cam_packet_handle = 0;
-  int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
-  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
-  pkt->num_cmd_buf = 2;
-  pkt->kmd_cmd_buf_index = -1;
-  pkt->header.op_code = 0x1000000 | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
-  pkt->header.size = size;
-  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
-
-  buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_cmd_i2c_info) + sizeof(struct cam_cmd_probe);
-  buf_desc[0].type = CAM_CMD_BUF_LEGACY;
-  struct cam_cmd_i2c_info *i2c_info = (struct cam_cmd_i2c_info *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
-  auto probe = (struct cam_cmd_probe *)(i2c_info + 1);
-
-  probe->camera_id = camera_num;
-  switch (camera_num) {
-    case 0:
-      // port 0
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C; // 6C = 0x36*2
-      break;
-    case 1:
-      // port 1
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x30 : 0x20;
-      break;
-    case 2:
-      // port 2
-      i2c_info->slave_addr = (camera_id == CAMERA_ID_AR0231) ? 0x20 : 0x6C;
-      break;
-  }
-
-  // 0(I2C_STANDARD_MODE) = 100khz, 1(I2C_FAST_MODE) = 400khz
-  //i2c_info->i2c_freq_mode = I2C_STANDARD_MODE;
-  i2c_info->i2c_freq_mode = I2C_FAST_MODE;
-  i2c_info->cmd_type = CAMERA_SENSOR_CMD_TYPE_I2C_INFO;
-
-  probe->data_type = CAMERA_SENSOR_I2C_TYPE_WORD;
-  probe->addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
-  probe->op_code = 3;   // don't care?
-  probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
-  probe->reg_addr = camera->reg_addr;
-  probe->expected_data = camera->expected_data;
-  probe->data_mask = 0;
-
-  //buf_desc[1].size = buf_desc[1].length = 148;
-  buf_desc[1].size = buf_desc[1].length = 196;
-  buf_desc[1].type = CAM_CMD_BUF_I2C;
-  struct cam_cmd_power *power_settings = (struct cam_cmd_power *)mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
-  memset(power_settings, 0, buf_desc[1].size);
-
-  // power on
-  struct cam_cmd_power *power = power_settings;
-  power->count = 4;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
-  power->power_settings[0].power_seq_type = 3; // clock??
-  power->power_settings[1].power_seq_type = 1; // analog
-  power->power_settings[2].power_seq_type = 2; // digital
-  power->power_settings[3].power_seq_type = 8; // reset low
-  power = power_set_wait(power, 1);
-
-  // set clock
-  power->count = 1;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
-  power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = camera->config_val_low;
-  power = power_set_wait(power, 1);
-
-  // reset high
-  power->count = 1;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
-  power->power_settings[0].power_seq_type = 8;
-  power->power_settings[0].config_val_low = 1;
-  // wait 650000 cycles @ 19.2 mhz = 33.8 ms
-  power = power_set_wait(power, 34);
-
-  // probe happens here
-
-  // disable clock
-  power->count = 1;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
-  power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = 0;
-  power = power_set_wait(power, 1);
-
-  // reset high
-  power->count = 1;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
-  power->power_settings[0].power_seq_type = 8;
-  power->power_settings[0].config_val_low = 1;
-  power = power_set_wait(power, 1);
-
-  // reset low
-  power->count = 1;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
-  power->power_settings[0].power_seq_type = 8;
-  power->power_settings[0].config_val_low = 0;
-  power = power_set_wait(power, 1);
-
-  // power off
-  power->count = 3;
-  power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_DOWN;
-  power->power_settings[0].power_seq_type = 2;
-  power->power_settings[1].power_seq_type = 1;
-  power->power_settings[2].power_seq_type = 3;
-
-  int ret = do_cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
-  LOGD("probing the sensor: %d", ret);
-
-  mm.free(i2c_info);
-  mm.free(power_settings);
-  mm.free(pkt);
-
-  return ret;
+  camera->mm.free(i2c_random_wr);
+  camera->mm.free(pkt);
 }
 
 void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
@@ -222,7 +99,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
-  struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
+  struct cam_packet *pkt = (struct cam_packet *)camera->mm.alloc(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
   // YUV has kmd_cmd_buf_offset = 1780
@@ -317,7 +194,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  uint32_t *buf2 = (uint32_t *)mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+  uint32_t *buf2 = (uint32_t *)camera->mm.alloc(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memcpy(buf2, &tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {
@@ -353,8 +230,8 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     LOGE("isp config failed");
   }
 
-  mm.free(buf2);
-  mm.free(pkt);
+  camera->mm.free(buf2);
+  camera->mm.free(pkt);
 }
 
 void CameraState::enqueue_buffer(int i, bool dp) {
@@ -469,21 +346,12 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   LOGD("opened sensor for %d", camera_num);
 
   // init memorymanager for this camera
-  mm.init(multi_cam_state->video0_fd);
+  camera->mm.init(multi_cam_state->video0_fd);
 
   // probe the sensor
   LOGD("-- Probing sensor %d", camera_num);
-  ret = sensors_init(CAMERA_ID_AR0231);
-  if (ret != 0) {
-    // TODO: use build flag instead?
-    LOGD("AR0231 init failed, trying OX03C10");
-    ret = sensors_init(CAMERA_ID_OX03C10);
-    if (ret == 0) {
-      camera = std::make_unique<CameraOX03C10>();
-    }
-  } else {
-    camera = std::make_unique<CameraAR0231>();
-  }
+  camera = AbstractCamera::initCamera(multi_cam_state_->video0_fd, sensor_fd, camera_num);
+
   LOGD("-- Probing sensor %d done with %d", camera_num, ret);
   if (ret != 0) {
     LOGE("** sensor %d FAILED bringup, disabling", camera_num);
@@ -584,7 +452,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   {
     uint32_t cam_packet_handle = 0;
     int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
-    struct cam_packet *pkt = (struct cam_packet *)mm.alloc(size, &cam_packet_handle);
+    struct cam_packet *pkt = (struct cam_packet *)camera->mm.alloc(size, &cam_packet_handle);
     pkt->num_cmd_buf = 1;
     pkt->kmd_cmd_buf_index = -1;
     pkt->header.size = size;
@@ -593,7 +461,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     buf_desc[0].size = buf_desc[0].length = sizeof(struct cam_csiphy_info);
     buf_desc[0].type = CAM_CMD_BUF_GENERIC;
 
-    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
+    struct cam_csiphy_info *csiphy_info = (struct cam_csiphy_info *)camera->mm.alloc(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
     csiphy_info->lane_mask = 0x1f;
     csiphy_info->lane_assign = 0x3210;// skip clk. How is this 16 bit for 5 channels??
     csiphy_info->csiphy_3phase = 0x0; // no 3 phase, only 2 conductors per lane
@@ -606,8 +474,8 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     int ret_ = device_config(csiphy_fd, session_handle, csiphy_dev_handle, cam_packet_handle);
     assert(ret_ == 0);
 
-    mm.free(csiphy_info);
-    mm.free(pkt);
+    camera->mm.free(csiphy_info);
+    camera->mm.free(pkt);
   }
 
   // link devices

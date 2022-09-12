@@ -64,6 +64,11 @@ CameraAR0231::~CameraAR0231() {
 
 }
 
+int CameraAR0231::getSlaveAddress(int port) {
+  assert(port >=0 && port <= 2);
+  return (int[]){0x20, 0x30, 0x20}[port];
+}
+
 std::vector<struct i2c_random_wr_payload> CameraAR0231::getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const {
   uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
   return {

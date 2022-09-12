@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -13,6 +14,9 @@
 #include "media/cam_sensor.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
+
+#include "common/util.h"
+#include "system/camerad/cameras/camera_util.h"
 #include "system/camerad/cameras/sensor2_i2c.h"
 
 #define CAMERA_ID_IMX298 0
@@ -45,8 +49,12 @@ public:
   virtual ~AbstractCamera(){};
   virtual std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const = 0;
   virtual void processRegisters(void *addr, cereal::FrameData::Builder &framed) {}
+  virtual int getSlaveAddress(int port) = 0;
+  static std::unique_ptr<AbstractCamera> initCamera(int video0_fd, int sensor_fd, int camera_num);
 
   CameraInfo ci;
+  MemoryManager mm;
+
   int id;
   float dc_gain_factor;
   int dc_gain_max_weight;
@@ -60,11 +68,15 @@ public:
   float min_ev, max_ev;
   int registers_offset = 0;
   float sensor_analog_gains[16];
+  uint32_t in_port_info_dt;
 
   camera_sensor_i2c_type i2c_type;
   std::vector<struct i2c_random_wr_payload> start_reg_array;
   std::vector<struct i2c_random_wr_payload> init_array;
-  uint32_t in_port_info_dt;
+
+protected:
+  bool init(int video0_fd, int sensor_fd, int camera_num);
+
   uint32_t reg_addr;
   uint32_t expected_data;
   uint32_t config_val_low;
@@ -74,6 +86,7 @@ class CameraAR0231 : public AbstractCamera {
 public:
   CameraAR0231();
   ~CameraAR0231();
+  int getSlaveAddress(int port) override;
   std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const override;
   void processRegisters(void *addr, cereal::FrameData::Builder &framed) override;
 
@@ -87,5 +100,6 @@ class CameraOX03C10 : public AbstractCamera {
 public:
   CameraOX03C10();
   ~CameraOX03C10();
+  int getSlaveAddress(int port) override;
   std::vector<struct i2c_random_wr_payload> getExposureVector(int new_g, bool dc_gain_enabled, int exposure_time, int dc_gain_weight) const override;
 };
