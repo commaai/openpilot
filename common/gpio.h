@@ -12,6 +12,7 @@
   #define GPIO_BMX_GYRO_INT     23
   #define GPIO_BMX_MAGN_INT     87
   #define GPIO_LSM_INT          84
+  #define GPIOCHIP_INT          0
 #else
   #define GPIO_HUB_RST_N        0
   #define GPIO_UBLOX_RST_N      0
@@ -23,6 +24,7 @@
   #define GPIO_BMX_GYRO_INT     0
   #define GPIO_BMX_MAGN_INT     0
   #define GPIO_LSM_INT          0
+  #define GPIOCHIP_INT          0
 #endif
 
 int gpio_init(int pin_nr, bool output);

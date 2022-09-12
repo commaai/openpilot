@@ -10,10 +10,6 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 
-// Assumed that all interrupt pins are unexported and rights are given to
-// read from gpiochip0.
-const std::string gpiochip_path = "/dev/gpiochip0";
-
 int gpio_init(int pin_nr, bool output) {
   char pin_dir_path[50];
   int pin_dir_path_len = snprintf(pin_dir_path, sizeof(pin_dir_path),
@@ -36,9 +32,13 @@ int gpio_set(int pin_nr, bool high) {
 }
 
 int gpiochip_get_ro_value_fd(int pin_nr) {
+
+  // Assumed that all interrupt pins are unexported and rights are given to
+  // read from gpiochip0.
+  std::string gpiochip_path = "/dev/gpiochip" + std::to_string(GPIOCHIP_INT);
   int fd = open(gpiochip_path.c_str(), O_RDONLY);
   if (fd < 0) {
-    LOGE("Error opening gpiochip fd")
+    LOGE("Error opening gpiochip0 fd")
     return -1;
   }
 
