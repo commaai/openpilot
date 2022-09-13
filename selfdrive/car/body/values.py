@@ -17,6 +17,9 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
+  def __init__(self, CP):
+    pass
+
 
 class CAR:
   BODY = "COMMA BODY"

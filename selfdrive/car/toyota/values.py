@@ -21,6 +21,8 @@ class CarControllerParams:
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
+  STEER_STEP = 1
+
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
       self.STEER_DELTA_UP = 15       # 1.0s time to peak torque

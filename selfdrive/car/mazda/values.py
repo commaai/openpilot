@@ -20,6 +20,10 @@ class CarControllerParams:
   STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
   STEER_DRIVER_FACTOR = 1         # from dbc
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
+  STEER_STEP = 1  # 100 Hz
+
+  def __init__(self, CP):
+    pass
 
 
 class CAR:

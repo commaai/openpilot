@@ -63,7 +63,7 @@ class CarController:
       apply_angle = CS.out.steeringAngleDeg
 
     # send steering commands at 20Hz
-    if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
+    if (self.frame % CarControllerParams.STEER_STEP) == 0:
       lca_rq = 1 if CC.latActive else 0
 
       # use LatCtlPath_An_Actl to actuate steering
