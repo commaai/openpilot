@@ -5,7 +5,7 @@
 #include "common/timing.h"
 #include "selfdrive/sensord/sensors/constants.h"
 
-void LightSensor::get_event(cereal::SensorEventData::Builder &event) {
+bool LightSensor::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   file.clear();
   file.seekg(0);
@@ -19,4 +19,6 @@ void LightSensor::get_event(cereal::SensorEventData::Builder &event) {
   event.setType(SENSOR_TYPE_LIGHT);
   event.setTimestamp(start_time);
   event.setLight(value);
+
+  return true;
 }
