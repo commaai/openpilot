@@ -177,6 +177,7 @@ int sensor_loop() {
   }
 
   PubMaster pm({"sensorEvents"});
+  init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};

@@ -158,6 +158,11 @@ class TestSensord(unittest.TestCase):
     data_list.sort()
     tdiffs = np.diff(data_list)
 
+    # with the skip of first 500ms measurements it happens that one value
+    # before the skip is received, this high diffs are filtered as they ruin
+    # the standard dev calculation
+    tdiffs = list(filter(lambda d: d <= 500*10**6, tdiffs))
+
     high_delay_diffs = set(filter(lambda d: d >= 10.1*10**6, tdiffs))
     assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
 
