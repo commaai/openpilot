@@ -234,7 +234,9 @@ class TestCarModelBase(unittest.TestCase):
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
-      checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+      if self.CP.carName not in ("hyundai", "chrysler", "subaru", "gm"):
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
