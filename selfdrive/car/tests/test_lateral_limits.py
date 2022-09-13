@@ -10,7 +10,7 @@ from selfdrive.car.interfaces import get_torque_params
 
 
 MAX_LAT_UP_JERK = 2.5  # m/s^3
-MAX_LAT_UP_JERK_TOLERANCE = 0.1  # m/s^3
+MAX_LAT_UP_JERK_TOLERANCE = 0.5  # m/s^3
 MIN_LAT_DOWN_JERK = 2.0  # m/s^3
 
 
