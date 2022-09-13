@@ -25,12 +25,14 @@ class CarControllerParams:
     self.STEER_THRESHOLD = 150
 
     if CP.carFingerprint in CANFD_CAR:
-      self.STEER_DELTA_UP = 2
-      self.STEER_DELTA_DOWN = 2
       self.STEER_MAX = 270
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
       self.STEER_THRESHOLD = 250
+      # These cars have significantly more torque than usual, limit torque ramp limits
+      if CP.carFingerprint in (CAR.KIA_EV6, CAR.IONIQ_5):
+        self.STEER_DELTA_UP = 2
+        self.STEER_DELTA_DOWN = 2
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
