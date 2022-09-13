@@ -150,7 +150,7 @@ class TestSensord(unittest.TestCase):
     data_list.sort()
     tdiffs = np.diff(data_list)
 
-    high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
+    high_delay_diffs = set(filter(lambda d: d >= 10.1*10**6, tdiffs))
     assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
 
     avg_diff = sum(tdiffs)/len(tdiffs)
