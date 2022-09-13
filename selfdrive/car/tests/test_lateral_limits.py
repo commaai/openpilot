@@ -1,24 +1,18 @@
 #!/usr/bin/env python3
 import argparse
-import random
 import unittest
-from parameterized import parameterized, parameterized_class
-# from selfdrive.car.hyundai.values import CarControllerParams
+from parameterized import parameterized_class
 import importlib
 
 
-from cereal import car
-from selfdrive.car.car_helpers import get_interface_attr, interfaces
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
+from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
 from collections import defaultdict
 
 
-MAX_LAT_ACCEL = 3  # m/s^2
-MAX_LAT_UP_JERK = 3  # m/s^2
-MAX_LAT_DOWN_JERK = 3  # m/s^2
+MAX_LAT_UP_JERK = 2.5  # m/s^2
+MIN_LAT_DOWN_JERK = 2.0  # m/s^2
 
 jerks = defaultdict(dict)
 
@@ -61,8 +55,8 @@ class TestLateralLimits(unittest.TestCase):
   def test_jerk_limits(self):
     up_jerk, down_jerk = self._calc_jerk()
     jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLess(up_jerk, 2.5)
-    # self.assertGreater(down_jerk, 2.0)
+    self.assertLess(up_jerk, MAX_LAT_UP_JERK)
+    # self.assertGreater(down_jerk, MIN_LAT_DOWN_JERK)
 
 
 if __name__ == "__main__":
