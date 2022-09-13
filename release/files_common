@@ -304,7 +304,7 @@ selfdrive/ui/soundd/soundd
 selfdrive/ui/soundd/.gitignore
 selfdrive/ui/translations/*.ts
 selfdrive/ui/translations/languages.json
-selfdrive/ui/tests/update_translations.py
+selfdrive/ui/update_translations.py
 selfdrive/ui/tests/test_translations.py
 
 selfdrive/ui/qt/*.cc
