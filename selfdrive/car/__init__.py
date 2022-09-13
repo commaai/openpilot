@@ -17,7 +17,6 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
     val_steady = val - hyst_gap
   elif val < val_steady - hyst_gap:
     val_steady = val + hyst_gap
-
   return val_steady
 
 
