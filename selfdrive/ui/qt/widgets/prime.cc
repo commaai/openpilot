@@ -299,7 +299,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &SetupWidget::replyFinished);
   }
-  hide();
 }
 
 void SetupWidget::replyFinished(const QString &response, bool success) {
