@@ -10,8 +10,9 @@ from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
 
 
-MAX_LAT_UP_JERK = 2.5  # m/s^2
-MIN_LAT_DOWN_JERK = 2.0  # m/s^2
+MAX_LAT_UP_JERK = 2.5  # m/s^3
+MAX_LAT_UP_JERK_TOLERANCE = 0.1  # m/s^3
+MIN_LAT_DOWN_JERK = 2.0  # m/s^3
 
 jerks = defaultdict(dict)
 
@@ -30,8 +31,11 @@ class TestLateralLimits(unittest.TestCase):
     if CP.steerControlType == car.CarParams.SteerControlType.angle:
       raise unittest.SkipTest
 
-    # TODO: test these
-    if CP.carName in ("honda", "body"):
+    if CP.notCar:
+      raise unittest.SkipTest
+
+    # TODO: test Honda
+    if CP.carName in ("honda",):
       raise unittest.SkipTest("No steering safety")
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
@@ -57,7 +61,7 @@ class TestLateralLimits(unittest.TestCase):
   def test_jerk_limits(self):
     up_jerk, down_jerk = self._calc_jerk()
     jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLess(up_jerk, MAX_LAT_UP_JERK)
+    self.assertLess(up_jerk, MAX_LAT_UP_JERK + MAX_LAT_UP_JERK_TOLERANCE)
     # self.assertGreater(down_jerk, MIN_LAT_DOWN_JERK)
 
 
