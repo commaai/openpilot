@@ -194,9 +194,15 @@ class TestSensord(unittest.TestCase):
         if measurement.version == 0:
           continue
 
+        # check if gyro and accel timestamps are before logMonoTime
+        if str(measurement.source).startswith("lsm6ds3"):
+          if measurement.which() != 'temperature':
+            err_msg = f"Timestamp after logMonoTime: {measurement.timestamp} > {event.logMonoTime}"
+            assert measurement.timestamp < event.logMonoTime, err_msg
+
         # negative values might occur, as non interrupt packages created
-        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
         # before the sensor is read
+        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
 
     high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
     assert len(high_delay_diffs) < 15, f"Too many high delay packages: {high_delay_diffs}"
@@ -256,6 +262,13 @@ class TestSensord(unittest.TestCase):
     with SMBus(SENSOR_BUS, force=True) as bus:
       int1_ctrl_reg = bus.read_byte_data(I2C_ADDR_LSM, 0x0D)
       assert int1_ctrl_reg == 3, "Interrupts not enabled!"
+
+    # read /proc/interrupts to verify interrupts are received
+    state_one = get_proc_interrupts(LSM_INT_GPIO)
+    time.sleep(1)
+    state_two = get_proc_interrupts(LSM_INT_GPIO)
+
+    assert state_one != state_two, "no Interrupts received after sensord start!"
 
     managed_processes["sensord"].stop()
 
