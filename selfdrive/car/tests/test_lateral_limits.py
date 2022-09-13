@@ -4,6 +4,7 @@ import importlib
 from parameterized import parameterized_class
 import unittest
 
+from cereal import car
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
@@ -25,13 +26,16 @@ class TestLateralLimits(unittest.TestCase):
     if CP.dashcamOnly:
       raise unittest.SkipTest("Platform is behind dashcamOnly")
 
+    # TODO: test angle
+    if CP.steerControlType == car.CarParams.SteerControlType.angle:
+      raise unittest.SkipTest
+
     # TODO: test these
-    if CP.carName in ("honda", "nissan", "body"):
+    if CP.carName in ("honda", "body"):
       raise unittest.SkipTest("No steering safety")
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
-
     cls.torque_params = get_torque_params(cls.car_model)
 
   @classmethod
