@@ -169,15 +169,15 @@ class TorqueEstimator:
     if self.filtered_points.is_valid():
       try:
         latAccelFactor, latAccelOffset, friction_coeff = self.estimate_params()
+        liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
+        liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
+        liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
       except np.linalg.LinAlgError as e:
         latAccelFactor = latAccelOffset = friction_coeff = None
         cloudlog.exception(f"Error computing live torque params: {e}")
 
       if self.is_sane(latAccelFactor, latAccelOffset, friction_coeff):
         liveTorqueParameters.liveValid = True
-        liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
-        liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
-        liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
         self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': friction_coeff})
         self.invalid_values_count = 0
       else:
