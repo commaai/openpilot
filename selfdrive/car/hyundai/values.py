@@ -29,7 +29,7 @@ class CarControllerParams:
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
       self.STEER_THRESHOLD = 250
-      # These cars have significantly more torque than usual, limit torque ramp limits
+      # These cars have significantly more torque than usual, limit torque rates
       if CP.carFingerprint in (CAR.KIA_EV6, CAR.IONIQ_5):
         self.STEER_DELTA_UP = 2
         self.STEER_DELTA_DOWN = 2
