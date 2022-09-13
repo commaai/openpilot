@@ -174,7 +174,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
-  locale_name = QString::fromStdString(Params().get("LanguageSetting")).replace("main_", "");
   refresh();
   timer->start(10 * 1000);
 }
@@ -184,6 +183,7 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 }
 
 void OffroadHome::refresh() {
+  QString locale_name = QString(uiState()->language).replace("main_", "");
   QString dateString = QLocale(locale_name).toString(QDateTime::currentDateTime(), "dddd, MMMM d");
   date->setText(dateString);
 
