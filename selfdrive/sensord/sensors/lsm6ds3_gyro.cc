@@ -8,12 +8,12 @@
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-
-LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus) : I2CSensor(bus) {}
+LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;
   uint8_t buffer[1];
+  uint8_t value = 0;
 
   ret = read_register(LSM6DS3_GYRO_I2C_REG_ID, buffer, 1);
   if(ret < 0) {
@@ -31,20 +31,69 @@ int LSM6DS3_Gyro::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
+  ret = init_gpio();
+  if (ret < 0) {
+    goto fail;
+  }
+
   // TODO: set scale. Default is +- 250 deg/s
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_104HZ);
   if (ret < 0) {
     goto fail;
   }
 
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_DRDY_CFG, LSM6DS3_GYRO_DRDY_PULSE_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // enable data ready interrupt for gyro on INT1
+  // (without resetting existing interrupts)
+  ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value |= LSM6DS3_GYRO_INT1_DRDY_G;
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
 
 fail:
   return ret;
 }
 
-void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+int LSM6DS3_Gyro::shutdown() {
+  int ret = 0;
 
-  uint64_t start_time = nanos_since_boot();
+  // disable data ready interrupt for accel on INT1
+  uint8_t value = 0;
+  ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
+  if (ret < 0) {
+    goto fail;
+  }
+  return ret;
+
+fail:
+  LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
+  return ret;
+}
+
+bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+
+  if (has_interrupt_enabled()) {
+    // INT1 shared with accel, check STATUS_REG who triggered
+    uint8_t status_reg = 0;
+    read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+    if ((status_reg & LSM6DS3_GYRO_DRDY_GDA) == 0) {
+      return false;
+    }
+  }
+
   uint8_t buffer[6];
   int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
@@ -58,11 +107,11 @@ void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   event.setVersion(2);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
-  event.setTimestamp(start_time);
 
   float xyz[] = {y, -x, z};
   auto svec = event.initGyroUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

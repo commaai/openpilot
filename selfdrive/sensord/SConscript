@@ -13,7 +13,7 @@ sensors = [
   'sensors/lsm6ds3_temp.cc',
   'sensors/mmc5603nj_magn.cc',
 ]
-libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj']
+libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj', 'pthread']
 if arch == "larch64":
   libs.append('i2c')
 env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)
