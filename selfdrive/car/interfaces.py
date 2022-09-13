@@ -62,7 +62,6 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
-    self.cluster_speed_steady = 0.0
 
     self.CS = None
     self.can_parsers = []
@@ -271,6 +270,7 @@ class CarStateBase(ABC):
     self.right_blinker_cnt = 0
     self.left_blinker_prev = False
     self.right_blinker_prev = False
+    self.cluster_speed_steady = 0.0
 
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
