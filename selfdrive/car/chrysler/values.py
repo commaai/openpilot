@@ -149,20 +149,20 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      # whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
       rx_offset=CHRYSLER_RX_OFFSET,
       bus=0,
     ),
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      # whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
       bus=0,
     ),
     Request(
       [CHRYSLER_SOFTWARE_VERSION_REQUEST],
       [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      # whitelist_ecus=[Ecu.engine, Ecu.transmission],
       bus=0,
     ),
   ],
