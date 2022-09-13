@@ -178,8 +178,8 @@ class TestSensord(unittest.TestCase):
           sensor_events[measurement.type] = 1
 
     for s in sensor_events:
-      err_msg = f"Sensor {s}: 200 < {sensor_events[s]} < 400 events"
-      assert sensor_events[s] > 200 and sensor_events[s] < 400, err_msg
+      err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
+      assert sensor_events[s] > 200, err_msg
 
   @with_processes(['sensord'])
   def test_logmonottime_timestamp_diff(self):
