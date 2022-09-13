@@ -23,7 +23,7 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_IMX390 9
+#define CAMERA_ID_OX03C10 9
 #define CAMERA_ID_MAX 10
 
 const int YUV_BUFFER_COUNT = 40;
@@ -40,6 +40,7 @@ const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
 const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
+const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
 
 typedef struct CameraInfo {
   uint32_t frame_width, frame_height;

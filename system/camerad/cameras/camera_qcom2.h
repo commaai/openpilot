@@ -7,23 +7,11 @@
 #include <media/cam_req_mgr.h>
 
 #include "system/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_util.h"
+#include "common/params.h"
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
-
-class MemoryManager {
-  public:
-    void init(int _video0_fd) { video0_fd = _video0_fd; }
-    void *alloc(int len, uint32_t *handle);
-    void free(void *ptr);
-    ~MemoryManager();
-  private:
-    std::mutex lock;
-    std::map<void *, uint32_t> handle_lookup;
-    std::map<void *, int> size_lookup;
-    std::map<int, std::queue<void *> > cached_allocations;
-    int video0_fd;
-};
 
 class CameraState {
 public:
@@ -35,14 +23,28 @@ public:
 
   int exposure_time;
   bool dc_gain_enabled;
+  int dc_gain_weight;
+  int gain_idx;
   float analog_gain_frac;
+
+  int exposure_time_min;
+  int exposure_time_max;
+
+  float dc_gain_factor;
+  int dc_gain_max_weight;
+  float dc_gain_on_grey;
+  float dc_gain_off_grey;
+
+  float sensor_analog_gains[16];
+  int analog_gain_min_idx;
+  int analog_gain_max_idx;
+  int analog_gain_rec_idx;
 
   float cur_ev[3];
   float min_ev, max_ev;
 
   float measured_grey_fraction;
   float target_grey_fraction;
-  int gain_idx;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
@@ -54,8 +56,10 @@ public:
 
   void sensors_start();
 
-  void camera_open();
-  void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, int camera_id, int camera_num, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, bool enabled);
+  void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
+  void camera_set_parameters();
+  void camera_map_bufs(MultiCameraState *s);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
   void camera_close();
 
   std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);

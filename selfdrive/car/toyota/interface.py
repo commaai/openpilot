@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "toyota"
@@ -218,6 +218,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
 
     if not ret.openpilotLongitudinalControl:
+      ret.autoResumeSng = False
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
     # we can't use the fingerprint to detect this reliably, since
@@ -229,11 +230,10 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else MIN_ACC_SPEED
 
-    if ret.enableGasInterceptor:
-      set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
-    elif candidate in TSS2_CAR:
+    if candidate in TSS2_CAR or ret.enableGasInterceptor:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+      if candidate in TSS2_CAR:
+        ret.stoppingDecelRate = 0.3 # reach stopping target smoothly
     else:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
 
