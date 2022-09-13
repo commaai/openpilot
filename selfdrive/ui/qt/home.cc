@@ -183,7 +183,9 @@ void OffroadHome::hideEvent(QHideEvent *event) {
 }
 
 void OffroadHome::refresh() {
-  date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
+  QString locale_name = QString(uiState()->language).replace("main_", "");
+  QString dateString = QLocale(locale_name).toString(QDateTime::currentDateTime(), "dddd, MMMM d");
+  date->setText(dateString);
 
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();
