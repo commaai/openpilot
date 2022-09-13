@@ -68,6 +68,9 @@ const int DC_GAIN_MIN_WEIGHT = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
 const int DC_GAIN_MAX_WEIGHT_OX03C10 = 32;
 
+const float TARGET_GREY_FACTOR_AR0231 = 6000.0;
+const float TARGET_GREY_FACTOR_OX03C10 = 60000.0;
+
 const float sensor_analog_gains_AR0231[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
   3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0, // 4, 5, 6, 7
@@ -529,6 +532,7 @@ void CameraState::camera_set_parameters() {
       sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
     }
     min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
+    target_grey_factor = TARGET_GREY_FACTOR_AR0231;
   } else if (camera_id == CAMERA_ID_OX03C10) {
     dc_gain_factor = DC_GAIN_OX03C10;
     dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_OX03C10;
@@ -543,6 +547,7 @@ void CameraState::camera_set_parameters() {
       sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
     }
     min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
+    target_grey_factor = TARGET_GREY_FACTOR_OX03C10;
   } else {
     assert(false);
   }
@@ -1037,7 +1042,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + cur_ev_) / log2(6000.0), 0.1, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + cur_ev_) / log2(target_grey_factor), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
 
   float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, min_ev, max_ev);

@@ -45,6 +45,7 @@ public:
 
   float measured_grey_fraction;
   float target_grey_fraction;
+  float target_grey_factor;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
