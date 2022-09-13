@@ -6,7 +6,7 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car, MODEL_TO_BRAND
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -21,20 +21,20 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  # @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  # def test_fw_fingerprint(self, brand, car_model, ecus):
-  #   CP = car.CarParams.new_message()
-  #   for _ in range(200):
-  #     fw = []
-  #     for ecu, fw_versions in ecus.items():
-  #       if not len(fw_versions):
-  #         raise unittest.SkipTest("Car model has no FW versions")
-  #       ecu_name, addr, sub_addr = ecu
-  #       fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
-  #                  "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-  #     CP.carFw = fw
-  #     _, matches = match_fw_to_car(CP.carFw)
-  #     self.assertFingerprints(matches, car_model)
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_fw_fingerprint(self, brand, car_model, ecus):
+    CP = car.CarParams.new_message()
+    for _ in range(200):
+      fw = []
+      for ecu, fw_versions in ecus.items():
+        if not len(fw_versions):
+          raise unittest.SkipTest("Car model has no FW versions")
+        ecu_name, addr, sub_addr = ecu
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP.carFw = fw
+      _, matches = match_fw_to_car(CP.carFw)
+      self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
     for car_model, ecus in FW_VERSIONS.items():
@@ -44,16 +44,19 @@ class TestFwFingerprint(unittest.TestCase):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
-  def test_blacklisted_ecus(self):
-    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+  def test_blacklisted_addrs(self):
+    blacklisted_addrs = {"subaru": (0x7c4, 0x7d0)}  # includes A/C ecu and an unknown ecu
     for brand, ecus in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
         if brand == 'subaru':
           for ecu in ecus.keys():
             self.assertNotIn(ecu[1], blacklisted_addrs, f'{brand}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
 
-        # TODO: this should be a separate test
-        elif brand == "chrysler":
+  def test_blacklisted_ecus(self):
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        CP = interfaces[car_model][0].get_params(car_model)
+        if CP.carName == "chrysler":
           # Some HD trucks have a combined TCM and ECM
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
@@ -70,28 +73,12 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
-  # TODO: Test to make sure all version ecus exist in config.ecus
-
   def test_all_version_ecus_exist_in_config(self):
-    # TODO: temp test
-    for brand, platforms in VERSIONS.items():
-      if brand == 'honda':
-        continue
-      config = FW_QUERY_CONFIGS[brand]
-      # print(brand)
-      to_print = {}
-      for platform, versions in platforms.items():
-        for ecu, addr, subaddr in versions.keys():
-          if (addr, subaddr) in to_print:
-            print(brand, platform, addr, to_print[(addr, subaddr)], ecu)
-            print()
-            assert to_print[(addr, subaddr)] == ecu
-          # assert (addr, subaddr) not in to_print
-          to_print[(addr, subaddr)] = ecu
-          # with self.subTest(brand=brand, platform=platform, addr_sub=(addr, subaddr)):
-          #   self.assertTrue((addr, subaddr) in config.ecus, f"{brand} ({platform}): Has missing ecu: {(hex(addr), subaddr)}")
-        # print(platform, versions.keys())
-      print(brand, to_print)
+    for brand, config in FW_QUERY_CONFIGS.items():
+      for car_model, versions in FW_VERSIONS[brand]:
+        for ecu, _, _ in versions.keys():
+          with self.subTest(car_model=car_model, ecu=ecu):
+            self.assertTrue(ecu in config.ecus, f"{car_model}: Ecu not in config.ecus: Ecu.{ECU_NAME[ecu]}")
 
   # TODO: Test to make sure all config.ecus exist in versions (no data collection ecus)
 
