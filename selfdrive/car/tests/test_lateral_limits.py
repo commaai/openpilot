@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-import argparse
-import unittest
-from parameterized import parameterized_class
+from collections import defaultdict
 import importlib
-
+from parameterized import parameterized_class
+import unittest
 
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
-from collections import defaultdict
 
 
 MAX_LAT_UP_JERK = 2.5  # m/s^2
@@ -60,13 +58,4 @@ class TestLateralLimits(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--print-jerks", action="store_true", help="Print theoretical max lateral jerk values for all platforms")
-
-  args = parser.parse_args()
-
-  if args.print_jerks:
-    # TODO: would be nice to support this
-    pass
-  else:
-    unittest.main()
+  unittest.main()
