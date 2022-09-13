@@ -92,6 +92,7 @@ class LongControl:
       v_target_1sec = interp(self.CP.longitudinalActuatorDelayUpperBound + t_since_plan + 1.0, T_IDXS[:CONTROL_N], speeds)
     else:
       v_target = 0.0
+      v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
 
@@ -131,7 +132,6 @@ class LongControl:
       output_accel = self.pid.update(error_deadzone, speed=CS.vEgo,
                                      feedforward=a_target,
                                      freeze_integrator=freeze_integrator)
-
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 

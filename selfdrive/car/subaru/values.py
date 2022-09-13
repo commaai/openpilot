@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
+from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -71,6 +73,19 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
 }
 
+SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ASCENT: {
@@ -89,6 +104,7 @@ FW_VERSIONS = {
       b'\000\000e~\037@ \'',
       b'\x00\x00e@\x1f@ $',
       b'\x00\x00d\xb9\x00\x00\x00\x00',
+      b'\x00\x00e@\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xbb,\xa0t\a',
@@ -96,11 +112,13 @@ FW_VERSIONS = {
       b'\xf1\x82\xbb,\xa0t\a',
       b'\xf1\x82\xd9,\xa0@\a',
       b'\xf1\x82\xd1,\xa0q\x07',
+      b'\xd1,\xa0q\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x00\xfe\xf7\x00\x00',
       b'\001\xfe\xf9\000\000',
       b'\x01\xfe\xf7\x00\x00',
+      b'\x01\xfe\xfa\x00\x00',
     ],
   },
   CAR.LEGACY: {
