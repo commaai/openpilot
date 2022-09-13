@@ -80,8 +80,6 @@ class TestFwFingerprint(unittest.TestCase):
           with self.subTest(car_model=car_model, ecu=ecu):
             self.assertTrue(ecu in config.ecus, f"{car_model}: Ecu not in config.ecus: Ecu.{ECU_NAME[ecu]}")
 
-  # TODO: Test to make sure all config.ecus exist in versions (no data collection ecus)
-
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
