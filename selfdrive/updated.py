@@ -249,13 +249,14 @@ def finalize_update(wait_helper: WaitTimeHelper) -> None:
   run(["git", "reset", "--hard"], FINALIZED)
   run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
 
-  cloudlog.info("Starting git gc")
+  cloudlog.info("Starting git cleanup in finalized update")
   t = time.monotonic()
   try:
     run(["git", "gc"], FINALIZED)
-    cloudlog.event("Done git gc", duration=time.monotonic() - t)
+    run(["git", "lfs", "prune"], FINALIZED)
+    cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
   except subprocess.CalledProcessError:
-    cloudlog.exception(f"Failed git gc, took {time.monotonic() - t:.3f} s")
+    cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
 
   if wait_helper.shutdown:
     cloudlog.info("got interrupted finalizing overlay")

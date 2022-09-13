@@ -1170,7 +1170,7 @@ location set</source>
     <message>
         <location line="+1"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>時速31マイル（50km）を超えるスピードで走行中、方向指示器を作動させずに検出された車線ライン上に車両が触れた場合、車線に戻るアラートを受信します。</translation>
+        <translation>時速31マイル（50km）を超えるスピードで走行中、ウインカーを作動させずに検出された車線ライン上に車両が触れた場合、車線に戻るアラートを受信します。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1195,22 +1195,22 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 エンドツーエンドのアクセル制御 (超アルファ版) 🌮</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>実験段階のopenpilotによるアクセル制御</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;警告: openpilotによるアクセル制御は実験段階であり、AEBを無効化します。&lt;/b&gt;</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>アクセルとブレーキの制御をopenpilotに任せます。openpilotが人間と同じように運転します。最初期の実験段階です。</translation>
     </message>
     <message>
         <location line="-55"/>
