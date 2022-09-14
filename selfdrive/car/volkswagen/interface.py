@@ -39,7 +39,6 @@ class CarInterface(CarInterfaceBase):
 
       if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
         ret.networkLocation = NetworkLocation.gateway
-        ret.experimentalLongitudinalAvailable = True
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
@@ -65,7 +64,6 @@ class CarInterface(CarInterfaceBase):
 
       if any(msg in fingerprint[1] for msg in (0x40, 0x86, 0xB2, 0xFD)):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
-        ret.experimentalLongitudinalAvailable = True
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
