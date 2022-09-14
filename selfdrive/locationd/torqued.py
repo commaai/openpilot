@@ -125,8 +125,11 @@ class TorqueEstimator:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
 
   def get_restore_key(self, CP, version):
-    # TODO: add tuning values too
-    return (CP.carFingerprint, CP.lateralTuning.which(), version)
+    a, b = None, None
+    if CP.lateralTuning.which() == 'torque':
+      a = CP.lateralTuning.torque.friction
+      b = CP.lateralTuning.torque.latAccelFactor
+    return (CP.carFingerprint, CP.lateralTuning.which(), a, b, version)
 
   def reset(self):
     self.resets += 1.0
@@ -234,16 +237,19 @@ def main(sm=None, pm=None):
   params_cache = params.get("LiveTorqueParameters")
   estimator = TorqueEstimator(CP, params_cache)
 
-  def cache_params(sig, torque_estimator):
+  def cache_params(sig, frame):
     signal.signal(sig, signal.SIG_DFL)
     cloudlog.warning("caching torque params")
-    msg = torque_estimator.get_msg(with_points=True)
+
     params = Params()
     params.put("LiveTorqueCarParams", CP.as_builder().to_bytes())
+
+    msg = estimator.get_msg(with_points=True)
     params.put("LiveTorqueParameters", msg.to_bytes())
+
     sys.exit(0)
   if "REPLAY" not in os.environ:
-    signal.signal(signal.SIGINT, lambda sig, frame: cache_params(sig, estimator))
+    signal.signal(signal.SIGINT, cache_params)
 
   while True:
     sm.update()
