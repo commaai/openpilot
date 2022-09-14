@@ -117,9 +117,10 @@ class TestSensord(unittest.TestCase):
     HARDWARE.initialize_hardware()
 
     # read initial sensor values every test case can use
+    managed_processes["sensord"].start()
     cls.events = read_sensor_events(3)
+    managed_processes["sensord"].stop()
 
-  @with_processes(['sensord'])
   def test_sensors_present(self):
     # verify correct sensors configuration
     events = self.events
@@ -134,7 +135,6 @@ class TestSensord(unittest.TestCase):
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
-  @with_processes(['sensord'])
   def test_lsm6ds3_100Hz(self):
     # verify measurements are sampled and published at a 100Hz rate
     events = self.events # 3sec (about 300 measurements)
@@ -165,7 +165,6 @@ class TestSensord(unittest.TestCase):
     stddev = np.std(tdiffs)
     assert stddev < 1.5*10**6, f"Standard-dev to big {stddev}"
 
-  @with_processes(['sensord'])
   def test_events_check(self):
     # verify if all sensors produce events
     events = self.events
@@ -187,7 +186,6 @@ class TestSensord(unittest.TestCase):
       err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
       assert sensor_events[s] > 200, err_msg
 
-  @with_processes(['sensord'])
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
     events = self.events
