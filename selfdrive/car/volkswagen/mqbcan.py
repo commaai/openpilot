@@ -64,11 +64,11 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, starting, standstill):
+def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_status, stopping, starting, standstill):
   commands = []
 
   acc_06_values = {
-    "ACC_Typ": 2,  # TODO: fixed requirement for SnG stopping coordinator, allow FtS and basic later
+    "ACC_Typ": acc_type,
     "ACC_Status_ACC": acc_status,
     "ACC_StartStopp_Info": enabled,
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,

@@ -74,8 +74,8 @@ class CarController:
       accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0
       stopping = actuators.longControlState == LongCtrlState.stopping
       starting = actuators.longControlState == LongCtrlState.starting
-      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CC.longActive, acc_status, accel,
-                                                         stopping, starting, CS.out.cruiseState.standstill))
+      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
+                                                         acc_status, stopping, starting, CS.out.cruiseState.standstill))
 
     # **** HUD Controls ***************************************************** #
 

@@ -59,11 +59,11 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, starting, standstill):
+def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_status, stopping, starting, standstill):
   values = {
     "ACS_Sta_ADR": acc_status,
     "ACS_StSt_Info": acc_status != 1,
-    "ACS_Typ_ACC": 0,  # TODO: this is ACC "basic", find a way to detect FtS support (1)
+    "ACS_Typ_ACC": acc_type,
     "ACS_Sollbeschl": accel if acc_status == 1 else 3.01,
     "ACS_zul_Regelabw": 0.2 if acc_status == 1 else 1.27,
     "ACS_max_AendGrad": 3.0 if acc_status == 1 else 5.08,
