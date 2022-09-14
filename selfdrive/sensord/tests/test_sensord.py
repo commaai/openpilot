@@ -8,7 +8,7 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
-from system.hardware import TICI
+from system.hardware import TICI, HARDWARE
 from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
 
@@ -112,6 +112,9 @@ class TestSensord(unittest.TestCase):
   def setUpClass(cls):
     if not TICI:
       raise unittest.SkipTest
+
+    # make sure gpiochip0 is readable
+    HARDWARE.initialize_hardware()
 
   @with_processes(['sensord'])
   def test_sensors_present(self):
