@@ -116,13 +116,16 @@ class TestSensord(unittest.TestCase):
     # make sure gpiochip0 is readable
     HARDWARE.initialize_hardware()
 
-  @with_processes(['sensord'])
+    # read initial sensor values every test case can use
+    managed_processes["sensord"].start()
+    cls.events = read_sensor_events(5)
+    managed_processes["sensord"].stop()
+
   def test_sensors_present(self):
     # verify correct sensors configuration
-    events = read_sensor_events(10)
 
     seen = set()
-    for event in events:
+    for event in self.events:
       for measurement in event.sensorEvents:
         # filter unset events (bmx magn)
         if measurement.version == 0:
@@ -131,13 +134,11 @@ class TestSensord(unittest.TestCase):
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
-  @with_processes(['sensord'])
   def test_lsm6ds3_100Hz(self):
     # verify measurements are sampled and published at a 100Hz rate
-    events = read_sensor_events(3) # 3sec (about 300 measurements)
 
     data_points = set()
-    for event in events:
+    for event in self.events:
       for measurement in event.sensorEvents:
 
         # skip lsm6ds3 temperature measurements
@@ -162,13 +163,11 @@ class TestSensord(unittest.TestCase):
     stddev = np.std(tdiffs)
     assert stddev < 1.5*10**6, f"Standard-dev to big {stddev}"
 
-  @with_processes(['sensord'])
   def test_events_check(self):
     # verify if all sensors produce events
-    events = read_sensor_events(3)
 
     sensor_events = dict()
-    for event in events:
+    for event in  self.events:
       for measurement in event.sensorEvents:
 
         # filter unset events (bmx magn)
@@ -184,13 +183,11 @@ class TestSensord(unittest.TestCase):
       err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
       assert sensor_events[s] > 200, err_msg
 
-  @with_processes(['sensord'])
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
-    events = read_sensor_events(3)
 
     tdiffs = list()
-    for event in events:
+    for event in self.events:
       for measurement in event.sensorEvents:
 
         # filter unset events (bmx magn)
@@ -289,4 +286,3 @@ class TestSensord(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-
