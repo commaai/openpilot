@@ -35,15 +35,15 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
-def acc_control_status_value(main_switch_on, acc_faulted, long_active):
+def acc_control_value(main_switch_on, acc_faulted, long_active):
   if long_active:
-    tsk_status = 1
+    acc_control = 1
   elif main_switch_on:
-    tsk_status = 2
+    acc_control = 2
   else:
-    tsk_status = 0
+    acc_control = 0
 
-  return tsk_status
+  return acc_control
 
 
 def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
@@ -59,16 +59,16 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_status, stopping, starting, standstill):
+def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control, stopping, starting, standstill):
   commands = []
 
   values = {
-    "ACS_Sta_ADR": acc_status,
-    "ACS_StSt_Info": acc_status != 1,
+    "ACS_Sta_ADR": acc_control,
+    "ACS_StSt_Info": acc_control != 1,
     "ACS_Typ_ACC": acc_type,
-    "ACS_Sollbeschl": accel if acc_status == 1 else 3.01,
-    "ACS_zul_Regelabw": 0.2 if acc_status == 1 else 1.27,
-    "ACS_max_AendGrad": 3.0 if acc_status == 1 else 5.08,
+    "ACS_Sollbeschl": accel if acc_control == 1 else 3.01,
+    "ACS_zul_Regelabw": 0.2 if acc_control == 1 else 1.27,
+    "ACS_max_AendGrad": 3.0 if acc_control == 1 else 5.08,
   }
 
   commands.append(packer.make_can_msg("ACC_System", bus, values))

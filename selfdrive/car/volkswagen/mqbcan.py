@@ -38,38 +38,30 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   return packer.make_can_msg("GRA_ACC_01", bus, values)
 
 
-def acc_control_status_value(main_switch_on, acc_faulted, long_active):
+def acc_control_value(main_switch_on, acc_faulted, long_active):
   if acc_faulted:
-    tsk_status = 6
+    acc_control = 6
   elif long_active:
-    tsk_status = 3
+    acc_control = 3
   elif main_switch_on:
-    tsk_status = 2
+    acc_control = 2
   else:
-    tsk_status = 0
+    acc_control = 0
 
-  return tsk_status
+  return acc_control
 
 
 def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
-  if acc_faulted:
-    hud_status = 6
-  elif long_active:
-    hud_status = 3
-  elif main_switch_on:
-    hud_status = 2
-  else:
-    hud_status = 0
-
-  return hud_status
+  # TODO: happens to resemble the ACC control value for now, but extend this for init/gas override later
+  return acc_control_value(main_switch_on, acc_faulted, long_active)
 
 
-def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_status, stopping, starting, standstill):
+def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control, stopping, starting, standstill):
   commands = []
 
   acc_06_values = {
     "ACC_Typ": acc_type,
-    "ACC_Status_ACC": acc_status,
+    "ACC_Status_ACC": acc_control,
     "ACC_StartStopp_Info": enabled,
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
     "ACC_zul_Regelabw_unten": 0.2,  # TODO: dynamic adjustment of comfort-band
