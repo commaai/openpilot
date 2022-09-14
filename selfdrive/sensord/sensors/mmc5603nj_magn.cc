@@ -51,7 +51,7 @@ fail:
   return ret;
 }
 
-void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
+bool MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
 
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[9];
@@ -74,4 +74,5 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

@@ -1,9 +1,9 @@
 /*
- *  Catch v2.13.0
- *  Generated: 2020-07-12 20:07:49.015950
+ *  Catch v2.13.9
+ *  Generated: 2022-04-12 22:37:23.260201
  *  ----------------------------------------------------------
  *  This file has been merged from multiple headers. Please don't edit it directly
- *  Copyright (c) 2020 Two Blue Cubes Ltd. All rights reserved.
+ *  Copyright (c) 2022 Two Blue Cubes Ltd. All rights reserved.
  *
  *  Distributed under the Boost Software License, Version 1.0. (See accompanying
  *  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -15,7 +15,7 @@
 
 #define CATCH_VERSION_MAJOR 2
 #define CATCH_VERSION_MINOR 13
-#define CATCH_VERSION_PATCH 0
+#define CATCH_VERSION_PATCH 9
 
 #ifdef __clang__
 #    pragma clang system_header
@@ -66,13 +66,16 @@
 #if !defined(CATCH_CONFIG_IMPL_ONLY)
 // start catch_platform.h
 
+// See e.g.:
+// https://opensource.apple.com/source/CarbonHeaders/CarbonHeaders-18.1/TargetConditionals.h.auto.html
 #ifdef __APPLE__
-# include <TargetConditionals.h>
-# if TARGET_OS_OSX == 1
-#  define CATCH_PLATFORM_MAC
-# elif TARGET_OS_IPHONE == 1
-#  define CATCH_PLATFORM_IPHONE
-# endif
+#  include <TargetConditionals.h>
+#  if (defined(TARGET_OS_OSX) && TARGET_OS_OSX == 1) || \
+      (defined(TARGET_OS_MAC) && TARGET_OS_MAC == 1)
+#    define CATCH_PLATFORM_MAC
+#  elif (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE == 1)
+#    define CATCH_PLATFORM_IPHONE
+#  endif
 
 #elif defined(linux) || defined(__linux) || defined(__linux__)
 #  define CATCH_PLATFORM_LINUX
@@ -132,13 +135,9 @@ namespace Catch {
 
 #endif
 
-#if defined(__cpp_lib_uncaught_exceptions)
-#  define CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
-#endif
-
-// We have to avoid both ICC and Clang, because they try to mask themselves
-// as gcc, and we want only GCC in this block
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__ICC)
+// Only GCC compiler should be used in this block, so other compilers trying to
+// mask themselves as GCC should be ignored.
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__ICC) && !defined(__CUDACC__) && !defined(__LCC__)
 #    define CATCH_INTERNAL_START_WARNINGS_SUPPRESSION _Pragma( "GCC diagnostic push" )
 #    define CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION  _Pragma( "GCC diagnostic pop" )
 
@@ -162,7 +161,7 @@ namespace Catch {
 // ```
 //
 // Therefore, `CATCH_INTERNAL_IGNORE_BUT_WARN` is not implemented.
-#  if !defined(__ibmxl__)
+#  if !defined(__ibmxl__) && !defined(__CUDACC__)
 #    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__) /* NOLINT(cppcoreguidelines-pro-type-vararg, hicpp-vararg) */
 #  endif
 
@@ -241,13 +240,6 @@ namespace Catch {
 // Visual C++
 #if defined(_MSC_VER)
 
-#  define CATCH_INTERNAL_START_WARNINGS_SUPPRESSION __pragma( warning(push) )
-#  define CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION  __pragma( warning(pop) )
-
-#  if _MSC_VER >= 1900 // Visual Studio 2015 or newer
-#    define CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
-#  endif
-
 // Universal Windows platform does not support SEH
 // Or console colours (or console at all...)
 #  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
@@ -256,13 +248,18 @@ namespace Catch {
 #    define CATCH_INTERNAL_CONFIG_WINDOWS_SEH
 #  endif
 
+#  if !defined(__clang__) // Handle Clang masquerading for msvc
+
 // MSVC traditional preprocessor needs some workaround for __VA_ARGS__
 // _MSVC_TRADITIONAL == 0 means new conformant preprocessor
 // _MSVC_TRADITIONAL == 1 means old traditional non-conformant preprocessor
-#  if !defined(__clang__) // Handle Clang masquerading for msvc
 #    if !defined(_MSVC_TRADITIONAL) || (defined(_MSVC_TRADITIONAL) && _MSVC_TRADITIONAL)
 #      define CATCH_INTERNAL_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
 #    endif // MSVC_TRADITIONAL
+
+// Only do this if we're not using clang on Windows, which uses `diagnostic push` & `diagnostic pop`
+#    define CATCH_INTERNAL_START_WARNINGS_SUPPRESSION __pragma( warning(push) )
+#    define CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION  __pragma( warning(pop) )
 #  endif // __clang__
 
 #endif // _MSC_VER
@@ -330,7 +327,10 @@ namespace Catch {
 
   // Check if byte is available and usable
   #  if __has_include(<cstddef>) && defined(CATCH_CPP17_OR_GREATER)
-  #    define CATCH_INTERNAL_CONFIG_CPP17_BYTE
+  #    include <cstddef>
+  #    if defined(__cpp_lib_byte) && (__cpp_lib_byte > 0)
+  #      define CATCH_INTERNAL_CONFIG_CPP17_BYTE
+  #    endif
   #  endif // __has_include(<cstddef>) && defined(CATCH_CPP17_OR_GREATER)
 
   // Check if variant is available and usable
@@ -371,10 +371,6 @@ namespace Catch {
 
 #if defined(CATCH_INTERNAL_CONFIG_CPP17_OPTIONAL) && !defined(CATCH_CONFIG_NO_CPP17_OPTIONAL) && !defined(CATCH_CONFIG_CPP17_OPTIONAL)
 #  define CATCH_CONFIG_CPP17_OPTIONAL
-#endif
-
-#if defined(CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS) && !defined(CATCH_CONFIG_NO_CPP17_UNCAUGHT_EXCEPTIONS) && !defined(CATCH_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS)
-#  define CATCH_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
 #endif
 
 #if defined(CATCH_INTERNAL_CONFIG_CPP17_STRING_VIEW) && !defined(CATCH_CONFIG_NO_CPP17_STRING_VIEW) && !defined(CATCH_CONFIG_CPP17_STRING_VIEW)
@@ -1016,34 +1012,34 @@ struct AutoReg : NonCopyable {
 
     #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(Name, Tags, ...) \
-            INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, typename TestType, __VA_ARGS__ )
+            INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, typename TestType, __VA_ARGS__ )
     #else
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(Name, Tags, ...) \
-            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, typename TestType, __VA_ARGS__ ) )
+            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, typename TestType, __VA_ARGS__ ) )
     #endif
 
     #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG_NO_REGISTRATION(Name, Tags, Signature, ...) \
-            INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, Signature, __VA_ARGS__ )
+            INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, Signature, __VA_ARGS__ )
     #else
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG_NO_REGISTRATION(Name, Tags, Signature, ...) \
-            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, Signature, __VA_ARGS__ ) )
+            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, Signature, __VA_ARGS__ ) )
     #endif
 
     #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION( ClassName, Name, Tags,... ) \
-            INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ )
+            INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ )
     #else
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION( ClassName, Name, Tags,... ) \
-            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ ) )
+            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ ) )
     #endif
 
     #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_SIG_NO_REGISTRATION( ClassName, Name, Tags, Signature, ... ) \
-            INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ )
+            INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ )
     #else
         #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_SIG_NO_REGISTRATION( ClassName, Name, Tags, Signature, ... ) \
-            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ ) )
+            INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_NO_REGISTRATION_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ ) )
     #endif
 #endif
 
@@ -1056,7 +1052,7 @@ struct AutoReg : NonCopyable {
         CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION \
         static void TestName()
     #define INTERNAL_CATCH_TESTCASE( ... ) \
-        INTERNAL_CATCH_TESTCASE2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ), __VA_ARGS__ )
+        INTERNAL_CATCH_TESTCASE2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ), __VA_ARGS__ )
 
     ///////////////////////////////////////////////////////////////////////////////
     #define INTERNAL_CATCH_METHOD_AS_TEST_CASE( QualifiedMethod, ... ) \
@@ -1078,7 +1074,7 @@ struct AutoReg : NonCopyable {
         CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION \
         void TestName::test()
     #define INTERNAL_CATCH_TEST_CASE_METHOD( ClassName, ... ) \
-        INTERNAL_CATCH_TEST_CASE_METHOD2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ), ClassName, __VA_ARGS__ )
+        INTERNAL_CATCH_TEST_CASE_METHOD2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ), ClassName, __VA_ARGS__ )
 
     ///////////////////////////////////////////////////////////////////////////////
     #define INTERNAL_CATCH_REGISTER_TESTCASE( Function, ... ) \
@@ -1105,7 +1101,7 @@ struct AutoReg : NonCopyable {
                     int index = 0;                                    \
                     constexpr char const* tmpl_types[] = {CATCH_REC_LIST(INTERNAL_CATCH_STRINGIZE_WITHOUT_PARENS, __VA_ARGS__)};\
                     using expander = int[];\
-                    (void)expander{(reg_test(Types{}, Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index]), Tags } ), index++, 0)... };/* NOLINT */ \
+                    (void)expander{(reg_test(Types{}, Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index]), Tags } ), index++)... };/* NOLINT */ \
                 }\
             };\
             static int INTERNAL_CATCH_UNIQUE_NAME( globalRegistrar ) = [](){\
@@ -1119,18 +1115,18 @@ struct AutoReg : NonCopyable {
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE(Name, Tags, ...) \
-        INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, typename TestType, __VA_ARGS__ )
+        INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, typename TestType, __VA_ARGS__ )
 #else
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE(Name, Tags, ...) \
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, typename TestType, __VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, typename TestType, __VA_ARGS__ ) )
 #endif
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG(Name, Tags, Signature, ...) \
-        INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, Signature, __VA_ARGS__ )
+        INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, Signature, __VA_ARGS__ )
 #else
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_SIG(Name, Tags, Signature, ...) \
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, Signature, __VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, Signature, __VA_ARGS__ ) )
 #endif
 
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2(TestName, TestFuncName, Name, Tags, Signature, TmplTypes, TypesList) \
@@ -1151,7 +1147,7 @@ struct AutoReg : NonCopyable {
                     constexpr char const* tmpl_types[] = {CATCH_REC_LIST(INTERNAL_CATCH_STRINGIZE_WITHOUT_PARENS, INTERNAL_CATCH_REMOVE_PARENS(TmplTypes))};\
                     constexpr char const* types_list[] = {CATCH_REC_LIST(INTERNAL_CATCH_STRINGIZE_WITHOUT_PARENS, INTERNAL_CATCH_REMOVE_PARENS(TypesList))};\
                     constexpr auto num_types = sizeof(types_list) / sizeof(types_list[0]);\
-                    (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestFuncName<Types> ), CATCH_INTERNAL_LINEINFO, Catch::StringRef(), Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index / num_types]) + "<" + std::string(types_list[index % num_types]) + ">", Tags } ), index++, 0)... };/* NOLINT */\
+                    (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestFuncName<Types> ), CATCH_INTERNAL_LINEINFO, Catch::StringRef(), Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index / num_types]) + "<" + std::string(types_list[index % num_types]) + ">", Tags } ), index++)... };/* NOLINT */\
                 }                                                     \
             };                                                        \
             static int INTERNAL_CATCH_UNIQUE_NAME( globalRegistrar ) = [](){ \
@@ -1168,18 +1164,18 @@ struct AutoReg : NonCopyable {
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE(Name, Tags, ...)\
-        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, typename T,__VA_ARGS__)
+        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, typename T,__VA_ARGS__)
 #else
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE(Name, Tags, ...)\
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, typename T, __VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, typename T, __VA_ARGS__ ) )
 #endif
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_SIG(Name, Tags, Signature, ...)\
-        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, Signature, __VA_ARGS__)
+        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, Signature, __VA_ARGS__)
 #else
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_SIG(Name, Tags, Signature, ...)\
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, Signature, __VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, Signature, __VA_ARGS__ ) )
 #endif
 
     #define INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_2(TestName, TestFunc, Name, Tags, TmplList)\
@@ -1195,7 +1191,7 @@ struct AutoReg : NonCopyable {
             void reg_tests() {                                          \
                 int index = 0;                                    \
                 using expander = int[];                           \
-                (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestFunc<Types> ), CATCH_INTERNAL_LINEINFO, Catch::StringRef(), Catch::NameAndTags{ Name " - " + std::string(INTERNAL_CATCH_STRINGIZE(TmplList)) + " - " + std::to_string(index), Tags } ), index++, 0)... };/* NOLINT */\
+                (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestFunc<Types> ), CATCH_INTERNAL_LINEINFO, Catch::StringRef(), Catch::NameAndTags{ Name " - " + std::string(INTERNAL_CATCH_STRINGIZE(TmplList)) + " - " + std::to_string(index), Tags } ), index++)... };/* NOLINT */\
             }                                                     \
         };\
         static int INTERNAL_CATCH_UNIQUE_NAME( globalRegistrar ) = [](){ \
@@ -1210,7 +1206,7 @@ struct AutoReg : NonCopyable {
         static void TestFunc()
 
     #define INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE(Name, Tags, TmplList) \
-        INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), Name, Tags, TmplList )
+        INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), Name, Tags, TmplList )
 
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( TestNameClass, TestName, ClassName, Name, Tags, Signature, ... ) \
         CATCH_INTERNAL_START_WARNINGS_SUPPRESSION \
@@ -1229,7 +1225,7 @@ struct AutoReg : NonCopyable {
                     int index = 0;                                    \
                     constexpr char const* tmpl_types[] = {CATCH_REC_LIST(INTERNAL_CATCH_STRINGIZE_WITHOUT_PARENS, __VA_ARGS__)};\
                     using expander = int[];\
-                    (void)expander{(reg_test(Types{}, #ClassName, Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index]), Tags } ), index++, 0)... };/* NOLINT */ \
+                    (void)expander{(reg_test(Types{}, #ClassName, Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index]), Tags } ), index++)... };/* NOLINT */ \
                 }\
             };\
             static int INTERNAL_CATCH_UNIQUE_NAME( globalRegistrar ) = [](){\
@@ -1243,18 +1239,18 @@ struct AutoReg : NonCopyable {
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD( ClassName, Name, Tags,... ) \
-        INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ )
+        INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ )
 #else
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD( ClassName, Name, Tags,... ) \
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, typename T, __VA_ARGS__ ) )
 #endif
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_SIG( ClassName, Name, Tags, Signature, ... ) \
-        INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ )
+        INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ )
 #else
     #define INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_SIG( ClassName, Name, Tags, Signature, ... ) \
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____C_L_A_S_S____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_C_L_A_S_S_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ) , ClassName, Name, Tags, Signature, __VA_ARGS__ ) )
 #endif
 
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2(TestNameClass, TestName, ClassName, Name, Tags, Signature, TmplTypes, TypesList)\
@@ -1278,7 +1274,7 @@ struct AutoReg : NonCopyable {
                     constexpr char const* tmpl_types[] = {CATCH_REC_LIST(INTERNAL_CATCH_STRINGIZE_WITHOUT_PARENS, INTERNAL_CATCH_REMOVE_PARENS(TmplTypes))};\
                     constexpr char const* types_list[] = {CATCH_REC_LIST(INTERNAL_CATCH_STRINGIZE_WITHOUT_PARENS, INTERNAL_CATCH_REMOVE_PARENS(TypesList))};\
                     constexpr auto num_types = sizeof(types_list) / sizeof(types_list[0]);\
-                    (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestName<Types>::test ), CATCH_INTERNAL_LINEINFO, #ClassName, Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index / num_types]) + "<" + std::string(types_list[index % num_types]) + ">", Tags } ), index++, 0)... };/* NOLINT */ \
+                    (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestName<Types>::test ), CATCH_INTERNAL_LINEINFO, #ClassName, Catch::NameAndTags{ Name " - " + std::string(tmpl_types[index / num_types]) + "<" + std::string(types_list[index % num_types]) + ">", Tags } ), index++)... };/* NOLINT */ \
                 }\
             };\
             static int INTERNAL_CATCH_UNIQUE_NAME( globalRegistrar ) = [](){\
@@ -1295,18 +1291,18 @@ struct AutoReg : NonCopyable {
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD( ClassName, Name, Tags, ... )\
-        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), ClassName, Name, Tags, typename T, __VA_ARGS__ )
+        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), ClassName, Name, Tags, typename T, __VA_ARGS__ )
 #else
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD( ClassName, Name, Tags, ... )\
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), ClassName, Name, Tags, typename T,__VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), ClassName, Name, Tags, typename T,__VA_ARGS__ ) )
 #endif
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_SIG( ClassName, Name, Tags, Signature, ... )\
-        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), ClassName, Name, Tags, Signature, __VA_ARGS__ )
+        INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), ClassName, Name, Tags, Signature, __VA_ARGS__ )
 #else
     #define INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_SIG( ClassName, Name, Tags, Signature, ... )\
-        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), ClassName, Name, Tags, Signature,__VA_ARGS__ ) )
+        INTERNAL_CATCH_EXPAND_VARGS( INTERNAL_CATCH_TEMPLATE_PRODUCT_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), ClassName, Name, Tags, Signature,__VA_ARGS__ ) )
 #endif
 
     #define INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_METHOD_2( TestNameClass, TestName, ClassName, Name, Tags, TmplList) \
@@ -1325,7 +1321,7 @@ struct AutoReg : NonCopyable {
                 void reg_tests(){\
                     int index = 0;\
                     using expander = int[];\
-                    (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestName<Types>::test ), CATCH_INTERNAL_LINEINFO, #ClassName, Catch::NameAndTags{ Name " - " + std::string(INTERNAL_CATCH_STRINGIZE(TmplList)) + " - " + std::to_string(index), Tags } ), index++, 0)... };/* NOLINT */ \
+                    (void)expander{(Catch::AutoReg( Catch::makeTestInvoker( &TestName<Types>::test ), CATCH_INTERNAL_LINEINFO, #ClassName, Catch::NameAndTags{ Name " - " + std::string(INTERNAL_CATCH_STRINGIZE(TmplList)) + " - " + std::to_string(index), Tags } ), index++)... };/* NOLINT */ \
                 }\
             };\
             static int INTERNAL_CATCH_UNIQUE_NAME( globalRegistrar ) = [](){\
@@ -1340,7 +1336,7 @@ struct AutoReg : NonCopyable {
         void TestName<TestType>::test()
 
 #define INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_METHOD(ClassName, Name, Tags, TmplList) \
-        INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____ ), INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_M_P_L_A_T_E____T_E_S_T____F_U_N_C____ ), ClassName, Name, Tags, TmplList )
+        INTERNAL_CATCH_TEMPLATE_LIST_TEST_CASE_METHOD_2( INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_ ), INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_M_P_L_A_T_E_T_E_S_T_F_U_N_C_ ), ClassName, Name, Tags, TmplList )
 
 // end catch_test_registry.h
 // start catch_capture.hpp
@@ -1829,8 +1825,8 @@ namespace Catch {
 #endif
 
     namespace Detail {
-        template<typename InputIterator>
-        std::string rangeToString(InputIterator first, InputIterator last) {
+        template<typename InputIterator, typename Sentinel = InputIterator>
+        std::string rangeToString(InputIterator first, Sentinel last) {
             ReusableStringStream rss;
             rss << "{ ";
             if (first != last) {
@@ -3097,7 +3093,7 @@ namespace Detail {
         Approx operator-() const;
 
         template <typename T, typename = typename std::enable_if<std::is_constructible<double, T>::value>::type>
-        Approx operator()( T const& value ) {
+        Approx operator()( T const& value ) const {
             Approx approx( static_cast<double>(value) );
             approx.m_epsilon = m_epsilon;
             approx.m_margin = m_margin;
@@ -4169,7 +4165,7 @@ namespace Generators {
             if (!m_predicate(m_generator.get())) {
                 // It might happen that there are no values that pass the
                 // filter. In that case we throw an exception.
-                auto has_initial_value = next();
+                auto has_initial_value = nextImpl();
                 if (!has_initial_value) {
                     Catch::throw_exception(GeneratorException("No valid value found in filtered generator"));
                 }
@@ -4181,6 +4177,11 @@ namespace Generators {
         }
 
         bool next() override {
+            return nextImpl();
+        }
+
+    private:
+        bool nextImpl() {
             bool success = m_generator.next();
             if (!success) {
                 return false;
@@ -5464,6 +5465,8 @@ namespace Catch {
 } // namespace Catch
 
 // end catch_outlier_classification.hpp
+
+#include <iterator>
 #endif // CATCH_CONFIG_ENABLE_BENCHMARKING
 
 #include <string>
@@ -6348,9 +6351,10 @@ namespace Catch {
 
         void writeTestCase(TestCaseNode const& testCaseNode);
 
-        void writeSection(std::string const& className,
-                          std::string const& rootName,
-                          SectionNode const& sectionNode);
+        void writeSection( std::string const& className,
+                           std::string const& rootName,
+                           SectionNode const& sectionNode,
+                           bool testOkToFail );
 
         void writeAssertions(SectionNode const& sectionNode);
         void writeAssertion(AssertionStats const& stats);
@@ -6885,7 +6889,7 @@ namespace Catch {
                     }
                     iters *= 2;
                 }
-                throw optimized_away_error{};
+                Catch::throw_exception(optimized_away_error{});
             }
         } // namespace Detail
     } // namespace Benchmark
@@ -6893,6 +6897,7 @@ namespace Catch {
 
 // end catch_run_for_at_least.hpp
 #include <algorithm>
+#include <iterator>
 
 namespace Catch {
     namespace Benchmark {
@@ -7063,8 +7068,8 @@ namespace Catch {
                 double b2 = bias - z1;
                 double a1 = a(b1);
                 double a2 = a(b2);
-                auto lo = std::max(cumn(a1), 0);
-                auto hi = std::min(cumn(a2), n - 1);
+                auto lo = (std::max)(cumn(a1), 0);
+                auto hi = (std::min)(cumn(a2), n - 1);
 
                 return { point, resample[lo], resample[hi], confidence_level };
             }
@@ -7133,7 +7138,9 @@ namespace Catch {
             }
             template <typename Clock>
             EnvironmentEstimate<FloatDuration<Clock>> estimate_clock_cost(FloatDuration<Clock> resolution) {
-                auto time_limit = std::min(resolution * clock_cost_estimation_tick_limit, FloatDuration<Clock>(clock_cost_estimation_time_limit));
+                auto time_limit = (std::min)(
+                    resolution * clock_cost_estimation_tick_limit,
+                    FloatDuration<Clock>(clock_cost_estimation_time_limit));
                 auto time_clock = [](int k) {
                     return Detail::measure<Clock>([k] {
                         for (int i = 0; i < k; ++i) {
@@ -7611,6 +7618,10 @@ namespace TestCaseTracking {
 
         void addInitialFilters( std::vector<std::string> const& filters );
         void addNextFilters( std::vector<std::string> const& filters );
+        //! Returns filters active in this tracker
+        std::vector<std::string> const& getFilters() const;
+        //! Returns whitespace-trimmed name of the tracked section
+        std::string const& trimmedName() const;
     };
 
 } // namespace TestCaseTracking
@@ -7776,7 +7787,7 @@ namespace Catch {
                 double sb = stddev.point;
                 double mn = mean.point / n;
                 double mg_min = mn / 2.;
-                double sg = std::min(mg_min / 4., sb / std::sqrt(n));
+                double sg = (std::min)(mg_min / 4., sb / std::sqrt(n));
                 double sg2 = sg * sg;
                 double sb2 = sb * sb;
 
@@ -7795,7 +7806,7 @@ namespace Catch {
                     return (nc / n) * (sb2 - nc * sg2);
                 };
 
-                return std::min(var_out(1), var_out(std::min(c_max(0.), c_max(mg_min)))) / sb2;
+                return (std::min)(var_out(1), var_out((std::min)(c_max(0.), c_max(mg_min)))) / sb2;
             }
 
             bootstrap_analysis analyse_samples(double confidence_level, int n_resamples, std::vector<double>::iterator first, std::vector<double>::iterator last) {
@@ -7985,86 +7996,58 @@ namespace Catch {
 
 // start catch_fatal_condition.h
 
-// start catch_windows_h_proxy.h
-
-
-#if defined(CATCH_PLATFORM_WINDOWS)
-
-#if !defined(NOMINMAX) && !defined(CATCH_CONFIG_NO_NOMINMAX)
-#  define CATCH_DEFINED_NOMINMAX
-#  define NOMINMAX
-#endif
-#if !defined(WIN32_LEAN_AND_MEAN) && !defined(CATCH_CONFIG_NO_WIN32_LEAN_AND_MEAN)
-#  define CATCH_DEFINED_WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifdef __AFXDLL
-#include <AfxWin.h>
-#else
-#include <windows.h>
-#endif
-
-#ifdef CATCH_DEFINED_NOMINMAX
-#  undef NOMINMAX
-#endif
-#ifdef CATCH_DEFINED_WIN32_LEAN_AND_MEAN
-#  undef WIN32_LEAN_AND_MEAN
-#endif
-
-#endif // defined(CATCH_PLATFORM_WINDOWS)
-
-// end catch_windows_h_proxy.h
-#if defined( CATCH_CONFIG_WINDOWS_SEH )
+#include <cassert>
 
 namespace Catch {
 
-    struct FatalConditionHandler {
+    // Wrapper for platform-specific fatal error (signals/SEH) handlers
+    //
+    // Tries to be cooperative with other handlers, and not step over
+    // other handlers. This means that unknown structured exceptions
+    // are passed on, previous signal handlers are called, and so on.
+    //
+    // Can only be instantiated once, and assumes that once a signal
+    // is caught, the binary will end up terminating. Thus, there
+    class FatalConditionHandler {
+        bool m_started = false;
 
-        static LONG CALLBACK handleVectoredException(PEXCEPTION_POINTERS ExceptionInfo);
-        FatalConditionHandler();
-        static void reset();
-        ~FatalConditionHandler();
-
-    private:
-        static bool isSet;
-        static ULONG guaranteeSize;
-        static PVOID exceptionHandlerHandle;
-    };
-
-} // namespace Catch
-
-#elif defined ( CATCH_CONFIG_POSIX_SIGNALS )
-
-#include <signal.h>
-
-namespace Catch {
-
-    struct FatalConditionHandler {
-
-        static bool isSet;
-        static struct sigaction oldSigActions[];
-        static stack_t oldSigStack;
-        static char altStackMem[];
-
-        static void handleSignal( int sig );
-
+        // Install/disengage implementation for specific platform.
+        // Should be if-defed to work on current platform, can assume
+        // engage-disengage 1:1 pairing.
+        void engage_platform();
+        void disengage_platform();
+    public:
+        // Should also have platform-specific implementations as needed
         FatalConditionHandler();
         ~FatalConditionHandler();
-        static void reset();
+
+        void engage() {
+            assert(!m_started && "Handler cannot be installed twice.");
+            m_started = true;
+            engage_platform();
+        }
+
+        void disengage() {
+            assert(m_started && "Handler cannot be uninstalled without being installed first");
+            m_started = false;
+            disengage_platform();
+        }
     };
 
-} // namespace Catch
-
-#else
-
-namespace Catch {
-    struct FatalConditionHandler {
-        void reset();
+    //! Simple RAII guard for (dis)engaging the FatalConditionHandler
+    class FatalConditionHandlerGuard {
+        FatalConditionHandler* m_handler;
+    public:
+        FatalConditionHandlerGuard(FatalConditionHandler* handler):
+            m_handler(handler) {
+            m_handler->engage();
+        }
+        ~FatalConditionHandlerGuard() {
+            m_handler->disengage();
+        }
     };
-}
 
-#endif
+} // end namespace Catch
 
 // end catch_fatal_condition.h
 #include <string>
@@ -8190,6 +8173,7 @@ namespace Catch {
         std::vector<SectionEndInfo> m_unfinishedSections;
         std::vector<ITracker*> m_activeSections;
         TrackerContext m_trackerContext;
+        FatalConditionHandler m_fatalConditionhandler;
         bool m_lastAssertionPassed = false;
         bool m_shouldReportUnexpected = true;
         bool m_includeSuccessfulResults;
@@ -10062,6 +10046,36 @@ namespace Catch {
 }
 
 // end catch_errno_guard.h
+// start catch_windows_h_proxy.h
+
+
+#if defined(CATCH_PLATFORM_WINDOWS)
+
+#if !defined(NOMINMAX) && !defined(CATCH_CONFIG_NO_NOMINMAX)
+#  define CATCH_DEFINED_NOMINMAX
+#  define NOMINMAX
+#endif
+#if !defined(WIN32_LEAN_AND_MEAN) && !defined(CATCH_CONFIG_NO_WIN32_LEAN_AND_MEAN)
+#  define CATCH_DEFINED_WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifdef __AFXDLL
+#include <AfxWin.h>
+#else
+#include <windows.h>
+#endif
+
+#ifdef CATCH_DEFINED_NOMINMAX
+#  undef NOMINMAX
+#endif
+#ifdef CATCH_DEFINED_WIN32_LEAN_AND_MEAN
+#  undef WIN32_LEAN_AND_MEAN
+#endif
+
+#endif // defined(CATCH_PLATFORM_WINDOWS)
+
+// end catch_windows_h_proxy.h
 #include <sstream>
 
 namespace Catch {
@@ -10578,7 +10592,7 @@ namespace Catch {
             // Extracts the actual name part of an enum instance
             // In other words, it returns the Blue part of Bikeshed::Colour::Blue
             StringRef extractInstanceName(StringRef enumInstance) {
-                // Find last occurence of ":"
+                // Find last occurrence of ":"
                 size_t name_start = enumInstance.size();
                 while (name_start > 0 && enumInstance[name_start - 1] != ':') {
                     --name_start;
@@ -10740,25 +10754,47 @@ namespace Catch {
 // end catch_exception_translator_registry.cpp
 // start catch_fatal_condition.cpp
 
-#if defined(__GNUC__)
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#endif
+#include <algorithm>
+
+#if !defined( CATCH_CONFIG_WINDOWS_SEH ) && !defined( CATCH_CONFIG_POSIX_SIGNALS )
+
+namespace Catch {
+
+    // If neither SEH nor signal handling is required, the handler impls
+    // do not have to do anything, and can be empty.
+    void FatalConditionHandler::engage_platform() {}
+    void FatalConditionHandler::disengage_platform() {}
+    FatalConditionHandler::FatalConditionHandler() = default;
+    FatalConditionHandler::~FatalConditionHandler() = default;
+
+} // end namespace Catch
+
+#endif // !CATCH_CONFIG_WINDOWS_SEH && !CATCH_CONFIG_POSIX_SIGNALS
+
+#if defined( CATCH_CONFIG_WINDOWS_SEH ) && defined( CATCH_CONFIG_POSIX_SIGNALS )
+#error "Inconsistent configuration: Windows' SEH handling and POSIX signals cannot be enabled at the same time"
+#endif // CATCH_CONFIG_WINDOWS_SEH && CATCH_CONFIG_POSIX_SIGNALS
 
 #if defined( CATCH_CONFIG_WINDOWS_SEH ) || defined( CATCH_CONFIG_POSIX_SIGNALS )
 
 namespace {
-    // Report the error condition
+    //! Signals fatal error message to the run context
     void reportFatal( char const * const message ) {
         Catch::getCurrentContext().getResultCapture()->handleFatalErrorCondition( message );
     }
-}
 
-#endif // signals/SEH handling
+    //! Minimal size Catch2 needs for its own fatal error handling.
+    //! Picked anecdotally, so it might not be sufficient on all
+    //! platforms, and for all configurations.
+    constexpr std::size_t minStackSizeForErrors = 32 * 1024;
+} // end unnamed namespace
+
+#endif // CATCH_CONFIG_WINDOWS_SEH || CATCH_CONFIG_POSIX_SIGNALS
 
 #if defined( CATCH_CONFIG_WINDOWS_SEH )
 
 namespace Catch {
+
     struct SignalDefs { DWORD id; const char* name; };
 
     // There is no 1-1 mapping between signals and windows exceptions.
@@ -10771,7 +10807,7 @@ namespace Catch {
         { static_cast<DWORD>(EXCEPTION_INT_DIVIDE_BY_ZERO), "Divide by zero error" },
     };
 
-    LONG CALLBACK FatalConditionHandler::handleVectoredException(PEXCEPTION_POINTERS ExceptionInfo) {
+    static LONG CALLBACK handleVectoredException(PEXCEPTION_POINTERS ExceptionInfo) {
         for (auto const& def : signalDefs) {
             if (ExceptionInfo->ExceptionRecord->ExceptionCode == def.id) {
                 reportFatal(def.name);
@@ -10782,38 +10818,50 @@ namespace Catch {
         return EXCEPTION_CONTINUE_SEARCH;
     }
 
-    FatalConditionHandler::FatalConditionHandler() {
-        isSet = true;
-        // 32k seems enough for Catch to handle stack overflow,
-        // but the value was found experimentally, so there is no strong guarantee
-        guaranteeSize = 32 * 1024;
-        exceptionHandlerHandle = nullptr;
-        // Register as first handler in current chain
-        exceptionHandlerHandle = AddVectoredExceptionHandler(1, handleVectoredException);
-        // Pass in guarantee size to be filled
-        SetThreadStackGuarantee(&guaranteeSize);
-    }
+    // Since we do not support multiple instantiations, we put these
+    // into global variables and rely on cleaning them up in outlined
+    // constructors/destructors
+    static PVOID exceptionHandlerHandle = nullptr;
 
-    void FatalConditionHandler::reset() {
-        if (isSet) {
-            RemoveVectoredExceptionHandler(exceptionHandlerHandle);
-            SetThreadStackGuarantee(&guaranteeSize);
-            exceptionHandlerHandle = nullptr;
-            isSet = false;
+    // For MSVC, we reserve part of the stack memory for handling
+    // memory overflow structured exception.
+    FatalConditionHandler::FatalConditionHandler() {
+        ULONG guaranteeSize = static_cast<ULONG>(minStackSizeForErrors);
+        if (!SetThreadStackGuarantee(&guaranteeSize)) {
+            // We do not want to fully error out, because needing
+            // the stack reserve should be rare enough anyway.
+            Catch::cerr()
+                << "Failed to reserve piece of stack."
+                << " Stack overflows will not be reported successfully.";
         }
     }
 
-    FatalConditionHandler::~FatalConditionHandler() {
-        reset();
+    // We do not attempt to unset the stack guarantee, because
+    // Windows does not support lowering the stack size guarantee.
+    FatalConditionHandler::~FatalConditionHandler() = default;
+
+    void FatalConditionHandler::engage_platform() {
+        // Register as first handler in current chain
+        exceptionHandlerHandle = AddVectoredExceptionHandler(1, handleVectoredException);
+        if (!exceptionHandlerHandle) {
+            CATCH_RUNTIME_ERROR("Could not register vectored exception handler");
+        }
     }
 
-bool FatalConditionHandler::isSet = false;
-ULONG FatalConditionHandler::guaranteeSize = 0;
-PVOID FatalConditionHandler::exceptionHandlerHandle = nullptr;
+    void FatalConditionHandler::disengage_platform() {
+        if (!RemoveVectoredExceptionHandler(exceptionHandlerHandle)) {
+            CATCH_RUNTIME_ERROR("Could not unregister vectored exception handler");
+        }
+        exceptionHandlerHandle = nullptr;
+    }
 
-} // namespace Catch
+} // end namespace Catch
 
-#elif defined( CATCH_CONFIG_POSIX_SIGNALS )
+#endif // CATCH_CONFIG_WINDOWS_SEH
+
+#if defined( CATCH_CONFIG_POSIX_SIGNALS )
+
+#include <signal.h>
 
 namespace Catch {
 
@@ -10821,10 +10869,6 @@ namespace Catch {
         int id;
         const char* name;
     };
-
-    // 32kb for the alternate stack seems to be sufficient. However, this value
-    // is experimentally determined, so that's not guaranteed.
-    static constexpr std::size_t sigStackSize = 32768 >= MINSIGSTKSZ ? 32768 : MINSIGSTKSZ;
 
     static SignalDefs signalDefs[] = {
         { SIGINT,  "SIGINT - Terminal interrupt signal" },
@@ -10835,7 +10879,32 @@ namespace Catch {
         { SIGABRT, "SIGABRT - Abort (abnormal termination) signal" }
     };
 
-    void FatalConditionHandler::handleSignal( int sig ) {
+// Older GCCs trigger -Wmissing-field-initializers for T foo = {}
+// which is zero initialization, but not explicit. We want to avoid
+// that.
+#if defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
+    static char* altStackMem = nullptr;
+    static std::size_t altStackSize = 0;
+    static stack_t oldSigStack{};
+    static struct sigaction oldSigActions[sizeof(signalDefs) / sizeof(SignalDefs)]{};
+
+    static void restorePreviousSignalHandlers() {
+        // We set signal handlers back to the previous ones. Hopefully
+        // nobody overwrote them in the meantime, and doesn't expect
+        // their signal handlers to live past ours given that they
+        // installed them after ours..
+        for (std::size_t i = 0; i < sizeof(signalDefs) / sizeof(SignalDefs); ++i) {
+            sigaction(signalDefs[i].id, &oldSigActions[i], nullptr);
+        }
+        // Return the old stack
+        sigaltstack(&oldSigStack, nullptr);
+    }
+
+    static void handleSignal( int sig ) {
         char const * name = "<unknown signal>";
         for (auto const& def : signalDefs) {
             if (sig == def.id) {
@@ -10843,16 +10912,33 @@ namespace Catch {
                 break;
             }
         }
-        reset();
-        reportFatal(name);
+        // We need to restore previous signal handlers and let them do
+        // their thing, so that the users can have the debugger break
+        // when a signal is raised, and so on.
+        restorePreviousSignalHandlers();
+        reportFatal( name );
         raise( sig );
     }
 
     FatalConditionHandler::FatalConditionHandler() {
-        isSet = true;
+        assert(!altStackMem && "Cannot initialize POSIX signal handler when one already exists");
+        if (altStackSize == 0) {
+            altStackSize = std::max(static_cast<size_t>(SIGSTKSZ), minStackSizeForErrors);
+        }
+        altStackMem = new char[altStackSize]();
+    }
+
+    FatalConditionHandler::~FatalConditionHandler() {
+        delete[] altStackMem;
+        // We signal that another instance can be constructed by zeroing
+        // out the pointer.
+        altStackMem = nullptr;
+    }
+
+    void FatalConditionHandler::engage_platform() {
         stack_t sigStack;
         sigStack.ss_sp = altStackMem;
-        sigStack.ss_size = sigStackSize;
+        sigStack.ss_size = altStackSize;
         sigStack.ss_flags = 0;
         sigaltstack(&sigStack, &oldSigStack);
         struct sigaction sa = { };
@@ -10864,40 +10950,17 @@ namespace Catch {
         }
     }
 
-    FatalConditionHandler::~FatalConditionHandler() {
-        reset();
-    }
-
-    void FatalConditionHandler::reset() {
-        if( isSet ) {
-            // Set signals back to previous values -- hopefully nobody overwrote them in the meantime
-            for( std::size_t i = 0; i < sizeof(signalDefs)/sizeof(SignalDefs); ++i ) {
-                sigaction(signalDefs[i].id, &oldSigActions[i], nullptr);
-            }
-            // Return the old stack
-            sigaltstack(&oldSigStack, nullptr);
-            isSet = false;
-        }
-    }
-
-    bool FatalConditionHandler::isSet = false;
-    struct sigaction FatalConditionHandler::oldSigActions[sizeof(signalDefs)/sizeof(SignalDefs)] = {};
-    stack_t FatalConditionHandler::oldSigStack = {};
-    char FatalConditionHandler::altStackMem[sigStackSize] = {};
-
-} // namespace Catch
-
-#else
-
-namespace Catch {
-    void FatalConditionHandler::reset() {}
-}
-
-#endif // signals/SEH handling
-
 #if defined(__GNUC__)
 #    pragma GCC diagnostic pop
 #endif
+
+    void FatalConditionHandler::disengage_platform() {
+        restorePreviousSignalHandlers();
+    }
+
+} // end namespace Catch
+
+#endif // CATCH_CONFIG_POSIX_SIGNALS
 // end catch_fatal_condition.cpp
 // start catch_generators.cpp
 
@@ -11452,7 +11515,8 @@ namespace {
             return lhs == rhs;
         }
 
-        auto ulpDiff = std::abs(lc - rc);
+        // static cast as a workaround for IBM XLC
+        auto ulpDiff = std::abs(static_cast<FP>(lc - rc));
         return static_cast<uint64_t>(ulpDiff) <= maxUlpDiff;
     }
 
@@ -11626,7 +11690,6 @@ Floating::WithinRelMatcher WithinRel(float target) {
 
 } // namespace Matchers
 } // namespace Catch
-
 // end catch_matchers_floating.cpp
 // start catch_matchers_generic.cpp
 
@@ -12042,7 +12105,7 @@ namespace Catch {
         if (tmpnam_s(m_buffer)) {
             CATCH_RUNTIME_ERROR("Could not get a temp filename");
         }
-        if (fopen_s(&m_file, m_buffer, "w")) {
+        if (fopen_s(&m_file, m_buffer, "w+")) {
             char buffer[100];
             if (strerror_s(buffer, errno)) {
                 CATCH_RUNTIME_ERROR("Could not translate errno to a string");
@@ -12580,13 +12643,53 @@ namespace Catch {
                 // `SECTION`s.
                 // **The check for m_children.empty cannot be removed**.
                 // doing so would break `GENERATE` _not_ followed by `SECTION`s.
-                const bool should_wait_for_child =
-                    !m_children.empty() &&
-                    std::find_if( m_children.begin(),
-                                  m_children.end(),
-                                  []( TestCaseTracking::ITrackerPtr tracker ) {
-                                      return tracker->hasStarted();
-                                  } ) == m_children.end();
+                const bool should_wait_for_child = [&]() {
+                    // No children -> nobody to wait for
+                    if ( m_children.empty() ) {
+                        return false;
+                    }
+                    // If at least one child started executing, don't wait
+                    if ( std::find_if(
+                             m_children.begin(),
+                             m_children.end(),
+                             []( TestCaseTracking::ITrackerPtr tracker ) {
+                                 return tracker->hasStarted();
+                             } ) != m_children.end() ) {
+                        return false;
+                    }
+
+                    // No children have started. We need to check if they _can_
+                    // start, and thus we should wait for them, or they cannot
+                    // start (due to filters), and we shouldn't wait for them
+                    auto* parent = m_parent;
+                    // This is safe: there is always at least one section
+                    // tracker in a test case tracking tree
+                    while ( !parent->isSectionTracker() ) {
+                        parent = &( parent->parent() );
+                    }
+                    assert( parent &&
+                            "Missing root (test case) level section" );
+
+                    auto const& parentSection =
+                        static_cast<SectionTracker&>( *parent );
+                    auto const& filters = parentSection.getFilters();
+                    // No filters -> no restrictions on running sections
+                    if ( filters.empty() ) {
+                        return true;
+                    }
+
+                    for ( auto const& child : m_children ) {
+                        if ( child->isSectionTracker() &&
+                             std::find( filters.begin(),
+                                        filters.end(),
+                                        static_cast<SectionTracker&>( *child )
+                                            .trimmedName() ) !=
+                                 filters.end() ) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }();
 
                 // This check is a bit tricky, because m_generator->next()
                 // has a side-effect, where it consumes generator's current
@@ -12920,9 +13023,8 @@ namespace Catch {
     }
 
     void RunContext::invokeActiveTestCase() {
-        FatalConditionHandler fatalConditionHandler; // Handle signals
+        FatalConditionHandlerGuard _(&m_fatalConditionhandler);
         m_activeTestCase->invoke();
-        fatalConditionHandler.reset();
     }
 
     void RunContext::handleUnfinishedSections() {
@@ -13289,6 +13391,10 @@ namespace Catch {
                 if (lastSlash != std::string::npos) {
                     filename.erase(0, lastSlash);
                     filename[0] = '#';
+                }
+                else
+                {
+                    filename.insert(0, "#");
                 }
 
                 auto lastDot = filename.find_last_of('.');
@@ -14091,24 +14197,28 @@ namespace Catch {
 
     namespace {
         struct TestHasher {
-            explicit TestHasher(Catch::SimplePcg32& rng) {
-                basis = rng();
-                basis <<= 32;
-                basis |= rng();
-            }
+            using hash_t = uint64_t;
 
-            uint64_t basis;
+            explicit TestHasher( hash_t hashSuffix ):
+                m_hashSuffix{ hashSuffix } {}
 
-            uint64_t operator()(TestCase const& t) const {
-                // Modified FNV-1a hash
-                static constexpr uint64_t prime = 1099511628211;
-                uint64_t hash = basis;
-                for (const char c : t.name) {
+            uint32_t operator()( TestCase const& t ) const {
+                // FNV-1a hash with multiplication fold.
+                const hash_t prime = 1099511628211u;
+                hash_t hash = 14695981039346656037u;
+                for ( const char c : t.name ) {
                     hash ^= c;
                     hash *= prime;
                 }
-                return hash;
+                hash ^= m_hashSuffix;
+                hash *= prime;
+                const uint32_t low{ static_cast<uint32_t>( hash ) };
+                const uint32_t high{ static_cast<uint32_t>( hash >> 32 ) };
+                return low * high;
             }
+
+        private:
+            hash_t m_hashSuffix;
         };
     } // end unnamed namespace
 
@@ -14126,9 +14236,9 @@ namespace Catch {
 
             case RunTests::InRandomOrder: {
                 seedRng( config );
-                TestHasher h( rng() );
+                TestHasher h{ config.rngSeed() };
 
-                using hashedTest = std::pair<uint64_t, TestCase const*>;
+                using hashedTest = std::pair<TestHasher::hash_t, TestCase const*>;
                 std::vector<hashedTest> indexed_tests;
                 indexed_tests.reserve( unsortedTestCases.size() );
 
@@ -14456,6 +14566,14 @@ namespace TestCaseTracking {
     void SectionTracker::addNextFilters( std::vector<std::string> const& filters ) {
         if( filters.size() > 1 )
             m_filters.insert( m_filters.end(), filters.begin()+1, filters.end() );
+    }
+
+    std::vector<std::string> const& SectionTracker::getFilters() const {
+        return m_filters;
+    }
+
+    std::string const& SectionTracker::trimmedName() const {
+        return m_trimmed_name;
     }
 
 } // namespace TestCaseTracking
@@ -15192,6 +15310,41 @@ namespace Catch {
 // end catch_totals.cpp
 // start catch_uncaught_exceptions.cpp
 
+// start catch_config_uncaught_exceptions.hpp
+
+//              Copyright Catch2 Authors
+// Distributed under the Boost Software License, Version 1.0.
+//   (See accompanying file LICENSE_1_0.txt or copy at
+//        https://www.boost.org/LICENSE_1_0.txt)
+
+// SPDX-License-Identifier: BSL-1.0
+
+#ifndef CATCH_CONFIG_UNCAUGHT_EXCEPTIONS_HPP
+#define CATCH_CONFIG_UNCAUGHT_EXCEPTIONS_HPP
+
+#if defined(_MSC_VER)
+#  if _MSC_VER >= 1900 // Visual Studio 2015 or newer
+#    define CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
+#  endif
+#endif
+
+#include <exception>
+
+#if defined(__cpp_lib_uncaught_exceptions) \
+    && !defined(CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS)
+
+#  define CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
+#endif // __cpp_lib_uncaught_exceptions
+
+#if defined(CATCH_INTERNAL_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS) \
+    && !defined(CATCH_CONFIG_NO_CPP17_UNCAUGHT_EXCEPTIONS) \
+    && !defined(CATCH_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS)
+
+#  define CATCH_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS
+#endif
+
+#endif // CATCH_CONFIG_UNCAUGHT_EXCEPTIONS_HPP
+// end catch_config_uncaught_exceptions.hpp
 #include <exception>
 
 namespace Catch {
@@ -15238,7 +15391,7 @@ namespace Catch {
     }
 
     Version const& libraryVersion() {
-        static Version version( 2, 13, 0, "", 0 );
+        static Version version( 2, 13, 9, "", 0 );
         return version;
     }
 
@@ -16651,6 +16804,7 @@ CATCH_REGISTER_REPORTER("console", ConsoleReporter)
 #include <sstream>
 #include <ctime>
 #include <algorithm>
+#include <iomanip>
 
 namespace Catch {
 
@@ -16678,7 +16832,7 @@ namespace Catch {
 #else
             std::strftime(timeStamp, timeStampSize, fmt, timeInfo);
 #endif
-            return std::string(timeStamp);
+            return std::string(timeStamp, timeStampSize-1);
         }
 
         std::string fileNameTag(const std::vector<std::string> &tags) {
@@ -16689,6 +16843,17 @@ namespace Catch {
                 return it->substr(1);
             return std::string();
         }
+
+        // Formats the duration in seconds to 3 decimal places.
+        // This is done because some genius defined Maven Surefire schema
+        // in a way that only accepts 3 decimal places, and tools like
+        // Jenkins use that schema for validation JUnit reporter output.
+        std::string formatDuration( double seconds ) {
+            ReusableStringStream rss;
+            rss << std::fixed << std::setprecision( 3 ) << seconds;
+            return rss.str();
+        }
+
     } // anonymous namespace
 
     JunitReporter::JunitReporter( ReporterConfig const& _config )
@@ -16758,7 +16923,7 @@ namespace Catch {
         if( m_config->showDurations() == ShowDurations::Never )
             xml.writeAttribute( "time", "" );
         else
-            xml.writeAttribute( "time", suiteTime );
+            xml.writeAttribute( "time", formatDuration( suiteTime ) );
         xml.writeAttribute( "timestamp", getCurrentTimestamp() );
 
         // Write properties if there are any
@@ -16803,12 +16968,13 @@ namespace Catch {
         if ( !m_config->name().empty() )
             className = m_config->name() + "." + className;
 
-        writeSection( className, "", rootSection );
+        writeSection( className, "", rootSection, stats.testInfo.okToFail() );
     }
 
-    void JunitReporter::writeSection(  std::string const& className,
-                        std::string const& rootName,
-                        SectionNode const& sectionNode ) {
+    void JunitReporter::writeSection( std::string const& className,
+                                      std::string const& rootName,
+                                      SectionNode const& sectionNode,
+                                      bool testOkToFail) {
         std::string name = trim( sectionNode.stats.sectionInfo.name );
         if( !rootName.empty() )
             name = rootName + '/' + name;
@@ -16825,12 +16991,17 @@ namespace Catch {
                 xml.writeAttribute( "classname", className );
                 xml.writeAttribute( "name", name );
             }
-            xml.writeAttribute( "time", ::Catch::Detail::stringify( sectionNode.stats.durationInSeconds ) );
+            xml.writeAttribute( "time", formatDuration( sectionNode.stats.durationInSeconds ) );
             // This is not ideal, but it should be enough to mimic gtest's
             // junit output.
             // Ideally the JUnit reporter would also handle `skipTest`
             // events and write those out appropriately.
             xml.writeAttribute( "status", "run" );
+
+            if (sectionNode.stats.assertions.failedButOk) {
+                xml.scopedElement("skipped")
+                    .writeAttribute("message", "TEST_CASE tagged with !mayfail");
+            }
 
             writeAssertions( sectionNode );
 
@@ -16841,9 +17012,9 @@ namespace Catch {
         }
         for( auto const& childNode : sectionNode.childSections )
             if( className.empty() )
-                writeSection( name, "", *childNode );
+                writeSection( name, "", *childNode, testOkToFail );
             else
-                writeSection( className, name, *childNode );
+                writeSection( className, name, *childNode, testOkToFail );
     }
 
     void JunitReporter::writeAssertions( SectionNode const& sectionNode ) {
@@ -17488,9 +17659,9 @@ int main (int argc, char * const argv[]) {
 
 #if defined(CATCH_CONFIG_ENABLE_BENCHMARKING)
 #define CATCH_BENCHMARK(...) \
-    INTERNAL_CATCH_BENCHMARK(INTERNAL_CATCH_UNIQUE_NAME(____C_A_T_C_H____B_E_N_C_H____), INTERNAL_CATCH_GET_1_ARG(__VA_ARGS__,,), INTERNAL_CATCH_GET_2_ARG(__VA_ARGS__,,))
+    INTERNAL_CATCH_BENCHMARK(INTERNAL_CATCH_UNIQUE_NAME(C_A_T_C_H_B_E_N_C_H_), INTERNAL_CATCH_GET_1_ARG(__VA_ARGS__,,), INTERNAL_CATCH_GET_2_ARG(__VA_ARGS__,,))
 #define CATCH_BENCHMARK_ADVANCED(name) \
-    INTERNAL_CATCH_BENCHMARK_ADVANCED(INTERNAL_CATCH_UNIQUE_NAME(____C_A_T_C_H____B_E_N_C_H____), name)
+    INTERNAL_CATCH_BENCHMARK_ADVANCED(INTERNAL_CATCH_UNIQUE_NAME(C_A_T_C_H_B_E_N_C_H_), name)
 #endif // CATCH_CONFIG_ENABLE_BENCHMARKING
 
 // If CATCH_CONFIG_PREFIX_ALL is not defined then the CATCH_ prefix is not required
@@ -17592,9 +17763,9 @@ int main (int argc, char * const argv[]) {
 
 #if defined(CATCH_CONFIG_ENABLE_BENCHMARKING)
 #define BENCHMARK(...) \
-    INTERNAL_CATCH_BENCHMARK(INTERNAL_CATCH_UNIQUE_NAME(____C_A_T_C_H____B_E_N_C_H____), INTERNAL_CATCH_GET_1_ARG(__VA_ARGS__,,), INTERNAL_CATCH_GET_2_ARG(__VA_ARGS__,,))
+    INTERNAL_CATCH_BENCHMARK(INTERNAL_CATCH_UNIQUE_NAME(C_A_T_C_H_B_E_N_C_H_), INTERNAL_CATCH_GET_1_ARG(__VA_ARGS__,,), INTERNAL_CATCH_GET_2_ARG(__VA_ARGS__,,))
 #define BENCHMARK_ADVANCED(name) \
-    INTERNAL_CATCH_BENCHMARK_ADVANCED(INTERNAL_CATCH_UNIQUE_NAME(____C_A_T_C_H____B_E_N_C_H____), name)
+    INTERNAL_CATCH_BENCHMARK_ADVANCED(INTERNAL_CATCH_UNIQUE_NAME(C_A_T_C_H_B_E_N_C_H_), name)
 #endif // CATCH_CONFIG_ENABLE_BENCHMARKING
 
 using Catch::Detail::Approx;
@@ -17641,8 +17812,8 @@ using Catch::Detail::Approx;
 #define CATCH_WARN( msg )          (void)(0)
 #define CATCH_CAPTURE( msg )       (void)(0)
 
-#define CATCH_TEST_CASE( ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
-#define CATCH_TEST_CASE_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+#define CATCH_TEST_CASE( ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
+#define CATCH_TEST_CASE_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
 #define CATCH_METHOD_AS_TEST_CASE( method, ... )
 #define CATCH_REGISTER_TEST_CASE( Function, ... ) (void)(0)
 #define CATCH_SECTION( ... )
@@ -17651,7 +17822,7 @@ using Catch::Detail::Approx;
 #define CATCH_FAIL_CHECK( ... ) (void)(0)
 #define CATCH_SUCCEED( ... ) (void)(0)
 
-#define CATCH_ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+#define CATCH_ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
 #define CATCH_TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(__VA_ARGS__)
@@ -17674,8 +17845,8 @@ using Catch::Detail::Approx;
 #endif
 
 // "BDD-style" convenience wrappers
-#define CATCH_SCENARIO( ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
-#define CATCH_SCENARIO_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_METHOD_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ), className )
+#define CATCH_SCENARIO( ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
+#define CATCH_SCENARIO_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_METHOD_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ), className )
 #define CATCH_GIVEN( desc )
 #define CATCH_AND_GIVEN( desc )
 #define CATCH_WHEN( desc )
@@ -17723,10 +17894,10 @@ using Catch::Detail::Approx;
 #define INFO( msg ) (void)(0)
 #define UNSCOPED_INFO( msg ) (void)(0)
 #define WARN( msg ) (void)(0)
-#define CAPTURE( msg ) (void)(0)
+#define CAPTURE( ... ) (void)(0)
 
-#define TEST_CASE( ... )  INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
-#define TEST_CASE_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+#define TEST_CASE( ... )  INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
+#define TEST_CASE_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
 #define METHOD_AS_TEST_CASE( method, ... )
 #define REGISTER_TEST_CASE( Function, ... ) (void)(0)
 #define SECTION( ... )
@@ -17734,7 +17905,7 @@ using Catch::Detail::Approx;
 #define FAIL( ... ) (void)(0)
 #define FAIL_CHECK( ... ) (void)(0)
 #define SUCCEED( ... ) (void)(0)
-#define ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ))
+#define ANON_TEST_CASE() INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ))
 
 #ifndef CATCH_CONFIG_TRADITIONAL_MSVC_PREPROCESSOR
 #define TEMPLATE_TEST_CASE( ... ) INTERNAL_CATCH_TEMPLATE_TEST_CASE_NO_REGISTRATION(__VA_ARGS__)
@@ -17764,8 +17935,8 @@ using Catch::Detail::Approx;
 #define CATCH_TRANSLATE_EXCEPTION( signature ) INTERNAL_CATCH_TRANSLATE_EXCEPTION_NO_REG( INTERNAL_CATCH_UNIQUE_NAME( catch_internal_ExceptionTranslator ), signature )
 
 // "BDD-style" convenience wrappers
-#define SCENARIO( ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ) )
-#define SCENARIO_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_METHOD_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( ____C_A_T_C_H____T_E_S_T____ ), className )
+#define SCENARIO( ... ) INTERNAL_CATCH_TESTCASE_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ) )
+#define SCENARIO_METHOD( className, ... ) INTERNAL_CATCH_TESTCASE_METHOD_NO_REGISTRATION(INTERNAL_CATCH_UNIQUE_NAME( C_A_T_C_H_T_E_S_T_ ), className )
 
 #define GIVEN( desc )
 #define AND_GIVEN( desc )

@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
+from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+
 Ecu = car.CarParams.Ecu
 
 
@@ -50,6 +52,7 @@ class LKAS_LIMITS:
   DISABLE_SPEED = 45    # kph
   ENABLE_SPEED = 52     # kph
 
+
 class Buttons:
   NONE = 0
   SET_PLUS = 1
@@ -58,8 +61,17 @@ class Buttons:
   CANCEL = 4
 
 
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+    ),
+  ],
+)
+
 FW_VERSIONS = {
-  CAR.CX5_2022 : {
+  CAR.CX5_2022: {
     (Ecu.eps, 0x730, None): [
       b'KSD5-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],

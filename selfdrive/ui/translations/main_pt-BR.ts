@@ -527,7 +527,7 @@ trabalho definido</translation>
         <translation>ATUALIZAÇÃO</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+93"/>
         <source> ALERTS</source>
         <translation> ALERTAS</translation>
     </message>
@@ -540,7 +540,7 @@ trabalho definido</translation>
 <context>
     <name>PairingPopup</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="+86"/>
+        <location filename="../qt/widgets/prime.cc" line="+89"/>
         <source>Pair your device to your comma account</source>
         <translation>Pareie seu dispositivo à sua conta comma</translation>
     </message>
