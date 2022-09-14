@@ -346,14 +346,14 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     auto ps = pss[i];
     ps.setUptime(health.uptime_pkt);
-    ps.setBlockedCnt(health.blocked_msg_cnt_pkt);
+    ps.setBlockedTxMsgCnt(health.blocked_tx_msg_cnt_pkt);
+    ps.setBlockedRxMsgCnt(health.blocked_rx_msg_cnt_pkt);
     ps.setIgnitionLine(health.ignition_line_pkt);
     ps.setIgnitionCan(health.ignition_can_pkt);
     ps.setControlsAllowed(health.controls_allowed_pkt);
     ps.setGasInterceptorDetected(health.gas_interceptor_detected_pkt);
-    ps.setCanRxErrs(health.can_rx_errs_pkt);
-    ps.setCanSendErrs(health.can_send_errs_pkt);
-    ps.setCanFwdErrs(health.can_fwd_errs_pkt);
+    ps.setTxBufferOverflowCnt(health.tx_buffer_overflow_cnt_pkt);
+    ps.setRxBufferOverflowCnt(health.rx_buffer_overflow_cnt_pkt);
     ps.setGmlanSendErrs(health.gmlan_send_errs_pkt);
     ps.setPandaType(panda->hw_type);
     ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
