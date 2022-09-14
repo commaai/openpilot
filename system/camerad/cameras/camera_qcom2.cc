@@ -1211,7 +1211,10 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
   fill_frame_data(framed, c->buf.cur_frame_data);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
+    framed->setSensor(cereal::FrameData::ImageSensor::AR0321);
     ar0231_process_registers(s, c, framed);
+  } else if (c->camera_id == CAMERA_ID_OX03C10) {
+    framed->setSensor(cereal::FrameData::ImageSensor::OX03C10);
   }
   s->pm->send("driverCameraState", msg);
 }
