@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include <QApplication>
+#include <QButtonGroup>
 #include <QLabel>
 #include <QVBoxLayout>
 
