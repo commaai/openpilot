@@ -12,10 +12,10 @@ State = log.ControlsState.OpenpilotState
 
 # The event types that maintain the current state
 MAINTAIN_STATES = {State.enabled: (None,), State.disabled: (None,), State.softDisabling: (ET.SOFT_DISABLE,),
-                   State.preEnabled: (ET.PRE_ENABLE,), State.overriding: (ET.OVERRIDE_LAT, ET.OVERRIDE_LONG)}
+                   State.preEnabled: (ET.PRE_ENABLE,), State.overriding: (ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL)}
 ALL_STATES = tuple(State.schema.enumerants.values())
 # The event types checked in DISABLED section of state machine
-ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE, ET.OVERRIDE_LAT, ET.OVERRIDE_LONG)
+ENABLE_EVENT_TYPES = (ET.ENABLE, ET.PRE_ENABLE, ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL)
 
 
 def make_event(event_types):
