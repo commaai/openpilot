@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <sys/file.h>
 
+#include <algorithm>
 #include <csignal>
 #include <unordered_map>
 
@@ -195,6 +196,12 @@ Params::Params(const std::string &path) {
   prefix = env ? "/" + std::string(env) : "/d";
   std::string default_param_path = ensure_params_path(prefix);
   params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);
+}
+
+std::vector<std::string> Params::allKeys() const {
+  std::vector<std::string> ret;
+  std::transform(keys.begin(), keys.end(), std::back_inserter(ret), [](auto it) { return it.first; });
+  return ret;
 }
 
 bool Params::checkKey(const std::string &key) {
