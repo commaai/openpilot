@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import json
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -11,8 +10,20 @@ from selfdrive.controls.lib.alertmanager import set_offroad_alert
 if __name__ == "__main__":
   params = Params()
 
-  with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
-    offroad_alerts = json.load(f)
+  offroad_alerts = (
+    'Offroad_TemperatureTooHigh',
+    'Offroad_ConnectivityNeeded',
+    'Offroad_UpdateFailed',
+    'Offroad_InvalidTime',
+    'Offroad_UnofficialHardware',
+    'Offroad_StorageMissing',
+    'Offroad_BadNvme',
+    'Offroad_CarUnrecognized',
+    'Offroad_ConnectivityNeededPrompt',
+    'Offroad_NoFirmware',
+    'Offroad_IsTakingSnapshot',
+    'Offroad_NeosUpdate',
+  )
 
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])
   while True:
