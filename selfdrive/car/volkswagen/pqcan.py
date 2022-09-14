@@ -60,6 +60,8 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
 
 
 def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_status, stopping, starting, standstill):
+  commands = []
+
   values = {
     "ACS_Sta_ADR": acc_status,
     "ACS_StSt_Info": acc_status != 1,
@@ -69,7 +71,9 @@ def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_status, 
     "ACS_max_AendGrad": 3.0 if acc_status == 1 else 5.08,
   }
 
-  packer.make_can_msg("ACC_System", bus, values)
+  commands.append(packer.make_can_msg("ACC_System", bus, values))
+
+  return commands
 
 
 def create_acc_hud_control(packer, bus, acc_hud_status, set_speed):
