@@ -81,7 +81,7 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    if experimental_long:
+    if experimental_long and candidate in PQ_CARS:
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
