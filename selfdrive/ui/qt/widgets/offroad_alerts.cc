@@ -67,7 +67,7 @@ OffroadAlert::OffroadAlert(QWidget *parent) : AbstractAlert(parent) {
     QLabel *l = new QLabel(this);
     l->setMargin(60);
     l->setWordWrap(true);
-    l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
+    l->setStyleSheet(QString("background-color: %1").arg(severity == Severity::high ? "#E22C2C" : "#292929"));
     scrollable_layout->addWidget(l);
 
     alerts[key] = {.text = text, .label = l};
