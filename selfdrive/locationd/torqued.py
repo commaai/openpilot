@@ -156,10 +156,14 @@ class TorqueEstimator:
     points = self.filtered_points.get_points(FIT_POINTS_TOTAL)
     # total least square solution as both x and y are noisy observations
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
-    _, _, v = np.linalg.svd(points, full_matrices=False)
-    slope, offset = -v.T[0:2, 2] / v.T[2, 2]
-    _, spread = np.matmul(points[:, [0, 2]], slope2rot(slope)).T
-    friction_coeff = np.std(spread) * FRICTION_FACTOR
+    try:
+      _, _, v = np.linalg.svd(points, full_matrices=False)
+      slope, offset = -v.T[0:2, 2] / v.T[2, 2]
+      _, spread = np.matmul(points[:, [0, 2]], slope2rot(slope)).T
+      friction_coeff = np.std(spread) * FRICTION_FACTOR
+    except np.linalg.LinAlgError as e:
+      cloudlog.exception(f"Error computing live torque params: {e}")
+      slope = offset = friction_coeff = np.nan
     return slope, offset, friction_coeff
 
   def update_params(self, params):
@@ -171,7 +175,7 @@ class TorqueEstimator:
   def is_sane(self, latAccelFactor, latAccelOffset, friction):
     if any([val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, friction]]):
       return False
-    return (((1.0 + FACTOR_SANITY) * self.offline_latAccelFactor) >= latAccelFactor >= ((1.0 - FACTOR_SANITY) * self.offline_latAccelFactor)) & \
+    return (((1.0 + FACTOR_SANITY) * self.offline_latAccelFactor) >= latAccelFactor >= ((1.0 - FACTOR_SANITY) * self.offline_latAccelFactor)) and \
       (((1.0 + FRICTION_SANITY) * self.offline_friction) >= friction >= ((1.0 - FRICTION_SANITY) * self.offline_friction))
 
   def handle_log(self, t, which, msg):
@@ -202,14 +206,10 @@ class TorqueEstimator:
     liveTorqueParameters.version = VERSION
 
     if self.filtered_points.is_valid():
-      try:
-        latAccelFactor, latAccelOffset, friction_coeff = self.estimate_params()
-        liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
-        liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
-        liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
-      except np.linalg.LinAlgError as e:
-        latAccelFactor = latAccelOffset = friction_coeff = None
-        cloudlog.exception(f"Error computing live torque params: {e}")
+      latAccelFactor, latAccelOffset, friction_coeff = self.estimate_params()
+      liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
+      liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
+      liveTorqueParameters.frictionCoefficientRaw = float(friction_coeff)
 
       if self.is_sane(latAccelFactor, latAccelOffset, friction_coeff):
         liveTorqueParameters.liveValid = True
