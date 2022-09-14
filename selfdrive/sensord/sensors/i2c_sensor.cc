@@ -15,8 +15,12 @@ int32_t read_20_bit(uint8_t b2, uint8_t b1, uint8_t b0) {
   return int32_t(combined) / (1 << 4);
 }
 
+I2CSensor::I2CSensor(I2CBus *bus, int gpio_nr, bool shared_gpio) : bus(bus), gpio_nr(gpio_nr), shared_gpio(shared_gpio) {}
 
-I2CSensor::I2CSensor(I2CBus *bus) : bus(bus) {
+I2CSensor::~I2CSensor() {
+  if (gpio_fd != -1) {
+    close(gpio_fd);
+  }
 }
 
 int I2CSensor::read_register(uint register_address, uint8_t *buffer, uint8_t len) {
@@ -25,4 +29,21 @@ int I2CSensor::read_register(uint register_address, uint8_t *buffer, uint8_t len
 
 int I2CSensor::set_register(uint register_address, uint8_t data) {
   return bus->set_register(get_device_address(), register_address, data);
+}
+
+int I2CSensor::init_gpio() {
+  if (shared_gpio || gpio_nr == 0) {
+    return 0;
+  }
+
+  gpio_fd = gpiochip_get_ro_value_fd("sensord", GPIOCHIP_INT, gpio_nr);
+  if (gpio_fd < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+bool I2CSensor::has_interrupt_enabled() {
+  return gpio_nr != 0;
 }

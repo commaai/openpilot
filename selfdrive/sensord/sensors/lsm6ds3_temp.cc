@@ -31,7 +31,7 @@ fail:
   return ret;
 }
 
-void LSM6DS3_Temp::get_event(cereal::SensorEventData::Builder &event) {
+bool LSM6DS3_Temp::get_event(cereal::SensorEventData::Builder &event) {
 
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[2];
@@ -47,4 +47,5 @@ void LSM6DS3_Temp::get_event(cereal::SensorEventData::Builder &event) {
   event.setTimestamp(start_time);
   event.setTemperature(temp);
 
+  return true;
 }

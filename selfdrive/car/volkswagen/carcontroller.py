@@ -17,6 +17,7 @@ class CarController:
     self.packer_pt = CANPacker(dbc_name)
 
     self.apply_steer_last = 0
+    self.gra_acc_counter_last = None
     self.frame = 0
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
@@ -91,15 +92,15 @@ class CarController:
 
     # **** Stock ACC Button Controls **************************************** #
 
-    if self.CP.pcmCruise and self.frame % self.CCP.GRA_ACC_STEP == 0:
-      idx = (CS.gra_stock_values["COUNTER"] + 1) % 16
-      if CC.cruiseControl.cancel:
-        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, cancel=True))
-      elif CC.cruiseControl.resume:
-        can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, idx, resume=True))
+    gra_send_ready = self.CP.pcmCruise and CS.gra_stock_values["COUNTER"] != self.gra_acc_counter_last
+    if gra_send_ready and (CC.cruiseControl.cancel or CC.cruiseControl.resume):
+      counter = (CS.gra_stock_values["COUNTER"] + 1) % 16
+      can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, ext_bus, CS.gra_stock_values, counter,
+                                                           cancel=CC.cruiseControl.cancel, resume=CC.cruiseControl.resume))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
 
+    self.gra_acc_counter_last = CS.gra_stock_values["COUNTER"]
     self.frame += 1
     return new_actuators, can_sends
