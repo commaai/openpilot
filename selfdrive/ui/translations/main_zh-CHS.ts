@@ -193,7 +193,7 @@
         <translation>切换</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Select a language</source>
         <translation>选择语言</translation>
     </message>
@@ -418,7 +418,7 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+58"/>
         <source>No home
 location set</source>
         <translation>家：未设定</translation>
@@ -430,7 +430,7 @@ location set</source>
         <translation>工作：未设定</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+120"/>
         <source>no recent destinations</source>
         <translation>无最近目的地</translation>
     </message>
@@ -519,17 +519,17 @@ location set</source>
 <context>
     <name>OffroadAlert</name>
     <message>
-        <location filename="../qt/widgets/offroad_alerts.cc" line="+26"/>
+        <location filename="../qt/widgets/offroad_alerts.h" line="+45"/>
         <source>Device temperature too high. System won&apos;t start.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+8"/>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-7"/>
         <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -545,7 +545,7 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+7"/>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -555,7 +555,7 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-7"/>
         <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -575,7 +575,7 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1215,7 +1215,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-324"/>
+        <location filename="../qt/offroad/settings.cc" line="-323"/>
         <source>Enable openpilot</source>
         <translation>启用openpilot</translation>
     </message>
