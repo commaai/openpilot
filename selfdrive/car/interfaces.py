@@ -275,7 +275,7 @@ class CarStateBase(ABC):
     self.right_blinker_cnt = 0
     self.left_blinker_prev = False
     self.right_blinker_prev = False
-    self.cluster_speed_hyst_gap = CV.MPH_TO_MS
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS
 
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
