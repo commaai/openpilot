@@ -170,7 +170,6 @@ selfdrive/controls/plannerd.py
 selfdrive/controls/radard.py
 selfdrive/controls/lib/__init__.py
 selfdrive/controls/lib/alertmanager.py
-selfdrive/controls/lib/alerts_offroad.json
 selfdrive/controls/lib/desire_helper.py
 selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/events.py

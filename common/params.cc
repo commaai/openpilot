@@ -201,6 +201,10 @@ bool Params::checkKey(const std::string &key) {
   return keys.find(key) != keys.end();
 }
 
+bool Params::exists(const std::string &key) {
+  return util::file_exists(getParamPath(key));
+}
+
 ParamKeyType Params::getKeyType(const std::string &key) {
   return static_cast<ParamKeyType>(keys[key]);
 }

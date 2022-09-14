@@ -16,6 +16,7 @@ class Params {
 public:
   Params(const std::string &path = {});
   bool checkKey(const std::string &key);
+  bool exists(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {
     return params_path + prefix + (key.empty() ? "" : "/" + key);

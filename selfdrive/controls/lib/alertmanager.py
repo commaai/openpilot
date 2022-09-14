@@ -9,18 +9,9 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.controls.lib.events import Alert
 
-
-with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
-  OFFROAD_ALERTS = json.load(f)
-
-
 def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = None) -> None:
   if show_alert:
-    a = OFFROAD_ALERTS[alert]
-    if extra_text is not None:
-      a = copy.copy(OFFROAD_ALERTS[alert])
-      a['text'] = extra_text
-    Params().put(alert, json.dumps(a))
+    Params().put(alert, extra_text if extra_text else '')
   else:
     Params().remove(alert)
 
