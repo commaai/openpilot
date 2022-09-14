@@ -77,7 +77,9 @@ def create_acc_hud_control(packer, bus, acc_hud_status, set_speed):
     "ACA_StaACC": acc_hud_status,
     "ACA_Zeitluecke": 2,
     "ACA_V_Wunsch": set_speed,
+    # TODO: ACA_gemZeitl, ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
+    # display/display-prio handling probably needed to stop confusing the instrument cluster
+    # kmh_mph handling probably needed to resolve rounding errors in displayed setpoint
   }
-  # TODO: ACA_gemZeitl, ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
 
   return packer.make_can_msg("ACC_GRA_Anziege", bus, values)

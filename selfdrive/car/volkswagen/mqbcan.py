@@ -68,12 +68,12 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, 
   commands = []
 
   acc_06_values = {
-    "ACC_Typ": 2,  # FIXME: require SnG during refactoring, re-enable FtS later
+    "ACC_Typ": 2,  # TODO: fixed requirement for SnG stopping coordinator, allow FtS and basic later
     "ACC_Status_ACC": acc_status,
     "ACC_StartStopp_Info": enabled,
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
-    "ACC_zul_Regelabw_unten": 0.5,  # FIXME: reintroduce comfort band support
-    "ACC_zul_Regelabw_oben": 0.5,  # FIXME: reintroduce comfort band support
+    "ACC_zul_Regelabw_unten": 0.2,  # TODO: dynamic adjustment of comfort-band
+    "ACC_zul_Regelabw_oben": 0.2,  # TODO: dynamic adjustment of comfort-band
     "ACC_neg_Sollbeschl_Grad_02": 4.0 if enabled else 0,
     "ACC_pos_Sollbeschl_Grad_02": 4.0 if enabled else 0,
     "ACC_Anfahren": starting,
@@ -86,12 +86,12 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, 
   elif standstill:
     acc_hold_type = 3  # hold standby
   elif stopping:
-    acc_hold_type = 1  # hold
+    acc_hold_type = 1  # hold request
   else:
     acc_hold_type = 0
 
   acc_07_values = {
-    "ACC_Distance_to_Stop": 1.0 if stopping else 20.46,
+    "ACC_Distance_to_Stop": 0.75 if stopping else 20.46,
     "ACC_Hold_Request": stopping,
     "ACC_Freewheel_Type": 2 if enabled else 0,
     "ACC_Hold_Type": acc_hold_type,
@@ -112,8 +112,8 @@ def create_acc_hud_control(packer, bus, acc_hud_status, set_speed):
     "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
+    # TODO: ACC_Abstandsindex for lead car distance, must determine analog vs digital cluster for scaling
   }
-  # TODO: ACC_Abstandsindex for lead car distance, must determine analog vs digital cluster for scaling
   commands.append(packer.make_can_msg("ACC_02", bus, acc_02_values))
 
   return commands
