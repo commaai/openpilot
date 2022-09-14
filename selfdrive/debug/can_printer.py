@@ -26,8 +26,9 @@ def can_printer(bus, max_msg, addr, ascii_decode):
       for addr in sorted(msgs.keys()):
         a = f"\"{msgs[addr][-1].decode('ascii', 'backslashreplace')}\"" if ascii_decode else ""
         x = binascii.hexlify(msgs[addr][-1]).decode('ascii')
+        freq = len(msgs[addr]) / (sec_since_boot() - start)
         if max_msg is None or addr < max_msg:
-          dd += "%04X(%4d)(%6d) %s %s\n" % (addr, addr, len(msgs[addr]), x.ljust(20), a)
+          dd += "%04X(%4d)(%6d)(%3dHz) %s %s\n" % (addr, addr, len(msgs[addr]), freq, x.ljust(20), a)
       print(dd)
       lp = sec_since_boot()
 

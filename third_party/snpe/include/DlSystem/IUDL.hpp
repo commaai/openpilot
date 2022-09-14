@@ -1,6 +1,6 @@
 //=============================================================================
 //
-//  Copyright (c) 2016-2017 Qualcomm Technologies, Inc.
+//  Copyright (c) 2016-2021 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -13,10 +13,10 @@
 
 namespace zdl {
 namespace DlSystem {
-/** @addtogroup c_plus_plus_apis C++
-@{ */
 
 /**
+ * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE.
+ *
  * @brief .
  *
  * Base class user concrete UDL implementation.
@@ -32,6 +32,8 @@ namespace DlSystem {
 class ZDL_EXPORT IUDL {
 public:
    /**
+    * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE.
+    *
     * @brief .
     *
     * Destructor
@@ -39,6 +41,8 @@ public:
    virtual ~IUDL() = default;
 
    /**
+    * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE.
+    *
     * @brief Sets up the user's environment.
     * This is called by the SNPE framework to allow the user the
     * opportunity to setup anything which is needed for running
@@ -66,6 +70,8 @@ public:
                       size_t outsz, const size_t **outdim, const size_t *outdimsz)  = 0;
 
    /**
+    * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE.
+    *
     * @brief Close the instance. Invoked by the SNPE
     * framework to allow the user the opportunity to release any resources
     * allocated during setup.
@@ -75,6 +81,8 @@ public:
    virtual void close(void *cookie) noexcept = 0;
 
    /**
+    * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE.
+    *
     * @brief Execute the user defined layer
     *
     * @param cookie User provided opaque data returned by the SNPE 
@@ -89,7 +97,6 @@ public:
     */
    virtual bool execute(void *cookie, const float **input, float **output)  = 0;
 };
-/** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 } // ns DlSystem
 

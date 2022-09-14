@@ -69,27 +69,31 @@ void ocp_nlp_out_print(ocp_nlp_dims *dims, ocp_nlp_out *nlp_out);
 void ocp_nlp_res_print(ocp_nlp_dims *dims, ocp_nlp_res *nlp_res);
 
 // ocp qp
+// TODO: move printing routines below that print qp structures to HPIPM!
 void print_ocp_qp_dims(ocp_qp_dims *dims);
 
 // void print_dense_qp_dims(dense_qp_dims *dims);
 
 void print_ocp_qp_in(ocp_qp_in *qp_in);
 
+void print_ocp_qp_in_to_file(FILE *file, ocp_qp_in *qp_in);
+
 void print_ocp_qp_out(ocp_qp_out *qp_out);
 
+void print_ocp_qp_out_to_file(FILE *file, ocp_qp_out *qp_out);
+
+void print_ocp_qp_res(ocp_qp_res *qp_res);
+
+void print_dense_qp_in(dense_qp_in *qp_in);
 // void print_ocp_qp_in_to_string(char string_out[], ocp_qp_in *qp_in);
 
 // void print_ocp_qp_out_to_string(char string_out[], ocp_qp_out *qp_out);
-
-void print_ocp_qp_res(ocp_qp_res *qp_res);
 
 // void print_colmaj_ocp_qp_in(colmaj_ocp_qp_in *qp);
 
 // void print_colmaj_ocp_qp_in_to_file(colmaj_ocp_qp_in *qp);
 
 // void print_colmaj_ocp_qp_out(char *filename, colmaj_ocp_qp_in *qp, colmaj_ocp_qp_out *out);
-
-void print_dense_qp_in(dense_qp_in *qp_in);
 
 void print_qp_info(qp_info *info);
 

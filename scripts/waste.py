@@ -6,7 +6,7 @@ from multiprocessing import Process
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 def waste(core):
-  os.sched_setaffinity(0, [core,])
+  os.sched_setaffinity(0, [core,])  # pylint: disable=no-member
 
   m1 = np.zeros((200, 200)) + 0.8
   m2 = np.zeros((200, 200)) + 1.2

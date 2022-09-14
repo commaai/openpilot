@@ -14,38 +14,21 @@
 #include <fstream>
 #include <iostream>
 #include <streambuf>
-#ifdef QCOM
-#include <cutils/properties.h>
-#endif
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/version.h"
-
-// ***** logging helpers *****
-
-void append_property(const char* key, const char* value, void *cookie) {
-  std::vector<std::pair<std::string, std::string> > *properties =
-    (std::vector<std::pair<std::string, std::string> > *)cookie;
-
-  properties->push_back(std::make_pair(std::string(key), std::string(value)));
-}
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/version.h"
 
 // ***** log metadata *****
 kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (Hardware::EON()) {
-    init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (Hardware::TICI()) {
-    init.setDeviceType(cereal::InitData::DeviceType::TICI);
-  } else {
-    init.setDeviceType(cereal::InitData::DeviceType::PC);
-  }
-
   init.setVersion(COMMA_VERSION);
+  init.setDirty(!getenv("CLEAN"));
+  init.setDeviceType(Hardware::get_device_type());
 
+  // log kernel args
   std::ifstream cmdline_stream("/proc/cmdline");
   std::vector<std::string> kernel_args;
   std::string buf;
@@ -61,22 +44,6 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setKernelVersion(util::read_file("/proc/version"));
   init.setOsVersion(util::read_file("/VERSION"));
 
-#ifdef QCOM
-  {
-    std::vector<std::pair<std::string, std::string> > properties;
-    property_list(append_property, (void*)&properties);
-
-    auto lentries = init.initAndroidProperties().initEntries(properties.size());
-    for (int i=0; i<properties.size(); i++) {
-      auto lentry = lentries[i];
-      lentry.setKey(properties[i].first);
-      lentry.setValue(properties[i].second);
-    }
-  }
-#endif
-
-  init.setDirty(!getenv("CLEAN"));
-
   // log params
   auto params = Params();
   std::map<std::string, std::string> params_map = params.readAll();
@@ -88,16 +55,31 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setDongleId(params_map["DongleId"]);
 
   auto lparams = init.initParams().initEntries(params_map.size());
-  int i = 0;
+  int j = 0;
   for (auto& [key, value] : params_map) {
-    auto lentry = lparams[i];
+    auto lentry = lparams[j];
     lentry.setKey(key);
     if ( !(params.getKeyType(key) & DONT_LOG) ) {
       lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
     }
-    i++;
-
+    j++;
   }
+
+  // log commands
+  std::vector<std::string> log_commands = {
+    "df -h",  // usage for all filesystems
+  };
+
+  auto commands = init.initCommands().initEntries(log_commands.size());
+  for (int i = 0; i < log_commands.size(); i++) {
+    auto lentry = commands[i];
+
+    lentry.setKey(log_commands[i]);
+
+    const std::string result = util::check_output(log_commands[i]);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
+  }
+
   return capnp::messageToFlatArray(msg);
 }
 
@@ -128,13 +110,12 @@ static void lh_log_sentinel(LoggerHandle *h, SentinelType type) {
 
 // ***** logging functions *****
 
-void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
+void logger_init(LoggerState *s, bool has_qlog) {
   pthread_mutex_init(&s->lock, NULL);
 
   s->part = -1;
   s->has_qlog = has_qlog;
   s->route_name = logger_get_route_name();
-  snprintf(s->log_name, sizeof(s->log_name), "%s", log_name);
   s->init_data = logger_build_init_data();
 }
 
@@ -151,8 +132,8 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->segment_path, sizeof(h->segment_path),
           "%s/%s--%d", root_path, s->route_name.c_str(), s->part);
 
-  snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
-  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
+  snprintf(h->log_path, sizeof(h->log_path), "%s/rlog", h->segment_path);
+  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
   h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
   h->exit_signal = 0;
@@ -163,9 +144,9 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   if (lock_file == NULL) return NULL;
   fclose(lock_file);
 
-  h->log = std::make_unique<BZFile>(h->log_path);
+  h->log = std::make_unique<RawFile>(h->log_path);
   if (s->has_qlog) {
-    h->q_log = std::make_unique<BZFile>(h->qlog_path);
+    h->q_log = std::make_unique<RawFile>(h->qlog_path);
   }
 
   pthread_mutex_init(&h->lock, NULL);
@@ -201,7 +182,7 @@ int logger_next(LoggerState *s, const char* root_path,
 
   pthread_mutex_unlock(&s->lock);
 
-  // write beggining of log metadata
+  // write beginning of log metadata
   log_init_data(s);
   lh_log_sentinel(s->cur_handle, is_start_of_route ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT);
   return 0;
@@ -266,16 +247,4 @@ void lh_close(LoggerHandle* h) {
     return;
   }
   pthread_mutex_unlock(&h->lock);
-}
-
-int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
-  const char* dot = strrchr(fpath, '.');
-  if (dot && strcmp(dot, ".lock") == 0) {
-    unlink(fpath);
-  }
-  return 0;
-}
-
-void clear_locks(const std::string log_root) {
-  ftw(log_root.c_str(), clear_locks_fn, 16);
 }

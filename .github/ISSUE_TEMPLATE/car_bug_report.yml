@@ -1,6 +1,6 @@
 name: Car bug report
 description: For issues with a particular car make or model
-labels: ["car bug"]
+labels: ["car", "bug"]
 body:
 
   - type: markdown
@@ -18,18 +18,6 @@ body:
     attributes:
       label: Describe the bug
       description: Also include a description of how to reproduce the bug
-    validations:
-      required: true
-
-  - type: dropdown
-    id: hw
-    attributes:
-      label: What hardware does this issue affect?
-      multiple: true
-      options:
-        - comma three
-        - comma two
-        - EON Gold
     validations:
       required: true
 

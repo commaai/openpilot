@@ -2,7 +2,7 @@
 #include <QSoundEffect>
 #include <QString>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 
 const std::tuple<AudibleAlert, QString, int> sound_list[] = {

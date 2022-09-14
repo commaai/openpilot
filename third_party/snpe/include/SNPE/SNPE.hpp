@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2015-2020 Qualcomm Technologies, Inc.
+//  Copyright (c) 2015-2021 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -19,6 +19,7 @@
 #include "DlSystem/StringList.hpp"
 #include "DlSystem/IUserBuffer.hpp"
 #include "DlSystem/UserBufferMap.hpp"
+#include "DlSystem/UserMemoryMap.hpp"
 #include "DlSystem/ZdlExportDefine.hpp"
 
 namespace zdl {
@@ -147,6 +148,21 @@ public:
    bool execute(const zdl::DlSystem::UserBufferMap &input,
                 const zdl::DlSystem::UserBufferMap &output) noexcept;
 
+
+    /**
+    * @brief Regiter Client ION Buffers
+    * @param[in] A UserMemoryMap of virtual addresses
+    *
+    */
+   bool registerIonBuffers(const zdl::DlSystem::UserMemoryMap& ionBufferMap) noexcept;
+
+    /**
+    * @brief Regiter Client ION Buffers
+    * @param[in] A StringList of ION Buffer names
+    *
+    */
+   bool deregisterIonBuffers(const zdl::DlSystem::StringList& ionBufferNames) noexcept;
+
     /**
     * @brief Returns the version string embedded at model conversion
     * time.
@@ -214,8 +230,6 @@ public:
      * @return BufferAttributes of input/output tensor named
      */
    zdl::DlSystem::Optional<zdl::DlSystem::IBufferAttributes*> getInputOutputBufferAttributes(const char *name) const noexcept;
-
-   zdl::DlSystem::Optional<zdl::DlSystem::IBufferAttributes*> getInputOutputBufferAttributesTf8(const char *name) const noexcept;
 
    /**
     * @brief .

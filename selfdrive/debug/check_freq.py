@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# type: ignore
-
 import argparse
 import numpy as np
 from collections import defaultdict, deque
+from typing import DefaultDict, Deque
+
 from common.realtime import sec_since_boot
 import cereal.messaging as messaging
 
@@ -19,8 +19,8 @@ if __name__ == "__main__":
   socket_names = args.socket
   sockets = {}
 
-  rcv_times = defaultdict(lambda: deque(maxlen=100))
-  valids = defaultdict(lambda: deque(maxlen=100))
+  rcv_times: DefaultDict[str, Deque[float]] = defaultdict(lambda: deque(maxlen=100))
+  valids: DefaultDict[str, Deque[bool]] = defaultdict(lambda: deque(maxlen=100))
 
   t = sec_since_boot()
   for name in socket_names:
@@ -31,6 +31,9 @@ if __name__ == "__main__":
   while True:
     for socket in poller.poll(100):
       msg = messaging.recv_one(socket)
+      if msg is None:
+        continue
+
       name = msg.which()
 
       t = sec_since_boot()

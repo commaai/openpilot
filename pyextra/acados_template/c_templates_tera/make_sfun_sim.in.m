@@ -47,10 +47,14 @@ SOURCES = [ 'acados_sim_solver_sfunction_{{ model.name }}.c ', ...
             '{{ model.name }}_model/{{ model.name }}_impl_dae_hess.c ',...
                 {%- endif %}
             {%- elif solver_options.integrator_type == "GNSF" %}
+                {% if model.gnsf.purely_linear != 1 %}
             '{{ model.name }}_model/{{ model.name }}_gnsf_phi_fun.c '
             '{{ model.name }}_model/{{ model.name }}_gnsf_phi_fun_jac_y.c '
             '{{ model.name }}_model/{{ model.name }}_gnsf_phi_jac_y_uhat.c '
+                {% if model.gnsf.nontrivial_f_LO == 1 %}
             '{{ model.name }}_model/{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz.c '
+                {%- endif %}
+                {%- endif %}
             '{{ model.name }}_model/{{ model.name }}_gnsf_get_matrices_fun.c '
             {%- endif %}
           ];

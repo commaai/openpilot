@@ -7,7 +7,7 @@
 #include <QDebug>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI

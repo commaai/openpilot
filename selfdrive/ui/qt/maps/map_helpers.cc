@@ -3,8 +3,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/params.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
 QString get_mapbox_token() {
@@ -44,61 +44,31 @@ QMapbox::CoordinatesCollections model_to_collection(
   for (int i = 0; i < x.size(); i++) {
     Eigen::Vector3d point_ecef = ecef_from_local * Eigen::Vector3d(x[i], y[i], z[i]) + ecef;
     Geodetic point_geodetic = ecef2geodetic((ECEF){.x = point_ecef[0], .y = point_ecef[1], .z = point_ecef[2]});
-    QMapbox::Coordinate coordinate(point_geodetic.lat, point_geodetic.lon);
-    coordinates.push_back(coordinate);
+    coordinates.push_back({point_geodetic.lat, point_geodetic.lon});
   }
 
-  QMapbox::CoordinatesCollection collection;
-  collection.push_back(coordinates);
-
-  QMapbox::CoordinatesCollections collections;
-  collections.push_back(collection);
-  return collections;
+  return {QMapbox::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c) {
-  QMapbox::Coordinates coordinates;
-  coordinates.push_back(c);
-
-  QMapbox::CoordinatesCollection collection;
-  collection.push_back(coordinates);
-
-  QMapbox::CoordinatesCollections collections;
-  collections.push_back(collection);
-  return collections;
+QMapbox::CoordinatesCollections coordinate_to_collection(const QMapbox::Coordinate &c) {
+  QMapbox::Coordinates coordinates{c};
+  return {QMapbox::CoordinatesCollection{coordinates}};
 }
 
 QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
   QMapbox::Coordinates coordinates;
-
   for (auto const &c: coordinate_list) {
-    QMapbox::Coordinate coordinate(c.getLatitude(), c.getLongitude());
-    coordinates.push_back(coordinate);
+    coordinates.push_back({c.getLatitude(), c.getLongitude()});
   }
-
-  QMapbox::CoordinatesCollection collection;
-  collection.push_back(coordinates);
-
-  QMapbox::CoordinatesCollections collections;
-  collections.push_back(collection);
-  return collections;
-
+  return {QMapbox::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordinate> coordinate_list) {
+QMapbox::CoordinatesCollections coordinate_list_to_collection(const QList<QGeoCoordinate> &coordinate_list) {
   QMapbox::Coordinates coordinates;
-
   for (auto &c : coordinate_list) {
-    QMapbox::Coordinate coordinate(c.latitude(), c.longitude());
-    coordinates.push_back(coordinate);
+    coordinates.push_back({c.latitude(), c.longitude()});
   }
-
-  QMapbox::CoordinatesCollection collection;
-  collection.push_back(coordinates);
-
-  QMapbox::CoordinatesCollections collections;
-  collections.push_back(collection);
-  return collections;
+  return {QMapbox::CoordinatesCollection{coordinates}};
 }
 
 QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString) {
@@ -143,55 +113,7 @@ QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString)
   return path;
 }
 
-static QGeoCoordinate sub(QGeoCoordinate v, QGeoCoordinate w) {
-  return QGeoCoordinate(v.latitude() - w.latitude(), v.longitude() - w.longitude());
-}
-
-static QGeoCoordinate add(QGeoCoordinate v, QGeoCoordinate w) {
-  return QGeoCoordinate(v.latitude() + w.latitude(), v.longitude() + w.longitude());
-}
-
-static QGeoCoordinate mul(QGeoCoordinate v, float c) {
-  return QGeoCoordinate(c * v.latitude(), c * v.longitude());
-}
-
-static float dot(QGeoCoordinate v, QGeoCoordinate w) {
-  return v.latitude() * w.latitude() + v.longitude() * w.longitude();
-}
-
-float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p) {
-  const QGeoCoordinate ap = sub(p, a);
-  const QGeoCoordinate ab = sub(b, a);
-  const float t = std::clamp(dot(ap, ab) / dot(ab, ab), 0.0f, 1.0f);
-  const QGeoCoordinate projection = add(a, mul(ab, t));
-  return projection.distanceTo(p);
-}
-
-float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos) {
-  if (geometry.size() <= 2) {
-    return geometry[0].distanceTo(pos);
-  }
-
-  // 1. Find segment that is closest to current position
-  // 2. Total distance is sum of distance to start of closest segment
-  //    + all previous segments
-  double total_distance = 0;
-  double total_distance_closest = 0;
-  double closest_distance = std::numeric_limits<double>::max();
-
-  for (int i = 0; i < geometry.size() - 1; i++) {
-    double d = minimum_distance(geometry[i], geometry[i+1], pos);
-    if (d < closest_distance) {
-      closest_distance = d;
-      total_distance_closest = total_distance + geometry[i].distanceTo(pos);
-    }
-    total_distance += geometry[i].distanceTo(geometry[i+1]);
-  }
-
-  return total_distance_closest;
-}
-
-std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
+std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &param) {
   QString json_str = QString::fromStdString(Params().get(param));
   if (json_str.isEmpty()) return {};
 
@@ -205,4 +127,9 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
   } else {
     return {};
   }
+}
+
+double angle_difference(double angle1, double angle2) {
+  double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
+  return diff < -180.0 ? diff + 360.0 : diff;
 }

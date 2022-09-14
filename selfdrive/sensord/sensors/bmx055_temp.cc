@@ -3,8 +3,8 @@
 #include <cassert>
 
 #include "selfdrive/sensord/sensors/bmx055_accel.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
 
 BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
 
@@ -28,7 +28,7 @@ fail:
   return ret;
 }
 
-void BMX055_Temp::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Temp::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[1];
   int len = read_register(BMX055_ACCEL_I2C_REG_TEMP, buffer, sizeof(buffer));
@@ -41,4 +41,5 @@ void BMX055_Temp::get_event(cereal::SensorEventData::Builder &event) {
   event.setType(SENSOR_TYPE_AMBIENT_TEMPERATURE);
   event.setTimestamp(start_time);
   event.setTemperature(temp);
+  return true;
 }

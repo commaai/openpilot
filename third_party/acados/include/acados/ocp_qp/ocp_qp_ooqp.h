@@ -112,6 +112,7 @@ typedef struct ocp_qp_ooqp_memory_
     int nnz;  // max(nnzQ, nnzA, nnzC)
     double time_qp_solver_call;
     int iter;
+    int status;
 
 } ocp_qp_ooqp_memory;
 

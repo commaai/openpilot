@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from enum import Enum
 
-
 class LongTunes(Enum):
-  PEDAL = 0
-  TSS2 = 1
-  TSS = 2
+  TSS2 = 0
+  TSS = 1
 
 class LatTunes(Enum):
   INDI_PRIUS = 0
@@ -29,7 +27,7 @@ class LatTunes(Enum):
 ###### LONG ######
 def set_long_tune(tune, name):
   # Improved longitudinal tune
-  if name == LongTunes.TSS2 or name == LongTunes.PEDAL:
+  if name == LongTunes.TSS2:
     tune.deadzoneBP = [0., 8.05]
     tune.deadzoneV = [.0, .14]
     tune.kpBP = [0., 5., 20.]
@@ -39,7 +37,7 @@ def set_long_tune(tune, name):
   # Default longitudinal tune
   elif name == LongTunes.TSS:
     tune.deadzoneBP = [0., 9.]
-    tune.deadzoneV = [0., .15]
+    tune.deadzoneV = [.0, .15]
     tune.kpBP = [0., 5., 35.]
     tune.kiBP = [0., 35.]
     tune.kpV = [3.6, 2.4, 1.5]
@@ -49,30 +47,8 @@ def set_long_tune(tune, name):
 
 
 ###### LAT ######
-def set_lat_tune(tune, name):
-  if name == LatTunes.INDI_PRIUS:
-    tune.init('indi')
-    tune.indi.innerLoopGainBP = [0.]
-    tune.indi.innerLoopGainV = [4.0]
-    tune.indi.outerLoopGainBP = [0.]
-    tune.indi.outerLoopGainV = [3.0]
-    tune.indi.timeConstantBP = [0.]
-    tune.indi.timeConstantV = [1.0]
-    tune.indi.actuatorEffectivenessBP = [0.]
-    tune.indi.actuatorEffectivenessV = [1.0]
-
-  elif name == LatTunes.LQR_RAV4:
-    tune.init('lqr')
-    tune.lqr.scale = 1500.0
-    tune.lqr.ki = 0.05
-    tune.lqr.a = [0., 1., -0.22619643, 1.21822268]
-    tune.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-    tune.lqr.c = [1., 0.]
-    tune.lqr.k = [-110.73572306, 451.22718255]
-    tune.lqr.l = [0.3233671, 0.3185757]
-    tune.lqr.dcGain = 0.002237852961363602
-
-  elif 'PID' in str(name):
+def set_lat_tune(tune, name, MAX_LAT_ACCEL=2.5, FRICTION=0.01, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+  if 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
     tune.pid.kpBP = [0.0]

@@ -8,12 +8,13 @@
 #include <QTimer>
 #include <QColor>
 #include <QFuture>
+#include <QPolygonF>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/modeldata.h"
+#include "common/params.h"
+#include "common/timing.h"
 
 const int bdr_s = 30;
 const int header_h = 420;
@@ -22,10 +23,7 @@ const int footer_h = 280;
 const int UI_FREQ = 20;   // Hz
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-// TODO: this is also hardcoded in common/transformations/camera.py
-// TODO: choose based on frame input size
-const float y_offset = Hardware::EON() ? 0.0 : 150.0;
-const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
+const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
 struct Alert {
   QString text1;
@@ -54,7 +52,7 @@ struct Alert {
         return {"openpilot Unavailable", "Waiting for controls to start",
                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                 AudibleAlert::NONE};
-      } else if (controls_missing > CONTROLS_TIMEOUT) {
+      } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
         // car is started, but controls is lagging or died
         if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
           return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
@@ -73,6 +71,7 @@ struct Alert {
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,
+  STATUS_OVERRIDE,
   STATUS_ENGAGED,
   STATUS_WARNING,
   STATUS_ALERT,
@@ -80,32 +79,29 @@ typedef enum UIStatus {
 
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] =  QColor(0x17, 0x33, 0x49, 0xc8),
+  [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
   [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
   [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
-typedef struct {
-  QPointF v[TRAJECTORY_SIZE * 2];
-  int cnt;
-} line_vertices_data;
-
 typedef struct UIScene {
-  mat3 view_from_calib;
+  bool calibration_valid = false;
+  mat3 view_from_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
 
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
-  line_vertices_data track_vertices;
-  line_vertices_data lane_line_vertices[4];
-  line_vertices_data road_edge_vertices[2];
+  QPolygonF track_vertices;
+  QPolygonF lane_line_vertices[4];
+  QPolygonF road_edge_vertices[2];
 
   // lead
   QPointF lead_vertices[2];
 
   float light_sensor, accel_sensor, gyro_sensor;
-  bool started, ignition, is_metric, longitudinal_control, end_to_end;
+  bool started, ignition, is_metric, map_on_left, longitudinal_control, end_to_end_long;
   uint64_t started_frame;
 } UIScene;
 
@@ -118,6 +114,9 @@ public:
   inline bool worldObjectsVisible() const {
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   };
+  inline bool engaged() const {
+    return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
+  };
 
   int fb_w = 0, fb_h = 0;
 
@@ -128,6 +127,7 @@ public:
 
   bool awake;
   int prime_type = 0;
+  QString language;
 
   QTransform car_space_transform;
   bool wide_camera;
@@ -141,7 +141,7 @@ private slots:
 
 private:
   QTimer *timer;
-  bool started_prev = true;
+  bool started_prev = false;
 };
 
 UIState *uiState();

@@ -1,7 +1,10 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from panda import Panda
+from common.conversions import Conversions as CV
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, \
+                          gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
 EventName = car.CarEvent.EventName
 
@@ -9,9 +12,6 @@ EventName = car.CarEvent.EventName
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
-
-    self.displayMetricUnitsPrev = None
-    self.buttonStatesPrev = BUTTON_STATES.copy()
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       self.ext_bus = CANBUS.pt
@@ -21,12 +21,42 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
     ret.radarOffCan = True
 
-    if True:  # pylint: disable=using-constant-test
+    if candidate in PQ_CARS:
+      # Set global PQ35/PQ46/NMS parameters
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
+      ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
+
+      if 0x440 in fingerprint[0]:  # Getriebe_1
+        ret.transmissionType = TransmissionType.automatic
+      else:
+        ret.transmissionType = TransmissionType.manual
+
+      if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
+        ret.networkLocation = NetworkLocation.gateway
+      else:
+        ret.networkLocation = NetworkLocation.fwdCamera
+
+      # The PQ port is in dashcam-only mode due to a fixed six-minute maximum timer on HCA steering. An unsupported
+      # EPS flash update to work around this timer, and enable steering down to zero, is available from:
+      #   https://github.com/pd0wm/pq-flasher
+      # It is documented in a four-part blog series:
+      #   https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/
+      # Panda ALLOW_DEBUG firmware required.
+      ret.dashcamOnly = True
+
+      if experimental_long and ret.networkLocation == NetworkLocation.gateway:
+        # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
+        # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
+        ret.experimentalLongitudinalAvailable = True
+        ret.openpilotLongitudinalControl = True
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
+
+    else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
@@ -46,7 +76,6 @@ class CarInterface(CarInterfaceBase):
     # Global lateral tuning defaults, can be overridden per-vehicle
 
     ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
     tire_stiffness_factor = 1.0  # Let the params learner figure this out
@@ -55,6 +84,13 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00006
     ret.lateralTuning.pid.kpV = [0.6]
     ret.lateralTuning.pid.kiV = [0.2]
+
+    # Global longitudinal tuning defaults, can be overridden per-vehicle
+
+    ret.pcmCruise = not ret.openpilotLongitudinalControl
+    ret.longitudinalActuatorDelayUpperBound = 0.5  # s
+    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kiV = [0.0]
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
@@ -77,6 +113,14 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.PASSAT_MK8:
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
+
+    elif candidate == CAR.PASSAT_NMS:
+      ret.mass = 1503 + STD_CARGO_KG
+      ret.wheelbase = 2.80
+      ret.minEnableSpeed = 20 * CV.KPH_TO_MS  # ACC "basic", no FtS
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
@@ -154,6 +198,7 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unsupported car {candidate}")
 
+    ret.autoResumeSng = ret.minEnableSpeed == -1
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
@@ -161,35 +206,11 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
-    buttonEvents = []
-
-    # Process the most recent CAN message traffic, and check for validity
-    # The camera CAN has no signals we use at this time, but we process it
-    # anyway so we can test connectivity with can_valid
-    self.cp.update_strings(can_strings)
-    self.cp_cam.update_strings(can_strings)
-
+  def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
-    ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
-    ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
-    # Check for and process state-change events (button press or release) from
-    # the turn stalk switch or ACC steering wheel/control stalk buttons.
-    for button in self.CS.buttonStates:
-      if self.CS.buttonStates[button] != self.buttonStatesPrev[button]:
-        be = car.CarState.ButtonEvent.new_message()
-        be.type = button
-        be.pressed = self.CS.buttonStates[button]
-        buttonEvents.append(be)
-
-    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
-
-    # Vehicle health and operation safety checks
-    if self.CS.parkingBrakeSet:
-      events.add(EventName.parkBrake)
-    if self.CS.tsk_status in (6, 7):
-      events.add(EventName.accFaulted)
+    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
+                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -199,23 +220,15 @@ class CarInterface(CarInterfaceBase):
     if self.low_speed_alert:
       events.add(EventName.belowSteerSpeed)
 
+    if self.CS.CP.openpilotLongitudinalControl:
+      if ret.vEgo < self.CP.minEnableSpeed + 2.:
+        events.add(EventName.belowEngageSpeed)
+      if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
+        events.add(EventName.speedTooLow)
+
     ret.events = events.to_msg()
-    ret.buttonEvents = buttonEvents
 
-    # update previous car states
-    self.displayMetricUnitsPrev = self.CS.displayMetricUnits
-    self.buttonStatesPrev = self.CS.buttonStates.copy()
-
-    self.CS.out = ret.as_reader()
-    return self.CS.out
+    return ret
 
   def apply(self, c):
-    hud_control = c.hudControl
-    ret = self.CC.update(c, c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
-                         hud_control.visualAlert,
-                         hud_control.leftLaneVisible,
-                         hud_control.rightLaneVisible,
-                         hud_control.leftLaneDepart,
-                         hud_control.rightLaneDepart)
-    self.frame += 1
-    return ret
+    return self.CC.update(c, self.CS, self.ext_bus)

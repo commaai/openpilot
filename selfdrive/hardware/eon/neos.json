@@ -1,7 +1,0 @@
-{
-  "ota_url": "https://commadist.azureedge.net/neosupdate/ota-signed-50da8800caa5cbc224acbaa21f3a83d21802a31d89cccfc62a898903a8eb19e7.zip",
-  "ota_hash": "50da8800caa5cbc224acbaa21f3a83d21802a31d89cccfc62a898903a8eb19e7",
-  "recovery_url": "https://commadist.azureedge.net/neosupdate/recovery-fe76739438d28ea6111853a737b616afdf340ba75c01c0ee99e6a28c19ecc29f.img",
-  "recovery_len": 15222060,
-  "recovery_hash": "fe76739438d28ea6111853a737b616afdf340ba75c01c0ee99e6a28c19ecc29f"
-}

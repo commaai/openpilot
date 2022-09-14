@@ -32,7 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mv opencv-${OPENCV_VERSION} OpenCV && \
     cd OpenCV && mkdir build && cd build && \
     cmake -DWITH_OPENGL=ON -DFORCE_VTK=ON -DWITH_TBB=ON -DWITH_GDAL=ON \
-          -DWITH_XINE=ON -DENABLE_PRECOMPILED_HEADERS=OFF .. && \
+          -DWITH_XINE=ON -DENABLE_PRECOMPILED_HEADERS=OFF -DBUILD_TESTS=OFF \
+          -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_apps=OFF .. && \
     make -j8 && \
     make install && \
     ldconfig && \

@@ -1,3 +1,5 @@
+# NOTE: this README is outdated. #24590 tracks adding back webcam support
+
 # Run openpilot with webcam on PC
 
 What's needed:
@@ -23,14 +25,14 @@ git clone https://github.com/commaai/openpilot.git
 ```
 cd ~/openpilot
 ```
-- check out selfdrive/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
+- check out system/camerad/cameras/camera_webcam.cc lines 72 and 146 before building if any camera is upside down
 ```
 USE_WEBCAM=1 scons -j$(nproc)
 ```
 
 ## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
-- (default indexes are 1 and 2; can be modified in selfdrive/camerad/cameras/camera_webcam.cc)
+- (default indexes are 1 and 2; can be modified in system/camerad/cameras/camera_webcam.cc)
 - Connect your computer to panda
 
 ## GO

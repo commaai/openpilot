@@ -19,8 +19,6 @@ private slots:
   void updateFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
-  bool eventFilter(QObject *obj, QEvent *event) override;
-
   QProcess proc;
   QString updater, manifest;
 

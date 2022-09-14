@@ -1,10 +1,9 @@
-def create_steer_command(packer, steer, steer_req, raw_cnt):
+def create_steer_command(packer, steer, steer_req):
   """Creates a CAN message for the Toyota Steer Command."""
 
   values = {
     "STEER_REQUEST": steer_req,
     "STEER_TORQUE_CMD": steer,
-    "COUNTER": raw_cnt,
     "SET_ME_1": 1,
   }
   return packer.make_can_msg("STEERING_LKA", 0, values)
@@ -19,7 +18,7 @@ def create_lta_steer_command(packer, steer, steer_req, raw_cnt):
     "SETME_X3": 3,
     "PERCENTAGE": 100,
     "SETME_X64": 0x64,
-    "ANGLE": 0,  # Rate limit? Lower values seeem to work better, but needs more testing
+    "ANGLE": 0,
     "STEER_ANGLE_CMD": steer,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,

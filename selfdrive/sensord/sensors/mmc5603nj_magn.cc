@@ -2,8 +2,8 @@
 
 #include <cassert>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
+#include "common/swaglog.h"
+#include "common/timing.h"
 
 MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
@@ -51,7 +51,7 @@ fail:
   return ret;
 }
 
-void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
+bool MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
 
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[9];
@@ -74,4 +74,5 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

@@ -6,15 +6,15 @@
 
 ```bash
 # Log in via browser to have access to non-public routes
-python lib/auth.py
+python tools/lib/auth.py
 
 # Start a replay
-selfdrive/ui/replay/replay <route-name>
+tools/replay/replay <route-name>
 
 # Example:
-# selfdrive/ui/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
+# tools/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
 # or use --demo to replay the default demo route:
-# selfdrive/ui/replay/replay --demo
+# tools/replay/replay --demo
 
 # watch the replay with the normal openpilot UI
 cd selfdrive/ui && ./ui
@@ -24,9 +24,10 @@ python replay/ui.py
 ```
 
 ## usage
+
 ``` bash
-$ selfdrive/ui/replay/replay -h
-Usage: selfdrive/ui/replay/replay [options] route
+$ tools/replay/replay -h
+Usage: tools/replay/replay [options] route
 Mock openpilot components by publishing logged messages.
 
 Options:
@@ -51,7 +52,7 @@ simply replay a route using the `--dcam` and `--ecam` flags:
 
 ```bash
 # start a replay
-cd selfdrive/ui/replay && ./replay --demo --dcam --ecam
+cd tools/replay && ./replay --demo --dcam --ecam
 
 # then start watch3
 cd selfdrive/ui && ./watch3
@@ -61,7 +62,7 @@ cd selfdrive/ui && ./watch3
 
 ## Stream CAN messages to your device
 
-Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices.
+Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices. Check out the [jungle repo](https://github.com/commaai/panda_jungle) for more info.
 
 `can_replay.py` is a convenient script for when any CAN data will do.
 
@@ -70,5 +71,5 @@ In order to replay specific route:
 MOCK=1 selfdrive/boardd/tests/boardd_old.py
 
 # In another terminal:
-selfdrive/ui/replay/replay <route-name>
+tools/replay/replay <route-name>
 ```

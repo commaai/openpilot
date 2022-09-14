@@ -81,25 +81,12 @@ def _get_fileobject_func(writer, temp_dir):
     return writer.get_fileobject(dir=temp_dir)
   return _get_fileobject
 
-def monkeypatch_os_link():
-  # This is neccesary on EON/C2, where os.link is patched out of python
-  if not hasattr(os, 'link'):
-    from cffi import FFI
-    ffi = FFI()
-    ffi.cdef("int link(const char *oldpath, const char *newpath);")
-    libc = ffi.dlopen(None)
-
-    def link(src, dest):
-      return libc.link(src.encode(), dest.encode())
-    os.link = link
-
 def atomic_write_on_fs_tmp(path, **kwargs):
   """Creates an atomic writer using a temporary file in a temporary directory
      on the same filesystem as path.
   """
   # TODO(mgraczyk): This use of AtomicWriter relies on implementation details to set the temp
   #                 directory.
-  monkeypatch_os_link()
   writer = AtomicWriter(path, **kwargs)
   return writer._open(_get_fileobject_func(writer, get_tmpdir_on_same_filesystem(path)))
 
@@ -108,6 +95,5 @@ def atomic_write_in_dir(path, **kwargs):
   """Creates an atomic writer using a temporary file in the same directory
      as the destination file.
   """
-  monkeypatch_os_link()
   writer = AtomicWriter(path, **kwargs)
   return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))

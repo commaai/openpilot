@@ -6,23 +6,24 @@ from casadi import SX, vertcat, sin, cos
 
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
-from selfdrive.controls.lib.drive_helpers import T_IDXS
+from selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
-  # from pyextra.acados_template import AcadosOcpSolverFast
-  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module, import-error
+  from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
-JSON_FILE = "acados_ocp_lat.json"
+JSON_FILE = os.path.join(LAT_MPC_DIR, "acados_ocp_lat.json")
 X_DIM = 4
 P_DIM = 2
+MODEL_NAME = 'lat'
+ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
 def gen_lat_model():
   model = AcadosModel()
-  model.name = 'lat'
+  model.name = MODEL_NAME
 
   # set up states & controls
   x_ego = SX.sym('x_ego')
@@ -58,7 +59,7 @@ def gen_lat_model():
   return model
 
 
-def gen_lat_mpc_solver():
+def gen_lat_ocp():
   ocp = AcadosOcp()
   ocp.model = gen_lat_model()
 
@@ -88,7 +89,7 @@ def gen_lat_mpc_solver():
   # TODO hacky weights to keep behavior the same
   ocp.model.cost_y_expr = vertcat(y_ego,
                                   ((v_ego +5.0) * psi_ego),
-                                  ((v_ego +5.0) * 4 * curv_rate))
+                                  ((v_ego + 5.0) * 4.0 * curv_rate))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
                                     ((v_ego +5.0) * psi_ego))
 
@@ -103,7 +104,7 @@ def gen_lat_mpc_solver():
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
-  ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+  ocp.solver_options.nlp_solver_type = ACADOS_SOLVER_TYPE
   ocp.solver_options.qp_solver_iter_max = 1
   ocp.solver_options.qp_solver_cond_N = 1
 
@@ -117,7 +118,7 @@ def gen_lat_mpc_solver():
 
 class LateralMpc():
   def __init__(self, x0=np.zeros(X_DIM)):
-    self.solver = AcadosOcpSolverFast('lat', N, EXPORT_DIR)
+    self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset(x0)
 
   def reset(self, x0=np.zeros(X_DIM)):
@@ -146,7 +147,7 @@ class LateralMpc():
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3/20.)*W[:2,:2])
 
-  def run(self, x0, p, y_pts, heading_pts):
+  def run(self, x0, p, y_pts, heading_pts, curv_rate_pts):
     x0_cp = np.copy(x0)
     p_cp = np.copy(p)
     self.solver.constraints_set(0, "lbx", x0_cp)
@@ -155,6 +156,7 @@ class LateralMpc():
     v_ego = p_cp[0]
     # rotation_radius = p_cp[1]
     self.yref[:,1] = heading_pts*(v_ego+5.0)
+    self.yref[:,2] = curv_rate_pts * (v_ego+5.0) * 4.0
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
       self.solver.set(i, "p", p_cp)
@@ -173,5 +175,6 @@ class LateralMpc():
 
 
 if __name__ == "__main__":
-  ocp = gen_lat_mpc_solver()
-  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)
+  ocp = gen_lat_ocp()
+  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE)
+  # AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)

@@ -19,7 +19,6 @@ public:
   explicit SettingsWindow(QWidget *parent = 0);
 
 protected:
-  void hideEvent(QHideEvent *event) override;
   void showEvent(QShowEvent *event) override;
 
 signals:
@@ -55,6 +54,13 @@ class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(SettingsWindow *parent);
+  void showEvent(QShowEvent *event) override;
+
+private:
+  Params params;
+  std::map<std::string, ParamControl*> toggles;
+
+  void updateToggles();
 };
 
 class SoftwarePanel : public ListWidget {
@@ -72,18 +78,8 @@ private:
   LabelControl *versionLbl;
   LabelControl *lastUpdateLbl;
   ButtonControl *updateBtn;
+  ButtonControl *branchSwitcherBtn;
 
   Params params;
   QFileSystemWatcher *fs_watch;
-};
-
-class C2NetworkPanel: public QWidget {
-  Q_OBJECT
-public:
-  explicit C2NetworkPanel(QWidget* parent = nullptr);
-
-private:
-  void showEvent(QShowEvent *event) override;
-  QString getIPAddress();
-  LabelControl *ipaddress;
 };

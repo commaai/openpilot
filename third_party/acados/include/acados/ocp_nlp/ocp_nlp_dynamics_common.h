@@ -84,6 +84,7 @@ typedef struct
     /* memory */
     acados_size_t (*memory_calculate_size)(void *config, void *dims, void *opts);
     void *(*memory_assign)(void *config, void *dims, void *opts, void *raw_memory);
+    // get shooting node gap x_next(x_n, u_n) - x_{n+1}
     struct blasfeo_dvec *(*memory_get_fun_ptr)(void *memory_);
     struct blasfeo_dvec *(*memory_get_adj_ptr)(void *memory_);
     void (*memory_set_ux_ptr)(struct blasfeo_dvec *ux, void *memory_);

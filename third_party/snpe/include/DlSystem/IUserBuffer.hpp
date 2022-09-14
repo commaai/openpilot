@@ -151,101 +151,6 @@ public:
   * An encoding type where each element is represented by tf8, which is an
   * 8-bit quantizd value, which has an exact representation of 0.0
   */
-
-class ZDL_EXPORT UserBufferEncodingTf8 : public UserBufferEncodingUnsigned8Bit {
-public:
-    UserBufferEncodingTf8() = delete;
-    UserBufferEncodingTf8(unsigned char stepFor0, float stepSize) :
-            UserBufferEncodingUnsigned8Bit(ElementType_t::TF8),
-            m_StepExactly0(stepFor0),
-            m_QuantizedStepSize(stepSize) {};
-
-    UserBufferEncodingTf8(const zdl::DlSystem::UserBufferEncoding &ubEncoding) : UserBufferEncodingUnsigned8Bit(ubEncoding.getElementType()){
-            const zdl::DlSystem::UserBufferEncodingTf8* ubEncodingTf8
-                            = dynamic_cast <const zdl::DlSystem::UserBufferEncodingTf8*> (&ubEncoding);
-            if (ubEncodingTf8) {
-                m_StepExactly0 = ubEncodingTf8->getStepExactly0();
-                m_QuantizedStepSize = ubEncodingTf8->getQuantizedStepSize();
-            }
-    }
-
-/**
-      * @brief Sets the step value that represents 0
-      *
-      * @param[in] stepExactly0 The step value that represents 0
-      *
-     */
-
-    void setStepExactly0(const unsigned char stepExactly0) {
-        m_StepExactly0 = stepExactly0;
-    }
-
-
-/**
-      * @brief Sets the float value that each step represents
-      *
-      * @param[in] quantizedStepSize The float value of each step size
-      *
-     */
-
-    void setQuantizedStepSize(const float quantizedStepSize) {
-        m_QuantizedStepSize = quantizedStepSize;
-    }
-
-
-/**
-      * @brief Retrieves the step that represents 0.0
-      *
-      * @return Step value
-     */
-
-    unsigned char getStepExactly0() const {
-        return m_StepExactly0;
-    }
-
-
-/**
-     * Calculates the minimum floating point value that
-     * can be represented with this encoding.
-     *
-     * @return Minimum representable floating point value
-     */
-
-    float getMin() const {
-        return m_QuantizedStepSize * (0 - m_StepExactly0);
-    }
-
-
-/**
-     * Calculates the maximum floating point value that
-     * can be represented with this encoding.
-     *
-     * @return Maximum representable floating point value
-     */
-
-    float getMax() const {
-        return m_QuantizedStepSize * (255 - m_StepExactly0);
-    }
-
-
-/**
-      * @brief Retrieves the step size
-      *
-      * @return Step size
-     */
-
-    float getQuantizedStepSize() const {
-        return m_QuantizedStepSize;
-    }
-
-private:
-    unsigned char m_StepExactly0;
-
-    float m_QuantizedStepSize;
-};
-
-
-
 class ZDL_EXPORT UserBufferEncodingTfN : public UserBufferEncoding {
 public:
    UserBufferEncodingTfN() = delete;
@@ -327,9 +232,41 @@ public:
    ElementType_t getTypeFromWidth(uint8_t width);
 
    uint8_t bitWidth;
-private:
+protected:
    uint64_t m_StepExactly0;
    float m_QuantizedStepSize;
+};
+
+
+class ZDL_EXPORT UserBufferEncodingTf8 : public UserBufferEncodingTfN {
+public:
+    UserBufferEncodingTf8() = delete;
+    UserBufferEncodingTf8(unsigned char stepFor0, float stepSize) :
+            UserBufferEncodingTfN(stepFor0, stepSize) {};
+
+    UserBufferEncodingTf8(const zdl::DlSystem::UserBufferEncoding &ubEncoding) : UserBufferEncodingTfN(ubEncoding){}
+
+/**
+      * @brief Sets the step value that represents 0
+      *
+      * @param[in] stepExactly0 The step value that represents 0
+      *
+     */
+
+    void setStepExactly0(const unsigned char stepExactly0) {
+        UserBufferEncodingTfN::m_StepExactly0 = stepExactly0;
+    }
+
+/**
+      * @brief Retrieves the step that represents 0.0
+      *
+      * @return Step value
+     */
+
+    unsigned char getStepExactly0() const {
+        return UserBufferEncodingTfN::m_StepExactly0;
+    }
+
 };
 
 

@@ -4,8 +4,6 @@ moc_*
 _mui
 watch3
 installer/installers/*
-replay/replay
-replay/tests/test_replay
 qt/text
 qt/spinner
 qt/setup/setup

@@ -1,5 +1,6 @@
 import os
 from cffi import FFI
+from typing import Any, List
 
 # Workaround for the EON/termux build of Python having os.*xattr removed.
 ffi = FFI()
@@ -11,7 +12,7 @@ int removexattr(const char *path, const char *name);
 """)
 libc = ffi.dlopen(None)
 
-def setxattr(path, name, value, flags=0):
+def setxattr(path, name, value, flags=0) -> None:
   path = path.encode()
   name = name.encode()
   if libc.setxattr(path, name, value, len(value), flags) == -1:
@@ -29,7 +30,7 @@ def getxattr(path, name, size=128):
     raise OSError(ffi.errno, f"{os.strerror(ffi.errno)}: getxattr({path}, {name}, {size})")
   return ffi.buffer(value)[:l]
 
-def listxattr(path, size=128):
+def listxattr(path, size=128) -> List[Any]:
   path = path.encode()
   attrs = ffi.new(f"char[{size}]")
   l = libc.listxattr(path, attrs, size)
@@ -38,7 +39,7 @@ def listxattr(path, size=128):
   # attrs is b'\0' delimited values (so chop off trailing empty item)
   return [a.decode() for a in ffi.buffer(attrs)[:l].split(b"\0")[0:-1]]
 
-def removexattr(path, name):
+def removexattr(path, name) -> None:
   path = path.encode()
   name = name.encode()
   if libc.removexattr(path, name) == -1:

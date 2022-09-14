@@ -11,7 +11,7 @@ from common.realtime import set_core_affinity, set_realtime_priority
 #   openpilot processes
 
 def main() -> NoReturn:
-  set_core_affinity(int(os.getenv("CORE", "3")))
+  set_core_affinity([int(os.getenv("CORE", "3")), ])
   set_realtime_priority(1)
 
   while True:

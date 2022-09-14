@@ -1,8 +1,6 @@
 #!/bin/sh
 
-if [ -f /EON ] && [ ! -f qt/spinner ]; then
-  cp qt/spinner_aarch64 qt/spinner
-elif [ -f /TICI ] && [ ! -f qt/spinner ]; then
+if [ -f /TICI ] && [ ! -f qt/spinner ]; then
   cp qt/spinner_larch64 qt/spinner
 fi
 

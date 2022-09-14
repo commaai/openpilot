@@ -1,6 +1,6 @@
 //==============================================================================
 //
-// Copyright (c) 2019-2020 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2021 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -36,6 +36,8 @@ SnpeUdo_getVersion (SnpeUdo_LibVersion_t** version);
 
 typedef SnpeUdo_ErrorType_t
 (*SnpeUdo_GetVersionFunction_t) (SnpeUdo_LibVersion_t** version);
+
+typedef SnpeUdo_GetVersionFunction_t Udo_GetVersionFunction_t;
 
 #ifdef __cplusplus
 } // extern "C"

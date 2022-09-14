@@ -1,6 +1,6 @@
 #pragma once
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/ui.h"
 
