@@ -178,8 +178,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
     framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
   } else if (c->camera_id == CAMERA_ID_OX03C10) {
     framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
-  } else {
-    assert(false);
   }
 }
 
