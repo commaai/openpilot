@@ -4,7 +4,6 @@ import sys
 import signal
 import numpy as np
 from collections import deque, defaultdict
-from random import sample
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -39,13 +38,29 @@ VERSION = 1  # bump this to invalidate old parameter caches
 def slope2rot(slope):
   sin = np.sqrt(slope**2 / (slope**2 + 1))
   cos = np.sqrt(1 / (slope**2 + 1))
-  return [[cos, -sin], [0.0, 0.0], [sin, cos]]
+  return np.array([[cos, -sin], [sin, cos]])
+
+
+class npqueue:
+  def __init__(self, maxlen, rowsize):
+    self.maxlen = maxlen
+    self.arr = np.empty((0, rowsize))
+
+  def __len__(self):
+    return len(self.arr)
+
+  def append(self, pt):
+    if len(self.arr) < self.maxlen:
+      self.arr = np.append(self.arr, [pt], axis=0)
+    else:
+      self.arr[:-1] = self.arr[1:]
+      self.arr[-1] = pt
 
 
 class PointBuckets:
   def __init__(self, x_bounds, min_points):
     self.x_bounds = x_bounds
-    self.buckets = {bounds: deque(maxlen=POINTS_PER_BUCKET) for bounds in x_bounds}
+    self.buckets = {bounds: npqueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
     self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
 
   def bucket_lengths(self):
@@ -64,12 +79,10 @@ class PointBuckets:
         break
 
   def get_points(self, num_points=None):
-    points = []
-    for bucket in self.buckets.values():
-      points += list(bucket)
+    points = np.concatenate([x.arr for x in self.buckets.values() if len(x) > 0])
     if num_points is None:
       return points
-    return sample(points, min(len(points), num_points))
+    return points[np.random.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
 
   def load_points(self, points):
     for x, y in points:
@@ -145,7 +158,7 @@ class TorqueEstimator:
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     _, _, v = np.linalg.svd(points, full_matrices=False)
     slope, offset = -v.T[0:2, 2] / v.T[2, 2]
-    _, spread = np.einsum("ik,kj -> ji", points, slope2rot(slope))
+    _, spread = np.matmul(points[:, [0, 2]], slope2rot(slope)).T
     friction_coeff = np.std(spread) * FRICTION_FACTOR
     return slope, offset, friction_coeff
 
@@ -213,9 +226,7 @@ class TorqueEstimator:
       liveTorqueParameters.liveValid = False
 
     if with_points:
-      points = self.filtered_points.get_points()
-      points = np.delete(points, 1, 1).tolist()
-      liveTorqueParameters.points = points
+      liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
 
     liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['latAccelFactor'].x)
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
