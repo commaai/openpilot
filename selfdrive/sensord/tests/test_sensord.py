@@ -116,10 +116,13 @@ class TestSensord(unittest.TestCase):
     # make sure gpiochip0 is readable
     HARDWARE.initialize_hardware()
 
+    # read initial sensor values every test case can use
+    cls.events = read_sensor_events(3)
+
   @with_processes(['sensord'])
   def test_sensors_present(self):
     # verify correct sensors configuration
-    events = read_sensor_events(10)
+    events = self.events
 
     seen = set()
     for event in events:
@@ -134,7 +137,7 @@ class TestSensord(unittest.TestCase):
   @with_processes(['sensord'])
   def test_lsm6ds3_100Hz(self):
     # verify measurements are sampled and published at a 100Hz rate
-    events = read_sensor_events(3) # 3sec (about 300 measurements)
+    events = self.events # 3sec (about 300 measurements)
 
     data_points = set()
     for event in events:
@@ -165,7 +168,7 @@ class TestSensord(unittest.TestCase):
   @with_processes(['sensord'])
   def test_events_check(self):
     # verify if all sensors produce events
-    events = read_sensor_events(3)
+    events = self.events
 
     sensor_events = dict()
     for event in events:
@@ -187,7 +190,7 @@ class TestSensord(unittest.TestCase):
   @with_processes(['sensord'])
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
-    events = read_sensor_events(3)
+    events = self.events
 
     tdiffs = list()
     for event in events:
@@ -289,4 +292,3 @@ class TestSensord(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-
