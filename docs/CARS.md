@@ -11,12 +11,12 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2019-22|All|openpilot|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
-|Audi|A3 2014-19|ACC + Lane Assist|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Audi|Q2 2018|ACC + Lane Assist|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Audi|Q3 2020-21|ACC + Lane Assist|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Audi|RS3 2018|ACC + Lane Assist|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Audi|S3 2015-17|ACC + Lane Assist|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
+|Audi|A3 2014-19|ACC + Lane Assist|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Audi|A3 Sportback e-tron 2017-18|ACC + Lane Assist|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Audi|Q2 2018|ACC + Lane Assist|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Audi|Q3 2020-21|ACC + Lane Assist|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Audi|RS3 2018|ACC + Lane Assist|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Audi|S3 2015-17|ACC + Lane Assist|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
@@ -123,8 +123,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Nissan|Rogue 2018-20|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
 |Nissan|X-Trail 2017|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
 |Ram|1500 2019-22|Adaptive Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Ram|
-|SEAT|Ateca 2018|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|SEAT|Leon 2014-20|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
+|SEAT|Ateca 2018|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|SEAT|Leon 2014-20|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
 |Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
@@ -135,13 +135,13 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru B|
 |Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Škoda|Karoq 2019-21[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Škoda|Kodiaq 2018-19|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Škoda|Octavia 2015, 2018-19|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Škoda|Octavia RS 2016|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Škoda|Scala 2020|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Škoda|Superb 2015-18|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
+|Škoda|Kamiq 2021[<sup>5</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Škoda|Karoq 2019-21|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Škoda|Kodiaq 2018-19|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Škoda|Octavia 2015, 2018-19|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Škoda|Octavia RS 2016|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Škoda|Scala 2020|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Škoda|Superb 2015-18|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
 |Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Avalon 2016|Toyota Safety Sense P|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
@@ -182,37 +182,37 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|RAV4 Hybrid 2019-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|RAV4 Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Sienna 2018-20|All|Stock[<sup>3</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Volkswagen|Arteon 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Arteon eHybrid 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Arteon R 2020-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Atlas 2018-23[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Atlas Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|California 2021[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Caravelle 2020[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|CC 2018-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|e-Golf 2014-20|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf 2015-20[<sup>8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf Alltrack 2015-19|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf GTD 2015-20|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf GTE 2015-20|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf GTI 2015-21|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf R 2015-19[<sup>8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Golf SportsVan 2015-20|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
-|Volkswagen|Jetta 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Jetta GLI 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Passat 2015-22[<sup>6,7,8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Passat Alltrack 2015-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Passat GTE 2015-22[<sup>7,8</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Polo 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Polo GTI 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|T-Cross 2021[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|T-Roc 2021[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Taos 2022[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Teramont 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Teramont Cross Sport 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Teramont X 2021-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Tiguan 2019-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
-|Volkswagen|Touran 2017|Driver Assistance|openpilot|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|VW|
+|Volkswagen|Arteon 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Arteon eHybrid 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Arteon R 2020-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Atlas 2018-23|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Atlas Cross Sport 2021-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|California 2021|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Caravelle 2020|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|CC 2018-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|e-Golf 2014-20|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf 2015-20[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf Alltrack 2015-19|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf GTD 2015-20|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf GTE 2015-20|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf GTI 2015-21|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf R 2015-19[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Golf SportsVan 2015-20|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Jetta 2018-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Jetta GLI 2021-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Passat 2015-22[<sup>6,7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Passat Alltrack 2015-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Passat GTE 2015-22[<sup>7</sup>](#footnotes)|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Polo 2020-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Polo GTI 2020-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|T-Cross 2021|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|T-Roc 2021|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Taos 2022|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Teramont 2018-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Teramont Cross Sport 2021-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Teramont X 2021-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Tiguan 2019-22|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
+|Volkswagen|Touran 2017|Driver Assistance|openpilot[<sup>8</sup>](#footnotes)|10 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|J533|
 
 <a id="footnotes"></a>
 <sup>1</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
@@ -221,8 +221,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 <sup>4</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>5</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>6</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
-<sup>7</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway inside the dashboard, choose "VW J533 Development" from the vehicle drop-down for a suitable harness. (Some newer models are also observed to not have a J533 connector.) <br />
-<sup>8</sup>Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.) <br />
+<sup>7</sup>Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.) <br />
+<sup>8</sup>Requires gateway (J533) harness. Camera harness integrations can only use stock ACC at this time. <br />
 
 ## Community Maintained Cars
 Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
