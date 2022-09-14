@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import signal
 import numpy as np
@@ -222,7 +223,8 @@ def main(sm=None, pm=None):
     msg = torque_estimator.get_msg(with_points=True)
     Params().put("LiveTorqueParameters", msg.to_bytes())
     sys.exit(0)
-  signal.signal(signal.SIGINT, lambda sig, frame: cache_params(sig, estimator))
+  if "REPLAY" not in os.environ:
+    signal.signal(signal.SIGINT, lambda sig, frame: cache_params(sig, estimator))
 
   while True:
     sm.update()

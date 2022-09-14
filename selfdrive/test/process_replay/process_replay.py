@@ -233,8 +233,8 @@ def torqued_rcv_callback(msg, CP, cfg, fsm):
   # should_recv always true to increment frame
   recv_socks = []
   frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
-  if frame == 0 or (msg.which() == 'liveLocationKalman' and (frame % 5) == 0):
-    recv_socks = ["liveCalibration"]
+  if msg.which() == 'liveLocationKalman' and (frame % 5) == 0:
+    recv_socks = ["liveTorqueParameters"]
   return recv_socks, fsm.frame == 0 or msg.which() == 'liveLocationKalman'
 
 
