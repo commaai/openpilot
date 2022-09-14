@@ -104,7 +104,7 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, 
   return commands
 
 
-def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed):
   commands = []
 
   acc_02_values = {
@@ -112,9 +112,8 @@ def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible)
     "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
-    "ACC_Abstandsindex": 512 if lead_visible else 0,  # FIXME: will break analog clusters during refactor
   }
+  # TODO: ACC_Abstandsindex for lead car distance, must determine analog vs digital cluster for scaling
   commands.append(packer.make_can_msg("ACC_02", bus, acc_02_values))
 
   return commands
-

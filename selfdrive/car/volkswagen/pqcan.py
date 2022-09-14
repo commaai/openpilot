@@ -72,13 +72,12 @@ def create_acc_accel_control(packer, bus, enabled, acc_status, accel, stopping, 
   packer.make_can_msg("ACC_System", bus, values)
 
 
-def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed):
   values = {
     "ACA_StaACC": acc_hud_status,
     "ACA_Zeitluecke": 2,
     "ACA_V_Wunsch": set_speed,
-    "ACA_gemZeitl": 8 if lead_visible else 0,
   }
-  # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
+  # TODO: ACA_gemZeitl, ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
 
   return packer.make_can_msg("ACC_GRA_Anziege", bus, values)

@@ -139,9 +139,6 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
 
-    # Update misc car configuration/equipment info
-    self.digital_cluster_installed = bool(pt_cp.vl["Kombi_03"]["KBI_Variante"])
-
     return ret
 
   def update_pq(self, pt_cp, cam_cp, ext_cp, trans_type):
@@ -279,7 +276,6 @@ class CarState(CarStateBase):
       ("ESP_Tastung_passiv", "ESP_21"),          # Stability control disabled
       ("ESP_Haltebestaetigung", "ESP_21"),       # ESP hold confirmation
       ("KBI_Handbremse", "Kombi_01"),            # Manual handbrake applied
-      ("KBI_Variante", "Kombi_03"),              # Digital/full-screen instrument cluster installed
       ("TSK_Status", "TSK_06"),                  # ACC engagement status from drivetrain coordinator
       ("GRA_Hauptschalter", "GRA_ACC_01"),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01"),           # ACC button, cancel
@@ -310,7 +306,6 @@ class CarState(CarStateBase):
       ("Airbag_02", 5),     # From J234 Airbag control module
       ("Kombi_01", 2),      # From J285 Instrument cluster
       ("Blinkmodi_02", 1),  # From J519 BCM (sent at 1Hz when no lights active, 50Hz when active)
-      ("Kombi_03", 1),      # From J285 instrument cluster
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
