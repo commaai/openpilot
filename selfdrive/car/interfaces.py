@@ -172,9 +172,11 @@ class CarInterfaceBase(ABC):
       self.v_ego_cluster_seen = True
 
     # Many cars apply hysteresis to the ego dash speed
-    # Car interfaces can override cluster_speed_hyst_gap if vEgoCluster already includes hysteresis
+    # Car interfaces can override CS.cluster_speed_hyst_gap and CS.cluster_min_speed to add hysteresis
     if self.CS is not None:
       ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
+      if ret.vEgo < self.CS.cluster_min_speed:
+        ret.vEgoCluster = 0.0
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
@@ -275,7 +277,8 @@ class CarStateBase(ABC):
     self.right_blinker_cnt = 0
     self.left_blinker_prev = False
     self.right_blinker_prev = False
-    self.cluster_speed_hyst_gap = CV.KPH_TO_MS
+    self.cluster_speed_hyst_gap = 0.0
+    self.cluster_min_speed = 0.0  # min speed before dropping to 0
 
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
