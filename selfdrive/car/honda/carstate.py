@@ -149,6 +149,8 @@ class CarState(CarStateBase):
     self.brake_switch_active = False
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS
+    self.cluster_min_speed = CV.KPH_TO_MS
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
