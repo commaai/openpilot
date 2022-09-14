@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 import os
 import unittest
-import random
 from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log, car
 from common.basedir import BASEDIR
-from common.params import Params
 from selfdrive.controls.lib.events import Alert, EVENTS, ET
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.test.process_replay.process_replay import FakeSubMaster, CONFIGS
 
 AlertSize = log.ControlsState.AlertSize
