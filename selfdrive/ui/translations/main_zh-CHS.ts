@@ -588,7 +588,7 @@ location set</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+93"/>
         <source> ALERTS</source>
         <translation> 警报</translation>
     </message>

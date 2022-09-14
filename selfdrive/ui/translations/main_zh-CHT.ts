@@ -590,7 +590,7 @@ location set</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+93"/>
         <source> ALERTS</source>
         <translation> 提醒</translation>
     </message>

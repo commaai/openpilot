@@ -23,8 +23,10 @@ public:
 
 private:
   void showEvent(QShowEvent *event) override;
+  void refresh();
 
   Params params;
+  QString prev_destinations, cur_destinations;
   QStackedWidget *stack;
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;

@@ -591,7 +591,7 @@ trabalho definido</translation>
         <translation>ATUALIZAÇÃO</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+93"/>
         <source> ALERTS</source>
         <translation> ALERTAS</translation>
     </message>
