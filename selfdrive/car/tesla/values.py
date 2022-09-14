@@ -6,6 +6,8 @@ from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
+Ecu = car.CarParams.Ecu
+
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 
@@ -45,13 +47,24 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
       rx_offset=0x10,
       bus=0,
-    )
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      rx_offset=0x08,
+      bus=0,
+    ),
   ]
 )
 
 FW_VERSIONS = {
   CAR.AP2_MODELS: {
-
+    (Ecu.unknown, 0x649, None): [],
+    (Ecu.unknown, 0x64d, None): [],
+    (Ecu.unknown, 0x64f, None): [],
+    (Ecu.unknown, 0x64e, None): [],
+    (Ecu.unknown, 0x671, None): [],
+    (Ecu.unknown, 0x730, None): [],
   },
 }
 
