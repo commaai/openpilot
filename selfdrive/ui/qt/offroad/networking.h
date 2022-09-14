@@ -17,6 +17,8 @@ public:
 
 private:
   WifiManager *wifi = nullptr;
+  QVBoxLayout *list_layout = nullptr;
+  QLabel *scanning = nullptr;
   QVBoxLayout* main_layout;
   QPixmap lock;
   QPixmap checkmark;
