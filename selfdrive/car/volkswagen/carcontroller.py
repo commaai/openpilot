@@ -7,6 +7,7 @@ from selfdrive.car.volkswagen import mqbcan, pqcan
 from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 class CarController:
@@ -25,7 +26,6 @@ class CarController:
   def update(self, CC, CS, ext_bus):
     actuators = CC.actuators
     hud_control = CC.hudControl
-
     can_sends = []
 
     # **** Steering Controls ************************************************ #
@@ -71,9 +71,12 @@ class CarController:
     # **** Acceleration Controls ******************************************** #
 
     if self.frame % self.CCP.ACC_CONTROL_STEP == 0 and self.CP.openpilotLongitudinalControl:
-      tsk_status = self.CCS.tsk_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
+      acc_control = self.CCS.acc_control_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
       accel = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX) if CC.longActive else 0
-      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, tsk_status, accel))
+      stopping = actuators.longControlState == LongCtrlState.stopping
+      starting = actuators.longControlState == LongCtrlState.starting
+      can_sends.extend(self.CCS.create_acc_accel_control(self.packer_pt, CANBUS.pt, CS.acc_type, CC.longActive, accel,
+                                                         acc_control, stopping, starting, CS.out.cruiseState.standstill))
 
     # **** HUD Controls ***************************************************** #
 
