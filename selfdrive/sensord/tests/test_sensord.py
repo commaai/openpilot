@@ -118,15 +118,14 @@ class TestSensord(unittest.TestCase):
 
     # read initial sensor values every test case can use
     managed_processes["sensord"].start()
-    cls.events = read_sensor_events(3)
+    cls.events = read_sensor_events(5)
     managed_processes["sensord"].stop()
 
   def test_sensors_present(self):
     # verify correct sensors configuration
-    events = self.events
 
     seen = set()
-    for event in events:
+    for event in self.events:
       for measurement in event.sensorEvents:
         # filter unset events (bmx magn)
         if measurement.version == 0:
@@ -137,10 +136,9 @@ class TestSensord(unittest.TestCase):
 
   def test_lsm6ds3_100Hz(self):
     # verify measurements are sampled and published at a 100Hz rate
-    events = self.events # 3sec (about 300 measurements)
 
     data_points = set()
-    for event in events:
+    for event in self.events:
       for measurement in event.sensorEvents:
 
         # skip lsm6ds3 temperature measurements
@@ -167,10 +165,9 @@ class TestSensord(unittest.TestCase):
 
   def test_events_check(self):
     # verify if all sensors produce events
-    events = self.events
 
     sensor_events = dict()
-    for event in events:
+    for event in  self.events:
       for measurement in event.sensorEvents:
 
         # filter unset events (bmx magn)
@@ -188,10 +185,9 @@ class TestSensord(unittest.TestCase):
 
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
-    events = self.events
 
     tdiffs = list()
-    for event in events:
+    for event in self.events:
       for measurement in event.sensorEvents:
 
         # filter unset events (bmx magn)
