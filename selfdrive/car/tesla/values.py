@@ -45,13 +45,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      rx_offset=0x10,
+      rx_offset=0x08,
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      rx_offset=0x08,
+      rx_offset=0x10,
       bus=0,
     ),
   ]
@@ -59,12 +59,18 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 FW_VERSIONS = {
   CAR.AP2_MODELS: {
-    (Ecu.unknown, 0x649, None): [],
-    (Ecu.unknown, 0x64d, None): [],
-    (Ecu.unknown, 0x64f, None): [],
-    (Ecu.unknown, 0x64e, None): [],
-    (Ecu.unknown, 0x671, None): [],
-    (Ecu.unknown, 0x730, None): [],
+    (Ecu.fwdCamera, 0x649, None): [ # DAS (autopilot computer)
+      b'\x01\x00\x8b\x07\x01\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11',
+    ],
+    (Ecu.electricBrakeBooster, 0x64d, None): [
+      b'1037123-00-A',
+    ],
+    (Ecu.fwdRadar, 0x671, None): [
+      b'\x01\x00W\x00\x00\x00\x07\x00\x00\x00\x00\x08\x01\x00\x00\x00\x07\xff\xfe',
+    ],
+    (Ecu.eps, 0x730, None): [
+      b'\x10#\x01',
+    ],
   },
 }
 
