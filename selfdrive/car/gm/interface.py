@@ -206,7 +206,7 @@ class CarInterface(CarInterfaceBase):
                                        pcm_enable=self.CP.pcmCruise)
 
     # TODO: (generically?) allow engaging with brake pressed (not regen paddle)
-    if ret.vEgo < self.CP.minEnableSpeed:
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and self.CS.brake_pressed):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)

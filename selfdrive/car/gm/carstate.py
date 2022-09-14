@@ -42,7 +42,7 @@ class CarState(CarStateBase):
 
     # Brake pedal's potentiometer returns near-zero reading even when pedal is not pressed.
     ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
-    ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 10
+    ret.brakePressed = self.brake_pressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] >= 10
 
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
