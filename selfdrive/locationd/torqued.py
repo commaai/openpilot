@@ -31,7 +31,8 @@ MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
 MAX_RESETS = 5.0
 MAX_INVALID_COUNT = 10
 MIN_ENGAGE_BUFFER = 2  # secs
-TORQUED_TAG = "v0.1"
+
+VERSION = 1  # bump this to invalidate old parameter caches
 
 
 def slope2rot(slope):
@@ -73,7 +74,7 @@ class PointBuckets:
 
 
 class TorqueEstimator:
-  def __init__(self, CP, params):
+  def __init__(self, CP, torque_params):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
 
@@ -86,30 +87,46 @@ class TorqueEstimator:
       self.offline_latAccelFactor = CP.lateralTuning.torque.latAccelFactor
 
     self.reset()
-    params = log.Event.from_bytes(params).liveTorqueParameters if params is not None else None
-    if params is not None and\
-       self.is_sane(params.latAccelFactorFiltered, params.latAccelOffsetFiltered, params.frictionCoefficientFiltered) and\
-       params.tag == TORQUED_TAG:
-       # ToDo: check if car has changed and reset (do not load old points if this is a new car)
-      initial_params = {
-        'latAccelFactor': params.latAccelFactorFiltered,
-        'latAccelOffset': params.latAccelOffsetFiltered,
-        'frictionCoefficient': params.frictionCoefficientFiltered,
-        'points': params.points
-      }
-      self.decay = params.decay
-      self.filtered_points.load_points(initial_params['points'])
-    else:
-      initial_params = {
-        'latAccelFactor': self.offline_latAccelFactor,
-        'latAccelOffset': 0.0,
-        'frictionCoefficient': self.offline_friction,
-        'points': []
-      }
-      self.decay = MIN_FILTER_DECAY
+
+    initial_params = {
+      'latAccelFactor': self.offline_latAccelFactor,
+      'latAccelOffset': 0.0,
+      'frictionCoefficient': self.offline_friction,
+      'points': []
+    }
+    self.decay = MIN_FILTER_DECAY
+
+    # try to restore cached params
+    params = Params()
+    params_cache = params.get("LiveTorqueCarParams")
+    torque_cache = params.get("LiveTorqueParameters")
+    if params_cache is not None and torque_cache is not None:
+      try:
+        cache_ltp = log.Event.from_bytes(torque_cache).liveTorqueParameters
+        cache_CP = car.CarParams.from_bytes(params_cache)
+        if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
+          initial_params = {
+            'latAccelFactor': cache_ltp.latAccelFactorFiltered,
+            'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
+            'frictionCoefficient': cache_ltp.frictionCoefficientFiltered,
+            'points': cache_ltp.points
+          }
+          self.decay = cache_ltp.decay
+          self.filtered_points.load_points(initial_params['points'])
+          cloudlog.info("restored torque params from cache")
+      except Exception:
+        cloudlog.exception("failed to restore cached torque params")
+        params.remove("LiveTorqueParameters")
+        # TODO: remove this
+        raise
+
     self.filtered_params = {}
     for param in initial_params:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
+
+  def get_restore_key(self, CP, version):
+    # TODO: add tuning values too
+    return (CP.carFingerprint, CP.lateralTuning.which(), version)
 
   def reset(self):
     self.resets += 1.0
@@ -165,7 +182,7 @@ class TorqueEstimator:
     msg = messaging.new_message('liveTorqueParameters')
     msg.valid = valid
     liveTorqueParameters = msg.liveTorqueParameters
-    liveTorqueParameters.tag = TORQUED_TAG
+    liveTorqueParameters.version = VERSION
 
     if self.filtered_points.is_valid():
       try:
@@ -214,14 +231,16 @@ def main(sm=None, pm=None):
 
   params = Params()
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-  torque_params = params.get("LiveTorqueParameters")
-  estimator = TorqueEstimator(CP, torque_params)
+  params_cache = params.get("LiveTorqueParameters")
+  estimator = TorqueEstimator(CP, params_cache)
 
   def cache_params(sig, torque_estimator):
     signal.signal(sig, signal.SIG_DFL)
     cloudlog.warning("caching torque params")
     msg = torque_estimator.get_msg(with_points=True)
-    Params().put("LiveTorqueParameters", msg.to_bytes())
+    params = Params()
+    params.put("LiveTorqueCarParams", CP.as_builder().to_bytes())
+    params.put("LiveTorqueParameters", msg.to_bytes())
     sys.exit(0)
   if "REPLAY" not in os.environ:
     signal.signal(signal.SIGINT, lambda sig, frame: cache_params(sig, estimator))
