@@ -5,11 +5,12 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus) : I2CSensor(bus) {}
+LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Accel::init() {
   int ret = 0;
   uint8_t buffer[1];
+  uint8_t value = 0;
 
   ret = read_register(LSM6DS3_ACCEL_I2C_REG_ID, buffer, 1);
   if(ret < 0) {
@@ -27,20 +28,69 @@ int LSM6DS3_Accel::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  // TODO: set scale and bandwith. Default is +- 2G, 50 Hz
+  ret = init_gpio();
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // TODO: set scale and bandwidth. Default is +- 2G, 50 Hz
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ);
   if (ret < 0) {
     goto fail;
   }
 
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, LSM6DS3_ACCEL_DRDY_PULSE_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // enable data ready interrupt for accel on INT1
+  // (without resetting existing interrupts)
+  ret = read_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value |= LSM6DS3_ACCEL_INT1_DRDY_XL;
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value);
 
 fail:
   return ret;
 }
 
-void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
+int LSM6DS3_Accel::shutdown() {
+  int ret = 0;
 
-  uint64_t start_time = nanos_since_boot();
+  // disable data ready interrupt for accel on INT1
+  uint8_t value = 0;
+  ret = read_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value &= ~(LSM6DS3_ACCEL_INT1_DRDY_XL);
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value);
+  if (ret < 0) {
+    goto fail;
+  }
+  return ret;
+
+fail:
+  LOGE("Could not disable lsm6ds3 acceleration interrupt!")
+  return ret;
+}
+
+bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
+
+  if (has_interrupt_enabled()) {
+    // INT1 shared with gyro, check STATUS_REG who triggered
+    uint8_t status_reg = 0;
+    read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+    if ((status_reg & LSM6DS3_ACCEL_DRDY_XLDA) == 0) {
+      return false;
+    }
+  }
+
   uint8_t buffer[6];
   int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
@@ -54,11 +104,11 @@ void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);
   event.setType(SENSOR_TYPE_ACCELEROMETER);
-  event.setTimestamp(start_time);
 
   float xyz[] = {y, -x, z};
   auto svec = event.initAcceleration();
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

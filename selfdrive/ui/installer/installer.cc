@@ -107,7 +107,7 @@ void Installer::doInstall() {
     qDebug() << "Waiting for valid time";
   }
 
-  // cleanup previous install attemps
+  // cleanup previous install attempts
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
   // do the install
@@ -182,7 +182,6 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   std::map<std::string, std::string> params = {
     {"SshEnabled", "1"},
     {"RecordFrontLock", "1"},
-    {"DisableRadar_Allow", "1"},
     {"GithubSshKeys", SSH_KEYS},
   };
   for (const auto& [key, value] : params) {

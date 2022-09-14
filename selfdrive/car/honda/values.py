@@ -6,6 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -113,7 +114,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
     HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   ],
   CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec),
+  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
     HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch_a),
     HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch_a),
@@ -131,7 +132,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.FIT: HondaCarInfo("Honda Fit 2018-20", harness=Harness.nidec),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", harness=Harness.nidec),
   CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", harness=Harness.nidec),
-  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-22", min_steer_speed=0., harness=Harness.nidec),
+  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
@@ -142,6 +143,14 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
 }
 
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.UDS_VERSION_RESPONSE],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ACCORD: {

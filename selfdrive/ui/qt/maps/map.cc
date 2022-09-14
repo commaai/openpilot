@@ -361,7 +361,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
-  is_rhd = Params().getBool("IsRHD");
+  is_rhd = Params().getBool("IsRhdDetected");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
   {
@@ -486,9 +486,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     // for rhd, reflect direction and then flip
     if (is_rhd) {
       if (fn.contains("left")) {
-        fn.replace(QString("left"), QString("right"));
+        fn.replace("left", "right");
       } else if (fn.contains("right")) {
-        fn.replace(QString("right"), QString("left"));
+        fn.replace("right", "left");
       }
     }
 
@@ -531,8 +531,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     }
 
     auto icon = new QLabel;
-    int wh = active ? 125 : 75;
-    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {wh, wh}, Qt::IgnoreAspectRatio));
+    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }

@@ -9,12 +9,13 @@ from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "subaru"
     ret.radarOffCan = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
+    ret.autoResumeSng = False
 
     if candidate in PREGLOBAL_CARS:
       ret.enableBsm = 0x25c in fingerprint[0]
@@ -71,7 +72,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
-    elif candidate == CAR.OUTBACK:
+    elif candidate in (CAR.OUTBACK, CAR.LEGACY):
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5

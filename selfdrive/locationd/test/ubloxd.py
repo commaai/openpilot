@@ -41,13 +41,13 @@ def configure_ublox(dev):
   ITMF_config2 = 25374
   payload = struct.pack('<II', ITMF_config1, ITMF_config2)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ITMF, payload)
-  #payload = struct.pack('<HHIBBBBBBBBBBH6BBB2BH4B3BB', 0, 8192, 0, 0, 0,
-  #                                                     0, 0, 0, 0, 0, 0,
-  #                                                     0, 0, 0, 0, 0, 0,
-  #                                                     0, 0, 0, 0, 0, 0,
-  #                                                     0, 0, 0, 0, 0, 0,
-  #                                                     0, 0, 0, 0)
-  #dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAVX5, payload)
+  payload = struct.pack('<HHIBBBBBBBBBBH6BBB2BH4B3BB', 0, (1 << 10), 0, 0, 0,
+                                                      0, 0, 0, 0, 0, 0,
+                                                      0, 1, 0, 0, 0, 0,
+                                                      0, 0, 0, 0, 0, 0,
+                                                      0, 0, 0, 0, 0, 0,
+                                                      0, 0, 0, 0)
+  dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAVX5, payload)
 
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAV5)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAVX5)
@@ -65,7 +65,7 @@ def configure_ublox(dev):
   print("backup restore polling message (implement custom response handler!):")
   dev.configure_poll(0x09, 0x14)
 
-  print("if succesfull, send this to clear the flash:")
+  print("if successful, send this to clear the flash:")
   dev.send_message(0x09, 0x14, b"\x01\x00\x00\x00")
 
   print("send on stop:")

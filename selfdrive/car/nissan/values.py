@@ -2,9 +2,12 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 from enum import Enum
 
+from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+
 Ecu = car.CarParams.Ecu
 
 
@@ -75,6 +78,33 @@ FINGERPRINTS = {
   ]
 }
 
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+
+NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
+NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
+
+NISSAN_RX_OFFSET = 0x20
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+    ),
+    Request(
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+      rx_offset=NISSAN_RX_OFFSET,
+    ),
+    Request(
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      rx_offset=NISSAN_RX_OFFSET,
+    ),
+  ],
+)
+
 FW_VERSIONS = {
   CAR.ALTIMA: {
     (Ecu.fwdCamera, 0x707, None): [
@@ -95,7 +125,7 @@ FW_VERSIONS = {
       b'5SH1BDB\x04\x18\x00\x00\x00\x00\x00_-?\x04\x91\xf2\x00\x00\x00\x80',
       b'5SK0ADB\x04\x18\x00\x00\x00\x00\x00_(5\x07\x9aQ\x00\x00\x00\x80',
     ],
-    (Ecu.esp, 0x740, None): [
+    (Ecu.abs, 0x740, None): [
       b'476605SH1D',
       b'476605SK2A',
     ],
@@ -112,7 +142,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x707, None): [
       b'284N86FR2A',
     ],
-    (Ecu.esp, 0x740, None): [
+    (Ecu.abs, 0x740, None): [
       b'6FU1BD\x11\x02\x00\x02e\x95e\x80iX#\x01\x00\x00\x00\x00\x00\x80',
       b'6FU0AD\x11\x02\x00\x02e\x95e\x80iQ#\x01\x00\x00\x00\x00\x00\x80',
     ],

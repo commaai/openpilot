@@ -23,9 +23,9 @@ common_src = [
 ]
 
 thneed_src = [
-  "thneed/thneed.cc",
+  "thneed/thneed_common.cc",
+  "thneed/thneed_qcom2.cc",
   "thneed/serialize.cc",
-  "thneed/optimizer.cc",
   "runners/thneedmodel.cc",
 ]
 
@@ -61,25 +61,53 @@ else:
 
 common_model = lenv.Object(common_src)
 
-# build thneed model
-if use_thneed and arch == "larch64":
-  fn = File("models/supercombo").abspath
-  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
-  cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} --in {fn}.dlc --out {fn}.thneed --binary --optimize"
-
-  lib_paths = ':'.join(Dir(p).abspath for p in lenv["LIBPATH"])
-  kernel_path = os.path.join(Dir('.').abspath, "thneed", "kernels")
-  cenv = Environment(ENV={'LD_LIBRARY_PATH': f"{lib_paths}:{lenv['ENV']['LD_LIBRARY_PATH']}", 'KERNEL_PATH': kernel_path})
-
-  kernels = [os.path.join(kernel_path, x) for x in os.listdir(kernel_path) if x.endswith(".cl")]
-  cenv.Command(fn + ".thneed", [fn + ".dlc", kernels, compiler], cmd)
-
 lenv.Program('_dmonitoringmodeld', [
     "dmonitoringmodeld.cc",
     "models/dmonitoring.cc",
   ]+common_model, LIBS=libs)
 
-lenv.Program('_modeld', [
+# build thneed model
+if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
+  fn = File("models/supercombo").abspath
+
+  if GetOption('pc_thneed'):
+    cmd = f"cd {Dir('#').abspath}/tinygrad_repo && NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+  else:
+    cmd = f"cd {Dir('#').abspath}/tinygrad_repo && FLOAT16=1 PYOPENCL_NO_CACHE=1 MATMUL=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+
+  # is there a better way then listing all of tinygrad?
+  lenv.Command(fn + ".thneed", [fn + ".onnx",
+    "#tinygrad_repo/openpilot/compile.py",
+    "#tinygrad_repo/accel/opencl/conv.cl",
+    "#tinygrad_repo/accel/opencl/matmul.cl",
+    "#tinygrad_repo/accel/opencl/ops_opencl.py",
+    "#tinygrad_repo/accel/opencl/preprocessing.py",
+    "#tinygrad_repo/extra/onnx.py",
+    "#tinygrad_repo/extra/utils.py",
+    "#tinygrad_repo/tinygrad/llops/ops_gpu.py",
+    "#tinygrad_repo/tinygrad/llops/ops_opencl.py",
+    "#tinygrad_repo/tinygrad/helpers.py",
+    "#tinygrad_repo/tinygrad/mlops.py",
+    "#tinygrad_repo/tinygrad/ops.py",
+    "#tinygrad_repo/tinygrad/shapetracker.py",
+    "#tinygrad_repo/tinygrad/tensor.py",
+    "#tinygrad_repo/tinygrad/nn/__init__.py"
+  ], cmd)
+
+llenv = lenv.Clone()
+if GetOption('pc_thneed'):
+  pc_thneed_src = [
+    "thneed/thneed_common.cc",
+    "thneed/thneed_pc.cc",
+    "thneed/serialize.cc",
+    "runners/thneedmodel.cc",
+  ]
+  llenv['CFLAGS'].append("-DUSE_THNEED")
+  llenv['CXXFLAGS'].append("-DUSE_THNEED")
+  common_model += llenv.Object(pc_thneed_src)
+  libs += ['dl']
+
+llenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
   ]+common_model, LIBS=libs + transformations)

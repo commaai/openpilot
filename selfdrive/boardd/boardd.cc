@@ -29,14 +29,12 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 
-#include "selfdrive/boardd/pigeon.h"
-
 // -- Multi-panda conventions --
 // Ordering:
 // - The internal panda will always be the first panda
 // - Consecutive pandas will be sorted based on panda type, and then serial number
 // Connecting:
-// - If a panda connection is dropped, boardd wil reconnect to all pandas
+// - If a panda connection is dropped, boardd will reconnect to all pandas
 // - If a panda is added, we will only reconnect when we are offroad
 // CAN buses:
 // - Each panda will have it's block of 4 buses. E.g.: the second panda will use
@@ -46,7 +44,7 @@
 // Safety:
 // - SafetyConfig is a list, which is mapped to the connected pandas
 // - If there are more pandas connected than there are SafetyConfigs,
-//   the excess pandas will remain in "silent" ot "noOutput" mode
+//   the excess pandas will remain in "silent" or "noOutput" mode
 // Ignition:
 // - If any of the ignition sources in any panda is high, ignition is high
 
@@ -197,13 +195,7 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
   if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
   }
-  panda->enable_deepsleep();
-
-  // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
-#ifndef __x86_64__
-  static std::once_flag connected_once;
-  std::call_once(connected_once, &Panda::set_usb_power_mode, panda, cereal::PeripheralState::UsbPowerMode::CDP);
-#endif
+  //panda->enable_deepsleep();
 
   sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
@@ -372,6 +364,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setAlternativeExperience(health.alternative_experience_pkt);
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
+    ps.setFanPower(health.fan_power);
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
@@ -392,13 +385,6 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 }
 
 void send_peripheral_state(PubMaster *pm, Panda *panda) {
-  auto pandaState_opt = panda->get_state();
-  if (!pandaState_opt) {
-    return;
-  }
-
-  health_t pandaState = *pandaState_opt;
-
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
@@ -416,7 +402,6 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   }
 
   uint16_t fan_speed_rpm = panda->get_fan_speed();
-  ps.setUsbPowerMode(cereal::PeripheralState::UsbPowerMode(pandaState.usb_power_mode_pkt));
   ps.setFanSpeedRpm(fan_speed_rpm);
 
   pm->send("peripheralState", msg);
@@ -483,7 +468,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 }
 
 
-void peripheral_control_thread(Panda *panda) {
+void peripheral_control_thread(Panda *panda, bool no_fan_control) {
   util::set_thread_name("boardd_peripheral_control");
 
   SubMaster sm({"deviceState", "driverCameraState"});
@@ -492,7 +477,6 @@ void peripheral_control_thread(Panda *panda) {
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
-  bool prev_charging_disabled = false;
   unsigned int cnt = 0;
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
@@ -501,24 +485,10 @@ void peripheral_control_thread(Panda *panda) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-    if (!Hardware::PC() && sm.updated("deviceState")) {
-      // Charging mode
-      bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
-      if (charging_disabled != prev_charging_disabled) {
-        if (charging_disabled) {
-          panda->set_usb_power_mode(cereal::PeripheralState::UsbPowerMode::CLIENT);
-          LOGW("TURN OFF CHARGING!\n");
-        } else {
-          panda->set_usb_power_mode(cereal::PeripheralState::UsbPowerMode::CDP);
-          LOGW("TURN ON CHARGING!\n");
-        }
-        prev_charging_disabled = charging_disabled;
-      }
-    }
-
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
-    if (sm.updated("deviceState")) {
+
+    if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0) {
@@ -526,6 +496,7 @@ void peripheral_control_thread(Panda *panda) {
         prev_fan_speed = fan_speed;
       }
     }
+
     if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
@@ -542,6 +513,7 @@ void peripheral_control_thread(Panda *panda) {
         ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
       }
     }
+
     // Disable ir_pwr on front frame timeout
     uint64_t cur_t = nanos_since_boot();
     if (cur_t - last_front_frame_t > 1e9) {
@@ -557,56 +529,6 @@ void peripheral_control_thread(Panda *panda) {
     if (!ignition && (cnt % 120 == 1)) {
       sync_time(panda, SyncTimeDir::TO_PANDA);
     }
-  }
-}
-
-static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
-  // create message
-  MessageBuilder msg;
-  msg.initEvent().setUbloxRaw(capnp::Data::Reader((uint8_t*)dat.data(), dat.length()));
-  pm.send("ubloxRaw", msg);
-}
-
-void pigeon_thread(Panda *panda) {
-  util::set_thread_name("boardd_pigeon");
-
-  PubMaster pm({"ubloxRaw"});
-  bool ignition_last = false;
-
-  std::unique_ptr<Pigeon> pigeon(Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda));
-
-  while (!do_exit && panda->connected) {
-    bool need_reset = false;
-    bool ignition_local = ignition;
-    std::string recv = pigeon->receive();
-
-    // Check based on null bytes
-    if (ignition_local && recv.length() > 0 && recv[0] == (char)0x00) {
-      need_reset = true;
-      LOGW("received invalid ublox message while onroad, resetting panda GPS");
-    }
-
-    if (recv.length() > 0) {
-      pigeon_publish_raw(pm, recv);
-    }
-
-    // init pigeon on rising ignition edge
-    // since it was turned off in low power mode
-    if((ignition_local && !ignition_last) || need_reset) {
-      pigeon_active = true;
-      pigeon->init();
-    } else if (!ignition_local && ignition_last) {
-      // power off on falling edge of ignition
-      LOGD("powering off pigeon\n");
-      pigeon->stop();
-      pigeon->set_power(false);
-      pigeon_active = false;
-    }
-
-    ignition_last = ignition_local;
-
-    // 10ms - 100 Hz
-    util::sleep_for(10);
   }
 }
 
@@ -647,8 +569,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
     std::vector<std::thread> threads;
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
-    threads.emplace_back(peripheral_control_thread, peripheral_panda);
-    threads.emplace_back(pigeon_thread, peripheral_panda);
+    threads.emplace_back(peripheral_control_thread, peripheral_panda, getenv("NO_FAN_CONTROL") != nullptr);
 
     threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, pandas);

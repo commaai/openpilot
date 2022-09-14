@@ -90,8 +90,6 @@ selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/can_list_to_can_capnp.cc
 selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
-selfdrive/boardd/pigeon.cc
-selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 
@@ -103,6 +101,7 @@ selfdrive/car/interfaces.py
 selfdrive/car/vin.py
 selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
+selfdrive/car/fw_query_definitions.py
 selfdrive/car/ecu_addrs.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
@@ -175,7 +174,6 @@ selfdrive/controls/lib/alerts_offroad.json
 selfdrive/controls/lib/desire_helper.py
 selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/events.py
-selfdrive/controls/lib/lane_planner.py
 selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_torque.py
@@ -282,6 +280,7 @@ selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
 selfdrive/sensord/sensord
+selfdrive/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
@@ -353,7 +352,7 @@ selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
-selfdrive/modeld/models/supercombo.dlc
+selfdrive/modeld/models/supercombo.onnx
 selfdrive/modeld/models/dmonitoring_model_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
@@ -364,12 +363,11 @@ selfdrive/modeld/transforms/transform.h
 selfdrive/modeld/transforms/transform.cl
 
 selfdrive/modeld/thneed/*.py
-selfdrive/modeld/thneed/thneed.*
+selfdrive/modeld/thneed/thneed.h
+selfdrive/modeld/thneed/thneed_common.cc
+selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
-selfdrive/modeld/thneed/compile.cc
-selfdrive/modeld/thneed/optimizer.cc
 selfdrive/modeld/thneed/include/*
-selfdrive/modeld/thneed/kernels/*.cl
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
@@ -434,6 +432,19 @@ rednose/.gitignore
 rednose/**
 laika/**
 
+body/.gitignore
+body/board/SConscript
+body/board/*.h
+body/board/*.c
+body/board/*.s
+body/board/*.ld
+body/board/inc/**
+body/board/obj/
+body/board/bldc/**
+body/board/drivers/**
+body/certs/**
+body/crypto/**
+
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
@@ -491,6 +502,7 @@ opendbc/can/parser_pyx.pyx
 
 opendbc/comma_body.dbc
 
+opendbc/chrysler_ram_hd_generated.dbc
 opendbc/chrysler_ram_dt_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_generated.dbc
 opendbc/chrysler_pacifica_2017_hybrid_private_fusion.dbc
@@ -499,6 +511,8 @@ opendbc/gm_global_a_powertrain_generated.dbc
 opendbc/gm_global_a_object.dbc
 opendbc/gm_global_a_chassis.dbc
 
+opendbc/FORD_CADS.dbc
+opendbc/ford_fusion_2018_adas.dbc
 opendbc/ford_lincoln_base_pt.dbc
 
 opendbc/honda_accord_2018_can_generated.dbc
@@ -518,7 +532,7 @@ opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 opendbc/honda_civic_ex_2022_can_generated.dbc
 
-opendbc/kia_ev6.dbc
+opendbc/hyundai_canfd.dbc
 opendbc/hyundai_kia_generic.dbc
 opendbc/hyundai_kia_mando_front_radar.dbc
 
@@ -538,8 +552,22 @@ opendbc/toyota_nodsu_pt_generated.dbc
 opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
+opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
+
+tinygrad_repo/openpilot/compile.py
+tinygrad_repo/accel/opencl/*
+tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/utils.py
+tinygrad_repo/tinygrad/llops/ops_gpu.py
+tinygrad_repo/tinygrad/llops/ops_opencl.py
+tinygrad_repo/tinygrad/helpers.py
+tinygrad_repo/tinygrad/mlops.py
+tinygrad_repo/tinygrad/ops.py
+tinygrad_repo/tinygrad/shapetracker.py
+tinygrad_repo/tinygrad/tensor.py
+tinygrad_repo/tinygrad/nn/__init__.py

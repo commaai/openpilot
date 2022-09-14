@@ -287,7 +287,7 @@ class Tici(HardwareBase):
     ]
 
     upload = [
-      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
       (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
 
       # Create class 1:20 with specified rate limit
@@ -372,7 +372,6 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
@@ -462,6 +461,17 @@ class Tici(HardwareBase):
     # *** VIDC (encoder) config ***
     sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
     sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+
+    # *** unexport GPIO for sensors ***
+    # remove from /userspace/usr/comma/gpio.sh
+    sudo_write(str(GPIO.BMX055_ACCEL_INT), "/sys/class/gpio/unexport")
+    sudo_write(str(GPIO.BMX055_GYRO_INT),  "/sys/class/gpio/unexport")
+    sudo_write(str(GPIO.BMX055_MAGN_INT),  "/sys/class/gpio/unexport")
+    sudo_write(str(GPIO.LSM_INT),          "/sys/class/gpio/unexport")
+
+    # *** set /dev/gpiochip0 rights to make accessible by sensord
+    os.system("sudo chmod +r /dev/gpiochip0")
+
 
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
