@@ -215,7 +215,7 @@ class Controls:
         controls_state = log.ControlsState.from_bytes(controls_state)
         self.v_cruise_kph = controls_state.vCruise
 
-      if self.sm['pandaStates'][0].controlsAllowed:
+      if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
         self.state = State.enabled
 
   def update_events(self, CS):

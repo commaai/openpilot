@@ -19,7 +19,6 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 class CarControllerParams:
   HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
-  GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
   ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
   ACC_HUD_STEP = 4                        # ACC_GRA_Anziege frequency 25Hz
 
@@ -774,6 +773,7 @@ FW_VERSIONS = {
       b'\xf1\x875G0906259L \xf1\x890002',
       b'\xf1\x875G0906259Q \xf1\x890002',
       b'\xf1\x878V0906259F \xf1\x890002',
+      b'\xf1\x878V0906259J \xf1\x890002',
       b'\xf1\x878V0906259K \xf1\x890001',
       b'\xf1\x878V0906264B \xf1\x890003',
       b'\xf1\x878V0907115B \xf1\x890007',
@@ -792,6 +792,7 @@ FW_VERSIONS = {
       b'\xf1\x870DD300046F \xf1\x891602',
       b'\xf1\x870DD300046G \xf1\x891601',
       b'\xf1\x870DL300012E \xf1\x892012',
+      b'\xf1\x870GC300011  \xf1\x890403',
       b'\xf1\x870GC300013M \xf1\x892402',
       b'\xf1\x870GC300042J \xf1\x891402',
     ],
@@ -799,6 +800,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655AB\xf1\x890388\xf1\x82\0211111001111111206110412111321139114',
       b'\xf1\x875Q0959655AM\xf1\x890315\xf1\x82\x1311111111111111311411011231129321212100',
       b'\xf1\x875Q0959655AM\xf1\x890318\xf1\x82\x1311111111111112311411011531159321212100',
+      b'\xf1\x875Q0959655AR\xf1\x890315\xf1\x82\x1311110011131115311211012331239321212100',
       b'\xf1\x875Q0959655BJ\xf1\x890339\xf1\x82\x1311110011131100311111011731179321342100',
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\x13111112111111--241115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221',
@@ -809,6 +811,7 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873Q0909144H \xf1\x895061\xf1\x82\00566G0HA14A1',
+      b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571G01A16A1',
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571G0HA16A1',
       b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571G0JA14A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521G0G809A1',
