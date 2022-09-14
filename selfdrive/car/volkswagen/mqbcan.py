@@ -96,7 +96,7 @@ def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control,
   return commands
 
 
-def create_acc_hud_control(packer, bus, acc_hud_status, set_speed):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
   values = {
     "ACC_Status_Anzeige": acc_hud_status,
     "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
