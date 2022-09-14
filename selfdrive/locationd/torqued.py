@@ -116,9 +116,8 @@ class TorqueEstimator:
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
+        params.remove("LiveTorqueCarParams")
         params.remove("LiveTorqueParameters")
-        # TODO: remove this
-        raise
 
     self.filtered_params = {}
     for param in initial_params:
