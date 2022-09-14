@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import os
 import unittest
 import random
@@ -14,8 +13,6 @@ from selfdrive.test.process_replay.process_replay import FakeSubMaster, CONFIGS
 
 AlertSize = log.ControlsState.AlertSize
 
-OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")
-
 # TODO: add callback alerts
 ALERTS = []
 for event_types in EVENTS.values():
@@ -27,14 +24,11 @@ class TestAlerts(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    with open(OFFROAD_ALERTS_PATH) as f:
-      cls.offroad_alerts = json.loads(f.read())
-
-      # Create fake objects for callback
-      cls.CS = car.CarState.new_message()
-      cls.CP = car.CarParams.new_message()
-      cfg = [c for c in CONFIGS if c.proc_name == 'controlsd'][0]
-      cls.sm = FakeSubMaster(cfg.pub_sub.keys())
+    # Create fake objects for callback
+    cls.CS = car.CarState.new_message()
+    cls.CP = car.CarParams.new_message()
+    cfg = [c for c in CONFIGS if c.proc_name == 'controlsd'][0]
+    cls.sm = FakeSubMaster(cfg.pub_sub.keys())
 
   def test_events_defined(self):
     # Ensure all events in capnp schema are defined in events.py
@@ -102,29 +96,6 @@ class TestAlerts(unittest.TestCase):
 
         if event_type not in (ET.WARNING, ET.PERMANENT, ET.PRE_ENABLE):
           self.assertEqual(a.creation_delay, 0.)
-
-  def test_offroad_alerts(self):
-    params = Params()
-    for a in self.offroad_alerts:
-      # set the alert
-      alert = self.offroad_alerts[a]
-      set_offroad_alert(a, True)
-      self.assertTrue(json.dumps(alert) == params.get(a, encoding='utf8'))
-
-      # then delete it
-      set_offroad_alert(a, False)
-      self.assertTrue(params.get(a) is None)
-
-  def test_offroad_alerts_extra_text(self):
-    params = Params()
-    for i in range(50):
-      # set the alert
-      a = random.choice(list(self.offroad_alerts))
-      set_offroad_alert(a, True, extra_text="a"*i)
-
-      expected_txt = "a"*i
-      written_txt = json.loads(params.get(a, encoding='utf8'))['text']
-      self.assertTrue(expected_txt == written_txt)
 
 if __name__ == "__main__":
   unittest.main()

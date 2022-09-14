@@ -76,18 +76,20 @@ OffroadAlert::OffroadAlert(QWidget *parent) : AbstractAlert(parent) {
 }
 
 int OffroadAlert::refresh() {
-  int alertCount = 0;
   Params params;
+  int alertCount = 0;
+
   for (const auto &[key, a] : alerts) {
-    QString text;
     if (params.exists(key)) {
-      std::string extra_text = params.get(key);
-      text = extra_text.empty() ? a.text : a.text.arg(QString::fromStdString(extra_text));
+      std::string extra = params.get(key);
+      a.label->setText(extra.empty() ? a.text : a.text.arg(extra.c_str()));
+      a.label->setVisible(true);
+      ++alertCount;
+    } else {
+      a.label->setVisible(false);
     }
-    a.label->setText(text);
-    a.label->setVisible(!text.isEmpty());
-    alertCount += !text.isEmpty();
   }
+
   snooze_btn->setVisible(alerts["Offroad_ConnectivityNeeded"].label->isVisible());
   return alertCount;
 }
