@@ -228,9 +228,8 @@ bool BMX055_Magn::get_event(MessageBuilder &msg, std::string &service, uint64_t 
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
 
-  // TODO: this needs a revisit...
-  //uint8_t drdy_data = 0;
-  //read_register(BMX055_MAGN_I2C_REG_RHALL_LSB, &drdy_data, sizeof(drdy_data));
+  int len = read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
+  assert(len == sizeof(buffer));
 
   bool parsed = parse_xyz(buffer, &_x, &_y, &z);
   if (parsed) {
