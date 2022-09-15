@@ -43,4 +43,4 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
   addr, vin_rx_addr, bus, vin = get_vin(logcan, sendcan, debug=False)
-  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, BUS: {bus} VIN: {vin}')
+  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, BUS: {bus}, VIN: {vin}')
