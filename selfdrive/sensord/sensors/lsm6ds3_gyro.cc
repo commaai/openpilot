@@ -5,6 +5,7 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/util.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
@@ -46,6 +47,9 @@ int LSM6DS3_Gyro::init() {
   if (ret < 0) {
     goto fail;
   }
+
+  // give gyro time to wake up from power down mode
+  util::sleep_for(50);
 
   // enable data ready interrupt for gyro on INT1
   // (without resetting existing interrupts)
