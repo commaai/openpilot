@@ -65,7 +65,7 @@ class CarState(CarStateBase):
     dash_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"]
     self.dash_speed_seen = self.dash_speed_seen or dash_speed > 1e-3
     if self.dash_speed_seen:
-      self.vEgoCluster = dash_speed * speed_conv
+      ret.vEgoCluster = dash_speed * speed_conv
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
