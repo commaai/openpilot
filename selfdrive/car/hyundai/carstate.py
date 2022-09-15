@@ -63,9 +63,20 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
 
-    self.dash_speed_seen = self.dash_speed_seen or cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] > 1e-3
-    if self.dash_speed_seen:
-      ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * speed_conv
+    FIRST_METHOD = True
+
+    # Hopefully vehicle speed matches a bit better
+    if FIRST_METHOD:
+      ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS
+    else:
+      ret.vEgoCluster = ret.vEgo
+
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS
+    self.cluster_min_speed = CV.KPH_TO_MS
+
+    # # i've seen vEgoRaw get to 1-2 before cluster updates, so pick 6 mph to be safe
+    # if ret.vEgoRaw > 3 and len(cp.vl_all["CLU15"]["CF_Clu_VehicleSpeed"]):
+    #   assert cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] > 0, (ret.vEgoRaw, cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"], cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * speed_conv)
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
@@ -235,7 +246,7 @@ class CarState(CarStateBase):
       ("CF_Clu_AmpInfo", "CLU11"),
       ("CF_Clu_AliveCnt1", "CLU11"),
 
-      # ("CF_Clu_VehicleSpeed", "CLU15"),
+      ("CF_Clu_VehicleSpeed", "CLU15"),
       ("CF_Clu_VehicleSpeed2", "CLU15"),
 
       ("ACCEnable", "TCS13"),
