@@ -33,10 +33,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    # wheel speed scaling is 0.057x, that means the minimum speed in kph for a single wheel is 0.057 kph
-    # and if one wheel is somehow at 0.057 kph with an average of (0.057+0+0+0)/4=0.01425 kph ()
-    # if all wheels are at the minimum signal value, then that is above 0.01 m/s
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = ret.vEgoRaw == 0
 
     # continuous blinker signals for assisted lane change
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
