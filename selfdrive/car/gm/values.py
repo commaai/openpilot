@@ -71,7 +71,7 @@ class Footnote(Enum):
 
 @dataclass
 class GMCarInfo(CarInfo):
-  package: str = "Adaptive Cruise Control"
+  package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.obd_ii
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.OBD_II])
 
