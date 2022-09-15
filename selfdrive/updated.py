@@ -60,18 +60,18 @@ class WaitTimeHelper:
     self.proc = proc
     self.ready_event = threading.Event()
     self.shutdown = False
-    self.check_for_update = False
+    self.only_check_for_update = False
     signal.signal(signal.SIGHUP, self.update_now)
     signal.signal(signal.SIGUSR1, self.check_now)
 
   def update_now(self, signum: int, frame) -> None:
     cloudlog.info("caught SIGHUP, attempting to downloading update")
-    self.check_for_update = False
+    self.only_check_for_update = False
     self.ready_event.set()
 
   def check_now(self, signum: int, frame) -> None:
     cloudlog.info("caught SIGUSR1, checking for updates")
-    self.check_for_update = True
+    self.only_check_for_update = True
     self.ready_event.set()
 
   def sleep(self, t: float) -> None:
@@ -428,7 +428,7 @@ def main() -> None:
   updater = Updater()
   updater.set_params(0, None)
   # no fetch on the first time
-  wait_helper.check_for_update = True
+  wait_helper.only_check_for_update = True
 
   # Run the update loop
   while True:
@@ -438,6 +438,7 @@ def main() -> None:
     exception = None
     update_failed_count += 1
     try:
+      # TODO: reuse overlay from previous updated instance if it looks clean
       init_overlay()
 
       # check for update
@@ -445,8 +446,9 @@ def main() -> None:
       updater.check_for_update()
 
       # download update
-      if not wait_helper.check_for_update:
-        wait_helper.check_for_update = False
+      if wait_helper.only_check_for_update:
+        cloudlog.info("skipping fetch this cycle")
+      else:
         updater.fetch_update()
       update_failed_count = 0
     except subprocess.CalledProcessError as e:
@@ -470,6 +472,7 @@ def main() -> None:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # infrequent attempts if we successfully updated recently
+    wait_helper.only_check_for_update = False
     wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
 
 
