@@ -69,7 +69,7 @@ class CarState(CarStateBase):
     if self.accurate_dash_speed_seen:
       self.vEgoCluster = accurate_dash_speed * speed_conv
     else:
-      self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 0.5  # seems to be best at 0.111111 m/s
+      self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2  # seems to be best at 0.111111 m/s
       self.cluster_min_speed = CV.KPH_TO_MS
       ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS
 
