@@ -1031,7 +1031,12 @@ location set</source>
         <translation type="vanished">輸入分支名稱</translation>
     </message>
     <message>
-        <location filename="../qt/offroad/software_settings.cc" line="+29"/>
+        <location filename="../qt/offroad/software_settings.cc" line="+24"/>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Current Version</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1043,6 +1048,11 @@ location set</source>
     <message>
         <location line="+12"/>
         <source>Install Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>INSTALL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

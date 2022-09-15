@@ -21,7 +21,7 @@ void SoftwarePanel::checkForUpdates() {
 }
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
-  onroadLbl = new QLabel("Updates are only downloaded while the car is off.");
+  onroadLbl = new QLabel(tr("Updates are only downloaded while the car is off."));
   onroadLbl->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left; padding-top: 30px; padding-bottom: 30px;");
   addItem(onroadLbl);
 
@@ -42,7 +42,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   addItem(downloadBtn);
 
   // install update btn
-  installBtn = new ButtonControl(tr("Install Update"), "INSTALL");
+  installBtn = new ButtonControl(tr("Install Update"), tr("INSTALL"));
   connect(installBtn, &ButtonControl::clicked, [=]() {
     installBtn->setEnabled(false);
     params.putBool("DoShutdown", true);
