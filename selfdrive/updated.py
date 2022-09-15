@@ -32,6 +32,7 @@ import signal
 import fcntl
 import time
 import threading
+from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional
 from markdown_it import MarkdownIt
@@ -239,7 +240,7 @@ def handle_agnos_update() -> None:
 class Updater:
   def __init__(self):
     self.params = Params()
-    self.branches = {}
+    self.branches = defaultdict(lambda: None)
 
   @property
   def target_branch(self):
@@ -261,9 +262,11 @@ class Updater:
 
   @property
   def update_available(self):
-    hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
-    branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
-    return hash_mismatch or branch_mismatch
+    if os.path.isdir(OVERLAY_MERGED):
+      hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
+      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
+      return hash_mismatch or branch_mismatch
+    return False
 
   def get_branch(self, path: str):
     return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
@@ -339,7 +342,7 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
     output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
 
-    self.branches = {}
+    self.branches = defaultdict(lambda: None)
     for line in output.split('\n'):
       ls_remotes_re = r'(?P<commit_sha>\b[0-9a-f]{5,40}\b)(\s+)(refs\/heads\/)(?P<branch_name>.*$)'
       x = re.fullmatch(ls_remotes_re, line.strip())
@@ -424,6 +427,7 @@ def main() -> None:
   wait_helper = WaitTimeHelper(proc)
 
   updater = Updater()
+  updater.set_params(0, None)
 
   # Run the update loop
   while True:
