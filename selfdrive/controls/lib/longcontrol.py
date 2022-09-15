@@ -23,6 +23,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
 
   starting_condition = (v_target_1sec > CP.vEgoStarting and
                         accelerating and
+                        not cruise_standstill and
                         not brake_pressed)
   started_condition = v_ego > CP.vEgoStarting
 
@@ -44,7 +45,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
         long_control_state = LongCtrlState.pid
 
     elif long_control_state == LongCtrlState.starting:
-      if planned_stop:
+      if stopping_condition:
         long_control_state = LongCtrlState.stopping
       elif started_condition:
         long_control_state = LongCtrlState.pid
