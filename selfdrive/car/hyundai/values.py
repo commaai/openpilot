@@ -29,6 +29,8 @@ class CarControllerParams:
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
       self.STEER_THRESHOLD = 250
+      self.STEER_DELTA_UP = 2
+      self.STEER_DELTA_DOWN = 3
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
@@ -1296,6 +1298,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_EV6: {
     (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00CV  IEB \x03 101!\x10\x18 58520-CV100',
       b'\xf1\x8758520CV100\xf1\x00CV  IEB \x02 101!\x10\x18 58520-CV100',
     ],
     (Ecu.eps, 0x7d4, None): [
@@ -1307,6 +1310,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
+      b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.05 99210-CV000 211027',
     ],
   },
   CAR.IONIQ_5: {
