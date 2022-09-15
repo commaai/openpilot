@@ -985,42 +985,42 @@ location set</source>
     <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트는 차량 연결이 해제되어 있는 동안에만 다운로드됩니다.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 버전</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>다운로드</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 설치</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>설치</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>대상 브랜치</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>선택</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>브랜치 선택</translation>
     </message>
     <message>
         <location line="+12"/>
