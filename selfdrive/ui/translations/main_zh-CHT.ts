@@ -193,7 +193,7 @@
         <translation>更改</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Select a language</source>
         <translation>選擇語言</translation>
     </message>
@@ -418,7 +418,7 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 立即註冊：https://connect.comma.ai</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+58"/>
         <source>No home
 location set</source>
         <translation>未設定
@@ -432,7 +432,7 @@ location set</source>
 工作位置</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+120"/>
         <source>no recent destinations</source>
         <translation>沒有最近的導航記錄</translation>
     </message>
@@ -718,7 +718,7 @@ location set</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+101"/>
+        <location filename="../qt/offroad/settings.cc" line="+22"/>
         <source>×</source>
         <translation>×</translation>
     </message>
@@ -983,68 +983,47 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-130"/>
-        <source>Git Branch</source>
-        <translation>Git 分支</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git Commit</source>
-        <translation>Git 提交</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>OS Version</source>
-        <translation>系統版本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Version</source>
-        <translation>版本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Last Update Check</source>
-        <translation>上次檢查時間</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>上次成功檢查更新的時間。更新系統只會在車子熄火時執行。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Check for Update</source>
-        <translation>檢查更新</translation>
+        <location filename="../qt/offroad/software_settings.cc" line="+24"/>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>CHECKING</source>
-        <translation>檢查中</translation>
+        <source>Current Version</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Switch Branch</source>
-        <translation>切換分支</translation>
+        <location line="+4"/>
+        <source>Download</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>ENTER</source>
-        <translation>切換</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <location line="+2"/>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>新的分支將會在下次檢查更新時切換過去。</translation>
+        <location line="+12"/>
+        <source>Install Update</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
-        <source>Enter branch name</source>
-        <translation>輸入分支名稱</translation>
+        <source>INSTALL</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+8"/>
+        <source>Target Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>SELECT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Select a branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>UNINSTALL</source>
         <translation>卸載</translation>
     </message>
@@ -1059,13 +1038,8 @@ location set</source>
         <translation>您確定您要卸載嗎？</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>failed to fetch update</source>
-        <translation>下載更新失敗</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+21"/>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
         <translation>檢查</translation>
     </message>
@@ -1083,7 +1057,7 @@ location set</source>
         <translation>警告：這將授權給 GitHub 帳號中所有公鑰 SSH 訪問權限。切勿輸入非您自己的 GitHub 用戶名。comma 員工「永遠不會」要求您添加他們的 GitHub 用戶名。</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
         <location line="+24"/>
         <source>ADD</source>
         <translation>新增</translation>
@@ -1153,7 +1127,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-324"/>
+        <location filename="../qt/offroad/settings.cc" line="-303"/>
         <source>Enable openpilot</source>
         <translation>啟用 openpilot</translation>
     </message>
@@ -1290,12 +1264,11 @@ location set</source>
     <name>WifiUI</name>
     <message>
         <location filename="../qt/offroad/networking.cc" line="+113"/>
-        <location line="+53"/>
         <source>Scanning for networks...</source>
         <translation>掃描無線網路中...</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+80"/>
         <source>CONNECTING...</source>
         <translation>連線中...</translation>
     </message>

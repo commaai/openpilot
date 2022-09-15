@@ -193,7 +193,7 @@
         <translation>変更</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Select a language</source>
         <translation>言語を選択</translation>
     </message>
@@ -418,7 +418,7 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 詳しくはこちら：https://connect.comma.ai</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+58"/>
         <source>No home
 location set</source>
         <translation>自宅の住所はまだ
@@ -432,7 +432,7 @@ location set</source>
 設定されていません</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+120"/>
         <source>no recent destinations</source>
         <translation>最近の目的地履歴がありません</translation>
     </message>
@@ -718,7 +718,7 @@ location set</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+101"/>
+        <location filename="../qt/offroad/settings.cc" line="+22"/>
         <source>×</source>
         <translation>×</translation>
     </message>
@@ -983,68 +983,47 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-130"/>
-        <source>Git Branch</source>
-        <translation>Git ブランチ</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git Commit</source>
-        <translation>Git コミット</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>OS Version</source>
-        <translation>OS バージョン</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Version</source>
-        <translation>バージョン</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Last Update Check</source>
-        <translation>最終更新確認</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>openpilotが最後にアップデートの確認に成功してからの時間です。アップデート処理は、車の電源が切れているときのみ実行されます。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Check for Update</source>
-        <translation>更新プログラムをチェック</translation>
+        <location filename="../qt/offroad/software_settings.cc" line="+24"/>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>CHECKING</source>
-        <translation>確認中</translation>
+        <source>Current Version</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Switch Branch</source>
-        <translation>ブランチの切り替え</translation>
+        <location line="+4"/>
+        <source>Download</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>ENTER</source>
-        <translation>切替</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <location line="+2"/>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>updater を実行する時にブランチを切り替えます。</translation>
+        <location line="+12"/>
+        <source>Install Update</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
-        <source>Enter branch name</source>
-        <translation>ブランチ名を入力</translation>
+        <source>INSTALL</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+8"/>
+        <source>Target Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>SELECT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Select a branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>UNINSTALL</source>
         <translation>アンインストール</translation>
     </message>
@@ -1059,13 +1038,8 @@ location set</source>
         <translation>アンインストールしてもよろしいですか？</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>failed to fetch update</source>
-        <translation>更新のﾀﾞｳﾝﾛｰﾄﾞにｴﾗｰが発生しました</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+21"/>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
         <translation>確認</translation>
     </message>
@@ -1083,7 +1057,7 @@ location set</source>
         <translation>警告: これは、GitHub の設定にあるすべての公開鍵への SSH アクセスを許可するものです。自分以外の GitHub のユーザー名を入力しないでください。コンマのスタッフが GitHub のユーザー名を追加するようお願いすることはありません。</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
         <location line="+24"/>
         <source>ADD</source>
         <translation>追加</translation>
@@ -1153,7 +1127,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-324"/>
+        <location filename="../qt/offroad/settings.cc" line="-303"/>
         <source>Enable openpilot</source>
         <translation>openpilot を有効化</translation>
     </message>
@@ -1290,12 +1264,11 @@ location set</source>
     <name>WifiUI</name>
     <message>
         <location filename="../qt/offroad/networking.cc" line="+113"/>
-        <location line="+53"/>
         <source>Scanning for networks...</source>
         <translation>ネットワークをスキャン中...</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+80"/>
         <source>CONNECTING...</source>
         <translation>接続中...</translation>
     </message>

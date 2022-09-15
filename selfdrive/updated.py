@@ -23,6 +23,7 @@
 # disable this service.
 
 import os
+import re
 import datetime
 import subprocess
 import psutil
@@ -31,8 +32,9 @@ import signal
 import fcntl
 import time
 import threading
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Union, Optional
 from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
@@ -54,20 +56,27 @@ DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 
 class WaitTimeHelper:
-  def __init__(self, proc):
-    self.proc = proc
+  def __init__(self):
     self.ready_event = threading.Event()
+    self.only_check_for_update = False
     signal.signal(signal.SIGHUP, self.update_now)
+    signal.signal(signal.SIGUSR1, self.check_now)
 
   def update_now(self, signum: int, frame) -> None:
-    cloudlog.info("caught SIGHUP, running update check immediately")
+    cloudlog.info("caught SIGHUP, attempting to downloading update")
+    self.only_check_for_update = False
+    self.ready_event.set()
+
+  def check_now(self, signum: int, frame) -> None:
+    cloudlog.info("caught SIGUSR1, checking for updates")
+    self.only_check_for_update = True
     self.ready_event.set()
 
   def sleep(self, t: float) -> None:
     self.ready_event.wait(timeout=t)
 
 
-def run(cmd: List[str], cwd: Optional[str] = None):
+def run(cmd: List[str], cwd: Optional[str] = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -80,59 +89,19 @@ def set_consistent_flag(consistent: bool) -> None:
     consistent_file.unlink(missing_ok=True)
   os.sync()
 
-
-def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -> None:
-  params = Params()
-
-  params.put("UpdateFailedCount", str(failed_count))
-
-  last_update = datetime.datetime.utcnow()
-  if failed_count == 0:
-    t = last_update.isoformat()
-    params.put("LastUpdateTime", t.encode('utf8'))
-  else:
+def parse_release_notes(basedir: str) -> bytes:
+  try:
+    with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
+      r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
     try:
-      t = params.get("LastUpdateTime", encoding='utf8')
-      last_update = datetime.datetime.fromisoformat(t)
-    except (TypeError, ValueError):
-      pass
-
-  if exception is None:
-    params.remove("LastUpdateException")
-  else:
-    params.put("LastUpdateException", exception)
-
-  # Write out release notes for new versions
-  if new_version:
-    try:
-      with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
-        r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
-      try:
-        params.put("ReleaseNotes", MarkdownIt().render(r.decode("utf-8")))
-      except Exception:
-        params.put("ReleaseNotes", r + b"\n")
+      return bytes(MarkdownIt().render(r.decode("utf-8")), encoding="utf-8")
     except Exception:
-      params.put("ReleaseNotes", "")
-    params.put_bool("UpdateAvailable", True)
-
-  # Handle user prompt
-  for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
-    set_offroad_alert(alert, False)
-
-  now = datetime.datetime.utcnow()
-  dt = now - last_update
-  if failed_count > 15 and exception is not None:
-    if is_tested_branch():
-      extra_text = "Ensure the software is correctly installed"
-    else:
-      extra_text = exception
-    set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
-  elif dt.days > DAYS_NO_CONNECTIVITY_MAX and failed_count > 1:
-    set_offroad_alert("Offroad_ConnectivityNeeded", True)
-  elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-    remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
-    set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
-
+      return r + b"\n"
+  except FileNotFoundError:
+    pass
+  except Exception:
+    cloudlog.exception("failed to parse release notes")
+  return b""
 
 def setup_git_options(cwd: str) -> None:
   # We sync FS object atimes (which NEOS doesn't use) and mtimes, but ctimes
@@ -267,65 +236,161 @@ def handle_agnos_update() -> None:
   set_offroad_alert("Offroad_NeosUpdate", False)
 
 
-def check_git_fetch_result(fetch_txt: str) -> bool:
-  err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
-  return len(fetch_txt) > 0 and (fetch_txt != err_msg)
 
+class Updater:
+  def __init__(self):
+    self.params = Params()
+    self.branches = defaultdict(lambda: None)
 
-def check_for_update() -> Tuple[bool, bool]:
-  setup_git_options(OVERLAY_MERGED)
-  try:
-    git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED)
-    return True, check_git_fetch_result(git_fetch_output)
-  except subprocess.CalledProcessError:
-    return False, False
+  @property
+  def target_branch(self) -> str:
+    b: Union[str, None] = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    if b is None:
+      b = self.get_branch(BASEDIR)
+      self.params.put("UpdaterTargetBranch", b)
+    return b
 
+  @property
+  def update_ready(self) -> bool:
+    consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
+    if consistent_file.is_file():
+      hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_branch]
+      branch_mismatch = self.get_branch(BASEDIR) != self.target_branch
+      on_target_branch = self.get_branch(FINALIZED) == self.target_branch
+      return ((hash_mismatch or branch_mismatch) and on_target_branch)
+    return False
 
-def fetch_update() -> bool:
-  cloudlog.info("attempting git fetch inside staging overlay")
+  @property
+  def update_available(self) -> bool:
+    if os.path.isdir(OVERLAY_MERGED):
+      hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
+      branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
+      return hash_mismatch or branch_mismatch
+    return False
 
-  setup_git_options(OVERLAY_MERGED)
+  def get_branch(self, path: str) -> str:
+    return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
 
-  git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED)
-  cloudlog.info("git fetch success: %s", git_fetch_output)
+  def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
+    return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
-  cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
-  upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
-  new_version: bool = cur_hash != upstream_hash
-  git_fetch_result = check_git_fetch_result(git_fetch_output)
+  def set_params(self, failed_count: int, exception: Optional[str]) -> None:
+    self.params.put("UpdateFailedCount", str(failed_count))
 
-  new_branch = Params().get("SwitchToBranch", encoding='utf8')
-  if new_branch is not None:
-    new_version = True
+    self.params.put_bool("UpdaterFetchAvailable", self.update_available)
+    self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
-  cloudlog.info(f"comparing {cur_hash} to {upstream_hash}")
-  if new_version or git_fetch_result:
-    cloudlog.info("Running update")
+    last_update = datetime.datetime.utcnow()
+    if failed_count == 0:
+      t = last_update.isoformat()
+      self.params.put("LastUpdateTime", t.encode('utf8'))
+    else:
+      try:
+        t = self.params.get("LastUpdateTime", encoding='utf8')
+        last_update = datetime.datetime.fromisoformat(t)
+      except (TypeError, ValueError):
+        pass
 
-    if new_version:
-      cloudlog.info("git reset in progress")
-      cmds = [
-        ["git", "reset", "--hard", "@{u}"],
-        ["git", "clean", "-xdf"],
-        ["git", "submodule", "init"],
-        ["git", "submodule", "update"],
-      ]
-      if new_branch is not None:
-        cloudlog.info(f"switching to branch {repr(new_branch)}")
-        cmds.insert(0, ["git", "checkout", "-f", new_branch])
-      r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
-      cloudlog.info("git reset success: %s", '\n'.join(r))
+    if exception is None:
+      self.params.remove("LastUpdateException")
+    else:
+      self.params.put("LastUpdateException", exception)
 
-      if AGNOS:
-        handle_agnos_update()
+    # Write out current and new version info
+    def get_description(basedir: str) -> str:
+      version = ""
+      branch = ""
+      commit = ""
+      try:
+        branch = self.get_branch(basedir)
+        commit = self.get_commit_hash(basedir)
+        with open(os.path.join(basedir, "common", "version.h")) as f:
+          version = f.read().split('"')[1]
+      except Exception:
+        pass
+      return f"{version} / {branch} / {commit[:7]}"
+    self.params.put("UpdaterCurrentDescription", get_description(BASEDIR))
+    self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
+    self.params.put("UpdaterNewDescription", get_description(FINALIZED))
+    self.params.put("UpdaterNewReleaseNotes", parse_release_notes(FINALIZED))
+    self.params.put_bool("UpdateAvailable", self.update_ready)
+
+    # Handle user prompt
+    for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
+      set_offroad_alert(alert, False)
+
+    now = datetime.datetime.utcnow()
+    dt = now - last_update
+    if failed_count > 15 and exception is not None:
+      if is_tested_branch():
+        extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
+      else:
+        extra_text = exception
+      set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+    elif dt.days > DAYS_NO_CONNECTIVITY_MAX and failed_count > 1:
+      set_offroad_alert("Offroad_ConnectivityNeeded", True)
+    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+      remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
+      set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
+
+  def check_for_update(self) -> None:
+    cloudlog.info("checking for updates")
+
+    excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
+
+    setup_git_options(OVERLAY_MERGED)
+    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
+
+    self.branches = defaultdict(lambda: None)
+    for line in output.split('\n'):
+      ls_remotes_re = r'(?P<commit_sha>\b[0-9a-f]{5,40}\b)(\s+)(refs\/heads\/)(?P<branch_name>.*$)'
+      x = re.fullmatch(ls_remotes_re, line.strip())
+      if x is not None and x.group('branch_name') not in excluded_branches:
+        self.branches[x.group('branch_name')] = x.group('commit_sha')
+
+    cur_branch = self.get_branch(OVERLAY_MERGED)
+    cur_commit = self.get_commit_hash(OVERLAY_MERGED)
+    new_branch = self.target_branch
+    new_commit = self.branches[new_branch]
+    if (cur_branch, cur_commit) != (new_branch, new_commit):
+      cloudlog.info(f"update available, {cur_branch} ({cur_commit[:7]}) -> {new_branch} ({new_commit[:7]})")
+    else:
+      cloudlog.info(f"up to date on {cur_branch} ({cur_commit[:7]})")
+
+  def fetch_update(self) -> None:
+    cloudlog.info("attempting git fetch inside staging overlay")
+
+    self.params.put("UpdaterState", "downloading...")
+
+    # TODO: cleanly interrupt this and invalidate old update
+    set_consistent_flag(False)
+    self.params.put_bool("UpdateAvailable", False)
+
+    setup_git_options(OVERLAY_MERGED)
+
+    branch = self.target_branch
+    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
+    cloudlog.info("git fetch success: %s", git_fetch_output)
+
+    cloudlog.info("git reset in progress")
+    cmds = [
+      ["git", "checkout", "--force", "--no-recurse-submodules", branch],
+      ["git", "reset", "--hard", f"origin/{branch}"],
+      ["git", "clean", "-xdf"],
+      ["git", "submodule", "init"],
+      ["git", "submodule", "update"],
+    ]
+    r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
+    cloudlog.info("git reset success: %s", '\n'.join(r))
+
+    # TODO: show agnos download progress
+    if AGNOS:
+      handle_agnos_update()
 
     # Create the finalized, ready-to-swap update
+    self.params.put("UpdaterState", "finalizing update...")
     finalize_update()
-    cloudlog.info("openpilot update successful!")
-  else:
-    cloudlog.info("nothing new from git at this time")
-
-  return new_version
+    cloudlog.info("finalize success!")
 
 
 def main() -> None:
@@ -357,8 +422,12 @@ def main() -> None:
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
   overlay_init.unlink(missing_ok=True)
 
+  updater = Updater()
   update_failed_count = 0  # TODO: Load from param?
-  wait_helper = WaitTimeHelper(proc)
+
+  # no fetch on the first time
+  wait_helper = WaitTimeHelper()
+  wait_helper.only_check_for_update = True
 
   # Run the update loop
   while True:
@@ -366,21 +435,24 @@ def main() -> None:
 
     # Attempt an update
     exception = None
-    new_version = False
-    update_failed_count += 1
     try:
+      # TODO: reuse overlay from previous updated instance if it looks clean
       init_overlay()
 
-      # TODO: still needed? skip this and just fetch?
-      # Lightweight internt check
-      internet_ok, update_available = check_for_update()
-      if internet_ok and not update_available:
-        update_failed_count = 0
+      # ensure we have some params written soon after startup
+      updater.set_params(update_failed_count, exception)
+      update_failed_count += 1
 
-      # Fetch update
-      if internet_ok:
-        new_version = fetch_update()
-        update_failed_count = 0
+      # check for update
+      params.put("UpdaterState", "checking...")
+      updater.check_for_update()
+
+      # download update
+      if wait_helper.only_check_for_update:
+        cloudlog.info("skipping fetch this cycle")
+      else:
+        updater.fetch_update()
+      update_failed_count = 0
     except subprocess.CalledProcessError as e:
       cloudlog.event(
         "update process failed",
@@ -396,12 +468,14 @@ def main() -> None:
       overlay_init.unlink(missing_ok=True)
 
     try:
-      set_params(new_version, update_failed_count, exception)
+      params.put("UpdaterState", "idle")
+      updater.set_params(update_failed_count, exception)
     except Exception:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # infrequent attempts if we successfully updated recently
-    wait_helper.sleep(5*60 if update_failed_count > 0 else 90*60)
+    wait_helper.only_check_for_update = False
+    wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
 
 
 if __name__ == "__main__":
