@@ -56,6 +56,29 @@ oemdre_measurement_report = """
   uint8_t source;
 """
 
+oemdre_svpoly_report = """
+  uint8_t version;
+  uint16_t sv_id;
+  int8_t frequency_index;
+  uint8_t flags;
+  uint16_t iode;
+  double t0;
+  double xyz0[3];
+  double xyzN[9];
+  float other[4];
+  float position_uncertainty;
+  float iono_delay;
+  float iono_dot;
+  float sbas_iono_delay;
+  float sbas_iono_dot;
+  float tropo_delay;
+  float elevation;
+  float elevation_dot;
+  float elevation_uncertainty;
+  double velocity_coeff[12];
+"""
+
+
 oemdre_measurement_report_sv = """
   uint8_t sv_id;
   uint8_t unkn;
