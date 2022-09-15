@@ -405,8 +405,6 @@ def main() -> None:
     # infrequent attempts if we successfully updated recently
     wait_helper.sleep(5*60 if update_failed_count > 0 else 90*60)
 
-  #dismount_overlay()
-
 
 if __name__ == "__main__":
   main()
