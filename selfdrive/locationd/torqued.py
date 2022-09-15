@@ -12,7 +12,7 @@ from common.realtime import config_realtime_process, DT_MDL
 from common.filter_simple import FirstOrderFilter
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
-
+from selfdrive.car.toyota.values import CAR as TOYOTA
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
@@ -29,10 +29,11 @@ LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
 MAX_RESETS = 5.0
-MAX_INVALID_COUNT = 10
+MAX_INVALID_THRESHOLD = 10
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
+ALLOWED_FINGERPRINTS = [TOYOTA.COROLLA_TSS2, TOYOTA.COROLLA, TOYOTA.COROLLAH_TSS2]
 
 
 def slope2rot(slope):
@@ -97,6 +98,7 @@ class TorqueEstimator:
     self.offline_friction = 0.0
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
+    self.use_params = CP.carFingerprint in ALLOWED_FINGERPRINTS
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = CP.lateralTuning.torque.friction
@@ -152,7 +154,8 @@ class TorqueEstimator:
 
   def reset(self):
     self.resets += 1.0
-    self.invalid_values_count = 0
+    self.invalid_values_tracker = 0.0
+    self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
     self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
 
@@ -208,6 +211,7 @@ class TorqueEstimator:
     msg.valid = valid
     liveTorqueParameters = msg.liveTorqueParameters
     liveTorqueParameters.version = VERSION
+    liveTorqueParameters.useParams = self.use_params
 
     if self.filtered_points.is_valid():
       latAccelFactor, latAccelOffset, friction_coeff = self.estimate_params()
@@ -218,12 +222,13 @@ class TorqueEstimator:
       if self.is_sane(latAccelFactor, latAccelOffset, friction_coeff):
         liveTorqueParameters.liveValid = True
         self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': friction_coeff})
-        self.invalid_values_count = 0
+        self.invalid_values_tracker = max(0.0, self.invalid_values_tracker - 0.5)
       else:
         cloudlog.exception("live torque params are numerically unstable")
         liveTorqueParameters.liveValid = False
-        self.invalid_values_count += 1
-        if self.invalid_values_count > MAX_INVALID_COUNT:
+        self.invalid_values_tracker += 1.0
+        # Reset when ~10 invalid over 5 secs
+        if self.invalid_values_tracker > MAX_INVALID_THRESHOLD:
           # Do not reset the filter as it may cause a drastic jump, just reset points
           self.reset()
     else:
