@@ -27,6 +27,8 @@ int BMX055_Accel::init() {
   if (ret < 0) {
     goto fail;
   }
+  // bmx055 accel has a 1.3ms wakeup time from deep suspend mode
+  util::sleep_for(10);
 
   // High bandwidth
   // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_ENABLE);

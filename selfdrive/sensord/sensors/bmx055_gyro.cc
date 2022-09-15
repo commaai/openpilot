@@ -31,7 +31,7 @@ int BMX055_Gyro::init() {
   if (ret < 0) {
     goto fail;
   }
-  // bmx055 has a 30ms wakeup time from deep suspend mode
+  // bmx055 gyro has a 30ms wakeup time from deep suspend mode
   util::sleep_for(50);
 
   // High bandwidth
