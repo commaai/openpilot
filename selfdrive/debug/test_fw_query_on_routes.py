@@ -130,23 +130,20 @@ if __name__ == "__main__":
                   if version.brand != brand and len(version.brand):
                     continue
                   sub_addr = None if version.subAddress == 0 else version.subAddress
-                  addr = version.address
 
                   if version.ecu == expected_ecu_type:
                     if version.fwVersion not in v:
                       print(f"(Ecu.{version.ecu}, {hex(version.address)}, {'None' if sub_addr is None else hex(sub_addr)}) - {version.fwVersion}")
 
                       # Add to global list of mismatches
-                      mismatch = (addr, sub_addr, version.fwVersion)
+                      mismatch = (version.ecu, version.fwVersion)
                       if mismatch not in mismatches[live_fingerprint]:
                         mismatches[live_fingerprint].append(mismatch)
 
           # No FW versions for this car yet, add them all to mismatch list
           if not found:
             for version in car_fw:
-              sub_addr = None if version.subAddress == 0 else version.subAddress
-              addr = version.address
-              mismatch = (addr, sub_addr, version.fwVersion)
+              mismatch = (version.ecu, version.fwVersion)
               if mismatch not in mismatches[live_fingerprint]:
                 mismatches[live_fingerprint].append(mismatch)
 
@@ -173,12 +170,12 @@ if __name__ == "__main__":
   # Print FW versions that need to be added separated out by car and address
   for car, m in sorted(mismatches.items()):
     print(car)
-    addrs = defaultdict(list)
-    for (addr, sub_addr, version) in m:
-      addrs[(addr, sub_addr)].append(version)
+    ecus = defaultdict(list)
+    for (ecu_type, version) in m:
+      ecus[ecu_type].append(version)
 
-    for (addr, sub_addr), versions in addrs.items():
-      print(f"  ({hex(addr)}, {'None' if sub_addr is None else hex(sub_addr)}): [")
+    for ecu_type, versions in ecus.items():
+      print(f"  Ecu.{ecu_type}: [")
       for v in versions:
         print(f"    {v},")
       print("  ]")
