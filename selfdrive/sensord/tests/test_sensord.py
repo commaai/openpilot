@@ -261,7 +261,10 @@ class TestSensord(unittest.TestCase):
     # check if the interrupts are enableds
     with SMBus(SENSOR_BUS, force=True) as bus:
       int1_ctrl_reg = bus.read_byte_data(I2C_ADDR_LSM, 0x0D)
-      assert int1_ctrl_reg == 3, "Interrupts not enabled!"
+
+      if int1_ctrl_reg != 3:
+        managed_processes["sensord"].stop()
+        assert int1_ctrl_reg == 3, "Interrupts not enabled!"
 
     # read /proc/interrupts to verify interrupts are received
     state_one = get_proc_interrupts(LSM_INT_GPIO)
