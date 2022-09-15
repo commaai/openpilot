@@ -207,9 +207,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
   circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
 
-  QLabel *scanning = new QLabel(tr("Scanning for networks..."));
-  scanning->setStyleSheet("font-size: 65px;");
-  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+  scanningLabel = new QLabel(tr("Scanning for networks..."));
+  scanningLabel->setStyleSheet("font-size: 65px;");
+  main_layout->addWidget(scanningLabel, 0, Qt::AlignCenter);
+
+  list_layout = new QVBoxLayout;
+  main_layout->addLayout(list_layout);
 
   setStyleSheet(R"(
     QScrollBar::handle:vertical {
@@ -257,14 +260,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 
 void WifiUI::refresh() {
   // TODO: don't rebuild this every time
-  clearLayout(main_layout);
+  clearLayout(list_layout);
 
-  if (wifi->seenNetworks.size() == 0) {
-    QLabel *scanning = new QLabel(tr("Scanning for networks..."));
-    scanning->setStyleSheet("font-size: 65px;");
-    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-    return;
-  }
+  bool is_empty = wifi->seenNetworks.isEmpty();
+  scanningLabel->setVisible(is_empty);
+  if (is_empty) return;
+
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
@@ -327,6 +328,6 @@ void WifiUI::refresh() {
 
     list->addItem(hlayout);
   }
-  main_layout->addWidget(list);
-  main_layout->addStretch(1);
+  list_layout->addWidget(list);
+  list_layout->addStretch(1);
 }

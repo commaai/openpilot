@@ -526,7 +526,7 @@ location set</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+93"/>
         <source> ALERTS</source>
         <translation> 提醒</translation>
     </message>
@@ -539,7 +539,7 @@ location set</source>
 <context>
     <name>PairingPopup</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="+86"/>
+        <location filename="../qt/widgets/prime.cc" line="+89"/>
         <source>Pair your device to your comma account</source>
         <translation>將設備與您的 comma 帳號配對</translation>
     </message>

@@ -23,7 +23,7 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_IMX390 9
+#define CAMERA_ID_OX03C10 9
 #define CAMERA_ID_MAX 10
 
 const int YUV_BUFFER_COUNT = 40;
@@ -113,7 +113,7 @@ public:
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
