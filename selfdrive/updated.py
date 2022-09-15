@@ -77,9 +77,7 @@ class WaitTimeHelper:
     self.ready_event.wait(timeout=t)
 
 
-def run(cmd: List[str], cwd: Optional[str] = None, low_priority: bool = False):
-  if low_priority:
-    cmd = ["nice", "-n", "19"] + cmd
+def run(cmd: List[str], cwd: Optional[str] = None):
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -180,7 +178,7 @@ def init_overlay() -> None:
   run(["sudo"] + mount_cmd)
   run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
 
-  git_diff = run(["git", "diff"], OVERLAY_MERGED, low_priority=True)
+  git_diff = run(["git", "diff"], OVERLAY_MERGED)
   params.put("GitDiff", git_diff)
   cloudlog.info(f"git diff output:\n{git_diff}")
 
@@ -268,10 +266,10 @@ class Updater:
     return hash_mismatch or branch_mismatch
 
   def get_branch(self, path: str):
-    return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path, low_priority=True).rstrip()
+    return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
 
   def get_commit_hash(self, path: str = OVERLAY_MERGED):
-    return run(["git", "rev-parse", "HEAD"], path, low_priority=True).rstrip()
+    return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
   def set_params(self, failed_count: int, exception: Optional[str]) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
@@ -339,7 +337,7 @@ class Updater:
     excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
 
     setup_git_options(OVERLAY_MERGED)
-    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED, low_priority=True)
+    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
 
     self.branches = {}
     for line in output.split('\n'):
@@ -369,7 +367,7 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
 
     branch = self.target_branch
-    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED, low_priority=True)
+    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
     cloudlog.info("git fetch success: %s", git_fetch_output)
 
     cloudlog.info("git reset in progress")
@@ -380,7 +378,7 @@ class Updater:
       ["git", "submodule", "init"],
       ["git", "submodule", "update"],
     ]
-    r = [run(cmd, OVERLAY_MERGED, low_priority=True) for cmd in cmds]
+    r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))
 
     # TODO: show agnos download progress
