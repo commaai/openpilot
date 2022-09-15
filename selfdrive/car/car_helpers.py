@@ -82,9 +82,6 @@ def fingerprint(logcan, sendcan):
   ecu_rx_addrs = set()
 
   if not fixed_fingerprint and not skip_fw_query:
-    # Vin query only reliably works through OBDII
-    bus = 1
-
     cached_params = Params().get("CarParamsCache")
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
@@ -97,7 +94,7 @@ def fingerprint(logcan, sendcan):
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
+      _, vin_rx_addr, vin = get_vin(logcan, sendcan)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
 
