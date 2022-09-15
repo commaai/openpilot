@@ -45,8 +45,17 @@ public:
     title_label->setText(title);
   }
 
+  void setValue(const QString &val) {
+    value->setText(val);
+  }
+
+public slots:
+  void showDescription() {
+    description->setVisible(true);
+  };
+
 signals:
-  void showDescription();
+  void showDescriptionEvent();
 
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
@@ -54,6 +63,9 @@ protected:
 
   QHBoxLayout *hlayout;
   QPushButton *title_label;
+
+private:
+  QLabel *value;
   QLabel *description = nullptr;
 };
 
