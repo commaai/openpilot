@@ -61,8 +61,8 @@ const float DC_GAIN_OX03C10 = 7.32;
 
 const float DC_GAIN_ON_GREY_AR0231= 0.2;
 const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
-const float DC_GAIN_ON_GREY_OX03C10= 0.3;
-const float DC_GAIN_OFF_GREY_OX03C10 = 0.375;
+const float DC_GAIN_ON_GREY_OX03C10= 0.25;
+const float DC_GAIN_OFF_GREY_OX03C10 = 0.35;
 
 const int DC_GAIN_MIN_WEIGHT = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
