@@ -32,14 +32,17 @@ class CarState(CarStateBase):
     self.park_brake = False
     self.buttons_counter = 0
 
+    # When available we use cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] to populate vEgoCluster
+    # However, on some cars this is not always present (FILL OUT)
+    self.dash_speed_seen = False
+
     self.params = CarControllerParams(CP)
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
 
-    metric = not cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"]
-    speed_conv = CV.KPH_TO_MS if metric else CV.MPH_TO_MS
+    speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 1 else CV.KPH_TO_MS
 
     ret = car.CarState.new_message()
 
@@ -57,11 +60,12 @@ class CarState(CarStateBase):
       cp.vl["WHL_SPD11"]["WHL_SPD_RR"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    # ret.vEgoCluster = (cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS) if metric else (cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * CV.MPH_TO_MS)
-    ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * speed_conv
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-
     ret.standstill = ret.vEgoRaw < 0.1
+
+    self.dash_speed_seen = self.dash_speed_seen or cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] > 1e-3
+    if self.dash_speed_seen:
+      ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * speed_conv
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
@@ -231,7 +235,7 @@ class CarState(CarStateBase):
       ("CF_Clu_AmpInfo", "CLU11"),
       ("CF_Clu_AliveCnt1", "CLU11"),
 
-      ("CF_Clu_VehicleSpeed", "CLU15"),
+      # ("CF_Clu_VehicleSpeed", "CLU15"),
       ("CF_Clu_VehicleSpeed2", "CLU15"),
 
       ("ACCEnable", "TCS13"),
@@ -258,7 +262,7 @@ class CarState(CarStateBase):
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),
-      ("CLU15", 4),
+      ("CLU15", 5),
       ("ESP12", 100),
       ("CGW1", 10),
       ("CGW2", 5),
@@ -317,7 +321,6 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals.append(("CF_Clu_Gear", "CLU15"))
-      checks.append(("CLU15", 5))
     elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
       signals.append(("CUR_GR", "TCU12"))
       checks.append(("TCU12", 100))
