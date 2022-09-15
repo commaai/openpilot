@@ -35,7 +35,7 @@ public:
   float dc_gain_on_grey;
   float dc_gain_off_grey;
 
-  float sensor_analog_gains[16];
+  float sensor_analog_gains[35];
   int analog_gain_min_idx;
   int analog_gain_max_idx;
   int analog_gain_rec_idx;
