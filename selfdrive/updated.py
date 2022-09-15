@@ -57,23 +57,7 @@ class WaitTimeHelper:
   def __init__(self, proc):
     self.proc = proc
     self.ready_event = threading.Event()
-    self.shutdown = False
-    signal.signal(signal.SIGTERM, self.graceful_shutdown)
-    signal.signal(signal.SIGINT, self.graceful_shutdown)
     signal.signal(signal.SIGHUP, self.update_now)
-
-  def graceful_shutdown(self, signum: int, frame) -> None:
-    # umount -f doesn't appear effective in avoiding "device busy" on NEOS,
-    # so don't actually die until the next convenient opportunity in main().
-    cloudlog.info("caught SIGINT/SIGTERM, dismounting overlay at next opportunity")
-
-    # forward the signal to all our child processes
-    child_procs = self.proc.children(recursive=True)
-    for p in child_procs:
-      p.send_signal(signum)
-
-    self.shutdown = True
-    self.ready_event.set()
 
   def update_now(self, signum: int, frame) -> None:
     cloudlog.info("caught SIGHUP, running update check immediately")
@@ -233,7 +217,7 @@ def init_overlay() -> None:
   cloudlog.info(f"git diff output:\n{git_diff}")
 
 
-def finalize_update(wait_helper: WaitTimeHelper) -> None:
+def finalize_update() -> None:
   """Take the current OverlayFS merged view and finalize a copy outside of
   OverlayFS, ready to be swapped-in at BASEDIR. Copy using shutil.copytree"""
 
@@ -258,14 +242,11 @@ def finalize_update(wait_helper: WaitTimeHelper) -> None:
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
 
-  if wait_helper.shutdown:
-    cloudlog.info("got interrupted finalizing overlay")
-  else:
-    set_consistent_flag(True)
-    cloudlog.info("done finalizing overlay")
+  set_consistent_flag(True)
+  cloudlog.info("done finalizing overlay")
 
 
-def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
+def handle_agnos_update() -> None:
   from system.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
@@ -302,7 +283,7 @@ def check_for_update() -> Tuple[bool, bool]:
     return False, False
 
 
-def fetch_update(wait_helper: WaitTimeHelper) -> bool:
+def fetch_update() -> bool:
   cloudlog.info("attempting git fetch inside staging overlay")
 
   setup_git_options(OVERLAY_MERGED)
@@ -338,10 +319,10 @@ def fetch_update(wait_helper: WaitTimeHelper) -> bool:
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
       if AGNOS:
-        handle_agnos_update(wait_helper)
+        handle_agnos_update()
 
     # Create the finalized, ready-to-swap update
-    finalize_update(wait_helper)
+    finalize_update()
     cloudlog.info("openpilot update successful!")
   else:
     cloudlog.info("nothing new from git at this time")
@@ -382,7 +363,7 @@ def main() -> None:
   wait_helper = WaitTimeHelper(proc)
 
   # Run the update loop
-  while not wait_helper.shutdown:
+  while True:
     wait_helper.ready_event.clear()
 
     # Attempt an update
@@ -400,7 +381,7 @@ def main() -> None:
 
       # Fetch update
       if internet_ok:
-        new_version = fetch_update(wait_helper)
+        new_version = fetch_update()
         update_failed_count = 0
     except subprocess.CalledProcessError as e:
       cloudlog.event(
@@ -416,16 +397,13 @@ def main() -> None:
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    if not wait_helper.shutdown:
-      try:
-        set_params(new_version, update_failed_count, exception)
-      except Exception:
-        cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+    try:
+      set_params(new_version, update_failed_count, exception)
+    except Exception:
+      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # infrequent attempts if we successfully updated recently
     wait_helper.sleep(5*60 if update_failed_count > 0 else 90*60)
-
-  dismount_overlay()
 
 
 if __name__ == "__main__":
