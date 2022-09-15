@@ -96,11 +96,13 @@ def parse_release_notes(basedir: str) -> bytes:
     with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
       r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
     try:
-      return bytes(MarkdownIt().render(r.decode("utf-8")))
+      return bytes(MarkdownIt().render(r.decode("utf-8")), encoding="utf-8")
     except Exception:
       return r + b"\n"
-  except Exception:
+  except FileNotFoundError:
     pass
+  except Exception:
+    cloudlog.exception("failed to parse release notes")
   return b""
 
 def setup_git_options(cwd: str) -> None:
@@ -426,7 +428,6 @@ def main() -> None:
   wait_helper = WaitTimeHelper(proc)
 
   updater = Updater()
-  updater.set_params(0, None)
   # no fetch on the first time
   wait_helper.only_check_for_update = True
 
@@ -436,10 +437,13 @@ def main() -> None:
 
     # Attempt an update
     exception = None
-    update_failed_count += 1
     try:
       # TODO: reuse overlay from previous updated instance if it looks clean
       init_overlay()
+
+      # ensure we have some params written on soon after startup
+      updater.set_params(update_failed_count, exception)
+      update_failed_count += 1
 
       # check for update
       params.put("UpdaterState", "checking...")
