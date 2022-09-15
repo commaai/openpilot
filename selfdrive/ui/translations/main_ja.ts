@@ -983,54 +983,6 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git ブランチ</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git コミット</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">OS バージョン</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">バージョン</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">最終更新確認</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">openpilotが最後にアップデートの確認に成功してからの時間です。アップデート処理は、車の電源が切れているときのみ実行されます。</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">更新プログラムをチェック</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">確認中</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">ブランチの切り替え</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">切替</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">updater を実行する時にブランチを切り替えます。</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">ブランチ名を入力</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
         <translation type="unfinished"></translation>
@@ -1084,10 +1036,6 @@ location set</source>
         <location line="+2"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>アンインストールしてもよろしいですか？</translation>
-    </message>
-    <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">更新のﾀﾞｳﾝﾛｰﾄﾞにｴﾗｰが発生しました</translation>
     </message>
     <message>
         <location line="-47"/>

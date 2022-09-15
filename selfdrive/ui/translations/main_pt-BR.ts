@@ -987,54 +987,6 @@ trabalho definido</translation>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git Branch</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Último Commit</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">Versão do Sistema</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">Versão</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">Verificação da última atualização</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">A última vez que o openpilot verificou com sucesso uma atualização. O atualizador só funciona com o carro desligado.</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">Verifique atualizações</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">VERIFICANDO</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">Alterar Branch</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">INSERIR</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">A nova branch será aplicada ao verificar atualizações.</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">Inserir o nome da branch</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
         <translation type="unfinished"></translation>
@@ -1088,10 +1040,6 @@ trabalho definido</translation>
         <location line="+2"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>Tem certeza que quer desinstalar?</translation>
-    </message>
-    <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">falha ao buscar atualização</translation>
     </message>
     <message>
         <location line="-47"/>

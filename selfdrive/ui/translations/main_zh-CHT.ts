@@ -983,54 +983,6 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git 分支</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git 提交</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">系統版本</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">版本</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">上次檢查時間</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">上次成功檢查更新的時間。更新系統只會在車子熄火時執行。</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">檢查更新</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">檢查中</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">切換分支</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">切換</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">新的分支將會在下次檢查更新時切換過去。</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">輸入分支名稱</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
         <translation type="unfinished"></translation>
@@ -1084,10 +1036,6 @@ location set</source>
         <location line="+2"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>您確定您要卸載嗎？</translation>
-    </message>
-    <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">下載更新失敗</translation>
     </message>
     <message>
         <location line="-47"/>

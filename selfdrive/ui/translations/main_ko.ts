@@ -983,54 +983,6 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git 브렌치</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git 커밋</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">OS 버전</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">버전</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">최신 업데이트 검사</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">최근에 openpilot이 업데이트를 성공적으로 확인했습니다. 업데이트 프로그램은 차량 연결이 해제되었을때만 작동합니다.</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">업데이트 확인</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">확인중</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">브랜치 변경</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">입력하세요</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">다음 업데이트 프로그램이 실행될 때 새 브랜치가 적용됩니다.</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">브랜치명 입력</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
         <translation type="unfinished"></translation>
@@ -1084,10 +1036,6 @@ location set</source>
         <location line="+2"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>제거하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">업데이트를 가져올수없습니다</translation>
     </message>
     <message>
         <location line="-47"/>

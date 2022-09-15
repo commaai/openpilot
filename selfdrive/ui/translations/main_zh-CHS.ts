@@ -981,54 +981,6 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git Branch</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git Commit</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">系统版本</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">软件版本</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">上次检查更新</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">上一次成功检查更新的时间。更新程序仅在汽车熄火时运行。</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">检查更新</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">正在检查更新</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">切换分支</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">输入</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">分支将在更新服务下次启动时自动切换。</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">输入分支名称</translation>
-    </message>
-    <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
         <translation type="unfinished"></translation>
@@ -1082,10 +1034,6 @@ location set</source>
         <location line="+2"/>
         <source>Are you sure you want to uninstall?</source>
         <translation>您确定要卸载吗？</translation>
-    </message>
-    <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">获取更新失败</translation>
     </message>
     <message>
         <location line="-47"/>
