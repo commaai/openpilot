@@ -43,12 +43,11 @@ class TestFwFingerprint(unittest.TestCase):
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu]}, {duplicates}")
 
   def test_blacklisted_addrs(self):
-    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    blacklisted_addrs = {"subaru": (0x7c4, 0x7d0)}  # includes A/C ecu and an unknown ecu
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
-        if brand == 'subaru':
-          for (addr, _), ecu in config.ecus.items():
-            self.assertNotIn(addr, blacklisted_addrs, f'{brand}: Blacklisted address: {hex(addr)}')
+        for addr, _ in config.ecus:
+          self.assertNotIn(addr, blacklisted_addrs.get(brand, tuple()), f'{brand}: Blacklisted address: {hex(addr)}')
 
   def test_blacklisted_ecus(self):
     for car_model, ecus in FW_VERSIONS.items():
