@@ -428,6 +428,8 @@ def main() -> None:
 
   updater = Updater()
   updater.set_params(0, None)
+  # no fetch on the first time
+  wait_helper.check_for_update = True
 
   # Run the update loop
   while True:
@@ -469,7 +471,7 @@ def main() -> None:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
     # infrequent attempts if we successfully updated recently
-    wait_helper.sleep(5*60 if update_failed_count > 0 else 5*60*60)
+    wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
 
 
 if __name__ == "__main__":
