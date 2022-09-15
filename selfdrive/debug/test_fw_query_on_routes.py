@@ -10,7 +10,7 @@ from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import match_fw_to_car
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
 
 
 NO_API = "NO_API" in os.environ
@@ -116,23 +116,25 @@ if __name__ == "__main__":
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
             print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
-          print("Mismatches")
+          print("\nMismatches")
           found = False
-          for brand in SUPPORTED_BRANDS:
+          for brand, config in FW_QUERY_CONFIGS.items():
             car_fws = VERSIONS[brand]
+            # print(live_fingerprint, car_fws.keys())
             if live_fingerprint in car_fws:
               found = True
               expected = car_fws[live_fingerprint]
-              for (_, expected_addr, expected_sub_addr), v in expected.items():
+              for expected_ecu_type, v in expected.items():
+                # expected_addr, expected_sub_addr = config.ecus[ecu_type]
                 for version in car_fw:
                   if version.brand != brand and len(version.brand):
                     continue
                   sub_addr = None if version.subAddress == 0 else version.subAddress
                   addr = version.address
 
-                  if (addr, sub_addr) == (expected_addr, expected_sub_addr):
+                  if version.ecu == expected_ecu_type:
                     if version.fwVersion not in v:
-                      print(f"({hex(addr)}, {'None' if sub_addr is None else hex(sub_addr)}) - {version.fwVersion}")
+                      print(f"(Ecu.{version.ecu}, {hex(version.address)}, {'None' if sub_addr is None else hex(sub_addr)}) - {version.fwVersion}")
 
                       # Add to global list of mismatches
                       mismatch = (addr, sub_addr, version.fwVersion)
