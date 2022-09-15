@@ -200,7 +200,9 @@ Params::Params(const std::string &path) {
 
 std::vector<std::string> Params::allKeys() const {
   std::vector<std::string> ret;
-  std::transform(keys.begin(), keys.end(), std::back_inserter(ret), [](auto it) { return it.first; });
+  for (auto &p : keys) {
+    ret.push_back(p.first);
+  }
   return ret;
 }
 

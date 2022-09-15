@@ -101,7 +101,7 @@ cdef class Params:
     cdef string key_bytes = ensure_bytes(key)
     return self.p.getParamPath(key_bytes).decode("utf-8")
 
-  def get_all_keys(self):
+  def all_keys(self):
     return self.p.allKeys()
 
 def put_nonblocking(key, val, d=""):
