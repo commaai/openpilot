@@ -1078,8 +1078,10 @@ location set</source>
         <translation type="vanished">获取更新失败</translation>
     </message>
     <message>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
-        <translation type="vanished">查看</translation>
+        <translation>查看</translation>
     </message>
 </context>
 <context>

@@ -30,10 +30,10 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   addItem(versionLbl);
 
   // download update btn
-  downloadBtn = new ButtonControl(tr("Download"), "CHECK");
+  downloadBtn = new ButtonControl(tr("Download"), tr("CHECK"));
   connect(downloadBtn, &ButtonControl::clicked, [=]() {
     downloadBtn->setEnabled(false);
-    if (downloadBtn->text() == "CHECK") {
+    if (downloadBtn->text() == tr("CHECK")) {
       checkForUpdates();
     } else {
       std::system("pkill -SIGHUP -f selfdrive.updated");

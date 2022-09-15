@@ -1084,8 +1084,10 @@ trabalho definido</translation>
         <translation type="vanished">falha ao buscar atualização</translation>
     </message>
     <message>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
-        <translation type="vanished">VERIFICAR</translation>
+        <translation>VERIFICAR</translation>
     </message>
 </context>
 <context>

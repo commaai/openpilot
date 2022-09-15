@@ -1080,8 +1080,10 @@ location set</source>
         <translation type="vanished">下載更新失敗</translation>
     </message>
     <message>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
-        <translation type="vanished">檢查</translation>
+        <translation>檢查</translation>
     </message>
 </context>
 <context>

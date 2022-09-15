@@ -1080,8 +1080,10 @@ location set</source>
         <translation type="vanished">更新のﾀﾞｳﾝﾛｰﾄﾞにｴﾗｰが発生しました</translation>
     </message>
     <message>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
-        <translation type="vanished">確認</translation>
+        <translation>確認</translation>
     </message>
 </context>
 <context>

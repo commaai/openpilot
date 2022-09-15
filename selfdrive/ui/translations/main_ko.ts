@@ -1080,8 +1080,10 @@ location set</source>
         <translation type="vanished">업데이트를 가져올수없습니다</translation>
     </message>
     <message>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
-        <translation type="vanished">확인</translation>
+        <translation>확인</translation>
     </message>
 </context>
 <context>
