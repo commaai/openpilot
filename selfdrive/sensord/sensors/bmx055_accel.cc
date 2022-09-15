@@ -42,6 +42,7 @@ int BMX055_Accel::init() {
   if (ret < 0) {
     goto fail;
   }
+
   ret = set_register(BMX055_ACCEL_I2C_REG_BW, BMX055_ACCEL_BW_125HZ);
   if (ret < 0) {
     goto fail;
