@@ -121,6 +121,10 @@ class TestSensord(unittest.TestCase):
     cls.events = read_sensor_events(5)
     managed_processes["sensord"].stop()
 
+  def tearDown(self):
+    # interrupt check might leave sensord running
+    managed_processes["sensord"].stop()
+
   def test_sensors_present(self):
     # verify correct sensors configuration
 
