@@ -35,6 +35,8 @@ class CarState(CarStateBase):
     # When available we use CLU15->CF_Clu_VehicleSpeed2 to populate vEgoCluster which is the actual dash speed
     # However, on some cars this is not always present, so we use the less accurate CF_Clu_VehicleSpeed signal
     self.accurate_dash_speed_seen = False
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
+    self.cluster_min_speed = CV.KPH_TO_MS
 
     self.params = CarControllerParams(CP)
 
@@ -68,9 +70,9 @@ class CarState(CarStateBase):
 
     if self.accurate_dash_speed_seen:
       self.vEgoCluster = accurate_dash_speed * speed_conv
+      # CF_Clu_VehicleSpeed2 is the true dash speed
+      self.cluster_speed_hyst_gap, self.cluster_min_speed = 0., 0.
     else:
-      self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
-      self.cluster_min_speed = CV.KPH_TO_MS
       ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
