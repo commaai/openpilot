@@ -33,7 +33,7 @@ class CarState(CarStateBase):
     self.buttons_counter = 0
 
     # When available we use CLU15->CF_Clu_VehicleSpeed2 to populate vEgoCluster which is the actual dash speed
-    # However, on some cars this is not always present, so we use the less accurate CLU15->CF_Clu_VehicleSpeed signal
+    # However, on some cars this is not always present, so we use the less accurate CF_Clu_VehicleSpeed signal
     self.accurate_dash_speed_seen = False
 
     self.params = CarControllerParams(CP)
