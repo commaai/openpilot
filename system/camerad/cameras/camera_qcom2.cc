@@ -100,8 +100,8 @@ const int ANALOG_GAIN_REC_IDX_AR0231 = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX_AR0231 = 0xD; // 4.0x
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x5; // 2x
-const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0xF;
+const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x6; // 2x
+const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x22;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
