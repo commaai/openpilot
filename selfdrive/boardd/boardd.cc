@@ -302,6 +302,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
   auto pss = evt.initPandaStates(pandas.size());
 
   std::vector<health_t> pandaStates;
+  std::vector<std::vector<can_health_t>> pandaCanStates;
   for (const auto& panda : pandas){
     auto health_opt = panda->get_state();
     if (!health_opt) {
@@ -318,6 +319,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       }
       can_health[i] = *can_health_opt;
     }
+    pandaCanStates.push_back(can_health);
 
     if (spoofing_started) {
       health.ignition_line_pkt = 1;
@@ -374,6 +376,31 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
+
+    std::vector<cereal::PandaState::PandaCanState::Builder> cs;
+    cs.push_back(ps.initCanState0());
+    cs.push_back(ps.initCanState1());
+    cs.push_back(ps.initCanState2());
+
+    for (uint32_t j = 0; j < 3; j++) {
+      const auto &can_health = pandaCanStates[i][j];
+      cs[j].setBusOff((bool)can_health.bus_off);
+      cs[j].setBusOffCnt(can_health.bus_off_cnt);
+      cs[j].setErrorWarning((bool)can_health.error_warning);
+      cs[j].setErrorPassive((bool)can_health.error_passive);
+      cs[j].setLastError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_error));
+      cs[j].setLastStoredError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_stored_error));
+      cs[j].setLastDataError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_data_error));
+      cs[j].setLastDataStoredError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_data_stored_error));
+      cs[j].setReceiveErrorCnt(can_health.receive_error_cnt);
+      cs[j].setTransmitErrorCnt(can_health.transmit_error_cnt);
+      cs[j].setTotalErrorCnt(can_health.total_error_cnt);
+      cs[j].setTotalTxLostCnt(can_health.total_tx_lost_cnt);
+      cs[j].setTotalRxLostCnt(can_health.total_rx_lost_cnt);
+      cs[j].setTotalTxCnt(can_health.total_tx_cnt);
+      cs[j].setTotalRxCnt(can_health.total_rx_cnt);
+      cs[j].setTotalFwdCnt(can_health.total_fwd_cnt);
+    }
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
