@@ -310,6 +310,15 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     health_t health = *health_opt;
 
+    std::vector<can_health_t> can_health;
+    for (uint32_t i = 0; i < 3; i++) {
+      auto can_health_opt = panda->get_can_state(i);
+      if (!can_health_opt) {
+        return std::nullopt;
+      }
+      can_health[i] = *can_health_opt;
+    }
+
     if (spoofing_started) {
       health.ignition_line_pkt = 1;
     }

@@ -14,6 +14,7 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
+#include "panda/board/can_health.h"
 
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
@@ -81,6 +82,7 @@ class Panda {
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
   std::optional<health_t> get_state();
+  std::optional<can_health_t> get_can_state(uint16_t can_number);
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();
