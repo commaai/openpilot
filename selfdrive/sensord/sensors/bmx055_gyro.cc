@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "common/swaglog.h"
+#include "common/util.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
@@ -30,6 +31,8 @@ int BMX055_Gyro::init() {
   if (ret < 0) {
     goto fail;
   }
+  // bmx055 has a 30ms wakeup time from deep suspend mode
+  util::sleep_for(50);
 
   // High bandwidth
   // ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_ENABLE);
