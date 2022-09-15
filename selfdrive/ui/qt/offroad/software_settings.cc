@@ -26,12 +26,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   addItem(onroadLbl);
 
   // current version
-  versionLbl = new ButtonControl(tr("Current Version"), tr("VIEW"));
-  connect(versionLbl, &ButtonControl::clicked, versionLbl, &ButtonControl::showDescription);
+  versionLbl = new LabelControl(tr("Current Version"), "");
   addItem(versionLbl);
 
   // download update btn
-  downloadBtn = new ButtonControl(tr("Download"), "DOWNLOAD");
+  downloadBtn = new ButtonControl(tr("Download"), "CHECK");
   connect(downloadBtn, &ButtonControl::clicked, [=]() {
     downloadBtn->setEnabled(false);
     if (downloadBtn->text() == "CHECK") {
@@ -146,7 +145,7 @@ void SoftwarePanel::updateLabels() {
   targetBranchBtn->setValue(QString::fromStdString(params.get("UpdaterTargetBranch")));
 
   // current + new versions
-  versionLbl->setValue(QString::fromStdString(params.get("UpdaterCurrentDescription")).left(35));
+  versionLbl->setText(QString::fromStdString(params.get("UpdaterCurrentDescription")).left(40));
   versionLbl->setDescription(QString::fromStdString(params.get("UpdaterCurrentReleaseNotes")));
 
   installBtn->setVisible(!is_onroad && params.getBool("UpdateAvailable"));

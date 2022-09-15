@@ -34,7 +34,7 @@ import time
 import threading
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Union, Optional
 from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
@@ -78,7 +78,7 @@ class WaitTimeHelper:
     self.ready_event.wait(timeout=t)
 
 
-def run(cmd: List[str], cwd: Optional[str] = None):
+def run(cmd: List[str], cwd: Optional[str] = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -243,35 +243,35 @@ class Updater:
     self.branches = defaultdict(lambda: None)
 
   @property
-  def target_branch(self):
-    b = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+  def target_branch(self) -> str:
+    b: Union[str, None] = self.params.get("UpdaterTargetBranch", encoding='utf-8')
     if b is None:
       b = self.get_branch(BASEDIR)
       self.params.put("UpdaterTargetBranch", b)
     return b
 
   @property
-  def update_ready(self):
+  def update_ready(self) -> bool:
     consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
     if consistent_file.is_file():
       hash_mismatch = self.get_commit_hash(BASEDIR) != self.branches[self.target_branch]
       branch_mismatch = self.get_branch(BASEDIR) != self.target_branch
       on_target_branch = self.get_branch(FINALIZED) == self.target_branch
-      return (hash_mismatch or branch_mismatch) and on_target_branch
+      return ((hash_mismatch or branch_mismatch) and on_target_branch)
     return False
 
   @property
-  def update_available(self):
+  def update_available(self) -> bool:
     if os.path.isdir(OVERLAY_MERGED):
       hash_mismatch = self.get_commit_hash(OVERLAY_MERGED) != self.branches[self.target_branch]
       branch_mismatch = self.get_branch(OVERLAY_MERGED) != self.target_branch
       return hash_mismatch or branch_mismatch
     return False
 
-  def get_branch(self, path: str):
+  def get_branch(self, path: str) -> str:
     return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
 
-  def get_commit_hash(self, path: str = OVERLAY_MERGED):
+  def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
   def set_params(self, failed_count: int, exception: Optional[str]) -> None:
@@ -309,7 +309,6 @@ class Updater:
       except Exception:
         pass
       return f"{version} / {branch} / {commit[:7]}"
-
     self.params.put("UpdaterCurrentDescription", get_description(BASEDIR))
     self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
     self.params.put("UpdaterNewDescription", get_description(FINALIZED))

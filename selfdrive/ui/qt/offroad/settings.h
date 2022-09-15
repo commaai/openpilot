@@ -76,7 +76,7 @@ private:
   bool is_onroad = false;
 
   QLabel *onroadLbl;
-  ButtonControl *versionLbl;
+  LabelControl *versionLbl;
   ButtonControl *installBtn;
   ButtonControl *downloadBtn;
   ButtonControl *targetBranchBtn;
