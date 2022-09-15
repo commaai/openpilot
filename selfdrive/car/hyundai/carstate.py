@@ -71,14 +71,7 @@ class CarState(CarStateBase):
     else:
       self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 0.5  # seems to be best at 0.111111 m/s
       self.cluster_min_speed = CV.KPH_TO_MS
-      # TODO: verify this is always metric
       ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS
-
-    # i've seen vEgoRaw get to 1-2 before cluster updates, so pick 6 mph to be safe
-    if ret.vEgoRaw > 3 and len(cp.vl_all["CLU15"]["CF_Clu_VehicleSpeed"]):
-      assert abs(cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS - ret.vEgoRaw) < 2.5
-
-      assert cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] > 0, (ret.vEgoRaw, cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"], cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * speed_conv)
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
