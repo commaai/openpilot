@@ -63,16 +63,24 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
 
-    FIRST_METHOD = True
+    SPEED_SOURCE = 0
 
     # Hopefully vehicle speed matches a bit better
-    if FIRST_METHOD:
-      ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS
-    else:
-      ret.vEgoCluster = ret.vEgo
+    # 0, 1 use hyst logic, 2 should be what dash uses
+    if SPEED_SOURCE in (0, 1):
+      self.cluster_speed_hyst_gap = CV.KPH_TO_MS
+      self.cluster_min_speed = CV.KPH_TO_MS
+      if SPEED_SOURCE == 0:
+        # always in metric, not sure what this is used for
+        # scaling is a bit different than vEgo, so it may match CF_Clu_VehicleSpeed2 and we just need to add hysteresis
+        # TODO: verify this signal matches CF_Clu_VehicleSpeed2 at ALL steady states
+        ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"] * CV.KPH_TO_MS
+      elif SPEED_SOURCE == 1:
+        ret.vEgoCluster = ret.vEgo
 
-    self.cluster_speed_hyst_gap = CV.KPH_TO_MS
-    self.cluster_min_speed = CV.KPH_TO_MS
+    else:
+      # in actual dash units
+      ret.vEgoCluster = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"] * speed_conv
 
     # # i've seen vEgoRaw get to 1-2 before cluster updates, so pick 6 mph to be safe
     # if ret.vEgoRaw > 3 and len(cp.vl_all["CLU15"]["CF_Clu_VehicleSpeed"]):
