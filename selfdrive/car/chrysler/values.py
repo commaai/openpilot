@@ -251,7 +251,7 @@ FW_VERSIONS = {
       b'56029827AG',
       b'68484694AE',
     ],
-    (Ecu.eps, 0x761, None): [
+    Ecu.eps: [
       b'68421036AC',
       b'68507906AB',
     ],
