@@ -11,27 +11,27 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2019-22|All|openpilot|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
-|Audi|A3 2014-19|Adaptive Cruise Control & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
-|Audi|A3 Sportback e-tron 2017-18|Adaptive Cruise Control & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
-|Audi|Q2 2018|Adaptive Cruise Control & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
-|Audi|Q3 2020-21|Adaptive Cruise Control & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
-|Audi|RS3 2018|Adaptive Cruise Control & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
-|Audi|S3 2015-17|Adaptive Cruise Control & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|A3 2014-19|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|A3 Sportback e-tron 2017-18|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|Q2 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|Q3 2020-21|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
+|Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
-|Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
-|Chrysler|Pacifica 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
-|Chrysler|Pacifica 2019-20|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
+|Chrysler|Pacifica 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica 2019-20|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Chrysler|Pacifica 2021|All|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
-|Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
-|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |comma|body|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None|
 |Genesis|G70 2018-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
 |Genesis|G70 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
 |Genesis|G80 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Genesis|G90 2017-18|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
+|GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |GMC|Sierra 1500 2020-21|Driver Alert Package II|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Honda|Accord 2018-22|All|openpilot|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Accord Hybrid 2018-22|All|openpilot|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
@@ -80,8 +80,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Hyundai|Tucson Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|Stock|5 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
-|Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
-|Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
+|Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Kia|Ceed 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
 |Kia|EV6 2022|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai P|
 |Kia|Forte 2018|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
@@ -122,7 +122,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Nissan|Leaf 2018-22|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
 |Nissan|Rogue 2018-20|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
 |Nissan|X-Trail 2017|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
-|Ram|1500 2019-22|Adaptive Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Ram|
+|Ram|1500 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Ram|
 |SEAT|Ateca 2018|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |SEAT|Leon 2014-20|Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
