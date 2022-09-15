@@ -56,10 +56,8 @@ DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 
 class WaitTimeHelper:
-  def __init__(self, proc):
-    self.proc = proc
+  def __init__(self):
     self.ready_event = threading.Event()
-    self.shutdown = False
     self.only_check_for_update = False
     signal.signal(signal.SIGHUP, self.update_now)
     signal.signal(signal.SIGUSR1, self.check_now)
@@ -325,7 +323,7 @@ class Updater:
     dt = now - last_update
     if failed_count > 15 and exception is not None:
       if is_tested_branch():
-        extra_text = "Ensure the software is correctly installed"
+        extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
       else:
         extra_text = exception
       set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
@@ -424,11 +422,11 @@ def main() -> None:
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
   overlay_init.unlink(missing_ok=True)
 
-  update_failed_count = 0  # TODO: Load from param?
-  wait_helper = WaitTimeHelper(proc)
-
   updater = Updater()
+  update_failed_count = 0  # TODO: Load from param?
+
   # no fetch on the first time
+  wait_helper = WaitTimeHelper()
   wait_helper.only_check_for_update = True
 
   # Run the update loop
@@ -441,7 +439,7 @@ def main() -> None:
       # TODO: reuse overlay from previous updated instance if it looks clean
       init_overlay()
 
-      # ensure we have some params written on soon after startup
+      # ensure we have some params written soon after startup
       updater.set_params(update_failed_count, exception)
       update_failed_count += 1
 
