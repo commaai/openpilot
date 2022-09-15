@@ -31,6 +31,7 @@ public:
   int exposure_time_max;
 
   float dc_gain_factor;
+  int dc_gain_min_weight;
   int dc_gain_max_weight;
   float dc_gain_on_grey;
   float dc_gain_off_grey;

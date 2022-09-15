@@ -64,8 +64,9 @@ const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
 const float DC_GAIN_ON_GREY_OX03C10= 0.25;
 const float DC_GAIN_OFF_GREY_OX03C10 = 0.35;
 
-const int DC_GAIN_MIN_WEIGHT = 0;
+const int DC_GAIN_MIN_WEIGHT_AR0231 = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
+const int DC_GAIN_MIN_WEIGHT_OX03C10 = 16;
 const int DC_GAIN_MAX_WEIGHT_OX03C10 = 32;
 
 const float TARGET_GREY_FACTOR_AR0231 = 1.0;
@@ -525,6 +526,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 void CameraState::camera_set_parameters() {
   if (camera_id == CAMERA_ID_AR0231) {
     dc_gain_factor = DC_GAIN_AR0231;
+    dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_AR0231;
     dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_AR0231;
     dc_gain_on_grey = DC_GAIN_ON_GREY_AR0231;
     dc_gain_off_grey = DC_GAIN_OFF_GREY_AR0231;
@@ -540,6 +542,7 @@ void CameraState::camera_set_parameters() {
     target_grey_factor = TARGET_GREY_FACTOR_AR0231;
   } else if (camera_id == CAMERA_ID_OX03C10) {
     dc_gain_factor = DC_GAIN_OX03C10;
+    dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_OX03C10;
     dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_OX03C10;
     dc_gain_on_grey = DC_GAIN_ON_GREY_OX03C10;
     dc_gain_off_grey = DC_GAIN_OFF_GREY_OX03C10;
@@ -561,7 +564,7 @@ void CameraState::camera_set_parameters() {
   target_grey_fraction = 0.3;
 
   dc_gain_enabled = false;
-  dc_gain_weight = DC_GAIN_MIN_WEIGHT;
+  dc_gain_weight = dc_gain_min_weight;
   gain_idx = analog_gain_rec_idx;
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight) * sensor_analog_gains[gain_idx] * exposure_time;
@@ -1063,14 +1066,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
   bool enable_dc_gain = dc_gain_enabled;
   if (!enable_dc_gain && target_grey < dc_gain_on_grey) {
     enable_dc_gain = true;
-    dc_gain_weight = DC_GAIN_MIN_WEIGHT;
+    dc_gain_weight = dc_gain_min_weight;
   } else if (enable_dc_gain && target_grey > dc_gain_off_grey) {
     enable_dc_gain = false;
     dc_gain_weight = dc_gain_max_weight;
   }
 
   if (enable_dc_gain && dc_gain_weight < dc_gain_max_weight) {dc_gain_weight += 1;}
-  if (!enable_dc_gain && dc_gain_weight > DC_GAIN_MIN_WEIGHT) {dc_gain_weight -= 1;}
+  if (!enable_dc_gain && dc_gain_weight > dc_gain_min_weight) {dc_gain_weight -= 1;}
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
