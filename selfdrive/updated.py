@@ -91,12 +91,12 @@ def set_consistent_flag(consistent: bool) -> None:
     consistent_file.unlink(missing_ok=True)
   os.sync()
 
-def parse_release_notes(basedir: str):
+def parse_release_notes(basedir: str) -> bytes:
   try:
     with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
       r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
     try:
-      return MarkdownIt().render(r.decode("utf-8"))
+      return bytes(MarkdownIt().render(r.decode("utf-8")))
     except Exception:
       return r + b"\n"
   except Exception:
@@ -333,7 +333,7 @@ class Updater:
       remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
       set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
 
-  def check_for_update(self):
+  def check_for_update(self) -> None:
     cloudlog.info("checking for updates")
 
     excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
