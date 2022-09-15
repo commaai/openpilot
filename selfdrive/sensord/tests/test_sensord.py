@@ -110,12 +110,18 @@ def read_sensor_events(sensor_types, duration_sec):
 
   return events
 
-def get_filter_bounds(values, percent):
-  values.sort()
-  median = int(len(values)/2)
-  lb = median - int(len(values)*percent/2)
-  ub = median + int(len(values)*percent/2)
-  return (lb, ub)
+def verify_100Hz_rate(type_name, data_list):
+  data_list.sort()
+  tdiffs = np.diff(data_list)
+
+  high_delay_diffs = set(filter(lambda d: d >= 10.1*10**6, tdiffs))
+  assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs} ({type_name})"
+
+  avg_diff = sum(tdiffs)/len(tdiffs)
+  assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold ({type_name})"
+
+  stddev = np.std(tdiffs)
+  assert stddev < 1.5*10**6, f"Standard-dev to big {stddev} ({type_name})"
 
 
 class TestSensord(unittest.TestCase):
@@ -132,7 +138,8 @@ class TestSensord(unittest.TestCase):
     managed_processes["sensord"].start()
     time.sleep(3)
     cls.sample_secs = 10
-    cls.events = read_sensor_events(cls.sample_secs)
+    cls.events = read_sensor_events(['accelerometer', 'gyroscope', 'magnetometer',
+      'accelerometer2', 'gyroscope2', 'lightSensor', 'temperatureSensor'], cls.sample_secs)
     managed_processes["sensord"].stop()
 
   @classmethod
@@ -146,12 +153,10 @@ class TestSensord(unittest.TestCase):
     # verify correct sensors configuration
 
     seen = set()
-    for event in self.events:
-      for measurement in event.sensorEvents:
-        # filter unset events (bmx magn)
-        if measurement.version == 0:
-          continue
-        seen.add((str(measurement.source), measurement.which()))
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
+        seen.add((str(m.source), m.which()))
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
@@ -162,10 +167,14 @@ class TestSensord(unittest.TestCase):
       1: [], # accel
       5: [], # gyro
     }
-    for event in self.events:
-      for measurement in event.sensorEvents:
-        if str(measurement.source).startswith("lsm6ds3") and measurement.sensor in sensor_t:
-          sensor_t[measurement.sensor].append(measurement.timestamp)
+
+    for measurement in self.events['accelerometer']:
+      m = getattr(measurement, measurement.which())
+      sensor_t[m.sensor].append(m.timestamp)
+
+    for measurement in self.events['gyroscope']:
+      m = getattr(measurement, measurement.which())
+      sensor_t[m.sensor].append(m.timestamp)
 
     for s, vals in sensor_t.items():
       with self.subTest(sensor=s):
@@ -186,11 +195,12 @@ class TestSensord(unittest.TestCase):
     # verify if all sensors produce events
 
     sensor_events = dict()
-    for event in  self.events:
-      for measurement in event.sensorEvents:
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
 
-        if measurement.sensorEvent.type in sensor_events:
-          sensor_events[measurement.sensorEvent.type] += 1
+        if m.type in sensor_events:
+          sensor_events[m.type] += 1
         else:
           sensor_events[m.type] = 1
 
@@ -202,22 +212,19 @@ class TestSensord(unittest.TestCase):
     # ensure diff between the message logMonotime and sample timestamp is small
 
     tdiffs = list()
-    for event in self.events:
-      for measurement in event.sensorEvents:
-
-        # filter unset events (bmx magn)
-        if measurement.version == 0:
-          continue
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
 
         # check if gyro and accel timestamps are before logMonoTime
-        if str(measurement.source).startswith("lsm6ds3"):
-          if measurement.which() != 'temperature':
-            err_msg = f"Timestamp after logMonoTime: {measurement.timestamp} > {event.logMonoTime}"
-            assert measurement.timestamp < event.logMonoTime, err_msg
+        if str(m.source).startswith("lsm6ds3"):
+          if m.which() != 'temperature':
+            err_msg = f"Timestamp after logMonoTime: {m.timestamp} > {measurement.logMonoTime}"
+            assert m.timestamp < measurement.logMonoTime, err_msg
 
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
-        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
+        tdiffs.append(abs(measurement.logMonoTime - m.timestamp))
 
     high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
     assert len(high_delay_diffs) < 15, f"Too many high delay packages: {high_delay_diffs}"
@@ -285,4 +292,3 @@ class TestSensord(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-
