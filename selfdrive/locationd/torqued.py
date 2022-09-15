@@ -15,9 +15,9 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 
 HISTORY = 5  # secs
-POINTS_PER_BUCKET = 2000
+POINTS_PER_BUCKET = 1500
 MIN_POINTS_TOTAL = 4000
-FIT_POINTS_TOTAL = 3000
+FIT_POINTS_TOTAL = 2000
 MIN_VEL = 15  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 FACTOR_SANITY = 0.3
@@ -70,7 +70,7 @@ class PointBuckets:
     return sum(self.bucket_lengths())
 
   def is_valid(self):
-    return all([len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())]) and (self.__len__() >= MIN_POINTS_TOTAL)
+    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())) and (self.__len__() >= MIN_POINTS_TOTAL)
 
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
@@ -111,6 +111,10 @@ class TorqueEstimator:
       'points': []
     }
     self.decay = MIN_FILTER_DECAY
+    self.min_lataccel_factor = (1.0 - FACTOR_SANITY) * self.offline_latAccelFactor
+    self.max_lataccel_factor = (1.0 + FACTOR_SANITY) * self.offline_latAccelFactor
+    self.min_friction = (1.0 - FRICTION_SANITY) * self.offline_friction
+    self.max_friction = (1.0 + FRICTION_SANITY) * self.offline_friction
 
     # try to restore cached params
     params = Params()
@@ -175,8 +179,8 @@ class TorqueEstimator:
   def is_sane(self, latAccelFactor, latAccelOffset, friction):
     if any([val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, friction]]):
       return False
-    return (((1.0 + FACTOR_SANITY) * self.offline_latAccelFactor) >= latAccelFactor >= ((1.0 - FACTOR_SANITY) * self.offline_latAccelFactor)) and \
-      (((1.0 + FRICTION_SANITY) * self.offline_friction) >= friction >= ((1.0 - FRICTION_SANITY) * self.offline_friction))
+    return (self.max_friction >= friction >= self.min_friction) and\
+      (self.max_lataccel_factor >= latAccelFactor >= self.min_lataccel_factor)
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
