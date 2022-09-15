@@ -32,8 +32,10 @@ class CarState(CarStateBase):
       cp_wheels.vl["Wheel_Speeds"]["RR"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    # wheel speed scaling is 0.057x, that means the minimum speed in kph for a single wheel is 0.057 kph
+    # and if one wheel is somehow at 0.057 kph with an average of (0.057+0+0+0)/4=0.01425 kph ()
+    # if all wheels are at the minimum signal value, then that is above 0.01 m/s
     ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
@@ -50,7 +52,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
-    
+
     steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 80
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
