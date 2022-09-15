@@ -18,11 +18,9 @@
 #include "system/hardware/hw.h"
 #include "msm_media_info.h"
 
+#include "system/camerad/cameras/camera_qcom2.h"
 #ifdef QCOM2
 #include "CL/cl_ext_qcom.h"
-#include "system/camerad/cameras/camera_qcom2.h"
-#else
-#include "system/camerad/test/camera_test.h"
 #endif
 
 ExitHandler do_exit;
@@ -161,7 +159,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -175,6 +173,12 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
+
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+  } else if (c->camera_id == CAMERA_ID_OX03C10) {
+    framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
+  }
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
