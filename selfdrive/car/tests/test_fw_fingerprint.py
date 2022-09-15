@@ -29,11 +29,9 @@ class TestFwFingerprint(unittest.TestCase):
       for ecu, fw_versions in ecus.items():
         if not len(fw_versions):
           raise unittest.SkipTest("Car model has no FW versions")
-        ecu_name, addr, sub_addr = ecu
-        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
-                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+        fw.append({"ecu": ecu, "fwVersion": random.choice(fw_versions), 'brand': brand})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw)
+      _, matches = match_fw_to_car(CP.carFw, allow_exact=True, allow_fuzzy=False)
       self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
@@ -42,15 +40,15 @@ class TestFwFingerprint(unittest.TestCase):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
-            self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
+            self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu]}, {duplicates}")
 
   def test_blacklisted_addrs(self):
-    blacklisted_addrs = {"subaru": (0x7c4, 0x7d0)}  # includes A/C ecu and an unknown ecu
-    for brand, ecus in FW_QUERY_CONFIGS.items():
+    blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
+    for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
         if brand == 'subaru':
-          for ecu in ecus.keys():
-            self.assertNotIn(ecu[1], blacklisted_addrs, f'{brand}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+          for (addr, _), ecu in config.ecus.items():
+            self.assertNotIn(addr, blacklisted_addrs, f'{brand}: Blacklisted address: {hex(addr)}')
 
   def test_blacklisted_ecus(self):
     for car_model, ecus in FW_VERSIONS.items():
@@ -60,7 +58,7 @@ class TestFwFingerprint(unittest.TestCase):
           # Some HD trucks have a combined TCM and ECM
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
-              self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
+              self.assertNotEqual(ecu, Ecu.transmission, f"{car_model}: Blacklisted ecu: Ecu.{ECU_NAME[ecu]}")
 
   def test_missing_versions_and_configs(self):
     brand_versions = set(VERSIONS.keys())
@@ -75,16 +73,16 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_all_version_ecus_exist_in_config(self):
     for brand, config in FW_QUERY_CONFIGS.items():
-      for car_model, versions in FW_VERSIONS[brand]:
-        for ecu, _, _ in versions.keys():
+      for car_model, versions in VERSIONS[brand].items():
+        for ecu in versions.keys():
           with self.subTest(car_model=car_model, ecu=ecu):
-            self.assertTrue(ecu in config.ecus, f"{car_model}: Ecu not in config.ecus: Ecu.{ECU_NAME[ecu]}")
+            self.assertTrue(ecu in config.ecus.values(), f"{car_model}: Ecu not in config.ecus: Ecu.{ECU_NAME[ecu]}")
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
         whitelisted_ecus = set([ecu for r in config.requests for ecu in r.whitelist_ecus])
-        brand_ecus = set([fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw])
+        brand_ecus = set(config.ecus.values())
 
         # each ecu in brand's fw versions needs to be whitelisted at least once
         ecus_not_whitelisted = brand_ecus - whitelisted_ecus

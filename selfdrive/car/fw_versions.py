@@ -31,9 +31,7 @@ def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
     if filter_brand is None or fw.brand == filter_brand:
-      addr = fw.address
-      sub_addr = fw.subAddress if fw.subAddress != 0 else None
-      fw_versions_dict[(addr, sub_addr)].add(fw.fwVersion)
+      fw_versions_dict[fw.ecu.raw].add(fw.fwVersion)
   return dict(fw_versions_dict)
 
 
@@ -48,24 +46,24 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   # time and only one is in our database.
   exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
-  # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
+  # Build lookup table from (ecu, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
-  for candidate, fw_by_addr in FW_VERSIONS.items():
+  for candidate, fw_by_ecu in FW_VERSIONS.items():
     if candidate == exclude:
       continue
 
-    for addr, fws in fw_by_addr.items():
-      if addr[0] in exclude_types:
+    for ecu_type, fws in fw_by_ecu.items():
+      if ecu_type in exclude_types:
         continue
       for f in fws:
-        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+        all_fw_versions[(ecu_type, f)].append(candidate)
 
   match_count = 0
   candidate = None
-  for addr, versions in fw_versions_dict.items():
+  for ecu_type, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
-      candidates = all_fw_versions[(addr[0], addr[1], version)]
+      candidates = all_fw_versions[(ecu_type, version)]
 
       if len(candidates) == 1:
         match_count += 1
@@ -92,12 +90,9 @@ def match_fw_to_car_exact(fw_versions_dict):
   candidates = FW_VERSIONS
 
   for candidate, fws in candidates.items():
-    for ecu, expected_versions in fws.items():
+    for ecu_type, expected_versions in fws.items():
       config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
-      ecu_type = ecu[0]
-      addr = ecu[1:]
-
-      found_versions = fw_versions_dict.get(addr, set())
+      found_versions = fw_versions_dict.get(ecu_type, set())
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
         if candidate in config.non_essential_ecus.get(ecu_type, []):
