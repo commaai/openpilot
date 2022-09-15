@@ -90,6 +90,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
     ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway
+    ret.experimentalLongitudinalAvailable &= bool(fingerprint[0])  # FIXME: hack to deal with CI/doc/harness stuff later
     ret.stoppingControl = True
     ret.startingState = True
     ret.startAccel = 1.0

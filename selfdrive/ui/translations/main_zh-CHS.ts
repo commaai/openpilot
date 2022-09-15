@@ -193,7 +193,7 @@
         <translation>切换</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Select a language</source>
         <translation>选择语言</translation>
     </message>
@@ -418,7 +418,7 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+58"/>
         <source>No home
 location set</source>
         <translation>家：未设定</translation>
@@ -430,7 +430,7 @@ location set</source>
         <translation>工作：未设定</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+120"/>
         <source>no recent destinations</source>
         <translation>无最近目的地</translation>
     </message>
@@ -716,7 +716,7 @@ location set</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+101"/>
+        <location filename="../qt/offroad/settings.cc" line="+22"/>
         <source>×</source>
         <translation>×</translation>
     </message>
@@ -981,68 +981,47 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-130"/>
-        <source>Git Branch</source>
-        <translation>Git Branch</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git Commit</source>
-        <translation>Git Commit</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>OS Version</source>
-        <translation>系统版本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Version</source>
-        <translation>软件版本</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Last Update Check</source>
-        <translation>上次检查更新</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>上一次成功检查更新的时间。更新程序仅在汽车熄火时运行。</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Check for Update</source>
-        <translation>检查更新</translation>
+        <location filename="../qt/offroad/software_settings.cc" line="+24"/>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>CHECKING</source>
-        <translation>正在检查更新</translation>
+        <source>Current Version</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Switch Branch</source>
-        <translation>切换分支</translation>
+        <location line="+4"/>
+        <source>Download</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>ENTER</source>
-        <translation>输入</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <location line="+2"/>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>分支将在更新服务下次启动时自动切换。</translation>
+        <location line="+12"/>
+        <source>Install Update</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+0"/>
-        <source>Enter branch name</source>
-        <translation>输入分支名称</translation>
+        <source>INSTALL</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+8"/>
+        <source>Target Branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>SELECT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Select a branch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>UNINSTALL</source>
         <translation>卸载</translation>
     </message>
@@ -1057,13 +1036,8 @@ location set</source>
         <translation>您确定要卸载吗？</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>failed to fetch update</source>
-        <translation>获取更新失败</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+21"/>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
         <translation>查看</translation>
     </message>
@@ -1081,7 +1055,7 @@ location set</source>
         <translation>警告：这将授予SSH访问权限给您GitHub设置中的所有公钥。切勿输入您自己以外的GitHub用户名。comma员工永远不会要求您添加他们的GitHub用户名。</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
         <location line="+24"/>
         <source>ADD</source>
         <translation>添加</translation>
@@ -1151,7 +1125,7 @@ location set</source>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-324"/>
+        <location filename="../qt/offroad/settings.cc" line="-303"/>
         <source>Enable openpilot</source>
         <translation>启用openpilot</translation>
     </message>
@@ -1288,12 +1262,11 @@ location set</source>
     <name>WifiUI</name>
     <message>
         <location filename="../qt/offroad/networking.cc" line="+113"/>
-        <location line="+53"/>
         <source>Scanning for networks...</source>
         <translation>正在扫描网络……</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+80"/>
         <source>CONNECTING...</source>
         <translation>正在连接……</translation>
     </message>
