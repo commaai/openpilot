@@ -67,9 +67,7 @@ class WaitTimeHelper:
     self.ready_event.wait(timeout=t)
 
 
-def run(cmd: List[str], cwd: Optional[str] = None, low_priority: bool = False):
-  if low_priority:
-    cmd = ["nice", "-n", "19"] + cmd
+def run(cmd: List[str], cwd: Optional[str] = None):
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -212,7 +210,7 @@ def init_overlay() -> None:
   run(["sudo"] + mount_cmd)
   run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
 
-  git_diff = run(["git", "diff"], OVERLAY_MERGED, low_priority=True)
+  git_diff = run(["git", "diff"], OVERLAY_MERGED)
   params.put("GitDiff", git_diff)
   cloudlog.info(f"git diff output:\n{git_diff}")
 
@@ -277,7 +275,7 @@ def check_git_fetch_result(fetch_txt: str) -> bool:
 def check_for_update() -> Tuple[bool, bool]:
   setup_git_options(OVERLAY_MERGED)
   try:
-    git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
+    git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED)
     return True, check_git_fetch_result(git_fetch_output)
   except subprocess.CalledProcessError:
     return False, False
@@ -288,7 +286,7 @@ def fetch_update() -> bool:
 
   setup_git_options(OVERLAY_MERGED)
 
-  git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED, low_priority=True)
+  git_fetch_output = run(["git", "fetch"], OVERLAY_MERGED)
   cloudlog.info("git fetch success: %s", git_fetch_output)
 
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
@@ -315,7 +313,7 @@ def fetch_update() -> bool:
       if new_branch is not None:
         cloudlog.info(f"switching to branch {repr(new_branch)}")
         cmds.insert(0, ["git", "checkout", "-f", new_branch])
-      r = [run(cmd, OVERLAY_MERGED, low_priority=True) for cmd in cmds]
+      r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
       cloudlog.info("git reset success: %s", '\n'.join(r))
 
       if AGNOS:
