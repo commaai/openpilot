@@ -172,10 +172,10 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.EQUINOX:
       ret.minEnableSpeed = -1
-      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
-      ret.wheelbase = 2.72 #107.3 inches in meters
-      ret.steerRatio = 14.4 # guess for tourx
-      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.72
+      ret.steerRatio = 14.4
+      ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # TODO: get actual value, for now starting with reasonable value for
