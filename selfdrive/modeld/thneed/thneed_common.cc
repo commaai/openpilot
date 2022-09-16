@@ -11,6 +11,11 @@ map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
 
+void Thneed::stop() {
+  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
+  record = false;
+}
+
 void Thneed::clinit() {
   device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   if (context == NULL) context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -131,23 +136,6 @@ cl_int CLQueuedKernel::exec() {
     kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 }
 
-uint64_t CLQueuedKernel::benchmark() {
-  uint64_t ret = 0;
-  int old_record = thneed->record;
-  thneed->record = 0;
-  clFinish(thneed->command_queue);
-  // TODO: benchmarking at a lower level will make this more accurate
-  for (int i = 0; i < 10; i++) {
-    uint64_t sb = nanos_since_boot();
-    exec();
-    clFinish(thneed->command_queue);
-    uint64_t et = nanos_since_boot() - sb;
-    if (ret == 0 || et < ret) ret = et;
-  }
-  thneed->record = old_record;
-  return ret;
-}
-
 void CLQueuedKernel::debug_print(bool verbose) {
   printf("%p %56s -- ", kernel, name.c_str());
   for (int i = 0; i < work_dim; i++) {
@@ -224,12 +212,5 @@ cl_int thneed_clSetKernelArg(cl_kernel kernel, cl_uint arg_index, size_t arg_siz
     g_args[make_pair(kernel, arg_index)] = string("");
   }
   cl_int ret = clSetKernelArg(kernel, arg_index, arg_size, arg_value);
-  return ret;
-}
-
-cl_program thneed_clCreateProgramWithSource(cl_context context, cl_uint count, const char **strings, const size_t *lengths, cl_int *errcode_ret) {
-  assert(count == 1);
-  cl_program ret = clCreateProgramWithSource(context, count, strings, lengths, errcode_ret);
-  g_program_source[ret] = strings[0];
   return ret;
 }

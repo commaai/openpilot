@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 import unittest
 import numpy as np
+from common.params import Params
+
+
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
-def run_cruise_simulation(cruise, t_end=100.):
+def run_cruise_simulation(cruise, t_end=20.):
   man = Maneuver(
     '',
     duration=t_end,
-    initial_speed=float(0.),
+    initial_speed=max(cruise - 1., 0.0),
     lead_relevancy=True,
     initial_distance_lead=100,
     cruise_values=[cruise],
@@ -21,12 +24,15 @@ def run_cruise_simulation(cruise, t_end=100.):
 
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
-    for speed in np.arange(5, 40, 5):
-      print(f'Testing {speed} m/s')
-      cruise_speed = float(speed)
+    params = Params()
+    for e2e in [False, True]:
+      params.put_bool("EndToEndLong", e2e)
+      for speed in np.arange(5, 40, 5):
+        print(f'Testing {speed} m/s')
+        cruise_speed = float(speed)
 
-      simulation_steady_state = run_cruise_simulation(cruise_speed)
-      self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
+        simulation_steady_state = run_cruise_simulation(cruise_speed)
+        self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
 
 
 if __name__ == "__main__":

@@ -30,11 +30,3 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
     printf("model exec in %lu us\n", (te-tb)/1000);
   }
 }
-
-void Thneed::stop() {
-}
-
-void Thneed::find_inputs_outputs() {
-  // thneed on PC doesn't work on old style inputs/outputs
-}
-

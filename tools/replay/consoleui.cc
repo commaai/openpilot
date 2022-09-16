@@ -18,7 +18,10 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
     {"space", "Pause/Resume"},
     {"e", "Next Engagement"},
     {"d", "Next Disengagement"},
-    {"t", "Next User Tag"}
+    {"t", "Next User Tag"},
+    {"i", "Next Info"},
+    {"w", "Next Warning"},
+    {"c", "Next Critical"},
   },
   {
     {"enter", "Enter seek request"},
@@ -344,6 +347,12 @@ void ConsoleUI::handleKey(char c) {
     replay->seekToFlag(FindFlag::nextDisEngagement);
   } else if (c == 't') {
     replay->seekToFlag(FindFlag::nextUserFlag);
+  } else if (c == 'i') {
+    replay->seekToFlag(FindFlag::nextInfo);
+  } else if (c == 'w') {
+    replay->seekToFlag(FindFlag::nextWarning);
+  } else if (c == 'c') {
+    replay->seekToFlag(FindFlag::nextCritical);
   } else if (c == 'm') {
     replay->seekTo(+60, true);
   } else if (c == 'M') {
