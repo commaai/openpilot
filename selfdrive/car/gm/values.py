@@ -90,7 +90,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
     GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II", footnotes=[], harness=Harness.gm),
     GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", footnotes=[], harness=Harness.gm),
   ],
-  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2018-22", "Premier/LT/RS Trim w Adaptive Cruise Control & LKAS", footnotes=[], harness=Harness.gm),
+  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22", "Adaptive Cruise Control (ACC)", footnotes=[], harness=Harness.gm),
 }
 
 
