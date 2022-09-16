@@ -1169,7 +1169,7 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 端對端縱向控制（實驗性功能） 🌮</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -1184,7 +1184,7 @@ location set</source>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>讓駕駛模型直接控製油門和剎車，openpilot將會模仿人類司機的駕駛方式。該功能仍非常實驗性。</translation>
     </message>
     <message>
         <location line="-55"/>
