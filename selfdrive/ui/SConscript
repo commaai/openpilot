@@ -122,3 +122,6 @@ if GetOption('extras'):
 # build watch3
 if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])
+
+if GetOption('test'):
+    qt_env.Program('tests/test_offroad_alerts', ['tests/test_offroad_alerts.cc'], LIBS=qt_libs)
