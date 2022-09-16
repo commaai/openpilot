@@ -1189,12 +1189,12 @@ location set</source>
     <message>
         <location line="+24"/>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 縱向控制目前不適用於這輛車。</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>打開縱向控制（實驗）以啟用此功能。</translation>
     </message>
     <message>
         <location line="-80"/>
