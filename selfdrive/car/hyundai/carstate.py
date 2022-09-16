@@ -4,8 +4,6 @@ import math
 
 from cereal import car
 from common.conversions import Conversions as CV
-from common.filter_simple import FirstOrderFilter
-from common.realtime import DT_CTRL
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.values import HyundaiFlags, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
@@ -35,8 +33,9 @@ class CarState(CarStateBase):
     self.park_brake = False
     self.buttons_counter = 0
 
-    # noisy signal sampled at ~5 Hz
-    self.cluster_speed = FirstOrderFilter(0.0, 1 / 5., DT_CTRL, initialized=False)
+    # noisy signal sampled at 5 Hz
+    self.cluster_speed = 0
+    self.cluster_speed_counter = 0
 
     self.params = CarControllerParams(CP)
 
@@ -64,15 +63,15 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
 
-    cluster_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
-    if not is_metric:
-      # compensate for dash rounding
-      cluster_speed = math.floor(cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
+    self.cluster_speed_counter += 1
+    if self.cluster_speed_counter > 20:  # 5 Hz
+      self.cluster_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
+      self.cluster_speed_counter = 0
+      if not is_metric:
+        # compensate for dash rounding
+        self.cluster_speed = math.floor(self.cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
 
-    self.cluster_speed.update(cluster_speed)
-
-    if self.cluster_speed.initialized:
-      ret.vEgoCluster = self.cluster_speed.x * speed_conv
+    ret.vEgoCluster = self.cluster_speed * speed_conv
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
