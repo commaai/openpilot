@@ -10,6 +10,7 @@ from selfdrive.car.hyundai.values import HyundaiFlags, DBC, FEATURES, CAMERA_SCC
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
+CLUSTER_SAMPLE_RATE = 20  # frames
 
 
 class CarState(CarStateBase):
@@ -33,9 +34,9 @@ class CarState(CarStateBase):
     self.park_brake = False
     self.buttons_counter = 0
 
-    # noisy signal sampled at 5 Hz
+    # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
     self.cluster_speed = 0
-    self.cluster_speed_counter = 0
+    self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
     self.params = CarControllerParams(CP)
 
@@ -64,11 +65,12 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.1
 
     self.cluster_speed_counter += 1
-    if self.cluster_speed_counter > 20:  # 5 Hz
+    if self.cluster_speed_counter > CLUSTER_SAMPLE_RATE:
       self.cluster_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
       self.cluster_speed_counter = 0
+
+      # mimic how dash converts to imperial
       if not is_metric:
-        # compensate for dash rounding
         self.cluster_speed = math.floor(self.cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
 
     ret.vEgoCluster = self.cluster_speed * speed_conv
