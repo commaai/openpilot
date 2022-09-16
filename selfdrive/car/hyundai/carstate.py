@@ -34,8 +34,8 @@ class CarState(CarStateBase):
     self.buttons_counter = 0
 
     # noisy signal sampled at 5 Hz
-    self.dash_speed = 0
-    self.dash_speed_counter = 0
+    self.cluster_speed = 0
+    self.cluster_speed_counter = 0
 
     self.params = CarControllerParams(CP)
 
@@ -46,6 +46,7 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
     cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
     is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
+    speed_conv = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
                         cp.vl["CGW2"]["CF_Gway_RLDrSw"], cp.vl["CGW2"]["CF_Gway_RRDrSw"]])
@@ -62,16 +63,15 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
 
-    self.dash_speed_counter += 1
-    if self.dash_speed_counter > 20:  # 5 Hz
-      self.dash_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
-      self.dash_speed_counter = 0
+    self.cluster_speed_counter += 1
+    if self.cluster_speed_counter > 20:  # 5 Hz
+      self.cluster_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
+      self.cluster_speed_counter = 0
+      if not is_metric:
+        # compensate for dash rounding
+        self.cluster_speed = math.floor(self.cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
 
-    if is_metric:
-      ret.vEgoCluster = self.dash_speed * CV.KPH_TO_MS
-    else:
-      # compensate for dash rounding
-      ret.vEgoCluster = math.floor(self.dash_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH) * CV.MPH_TO_MS
+    ret.vEgoCluster = self.cluster_speed * speed_conv
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
@@ -93,7 +93,6 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
       ret.cruiseState.standstill = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 4.
-      speed_conv = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speed = cp_cruise.vl["SCC11"]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
