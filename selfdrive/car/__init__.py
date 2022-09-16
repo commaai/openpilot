@@ -12,6 +12,14 @@ ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 
+def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
+  if val > val_steady + hyst_gap:
+    val_steady = val - hyst_gap
+  elif val < val_steady - hyst_gap:
+    val_steady = val + hyst_gap
+  return val_steady
+
+
 def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
                         unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
   if cur_but != unpressed:

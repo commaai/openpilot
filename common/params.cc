@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <sys/file.h>
 
+#include <algorithm>
 #include <csignal>
 #include <unordered_map>
 
@@ -154,18 +155,24 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PrimeType", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
-    {"ReleaseNotes", PERSISTENT},
     {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
     {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"SshEnabled", PERSISTENT},
     {"SubscriberInfo", PERSISTENT},
-    {"SwitchToBranch", CLEAR_ON_MANAGER_START},
     {"TermsVersion", PERSISTENT},
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
+    {"UpdaterState", CLEAR_ON_MANAGER_START},
+    {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
+    {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
+    {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
+    {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
+    {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
+    {"UpdaterNewDescription", CLEAR_ON_MANAGER_START},
+    {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
     {"WideCameraOnly", PERSISTENT},
@@ -195,6 +202,14 @@ Params::Params(const std::string &path) {
   prefix = env ? "/" + std::string(env) : "/d";
   std::string default_param_path = ensure_params_path(prefix);
   params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);
+}
+
+std::vector<std::string> Params::allKeys() const {
+  std::vector<std::string> ret;
+  for (auto &p : keys) {
+    ret.push_back(p.first);
+  }
+  return ret;
 }
 
 bool Params::checkKey(const std::string &key) {

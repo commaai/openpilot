@@ -12,7 +12,7 @@ from system.hardware import HARDWARE
 os.environ['FAKEUPLOAD'] = "1"
 
 MAX_STARTUP_TIME = 3
-ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['updated', 'pandad'])]
+ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['pandad', ])]
 
 
 class TestManager(unittest.TestCase):

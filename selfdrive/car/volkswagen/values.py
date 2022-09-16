@@ -20,7 +20,6 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 class CarControllerParams:
   HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
   ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
-  ACC_HUD_STEP = 4                        # ACC_GRA_Anziege frequency 25Hz
 
   ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
   ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
@@ -37,6 +36,7 @@ class CarControllerParams:
 
     if CP.carFingerprint in PQ_CARS:
       self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
+      self.ACC_HUD_STEP = 4               # ACC_GRA_Anziege frequency 25Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 6             # Max HCA reached in 1.00s (STEER_MAX / (50Hz * 1.00))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
@@ -65,6 +65,7 @@ class CarControllerParams:
 
     else:
       self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+      self.ACC_HUD_STEP = 6               # ACC_02 message frequency 16Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
@@ -163,7 +164,7 @@ class Footnote(Enum):
 
 @dataclass
 class VWCarInfo(CarInfo):
-  package: str = "Driver Assistance"
+  package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
   harness: Enum = Harness.vw
 
 
@@ -215,13 +216,13 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.AUDI_A3_MK3: [
-    VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
-    VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
-    VWCarInfo("Audi RS3 2018", "ACC + Lane Assist"),
-    VWCarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
+    VWCarInfo("Audi A3 2014-19"),
+    VWCarInfo("Audi A3 Sportback e-tron 2017-18"),
+    VWCarInfo("Audi RS3 2018"),
+    VWCarInfo("Audi S3 2015-17"),
   ],
-  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018", "ACC + Lane Assist"),
-  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
+  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
