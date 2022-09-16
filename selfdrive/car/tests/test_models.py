@@ -22,7 +22,7 @@ from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 import matplotlib.pyplot as plt
-plt.rcParams['figure.figsize'] = [17, 12]
+plt.rcParams['figure.figsize'] = [15, 10]
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -237,33 +237,35 @@ class TestCarModelBase(unittest.TestCase):
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
-    # self.dat.append([ret.vEgo, ret.vEgoRaw, ret.vEgoCluster, cp.vl["CLU15"]["CF_Clu_VehicleSpeed"], self.dash_speed_seen])
-    plt.clf()
-    CS = self.CI.CS
-    speed2_not_set = not any([d[4] for d in CS.dat])
-    if not CS.is_metric:
-      plt.ylabel('mph')
-      if speed2_not_set:
-        plt.plot([d[0] * CV.MS_TO_MPH for d in CS.dat], label='CS.vEgo')
-        plt.plot([round(d[3] * CV.KPH_TO_MPH) for d in CS.dat], label='CF_Clu_VehicleSpeed (mph from kph)')
-        plt.plot([round(d[5] * CV.KPH_TO_MPH) for d in CS.dat], label='CF_Clu_VehicleSpeed low frq')
-      else:
-        plt.plot([d[0] * CV.MS_TO_MPH for d in CS.dat], label='CS.vEgo')
-        plt.plot([d[2] * CV.MS_TO_MPH for d in CS.dat], label='CF_Clu_VehicleSpeed2 (native mph)')
-    else:
-      plt.ylabel('kph')
-      if speed2_not_set:
-        plt.plot([d[0] * CV.MS_TO_KPH for d in CS.dat], label='CS.vEgo')
-        plt.plot([d[3] for d in CS.dat], label='CF_Clu_VehicleSpeed (native kph)')
-        plt.plot([round(d[5]) for d in CS.dat], label='CF_Clu_VehicleSpeed low frq')
-      else:
-        plt.plot([d[0] * CV.MS_TO_KPH for d in CS.dat], label='CS.vEgo')
-        plt.plot([d[2] * CV.MS_TO_KPH for d in CS.dat], label='CF_Clu_VehicleSpeed2 (native kph)')
+    self.assertLess(self.CI.CS.updates / self.CI.CS.frame * 100, -11000000)
 
-    plt.title(self.CP.carFingerprint)
-    plt.legend()
-    plt.xlabel(f'{CS.is_metric=}')
-    plt.savefig('/home/batman/notebook_data/hyundai_cluster_speeds/{}_{}.png'.format(self.CP.carFingerprint, random.randint(0, 100)))
+    # # self.dat.append([ret.vEgo, ret.vEgoRaw, ret.vEgoCluster, cp.vl["CLU15"]["CF_Clu_VehicleSpeed"], self.dash_speed_seen])
+    # plt.clf()
+    # CS = self.CI.CS
+    # speed2_not_set = not any([d[4] for d in CS.dat])
+    # if not CS.is_metric:
+    #   plt.ylabel('mph')
+    #   if speed2_not_set:
+    #     plt.plot([d[0] * CV.MS_TO_MPH for d in CS.dat], label='CS.vEgo')
+    #     plt.plot([round(d[3] * CV.KPH_TO_MPH) for d in CS.dat], label='CF_Clu_VehicleSpeed (mph from kph)')
+    #     plt.plot([d[2] * CV.MS_TO_MPH for d in CS.dat], label='CF_Clu_VehicleSpeed low frq')
+    #   else:
+    #     plt.plot([d[0] * CV.MS_TO_MPH for d in CS.dat], label='CS.vEgo')
+    #     plt.plot([d[2] * CV.MS_TO_MPH for d in CS.dat], label='CF_Clu_VehicleSpeed2 (native mph)')
+    # else:
+    #   plt.ylabel('kph')
+    #   if speed2_not_set:
+    #     plt.plot([d[0] * CV.MS_TO_KPH for d in CS.dat], label='CS.vEgo')
+    #     plt.plot([d[3] for d in CS.dat], linewidth=2, label='CF_Clu_VehicleSpeed (native kph)')
+    #     plt.plot([round(d[5]) for d in CS.dat], label='CF_Clu_VehicleSpeed low frq')
+    #   else:
+    #     plt.plot([d[0] * CV.MS_TO_KPH for d in CS.dat], label='CS.vEgo')
+    #     plt.plot([d[2] * CV.MS_TO_KPH for d in CS.dat], label='CF_Clu_VehicleSpeed2 (native kph)')
+    #
+    # plt.title(self.CP.carFingerprint)
+    # plt.legend()
+    # plt.xlabel(f'{CS.is_metric=}')
+    # plt.savefig('/home/batman/notebook_data/hyundai_cluster_speeds/{}_{}.png'.format(self.CP.carFingerprint, random.randint(0, 100)))
 
     #   # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
     #

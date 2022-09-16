@@ -75,8 +75,11 @@ class CarState(CarStateBase):
     #   ret.vEgoCluster = dash_speed * speed_conv
 
     # on some cars, CLU15 can be 12+ Hz and noisy (expected only 4 Hz), while the dash likely only samples at a much lower rate
+    if len(cp.vl_all['CLU15']['CF_Clu_VehicleSpeed']):
+      self.updates += 1
     if self.frame > 25:  # 5 Hz
-      self.frame = 0
+      # self.frame = 0
+      # self.updates += 1
       self.dash_speed_alt = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
 
     if self.is_metric:
