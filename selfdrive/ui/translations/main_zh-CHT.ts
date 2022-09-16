@@ -1187,7 +1187,17 @@ location set</source>
         <translation>讓駕駛模型直接控製油門和剎車，openpilot將會模仿人類司機的駕駛方式。該功能仍非常實驗性。</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="+24"/>
+        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enable experimental longitudinal control to enable this.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>油門取消控車</translation>
     </message>
