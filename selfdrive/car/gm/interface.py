@@ -71,7 +71,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.minSteerSpeed = 10 * CV.KPH_TO_MS
@@ -138,23 +138,23 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1601. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.centerToFront = ret.wheelbase * 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate == CAR.BOLT_EUV:
+    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
       ret.minEnableSpeed = -1
       ret.mass = 1669. + STD_CARGO_KG
-      ret.wheelbase = 2.675
+      ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
       ret.centerToFront = 2.15  # measured
       tire_stiffness_factor = 1.0
