@@ -215,6 +215,7 @@ class CarState(CarStateBase):
     ret.stockAeb = False
 
     # Update ACC radar status.
+    self.acc_type = 0  # TODO: this is ACC "basic" with nonzero min speed, support FtS (1) later
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = bool(pt_cp.vl["Motor_2"]["GRA_Status"])
     if self.CP.pcmCruise:

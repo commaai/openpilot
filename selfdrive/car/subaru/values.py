@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
 
+from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from cereal import car
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -71,10 +73,23 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
 }
 
+SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ASCENT: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa5 \x19\x02\x00',
       b'\xa5 !\002\000',
       b'\xf1\x82\xa5 \x19\x02\x00',
@@ -89,6 +104,7 @@ FW_VERSIONS = {
       b'\000\000e~\037@ \'',
       b'\x00\x00e@\x1f@ $',
       b'\x00\x00d\xb9\x00\x00\x00\x00',
+      b'\x00\x00e@\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xbb,\xa0t\a',
@@ -96,15 +112,17 @@ FW_VERSIONS = {
       b'\xf1\x82\xbb,\xa0t\a',
       b'\xf1\x82\xd9,\xa0@\a',
       b'\xf1\x82\xd1,\xa0q\x07',
+      b'\xd1,\xa0q\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x00\xfe\xf7\x00\x00',
       b'\001\xfe\xf9\000\000',
       b'\x01\xfe\xf7\x00\x00',
+      b'\x01\xfe\xfa\x00\x00',
     ],
   },
   CAR.LEGACY: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa1\\  x04\x01',
       b'\xa1  \x03\x03'
     ],
@@ -126,7 +144,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.IMPREZA: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\x7a\x94\x3f\x90\x00',
       b'\xa2 \x185\x00',
       b'\xa2 \x193\x00',
@@ -201,7 +219,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.IMPREZA_2020: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa2 \0314\000',
       b'\xa2 \0313\000',
       b'\xa2 !i\000',
@@ -239,7 +257,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa3 \x18\x14\x00',
       b'\xa3  \024\000',
       b'\xa3 \031\024\000',
@@ -274,7 +292,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.FORESTER_PREGLOBAL: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
       b'\xf1\x00\xbb\x0c\x04',
     ],
@@ -303,7 +321,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEGACY_PREGLOBAL: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'k\x97D\x00',
       b'[\xba\xc4\x03',
       b'{\x97D\x00',
@@ -333,7 +351,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK_PREGLOBAL: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'{\x9a\xac\x00',
       b'k\x97\xac\x00',
       b'\x5b\xf7\xbc\x03',
@@ -387,7 +405,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK_PREGLOBAL_2018: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\x8b\x97\xac\x00',
       b'\x8b\x9a\xac\x00',
       b'\x9b\x97\xac\x00',
@@ -430,7 +448,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.OUTBACK: {
-    (Ecu.esp, 0x7b0, None): [
+    (Ecu.abs, 0x7b0, None): [
       b'\xa1  \x06\x01',
       b'\xa1  \a\x00',
       b'\xa1  \b\001',

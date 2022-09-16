@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
     ret.radarOffCan = True
@@ -38,6 +38,7 @@ class CarInterface(CarInterfaceBase):
 
       if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
         ret.networkLocation = NetworkLocation.gateway
+        ret.experimentalLongitudinalAvailable = True
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
@@ -48,12 +49,6 @@ class CarInterface(CarInterfaceBase):
       #   https://blog.willemmelching.nl/carhacking/2022/01/02/vw-part1/
       # Panda ALLOW_DEBUG firmware required.
       ret.dashcamOnly = True
-
-      if disable_radar and ret.networkLocation == NetworkLocation.gateway:
-        # Proof-of-concept, prep for E2E only. No radar points available. Follow-to-stop not yet supported, but should
-        # be simple to add when a suitable test car becomes available. Panda ALLOW_DEBUG firmware required.
-        ret.openpilotLongitudinalControl = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
 
     else:
       # Set global MQB parameters
@@ -85,6 +80,13 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiV = [0.2]
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
+
+    if experimental_long and candidate in PQ_CARS:
+      # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
+      ret.openpilotLongitudinalControl = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
+      if ret.transmissionType == TransmissionType.manual:
+        ret.minEnableSpeed = 4.5
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
     ret.longitudinalActuatorDelayUpperBound = 0.5  # s

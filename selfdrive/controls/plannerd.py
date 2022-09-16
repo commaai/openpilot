@@ -3,7 +3,7 @@ from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
 from system.swaglog import cloudlog
-from selfdrive.controls.lib.longitudinal_planner import Planner
+from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging
 
@@ -16,7 +16,7 @@ def plannerd_thread(sm=None, pm=None):
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
-  longitudinal_planner = Planner(CP)
+  longitudinal_planner = LongitudinalPlanner(CP)
   lateral_planner = LateralPlanner(CP)
 
   if sm is None:

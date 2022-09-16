@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
