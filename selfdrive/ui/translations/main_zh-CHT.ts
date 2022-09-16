@@ -985,42 +985,42 @@ location set</source>
     <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>系統更新只會在熄火時下載。</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>當前版本</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>下載</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>安裝更新</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>安裝</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>目標分支</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>選取</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>選取一個分支</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -1169,25 +1169,35 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 端對端縱向控制（實驗性功能） 🌮</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>使用 openpilot 縱向控制（實驗）</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;注意：這台車的 openpilot 縱向控制仍然是實驗中的功能，開啟這功能將會關閉自動緊急煞車 (AEB)。&lt;/b&gt;</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>讓駕駛模型直接控製油門和剎車，openpilot將會模仿人類司機的駕駛方式。該功能仍非常實驗性。</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="+24"/>
+        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <translation>openpilot 縱向控制目前不適用於這輛車。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enable experimental longitudinal control to enable this.</source>
+        <translation>打開縱向控制（實驗）以啟用此功能。</translation>
+    </message>
+    <message>
+        <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>油門取消控車</translation>
     </message>

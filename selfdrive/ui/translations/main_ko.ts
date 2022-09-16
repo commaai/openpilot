@@ -1187,7 +1187,17 @@ location set</source>
         <translation>주행모델이 가속과 감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="+24"/>
+        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enable experimental longitudinal control to enable this.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>가속페달 조작시 해제</translation>
     </message>

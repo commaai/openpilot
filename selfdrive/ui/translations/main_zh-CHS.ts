@@ -1167,7 +1167,7 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 端对端纵向控制（实验性功能） 🌮</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -1182,10 +1182,20 @@ location set</source>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
+        <translation>让驾驶模型直接控制油门和刹车，openpilot将会模仿人类司机的驾驶方式。该功能仍非常实验性。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>openpilot longitudinal control is not currently available for this car.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="+1"/>
+        <source>Enable experimental longitudinal control to enable this.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>踩油门时取消控制</translation>
     </message>
