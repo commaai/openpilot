@@ -4,7 +4,6 @@
 #include <cmath>
 
 #include <QDebug>
-#include <QFileInfo>
 #include <QPainterPath>
 
 #include "common/swaglog.h"
@@ -29,8 +28,6 @@ const float VALID_POS_STD = 50.0; // m
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
-  QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
-
   // Instructions
   map_instructions = new MapInstructions(this);
   QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
@@ -60,45 +57,40 @@ MapWindow::~MapWindow() {
 }
 
 void MapWindow::initLayers() {
-  // This doesn't work from initializeGL
-  if (!m_map->layerExists("modelPathLayer")) {
-    qDebug() << "Initializing modelPathLayer";
-    QVariantMap modelPath;
-    modelPath["id"] = "modelPathLayer";
-    modelPath["type"] = "line";
-    modelPath["source"] = "modelPathSource";
-    m_map->addLayer(modelPath);
-    m_map->setPaintProperty("modelPathLayer", "line-color", QColor("red"));
-    m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
-    m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
-  }
-  if (!m_map->layerExists("navLayer")) {
-    qDebug() << "Initializing navLayer";
-    QVariantMap nav;
-    nav["id"] = "navLayer";
-    nav["type"] = "line";
-    nav["source"] = "navSource";
-    m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
-    m_map->setPaintProperty("navLayer", "line-width", 7.5);
-    m_map->setLayoutProperty("navLayer", "line-cap", "round");
-  }
-  if (!m_map->layerExists("carPosLayer")) {
-    qDebug() << "Initializing carPosLayer";
-    m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
+  // Initializing modelPathLayer
+  QVariantMap modelPath;
+  modelPath["id"] = "modelPathLayer";
+  modelPath["type"] = "line";
+  modelPath["source"] = "modelPathSource";
+  m_map->addLayer(modelPath);
+  m_map->setPaintProperty("modelPathLayer", "line-color", QColor("red"));
+  m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
+  m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
 
-    QVariantMap carPos;
-    carPos["id"] = "carPosLayer";
-    carPos["type"] = "symbol";
-    carPos["source"] = "carPosSource";
-    m_map->addLayer(carPos);
-    m_map->setLayoutProperty("carPosLayer", "icon-pitch-alignment", "map");
-    m_map->setLayoutProperty("carPosLayer", "icon-image", "label-arrow");
-    m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
-    m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
-    m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
-    m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
-  }
+  // Initializing navLayer
+  QVariantMap nav;
+  nav["id"] = "navLayer";
+  nav["type"] = "line";
+  nav["source"] = "navSource";
+  m_map->addLayer(nav, "road-intersection");
+  m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
+  m_map->setPaintProperty("navLayer", "line-width", 7.5);
+  m_map->setLayoutProperty("navLayer", "line-cap", "round");
+
+  // Initializing carPosLayer
+  m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
+
+  QVariantMap carPos;
+  carPos["id"] = "carPosLayer";
+  carPos["type"] = "symbol";
+  carPos["source"] = "carPosSource";
+  m_map->addLayer(carPos);
+  m_map->setLayoutProperty("carPosLayer", "icon-pitch-alignment", "map");
+  m_map->setLayoutProperty("carPosLayer", "icon-image", "label-arrow");
+  m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
+  m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
+  m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
+  m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
 }
 
 void MapWindow::updateState(const UIState &s) {
@@ -169,17 +161,11 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  if (m_map.isNull()) {
-    return;
-  }
-
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
     map_instructions->showError(tr("Map Loading"));
     return;
   }
-
-  initLayers();
 
   if (locationd_valid || laikad_valid) {
     map_instructions->noError();
@@ -259,14 +245,14 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
-    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
-      loaded_once = true;
+    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+      initLayers();
+      QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
     }
   });
 }
 
 void MapWindow::paintGL() {
-  if (!isVisible() || m_map.isNull()) return;
   m_map->render();
 }
 
