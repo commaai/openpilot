@@ -28,11 +28,16 @@ class CarControllerParams:
   # TODO: MAX_GAS should achieve 2 m/s^2 and MAX_BRAKE with regen should achieve -3.5 m/s^2
   MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
   ZERO_GAS = 2048  # Coasting
-  MAX_BRAKE = 350  # ~ -3.5 m/s^2 with regen
+  MAX_BRAKE = 400  # ~ -3.5 m/s^2 with regen
   MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
 
+  # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
+  # perform the closed loop control, and might need some
+  # to apply some more braking if we're on a downhill slope.
+  # Our controller should still keep the 2 second average above
+  # -3.5 m/s^2 as per planner limits
   ACCEL_MAX = 2.  # m/s^2
-  ACCEL_MIN = -3.5  # m/s^2
+  ACCEL_MIN = -4.  # m/s^2
 
   # ICE has much less engine braking force compared to regen in EVs,
   # lower threshold removes some braking deadzone
