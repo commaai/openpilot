@@ -80,6 +80,8 @@ class CarState(CarStateBase):
       self.frame = 0
       self.dash_speed_alt = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
 
+    ret.vEgoCluster = self.dash_speed_alt * CV.KPH_TO_MS
+
     self.dat.append([ret.vEgo, ret.vEgoRaw, ret.vEgoCluster, cp.vl["CLU15"]["CF_Clu_VehicleSpeed"], self.dash_speed_seen, self.dash_speed_alt])
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]

@@ -22,7 +22,7 @@ from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 import matplotlib.pyplot as plt
-plt.rcParams['figure.figsize'] = [20, 15]
+plt.rcParams['figure.figsize'] = [17, 12]
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
