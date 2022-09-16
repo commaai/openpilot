@@ -115,6 +115,7 @@ class TestSensord(unittest.TestCase):
     HARDWARE.initialize_hardware()
 
     # read initial sensor values every test case can use
+    os.system("pkill -f ./_sensord")
     cls.sample_secs = 5
     managed_processes["sensord"].start()
     time.sleep(2)
