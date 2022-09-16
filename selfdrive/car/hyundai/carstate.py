@@ -15,6 +15,8 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    self.dat = []
+    self.frame = 0
 
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
@@ -34,13 +36,17 @@ class CarState(CarStateBase):
 
     # When available we use CLU15->CF_Clu_VehicleSpeed2 to populate vEgoCluster
     self.dash_speed_seen = False
+    self.dash_speed_alt = 0
+    self.updates = 0
 
     self.params = CarControllerParams(CP)
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
+    self.frame += 1
 
+    self.is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
     speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 1 else CV.KPH_TO_MS
 
     ret = car.CarState.new_message()
@@ -66,6 +72,15 @@ class CarState(CarStateBase):
     self.dash_speed_seen = self.dash_speed_seen or dash_speed > 1e-3
     if self.dash_speed_seen:
       ret.vEgoCluster = dash_speed * speed_conv
+
+    if len(cp.vl_all["CLU15"]["CF_Clu_VehicleSpeed"]):
+      self.updates += 1
+      print(self.updates, self.frame)
+    if self.frame > 50:
+      self.frame = 0
+      self.dash_speed_alt = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
+
+    self.dat.append([ret.vEgo, ret.vEgoRaw, ret.vEgoCluster, cp.vl["CLU15"]["CF_Clu_VehicleSpeed"], self.dash_speed_seen, self.dash_speed_alt])
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
@@ -235,6 +250,7 @@ class CarState(CarStateBase):
       ("CF_Clu_AmpInfo", "CLU11"),
       ("CF_Clu_AliveCnt1", "CLU11"),
 
+      ("CF_Clu_VehicleSpeed", "CLU15"),
       ("CF_Clu_VehicleSpeed2", "CLU15"),
 
       ("ACCEnable", "TCS13"),
