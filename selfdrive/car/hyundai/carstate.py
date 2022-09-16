@@ -68,7 +68,7 @@ class CarState(CarStateBase):
       self.dash_speed_counter = 0
 
     if is_metric:
-      ret.vEgoCluster = self.dash_speed
+      ret.vEgoCluster = self.dash_speed * CV.KPH_TO_MS
     else:
       # compensate for dash rounding
       ret.vEgoCluster = math.floor(self.dash_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH) * CV.MPH_TO_MS
