@@ -8,9 +8,10 @@ from cereal import car
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
+from common.numpy_fast import interp
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_hysteresis, create_button_enable_events, gen_empty_fingerprint
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_deadzone
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
@@ -20,6 +21,7 @@ EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
+FRICTION_THRESHOLD = 0.2
 
 TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yaml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
@@ -101,6 +103,23 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
+  @staticmethod
+  def torque_from_lateral_accel_linear(lateral_accel_value, torque_params, lateral_accel_error=None, lateral_accel_deadzone=None, friction_compensation=False):
+    # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
+    if friction_compensation:
+      assert (lateral_accel_error is not None) and (lateral_accel_deadzone is not None)
+      friction = interp(
+        apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
+        [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
+        [-torque_params['friction'], torque_params['friction']]
+      )
+    else:
+      friction = 0.0
+    return (lateral_accel_value / torque_params['latAccelFactor']) + friction
+
+  def torque_from_lateral_accel(self):
+    return self.torque_from_lateral_accel_linear
+
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
   def get_std_params(candidate, fingerprint):
@@ -144,11 +163,12 @@ class CarInterfaceBase(ABC):
 
     tune.init('torque')
     tune.torque.useSteeringAngle = use_steering_angle
-    tune.torque.kp = 1.0 / params['LAT_ACCEL_FACTOR']
-    tune.torque.kf = 1.0 / params['LAT_ACCEL_FACTOR']
-    tune.torque.ki = 0.1 / params['LAT_ACCEL_FACTOR']
+    tune.torque.kp = 1.0
+    tune.torque.kf = 1.0
+    tune.torque.ki = 0.1
     tune.torque.friction = params['FRICTION']
-    tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
+    tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
+    tune.torque.latAccelOffset = 0.0
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
