@@ -20,11 +20,12 @@ TEST_CASE("offroadAlerts") {
   }
 
   // make sure if the keys are same.
-  REQUIRE(keys.size() == OFFROAD_ALERTS.size());
+  auto offroad_alerts = OffroadAlert::allAlerts();
+  REQUIRE(keys.size() == offroad_alerts.size());
   for (const auto &k : keys) {
-    auto result = std::find_if(OFFROAD_ALERTS.begin(), OFFROAD_ALERTS.end(), [=](auto &v) {
+    auto result = std::find_if(offroad_alerts.begin(), offroad_alerts.end(), [=](auto &v) {
         return std::get<0>(v) == k;
     });
-    REQUIRE(result != OFFROAD_ALERTS.end());
+    REQUIRE(result != offroad_alerts.end());
   }
 }
