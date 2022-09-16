@@ -25,7 +25,7 @@ class CarControllerParams:
 
   # Volt gas/brake lookups
   # TODO: These values should be confirmed on non-Volt vehicles.
-  # TODO: MAX_GAS should equal 2 m/s^2 and MAX_BRAKE with regen should equal -3.5 m/s^2
+  # TODO: MAX_GAS should achieve 2 m/s^2 and MAX_BRAKE with regen should achieve -3.5 m/s^2
   MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
   ZERO_GAS = 2048  # Coasting
   MAX_BRAKE = 350  # ~ -3.5 m/s^2 with regen
