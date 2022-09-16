@@ -4,7 +4,6 @@ import time
 import unittest
 import numpy as np
 from collections import namedtuple
-from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
