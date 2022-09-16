@@ -91,8 +91,6 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
 
   bool m_sourceAdded = false;
-
-  bool loaded_once = false;
   bool allow_open = true;
 
   // Panning

@@ -48,6 +48,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
     last_position = *last_gps_position;
   }
 
+  map_instructions->showError(tr("Map Loading"));
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
 }
@@ -161,12 +162,6 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  loaded_once = loaded_once || m_map->isFullyLoaded();
-  if (!loaded_once) {
-    map_instructions->showError(tr("Map Loading"));
-    return;
-  }
-
   if (locationd_valid || laikad_valid) {
     map_instructions->noError();
 
@@ -245,7 +240,9 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
-    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
+      map_instructions->noError();
+    }else if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
       initLayers();
       QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
     }
