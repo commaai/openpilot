@@ -888,13 +888,13 @@ trabalho definido</translation>
     <message>
         <location line="-2"/>
         <source>OFFLINE</source>
-        <translation>DESCONEC</translation>
+        <translation>OFFLINE</translation>
     </message>
     <message>
         <location line="+2"/>
         <location line="+13"/>
         <source>ONLINE</source>
-        <translation>CONECTADO</translation>
+        <translation>ONLINE</translation>
     </message>
     <message>
         <location line="-13"/>
@@ -989,47 +989,47 @@ trabalho definido</translation>
     <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atualizações baixadas durante o motor desligado.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versao Atual</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Download</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalar Atualização</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>INSTALAR</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Alterar Branch</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>SELECIONE</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecione uma branch</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>UNINSTALL</source>
-        <translation>DESINSTALAR</translation>
+        <translation>DESINSTAL</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1178,27 +1178,27 @@ trabalho definido</translation>
     <message>
         <location line="+6"/>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>Controle longitudinal experimental openpilot</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.&lt;/b&gt;</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deixe o modelo controlar o acelerador e os freios. openpilot irá conduzir como pensa que um humano faria. Super experimental.</translation>
     </message>
     <message>
         <location line="+24"/>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>controle longitudinal openpilot não está disponível para este carro.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilite o controle longitudinal experimental para habilitar isso.</translation>
     </message>
     <message>
         <location line="-80"/>
