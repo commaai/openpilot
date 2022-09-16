@@ -888,13 +888,13 @@ trabalho definido</translation>
     <message>
         <location line="-2"/>
         <source>OFFLINE</source>
-        <translation>DESCONEC</translation>
+        <translation>OFFLINE</translation>
     </message>
     <message>
         <location line="+2"/>
         <location line="+13"/>
         <source>ONLINE</source>
-        <translation>CONECTADO</translation>
+        <translation>ONLINE</translation>
     </message>
     <message>
         <location line="-13"/>
@@ -1014,7 +1014,7 @@ trabalho definido</translation>
     <message>
         <location line="+8"/>
         <source>Target Branch</source>
-        <translation>Branch Alvo</translation>
+        <translation>Alterar Branch</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1029,7 +1029,7 @@ trabalho definido</translation>
     <message>
         <location line="+12"/>
         <source>UNINSTALL</source>
-        <translation>DESINSTALAR</translation>
+        <translation>DESINSTAL</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1178,7 +1178,7 @@ trabalho definido</translation>
     <message>
         <location line="+6"/>
         <source>Experimental openpilot longitudinal control</source>
-        <translation>Controle longitudinal openpilot experimental</translation>
+        <translation>Controle longitudinal experimental openpilot</translation>
     </message>
     <message>
         <location line="+1"/>
