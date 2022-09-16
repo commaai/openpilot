@@ -414,7 +414,7 @@
         <location line="+12"/>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>订阅comma prime以获取导航。
+        <translation>订阅comma prime以获取导航。 
 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
