@@ -48,33 +48,33 @@ SENSOR_CONFIGURATIONS = (
 )
 
 Sensor = log.SensorEventData.SensorSource
-SensorConfig = namedtuple('SensorConfig', ['type', 'min_samples', 'sanity_min', 'sanity_max'])
+SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
   Sensor.rpr0521: {
-    SensorConfig("light", 100, 0, 150),
+    SensorConfig("light", 0, 150),
   },
 
   Sensor.lsm6ds3: {
-    SensorConfig("acceleration", 100, 5, 15),
-    SensorConfig("gyroUncalibrated", 100, 0, .2),
-    SensorConfig("temperature", 100, 0, 60),
+    SensorConfig("acceleration", 5, 15),
+    SensorConfig("gyroUncalibrated", 0, .2),
+    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.lsm6ds3trc: {
-    SensorConfig("acceleration", 100, 5, 15),
-    SensorConfig("gyroUncalibrated", 100, 0, .2),
-    SensorConfig("temperature", 100, 0, 60),
+    SensorConfig("acceleration", 5, 15),
+    SensorConfig("gyroUncalibrated", 0, .2),
+    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.bmx055: {
-    SensorConfig("acceleration", 100, 5, 15),
-    SensorConfig("gyroUncalibrated", 100, 0, .2),
-    SensorConfig("magneticUncalibrated", 100, 0, 300),
-    SensorConfig("temperature", 100, 0, 60),
+    SensorConfig("acceleration", 5, 15),
+    SensorConfig("gyroUncalibrated", 0, .2),
+    SensorConfig("magneticUncalibrated", 0, 300),
+    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.mmc5603nj: {
-    SensorConfig("magneticUncalibrated", 100, 0, 300),
+    SensorConfig("magneticUncalibrated", 0, 300),
   }
 }
 
