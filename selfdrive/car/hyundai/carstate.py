@@ -16,8 +16,6 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.dat = []
-    self.frame = 0
 
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
@@ -35,17 +33,15 @@ class CarState(CarStateBase):
     self.park_brake = False
     self.buttons_counter = 0
 
-    # When available we use CLU15->CF_Clu_VehicleSpeed2 to populate vEgoCluster
-    self.dash_speed_seen = False
-    self.dash_speed_alt = 0
-    self.updates = 0
+    # noisy signal sampled at 5 Hz
+    self.dash_speed = 0
+    self.dash_speed_counter = 0
 
     self.params = CarControllerParams(CP)
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
-    self.frame += 1
 
     self.is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
     speed_conv = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
@@ -69,31 +65,16 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.1
 
-    # dash_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed2"]
-    # self.dash_speed_seen = self.dash_speed_seen or dash_speed > 1e-3
-    # if self.dash_speed_seen:
-    #   ret.vEgoCluster = dash_speed * speed_conv
-
-    # on some cars, CLU15 can be 12+ Hz and noisy (expected only 4 Hz), while the dash likely only samples at a much lower rate
-    if len(cp.vl_all['CLU15']['CF_Clu_VehicleSpeed']):
-      self.updates += 1
-    if self.frame > 25:  # 5 Hz
-      # self.frame = 0
-      # self.updates += 1
-      self.dash_speed_alt = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
+    self.dash_speed_counter += 1
+    if self.dash_speed_counter > 20:  # 5 Hz
+      self.dash_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
+      self.dash_speed_counter = 0
 
     if self.is_metric:
-      # TODO: do we need to do anything when it's kph? likely not besides the oscillation that's already taken care of
-      ret.vEgoCluster = self.dash_speed_alt
+      ret.vEgoCluster = self.dash_speed
     else:
-      # dash applies some weird rounding
-      # TODO: debug comment, will be removed
-      # for example, 117 kph is 72.7 (73) mph, but 115 is 71.45 mph (which would be rounded to 71 normally, but dash shows 72 mph)
-      # without this and rounding normally, the C3 will never hit the speeds: 77 mph, 72 mph, 67 mph, 59 mph, 54 mph, 49 mph, ... 26 mph, 18 mph, 13 mph, 8 mph, 3 mph
-      # 0.6 also worked, but was wrong on a few speeds. 0.62... or kph_to_mph made the most sense and was the most correct
-      ret.vEgoCluster = math.floor(self.dash_speed_alt * CV.KPH_TO_MPH + CV.KPH_TO_MPH) * CV.MPH_TO_MS
-
-    self.dat.append([ret.vEgo, ret.vEgoRaw, ret.vEgoCluster, cp.vl["CLU15"]["CF_Clu_VehicleSpeed"], self.dash_speed_seen, self.dash_speed_alt])
+      # compensate for dash rounding
+      ret.vEgoCluster = math.floor(self.dash_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH) * CV.MPH_TO_MS
 
     ret.steeringAngleDeg = cp.vl["SAS11"]["SAS_Angle"]
     ret.steeringRateDeg = cp.vl["SAS11"]["SAS_Speed"]
@@ -264,7 +245,6 @@ class CarState(CarStateBase):
       ("CF_Clu_AliveCnt1", "CLU11"),
 
       ("CF_Clu_VehicleSpeed", "CLU15"),
-      ("CF_Clu_VehicleSpeed2", "CLU15"),
 
       ("ACCEnable", "TCS13"),
       ("ACC_REQ", "TCS13"),

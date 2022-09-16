@@ -6,8 +6,6 @@ import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
-from common.conversions import Conversions as CV
-import random
 
 from cereal import log, car
 from common.realtime import DT_CTRL
@@ -21,8 +19,6 @@ from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
-import matplotlib.pyplot as plt
-plt.rcParams['figure.figsize'] = [15, 10]
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -125,83 +121,83 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-  # def test_car_params(self):
-  #   if self.CP.dashcamOnly:
-  #     self.skipTest("no need to check carParams for dashcamOnly")
-  #
-  #   # make sure car params are within a valid range
-  #   self.assertGreater(self.CP.mass, 1)
-  #
-  #   if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
-  #     tuning = self.CP.lateralTuning.which()
-  #     if tuning == 'pid':
-  #       self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
-  #     elif tuning == 'torque':
-  #       self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
-  #     elif tuning == 'indi':
-  #       self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
-  #     else:
-  #       raise Exception("unknown tuning")
-  #
-  # def test_car_interface(self):
-  #   # TODO: also check for checksum violations from can parser
-  #   can_invalid_cnt = 0
-  #   can_valid = False
-  #   CC = car.CarControl.new_message()
-  #
-  #   for i, msg in enumerate(self.can_msgs):
-  #     CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
-  #     self.CI.apply(CC)
-  #
-  #     if CS.canValid:
-  #       can_valid = True
-  #
-  #     # wait max of 2s for low frequency msgs to be seen
-  #     if i > 200 or can_valid:
-  #       can_invalid_cnt += not CS.canValid
-  #
-  #   self.assertEqual(can_invalid_cnt, 0)
-  #
-  # def test_radar_interface(self):
-  #   os.environ['NO_RADAR_SLEEP'] = "1"
-  #   RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
-  #   RI = RadarInterface(self.CP)
-  #   assert RI
-  #
-  #   error_cnt = 0
-  #   for i, msg in enumerate(self.can_msgs):
-  #     rr = RI.update((msg.as_builder().to_bytes(),))
-  #     if rr is not None and i > 50:
-  #       error_cnt += car.RadarData.Error.canError in rr.errors
-  #   self.assertEqual(error_cnt, 0)
-  #
-  # def test_panda_safety_rx_valid(self):
-  #   if self.CP.dashcamOnly:
-  #     self.skipTest("no need to check panda safety for dashcamOnly")
-  #
-  #   start_ts = self.can_msgs[0].logMonoTime
-  #
-  #   failed_addrs = Counter()
-  #   for can in self.can_msgs:
-  #     # update panda timer
-  #     t = (can.logMonoTime - start_ts) / 1e3
-  #     self.safety.set_timer(int(t))
-  #
-  #     # run all msgs through the safety RX hook
-  #     for msg in can.can:
-  #       if msg.src >= 64:
-  #         continue
-  #
-  #       to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
-  #       if self.safety.safety_rx_hook(to_send) != 1:
-  #         failed_addrs[hex(msg.address)] += 1
-  #
-  #     # ensure all msgs defined in the addr checks are valid
-  #     if self.car_model not in ignore_addr_checks_valid:
-  #       self.safety.safety_tick_current_rx_checks()
-  #       if t > 1e6:
-  #         self.assertTrue(self.safety.addr_checks_valid())
-  #   self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
+  def test_car_params(self):
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check carParams for dashcamOnly")
+
+    # make sure car params are within a valid range
+    self.assertGreater(self.CP.mass, 1)
+
+    if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
+      tuning = self.CP.lateralTuning.which()
+      if tuning == 'pid':
+        self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
+      elif tuning == 'torque':
+        self.assertTrue(self.CP.lateralTuning.torque.kf > 0)
+      elif tuning == 'indi':
+        self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+      else:
+        raise Exception("unknown tuning")
+
+  def test_car_interface(self):
+    # TODO: also check for checksum violations from can parser
+    can_invalid_cnt = 0
+    can_valid = False
+    CC = car.CarControl.new_message()
+
+    for i, msg in enumerate(self.can_msgs):
+      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
+      self.CI.apply(CC)
+
+      if CS.canValid:
+        can_valid = True
+
+      # wait max of 2s for low frequency msgs to be seen
+      if i > 200 or can_valid:
+        can_invalid_cnt += not CS.canValid
+
+    self.assertEqual(can_invalid_cnt, 0)
+
+  def test_radar_interface(self):
+    os.environ['NO_RADAR_SLEEP'] = "1"
+    RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
+    RI = RadarInterface(self.CP)
+    assert RI
+
+    error_cnt = 0
+    for i, msg in enumerate(self.can_msgs):
+      rr = RI.update((msg.as_builder().to_bytes(),))
+      if rr is not None and i > 50:
+        error_cnt += car.RadarData.Error.canError in rr.errors
+    self.assertEqual(error_cnt, 0)
+
+  def test_panda_safety_rx_valid(self):
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    start_ts = self.can_msgs[0].logMonoTime
+
+    failed_addrs = Counter()
+    for can in self.can_msgs:
+      # update panda timer
+      t = (can.logMonoTime - start_ts) / 1e3
+      self.safety.set_timer(int(t))
+
+      # run all msgs through the safety RX hook
+      for msg in can.can:
+        if msg.src >= 64:
+          continue
+
+        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
+        if self.safety.safety_rx_hook(to_send) != 1:
+          failed_addrs[hex(msg.address)] += 1
+
+      # ensure all msgs defined in the addr checks are valid
+      if self.car_model not in ignore_addr_checks_valid:
+        self.safety.safety_tick_current_rx_checks()
+        if t > 1e6:
+          self.assertTrue(self.safety.addr_checks_valid())
+    self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
     """
@@ -218,9 +214,6 @@ class TestCarModelBase(unittest.TestCase):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
         self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
-        self.CI.CS.dat = []
-        self.CI.CS.frame = 0
-        self.CI.CS.updates = 0
 
     if not self.CP.pcmCruise:
       self.safety.set_controls_allowed(0)
@@ -237,78 +230,48 @@ class TestCarModelBase(unittest.TestCase):
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
-    self.assertLess(self.CI.CS.updates / self.CI.CS.frame * 100, -11000000)
+      # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-    # # self.dat.append([ret.vEgo, ret.vEgoRaw, ret.vEgoCluster, cp.vl["CLU15"]["CF_Clu_VehicleSpeed"], self.dash_speed_seen])
-    # plt.clf()
-    # CS = self.CI.CS
-    # speed2_not_set = not any([d[4] for d in CS.dat])
-    # if not CS.is_metric:
-    #   plt.ylabel('mph')
-    #   if speed2_not_set:
-    #     plt.plot([d[0] * CV.MS_TO_MPH for d in CS.dat], label='CS.vEgo')
-    #     plt.plot([round(d[3] * CV.KPH_TO_MPH) for d in CS.dat], label='CF_Clu_VehicleSpeed (mph from kph)')
-    #     plt.plot([d[2] * CV.MS_TO_MPH for d in CS.dat], label='CF_Clu_VehicleSpeed low frq')
-    #   else:
-    #     plt.plot([d[0] * CV.MS_TO_MPH for d in CS.dat], label='CS.vEgo')
-    #     plt.plot([d[2] * CV.MS_TO_MPH for d in CS.dat], label='CF_Clu_VehicleSpeed2 (native mph)')
-    # else:
-    #   plt.ylabel('kph')
-    #   if speed2_not_set:
-    #     plt.plot([d[0] * CV.MS_TO_KPH for d in CS.dat], label='CS.vEgo')
-    #     plt.plot([d[3] for d in CS.dat], linewidth=2, label='CF_Clu_VehicleSpeed (native kph)')
-    #     plt.plot([round(d[5]) for d in CS.dat], label='CF_Clu_VehicleSpeed low frq')
-    #   else:
-    #     plt.plot([d[0] * CV.MS_TO_KPH for d in CS.dat], label='CS.vEgo')
-    #     plt.plot([d[2] * CV.MS_TO_KPH for d in CS.dat], label='CF_Clu_VehicleSpeed2 (native kph)')
-    #
-    # plt.title(self.CP.carFingerprint)
-    # plt.legend()
-    # plt.xlabel(f'{CS.is_metric=}')
-    # plt.savefig('/home/batman/notebook_data/hyundai_cluster_speeds/{}_{}.png'.format(self.CP.carFingerprint, random.randint(0, 100)))
+      checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
+      if self.CP.carName not in ("hyundai", "volkswagen", "gm", "body"):
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
-    #   # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
-    #
-    #   checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-    #   checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
-    #   if self.CP.carName not in ("hyundai", "volkswagen", "gm", "body"):
-    #     # TODO: fix standstill mismatches for other makes
-    #     checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
-    #
-    #   # TODO: remove this exception once this mismatch is resolved
-    #   brake_pressed = CS.brakePressed
-    #   if CS.brakePressed and not self.safety.get_brake_pressed_prev():
-    #     if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
-    #       brake_pressed = False
-    #   safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
-    #   checks['brakePressed'] += brake_pressed != safety_brake_pressed
-    #
-    #   if self.CP.pcmCruise:
-    #     # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
-    #     # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
-    #     # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
-    #     if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
-    #       # only the rising edges are expected to match
-    #       if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
-    #         checks['controlsAllowed'] += not self.safety.get_controls_allowed()
-    #     else:
-    #       checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
-    #   else:
-    #     # Check for enable events on rising edge of controls allowed
-    #     button_enable = any(evt.enable for evt in CS.events)
-    #     mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
-    #     checks['controlsAllowed'] += mismatch
-    #     controls_allowed_prev = self.safety.get_controls_allowed()
-    #     if button_enable and not mismatch:
-    #       self.safety.set_controls_allowed(False)
-    #
-    #   if self.CP.carName == "honda":
-    #     checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
-    #
-    #   CS_prev = CS
-    #
-    # failed_checks = {k: v for k, v in checks.items() if v > 0}
-    # self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
+      # TODO: remove this exception once this mismatch is resolved
+      brake_pressed = CS.brakePressed
+      if CS.brakePressed and not self.safety.get_brake_pressed_prev():
+        if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
+          brake_pressed = False
+      safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
+      checks['brakePressed'] += brake_pressed != safety_brake_pressed
+
+      if self.CP.pcmCruise:
+        # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
+        # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
+        # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
+        if self.CP.carName == "honda" and self.CP.carFingerprint not in HONDA_BOSCH:
+          # only the rising edges are expected to match
+          if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
+            checks['controlsAllowed'] += not self.safety.get_controls_allowed()
+        else:
+          checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
+      else:
+        # Check for enable events on rising edge of controls allowed
+        button_enable = any(evt.enable for evt in CS.events)
+        mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
+        checks['controlsAllowed'] += mismatch
+        controls_allowed_prev = self.safety.get_controls_allowed()
+        if button_enable and not mismatch:
+          self.safety.set_controls_allowed(False)
+
+      if self.CP.carName == "honda":
+        checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
+
+      CS_prev = CS
+
+    failed_checks = {k: v for k, v in checks.items() if v > 0}
+    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
 @parameterized_class(('car_model', 'test_route'), test_cases)
