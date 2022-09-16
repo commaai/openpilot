@@ -242,7 +242,7 @@ void MapWindow::initializeGL() {
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
       map_instructions->noError();
-    }else if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+    } else if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
       initLayers();
       QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
     }
