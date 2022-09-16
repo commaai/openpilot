@@ -317,7 +317,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       if (!can_health_opt) {
         return std::nullopt;
       }
-      can_health[i] = *can_health_opt;
+      can_health.push_back(*can_health_opt);
     }
     pandaCanStates.push_back(can_health);
 
