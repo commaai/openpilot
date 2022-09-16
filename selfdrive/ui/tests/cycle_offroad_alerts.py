@@ -10,21 +10,6 @@ from selfdrive.controls.lib.alertmanager import set_offroad_alert
 if __name__ == "__main__":
   params = Params()
 
-  offroad_alerts = (
-    'Offroad_TemperatureTooHigh',
-    'Offroad_ConnectivityNeeded',
-    'Offroad_UpdateFailed',
-    'Offroad_InvalidTime',
-    'Offroad_UnofficialHardware',
-    'Offroad_StorageMissing',
-    'Offroad_BadNvme',
-    'Offroad_CarUnrecognized',
-    'Offroad_ConnectivityNeededPrompt',
-    'Offroad_NoFirmware',
-    'Offroad_IsTakingSnapshot',
-    'Offroad_NeosUpdate',
-  )
-
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])
   while True:
     print("setting alert update")
@@ -37,9 +22,9 @@ if __name__ == "__main__":
     params.put_bool("UpdateAvailable", False)
 
     # cycle through normal alerts
-    for a in offroad_alerts:
+    for a in [k for k in params.all_keys() if k.startswith(b'Offroad_')]:
       print("setting alert:", a)
-      set_offroad_alert(a, True, '{extra text}' if a in ('Offroad_UpdateFailed', 'Offroad_ConnectivityNeededPrompt') else None)
+      set_offroad_alert(a, True, '{extra text}' if a in (b'Offroad_UpdateFailed', b'Offroad_ConnectivityNeededPrompt') else None)
       time.sleep(t)
       set_offroad_alert(a, False)
 
