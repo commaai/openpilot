@@ -985,42 +985,42 @@ location set</source>
     <message>
         <location filename="../qt/offroad/software_settings.cc" line="+24"/>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>車の電源がオフの間のみ、アップデートのダウンロードが行われます。</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>現在のバージョン</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロード</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデート</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>インストール</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>対象のブランチ</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>選択</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>ブランチを選択</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -1189,12 +1189,12 @@ location set</source>
     <message>
         <location line="+24"/>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotによるアクセル制御は、この車では現在利用できません。</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>ここ機能を使う為には、「実験段階のopenpilotによるアクセル制御」を先に有効化してください。</translation>
     </message>
     <message>
         <location line="-80"/>
