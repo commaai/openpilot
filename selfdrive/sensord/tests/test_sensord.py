@@ -246,7 +246,7 @@ class TestSensord(unittest.TestCase):
 
         key = (sensor, s.type)
         val_cnt = len(sensor_values[key])
-        min_samples = (100 * self.sample_secs) * 0.95
+        min_samples = self.sample_secs * 100  # Hz
         err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {min_samples}"
         assert min_samples*0.9 < val_cnt < min_samples*1.1, err_msg
 
