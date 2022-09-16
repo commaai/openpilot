@@ -283,10 +283,7 @@ void NvgWindow::drawHud(QPainter &p) {
     p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
   }
   configFont(p, "Inter", 40, "SemiBold");
-  QRect max_rect = getTextRect(p, Qt::AlignCenter, tr("MAX"));
-  max_rect.moveCenter({set_speed_rect.center().x(), 0});
-  max_rect.moveTop(set_speed_rect.top() + 27);
-  p.drawText(max_rect, Qt::AlignCenter, tr("MAX"));
+  p.drawText(set_speed_rect.translated(0, 27), Qt::AlignHCenter | Qt::AlignTop, tr("MAX"));
 
   // Draw set speed
   if (is_cruise_set) {
@@ -303,12 +300,7 @@ void NvgWindow::drawHud(QPainter &p) {
     p.setPen(QColor(0x72, 0x72, 0x72, 0xff));
   }
   configFont(p, "Inter", 90, "Bold");
-  QRect speed_rect = getTextRect(p, Qt::AlignCenter, setSpeedStr);
-  speed_rect.moveCenter({set_speed_rect.center().x(), 0});
-  speed_rect.moveTop(set_speed_rect.top() + 77);
-  p.drawText(speed_rect, Qt::AlignCenter, setSpeedStr);
-
-
+  p.drawText(set_speed_rect.translated(0, 77), Qt::AlignHCenter | Qt::AlignTop, setSpeedStr);
 
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
@@ -330,23 +322,12 @@ void NvgWindow::drawHud(QPainter &p) {
 
     // "SPEED"
     configFont(p, "Inter", 28, "SemiBold");
-    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, tr("SPEED"));
-    text_speed_rect.moveCenter({sign_rect.center().x(), 0});
-    text_speed_rect.moveTop(sign_rect_outer.top() + 22);
-    p.drawText(text_speed_rect, Qt::AlignCenter, tr("SPEED"));
-
+    p.drawText(sign_rect_outer.translated(0, 22), Qt::AlignHCenter | Qt::AlignTop, tr("SPEED"));
     // "LIMIT"
-    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, tr("LIMIT"));
-    text_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    text_limit_rect.moveTop(sign_rect_outer.top() + 51);
-    p.drawText(text_limit_rect, Qt::AlignCenter, tr("LIMIT"));
-
+    p.drawText(sign_rect_outer.translated(0, 51), Qt::AlignHCenter | Qt::AlignTop, tr("LIMIT"));
     // Speed limit value
     configFont(p, "Inter", 70, "Bold");
-    QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
-    speed_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    speed_limit_rect.moveTop(sign_rect_outer.top() + 85);
-    p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
+    p.drawText(sign_rect_outer.translated(0, 85), Qt::AlignHCenter | Qt::AlignTop, speedLimitStr);
   }
 
   // EU (Vienna style) sign
@@ -356,29 +337,29 @@ void NvgWindow::drawHud(QPainter &p) {
     int inner_radius_2 = inner_radius_1 - 20; // Red circle
 
     // Draw white circle with red border
-    QPoint center(set_speed_rect.center().x() + 1, set_speed_rect.top() + 204 + outer_radius);
+    QRect speed_limit_rect(set_speed_rect.left(), set_speed_rect.bottom() + 8, set_speed_rect.width(), outer_radius * 2);
     p.setPen(Qt::NoPen);
     p.setBrush(whiteColor());
-    p.drawEllipse(center, outer_radius, outer_radius);
+    p.drawEllipse(speed_limit_rect.center(), outer_radius, outer_radius);
     p.setBrush(QColor(255, 0, 0, 255));
-    p.drawEllipse(center, inner_radius_1, inner_radius_1);
+    p.drawEllipse(speed_limit_rect.center(), inner_radius_1, inner_radius_1);
     p.setBrush(whiteColor());
-    p.drawEllipse(center, inner_radius_2, inner_radius_2);
+    p.drawEllipse(speed_limit_rect.center(), inner_radius_2, inner_radius_2);
 
     // Speed limit value
     int font_size = (speedLimitStr.size() >= 3) ? 60 : 70;
     configFont(p, "Inter", font_size, "Bold");
-    QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
-    speed_limit_rect.moveCenter(center);
     p.setPen(blackColor());
     p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
   }
 
   // current speed
   configFont(p, "Inter", 176, "Bold");
-  drawText(p, rect().center().x(), 210, speedStr);
+  p.setPen(Qt::white);
+  p.drawText(rect().translated(0, set_speed_rect.top()), Qt::AlignHCenter | Qt::AlignTop, speedStr);
   configFont(p, "Inter", 66, "Regular");
-  drawText(p, rect().center().x(), 290, speedUnit, 200);
+  p.setPen(QColor(0xff, 0xff, 0xff, 200));
+  p.drawText(rect().translated(0, set_speed_rect.bottom() - 10), Qt::AlignHCenter | Qt::AlignTop, speedUnit);
 
   // engage-ability icon
   if (engageable) {
@@ -393,14 +374,6 @@ void NvgWindow::drawHud(QPainter &p) {
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
   p.restore();
-}
-
-void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
-  QRect real_rect = getTextRect(p, 0, text);
-  real_rect.moveCenter({x, y - real_rect.height() / 2});
-
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
-  p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
 void NvgWindow::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
