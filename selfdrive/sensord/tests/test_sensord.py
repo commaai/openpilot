@@ -150,12 +150,7 @@ class TestSensord(unittest.TestCase):
     }
     for event in self.events:
       for measurement in event.sensorEvents:
-
-        # skip lsm6ds3 temperature measurements
-        if measurement.which() == 'temperature':
-          continue
-
-        if str(measurement.source).startswith("lsm6ds3"):
+        if str(measurement.source).startswith("lsm6ds3") and measurement.sensor in sensor_t:
           sensor_t[measurement.sensor].append(measurement.timestamp)
 
     for s, vals in sensor_t.items():
@@ -170,8 +165,8 @@ class TestSensord(unittest.TestCase):
         avg_diff = sum(tdiffs)/len(tdiffs)
         assert 9.3 < avg_diff < 10., f"avg difference {avg_diff}, below threshold"
 
-        #stddev = np.std(tdiffs)
-        #assert stddev < 1.5*10**6, f"Standard-dev to big {stddev}"
+        stddev = np.std(tdiffs)
+        assert stddev < 2.0, f"Standard-dev to big {stddev}"
 
   def test_events_check(self):
     # verify if all sensors produce events
