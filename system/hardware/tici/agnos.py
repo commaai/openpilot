@@ -20,7 +20,7 @@ class StreamingDecompressor:
   def __init__(self, url: str) -> None:
     self.buf = b""
 
-    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})  # type: ignore
+    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})  # type: ignore # pylint: disable=missing-timeout
     self.it = self.req.iter_content(chunk_size=1024 * 1024)
     self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
     self.eof = False
@@ -241,7 +241,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalo
   else:
     extract_compressed_image(target_slot_number, partition, cloudlog)
 
-  # Write hash after successfull flash
+  # Write hash after successful flash
   if not full_check:
     with open(path, 'wb+') as out:
       out.seek(partition['size'])
@@ -257,7 +257,7 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
   while True:
     out = subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True, stderr=subprocess.STDOUT, encoding='utf8')
     if ("No such file or directory" not in out) and ("lun as boot lun" in out):
-      cloudlog.info(f"Swap successfull {out}")
+      cloudlog.info(f"Swap successful {out}")
       break
     else:
       cloudlog.error(f"Swap failed {out}")

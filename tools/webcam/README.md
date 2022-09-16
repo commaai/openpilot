@@ -1,3 +1,5 @@
+# NOTE: this README is outdated. #24590 tracks adding back webcam support
+
 # Run openpilot with webcam on PC
 
 What's needed:

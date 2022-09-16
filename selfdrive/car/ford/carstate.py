@@ -3,7 +3,7 @@ from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.ford.values import CANBUS, DBC
+from selfdrive.car.ford.values import CANBUS, DBC, CarControllerParams
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -22,7 +22,7 @@ class CarState(CarStateBase):
     # car speed
     ret.vEgoRaw = cp.vl["EngVehicleSpThrottle2"]["Veh_V_ActlEng"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.yawRate = cp.vl["Yaw_Data_FD1"]["VehYaw_W_Actl"] * CV.RAD_TO_DEG
+    ret.yawRate = cp.vl["Yaw_Data_FD1"]["VehYaw_W_Actl"]
     ret.standstill = cp.vl["DesiredTorqBrk"]["VehStop_D_Stat"] == 1
 
     # gas pedal
@@ -37,7 +37,7 @@ class CarState(CarStateBase):
     # steering wheel
     ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
-    ret.steeringPressed = cp.vl["Lane_Assist_Data3_FD1"]["LaHandsOff_B_Actl"] == 0
+    ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
     # ret.espDisabled = False  # TODO: find traction control signal
@@ -46,6 +46,8 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
+    ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
+    ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
@@ -65,6 +67,7 @@ class CarState(CarStateBase):
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
     ret.rightBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 2
+    # TODO: block this going to the camera otherwise it will enable stock TJA
     ret.genericToggle = bool(cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"])
 
     # lock info
@@ -77,9 +80,13 @@ class CarState(CarStateBase):
       ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]["SodDetctLeft_D_Stat"] != 0
       ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]["SodDetctRight_D_Stat"] != 0
 
+    # Stock steering buttons so that we can passthru blinkers etc.
+    self.buttons_stock_values = cp.vl["Steering_Data_FD1"]
     # Stock values from IPMA so that we can retain some stock functionality
     self.acc_tja_status_stock_values = cp_cam.vl["ACCDATA_3"]
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
+    # Use stock sensor values
+    self.yaw_data = cp.vl["Yaw_Data_FD1"]
 
     return ret
 
@@ -97,6 +104,8 @@ class CarState(CarStateBase):
       ("Veh_V_DsplyCcSet", "EngBrakeData"),                  # PCM ACC set speed (mph)
                                                              # The units might change with IPC settings?
       ("CcStat_D_Actl", "EngBrakeData"),                     # PCM ACC status
+      ("AccStopMde_D_Rq", "EngBrakeData"),                   # PCM ACC standstill
+      ("AccEnbl_B_RqDrv", "Cluster_Info1_FD1"),              # PCM ACC enable
       ("StePinComp_An_Est", "SteeringPinion_Data"),          # PSCM estimated steering angle (deg)
                                                              # Calculates steering angle (and offset) from pinion
                                                              # angle and driving measurements.
@@ -104,7 +113,6 @@ class CarState(CarStateBase):
                                                              # to zero at the beginning of the drive.
       ("SteeringColumnTorque", "EPAS_INFO"),                 # PSCM steering column torque (Nm)
       ("EPAS_Failure", "EPAS_INFO"),                         # PSCM EPAS status
-      ("LaHandsOff_B_Actl", "Lane_Assist_Data3_FD1"),        # PSCM LKAS hands off wheel
       ("TurnLghtSwtch_D_Stat", "Steering_Data_FD1"),         # SCCM Turn signal switch
       ("TjaButtnOnOffPress", "Steering_Data_FD1"),           # SCCM ACC button, lane-centering/traffic jam assist toggle
       ("DrStatDrv_B_Actl", "BodyInfo_3_FD1"),                # BCM Door open, driver
@@ -112,6 +120,38 @@ class CarState(CarStateBase):
       ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
       ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
       ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
+      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthru the remaining buttons
+      ("WiprFront_D_Stat", "Steering_Data_FD1"),
+      ("LghtAmb_D_Sns", "Steering_Data_FD1"),
+      ("AccButtnGapDecPress", "Steering_Data_FD1"),
+      ("AccButtnGapIncPress", "Steering_Data_FD1"),
+      ("AslButtnOnOffCnclPress", "Steering_Data_FD1"),
+      ("AslButtnOnOffPress", "Steering_Data_FD1"),
+      ("CcAslButtnCnclPress", "Steering_Data_FD1"),
+      ("LaSwtchPos_D_Stat", "Steering_Data_FD1"),
+      ("CcAslButtnCnclResPress", "Steering_Data_FD1"),
+      ("CcAslButtnDeny_B_Actl", "Steering_Data_FD1"),
+      ("CcAslButtnIndxDecPress", "Steering_Data_FD1"),
+      ("CcAslButtnIndxIncPress", "Steering_Data_FD1"),
+      ("CcAslButtnOffCnclPress", "Steering_Data_FD1"),
+      ("CcAslButtnOnOffCncl", "Steering_Data_FD1"),
+      ("CcAslButtnOnPress", "Steering_Data_FD1"),
+      ("CcAslButtnResDecPress", "Steering_Data_FD1"),
+      ("CcAslButtnResIncPress", "Steering_Data_FD1"),
+      ("CcAslButtnSetDecPress", "Steering_Data_FD1"),
+      ("CcAslButtnSetIncPress", "Steering_Data_FD1"),
+      ("CcAslButtnSetPress", "Steering_Data_FD1"),
+      ("CcAsllButtnResPress", "Steering_Data_FD1"),
+      ("CcButtnOffPress", "Steering_Data_FD1"),
+      ("CcButtnOnOffCnclPress", "Steering_Data_FD1"),
+      ("CcButtnOnOffPress", "Steering_Data_FD1"),
+      ("CcButtnOnPress", "Steering_Data_FD1"),
+      ("HeadLghtHiFlash_D_Actl", "Steering_Data_FD1"),
+      ("HeadLghtHiOn_B_StatAhb", "Steering_Data_FD1"),
+      ("AhbStat_B_Dsply", "Steering_Data_FD1"),
+      ("AccButtnGapTogglePress", "Steering_Data_FD1"),
+      ("WiprFrontSwtch_D_Stat", "Steering_Data_FD1"),
+      ("HeadLghtHiCtrl_D_RqAhb", "Steering_Data_FD1"),
     ]
 
     checks = [
@@ -122,6 +162,7 @@ class CarState(CarStateBase):
       ("EngVehicleSpThrottle", 100),
       ("BrakeSnData_4", 50),
       ("EngBrakeData", 10),
+      ("Cluster_Info1_FD1", 10),
       ("SteeringPinion_Data", 100),
       ("EPAS_INFO", 50),
       ("Lane_Assist_Data3_FD1", 33),
@@ -203,7 +244,8 @@ class CarState(CarStateBase):
       ("DasStats_D_Dsply", "IPMA_Data"),            # DAS status
       ("DasWarn_D_Dsply", "IPMA_Data"),             # DAS warning
       ("AhbHiBeam_D_Rq", "IPMA_Data"),              # AHB status
-      ("Set_Me_X1", "IPMA_Data"),
+      ("Passthru_63", "IPMA_Data"),
+      ("Passthru_48", "IPMA_Data"),
     ]
 
     checks = [

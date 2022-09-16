@@ -33,7 +33,7 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
-  home_img = loadPixmap("../assets/images/button_home.png", {180, 180});
+  home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
@@ -43,9 +43,16 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   setFixedWidth(300);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
+
+  pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 }
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
+  if (home_btn.contains(event->pos())) {
+    MessageBuilder msg;
+    msg.initEvent().initUserFlag();
+    pm->send("userFlag", msg);
+  }
   if (settings_btn.contains(event->pos())) {
     emit openSettings();
   }
@@ -99,7 +106,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.setOpacity(0.65);
   p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
   p.setOpacity(1.0);
-  p.drawPixmap(60, 1080 - 180 - 40, home_img);
+  p.drawPixmap(home_btn.x(), home_btn.y(), home_img);
 
   // network
   int x = 58;

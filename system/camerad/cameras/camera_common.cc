@@ -18,11 +18,9 @@
 #include "system/hardware/hw.h"
 #include "msm_media_info.h"
 
+#include "system/camerad/cameras/camera_qcom2.h"
 #ifdef QCOM2
 #include "CL/cl_ext_qcom.h"
-#include "system/camerad/cameras/camera_qcom2.h"
-#else
-#include "system/camerad/test/camera_test.h"
 #endif
 
 ExitHandler do_exit;
@@ -36,10 +34,10 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DCAM_NUM=%d%s",
+             "-DIS_OX=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, b->rgb_stride, buf_width, uv_offset,
-             s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
+             s->camera_id==CAMERA_ID_OX03C10 ? 1 : 0, s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
@@ -161,7 +159,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -175,6 +173,12 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
+
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+  } else if (c->camera_id == CAMERA_ID_OX03C10) {
+    framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
+  }
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
@@ -348,8 +352,8 @@ void camerad_thread() {
   MultiCameraState cameras = {};
   VisionIpcServer vipc_server("camerad", device_id, context);
 
-  cameras_init(&vipc_server, &cameras, device_id, context);
   cameras_open(&cameras);
+  cameras_init(&vipc_server, &cameras, device_id, context);
 
   vipc_server.start_listener();
 
