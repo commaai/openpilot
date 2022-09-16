@@ -95,7 +95,7 @@ int OffroadAlert::refresh() {
   return alertCount;
 }
 
-const std::vector<std::tuple<std::string, Severity, QString>> OffroadAlert::allAlerts() {
+const std::vector<std::tuple<std::string, OffroadAlert::Severity, QString>> OffroadAlert::allAlerts() {
   return {
     {"Offroad_TemperatureTooHigh", Severity::high, tr("Device temperature too high. System won't start.")},
     {"Offroad_ConnectivityNeeded", Severity::high, tr("Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.")},
