@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-
+#include <mutex>
 #include <sys/types.h>
 
 class I2CBus {
@@ -9,6 +9,7 @@ class I2CBus {
     int i2c_fd;
 
   public:
+    std::mutex mutex;
     I2CBus(uint8_t bus_id);
     ~I2CBus();
 

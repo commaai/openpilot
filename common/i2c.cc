@@ -37,7 +37,7 @@ I2CBus::~I2CBus() {
 
 int I2CBus::read_register(uint8_t device_address, uint register_address, uint8_t *buffer, uint8_t len) {
   int ret = 0;
-
+  std::lock_guard lk(mutex);
   ret = HANDLE_EINTR(ioctl(i2c_fd, I2C_SLAVE, device_address));
   if(ret < 0) { goto fail; }
 
@@ -50,7 +50,7 @@ fail:
 
 int I2CBus::set_register(uint8_t device_address, uint register_address, uint8_t data) {
   int ret = 0;
-
+  std::lock_guard lk(mutex);
   ret = HANDLE_EINTR(ioctl(i2c_fd, I2C_SLAVE, device_address));
   if(ret < 0) { goto fail; }
 
