@@ -43,12 +43,9 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
 
-    self.is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
-    speed_conv = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-
     ret = car.CarState.new_message()
-
     cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
+    is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
                         cp.vl["CGW2"]["CF_Gway_RLDrSw"], cp.vl["CGW2"]["CF_Gway_RRDrSw"]])
@@ -70,7 +67,7 @@ class CarState(CarStateBase):
       self.dash_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
       self.dash_speed_counter = 0
 
-    if self.is_metric:
+    if is_metric:
       ret.vEgoCluster = self.dash_speed
     else:
       # compensate for dash rounding
@@ -96,6 +93,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp_cruise.vl["SCC11"]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp_cruise.vl["SCC12"]["ACCMode"] != 0
       ret.cruiseState.standstill = cp_cruise.vl["SCC11"]["SCCInfoDisplay"] == 4.
+      speed_conv = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
       ret.cruiseState.speed = cp_cruise.vl["SCC11"]["VSetDis"] * speed_conv
 
     # TODO: Find brake pressure
