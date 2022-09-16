@@ -317,7 +317,6 @@ void NvgWindow::drawHud(QPainter &p) {
     // Smaller white square with black border
     QRect sign_rect(sign_rect_outer.left() + 1.5 * border_width, sign_rect_outer.top() + 1.5 * border_width, sign_width - 3 * border_width, sign_height - 3 * border_width);
     p.setPen(QPen(blackColor(), border_width));
-    p.setBrush(whiteColor());
     p.drawRoundedRect(sign_rect, 16, 16);
 
     // "SPEED"
