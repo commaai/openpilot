@@ -6,7 +6,7 @@ firmware versions. If you want to try on a new radar make sure to note the defau
 in case it's different from the other radars and you need to revert the changes.
 
 After changing the config the car should not show any faults when openpilot is not running.
-These config changes are persistent accross car reboots. You need to run this script again
+These config changes are persistent across car reboots. You need to run this script again
 to go back to the default values.
 
 USE AT YOUR OWN RISK! Safety features, like AEB and FCW, might be affected by these changes."""

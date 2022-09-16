@@ -253,8 +253,8 @@ constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + TEMPORAL_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
-  ModelFrame *frame;
-  ModelFrame *wide_frame;
+  ModelFrame *frame = nullptr;
+  ModelFrame *wide_frame = nullptr;
   std::array<float, NET_OUTPUT_SIZE> output = {};
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE

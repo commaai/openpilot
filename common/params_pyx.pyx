@@ -2,6 +2,7 @@
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 import threading
 
 cdef extern from "common/params.h":
@@ -22,6 +23,7 @@ cdef extern from "common/params.h":
     bool checkKey(string) nogil
     string getParamPath(string) nogil
     void clearAll(ParamKeyType)
+    vector[string] allKeys()
 
 
 def ensure_bytes(v):
@@ -90,7 +92,7 @@ cdef class Params:
     with nogil:
       self.p.putBool(k, val)
 
-  def delete(self, key):
+  def remove(self, key):
     cdef string k = self.check_key(key)
     with nogil:
       self.p.remove(k)
@@ -98,6 +100,9 @@ cdef class Params:
   def get_param_path(self, key=""):
     cdef string key_bytes = ensure_bytes(key)
     return self.p.getParamPath(key_bytes).decode("utf-8")
+
+  def all_keys(self):
+    return self.p.allKeys()
 
 def put_nonblocking(key, val, d=""):
   threading.Thread(target=lambda: Params(d).put(key, val)).start()

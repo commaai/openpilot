@@ -186,7 +186,7 @@ class TestLoggerd(unittest.TestCase):
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
-    # TOOD: fix loggerd bug dropping the msgs from the first poll
+    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
     for s in services:
       while not pm.all_readers_updated(s):

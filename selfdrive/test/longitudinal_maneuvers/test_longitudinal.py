@@ -140,16 +140,23 @@ class LongitudinalControl(unittest.TestCase):
 
 def run_maneuver_worker(k):
   def run(self):
+    params = Params()
+
     man = maneuvers[k]
-    print(man.title)
+    params.put_bool("EndToEndLong", True)
+    print(man.title, ' in e2e mode')
+    valid, _ = man.evaluate()
+    self.assertTrue(valid, msg=man.title)
+    params.put_bool("EndToEndLong", False)
+    print(man.title, ' in acc mode')
     valid, _ = man.evaluate()
     self.assertTrue(valid, msg=man.title)
   return run
 
-
 for k in range(len(maneuvers)):
   setattr(LongitudinalControl, f"test_longitudinal_maneuvers_{k+1}",
           run_maneuver_worker(k))
+
 
 if __name__ == "__main__":
   unittest.main(failfast=True)

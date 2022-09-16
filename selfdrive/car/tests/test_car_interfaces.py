@@ -5,6 +5,7 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car
+from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
@@ -19,11 +20,8 @@ class TestCarInterfaces(unittest.TestCase):
       fingerprint = {}
 
     CarInterface, CarController, CarState = interfaces[car_name]
-    fingerprints = {
-      0: fingerprint,
-      1: fingerprint,
-      2: fingerprint,
-    }
+    fingerprints = gen_empty_fingerprint()
+    fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
     car_fw = []
 
