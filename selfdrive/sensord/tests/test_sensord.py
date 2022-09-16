@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import time
 import unittest
 import numpy as np
@@ -121,8 +121,11 @@ class TestSensord(unittest.TestCase):
     cls.events = read_sensor_events(cls.sample_secs)
     managed_processes["sensord"].stop()
 
+  @classmethod
+  def tearDownClass(cls):
+    managed_processes["sensord"].stop()
+
   def tearDown(self):
-    # interrupt check might leave sensord running
     managed_processes["sensord"].stop()
 
   def test_sensors_present(self):
@@ -138,10 +141,13 @@ class TestSensord(unittest.TestCase):
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
-  def test_lsm6ds3_100Hz(self):
-    # verify measurements are sampled and published at a 100Hz rate
+  def test_lsm6ds3_timing(self):
+    # verify measurements are sampled and published at 104Hz
 
-    data_points = set()
+    sensor_t = {
+      1: [], # accel
+      5: [], # gyro
+    }
     for event in self.events:
       for measurement in event.sensorEvents:
 
@@ -150,22 +156,22 @@ class TestSensord(unittest.TestCase):
           continue
 
         if str(measurement.source).startswith("lsm6ds3"):
-          data_points.add(measurement.timestamp)
+          sensor_t[measurement.sensor].append(measurement.timestamp)
 
-    assert len(data_points) != 0, "No lsm6ds3 sensor events"
+    for s, vals in sensor_t.items():
+      with self.subTest(sensor=s):
+        assert len(vals) > 0
+        tdiffs = np.diff(vals) / 1e6 # millis
 
-    data_list = list(data_points)
-    data_list.sort()
-    tdiffs = np.diff(data_list)
+        high_delay_diffs = list(filter(lambda d: d >= 20., tdiffs))
+        assert len(high_delay_diffs) < 15, f"Too many large diffs: {high_delay_diffs}"
 
-    high_delay_diffs = set(filter(lambda d: d >= 10.1*10**6, tdiffs))
-    assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs}"
+        # 100-108Hz, expected 104Hz
+        avg_diff = sum(tdiffs)/len(tdiffs)
+        assert 9.3 < avg_diff < 10., f"avg difference {avg_diff}, below threshold"
 
-    avg_diff = sum(tdiffs)/len(tdiffs)
-    assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold"
-
-    stddev = np.std(tdiffs)
-    assert stddev < 1.5*10**6, f"Standard-dev to big {stddev}"
+        #stddev = np.std(tdiffs)
+        #assert stddev < 1.5*10**6, f"Standard-dev to big {stddev}"
 
   def test_events_check(self):
     # verify if all sensors produce events
@@ -257,27 +263,17 @@ class TestSensord(unittest.TestCase):
   def test_sensor_verify_no_interrupts_after_stop(self):
 
     managed_processes["sensord"].start()
-    time.sleep(2)
-
-    # check if the interrupts are enableds
-    with SMBus(SENSOR_BUS, force=True) as bus:
-      int1_ctrl_reg = bus.read_byte_data(I2C_ADDR_LSM, 0x0D)
-      assert int1_ctrl_reg == 3, "Interrupts not enabled!"
+    time.sleep(3)
 
     # read /proc/interrupts to verify interrupts are received
     state_one = get_proc_interrupts(LSM_INT_GPIO)
     time.sleep(1)
     state_two = get_proc_interrupts(LSM_INT_GPIO)
 
-    assert state_one != state_two, "no Interrupts received after sensord start!"
+    assert state_one != state_two, f"no interrupts received after sensord start!\n{state_one} {state_two}"
 
     managed_processes["sensord"].stop()
     time.sleep(1)
-
-    # check if the interrupts got disabled
-    with SMBus(SENSOR_BUS, force=True) as bus:
-      int1_ctrl_reg = bus.read_byte_data(I2C_ADDR_LSM, 0x0D)
-      assert int1_ctrl_reg == 0, "Interrupts not disabled!"
 
     # read /proc/interrupts to verify no more interrupts are received
     state_one = get_proc_interrupts(LSM_INT_GPIO)
