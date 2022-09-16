@@ -9,7 +9,6 @@ from smbus2 import SMBus
 import cereal.messaging as messaging
 from cereal import log
 from system.hardware import TICI, HARDWARE
-from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
 
 SENSOR_CONFIGURATIONS = (
@@ -96,7 +95,6 @@ def read_sensor_events(duration_sec):
   return events
 
 def get_proc_interrupts(int_pin):
-
   with open("/proc/interrupts") as f:
     lines = f.read().split("\n")
 
@@ -117,8 +115,10 @@ class TestSensord(unittest.TestCase):
     HARDWARE.initialize_hardware()
 
     # read initial sensor values every test case can use
+    cls.sample_secs = 5
     managed_processes["sensord"].start()
-    cls.events = read_sensor_events(5)
+    time.sleep(2)
+    cls.events = read_sensor_events(cls.sample_secs)
     managed_processes["sensord"].stop()
 
   def tearDown(self):
@@ -217,13 +217,9 @@ class TestSensord(unittest.TestCase):
     stddev = np.std(tdiffs)
     assert stddev < 2*10**6, f"Timing diffs have to high stddev: {stddev}"
 
-  @with_processes(['sensord'])
   def test_sensor_values_sanity_check(self):
-
-    events = read_sensor_events(2)
-
     sensor_values = dict()
-    for event in events:
+    for event in self.events:
       for m in event.sensorEvents:
 
         # filter unset events (bmx magn)
@@ -250,8 +246,9 @@ class TestSensord(unittest.TestCase):
 
         key = (sensor, s.type)
         val_cnt = len(sensor_values[key])
-        err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {s.min_samples}"
-        assert val_cnt > s.min_samples, err_msg
+        min_samples = (100 * self.sample_secs) * 0.95
+        err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {min_samples}"
+        assert min_samples*0.9 < val_cnt < min_samples*1.1, err_msg
 
         mean_norm = np.mean(np.linalg.norm(sensor_values[key], axis=1))
         err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {mean_norm} is not between {s.sanity_min} and {s.sanity_max}"
@@ -260,7 +257,7 @@ class TestSensord(unittest.TestCase):
   def test_sensor_verify_no_interrupts_after_stop(self):
 
     managed_processes["sensord"].start()
-    time.sleep(1)
+    time.sleep(2)
 
     # check if the interrupts are enableds
     with SMBus(SENSOR_BUS, force=True) as bus:
@@ -275,6 +272,7 @@ class TestSensord(unittest.TestCase):
     assert state_one != state_two, "no Interrupts received after sensord start!"
 
     managed_processes["sensord"].stop()
+    time.sleep(1)
 
     # check if the interrupts got disabled
     with SMBus(SENSOR_BUS, force=True) as bus:
