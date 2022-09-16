@@ -1191,7 +1191,17 @@ trabalho definido</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="+24"/>
+        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enable experimental longitudinal control to enable this.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>

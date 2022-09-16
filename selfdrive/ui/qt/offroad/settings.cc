@@ -134,8 +134,8 @@ void TogglesPanel::updateToggles() {
       e2e_toggle->setEnabled(false);
       params.remove("EndToEndLong");
 
-      const QString no_long = "openpilot longitudinal control is not currently available for this car.";
-      const QString exp_long = "Enable experimental longitudinal control to enable this.";
+      const QString no_long = tr("openpilot longitudinal control is not currently available for this car.");
+      const QString exp_long = tr("Enable experimental longitudinal control to enable this.");
       e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
     }
 
