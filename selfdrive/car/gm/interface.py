@@ -156,7 +156,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.675
       ret.steerRatio = 16.8
-      ret.centerToFront = ret.wheelbase * 0.4
+      ret.centerToFront = 2.15  # measured
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
