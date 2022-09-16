@@ -19,6 +19,7 @@ TEST_CASE("offroadAlerts") {
     }
   }
 
+  // make sure if the keys are same.
   OffroadAlert alert;
   REQUIRE(offroad_keys.size() == alert.offroad_alerts.size());
   for (const auto &k : offroad_keys) {
