@@ -63,7 +63,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
 }
 
 OffroadAlert::OffroadAlert(QWidget *parent) : AbstractAlert(parent) {
-  for (auto &[key, severity, text] : offroad_alerts) {
+  for (auto &[key, severity, text] : OFFROAD_ALERTS) {
     QLabel *l = new QLabel(this);
     l->setMargin(60);
     l->setWordWrap(true);
