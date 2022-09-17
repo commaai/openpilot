@@ -52,17 +52,13 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
     if (err == -1) {
-      if (errno == EINTR) {
-        continue;
-      }
-      return;
-    } else if (err == 0) {
-      LOGE("poll timed out");
-      continue;
+      if (errno == EINTR) continue;
+      LOGE("poll failed (%d - %d)", err, errno);
+      break;
     }
 
     if ((fd_list[0].revents & (POLLIN | POLLPRI)) == 0) {
-      LOGE("no poll events set");
+      LOGE("poll timed out");
       continue;
     }
 
@@ -73,6 +69,8 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       LOGE("error reading event data %d", err);
       continue;
     }
+    int num_events = err / sizeof(*evdata);
+    uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
     std::vector<Sensor *> s;
     for (auto sensor : sensors) {
@@ -80,8 +78,6 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     }
     if (s.empty()) continue;
 
-    int num_events = err / sizeof(*evdata);
-    uint64_t ts = evdata[num_events - 1].timestamp - offset;
     publish_events(pm, s, ts);
   }
 
