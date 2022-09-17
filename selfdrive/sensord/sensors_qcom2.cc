@@ -28,12 +28,12 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
-void publish_events(PubMaster &pm, const std::vector<Sensor *> &s, std::optional<int64_t> ts = {}) {
+void publish_events(PubMaster &pm, const std::vector<Sensor *> &sensors, std::optional<int64_t> ts = {}) {
   MessageBuilder msg;
-  auto sensor_events = msg.initEvent().initSensorEvents(s.size());
-  for (int i = 0; i < s.size(); i++) {
+  auto sensor_events = msg.initEvent().initSensorEvents(sensors.size());
+  for (int i = 0; i < sensors.size(); i++) {
     auto event = sensor_events[i];
-    s[i]->get_event(event);
+    sensors[i]->get_event(event);
     if (ts) {
       event.setTimestamp(*ts);
     }
