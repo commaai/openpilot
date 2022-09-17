@@ -21,19 +21,17 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIDController(CP.lateralTuning.torque.kp, CP.lateralTuning.torque.ki,
-                             k_f=CP.lateralTuning.torque.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
+    self.torque_params = CP.lateralTuning.torque.as_builder()
+    self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
+                             k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
-    self.use_steering_angle = CP.lateralTuning.torque.useSteeringAngle
-    self.steering_angle_deadzone_deg = CP.lateralTuning.torque.steeringAngleDeadzoneDeg
-    self.update_live_torque_params(CP.lateralTuning.torque.latAccelFactor, CP.lateralTuning.torque.latAccelOffset, CP.lateralTuning.torque.friction)
+    self.use_steering_angle = self.torque_params.useSteeringAngle
+    self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
-    self.live_torque_params = {
-      'latAccelFactor': latAccelFactor,
-      'friction': friction,
-      'latAccelOffset': latAccelOffset
-    }
+    self.torque_params.latAccelFactor = latAccelFactor
+    self.torque_params.latAccelOffset = latAccelOffset
+    self.torque_params.friction = friction
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -61,11 +59,17 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
-      pid_log.error = self.torque_from_lateral_accel(lateral_accel_value=error, torque_params=self.live_torque_params)
+      pid_log.error = self.torque_from_lateral_accel(
+        lateral_accel_value=error,
+        torque_params=self.torque_params,
+        lateral_accel_error=error,
+        lateral_accel_deadzone=lateral_accel_deadzone,
+        friction_compensation=False
+      )
 
       ff = self.torque_from_lateral_accel(
         lateral_accel_value=desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY,
-        torque_params=self.live_torque_params,
+        torque_params=self.torque_params,
         lateral_accel_error=error,
         lateral_accel_deadzone=lateral_accel_deadzone,
         friction_compensation=True

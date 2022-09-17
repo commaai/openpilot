@@ -2,7 +2,7 @@ import yaml
 import os
 import time
 from abc import abstractmethod, ABC
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, Optional, Tuple, List, Callable
 
 from cereal import car
 from common.basedir import BASEDIR
@@ -104,20 +104,19 @@ class CarInterfaceBase(ABC):
     return self.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_linear(lateral_accel_value, torque_params, lateral_accel_error=None, lateral_accel_deadzone=None, friction_compensation=False):
+  def torque_from_lateral_accel_linear(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
-    if friction_compensation:
-      assert (lateral_accel_error is not None) and (lateral_accel_deadzone is not None)
-      friction = interp(
-        apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
-        [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
-        [-torque_params['friction'], torque_params['friction']]
-      )
-    else:
-      friction = 0.0
-    return (lateral_accel_value / torque_params['latAccelFactor']) + friction
+    friction_interp = interp(
+      apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
+      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
+      [-torque_params.friction, torque_params.friction]
+    )
+    friction = friction_interp if friction_compensation else 0.0
+    return (lateral_accel_value / torque_params.latAccelFactor) + friction
 
-  def torque_from_lateral_accel(self):
+  TorqueFromLateralAccelCallbackType = Callable[[float, car.LateralTorqueTuning, float, float, bool], float]
+
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_linear
 
   # returns a set of default params to avoid repetition in car specific params
