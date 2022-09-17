@@ -61,12 +61,16 @@ const float DC_GAIN_OX03C10 = 7.32;
 
 const float DC_GAIN_ON_GREY_AR0231= 0.2;
 const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
-const float DC_GAIN_ON_GREY_OX03C10= 0.3;
-const float DC_GAIN_OFF_GREY_OX03C10 = 0.375;
+const float DC_GAIN_ON_GREY_OX03C10= 0.25;
+const float DC_GAIN_OFF_GREY_OX03C10 = 0.35;
 
-const int DC_GAIN_MIN_WEIGHT = 0;
+const int DC_GAIN_MIN_WEIGHT_AR0231 = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
+const int DC_GAIN_MIN_WEIGHT_OX03C10 = 16;
 const int DC_GAIN_MAX_WEIGHT_OX03C10 = 32;
+
+const float TARGET_GREY_FACTOR_AR0231 = 1.0;
+const float TARGET_GREY_FACTOR_OX03C10 = 0.02;
 
 const float sensor_analog_gains_AR0231[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
@@ -74,26 +78,31 @@ const float sensor_analog_gains_AR0231[] = {
   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0, // 8, 9, 10, 11
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
-// similar gain curve to AR
 const float sensor_analog_gains_OX03C10[] = {
-  1.0, 1.25, 1.3125, 1.5625,
-  1.6875, 2.0, 2.25, 2.625,
-  3.125, 3.625, 4.5, 5.0,
-  7.25, 8.5, 12.0, 15.5};
+  1.0, 1.125, 1.25, 1.3125, 1.5625,
+  1.6875, 2.0, 2.25, 2.625, 3.125,
+  3.625, 4.0, 4.5, 5.0, 5.5,
+  6.0, 6.5, 7.0, 7.5, 8.0,
+  8.5, 9.0, 9.5, 10.0, 10.5,
+  11.0, 11.5, 12.0, 12.5, 13.0,
+  13.5, 14.0, 14.5, 15.0, 15.5};
 
 const uint32_t ox03c10_analog_gains_reg[] = {
-  0x100, 0x140, 0x150, 0x190,
-  0x1B0, 0x200, 0x240, 0x2A0,
-  0x320, 0x3A0, 0x480, 0x500,
-  0x740, 0x880, 0xC00, 0xF80};
+  0x100, 0x120, 0x140, 0x150, 0x190,
+  0x1B0, 0x200, 0x240, 0x2A0, 0x320,
+  0x3A0, 0x400, 0x480, 0x500, 0x580,
+  0x600, 0x680, 0x700, 0x780, 0x800,
+  0x880, 0x900, 0x980, 0xA00, 0xA80,
+  0xB00, 0xB80, 0xC00, 0xC80, 0xD00,
+  0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
 const int ANALOG_GAIN_MIN_IDX_AR0231 = 0x1; // 0.25x
 const int ANALOG_GAIN_REC_IDX_AR0231 = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX_AR0231 = 0xD; // 4.0x
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x5; // 2x
-const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0xF;
+const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x6; // 2x
+const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x22;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
@@ -517,6 +526,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 void CameraState::camera_set_parameters() {
   if (camera_id == CAMERA_ID_AR0231) {
     dc_gain_factor = DC_GAIN_AR0231;
+    dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_AR0231;
     dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_AR0231;
     dc_gain_on_grey = DC_GAIN_ON_GREY_AR0231;
     dc_gain_off_grey = DC_GAIN_OFF_GREY_AR0231;
@@ -529,8 +539,10 @@ void CameraState::camera_set_parameters() {
       sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
     }
     min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
+    target_grey_factor = TARGET_GREY_FACTOR_AR0231;
   } else if (camera_id == CAMERA_ID_OX03C10) {
     dc_gain_factor = DC_GAIN_OX03C10;
+    dc_gain_min_weight = DC_GAIN_MIN_WEIGHT_OX03C10;
     dc_gain_max_weight = DC_GAIN_MAX_WEIGHT_OX03C10;
     dc_gain_on_grey = DC_GAIN_ON_GREY_OX03C10;
     dc_gain_off_grey = DC_GAIN_OFF_GREY_OX03C10;
@@ -543,6 +555,7 @@ void CameraState::camera_set_parameters() {
       sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
     }
     min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
+    target_grey_factor = TARGET_GREY_FACTOR_OX03C10;
   } else {
     assert(false);
   }
@@ -551,7 +564,7 @@ void CameraState::camera_set_parameters() {
   target_grey_fraction = 0.3;
 
   dc_gain_enabled = false;
-  dc_gain_weight = DC_GAIN_MIN_WEIGHT;
+  dc_gain_weight = dc_gain_min_weight;
   gain_idx = analog_gain_rec_idx;
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight) * sensor_analog_gains[gain_idx] * exposure_time;
@@ -808,8 +821,8 @@ void cameras_open(MultiCameraState *s) {
 
   // query icp for MMU handles
   LOG("-- Query ICP for MMU handles");
-  static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
-  static struct cam_query_cap_cmd query_cap_cmd = {0};
+  struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
+  struct cam_query_cap_cmd query_cap_cmd = {0};
   query_cap_cmd.handle_type = 1;
   query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
   query_cap_cmd.size = sizeof(isp_query_cap_cmd);
@@ -822,7 +835,7 @@ void cameras_open(MultiCameraState *s) {
 
   // subscribe
   LOG("-- Subscribing");
-  static struct v4l2_event_subscription sub = {0};
+  struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
@@ -851,7 +864,7 @@ void CameraState::camera_close() {
     LOGD("stop csiphy: %d", ret);
     // link control stop
     LOG("-- Stop link control");
-    static struct cam_req_mgr_link_control req_mgr_link_control = {0};
+    struct cam_req_mgr_link_control req_mgr_link_control = {0};
     req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
     req_mgr_link_control.session_hdl = session_handle;
     req_mgr_link_control.num_links = 1;
@@ -861,7 +874,7 @@ void CameraState::camera_close() {
 
     // unlink
     LOG("-- Unlink");
-    static struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
+    struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
     req_mgr_unlink_info.session_hdl = session_handle;
     req_mgr_unlink_info.link_hdl = link_handle;
     ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
@@ -1037,7 +1050,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + cur_ev_) / log2(6000.0), 0.1, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
 
   float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, min_ev, max_ev);
@@ -1053,14 +1066,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
   bool enable_dc_gain = dc_gain_enabled;
   if (!enable_dc_gain && target_grey < dc_gain_on_grey) {
     enable_dc_gain = true;
-    dc_gain_weight = DC_GAIN_MIN_WEIGHT;
+    dc_gain_weight = dc_gain_min_weight;
   } else if (enable_dc_gain && target_grey > dc_gain_off_grey) {
     enable_dc_gain = false;
     dc_gain_weight = dc_gain_max_weight;
   }
 
   if (enable_dc_gain && dc_gain_weight < dc_gain_max_weight) {dc_gain_weight += 1;}
-  if (!enable_dc_gain && dc_gain_weight > DC_GAIN_MIN_WEIGHT) {dc_gain_weight -= 1;}
+  if (!enable_dc_gain && dc_gain_weight > dc_gain_min_weight) {dc_gain_weight -= 1;}
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
@@ -1145,10 +1158,12 @@ void CameraState::set_camera_exposure(float grey_frac) {
     // t_HCG + t_LCG + t_VS on LPD, t_SPD on SPD
     uint32_t hcg_time = std::max((dc_gain_weight * exposure_time / dc_gain_max_weight), 0);
     uint32_t lcg_time = std::max(((dc_gain_max_weight - dc_gain_weight) * exposure_time / dc_gain_max_weight), 0);
-    uint32_t spd_time = std::max(hcg_time / 16, (uint32_t)exposure_time_min);
-    uint32_t vs_time = std::min(std::max(hcg_time / 64, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
+    // uint32_t spd_time = std::max(hcg_time / 16, (uint32_t)exposure_time_min);
+    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 128, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
+    uint32_t spd_time = vs_time;
 
     uint32_t real_gain = ox03c10_analog_gains_reg[new_g];
+    uint32_t min_gain = ox03c10_analog_gains_reg[0];
     struct i2c_random_wr_payload exp_reg_array[] = {
 
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
@@ -1157,16 +1172,12 @@ void CameraState::set_camera_exposure(float grey_frac) {
       {0x35c1, vs_time>>8}, {0x35c2, vs_time&0xFF},
 
       {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
-      {0x3588, real_gain>>8}, {0x3589, real_gain&0xFF},
-      {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
-      {0x35c8, real_gain>>8}, {0x35c9, real_gain&0xFF},
+      {0x3588, min_gain>>8}, {0x3589, min_gain&0xFF},
+      {0x3548, min_gain>>8}, {0x3549, min_gain&0xFF},
+      {0x35c8, min_gain>>8}, {0x35c9, min_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   }
-}
-
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  s->set_camera_exposure(grey_frac);
 }
 
 static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
@@ -1195,20 +1206,13 @@ static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal
   framed.setTemperaturesC({temp_0, temp_1});
 }
 
-static void driver_cam_auto_exposure(CameraState *c) {
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  driver_cam_auto_exposure(c);
+  c->set_camera_exposure(set_exposure_target(&c->buf, 96, 1832, 2, 242, 1148, 4));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
+  fill_frame_data(framed, c->buf.cur_frame_data, c);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);
@@ -1221,7 +1225,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   MessageBuilder msg;
   auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data);
+  fill_frame_data(framed, b->cur_frame_data, c);
   if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
     framed.setImage(get_raw_frame_image(b));
   }
@@ -1239,7 +1243,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
 void cameras_run(MultiCameraState *s) {

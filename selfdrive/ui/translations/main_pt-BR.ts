@@ -193,7 +193,7 @@
         <translation>ALTERAR</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Select a language</source>
         <translation>Selecione o Idioma</translation>
     </message>
@@ -419,7 +419,7 @@ prime subscription. Sign up now: https://connect.comma.ai</source>
 uma assinatura prime Inscreva-se agora:  https://connect.comma.ai</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+58"/>
         <source>No home
 location set</source>
         <translation>Sem local
@@ -433,7 +433,7 @@ location set</source>
 trabalho definido</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+120"/>
         <source>no recent destinations</source>
         <translation>sem destinos recentes</translation>
     </message>
@@ -527,7 +527,7 @@ trabalho definido</translation>
         <translation>ATUALIZAÇÃO</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+93"/>
         <source> ALERTS</source>
         <translation> ALERTAS</translation>
     </message>
@@ -540,7 +540,7 @@ trabalho definido</translation>
 <context>
     <name>PairingPopup</name>
     <message>
-        <location filename="../qt/widgets/prime.cc" line="+86"/>
+        <location filename="../qt/widgets/prime.cc" line="+89"/>
         <source>Pair your device to your comma account</source>
         <translation>Pareie seu dispositivo à sua conta comma</translation>
     </message>
@@ -722,7 +722,7 @@ trabalho definido</translation>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="+101"/>
+        <location filename="../qt/offroad/settings.cc" line="+22"/>
         <source>×</source>
         <translation>×</translation>
     </message>
@@ -888,13 +888,13 @@ trabalho definido</translation>
     <message>
         <location line="-2"/>
         <source>OFFLINE</source>
-        <translation>DESCONEC</translation>
+        <translation>OFFLINE</translation>
     </message>
     <message>
         <location line="+2"/>
         <location line="+13"/>
         <source>ONLINE</source>
-        <translation>CONECTADO</translation>
+        <translation>ONLINE</translation>
     </message>
     <message>
         <location line="-13"/>
@@ -987,70 +987,49 @@ trabalho definido</translation>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-130"/>
-        <source>Git Branch</source>
-        <translation>Git Branch</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git Commit</source>
-        <translation>Último Commit</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>OS Version</source>
-        <translation>Versão do Sistema</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Version</source>
-        <translation>Versão</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Last Update Check</source>
-        <translation>Verificação da última atualização</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation>A última vez que o openpilot verificou com sucesso uma atualização. O atualizador só funciona com o carro desligado.</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Check for Update</source>
-        <translation>Verifique atualizações</translation>
+        <location filename="../qt/offroad/software_settings.cc" line="+24"/>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation>Atualizações baixadas durante o motor desligado.</translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>CHECKING</source>
-        <translation>VERIFICANDO</translation>
+        <source>Current Version</source>
+        <translation>Versao Atual</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Switch Branch</source>
+        <location line="+4"/>
+        <source>Download</source>
+        <translation>Download</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Install Update</source>
+        <translation>Instalar Atualização</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>INSTALL</source>
+        <translation>INSTALAR</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Target Branch</source>
         <translation>Alterar Branch</translation>
     </message>
     <message>
         <location line="+0"/>
-        <source>ENTER</source>
-        <translation>INSERIR</translation>
+        <source>SELECT</source>
+        <translation>SELECIONE</translation>
     </message>
     <message>
-        <location line="+0"/>
-        <location line="+2"/>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation>A nova branch será aplicada ao verificar atualizações.</translation>
+        <location line="+13"/>
+        <source>Select a branch</source>
+        <translation>Selecione uma branch</translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>Enter branch name</source>
-        <translation>Inserir o nome da branch</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+12"/>
         <source>UNINSTALL</source>
-        <translation>DESINSTALAR</translation>
+        <translation>DESINSTAL</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1063,13 +1042,8 @@ trabalho definido</translation>
         <translation>Tem certeza que quer desinstalar?</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>failed to fetch update</source>
-        <translation>falha ao buscar atualização</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+21"/>
+        <location line="-47"/>
+        <location line="+3"/>
         <source>CHECK</source>
         <translation>VERIFICAR</translation>
     </message>
@@ -1087,7 +1061,7 @@ trabalho definido</translation>
         <translation>Aviso: isso concede acesso SSH a todas as chaves públicas nas configurações do GitHub. Nunca insira um nome de usuário do GitHub que não seja o seu. Um funcionário da comma NUNCA pedirá que você adicione seu nome de usuário do GitHub.</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
         <location line="+24"/>
         <source>ADD</source>
         <translation>ADICIONAR</translation>
@@ -1157,7 +1131,7 @@ trabalho definido</translation>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <location filename="../qt/offroad/settings.cc" line="-324"/>
+        <location filename="../qt/offroad/settings.cc" line="-303"/>
         <source>Enable openpilot</source>
         <translation>Ativar openpilot</translation>
     </message>
@@ -1204,20 +1178,30 @@ trabalho definido</translation>
     <message>
         <location line="+6"/>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>Controle longitudinal experimental openpilot</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.&lt;/b&gt;</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deixe o modelo controlar o acelerador e os freios. openpilot irá conduzir como pensa que um humano faria. Super experimental.</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="+24"/>
+        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <translation>controle longitudinal openpilot não está disponível para este carro.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enable experimental longitudinal control to enable this.</source>
+        <translation>Habilite o controle longitudinal experimental para habilitar isso.</translation>
+    </message>
+    <message>
+        <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>
@@ -1294,12 +1278,11 @@ trabalho definido</translation>
     <name>WifiUI</name>
     <message>
         <location filename="../qt/offroad/networking.cc" line="+113"/>
-        <location line="+53"/>
         <source>Scanning for networks...</source>
         <translation>Procurando redes...</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+80"/>
         <source>CONNECTING...</source>
         <translation>CONECTANDO...</translation>
     </message>

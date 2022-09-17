@@ -65,11 +65,9 @@ private:
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
   vipc_server = v;
   this->yuv_type = init_yuv_type;
-
-  const CameraInfo *ci = &s->ci;
-  camera_state = s;
   frame_buf_count = frame_cnt;
 
+  const CameraInfo *ci = &s->ci;
   // RAW frame
   const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
@@ -144,7 +142,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -158,6 +156,12 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
+
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+  } else if (c->camera_id == CAMERA_ID_OX03C10) {
+    framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
+  }
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
