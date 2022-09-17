@@ -24,6 +24,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     ("MOTOR_TORQUE", "STEER_MOTOR_TORQUE"),
     ("STEER_TORQUE_SENSOR", "STEER_STATUS"),
     ("IMPERIAL_UNIT", "CAR_SPEED"),
+    ("ROUGH_CAR_SPEED_2", "CAR_SPEED"),
     ("LEFT_BLINKER", "SCM_FEEDBACK"),
     ("RIGHT_BLINKER", "SCM_FEEDBACK"),
     ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS"),
@@ -150,6 +151,10 @@ class CarState(CarStateBase):
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
 
+    # When available we use cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] to populate vEgoCluster
+    # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
+    self.dash_speed_seen = False
+
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
@@ -203,6 +208,11 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (1. - v_weight) * cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor + v_weight * v_wheel
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
+    self.dash_speed_seen = self.dash_speed_seen or cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] > 1e-3
+    if self.dash_speed_seen:
+      conversion = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
+      ret.vEgoCluster = cp.vl["CAR_SPEED"]["ROUGH_CAR_SPEED_2"] * conversion
+
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE"]
     ret.steeringRateDeg = cp.vl["STEERING_SENSORS"]["STEER_ANGLE_RATE"]
 
@@ -237,9 +247,9 @@ class CarState(CarStateBase):
         ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
 
         # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
-        conversion_factor = CV.MPH_TO_MS if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric else CV.KPH_TO_MS
+        conversion = CV.MPH_TO_MS if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not self.is_metric else CV.KPH_TO_MS
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion_factor
+        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * conversion
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
@@ -275,11 +285,14 @@ class CarState(CarStateBase):
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
-    self.stock_hud = False
+    self.acc_hud = False
+    self.lkas_hud = False
     if self.CP.carFingerprint not in HONDA_BOSCH:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
-      self.stock_hud = cp_cam.vl["ACC_HUD"]
+      self.acc_hud = cp_cam.vl["ACC_HUD"]
       self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
+    if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+      self.lkas_hud = cp_cam.vl["LKAS_HUD"]
 
     if self.CP.enableBsm and self.CP.carFingerprint in (CAR.CRV_5G, ):
       # BSM messages are on B-CAN, requires a panda forwarding B-CAN messages to CAN 0
@@ -300,12 +313,15 @@ class CarState(CarStateBase):
       ("STEERING_CONTROL", 100),
     ]
 
-    if CP.carFingerprint in HONDA_BOSCH_RADARLESS and not CP.openpilotLongitudinalControl:
-      signals += [
-        ("CRUISE_SPEED", "ACC_HUD"),
-        ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
-      ]
-      checks.append(("ACC_HUD", 10))
+    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+      signals.append(("LKAS_PROBLEM", "LKAS_HUD"))
+      checks.append(("LKAS_HUD", 10))
+      if not CP.openpilotLongitudinalControl:
+        signals += [
+          ("CRUISE_SPEED", "ACC_HUD"),
+          ("CRUISE_CONTROL_LABEL", "ACC_HUD"),
+        ]
+        checks.append(("ACC_HUD", 10))
 
     elif CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND"),

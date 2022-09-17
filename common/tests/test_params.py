@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import unittest
 
-from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking
+from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -59,13 +59,13 @@ class TestParams(unittest.TestCase):
     with self.assertRaises(UnknownKeyName):
       self.params.put_bool("swag", True)
 
-  def test_delete_not_there(self):
+  def test_remove_not_there(self):
     assert self.params.get("CarParams") is None
-    self.params.delete("CarParams")
+    self.params.remove("CarParams")
     assert self.params.get("CarParams") is None
 
   def test_get_bool(self):
-    self.params.delete("IsMetric")
+    self.params.remove("IsMetric")
     self.assertFalse(self.params.get_bool("IsMetric"))
 
     self.params.put_bool("IsMetric", True)
@@ -88,6 +88,23 @@ class TestParams(unittest.TestCase):
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
+
+  def test_put_bool_non_blocking_with_get_block(self):
+    q = Params(self.tmpdir)
+    def _delayed_writer():
+      time.sleep(0.1)
+      put_bool_nonblocking("CarParams", True, self.tmpdir)
+    threading.Thread(target=_delayed_writer).start()
+    assert q.get("CarParams") is None
+    assert q.get("CarParams", True) == b"1"
+
+  def test_params_all_keys(self):
+    keys = Params().all_keys()
+
+    # sanity checks
+    assert len(keys) > 20
+    assert len(keys) == len(set(keys))
+    assert b"CarParams" in keys
 
 
 if __name__ == "__main__":

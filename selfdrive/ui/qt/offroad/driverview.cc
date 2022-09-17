@@ -31,7 +31,6 @@ DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidg
 
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
-  is_rhd = params.getBool("IsRHD");
   params.putBool("IsDriverViewEnabled", true);
 }
 
@@ -60,7 +59,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   cereal::DriverStateV2::Reader driver_state = sm["driverStateV2"].getDriverStateV2();
   cereal::DriverStateV2::DriverData::Reader driver_data;
 
-  // is_rhd = driver_state.getWheelOnRightProb() > 0.5;
+  is_rhd = driver_state.getWheelOnRightProb() > 0.5;
   driver_data = is_rhd ? driver_state.getRightDriverData() : driver_state.getLeftDriverData();
 
   bool face_detected = driver_data.getFaceProb() > 0.7;
@@ -85,7 +84,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
 
   // icon
   const int img_offset = 60;
-  const int img_x = rect().left() + img_offset;
+  const int img_x = is_rhd ? rect().right() - FACE_IMG_SIZE - img_offset : rect().left() + img_offset;
   const int img_y = rect().bottom() - FACE_IMG_SIZE - img_offset;
   p.setOpacity(face_detected ? 1.0 : 0.2);
   p.drawPixmap(img_x, img_y, face_img);

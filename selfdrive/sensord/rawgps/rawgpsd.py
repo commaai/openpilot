@@ -7,10 +7,10 @@ import math
 import time
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
-
 import cereal.messaging as messaging
 from cereal import log
 from system.swaglog import cloudlog
+from laika.gps_time import GPSTime
 
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import dict_unpacker
@@ -81,10 +81,9 @@ def main() -> NoReturn:
     LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
   ]
   pub_types = ['qcomGnss']
-  if int(os.getenv("PUBLISH_EXTERNAL", "0")) == 1:
-    unpack_position, _ = dict_unpacker(position_report)
-    log_types.append(LOG_GNSS_POSITION_REPORT)
-    pub_types.append("gpsLocationExternal")
+  unpack_position, _ = dict_unpacker(position_report)
+  log_types.append(LOG_GNSS_POSITION_REPORT)
+  pub_types.append("gpsLocation")
 
   # connect to modem
   diag = ModemDiag()
@@ -204,23 +203,23 @@ def main() -> NoReturn:
       vNED = [report["q_FltVelEnuMps[1]"], report["q_FltVelEnuMps[0]"], -report["q_FltVelEnuMps[2]"]]
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
 
-      msg = messaging.new_message('gpsLocationExternal')
-      gps = msg.gpsLocationExternal
+      msg = messaging.new_message('gpsLocation')
+      gps = msg.gpsLocation
       gps.flags = 1
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
       gps.altitude = report["q_FltFinalPosAlt"]
       gps.speed = math.sqrt(sum([x**2 for x in vNED]))
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
-      # TODO: this probably isn't right, use laika for this
-      gps.timestamp = report['w_GpsWeekNumber']*604800*1000 + report['q_GpsFixTimeMs']
+      gps.unixTimestampMillis = GPSTime(report['w_GpsWeekNumber'],
+                                        1e-3*report['q_GpsFixTimeMs']).as_unix_timestamp()*1e3
       gps.source = log.GpsLocationData.SensorSource.qcomdiag
       gps.vNED = vNED
       gps.verticalAccuracy = report["q_FltVdop"]
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
 
-      pm.send('gpsLocationExternal', msg)
+      pm.send('gpsLocation', msg)
 
     if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')

@@ -3,6 +3,7 @@ import os
 import unittest
 
 from common.params import Params
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
@@ -106,6 +107,17 @@ maneuvers = [
     breakpoints=[1., 1.01, 11.],
     cruise_values=[float("nan"), 15., 15.],
   ),
+  # controls relies on planner commanding to move for stock-ACC resume spamming
+  Maneuver(
+    "resume from a stop",
+    duration=20.,
+    initial_speed=0.,
+    lead_relevancy=True,
+    initial_distance_lead=STOP_DISTANCE,
+    speed_lead_values=[0., 0., 2.],
+    breakpoints=[1., 10., 15.],
+    ensure_start=True,
+  ),
 ]
 
 
@@ -128,16 +140,23 @@ class LongitudinalControl(unittest.TestCase):
 
 def run_maneuver_worker(k):
   def run(self):
+    params = Params()
+
     man = maneuvers[k]
-    print(man.title)
+    params.put_bool("EndToEndLong", True)
+    print(man.title, ' in e2e mode')
+    valid, _ = man.evaluate()
+    self.assertTrue(valid, msg=man.title)
+    params.put_bool("EndToEndLong", False)
+    print(man.title, ' in acc mode')
     valid, _ = man.evaluate()
     self.assertTrue(valid, msg=man.title)
   return run
 
-
 for k in range(len(maneuvers)):
   setattr(LongitudinalControl, f"test_longitudinal_maneuvers_{k+1}",
           run_maneuver_worker(k))
+
 
 if __name__ == "__main__":
   unittest.main(failfast=True)

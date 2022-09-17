@@ -179,7 +179,7 @@ def gps_callback(gps, vehicle_state):
   ]
 
   dat.gpsLocationExternal = {
-    "timestamp": int(time.time() * 1000),
+    "unixTimestampMillis": int(time.time() * 1000),
     "flags": 1,  # valid fix
     "accuracy": 1.0,
     "verticalAccuracy": 1.0,
@@ -304,6 +304,7 @@ class CarlaBridge:
     world_map = world.get_map()
 
     vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
+    vehicle_bp.set_attribute('role_name', 'hero')
     spawn_points = world_map.get_spawn_points()
     assert len(spawn_points) > self._args.num_selected_spawn_point, f'''No spawn point {self._args.num_selected_spawn_point}, try a value between 0 and
       {len(spawn_points)} for this town.'''
@@ -345,7 +346,7 @@ class CarlaBridge:
 
     vehicle_state = VehicleState()
 
-    # reenable IMU
+    # re-enable IMU
     imu_bp = blueprint_library.find('sensor.other.imu')
     imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
     imu.listen(lambda imu: imu_callback(imu, vehicle_state))
@@ -547,4 +548,4 @@ if __name__ == "__main__":
   finally:
     # Try cleaning up the wide camera param
     # in case users want to use replay after
-    Params().delete("WideCameraOnly")
+    Params().remove("WideCameraOnly")

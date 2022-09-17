@@ -82,9 +82,9 @@ void Route::addFileToSegment(int n, const QString &file) {
   const int pos = name.lastIndexOf("--");
   name = pos != -1 ? name.mid(pos + 2) : name;
 
-  if (name == "rlog.bz2") {
+  if (name == "rlog.bz2" || name == "rlog") {
     segments_[n].rlog = file;
-  } else if (name == "qlog.bz2") {
+  } else if (name == "qlog.bz2" || name == "qlog") {
     segments_[n].qlog = file;
   } else if (name == "fcamera.hevc") {
     segments_[n].road_cam = file;

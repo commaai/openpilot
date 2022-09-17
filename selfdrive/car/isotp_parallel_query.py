@@ -126,7 +126,7 @@ class IsoTpParallelQuery:
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
           else:
-            results[tx_addr] = dat[len(expected_response):]
+            results[(tx_addr, msg._can_client.rx_addr)] = dat[len(expected_response):]
             request_done[tx_addr] = True
         else:
           error_code = dat[2] if len(dat) > 2 else -1
@@ -135,6 +135,7 @@ class IsoTpParallelQuery:
             if self.debug:
               cloudlog.warning(f"iso-tp query response pending: {tx_addr}")
           else:
+            response_timeouts[tx_addr] = 0
             request_done[tx_addr] = True
             cloudlog.warning(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 

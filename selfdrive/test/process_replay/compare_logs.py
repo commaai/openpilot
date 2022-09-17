@@ -46,11 +46,25 @@ def remove_ignored_fields(msg, ignore):
   return msg.as_reader()
 
 
-def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None):
+def get_field_tolerance(diff_field, field_tolerances):
+  diff_field_str = diff_field[0]
+  for s in diff_field[1:]:
+    # loop until number in field
+    if not isinstance(s, str):
+      break
+    diff_field_str += '.'+s
+  if diff_field_str in field_tolerances:
+    return field_tolerances[diff_field_str]
+
+
+def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=None, field_tolerances=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
     ignore_msgs = []
+  if field_tolerances is None:
+    field_tolerances = {}
+  default_tolerance = EPSILON if tolerance is None else tolerance
 
   log1, log2 = (list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2))
 
@@ -72,7 +86,6 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       msg1_dict = msg1.to_dict(verbose=True)
       msg2_dict = msg2.to_dict(verbose=True)
 
-      tolerance = EPSILON if tolerance is None else tolerance
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
       # Dictdiffer only supports relative tolerance, we also want to check for absolute
@@ -80,10 +93,13 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       def outside_tolerance(diff):
         try:
           if diff[0] == "change":
+            field_tolerance = default_tolerance
+            if (tol := get_field_tolerance(diff[1], field_tolerances)) is not None:
+              field_tolerance = tol
             a, b = diff[2]
             finite = math.isfinite(a) and math.isfinite(b)
             if finite and isinstance(a, numbers.Number) and isinstance(b, numbers.Number):
-              return abs(a - b) > max(tolerance, tolerance * max(abs(a), abs(b)))
+              return abs(a - b) > max(field_tolerance, field_tolerance * max(abs(a), abs(b)))
         except TypeError:
           pass
         return True

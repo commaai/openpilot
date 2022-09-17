@@ -35,6 +35,9 @@ class Bootlog:
   def datetime(self) -> datetime.datetime:
     return timestamp_to_datetime(self._timestamp)
 
+  def __str__(self):
+    return f"{self._dongle_id}|{self._timestamp}"
+
   def __eq__(self, b) -> bool:
     if not isinstance(b, Bootlog):
       return False

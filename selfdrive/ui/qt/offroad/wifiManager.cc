@@ -303,7 +303,7 @@ void WifiManager::initConnections() {
     const Connection settings = getConnectionSettings(path);
     if (settings.value("connection").value("type") == "802-11-wireless") {
       knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
-    } else if (path.path() != "/") {
+    } else if (settings.value("connection").value("id") == "lte") {
       lteConnectionPath = path;
     }
   }

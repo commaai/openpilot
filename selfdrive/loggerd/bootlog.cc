@@ -7,12 +7,6 @@
 
 
 static kj::Array<capnp::word> build_boot_log() {
-  std::vector<std::string> bootlog_commands;
-  if (Hardware::AGNOS()) {
-    bootlog_commands.push_back("journalctl");
-    bootlog_commands.push_back("sudo nvme smart-log --output-format=json /dev/nvme0");
-  }
-
   MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
 
@@ -31,17 +25,22 @@ static kj::Array<capnp::word> build_boot_log() {
   }
 
   // Gather output of commands
-  i = 0;
+  std::vector<std::string> bootlog_commands = {
+    "[ -x \"$(command -v journalctl)\" ] && journalctl",
+  };
+
+  if (Hardware::TICI()) {
+    bootlog_commands.push_back("[ -e /dev/nvme0 ] && sudo nvme smart-log --output-format=json /dev/nvme0");
+  }
+
   auto commands = boot.initCommands().initEntries(bootlog_commands.size());
-  for (auto &command : bootlog_commands) {
-    auto lentry = commands[i];
+  for (int j = 0; j < bootlog_commands.size(); j++) {
+    auto lentry = commands[j];
 
-    lentry.setKey(command);
+    lentry.setKey(bootlog_commands[j]);
 
-    const std::string result = util::check_output(command);
+    const std::string result = util::check_output(bootlog_commands[j]);
     lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
-
-    i++;
   }
 
   boot.setLaunchLog(util::read_file("/tmp/launch_log"));

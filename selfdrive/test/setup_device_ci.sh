@@ -21,28 +21,26 @@ umount /data/safe_staging/merged/ || true
 sudo umount /data/safe_staging/merged/ || true
 rm -rf /data/safe_staging/* || true
 
-export KEYS_PARAM_PATH="/data/params/d/GithubSshKeys"
-export KEYS_PATH="/usr/comma/setup_keys"
-export CONTINUE_PATH="/data/continue.sh"
-
-if ! grep -F "$KEYS_PATH" /etc/ssh/sshd_config; then
-  echo "setting up keys"
-  sudo mount -o rw,remount /
-  sudo systemctl enable ssh
-  sudo sed -i "s,$KEYS_PARAM_PATH,$KEYS_PATH," /etc/ssh/sshd_config
-  sudo mount -o ro,remount /
-fi
-
+CONTINUE_PATH="/data/continue.sh"
 tee $CONTINUE_PATH << EOF
 #!/usr/bin/bash
 
 sudo abctl --set_success
 
+# patch sshd config
+sudo mount -o rw,remount /
+sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
+sudo systemctl daemon-reload
+sudo systemctl restart ssh
+sudo systemctl disable ssh-param-watcher.path
+sudo systemctl disable ssh-param-watcher.service
+sudo mount -o ro,remount /
+
 while true; do
   if ! sudo systemctl is-active -q ssh; then
     sudo systemctl start ssh
   fi
-  sleep 10s
+  sleep 5s
 done
 
 sleep infinity

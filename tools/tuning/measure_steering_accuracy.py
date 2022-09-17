@@ -71,7 +71,7 @@ if __name__ == "__main__":
     active = sm['controlsState'].active
     steer = sm['carControl'].actuatorsOutput.steer
     standstill = sm['carState'].standstill
-    steer_limited = sm['carState'].steeringRateLimited
+    steer_limited = abs(sm['carControl'].actuators.steer - sm['carControl'].actuatorsOutput.steer) > 1e-2
     overriding = sm['carState'].steeringPressed
     changing_lanes = sm['lateralPlan'].laneChangeState != 0
     d_path_points = sm['lateralPlan'].dPathPoints

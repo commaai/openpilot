@@ -104,7 +104,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     screenshot->setPixmap(pm.scaledToWidth(1080, Qt::SmoothTransformation));
     no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
 
-    QLabel *signup = new QLabel(tr("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai"));
+    QLabel *signup = new QLabel(tr("Get turn-by-turn directions displayed and more with a comma\nprime subscription. Sign up now: https://connect.comma.ai"));
     signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
     signup->setAlignment(Qt::AlignCenter);
 
@@ -156,6 +156,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
 void MapPanel::showEvent(QShowEvent *event) {
   updateCurrentRoute();
+  refresh();
 }
 
 void MapPanel::clear() {
@@ -184,18 +185,25 @@ void MapPanel::updateCurrentRoute() {
 }
 
 void MapPanel::parseResponse(const QString &response, bool success) {
-  stack->setCurrentIndex((uiState()->prime_type || success) ? 0 : 1);
+  if (!success) return;
 
-  if (!success) {
-    return;
+  cur_destinations = response;
+  if (isVisible()) {
+    refresh();
   }
+}
 
-  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
+void MapPanel::refresh() {
+  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
+  if (cur_destinations == prev_destinations) return;
+
+  QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
     return;
   }
 
+  prev_destinations = cur_destinations;
   clear();
 
   bool has_recents = false;

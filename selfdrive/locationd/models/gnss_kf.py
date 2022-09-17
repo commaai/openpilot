@@ -39,12 +39,6 @@ class GNSSKalman():
                        1e14, (100)**2, (0.2)**2,
                        (10)**2, (1)**2])
 
-  # process noise
-  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               3**2, 3**2, 3**2,
-               (.1)**2, (0)**2, (0.005)**2,
-               .1**2, (.01)**2])
-
   maha_test_kinds: List[int] = []  # ObservationKind.PSEUDORANGE_RATE, ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_GLONASS]
 
   @staticmethod
@@ -120,7 +114,14 @@ class GNSSKalman():
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, maha_test_kinds=maha_test_kinds)
 
-  def __init__(self, generated_dir, cython=False):
+  def __init__(self, generated_dir, cython=False, erratic_clock=False):
+    # process noise
+    clock_error_drift = 100.0 if erratic_clock else 0.1
+    self.Q = np.diag([0.03**2, 0.03**2, 0.03**2,
+                      3**2, 3**2, 3**2,
+                      (clock_error_drift)**2, (0)**2, (0.005)**2,
+                      .1**2, (.01)**2])
+
     self.dim_state = self.x_initial.shape[0]
 
     # init filter

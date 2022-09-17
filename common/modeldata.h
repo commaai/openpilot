@@ -34,12 +34,13 @@ const mat3 ecam_intrinsic_matrix = (mat3){{567.0, 0.0, 1928.0 / 2,
                                            0.0, 567.0, 1208.0 / 2,
                                            0.0, 0.0, 1.0}};
 
-static inline mat3 get_model_yuv_transform(bool bayer = true) {
+static inline mat3 get_model_yuv_transform() {
   float db_s = 1.0;
   const mat3 transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,
     0.0, 0.0, 1.0
   }};
-  return bayer ? transform_scale_buffer(transform, db_s) : transform;
+  // Can this be removed since scale is 1?
+  return transform_scale_buffer(transform, db_s);
 }

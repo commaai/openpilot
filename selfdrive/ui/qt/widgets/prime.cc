@@ -18,21 +18,24 @@
 using qrcodegen::QrCode;
 
 PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
-  QTimer* timer = new QTimer(this);
-  timer->start(5 * 60 * 1000);
+  timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &PairingQRWidget::refresh);
 }
 
 void PairingQRWidget::showEvent(QShowEvent *event) {
   refresh();
+  timer->start(5 * 60 * 1000);
+}
+
+void PairingQRWidget::hideEvent(QHideEvent *event) {
+  timer->stop();
 }
 
 void PairingQRWidget::refresh() {
-  if (isVisible()) {
-    QString pairToken = CommaApi::create_jwt({{"pair", true}});
-    QString qrString = "https://connect.comma.ai/?pair=" + pairToken;
-    this->updateQrCode(qrString);
-  }
+  QString pairToken = CommaApi::create_jwt({{"pair", true}});
+  QString qrString = "https://connect.comma.ai/?pair=" + pairToken;
+  this->updateQrCode(qrString);
+  update();
 }
 
 void PairingQRWidget::updateQrCode(const QString &text) {
@@ -88,13 +91,16 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
-    QLabel *instructions = new QLabel(tr(R"(
+    QLabel *instructions = new QLabel(QString(R"(
       <ol type='1' style='margin-left: 15px;'>
-        <li style='margin-bottom: 50px;'>Go to https://connect.comma.ai on your phone</li>
-        <li style='margin-bottom: 50px;'>Click "add new device" and scan the QR code on the right</li>
-        <li style='margin-bottom: 50px;'>Bookmark connect.comma.ai to your home screen to use it like an app</li>
+        <li style='margin-bottom: 50px;'>%1</li>
+        <li style='margin-bottom: 50px;'>%2</li>
+        <li style='margin-bottom: 50px;'>%3</li>
       </ol>
-    )"), this);
+    )").arg(tr("Go to https://connect.comma.ai on your phone"))
+    .arg(tr("Click \"add new device\" and scan the QR code on the right"))
+    .arg(tr("Bookmark connect.comma.ai to your home screen to use it like an app")), this);
+
     instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
     instructions->setWordWrap(true);
     vlayout->addWidget(instructions);
@@ -271,7 +277,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(primeAd);
+  mainLayout->setCurrentWidget(uiState()->prime_type ? (QWidget*)primeUser : (QWidget*)primeAd);
 
   setFixedWidth(750);
   setStyleSheet(R"(
@@ -293,11 +299,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &SetupWidget::replyFinished);
   }
-  hide(); // Only show when first request comes back
 }
 
 void SetupWidget::replyFinished(const QString &response, bool success) {
-  show();
   if (!success) return;
 
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());

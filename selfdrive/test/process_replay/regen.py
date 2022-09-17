@@ -15,6 +15,8 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from panda.python import Panda
+from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
@@ -30,8 +32,8 @@ def replay_panda_states(s, msgs):
 
   # TODO: new safety params from flags, remove after getting new routes for Toyota
   safety_param_migration = {
-    "TOYOTA PRIUS 2017": 578,
-    "TOYOTA RAV4 2017": 329
+    "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
+    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
   }
 
   # Migrate safety param base on carState
@@ -177,22 +179,37 @@ def replay_cameras(lr, frs, disable_tqdm=False):
   return vs, p
 
 
+def migrate_carparams(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() == 'carParams':
+      CP = messaging.new_message('carParams')
+      CP.carParams = msg.carParams.as_builder()
+      for car_fw in CP.carParams.carFw:
+        car_fw.brand = CP.carParams.carName
+      msg = CP.as_reader()
+    all_msgs.append(msg)
+
+  return all_msgs
+
+
 def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
-  lr = list(lr)
+  lr = migrate_carparams(list(lr))
   if frs is None:
     frs = dict()
 
   params = Params()
   os.environ["LOG_ROOT"] = outdir
 
-  for msg in lr:
-    if msg.which() == 'carParams':
-      setup_env(CP=msg.carParams)
-    elif msg.which() == 'liveCalibration':
-      params.put("CalibrationParams", msg.as_builder().to_bytes())
+  # Get and setup initial state
+  CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+  controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
+  liveCalibration = [m for m in lr if m.which() == 'liveCalibration'][0]
+
+  setup_env(CP=CP, controlsState=controlsState)
+  params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
-
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
@@ -247,7 +264,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
   if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
-    raise Exception(f"Route never enabled: {segment}")
+    raise Exception(f"Route did not engage for long enough: {segment}")
 
   return seg_path
 

@@ -13,7 +13,7 @@ from tools.lib.logreader import logreader_from_route_or_segment
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
-# Retrive controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
+# Retrieve controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
 MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime']
 MSGQ_TO_SERVICE = {
   'roadCameraState': 'camerad',
@@ -79,7 +79,7 @@ def read_logs(lr):
         if not data['start'][frame_id][service]:
           data['start'][frame_id][service] = msg_obj.timestampSof
       elif msg.which() == 'controlsState':
-        # Sendcan is published before controlsState, but the frameId is retrived in CS
+        # Sendcan is published before controlsState, but the frameId is retrieved in CS
         data['timestamp'][frame_id][service].append(("sendcan published", latest_sendcan_monotime))
       elif msg.which() == 'modelV2':
         if msg_obj.frameIdExtra != frame_id:

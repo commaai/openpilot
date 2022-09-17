@@ -342,10 +342,6 @@ void Panda::enable_deepsleep() {
   usb_write(0xfb, 0, 0);
 }
 
-void Panda::set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode) {
-  usb_write(0xe6, (uint16_t)power_mode, 0);
-}
-
 void Panda::send_heartbeat(bool engaged) {
   usb_write(0xf3, engaged, 0);
 }
@@ -393,7 +389,8 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     }
     auto can_data = cmsg.getDat();
     uint8_t data_len_code = len_to_dlc(can_data.size());
-    assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8));
+    assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA ||
+                                hw_type == cereal::PandaState::PandaType::RED_PANDA_V2) ? 64 : 8));
     assert(can_data.size() == dlc_to_len[data_len_code]);
 
     can_header header;

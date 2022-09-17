@@ -37,6 +37,9 @@ class TestPowerDraw(unittest.TestCase):
     HARDWARE.initialize_hardware()
     HARDWARE.set_power_save(False)
 
+    # wait a bit for power save to disable
+    time.sleep(5)
+
   def tearDown(self):
     manager_cleanup()
 
