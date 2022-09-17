@@ -74,7 +74,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
 
     std::vector<Sensor *> s;
     for (auto sensor : sensors) {
-      if (sensor->trigged()) s.push_back(sensor);
+      if (sensor->triggered()) s.push_back(sensor);
     }
     if (s.empty()) continue;
 

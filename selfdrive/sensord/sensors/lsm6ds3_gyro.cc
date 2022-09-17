@@ -83,7 +83,7 @@ fail:
   return ret;
 }
 
-bool LSM6DS3_Gyro::trigged() {
+bool LSM6DS3_Gyro::triggered() {
   // INT1 shared with accel, check STATUS_REG who triggered
   uint8_t status_reg = 0;
   read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
