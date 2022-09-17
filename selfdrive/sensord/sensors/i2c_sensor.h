@@ -2,12 +2,13 @@
 
 #include <cstdint>
 #include <unistd.h>
-
+#include <optional>
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/i2c.h"
 #include "common/gpio.h"
 
+#include "common/swaglog.h"
 #include "selfdrive/sensord/sensors/constants.h"
 #include "selfdrive/sensord/sensors/sensor.h"
 
@@ -33,4 +34,21 @@ public:
   virtual int init() = 0;
   virtual bool get_event(cereal::SensorEventData::Builder &event) = 0;
   virtual int shutdown() = 0;
+
+  template <class... Args>
+  std::optional<uint8_t> verify_chip_id(uint8_t address, Args... args) {
+    uint8_t chip_id = 0;
+    int ret = read_register(address, &chip_id, 1);
+    if (ret < 0) {
+      LOGE("Reading chip ID failed: %d", ret);
+      return std::nullopt;
+    }
+
+    int expected_ids[] = {args...};
+    for (auto id : expected_ids) {
+      if (chip_id == id) return chip_id;
+    }
+    LOGE("Chip ID wrong. Got: %d, Expected %d", chip_id, expected_ids[0]);
+    return std::nullopt;
+  }
 };

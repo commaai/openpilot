@@ -11,27 +11,15 @@
 LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Gyro::init() {
-  int ret = 0;
-  uint8_t buffer[1];
-  uint8_t value = 0;
+  auto chip = verify_chip_id(LSM6DS3_GYRO_I2C_REG_ID, LSM6DS3_GYRO_CHIP_ID, LSM6DS3TRC_GYRO_CHIP_ID);
+  if (!chip) return -1;
 
-  ret = read_register(LSM6DS3_GYRO_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
-    goto fail;
-  }
-
-  if(buffer[0] != LSM6DS3_GYRO_CHIP_ID && buffer[0] != LSM6DS3TRC_GYRO_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], LSM6DS3_GYRO_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
-
-  if (buffer[0] == LSM6DS3TRC_GYRO_CHIP_ID) {
+  if (*chip == LSM6DS3TRC_GYRO_CHIP_ID) {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  ret = init_gpio();
+  uint8_t value = 0;
+  int ret = init_gpio();
   if (ret < 0) {
     goto fail;
   }
