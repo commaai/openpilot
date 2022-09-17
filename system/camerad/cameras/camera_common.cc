@@ -114,6 +114,11 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire() {
   if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
+  if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
+    LOGE("no frame data? wtf");
+    return false;
+  }
+
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   cur_camera_buf = &camera_bufs[cur_buf_idx];
