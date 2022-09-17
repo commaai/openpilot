@@ -568,24 +568,23 @@ void CameraState::camera_set_parameters() {
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight) * sensor_analog_gains[gain_idx] * exposure_time;
 }
 
-void CameraState::camera_map_bufs(CameraServer *s) {
+void CameraState::camera_map_bufs() {
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // configure ISP to put the image in place
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
+    mem_mgr_map_cmd.mmu_hdls[0] = server->device_iommu;
     mem_mgr_map_cmd.num_hdl = 1;
     mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
     mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-    int ret = do_cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    int ret = do_cam_control(server->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
     LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
-void CameraState::camera_init(CameraServer *s, int camera_id_, unsigned int fps, VisionStreamType yuv_type) {
+void CameraState::camera_init(unsigned int fps, VisionStreamType yuv_type) {
   if (!enabled) return;
-  camera_id = camera_id_;
 
   LOGD("camera init %d", camera_num);
   assert(camera_id < std::size(cameras_supported));
@@ -597,8 +596,8 @@ void CameraState::camera_init(CameraServer *s, int camera_id_, unsigned int fps,
 
   camera_set_parameters();
 
-  buf.init(s->device_id, s->context.get(), this, s->vipc_server.get(), FRAME_BUF_COUNT, yuv_type);
-  camera_map_bufs(s);
+  buf.init(server->device_id, server->context.get(), this, server->vipc_server.get(), FRAME_BUF_COUNT, yuv_type);
+  camera_map_bufs();
 }
 
 void CameraState::camera_open(CameraServer *server_, int camera_num_, bool enabled_) {

@@ -74,9 +74,9 @@ CameraServer::CameraServer() {
   wide_road_cam.camera_open(this, 0, !env_disable_wide_road);
   LOGD("wide road camera opened");
 
-  driver_cam.camera_init(this, driver_cam.camera_id, 20, VISION_STREAM_DRIVER);
-  road_cam.camera_init(this, road_cam.camera_id, 20, VISION_STREAM_ROAD);
-  wide_road_cam.camera_init(this, wide_road_cam.camera_id, 20, VISION_STREAM_WIDE_ROAD);
+  driver_cam.camera_init(20, VISION_STREAM_DRIVER);
+  road_cam.camera_init(20, VISION_STREAM_ROAD);
+  wide_road_cam.camera_init(20, VISION_STREAM_WIDE_ROAD);
 }
 
 CameraServer::~CameraServer() {

@@ -59,8 +59,8 @@ public:
 
   void camera_open(CameraServer *server, int camera_num, bool enabled);
   void camera_set_parameters();
-  void camera_map_bufs(CameraServer *s);
-  void camera_init(CameraServer *s, int camera_id, unsigned int fps, VisionStreamType yuv_type);
+  void camera_map_bufs();
+  void camera_init(unsigned int fps, VisionStreamType yuv_type);
   void camera_close();
   void frameThread();
 
