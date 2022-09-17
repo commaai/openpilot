@@ -16,8 +16,6 @@ static QLabel* newLabel(const QString& text, const QString &type) {
 }
 
 DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
-  metric_ = Params().getBool("IsMetric");
-
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 50, 50, 60);
 
@@ -35,7 +33,7 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
     grid_layout->addWidget(labels.hours = newLabel("0", "number"), row, 2, Qt::AlignLeft);
 
     grid_layout->addWidget(newLabel((tr("Drives")), "unit"), row + 1, 0, Qt::AlignLeft);
-    grid_layout->addWidget(labels.distance_unit = newLabel(getDistanceUnit(), "unit"), row + 1, 1, Qt::AlignLeft);
+    grid_layout->addWidget(labels.distance_unit = newLabel("", "unit"), row + 1, 1, Qt::AlignLeft);
     grid_layout->addWidget(newLabel(tr("Hours"), "unit"), row + 1, 2, Qt::AlignLeft);
 
     main_layout->addLayout(grid_layout);
@@ -64,10 +62,11 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
 }
 
 void DriveStats::updateStats() {
+  bool is_metric = Params().getBool("IsMetric");
   auto update = [=](const QJsonObject& obj, StatsLabels& labels) {
     labels.routes->setText(QString::number((int)obj["routes"].toDouble()));
-    labels.distance->setText(QString::number(int(obj["distance"].toDouble() * (metric_ ? MILE_TO_KM : 1))));
-    labels.distance_unit->setText(getDistanceUnit());
+    labels.distance->setText(QString::number(int(obj["distance"].toDouble() * (is_metric ? MILE_TO_KM : 1))));
+    labels.distance_unit->setText(is_metric ? tr("KM") : tr("Miles"));
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
@@ -84,14 +83,12 @@ void DriveStats::parseResponse(const QString& response, bool success) {
     qDebug() << "JSON Parse failed on getting past drives statistics";
     return;
   }
-  stats_ = doc;
-  updateStats();
+  if (doc != stats_) {
+    stats_ = doc;
+    updateStats();
+  }
 }
 
 void DriveStats::showEvent(QShowEvent* event) {
-  bool metric = Params().getBool("IsMetric");
-  if (metric_ != metric) {
-    metric_ = metric;
-    updateStats();
-  }
+  updateStats();
 }
