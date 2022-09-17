@@ -89,25 +89,44 @@ def replay_device_state(s, msgs):
       pm.send(s, new_m)
       rk.keep_time()
 
+def replay_sensor_events(s, msgs):
+  sensor_service_list = ['accelerometer', 'gyroscope', 'magnetometer',
+                         'lightSensor', 'temperatureSensor']
+  pm = messaging.PubMaster(sensor_service_list)
 
-def replay_sensor_events(slist, msgs):
-  pm = messaging.PubMaster(slist)
-
-  rks = {}
-  for s in slist:
-    rks[s] = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  smsgs = [m for m in msgs if m.which() == s]
 
   while True:
-    for m in msgs:
-      if m.which() not in slist:
-        continue
+    for m in smsgs:
+      for evt in m.sensorEvents:
+        # build new message for each sensor type
+        sensor_service = ''
+        if evt.which() == 'acceleration':
+          sensor_service = 'accelerometer'
+        elif evt.which() == 'gyro' or evt.which() == 'gyroUncalibrated':
+          sensor_service = 'gyroscope'
+        elif evt.which() == 'light' or evt.which() == 'proximity':
+          sensor_service = 'lightSensor'
+        elif evt.which() == 'magnetic' or evt.which() == 'magneticUncalibrated':
+          sensor_service = 'magnetometer'
+        elif evt.which() == 'temperature':
+          sensor_service = 'temperatureSensor'
 
-      new_m = m.as_builder()
-      new_m.logMonoTime = int(sec_since_boot() * 1e9)
-      getattr(new_m, m.which()).timestamp = new_m.logMonoTime
+        m = messaging.new_message(sensor_service)
+        m.logMonoTime = int(sec_since_boot() * 1e9)
+        m.valid = True
 
-      pm.send(m.which(), new_m)
-      rks[m.which()].keep_time()
+        m_dat = getattr(m, sensor_service)
+        m_dat.version = evt.version
+        m_dat.sensor = evt.sensor
+        m_dat.type = evt.type
+        m_dat.timestamp = evt.timestamp
+        m_dat.source = evt.source
+        setattr(m_dat, evt.which(), getattr(evt, evt.which()))
+        pm.send(sensor_service, m)
+
+      rk.keep_time() # TODO: fix this, this must be done per sensor
 
 
 def replay_sensor_event(s, msgs):
@@ -217,12 +236,12 @@ def migrate_carparams(lr):
 def migrate_sensorEvents(lr):
   all_msgs = []
   for msg in lr:
-    if msg.which() != 'sensorEvents':
+    if msg.which() != 'sensorEventsDEPRECATED':
       all_msgs.append(msg)
       continue
 
     # migrate to split sensor events
-    for evt in msg.sensorEvents:
+    for evt in msg.sensorEventsDEPRECATED:
       # build new message for each sensor type
       sensor_service = ''
       if evt.which() == 'acceleration':
