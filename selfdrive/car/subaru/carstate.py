@@ -13,6 +13,11 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
+    # TODO: cluster is super delayed when updating, could it be just hysteresis or also a lower update rate?
+    # "felt" like 1-2 Hz, try to measure
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS
+    self.cluster_min_speed = CV.KPH_TO_MS
+
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
