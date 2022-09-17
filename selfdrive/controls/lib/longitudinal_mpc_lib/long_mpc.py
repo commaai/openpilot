@@ -351,7 +351,7 @@ class LongitudinalMpc:
 
       x_and_cruise = np.column_stack([x, cruise_target])
       x = np.min(x_and_cruise, axis=1)
-      
+
       self.source = 'e2e' if x_and_cruise[0,0] < x_and_cruise[0,1] else 'cruise'
 
     else:
@@ -385,7 +385,7 @@ class LongitudinalMpc:
          (lead_1_obstacle[0] - lead_0_obstacle[0]):
         self.source = 'lead1'
 
-      
+
 
   def update_with_xva(self, x, v, a):
     self.params[:,0] = -10.
@@ -433,6 +433,7 @@ class LongitudinalMpc:
     for i in range(N):
       self.u_sol[i] = self.solver.get(i, 'u')
 
+    self.x_solution = self.x_sol[:,0]
     self.v_solution = self.x_sol[:,1]
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]
