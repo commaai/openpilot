@@ -1179,7 +1179,7 @@ void process_road_camera(CameraServer *s, CameraState *c, int cnt) {
   c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
-void CameraState::processThread() {
+void CameraState::frameThread() {
   const char *thread_name = nullptr;
   if (this == &server->road_cam) {
     thread_name = "RoadCamera";

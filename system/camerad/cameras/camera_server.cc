@@ -88,9 +88,9 @@ CameraServer::~CameraServer() {
 void CameraServer::run() {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (driver_cam.enabled) threads.emplace_back(&CameraState::processThread, &driver_cam);
-  if (road_cam.enabled) threads.emplace_back(&CameraState::processThread, &road_cam);
-  if (wide_road_cam.enabled) threads.emplace_back(&CameraState::processThread, &wide_road_cam);
+  if (driver_cam.enabled) threads.emplace_back(&CameraState::frameThread, &driver_cam);
+  if (road_cam.enabled) threads.emplace_back(&CameraState::frameThread, &road_cam);
+  if (wide_road_cam.enabled) threads.emplace_back(&CameraState::frameThread, &wide_road_cam);
 
   // start devices
   LOG("-- Starting devices");

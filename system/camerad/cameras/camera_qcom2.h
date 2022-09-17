@@ -62,7 +62,7 @@ public:
   void camera_map_bufs(CameraServer *s);
   void camera_init(CameraServer *s, int camera_id, unsigned int fps, VisionStreamType yuv_type);
   void camera_close();
-  void processThread();
+  void frameThread();
 
   std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
 
