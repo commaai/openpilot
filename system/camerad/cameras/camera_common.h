@@ -81,15 +81,10 @@ class Debayer;
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
-  CameraState *camera_state;
   Debayer *debayer = nullptr;
-
   VisionStreamType yuv_type;
-
   int cur_buf_idx;
-
   SafeQueue<int> safe_queue;
-
   int frame_buf_count;
 
 public:
@@ -107,7 +102,6 @@ public:
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
   bool acquire();
-  void release();
   void queue(size_t buf_idx);
 };
 
@@ -122,7 +116,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);
 void camerad_thread();
 
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);
