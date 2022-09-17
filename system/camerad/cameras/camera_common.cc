@@ -336,15 +336,17 @@ void camerad_thread() {
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 #endif
 
-  MultiCameraState cameras = {};
-  VisionIpcServer vipc_server("camerad", device_id, context);
+  {
+    MultiCameraState cameras = {};
+    VisionIpcServer vipc_server("camerad", device_id, context);
 
-  cameras_open(&cameras);
-  cameras_init(&vipc_server, &cameras, device_id, context);
+    cameras_open(&cameras);
+    cameras_init(&vipc_server, &cameras, device_id, context);
 
-  vipc_server.start_listener();
+    vipc_server.start_listener();
 
-  cameras_run(&cameras);
+    cameras_run(&cameras);
+  }
 
   CL_CHECK(clReleaseContext(context));
 }
