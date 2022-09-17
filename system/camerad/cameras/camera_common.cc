@@ -65,11 +65,9 @@ private:
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
   vipc_server = v;
   this->yuv_type = init_yuv_type;
-
-  const CameraInfo *ci = &s->ci;
-  camera_state = s;
   frame_buf_count = frame_cnt;
 
+  const CameraInfo *ci = &s->ci;
   // RAW frame
   const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
