@@ -116,39 +116,29 @@ bool CameraBuf::acquire() {
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
-    release();
     return false;
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
-  cl_event event;
-
-  double start_time = millis_since_boot();
-
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
-  debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
-
+  double start_time = millis_since_boot();
+  cl_event event;
+  debayer->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
-
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
-                        cur_frame_data.frame_id,
-                        cur_frame_data.timestamp_sof,
-                        cur_frame_data.timestamp_eof,
+    cur_frame_data.frame_id,
+    cur_frame_data.timestamp_sof,
+    cur_frame_data.timestamp_eof,
   };
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
   vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
-}
-
-void CameraBuf::release() {
-  // Empty
 }
 
 void CameraBuf::queue(size_t buf_idx) {
@@ -328,7 +318,6 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
-    cs->buf.release();
     ++cnt;
   }
   return NULL;

@@ -102,7 +102,6 @@ public:
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
   bool acquire();
-  void release();
   void queue(size_t buf_idx);
 };
 
