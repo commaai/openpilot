@@ -28,12 +28,26 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
+void publish_events(PubMaster &pm, const std::vector<Sensor *> &s, std::optional<int64_t> ts = {}) {
+  MessageBuilder msg;
+  auto sensor_events = msg.initEvent().initSensorEvents(s.size());
+  for (int i = 0; i < s.size(); i++) {
+    auto event = sensor_events[i];
+    s[i]->get_event(event);
+    if (ts) {
+      event.setTimestamp(*ts);
+    }
+  }
+  std::lock_guard<std::mutex> lock(pm_mutex);
+  pm.send("sensorEvents", msg);
+}
+
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
 
-  uint64_t offset = nanos_since_epoch() - nanos_since_boot();
+  const uint64_t offset = nanos_since_epoch() - nanos_since_boot();
 
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
@@ -60,36 +74,15 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       continue;
     }
 
+    std::vector<Sensor *> s;
+    for (auto sensor : sensors) {
+      if (sensor->trigged()) s.push_back(sensor);
+    }
+    if (s.empty()) continue;
+
     int num_events = err / sizeof(*evdata);
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
-
-    MessageBuilder msg;
-    auto orphanage = msg.getOrphanage();
-    std::vector<capnp::Orphan<cereal::SensorEventData>> collected_events;
-    collected_events.reserve(sensors.size());
-
-    for (Sensor *sensor : sensors) {
-      auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
-      auto event = orphan.get();
-      if (!sensor->get_event(event)) {
-        continue;
-      }
-
-      event.setTimestamp(ts);
-      collected_events.push_back(kj::mv(orphan));
-    }
-
-    if (collected_events.size() == 0) {
-      continue;
-    }
-
-    auto events = msg.initEvent().initSensorEvents(collected_events.size());
-    for (int i = 0; i < collected_events.size(); ++i) {
-      events.adoptWithCaveats(i, kj::mv(collected_events[i]));
-    }
-
-    std::lock_guard<std::mutex> lock(pm_mutex);
-    pm.send("sensorEvents", msg);
+    publish_events(pm, s, ts);
   }
 
   // poweroff sensors, disable interrupts
@@ -174,23 +167,9 @@ int sensor_loop() {
 
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-    const int num_events = sensors.size();
-    MessageBuilder msg;
-    auto sensor_events = msg.initEvent().initSensorEvents(num_events);
-
-    for (int i = 0; i < num_events; i++) {
-      auto event = sensor_events[i];
-      sensors[i]->get_event(event);
-    }
-
-    {
-      std::lock_guard<std::mutex> lock(pm_mutex);
-      pm.send("sensorEvents", msg);
-    }
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto begin = std::chrono::steady_clock::now();
+    publish_events(pm, sensors);
+    auto end = std::chrono::steady_clock::now();
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
 

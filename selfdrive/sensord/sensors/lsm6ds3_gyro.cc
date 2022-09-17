@@ -83,17 +83,14 @@ fail:
   return ret;
 }
 
+bool LSM6DS3_Gyro::trigged() {
+  // INT1 shared with accel, check STATUS_REG who triggered
+  uint8_t status_reg = 0;
+  read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+  return (status_reg & LSM6DS3_GYRO_DRDY_GDA) != 0;
+}
+
 bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
-
-  if (has_interrupt_enabled()) {
-    // INT1 shared with accel, check STATUS_REG who triggered
-    uint8_t status_reg = 0;
-    read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
-    if ((status_reg & LSM6DS3_GYRO_DRDY_GDA) == 0) {
-      return false;
-    }
-  }
-
   uint8_t buffer[6];
   int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));

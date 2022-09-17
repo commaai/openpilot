@@ -29,5 +29,6 @@ public:
   LSM6DS3_Accel(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
   int init();
   bool get_event(cereal::SensorEventData::Builder &event);
+  bool trigged() override;
   int shutdown();
 };
