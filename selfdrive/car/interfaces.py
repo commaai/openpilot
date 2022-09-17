@@ -114,7 +114,7 @@ class CarInterfaceBase(ABC):
     friction = friction_interp if friction_compensation else 0.0
     return (lateral_accel_value / torque_params.latAccelFactor) + friction
 
-  TorqueFromLateralAccelCallbackType = Callable[[float, car.LateralTorqueTuning, float, float, bool], float]
+  TorqueFromLateralAccelCallbackType = Callable[[float, car.CarParams.LateralTorqueTuning, float, float, bool], float]
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_linear
