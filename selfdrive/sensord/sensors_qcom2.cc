@@ -28,7 +28,8 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
-void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
+void interrupt_loop(const std::vector<Sensor *> &sensors, PubMaster &pm) {
+  int fd = sensors[0]->gpio_fd;
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
@@ -91,98 +92,57 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     std::lock_guard<std::mutex> lock(pm_mutex);
     pm.send("sensorEvents", msg);
   }
-
-  // poweroff sensors, disable interrupts
-  for (Sensor *sensor : sensors) {
-    sensor->shutdown();
-  }
 }
 
-int sensor_loop() {
-  I2CBus *i2c_bus_imu;
+int sensor_loop(I2CBus *i2c_bus_imu) {
+  std::pair<Sensor *, bool> all_sensors[] = {
+    {new BMX055_Accel(i2c_bus_imu), false},
+    {new BMX055_Gyro(i2c_bus_imu), false},
+    {new BMX055_Magn(i2c_bus_imu), false},
+    {new BMX055_Temp(i2c_bus_imu), false},
+    {new LSM6DS3_Accel(i2c_bus_imu, GPIO_LSM_INT), true},
+    {new LSM6DS3_Gyro(i2c_bus_imu, GPIO_LSM_INT, true), true},
+    {new LSM6DS3_Temp(i2c_bus_imu), true},
+    {new MMC5603NJ_Magn(i2c_bus_imu), false},
+    {new LightSensor("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw"), true},
+  };
 
-  try {
-    i2c_bus_imu = new I2CBus(I2C_BUS_IMU);
-  } catch (std::exception &e) {
-    LOGE("I2CBus init failed");
-    return -1;
-  }
-
-  BMX055_Accel bmx055_accel(i2c_bus_imu);
-  BMX055_Gyro bmx055_gyro(i2c_bus_imu);
-  BMX055_Magn bmx055_magn(i2c_bus_imu);
-  BMX055_Temp bmx055_temp(i2c_bus_imu);
-
-  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, GPIO_LSM_INT);
-  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, GPIO_LSM_INT, true); // GPIO shared with accel
-  LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
-
-  MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
-
-  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
-
-  // Sensor init
-  std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
-  sensors_init.push_back({&bmx055_accel, false});
-  sensors_init.push_back({&bmx055_gyro, false});
-  sensors_init.push_back({&bmx055_magn, false});
-  sensors_init.push_back({&bmx055_temp, false});
-
-  sensors_init.push_back({&lsm6ds3_accel, true});
-  sensors_init.push_back({&lsm6ds3_gyro, true});
-  sensors_init.push_back({&lsm6ds3_temp, true});
-
-  sensors_init.push_back({&mmc5603nj_magn, false});
-
-  sensors_init.push_back({&light, true});
-
+  std::vector<Sensor*> intr_sensors, non_intr_sensors;
   bool has_magnetometer = false;
-
-  // Initialize sensors
-  std::vector<Sensor *> sensors;
-  for (auto &sensor : sensors_init) {
-    int err = sensor.first->init();
+  for (auto [sensor, required] : all_sensors) {
+    int err = sensor->init();
     if (err < 0) {
-      // Fail on required sensors
-      if (sensor.second) {
+      if (required) {
         LOGE("Error initializing sensors");
-        delete i2c_bus_imu;
         return -1;
       }
     } else {
-      if (sensor.first == &bmx055_magn || sensor.first == &mmc5603nj_magn) {
-        has_magnetometer = true;
-      }
-
-      if (!sensor.first->has_interrupt_enabled()) {
-        sensors.push_back(sensor.first);
-      }
+      auto &v = sensor->has_interrupt_enabled() ? intr_sensors : non_intr_sensors;
+      v.push_back(sensor);
+      has_magnetometer = has_magnetometer || dynamic_cast<BMX055_Magn *>(sensor) || dynamic_cast<MMC5603NJ_Magn *>(sensor);
     }
   }
 
   if (!has_magnetometer) {
     LOGE("No magnetometer present");
-    delete i2c_bus_imu;
     return -1;
   }
 
   PubMaster pm({"sensorEvents"});
-
   // thread for reading events via interrupts
-  std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
-  std::thread lsm_interrupt_thread(&interrupt_loop, lsm6ds3_accel.gpio_fd, std::ref(lsm_interrupt_sensors), std::ref(pm));
+  std::thread interrupt_thread(&interrupt_loop, std::ref(intr_sensors), std::ref(pm));
 
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    const int num_events = sensors.size();
+    const int num_events = non_intr_sensors.size();
     MessageBuilder msg;
     auto sensor_events = msg.initEvent().initSensorEvents(num_events);
 
     for (int i = 0; i < num_events; i++) {
       auto event = sensor_events[i];
-      sensors[i]->get_event(event);
+      non_intr_sensors[i]->get_event(event);
     }
 
     {
@@ -194,12 +154,24 @@ int sensor_loop() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
 
-  lsm_interrupt_thread.join();
-  delete i2c_bus_imu;
+  interrupt_thread.join();
+
+  // poweroff sensors, disable interrupts
+  for (auto [sensor, _] : all_sensors) {
+    sensor->shutdown();
+    delete sensor;
+  }
   return 0;
 }
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -18);
-  return sensor_loop();
+
+  try {
+    auto i2c_bus_imu = std::make_unique<I2CBus>(I2C_BUS_IMU);
+    return sensor_loop(i2c_bus_imu.get());
+  } catch (std::exception &e) {
+    LOGE("I2CBus init failed");
+    return -1;
+  }
 }
