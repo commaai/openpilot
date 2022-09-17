@@ -1,29 +1,18 @@
 #include "system/camerad/cameras/camera_common.h"
 
-#include <unistd.h>
-
 #include <cassert>
-#include <cstdio>
-#include <chrono>
-#include <thread>
 
 #include "libyuv.h"
 #include <jpeglib.h>
 
-#include "system/camerad/imgproc/utils.h"
 #include "common/clutil.h"
 #include "common/modeldata.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
 #include "msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
-#ifdef QCOM2
-#include "CL/cl_ext_qcom.h"
-#endif
-
-ExitHandler do_exit;
+#include "system/camerad/cameras/camera_server.h"
 
 class Debayer {
 public:
@@ -256,7 +245,7 @@ static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_w
   return dat;
 }
 
-static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
+void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   auto thumbnail = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
   if (thumbnail.size() == 0) return;
 
@@ -295,60 +284,6 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   }
 
   return lum_med / 256.0;
-}
-
-void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  const char *thread_name = nullptr;
-  if (cs == &cameras->road_cam) {
-    thread_name = "RoadCamera";
-  } else if (cs == &cameras->driver_cam) {
-    thread_name = "DriverCamera";
-  } else {
-    thread_name = "WideRoadCamera";
-  }
-  util::set_thread_name(thread_name);
-
-  uint32_t cnt = 0;
-  while (!do_exit) {
-    if (!cs->buf.acquire()) continue;
-
-    callback(cameras, cs, cnt);
-
-    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
-      // this takes 10ms???
-      publish_thumbnail(cameras->pm, &(cs->buf));
-    }
-    ++cnt;
-  }
-  return NULL;
-}
-
-std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, cs, callback);
-}
-
-void camerad_thread() {
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-#ifdef QCOM2
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-#else
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-#endif
-
-  {
-    MultiCameraState cameras = {};
-    VisionIpcServer vipc_server("camerad", device_id, context);
-
-    cameras_open(&cameras);
-    cameras_init(&vipc_server, &cameras, device_id, context);
-
-    vipc_server.start_listener();
-
-    cameras_run(&cameras);
-  }
-
-  CL_CHECK(clReleaseContext(context));
 }
 
 int open_v4l_by_name_and_index(const char name[], int index, int flags) {

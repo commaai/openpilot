@@ -1,10 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <map>
 #include <utility>
-
-#include <media/cam_req_mgr.h>
 
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
@@ -13,9 +10,11 @@
 
 #define FRAME_BUF_COUNT 4
 
+class CameraServer;
+
 class CameraState {
 public:
-  MultiCameraState *multi_cam_state;
+  CameraServer *server;
   CameraInfo ci;
   bool enabled;
 
@@ -58,11 +57,12 @@ public:
 
   void sensors_start();
 
-  void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
+  void camera_open(CameraServer *server, int camera_num, bool enabled);
   void camera_set_parameters();
-  void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_map_bufs(CameraServer *s);
+  void camera_init(CameraServer *s, int camera_id, unsigned int fps, VisionStreamType yuv_type);
   void camera_close();
+  void processThread();
 
   std::map<uint16_t, uint16_t> ar0231_parse_registers(uint8_t *data, std::initializer_list<uint16_t> addrs);
 
@@ -100,17 +100,3 @@ private:
   std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
   std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(uint8_t *data);
 };
-
-typedef struct MultiCameraState {
-  unique_fd video0_fd;
-  unique_fd cam_sync_fd;
-  unique_fd isp_fd;
-  int device_iommu;
-  int cdm_iommu;
-
-  CameraState road_cam;
-  CameraState wide_road_cam;
-  CameraState driver_cam;
-
-  PubMaster *pm;
-} MultiCameraState;
