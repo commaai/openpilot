@@ -821,8 +821,8 @@ void cameras_open(MultiCameraState *s) {
 
   // query icp for MMU handles
   LOG("-- Query ICP for MMU handles");
-  static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
-  static struct cam_query_cap_cmd query_cap_cmd = {0};
+  struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
+  struct cam_query_cap_cmd query_cap_cmd = {0};
   query_cap_cmd.handle_type = 1;
   query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
   query_cap_cmd.size = sizeof(isp_query_cap_cmd);
@@ -835,7 +835,7 @@ void cameras_open(MultiCameraState *s) {
 
   // subscribe
   LOG("-- Subscribing");
-  static struct v4l2_event_subscription sub = {0};
+  struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
@@ -864,7 +864,7 @@ void CameraState::camera_close() {
     LOGD("stop csiphy: %d", ret);
     // link control stop
     LOG("-- Stop link control");
-    static struct cam_req_mgr_link_control req_mgr_link_control = {0};
+    struct cam_req_mgr_link_control req_mgr_link_control = {0};
     req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
     req_mgr_link_control.session_hdl = session_handle;
     req_mgr_link_control.num_links = 1;
@@ -874,7 +874,7 @@ void CameraState::camera_close() {
 
     // unlink
     LOG("-- Unlink");
-    static struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
+    struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
     req_mgr_unlink_info.session_hdl = session_handle;
     req_mgr_unlink_info.link_hdl = link_handle;
     ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
