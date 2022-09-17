@@ -72,7 +72,6 @@ typedef struct FrameMetadata {
   float processing_time;
 } FrameMetadata;
 
-struct MultiCameraState;
 struct CameraState;
 class Debayer;
 
@@ -102,8 +101,6 @@ public:
   bool acquire();
   void queue(size_t buf_idx);
 };
-
-typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);

@@ -12,7 +12,6 @@
 #include "msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
-#include "system/camerad/cameras/camera_server.h"
 
 class Debayer {
 public:

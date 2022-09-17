@@ -20,7 +20,6 @@
 #include "system/camerad/cameras/sensor2_i2c.h"
 #include "system/camerad/cameras/camera_server.h"
 
-
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
