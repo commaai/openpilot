@@ -17,6 +17,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
+TorqueFromLateralAccelCallbackType = Callable[[float, car.CarParams.LateralTorqueTuning, float, float, bool], float]
 
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
@@ -113,8 +114,6 @@ class CarInterfaceBase(ABC):
     )
     friction = friction_interp if friction_compensation else 0.0
     return (lateral_accel_value / torque_params.latAccelFactor) + friction
-
-  TorqueFromLateralAccelCallbackType = Callable[[float, car.CarParams.LateralTorqueTuning, float, float, bool], float]
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_linear
