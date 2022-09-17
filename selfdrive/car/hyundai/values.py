@@ -143,34 +143,34 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
 
   # Kia
-  CAR.KIA_FORTE: [
-    HyundaiCarInfo("Kia Forte 2018", harness=Harness.hyundai_b),
-    HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
-  ],
+  CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", "Smart Cruise Control (SCC)", harness=Harness.hyundai_g),
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
-    HyundaiCarInfo("Kia Niro Electric 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
-    HyundaiCarInfo("Kia Niro Electric 2020", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
-    HyundaiCarInfo("Kia Niro Electric 2021", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
-    HyundaiCarInfo("Kia Niro Electric 2022", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro EV 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro EV 2020", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_f),
+    HyundaiCarInfo("Kia Niro EV 2021", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
+    HyundaiCarInfo("Kia Niro EV 2022", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
   ],
-  CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
+  CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
   CAR.KIA_NIRO_HEV_2021: [
     HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
     HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
   ],
   CAR.KIA_OPTIMA: [
-    HyundaiCarInfo("Kia Optima 2017", min_steer_speed=32. * CV.MPH_TO_MS, harness=Harness.hyundai_b),
-    HyundaiCarInfo("Kia Optima 2019", harness=Harness.hyundai_g),
+    HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control & LDWS", min_steer_speed=32. * CV.MPH_TO_MS, harness=Harness.hyundai_b),
+    HyundaiCarInfo("Kia Optima 2019", "Smart Cruise Control (SCC)", harness=Harness.hyundai_g),
   ],
-  CAR.KIA_OPTIMA_H: HyundaiCarInfo("Kia Optima Hybrid 2017, 2019"),  # TODO: info may be incorrect
-  CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", "Smart Cruise Control (SCC)", harness=Harness.hyundai_a),
+  CAR.KIA_OPTIMA_H: [
+    HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control & LDWS"),  # TODO: info may be incorrect
+    HyundaiCarInfo("Kia Optima Hybrid 2019"),
+  ],
+  CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", harness=Harness.hyundai_a),
   CAR.KIA_SORENTO: [
-    HyundaiCarInfo("Kia Sorento 2018", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
+    HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control & LDWS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
     HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_e),
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
-  CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
+  CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", "Smart Cruise Control (SCC)", harness=Harness.hyundai_e),
   CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "Highway Driving Assist II", harness=Harness.hyundai_p),
 
   # Genesis
