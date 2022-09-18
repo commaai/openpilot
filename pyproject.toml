@@ -19,7 +19,7 @@ cryptography = "*"
 Cython = "*"
 flake8 = "*"
 Flask = "*"
-future-fstrings = "*"
+future-fstrings = "*"  # for acados
 gunicorn = "*"
 hatanaka = "==2.4"
 hexdump = "*"
@@ -57,7 +57,7 @@ utm = "*"
 websocket_client = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 av = "*"
 azure-storage-blob = "~=2.1"
 breathe = "*"
