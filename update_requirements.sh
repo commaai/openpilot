@@ -41,7 +41,7 @@ eval "$(pyenv init --path)"
 
 echo "update pip"
 pip install pip==21.3.1
-pip install poetry
+pip install poetry==1.2.1
 
 if [ -d "./xx" ]; then
   export POETRY_SYSTEM=1
@@ -56,7 +56,7 @@ else
 fi
 
 echo "pip packages install..."
-poetry install
+poetry install --with dev
 pyenv rehash
 
 echo "pre-commit hooks install..."

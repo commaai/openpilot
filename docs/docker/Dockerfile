@@ -9,9 +9,9 @@ RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
 COPY pyproject.toml poetry.lock $OPENPILOT_PATH
-RUN pip install --no-cache-dir poetry pip==21.3.1 && \
+RUN pip install --no-cache-dir poetry==1.2.1 pip==21.3.1 && \
     poetry config virtualenvs.create false && \
-    poetry install && \
+    poetry install --no-ansi --no-interaction --with dev --no-root && \
     pip uninstall -y poetry
 
 
