@@ -17,6 +17,7 @@
 #include "panda/board/can_health.h"
 
 #define TIMEOUT 0
+#define PANDA_CAN_CNT 3
 #define PANDA_BUS_CNT 4
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)

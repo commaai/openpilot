@@ -382,7 +382,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     cs.push_back(ps.initCanState1());
     cs.push_back(ps.initCanState2());
 
-    for (uint32_t j = 0; j < 3; j++) {
+    for (uint32_t j = 0; j < PANDA_CAN_CNT; j++) {
       const auto &can_health = pandaCanStates[i][j];
       cs[j].setBusOff((bool)can_health.bus_off);
       cs[j].setBusOffCnt(can_health.bus_off_cnt);
