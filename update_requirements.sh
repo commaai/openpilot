@@ -40,7 +40,7 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==21.3.1
+pip install pip==22.2.2
 
 if [ -d "./xx" ]; then
   echo "WARNING: using xx Pipfile ******"
