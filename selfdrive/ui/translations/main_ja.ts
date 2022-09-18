@@ -70,7 +70,7 @@
     <message>
         <location line="+0"/>
         <source>leave blank for automatic configuration</source>
-        <translation>空白のままにして、自動設定にします</translation>
+        <translation>自動で設定するには、空白のままにしてください。</translation>
     </message>
 </context>
 <context>
@@ -130,7 +130,7 @@
     <message>
         <location line="+0"/>
         <source>PREVIEW</source>
-        <translation>見る</translation>
+        <translation>プレビュー</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -155,7 +155,7 @@
     <message>
         <location line="+7"/>
         <source>Review Training Guide</source>
-        <translation>入門書を見る</translation>
+        <translation>使い方の確認</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -170,7 +170,7 @@
     <message>
         <location line="+2"/>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>入門書を見てもよろしいですか？</translation>
+        <translation>使い方の確認をしますか？</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -210,12 +210,12 @@
     <message>
         <location line="+20"/>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot は、左または右の4°以内、上の5°または下の8°以内にデバイスを取付ける必要があります。キャリブレーションを引き続きます、リセットはほとんど必要ありません。</translation>
+        <translation>openpilotの本体は、左右4°以内、上5°、下8°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
     </message>
     <message>
         <location line="+11"/>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> このデバイスは%2の%1°、%4の%3°に向けます。</translation>
+        <translation> このデバイスは%2 %1°、%4 %3°の向きに設置されています。</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -342,7 +342,7 @@
     <message>
         <location filename="../qt/maps/map.cc" line="+621"/>
         <source>eta</source>
-        <translation>予定到着時間</translation>
+        <translation>到着予定時間</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -546,17 +546,17 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>モバイルデバイスで「connect.comma.ai」にアクセスして</translation>
+        <translation>スマートフォンで「https://connect.comma.ai」にアクセスしてください。</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation>「新しいデバイスを追加」を押すと、右側のQRコードをスキャンしてください</translation>
+        <translation>「新しいデバイスを追加」を押し、右側のQRコードをスキャンしてください。</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>「connect.comma.ai」をホーム画面に追加して、アプリのように使うことができます</translation>
+        <translation>「connect.comma.ai」をホーム画面に追加して、アプリのように使うことができます。</translation>
     </message>
 </context>
 <context>
@@ -736,7 +736,7 @@ location set</source>
     <message>
         <location line="-38"/>
         <source>Toggles</source>
-        <translation>切り替え</translation>
+        <translation>機能設定</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -759,7 +759,7 @@ location set</source>
     <message>
         <location line="+6"/>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>自己責任でハーネスから電源を供給してください。</translation>
+        <translation>自己責任で実行を継続するか、ハーネスから電源を供給してください。</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -781,7 +781,7 @@ location set</source>
     <message>
         <location line="+5"/>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>その前に、インストールを完了し、いくつかの詳細を説明します。</translation>
+        <translation>道路に向かう前に、インストールを完了して使い方を確認しましょう。</translation>
     </message>
     <message>
         <location line="+25"/>
@@ -797,7 +797,7 @@ location set</source>
     <message>
         <location line="-81"/>
         <source>Continue without Wi-Fi</source>
-        <translation>Wi-Fi に未接続で続行</translation>
+        <translation>Wi-Fi に接続せずに続行</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -807,7 +807,7 @@ location set</source>
     <message>
         <location line="+54"/>
         <source>Choose Software to Install</source>
-        <translation>インストールするソフトウェアを選びます</translation>
+        <translation>インストールするソフトウェアを選択してください</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -865,7 +865,7 @@ location set</source>
     <message>
         <location line="+6"/>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>デバイスを comma connect (connect.comma.ai)でペアリングし comma prime 特典を申請してください。</translation>
+        <translation>デバイスを comma connect (connect.comma.ai)でペアリングし、comma primeの特典を申請してください。</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -1025,7 +1025,7 @@ location set</source>
     <message>
         <location line="+12"/>
         <source>UNINSTALL</source>
-        <translation>アンインストール</translation>
+        <translation>実行</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -1054,7 +1054,7 @@ location set</source>
     <message>
         <location line="+0"/>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告: これは、GitHub の設定にあるすべての公開鍵への SSH アクセスを許可するものです。自分以外の GitHub のユーザー名を入力しないでください。コンマのスタッフが GitHub のユーザー名を追加するようお願いすることはありません。</translation>
+        <translation>警告: これは、GitHub の設定にあるすべての公開鍵への SSH アクセスを許可するものです。自分以外の GitHub のユーザー名を入力しないでください。commaのスタッフが GitHub のユーザー名を追加するようお願いすることはありません。</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1070,7 +1070,7 @@ location set</source>
     <message>
         <location line="+2"/>
         <source>LOADING</source>
-        <translation>ローディング</translation>
+        <translation>読み込み中</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -1134,7 +1134,7 @@ location set</source>
     <message>
         <location line="+1"/>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>アダプティブクルーズコントロールとレーンキーピングドライバーアシスト（openpilotシステム）。この機能を使用するには、常に注意が必要です。この設定を変更すると、車の電源が切れたときに有効になります。</translation>
+        <translation>openpilotによるアダプティブクルーズコントロールとレーンキーピングドライバーアシストを利用します。この機能を利用する際は、常に前方への注意が必要です。この設定を変更すると、車の電源が切れた時に反映されます。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1144,12 +1144,12 @@ location set</source>
     <message>
         <location line="+1"/>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>時速31マイル（50km）を超えるスピードで走行中、ウインカーを作動させずに検出された車線ライン上に車両が触れた場合、車線に戻るアラートを受信します。</translation>
+        <translation>時速31マイル（50km）を超えるスピードで走行中、ウインカーを作動させずに検出された車線ライン上に車両が触れた場合、手動で車線内に戻るように警告を行います。</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Use Metric System</source>
-        <translation>メートル法を有効化</translation>
+        <translation>メートル法を使用</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1169,7 +1169,7 @@ location set</source>
     <message>
         <location line="+11"/>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 エンドツーエンドのアクセル制御 (超アルファ版) 🌮</translation>
+        <translation>🌮 エンドツーエンドのアクセル制御 (超α版) 🌮</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -1199,12 +1199,12 @@ location set</source>
     <message>
         <location line="-80"/>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>ｱｸｾﾙ踏むと openpilot をｷｬﾝｾﾙ</translation>
+        <translation>ｱｸｾﾙを踏むと openpilot を中断</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>有効な場合は、アクセルを踏むと openpilot をキャンセルします。</translation>
+        <translation>この機能を有効化すると、openpilotを利用中にアクセルを踏むとopenpilotによる運転サポートを中断します。</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -1232,12 +1232,12 @@ location set</source>
     <message>
         <location filename="../qt/setup/updater.cc" line="+23"/>
         <source>Update Required</source>
-        <translation>更新が必要です</translation>
+        <translation>アップデートが必要です</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>ｵﾍﾟﾚｰﾃｨﾝｸﾞｼｽﾃﾑのアップデートが必要です。Wi-Fi に接続することで、最速のアップデートを体験できます。ダウンロードサイズは約 1GB です。</translation>
+        <translation>ｵﾍﾟﾚｰﾃｨﾝｸﾞｼｽﾃﾑのアップデートが必要です。Wi-Fi に接続してアップデートする事をお勧めします。ダウンロードサイズは約 1GB です。</translation>
     </message>
     <message>
         <location line="+11"/>
