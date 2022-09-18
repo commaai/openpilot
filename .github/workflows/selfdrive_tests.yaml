@@ -105,7 +105,7 @@ jobs:
   #        /usr/local/Cellar
   #        ~/github_brew_cache_entries.txt
   #        /tmp/scons_cache
-  #      key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}
+  #      key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
   #      restore-keys: macos-
   #  - name: Brew link restored dependencies
   #    run: |

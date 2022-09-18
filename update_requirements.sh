@@ -41,13 +41,17 @@ eval "$(pyenv init --path)"
 
 echo "update pip"
 pip install pip==21.3.1
-pip install poetry==1.2.1
 
 if [ -d "./xx" ]; then
-  export POETRY_SYSTEM=1
+  echo "WARNING: using xx Pipfile ******"
+  export VENV_SYSTEM=1
+  export PIPENV_PIPFILE=./xx/Pipfile
+  pip install pipenv==2021.11.23
+else
+  pip install poetry==1.2.1
 fi
 
-if [ -z "$POETRY_SYSTEM" ]; then
+if [ -z "$VENV_SYSTEM" ]; then
   echo "PYTHONPATH=${PWD}" > .env
   RUN="poetry run"
 else
