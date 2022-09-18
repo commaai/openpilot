@@ -1,13 +1,18 @@
 [tool.poetry]
 name = "openpilot"
-version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+version = "0.8.17"
+description = "an open source driver assistance system"
+authors = ["Vehicle Researcher <user@comma.ai>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/commaai/openpilot"
+documentation = "https://docs.comma.ai"
+
 
 [tool.poetry.dependencies]
 python = "^3.8"
 atomicwrites = "*"
-casadi = {version = "3.5.5", markers="platform_system != 'Darwin'"}
+casadi = { version = "3.5.5", markers = "platform_system != 'Darwin'" }
 cffi = "*"
 crcmod = "*"
 cryptography = "*"
@@ -16,6 +21,7 @@ flake8 = "*"
 Flask = "*"
 future-fstrings = "*"
 gunicorn = "*"
+hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
@@ -23,8 +29,9 @@ libusb1 = "*"
 nose = "*"
 numpy = "*"
 onnx = "*"
-onnxruntime-gpu = {version = "*", markers = "platform_system != 'Darwin'"}
+onnxruntime-gpu = { version = "*", markers = "platform_system != 'Darwin'" }
 pillow = "*"
+protobuf = "==3.20.1"
 psutil = "*"
 pycapnp = "==1.1.0"
 pycryptodome = "*"
@@ -32,6 +39,7 @@ PyJWT = "*"
 pylint = "*"
 pyopencl = "*"
 pyserial = "*"
+PySide2 = "*"
 python-dateutil = "*"
 PyYAML = "*"
 pyzmq = "*"
@@ -47,28 +55,31 @@ tqdm = "*"
 urllib3 = "*"
 utm = "*"
 websocket_client = "*"
-hatanaka = "==2.4"
-PyQt5 = "==5.15.4"
-PyQt5-sip = "==12.9.0"
+
 
 [tool.poetry.dev-dependencies]
 av = "*"
 azure-storage-blob = "~=2.1"
+breathe = "*"
+carla = { version = "==0.9.13", markers = "platform_system != 'Darwin'" }
 control = "*"
 coverage = "*"
 dictdiffer = "*"
 fastcluster = "*"
+ft4222 = "*"
 hexdump = "*"
 hypothesis = "==6.46.7"
 inputs = "*"
 lru-dict = "*"
 markdown-it-py = "*"
 matplotlib = "*"
+mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
 natsort = "*"
 numpy = "*"
 opencv-python-headless = "*"
+pandas = "*"
 parameterized = "*"
 paramiko = "*"
 pprofile = "*"
@@ -83,11 +94,10 @@ scipy = "*"
 sphinx = "*"
 sphinx-sitemap = "*"
 sphinx-rtd-theme = "*"
-breathe = "*"
 subprocess32 = "*"
+tabulate = "*"
 tenacity = "*"
-mpld3 = "*"
-carla = {version = "==0.9.13", markers = "platform_system != 'Darwin'"}
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
