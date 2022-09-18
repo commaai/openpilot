@@ -60,7 +60,7 @@ else
 fi
 
 echo "pip packages install..."
-poetry install --with dev --no-root
+poetry install
 pyenv rehash
 
 echo "pre-commit hooks install..."
