@@ -41,25 +41,28 @@ eval "$(pyenv init --path)"
 
 echo "update pip"
 pip install pip==22.2.2
-pip install poetry==1.2.1
 
 if [ -d "./xx" ]; then
   echo "WARNING: using xx Pipfile ******"
-  export VENV_SYSTEM=1
   export PIPENV_PIPFILE=./xx/Pipfile
   pip install pipenv==2021.11.23
-fi
 
-if [ -z "$VENV_SYSTEM" ]; then
-  echo "PYTHONPATH=${PWD}" > .env
-  RUN="poetry run"
-else
-  poetry config virtualenvs.create false
+  echo "pip packages install..."
+  pipenv sync --dev
+  pipenv --clear
+
   RUN=""
+else
+  echo "PYTHONPATH=${PWD}" > .env
+  pip install poetry==1.2.1
+  poetry config virtualenvs.prefer-active-python true --local
+
+  echo "pip packages install..."
+  poetry install
+
+  RUN="poetry run"
 fi
 
-echo "pip packages install..."
-poetry install
 pyenv rehash
 
 echo "pre-commit hooks install..."
