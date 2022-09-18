@@ -67,7 +67,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    disable_radar = False
+    experimental_long = False
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
@@ -93,7 +93,7 @@ class TestCarModelBase(unittest.TestCase):
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
-            disable_radar = True
+            experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
@@ -105,7 +105,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, disable_radar)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -234,7 +234,7 @@ class TestCarModelBase(unittest.TestCase):
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
-      if self.CP.carName in ("honda", "toyota"):
+      if self.CP.carName not in ("hyundai", "volkswagen", "gm", "body"):
         # TODO: fix standstill mismatches for other makes
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
@@ -243,7 +243,8 @@ class TestCarModelBase(unittest.TestCase):
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-      checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
+      checks['brakePressed'] += brake_pressed != safety_brake_pressed
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.

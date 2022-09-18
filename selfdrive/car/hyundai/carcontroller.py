@@ -1,6 +1,6 @@
 from cereal import car
 from common.conversions import Conversions as CV
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
@@ -123,12 +123,9 @@ class CarController:
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         accel = actuators.accel
-        jerk = 0
 
-        if CC.longActive:
-          jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
-          if accel < 0:
-            accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
+        #TODO unclear if this is needed
+        jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
 
         accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
