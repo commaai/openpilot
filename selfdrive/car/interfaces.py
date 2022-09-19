@@ -167,6 +167,7 @@ class CarInterfaceBase(ABC):
     tune.torque.friction = params['FRICTION']
     tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
     tune.torque.latAccelOffset = 0.0
+    tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:

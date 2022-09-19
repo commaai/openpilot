@@ -15,22 +15,22 @@ from system.version import get_commit
 from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
-original_segments = [
+source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI", "d824e27e8c60172c|2022-08-19--17-58-07--2"),     # HYUNDAI.KIA_EV6
+  ("HYUNDAI", "d824e27e8c60172c|2022-09-13--11-26-50--2"),     # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),         # CHRYSLER.RAM_1500
-  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
+  ("RAM", "2f4452b03ccb98f0|2022-09-07--13-55-08--10"),        # CHRYSLER.RAM_1500
+  ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
-  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dashcamOnly is no longer set
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS

@@ -240,6 +240,7 @@ selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/models/constants.py
 selfdrive/locationd/models/gnss_helpers.py
 
+selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
 
 system/logcatd/.gitignore
