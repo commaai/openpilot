@@ -289,12 +289,9 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
       # ensure all procs are running
       for d, procs in fake_daemons.items():
         for p in procs:
-          if not p.is_alive():
-            if d == 'sensord':
-              # not all sensors must have events (temperatureSensor)
-              print(f"sensord {d} died!")
-            else:
-              raise Exception(f"{d}'s {p.name} died")
+          if not p.is_alive() and d != 'sensord':
+            # not all sensors must have events (temperatureSensor)
+            raise Exception(f"{d}'s {p.name} died")
       time.sleep(1)
   finally:
     # kill everything
