@@ -14,7 +14,6 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
-#include "panda/board/can_health.h"
 
 #define TIMEOUT 0
 #define PANDA_CAN_CNT 3
