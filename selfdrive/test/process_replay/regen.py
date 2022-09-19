@@ -89,6 +89,25 @@ def replay_device_state(s, msgs):
       pm.send(s, new_m)
       rk.keep_time()
 
+
+def replay_sensor_event(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+
+  smsgs = [m for m in msgs if m.which() == s]
+  if len(smsgs) == 0:
+    return
+
+  while True:
+    for m in smsgs:
+      m = m.as_builder()
+      m.logMonoTime = int(sec_since_boot() * 1e9)
+      m_dat = getattr(m, m.which())
+      m_dat.timestamp = m.logMonoTime
+      pm.send( m.which(), m)
+      rk.keep_time()
+
+
 def replay_sensor_events(s, msgs):
   sensor_service_list = ['accelerometer', 'gyroscope', 'magnetometer',
                          'lightSensor', 'temperatureSensor']
@@ -96,6 +115,8 @@ def replay_sensor_events(s, msgs):
 
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() == s]
+  if len(smsgs) == 0:
+    return
 
   while True:
     for m in smsgs:
@@ -121,7 +142,7 @@ def replay_sensor_events(s, msgs):
         m_dat.version = evt.version
         m_dat.sensor = evt.sensor
         m_dat.type = evt.type
-        m_dat.timestamp = evt.timestamp
+        m_dat.timestamp = m.logMonoTime
         m_dat.source = evt.source
         setattr(m_dat, evt.which(), getattr(evt, evt.which()))
         pm.send(sensor_service, m)
