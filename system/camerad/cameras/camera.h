@@ -51,9 +51,11 @@ public:
   CameraInfo ci;
   int id;
   float dc_gain_factor;
+  int dc_gain_min_weight;
   int dc_gain_max_weight;
   float dc_gain_on_grey;
   float dc_gain_off_grey;
+  float target_grey_factor;
   int exposure_time_min;
   int exposure_time_max;
   int analog_gain_min_idx;
@@ -61,7 +63,7 @@ public:
   int analog_gain_max_idx;
   float min_ev, max_ev;
   int registers_offset = 0;
-  float sensor_analog_gains[16];
+  float sensor_analog_gains[35];
 
   camera_sensor_i2c_type i2c_type;
   std::vector<struct i2c_random_wr_payload> start_reg_array;

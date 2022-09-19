@@ -26,9 +26,11 @@ CameraAR0231::CameraAR0231() {
   };
 
   dc_gain_factor = 2.5;
+  dc_gain_min_weight = 0;
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.2;
   dc_gain_off_grey = 0.3;
+  target_grey_factor = 1.0;
   exposure_time_min = 2;       // with HDR, fastest ss
   exposure_time_max = 0x0855;  // with HDR, slowest ss, 40ms
   analog_gain_min_idx = 0x1;   // 0.25x

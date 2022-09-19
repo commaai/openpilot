@@ -234,7 +234,7 @@ class TestCarModelBase(unittest.TestCase):
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
-      if self.CP.carName in ("honda", "toyota"):
+      if self.CP.carName not in ("hyundai", "volkswagen", "gm", "body"):
         # TODO: fix standstill mismatches for other makes
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
@@ -243,7 +243,8 @@ class TestCarModelBase(unittest.TestCase):
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-      checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
+      checks['brakePressed'] += brake_pressed != safety_brake_pressed
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.

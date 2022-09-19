@@ -17,7 +17,6 @@
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
-const int DC_GAIN_MIN_WEIGHT = 0;
 
 extern ExitHandler do_exit;
 
@@ -410,7 +409,7 @@ void CameraState::camera_set_parameters() {
   target_grey_fraction = 0.3;
 
   dc_gain_enabled = false;
-  dc_gain_weight = DC_GAIN_MIN_WEIGHT;
+  dc_gain_weight = camera->dc_gain_min_weight;
   gain_idx = camera->analog_gain_rec_idx;
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (camera->dc_gain_factor-1) / camera->dc_gain_max_weight) * camera->sensor_analog_gains[gain_idx] * exposure_time;
@@ -652,8 +651,8 @@ void cameras_open(MultiCameraState *s) {
 
   // query icp for MMU handles
   LOG("-- Query ICP for MMU handles");
-  static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
-  static struct cam_query_cap_cmd query_cap_cmd = {0};
+  struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
+  struct cam_query_cap_cmd query_cap_cmd = {0};
   query_cap_cmd.handle_type = 1;
   query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
   query_cap_cmd.size = sizeof(isp_query_cap_cmd);
@@ -666,7 +665,7 @@ void cameras_open(MultiCameraState *s) {
 
   // subscribe
   LOG("-- Subscribing");
-  static struct v4l2_event_subscription sub = {0};
+  struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
@@ -695,7 +694,7 @@ void CameraState::camera_close() {
     LOGD("stop csiphy: %d", ret);
     // link control stop
     LOG("-- Stop link control");
-    static struct cam_req_mgr_link_control req_mgr_link_control = {0};
+    struct cam_req_mgr_link_control req_mgr_link_control = {0};
     req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
     req_mgr_link_control.session_hdl = session_handle;
     req_mgr_link_control.num_links = 1;
@@ -705,7 +704,7 @@ void CameraState::camera_close() {
 
     // unlink
     LOG("-- Unlink");
-    static struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
+    struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
     req_mgr_unlink_info.session_hdl = session_handle;
     req_mgr_unlink_info.link_hdl = link_handle;
     ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
@@ -817,7 +816,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + cur_ev_) / log2(6000.0), 0.1, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + camera->target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
 
   float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, camera->min_ev, camera->max_ev);
@@ -833,14 +832,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
   bool enable_dc_gain = dc_gain_enabled;
   if (!enable_dc_gain && target_grey < camera->dc_gain_on_grey) {
     enable_dc_gain = true;
-    dc_gain_weight = DC_GAIN_MIN_WEIGHT;
+    dc_gain_weight = camera->dc_gain_min_weight;
   } else if (enable_dc_gain && target_grey > camera->dc_gain_off_grey) {
     enable_dc_gain = false;
     dc_gain_weight = camera->dc_gain_max_weight;
   }
 
   if (enable_dc_gain && dc_gain_weight < camera->dc_gain_max_weight) {dc_gain_weight += 1;}
-  if (!enable_dc_gain && dc_gain_weight > DC_GAIN_MIN_WEIGHT) {dc_gain_weight -= 1;}
+  if (!enable_dc_gain && dc_gain_weight > camera->dc_gain_min_weight) {dc_gain_weight -= 1;}
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
@@ -917,24 +916,13 @@ void CameraState::set_camera_exposure(float grey_frac) {
   sensors_i2c(exp_vector, CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  s->set_camera_exposure(grey_frac);
-}
-
-static void driver_cam_auto_exposure(CameraState *c) {
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  driver_cam_auto_exposure(c);
+  c->set_camera_exposure(set_exposure_target(&c->buf, 96, 1832, 2, 242, 1148, 4));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
+  fill_frame_data(framed, c->buf.cur_frame_data, c);
 
   c->camera->processRegisters(c->buf.cur_camera_buf->addr, framed);
   s->pm->send("driverCameraState", msg);
@@ -945,7 +933,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   MessageBuilder msg;
   auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data);
+  fill_frame_data(framed, b->cur_frame_data, c);
   if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
     framed.setImage(get_raw_frame_image(b));
   }
@@ -960,7 +948,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
 void cameras_run(MultiCameraState *s) {

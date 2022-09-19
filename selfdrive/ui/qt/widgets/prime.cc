@@ -35,6 +35,7 @@ void PairingQRWidget::refresh() {
   QString pairToken = CommaApi::create_jwt({{"pair", true}});
   QString qrString = "https://connect.comma.ai/?pair=" + pairToken;
   this->updateQrCode(qrString);
+  update();
 }
 
 void PairingQRWidget::updateQrCode(const QString &text) {
@@ -276,7 +277,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(primeAd);
+  mainLayout->setCurrentWidget(uiState()->prime_type ? (QWidget*)primeUser : (QWidget*)primeAd);
 
   setFixedWidth(750);
   setStyleSheet(R"(
@@ -298,11 +299,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &SetupWidget::replyFinished);
   }
-  hide(); // Only show when first request comes back
 }
 
 void SetupWidget::replyFinished(const QString &response, bool success) {
-  show();
   if (!success) return;
 
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());

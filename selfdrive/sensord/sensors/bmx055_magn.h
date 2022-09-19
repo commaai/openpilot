@@ -59,5 +59,6 @@ class BMX055_Magn : public I2CSensor{
 public:
   BMX055_Magn(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
+  int shutdown() { return 0; }
 };
