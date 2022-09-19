@@ -116,8 +116,12 @@ int sensor_loop() {
     return -1;
   }
 
+  // bmx accel and gyro data is not used anymore
   BMX055_Accel bmx055_accel(i2c_bus_imu);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu);
+  bmx055_accel->shutdown();
+  bmx055_gyro->shutdown();
+
   BMX055_Magn bmx055_magn(i2c_bus_imu);
   BMX055_Temp bmx055_temp(i2c_bus_imu);
 
@@ -131,8 +135,6 @@ int sensor_loop() {
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
-  sensors_init.push_back({&bmx055_accel, false});
-  sensors_init.push_back({&bmx055_gyro, false});
   sensors_init.push_back({&bmx055_magn, false});
   sensors_init.push_back({&bmx055_temp, false});
 
