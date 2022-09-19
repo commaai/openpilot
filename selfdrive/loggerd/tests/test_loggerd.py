@@ -101,7 +101,6 @@ class TestLoggerd(unittest.TestCase):
       with open("/proc/version") as f:
         self.assertEqual(initData.kernelVersion, f.read())
 
-
     # check params
     logged_params = {entry.key: entry.value for entry in initData.params.entries}
     expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemeris'}
