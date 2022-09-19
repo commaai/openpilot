@@ -302,7 +302,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
   auto pss = evt.initPandaStates(pandas.size());
 
   std::vector<health_t> pandaStates;
-  std::vector<std::array<can_health_t, 3>> pandaCanStates;
+  std::vector<std::array<can_health_t, PANDA_CAN_CNT>> pandaCanStates;
   for (const auto& panda : pandas){
     auto health_opt = panda->get_state();
     if (!health_opt) {
@@ -311,7 +311,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     health_t health = *health_opt;
 
-    std::array<can_health_t, 3> can_health{};
+    std::array<can_health_t, PANDA_CAN_CNT> can_health{};
     for (uint32_t i = 0; i < PANDA_CAN_CNT; i++) {
       auto can_health_opt = panda->get_can_state(i);
       if (!can_health_opt) {
@@ -377,7 +377,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
 
-    std::array<cereal::PandaState::PandaCanState::Builder, 3> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
+    std::array<cereal::PandaState::PandaCanState::Builder, PANDA_CAN_CNT> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
 
     for (uint32_t j = 0; j < PANDA_CAN_CNT; j++) {
       const auto &can_health = pandaCanStates[i][j];
