@@ -127,6 +127,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1230 + STD_CARGO_KG
       ret.wheelbase = 2.55
 
+    elif candidate == CAR.SHARAN_MK2:
+      ret.mass = 1639 + STD_CARGO_KG
+      ret.wheelbase = 2.92
+
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
       ret.wheelbase = 2.69
