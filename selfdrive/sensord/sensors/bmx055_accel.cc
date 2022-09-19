@@ -53,9 +53,7 @@ fail:
 
 int BMX055_Accel::shutdown()  {
   // enter deep suspend mode (lowest power mode)
-
-  int ret = 0;
-  ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_DEEP_SUSPEND);
+  int ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_DEEP_SUSPEND);
   if (ret < 0) {
     LOGE("Could not move BMX055 ACCEL in deep suspend mode!")
   }

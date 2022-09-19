@@ -207,8 +207,8 @@ int sensor_loop() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
 
-  for (int i = 0; i < sensors.size(); i++) {
-    sensors[i]->shutdown();
+  for (Sensor *sensor :  sensors) {
+    sensor->shutdown();
   }
 
   lsm_interrupt_thread.join();
