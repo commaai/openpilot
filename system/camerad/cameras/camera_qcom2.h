@@ -19,13 +19,10 @@ public:
   CameraInfo ci;
   bool enabled;
 
-  std::mutex exp_lock;
-
   int exposure_time;
   bool dc_gain_enabled;
   int dc_gain_weight;
   int gain_idx;
-  float analog_gain_frac;
 
   int exposure_time_min;
   int exposure_time_max;
@@ -44,7 +41,6 @@ public:
   float cur_ev[3];
   float min_ev, max_ev;
 
-  float measured_grey_fraction;
   float target_grey_fraction;
   float target_grey_factor;
 
@@ -54,7 +50,7 @@ public:
   int camera_num;
 
   void handle_camera_event(void *evdat);
-  void set_camera_exposure(float grey_frac);
+  void set_camera_exposure(float grey_frac, cereal::FrameData::Builder &framed);
 
   void sensors_start();
 

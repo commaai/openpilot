@@ -59,18 +59,6 @@ typedef struct FrameMetadata {
   uint64_t timestamp_sof; // only set on tici
   uint64_t timestamp_eof;
 
-  // Exposure
-  unsigned int integ_lines;
-  bool high_conversion_gain;
-  float gain;
-  float measured_grey_fraction;
-  float target_grey_fraction;
-
-  // Focus
-  unsigned int lens_pos;
-  float lens_err;
-  float lens_true_pos;
-
   float processing_time;
 } FrameMetadata;
 
