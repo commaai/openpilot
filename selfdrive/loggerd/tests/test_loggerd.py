@@ -107,7 +107,7 @@ class TestLoggerd(unittest.TestCase):
     # check params
     logged_params = {entry.key: entry.value for entry in initData.params.entries}
     expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemeris'}
-    assert set(logged_params.keys()) == expected_params, logged_params ^ expected_params
+    assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
     assert logged_params['LaikadEphemeris'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemeris'])}"
 
   def test_rotation(self):
