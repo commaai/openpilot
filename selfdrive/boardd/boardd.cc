@@ -302,7 +302,6 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
   auto pss = evt.initPandaStates(pandas.size());
 
   std::vector<health_t> pandaStates;
-  // std::vector<std::vector<can_health_t>> pandaCanStates;
   std::vector<std::array<can_health_t, 3>> pandaCanStates;
   for (const auto& panda : pandas){
     auto health_opt = panda->get_state();
