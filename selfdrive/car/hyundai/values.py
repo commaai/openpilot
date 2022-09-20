@@ -159,7 +159,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   # TODO: probably supports 2016, 2018
   CAR.KIA_OPTIMA: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control & LDWS", harness=Harness.hyundai_b),
-  CAR.KIA_OPTIMA_2019: HyundaiCarInfo("Kia Optima 2019", "Smart Cruise Control (SCC)", harness=Harness.hyundai_g),
+  CAR.KIA_OPTIMA_2019: HyundaiCarInfo("Kia Optima 2019-20", "Smart Cruise Control (SCC)", harness=Harness.hyundai_g),
   CAR.KIA_OPTIMA_H: [
     HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control & LDWS"),  # TODO: info may be incorrect
     HyundaiCarInfo("Kia Optima Hybrid 2019"),
@@ -1149,10 +1149,8 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFWGN LDWS AT USA LHD 1.00 1.02 95895-D4100 G21',  # from 2017
-      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5100 h32',  # unknown
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DJF0T16NL2\x9eA\x80\x01',
       b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6B8051\x00\x00\xf1\x006T6H0_C2\x00\x006T6B8051\x00\x00TJFSG24NH27\xa7\xc2\xb4'
     ],
   },
@@ -1165,14 +1163,18 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
+      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5100 h32',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',
 
       b'\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
+      b'\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DJF0T16NL2\x9eA\x80\x01',
       b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',
 
       b'\xf1\x816U2VA051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
+      b'\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DJF0T16NL2\x9eA\x80\x01',
+
     ],
   },
   CAR.ELANTRA_2021: {
