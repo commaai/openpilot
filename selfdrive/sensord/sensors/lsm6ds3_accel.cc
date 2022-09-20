@@ -14,99 +14,73 @@ void LSM6DS3_Accel::wait_for_data_ready() {
   uint8_t drdy = 0;
   uint8_t buffer[6];
 
-  // wait until data is ready
   do {
     read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
     drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
   } while(drdy == 0);
 
-  // read first values and discard them
+  // read first values and discard
   int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 }
 
-void LSM6DS3_Accel::read_and_avg_data(float* val_st_off) {
+void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
   uint8_t drdy = 0;
   uint8_t buffer[6];
 
   for (int i = 0; i < 5; i++) {
-    // Check if new value available
+    // check for new data
     do {
       read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
       drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
     } while(drdy == 0);
 
-    // not sure here, verify correct casting
     int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
     assert(len == sizeof(buffer));
 
     for (int j = 0; j < 3; j++) {
-      val_st_off[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * 0.122f;
+      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * 0.061f;
     }
   }
 
-  // Calculate the mg average values 
+  // calculate the mg average values
   for (int i = 0; i < 3; i++) {
-    val_st_off[i] /= 5.0f;
+    out_buf[i] /= 5.0f;
   }
 }
 
-int LSM6DS3_Accel::perform_self_test() {
+int LSM6DS3_Accel::perform_self_test(int test_type) {
   int ret = 0;
   float val_st_off[3] = {0};
   float val_st_on[3] = {0};
   float test_val[3] = {0};
-  uint8_t st_result;
+  bool test_result = true;
   int i;
-
-  LOGE("starting lsm accel self test")
 
   // prepare sensor for self-test
 
-  // full scale: +-4g, ODR: 52Hz
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0x38);
+  // enable block data update and automatic increment
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC_BDU);
   if (ret < 0) {
     goto fail;
   }
 
-  // LSM6DS3_ACCEL_I2C_REG_CTRL2_G = 0 (Default Values)
-
-  // BDU: registers not updated until MSB and LSB have been read
-  // IF_INC: Register address automatically incremented during a multiple byte
-  //         access with a serial interface (I 2 C or SPI) (default)
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, 0x44);
+  // full scale: +-2g, ODR: 52Hz
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_52HZ);
   if (ret < 0) {
     goto fail;
   }
+  util::sleep_for(100);
 
-  // LSM6DS3_ACCEL_I2C_REG_CTRL4_C = 0 (Default Values)
-
-  // LSM6DS3_ACCEL_I2C_REG_CTRL5_C = 0 (Default Values)
-
-  // LSM6DS3_ACCEL_I2C_REG_CTRL6_G = 0 (Default Values)
-
-  // LSM6DS3_ACCEL_I2C_REG_CTRL7_G = 0 (Default Values)
-
-  // LSM6DS3_ACCEL_I2C_REG_CTRL8_G = 0 (Default Values)
-
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL9_XL, 0);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL10_C, 0);
-  if (ret < 0) {
-    goto fail;
-  }
+  // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
 
   // wait for stable output, and discard first values
   util::sleep_for(100);
   wait_for_data_ready();
   read_and_avg_data(val_st_off);
 
-  // Enable Self Test positive (or negative)
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, LSM6DS3_ACCEL_POSITIVE_TEST);
-  //ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, LSM6DS3_ACCEL_NEGATIVE-_TEST);
+  // enable Self Test positive (or negative)
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, test_type);
   if (ret < 0) {
     goto fail;
   }
@@ -116,23 +90,18 @@ int LSM6DS3_Accel::perform_self_test() {
   wait_for_data_ready();
   read_and_avg_data(val_st_on);
 
-  /* Calculate the mg values for self test */
+  // calculate the mg values for self test
   for (i = 0; i < 3; i++) {
     test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
   }
 
-  /* Check self test limit */
-  st_result = ST_PASS;
-
+  // verify test result
   for (i = 0; i < 3; i++) {
-    if ((LSM6DS3_ACCEL_MIN_ST_LIMIT_mg > test_val[i] ) ||
-        ( test_val[i] > LSM6DS3_ACCEL_MAX_ST_LIMIT_mg)) {
-      st_result = ST_FAIL;
-      LOGE("ACCEL selftest failed!");
+    if ((LSM6DS3_ACCEL_MIN_ST_LIMIT_mg > test_val[i]) ||
+        (test_val[i] > LSM6DS3_ACCEL_MAX_ST_LIMIT_mg)) {
+      test_result = false;
     }
   }
-
-  LOGE("ACCEL selftest finished!");
 
   // disable sensor
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0);
@@ -144,6 +113,10 @@ int LSM6DS3_Accel::perform_self_test() {
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, 0);
   if (ret < 0) {
     goto fail;
+  }
+
+  if (!test_result) {
+    ret = -1;
   }
 
 fail:
@@ -171,13 +144,25 @@ int LSM6DS3_Accel::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  ret = perform_self_test();
+  ret = perform_self_test(LSM6DS3_ACCEL_POSITIVE_TEST);
   if (ret < 0) {
-    LOGE("LSM6DS3 self test failed!");
+    LOGE("LSM6DS3 positive self-test failed!");
+    goto fail;
+  }
+
+  ret = perform_self_test(LSM6DS3_ACCEL_NEGATIVE_TEST);
+  if (ret < 0) {
+    LOGE("LSM6DS3 negative self-test failed!");
     goto fail;
   }
 
   ret = init_gpio();
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // enable continuous update, and automatic increase
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC);
   if (ret < 0) {
     goto fail;
   }
