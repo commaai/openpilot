@@ -95,6 +95,7 @@ class Plant():
     # does not predict slowdown in e2e mode
     position = log.ModelDataV2.XYZTData.new_message()
     position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
+    position.z = [0 for _ in range(len(T_IDXS))]
     model.modelV2.position = position
     velocity = log.ModelDataV2.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]

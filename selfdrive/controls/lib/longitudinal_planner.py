@@ -71,6 +71,7 @@ class LongitudinalPlanner:
 
   def parse_model(self, model_msg):
     if (len(model_msg.position.x) == 33 and
+       len(model_msg.position.z) == 33 and
        len(model_msg.velocity.x) == 33 and
        len(model_msg.acceleration.x) == 33):
       x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x)
