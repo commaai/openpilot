@@ -374,8 +374,8 @@ class Updater:
 
     cloudlog.info("git reset in progress")
     cmds = [
-      ["git", "checkout", "--force", "--no-recurse-submodules", branch],
-      ["git", "reset", "--hard", f"origin/{branch}"],
+      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
+      ["git", "reset", "--hard"],
       ["git", "clean", "-xdf"],
       ["git", "submodule", "init"],
       ["git", "submodule", "update"],
