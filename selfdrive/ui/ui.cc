@@ -99,15 +99,18 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     scene.road_edge_stds[i] = road_edge_stds[i];
     update_line_data(s, road_edges[i].getX(),road_edges[i].getY() , road_edges[i].getZ(), 0.025, 0, &scene.road_edge_vertices[i], max_idx);
   }
+}
 
+static void update_plan(UIState *s) {
   // update path
   const auto plan_y = (*s->sm)["lateralPlan"].getLateralPlan().getYs();
   const auto plan_x = (*s->sm)["longitudinalPlan"].getLongitudinalPlan().getXs();
   const auto plan_z = (*s->sm)["longitudinalPlan"].getLongitudinalPlan().getZs();
 
-  if (plan_y.size() == 0 || plan_x.size() == 0 || plan_z.size() == 0) return;
-
-  update_line_data(s, plan_x, plan_y, plan_z , 0.9, 1.22, &scene.track_vertices, CONTROL_N - 1, false);
+  if (plan_y.size() == CONTROL_N && plan_x.size() == CONTROL_N && plan_z.size() == CONTROL_N) {
+    UIScene &scene = s->scene;
+    update_line_data(s, plan_x, plan_y, plan_z , 0.9, 1.22, &scene.track_vertices, CONTROL_N - 1, false);
+  }
 }
 
 static void update_sockets(UIState *s) {
@@ -138,6 +141,9 @@ static void update_state(UIState *s) {
   if (s->worldObjectsVisible()) {
     if (sm.updated("modelV2")) {
       update_model(s, sm["modelV2"].getModelV2());
+    }
+    if (sm.updated("longitudinalPlan")) {
+      update_plan(s);
     }
     if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
