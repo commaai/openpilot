@@ -54,7 +54,9 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
   }
 }
 
-static void update_line_data(const UIState *s, const ::capnp::List<float, ::capnp::Kind::PRIMITIVE>::Reader &line_x, const ::capnp::List<float, ::capnp::Kind::PRIMITIVE>::Reader &line_y , const ::capnp::List<float, ::capnp::Kind::PRIMITIVE>::Reader &line_z,
+static void update_line_data(const UIState *s, const ::capnp::List<float, ::capnp::Kind::PRIMITIVE>::Reader &line_x,
+                             const ::capnp::List<float, ::capnp::Kind::PRIMITIVE>::Reader &line_y,
+                             const ::capnp::List<float, ::capnp::Kind::PRIMITIVE>::Reader &line_z,
                              float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
 
   QPolygonF left_points, right_points;
