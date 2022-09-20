@@ -5,7 +5,8 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
+LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, uint64_t init_delay, int gpio_nr, bool shared_gpio) :
+  I2CSensor(bus, init_delay, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Accel::init() {
   int ret = 0;

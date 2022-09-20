@@ -19,7 +19,7 @@ class LSM6DS3_Temp : public I2CSensor {
   cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 
 public:
-  LSM6DS3_Temp(I2CBus *bus);
+  LSM6DS3_Temp(I2CBus *bus, uint64_t init_delay = 0);
   int init();
   bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0);
   int shutdown() { return 0; }

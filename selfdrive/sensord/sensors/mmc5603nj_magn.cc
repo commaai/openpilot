@@ -5,7 +5,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus) : I2CSensor(bus) {}
+MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
 
 int MMC5603NJ_Magn::init() {
   int ret = 0;

@@ -63,7 +63,7 @@ static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t 
   return (int16_t)retval;
 }
 
-BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Magn::BMX055_Magn(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
 
 int BMX055_Magn::init() {
   int ret;

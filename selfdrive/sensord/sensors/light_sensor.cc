@@ -5,6 +5,10 @@
 #include "common/timing.h"
 #include "selfdrive/sensord/sensors/constants.h"
 
+LightSensor::LightSensor(std::string filename, uint64_t _init_delay) : FileSensor(filename), init_delay(_init_delay) {
+  //init_delay = _init_delay;
+}
+
 bool LightSensor::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   file.clear();

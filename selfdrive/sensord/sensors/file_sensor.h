@@ -11,7 +11,7 @@ protected:
   std::ifstream file;
 
 public:
-  FileSensor(std::string filename);
+  FileSensor(std::string filename, uint64_t init_delay = 0);
   ~FileSensor();
   int init();
   bool has_interrupt_enabled();

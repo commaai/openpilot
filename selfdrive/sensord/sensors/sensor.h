@@ -5,6 +5,7 @@
 class Sensor {
 public:
   int gpio_fd = -1;
+  uint64_t init_delay = 0;
   virtual ~Sensor() {};
   virtual int init() = 0;
   virtual bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0) = 0;

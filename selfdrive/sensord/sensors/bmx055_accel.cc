@@ -6,7 +6,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Accel::BMX055_Accel(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
 
 int BMX055_Accel::init() {
   int ret = 0;

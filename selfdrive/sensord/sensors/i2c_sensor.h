@@ -24,7 +24,7 @@ private:
   virtual uint8_t get_device_address() = 0;
 
 public:
-  I2CSensor(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
+  I2CSensor(I2CBus *bus, uint64_t init_delay = 0, int gpio_nr = 0, bool shared_gpio = false);
   ~I2CSensor();
   int read_register(uint register_address, uint8_t *buffer, uint8_t len);
   int set_register(uint register_address, uint8_t data);

@@ -6,7 +6,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
+BMX055_Temp::BMX055_Temp(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
 
 int BMX055_Temp::init() {
   int ret = 0;

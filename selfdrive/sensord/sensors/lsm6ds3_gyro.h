@@ -26,7 +26,7 @@ class LSM6DS3_Gyro : public I2CSensor {
   uint8_t get_device_address() {return LSM6DS3_GYRO_I2C_ADDR;}
   cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 public:
-  LSM6DS3_Gyro(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
+  LSM6DS3_Gyro(I2CBus *bus, uint64_t init_delay = 0, int gpio_nr = 0, bool shared_gpio = false);
   int init();
   bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0);
   int shutdown();

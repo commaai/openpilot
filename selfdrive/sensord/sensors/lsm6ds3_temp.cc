@@ -5,7 +5,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-LSM6DS3_Temp::LSM6DS3_Temp(I2CBus *bus) : I2CSensor(bus) {}
+LSM6DS3_Temp::LSM6DS3_Temp(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
 
 int LSM6DS3_Temp::init() {
   int ret = 0;
