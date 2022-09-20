@@ -155,8 +155,9 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
   CAR.KIA_NIRO_HEV_2021: [
-    HyundaiCarInfo("Kia Niro Hybrid 2021", "Smart Cruise Control (SCC) & LKAS", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
-    HyundaiCarInfo("Kia Niro Hybrid 2022", "Smart Cruise Control (SCC) & LKAS", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro Hybrid 2021", "Smart Cruise Control (SCC) & LKAS", harness=Harness.hyundai_f),   # TODO: could be hyundai_d, verify
+                                                                                                              # TODO: check packages
+    HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
   ],
   CAR.KIA_OPTIMA: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", harness=Harness.hyundai_b),  # TODO: may support 2016, 2018
   CAR.KIA_OPTIMA_2019: HyundaiCarInfo("Kia Optima 2019-20", harness=Harness.hyundai_g),
