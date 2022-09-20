@@ -125,7 +125,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", "Smart Cruise Control (SCC)", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", "Smart Cruise Control (SCC)", harness=Harness.hyundai_g),
   CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", "Smart Cruise Control (SCC)", harness=Harness.hyundai_o),
-  CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", video_link="https://youtu.be/0dwpAHiZgFo", harness=Harness.hyundai_i),
+  CAR.KONA_HEV: HyundaiCarInfo("Hyundai Kona Hybrid 2020", "Smart Cruise Control (SCC) & LKAS", video_link="https://youtu.be/0dwpAHiZgFo", harness=Harness.hyundai_i),  # TODO: check packages
   CAR.SANTA_FE: HyundaiCarInfo("Hyundai Santa Fe 2019-20", "All", harness=Harness.hyundai_d),
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All", video_link="https://youtu.be/VnHzSTygTS4", harness=Harness.hyundai_l),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All", harness=Harness.hyundai_l),
@@ -156,8 +156,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
   CAR.KIA_NIRO_HEV_2021: [
-    HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
-    HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro Hybrid 2021", "Smart Cruise Control (SCC) & LKAS", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
+    HyundaiCarInfo("Kia Niro Hybrid 2022", "Smart Cruise Control (SCC) & LKAS", harness=Harness.hyundai_h),
   ],
   CAR.KIA_OPTIMA: [
     HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", min_steer_speed=32. * CV.MPH_TO_MS, harness=Harness.hyundai_b),
@@ -167,12 +167,12 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control"),  # TODO: may support adjacent years
     HyundaiCarInfo("Kia Optima Hybrid 2019", "Smart Cruise Control (SCC)"),
   ],
-  CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", harness=Harness.hyundai_a),
+  CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", "Smart Cruise Control (SCC) & LKAS", harness=Harness.hyundai_a),
   CAR.KIA_SORENTO: [
     HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
-    HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_e),
+    HyundaiCarInfo("Kia Sorento 2019", "Smart Cruise Control (SCC) & LKAS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_e),
   ],
-  CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
+  CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", "Smart Cruise Control (SCC) & LKAS", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", "Smart Cruise Control (SCC)", harness=Harness.hyundai_e),
   CAR.KIA_EV6: HyundaiCarInfo("Kia EV6 2022", "Highway Driving Assist II", harness=Harness.hyundai_p),
 
