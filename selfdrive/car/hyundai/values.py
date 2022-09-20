@@ -1202,7 +1202,6 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'CNCWD0AMFCXCSFFB',
-      b'\xf1\x81HM6M2_0a0_FF0',
       b'\xf1\x82CNCWD0AMFCXCSFFA',
       b'\xf1\x81HM6M2_0a0_FF0',
       b'\xf1\x82CNCVD0AMFCXCSFFB',
