@@ -1144,20 +1144,31 @@ FW_VERSIONS = {
       b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4100         ',
     ],
     (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00JF ESC \x0b 11 \x18\x030 58920-D5180',
       b"\xf1\x00JF ESC \t 11 \x18\x03' 58920-D5260",
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
       b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5100 h32',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
       b'\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',
       b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW',
       b'\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DJF0T16NL2\x9eA\x80\x01',
-      b'\xf1\x816U2VA051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
       b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6B8051\x00\x00\xf1\x006T6H0_C2\x00\x006T6B8051\x00\x00TJFSG24NH27\xa7\xc2\xb4'
+    ],
+  },
+  CAR.KIA_OPTIMA_2019: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4110         ',
+    ],
+    (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00JF ESC \x0b 11 \x18\x030 58920-D5180',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
+      b'\xf1\x816U2VA051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VA051\x00\x00DJF0T16NL1\xca3\xeb.',
     ],
   },
   CAR.ELANTRA_2021: {
