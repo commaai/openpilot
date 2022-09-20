@@ -139,7 +139,6 @@ int sensor_loop() {
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
   sensors_init.push_back({&bmx055_magn, false});
-  sensors_init.push_back({&bmx055_temp, false});
 
   sensors_init.push_back({&lsm6ds3_accel, true});
   sensors_init.push_back({&lsm6ds3_gyro, true});
