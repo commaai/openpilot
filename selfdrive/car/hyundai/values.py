@@ -1144,7 +1144,6 @@ FW_VERSIONS = {
       b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4100         ',  # from 2017
     ],
     (Ecu.abs, 0x7d1, None): [
-      b"\xf1\x00JF ESC \t 11 \x18\x03' 58920-D5260",  # unknown
       b'\xf1\x00JF ESC \x0f 16 \x16\x06\x17 58920-D5080',  # from 2017
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
@@ -1161,6 +1160,7 @@ FW_VERSIONS = {
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00JF ESC \x0b 11 \x18\x030 58920-D5180',
+      b"\xf1\x00JF ESC \t 11 \x18\x03' 58920-D5260",  # 2020!
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
