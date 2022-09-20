@@ -22,8 +22,7 @@ void LSM6DS3_Gyro::wait_for_data_ready() {
   } while(drdy == 0);
 
   // read first values and discard
-  int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
-  assert(len == sizeof(buffer));
+  read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
 }
 
 void LSM6DS3_Gyro::read_and_avg_data(float* out_buf) {
@@ -31,7 +30,6 @@ void LSM6DS3_Gyro::read_and_avg_data(float* out_buf) {
   uint8_t buffer[6];
 
   for (int i = 0; i < 5; i++) {
-    // check for new data
     do {
       read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
       drdy &= LSM6DS3_GYRO_DRDY_GDA;
@@ -52,12 +50,11 @@ void LSM6DS3_Gyro::read_and_avg_data(float* out_buf) {
 }
 
 int LSM6DS3_Gyro::perform_self_test(int test_type) {
-  int ret = 0;
+  int i, ret = 0;
   float val_st_off[3] = {0};
   float val_st_on[3] = {0};
   float test_val[3] = {0};
   bool test_result = true;
-  int i;
 
   // prepare sensor for self-test
 
@@ -66,12 +63,9 @@ int LSM6DS3_Gyro::perform_self_test(int test_type) {
   if (ret < 0) {
     goto fail;
   }
-  util::sleep_for(400);
-
-  // TODO: check if this also holds for the gyro
-  // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
 
   // wait for stable output, and discard first values
+  util::sleep_for(150);
   wait_for_data_ready();
   read_and_avg_data(val_st_off);
 
@@ -82,9 +76,21 @@ int LSM6DS3_Gyro::perform_self_test(int test_type) {
   }
 
   // wait for stable output, and discard first values
-  util::sleep_for(100);
+  util::sleep_for(50);
   wait_for_data_ready();
   read_and_avg_data(val_st_on);
+
+  // disable sensor
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // disable self test
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL5_C, 0);
+  if (ret < 0) {
+    goto fail;
+  }
 
   // calculate the mg values for self test
   for (i = 0; i < 3; i++) {
@@ -97,18 +103,6 @@ int LSM6DS3_Gyro::perform_self_test(int test_type) {
         (test_val[i] > LSM6DS3_GYRO_MAX_ST_LIMIT_mdps)) {
       test_result = false;
     }
-  }
-
-  // disable sensor
-  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  // disable self test
-  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL5_C, 0);
-  if (ret < 0) {
-    goto fail;
   }
 
   if (!test_result) {

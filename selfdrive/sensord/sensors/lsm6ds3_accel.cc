@@ -20,21 +20,19 @@ void LSM6DS3_Accel::wait_for_data_ready() {
   } while(drdy == 0);
 
   // read first values and discard
-  int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
-  assert(len == sizeof(buffer));
+  read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
 }
 
 void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
   uint8_t drdy = 0;
   uint8_t buffer[6];
 
-  float scaleing = 0.061f;
+  float scaling = 0.061f;
   if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
-    scaleing = 0.122f;
+    scaling = 0.122f;
   }
 
   for (int i = 0; i < 5; i++) {
-    // check for new data
     do {
       read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
       drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
@@ -44,11 +42,10 @@ void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
     assert(len == sizeof(buffer));
 
     for (int j = 0; j < 3; j++) {
-      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * scaleing;
+      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * scaling;
     }
   }
 
-  // calculate the mg average values
   for (int i = 0; i < 3; i++) {
     out_buf[i] /= 5.0f;
   }
@@ -78,15 +75,6 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
     goto fail;
   }
 
-  /*
-  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
-    // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
-    ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTR9_XL, 0);
-    if (ret < 0) {
-      goto fail;
-    }
-  }*/
-
   // wait for stable output, and discard first values
   util::sleep_for(100);
   wait_for_data_ready();
@@ -103,6 +91,18 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
   wait_for_data_ready();
   read_and_avg_data(val_st_on);
 
+  // disable sensor
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // disable self test
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, 0);
+  if (ret < 0) {
+    goto fail;
+  }
+
   // calculate the mg values for self test
   for (i = 0; i < 3; i++) {
     test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
@@ -114,18 +114,6 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
         (test_val[i] > LSM6DS3_ACCEL_MAX_ST_LIMIT_mg)) {
       test_result = false;
     }
-  }
-
-  // disable sensor
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0);
-  if (ret < 0) {
-    goto fail;
-  }
-
-  // disable self test
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, 0);
-  if (ret < 0) {
-    goto fail;
   }
 
   if (!test_result) {
@@ -179,15 +167,6 @@ int LSM6DS3_Accel::init() {
   if (ret < 0) {
     goto fail;
   }
-
-  /*
-  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
-    // data enable for x, y, z axis
-    ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTR9_XL, LSM6DS3_ACCEL_XYZ_DEN);
-    if (ret < 0) {
-      goto fail;
-    }
-  }*/
 
   // TODO: set scale and bandwidth. Default is +- 2G, 50 Hz
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ);
