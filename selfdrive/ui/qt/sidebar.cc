@@ -59,17 +59,16 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
 }
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
+  if (flag_pressed || settings_pressed) {
+    flag_pressed = settings_pressed = false;
+    update();
+  }
   if (home_btn.contains(event->pos())) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
-  }
-  if (settings_btn.contains(event->pos())) {
+  } else if (settings_btn.contains(event->pos())) {
     emit openSettings();
-  }
-  if (flag_pressed || settings_pressed) {
-    flag_pressed = settings_pressed = false;
-    update();
   }
 }
 
