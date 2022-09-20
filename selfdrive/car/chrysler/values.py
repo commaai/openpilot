@@ -3,8 +3,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -49,7 +52,7 @@ RAM_CARS = RAM_DT | RAM_HD
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise Control"
+  package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.fca
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -129,10 +132,46 @@ FINGERPRINTS = {
   }],
 }
 
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+
+CHRYSLER_RX_OFFSET = -0x280
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      rx_offset=CHRYSLER_RX_OFFSET,
+      bus=0,
+    ),
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      bus=0,
+    ),
+    Request(
+      [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+      [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      bus=0,
+    ),
+  ],
+)
+
 FW_VERSIONS = {
   CAR.PACIFICA_2019_HYBRID: {
     (Ecu.hcp, 0x7e2, None): [],
-    (Ecu.esp, 0x7e4, None): [],
+    (Ecu.abs, 0x7e4, None): [],
   },
 
   CAR.RAM_1500: {
@@ -149,7 +188,7 @@ FW_VERSIONS = {
       b'68428609AB',
       b'68500728AA',
     ],
-    (Ecu.esp, 0x747, None): [
+    (Ecu.abs, 0x747, None): [
       b'68432418AD',
       b'68432418AB',
       b'68436004AE',
@@ -187,12 +226,6 @@ FW_VERSIONS = {
       b'68540431AB',
       b'68484467AC',
     ],
-    (Ecu.gateway, 0x18DACBF1, None): [
-      b'68402660AB',
-      b'68445283AB',
-      b'68533631AB',
-      b'68500483AB',
-    ],
   },
 
   CAR.RAM_HD: {
@@ -205,7 +238,7 @@ FW_VERSIONS = {
       b'68428503AA',
       b'68428505AA',
     ],
-    (Ecu.esp, 0x747, None): [
+    (Ecu.abs, 0x747, None): [
       b'68334977AH',
       b'68504022AB',
       b'68530686AB',
@@ -223,10 +256,6 @@ FW_VERSIONS = {
       b'52421132AF',
       b'M2370131MB',
       b'M2421132MB',
-    ],
-    (Ecu.gateway, 0x18DACBF1, None): [
-      b'68488419AB',
-      b'68535476AB',
     ],
   },
 }

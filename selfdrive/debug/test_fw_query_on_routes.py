@@ -56,7 +56,7 @@ if __name__ == "__main__":
       qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
     else:
       route = Route(route)
-      qlog_path = route.qlog_paths()[0]
+      qlog_path = next((p for p in route.qlog_paths() if p is not None), None)
 
     if qlog_path is None:
       continue

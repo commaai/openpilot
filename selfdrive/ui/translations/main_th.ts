@@ -754,7 +754,7 @@ location set</source>
     <message>
         <location filename="../qt/setup/setup.cc" line="73"/>
         <source>WARNING: Low Voltage</source>
-        <translation>คำเตือน: แรงดันไฟฟ้าต่ำ</translation>
+        <translation>คำเตือน: แรงดันแบตเตอรี่ต่ำ</translation>
     </message>
     <message>
         <location filename="../qt/setup/setup.cc" line="79"/>

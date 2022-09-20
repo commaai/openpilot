@@ -6,7 +6,8 @@ from cereal import log
 import cereal.messaging as messaging
 from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.longitudinal_planner import Planner
+from selfdrive.modeld.constants import T_IDXS
+from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 
 
 class Plant():
@@ -43,7 +44,8 @@ class Plant():
 
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
-    self.planner = Planner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
+
+    self.planner = LongitudinalPlanner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
 
   def current_time(self):
     return float(self.rk.frame) / self.rate
@@ -54,6 +56,7 @@ class Plant():
     radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
+    model = messaging.new_message('modelV2')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
 
@@ -87,6 +90,21 @@ class Plant():
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
+    # Simulate model predicting slightly faster speed
+    # this is to ensure lead policy is effective when model
+    # does not predict slowdown in e2e mode
+    position = log.ModelDataV2.XYZTData.new_message()
+    position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
+    model.modelV2.position = position
+    velocity = log.ModelDataV2.XYZTData.new_message()
+    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]
+    model.modelV2.velocity = velocity
+    acceleration = log.ModelDataV2.XYZTData.new_message()
+    acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
+    model.modelV2.acceleration = acceleration
+
+
+
     control.controlsState.longControlState = LongCtrlState.pid
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
@@ -95,7 +113,8 @@ class Plant():
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
-          'controlsState': control.controlsState}
+          'controlsState': control.controlsState,
+          'modelV2': model.modelV2}
     self.planner.update(sm)
     self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
