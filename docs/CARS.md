@@ -93,10 +93,10 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
 |Kia|Niro Hybrid 2022|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Kia|Niro Plug-in Hybrid 2018-19|All|openpilot|10 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|Kia|Optima 2017|Advanced Smart Cruise Control & LDWS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
-|Kia|Optima 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
+|Kia|Optima 2017|Advanced Smart Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
+|Kia|Optima 2019-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
 |Kia|Seltos 2021|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
-|Kia|Sorento 2018|Advanced Smart Cruise Control & LDWS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Sorento 2018|Advanced Smart Cruise Control|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Sorento 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
 |Kia|Stinger 2018-20|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Telluride 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
