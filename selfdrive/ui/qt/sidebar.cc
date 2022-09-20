@@ -35,10 +35,7 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
   flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
-  flag_pressed_img = loadPixmap("../assets/images/button_flag_pressed.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
-
-  home_btn_img = &home_img;
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
@@ -52,8 +49,8 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
-  if (home_btn.contains(event->pos())) {
-    home_btn_img = &flag_pressed_img;
+  if (onroad && home_btn.contains(event->pos())) {
+    flag_pressed = true;
     update();
   }
 }
@@ -64,8 +61,8 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
   }
-  if (home_btn_img == &flag_pressed_img) {
-    home_btn_img = &flag_img;
+  if (flag_pressed) {
+    flag_pressed = false;
     update();
   }
   if (settings_btn.contains(event->pos())) {
@@ -74,11 +71,7 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void Sidebar::offroadTransition(bool offroad) {
-  if (offroad) {
-    home_btn_img = &home_img;
-  } else {
-    home_btn_img = &flag_img;
-  }
+  onroad = !offroad;
 }
 
 void Sidebar::updateState(const UIState &s) {
@@ -128,8 +121,9 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   // buttons
   p.setOpacity(0.65);
   p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
+  p.setOpacity(onroad && flag_pressed ? 0.65 : 1.0);
+  p.drawPixmap(home_btn.x(), home_btn.y(), onroad ? flag_img : home_img);
   p.setOpacity(1.0);
-  p.drawPixmap(home_btn.x(), home_btn.y(), *home_btn_img);
 
   // network
   int x = 58;
