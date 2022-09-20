@@ -346,14 +346,14 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     auto ps = pss[i];
     ps.setUptime(health.uptime_pkt);
-    ps.setBlockedCnt(health.blocked_msg_cnt_pkt);
+    ps.setSafetyTxBlocked(health.safety_tx_blocked_pkt);
+    ps.setSafetyRxInvalid(health.safety_rx_invalid_pkt);
     ps.setIgnitionLine(health.ignition_line_pkt);
     ps.setIgnitionCan(health.ignition_can_pkt);
     ps.setControlsAllowed(health.controls_allowed_pkt);
     ps.setGasInterceptorDetected(health.gas_interceptor_detected_pkt);
-    ps.setCanRxErrs(health.can_rx_errs_pkt);
-    ps.setCanSendErrs(health.can_send_errs_pkt);
-    ps.setCanFwdErrs(health.can_fwd_errs_pkt);
+    ps.setTxBufferOverflow(health.tx_buffer_overflow_pkt);
+    ps.setRxBufferOverflow(health.rx_buffer_overflow_pkt);
     ps.setGmlanSendErrs(health.gmlan_send_errs_pkt);
     ps.setPandaType(panda->hw_type);
     ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
@@ -468,7 +468,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 }
 
 
-void peripheral_control_thread(Panda *panda) {
+void peripheral_control_thread(Panda *panda, bool no_fan_control) {
   util::set_thread_name("boardd_peripheral_control");
 
   SubMaster sm({"deviceState", "driverCameraState"});
@@ -488,7 +488,7 @@ void peripheral_control_thread(Panda *panda) {
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
 
-    if (sm.updated("deviceState")) {
+    if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
       if (fan_speed != prev_fan_speed || cnt % 100 == 0) {
@@ -496,6 +496,7 @@ void peripheral_control_thread(Panda *panda) {
         prev_fan_speed = fan_speed;
       }
     }
+
     if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
@@ -568,7 +569,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
     std::vector<std::thread> threads;
 
     threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
-    threads.emplace_back(peripheral_control_thread, peripheral_panda);
+    threads.emplace_back(peripheral_control_thread, peripheral_panda, getenv("NO_FAN_CONTROL") != nullptr);
 
     threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, pandas);

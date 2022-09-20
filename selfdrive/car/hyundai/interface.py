@@ -21,14 +21,15 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "hyundai"
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = disable_radar and (candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR))
+    ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR | CANFD_CAR)
+    ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -42,13 +43,15 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 1.
 
     ret.stoppingControl = True
-    ret.vEgoStopping = 1.0
+    ret.startingState = True
+    ret.vEgoStarting = 0.1
+    ret.startAccel = 2.0
 
-    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kpV = [0.5]
     ret.longitudinalTuning.kiV = [0.0]
-    ret.stopAccel = 0.0
 
-    ret.longitudinalActuatorDelayUpperBound = 1.0  # s
+    ret.longitudinalActuatorDelayLowerBound = 0.5  # s
+    ret.longitudinalActuatorDelayUpperBound = 0.5  # s
     if candidate in (CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022):
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
@@ -199,11 +202,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.timeConstantV = [1.4]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
-    elif candidate in (CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H):
+    elif candidate in (CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_2019, CAR.KIA_OPTIMA_H):
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
+      if candidate == CAR.KIA_OPTIMA:
+        ret.minSteerSpeed = 32 * CV.MPH_TO_MS
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005

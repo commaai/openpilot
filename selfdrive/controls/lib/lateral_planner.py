@@ -4,16 +4,15 @@ from common.numpy_fast import interp
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N
-from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
 
+TRAJECTORY_SIZE = 33
+CAMERA_OFFSET = 0.04
 
 class LateralPlanner:
-  def __init__(self, CP, use_lanelines=True, wide_camera=False):
-    self.use_lanelines = use_lanelines
-    self.LP = LanePlanner(wide_camera)
+  def __init__(self, CP):
     self.DH = DesireHelper()
 
     # Vehicle model parameters used to calculate lateral movement of car
@@ -42,7 +41,6 @@ class LateralPlanner:
 
     # Parse model predictions
     md = sm['modelV2']
-    self.LP.parse_model(md)
     if len(md.position.x) == TRAJECTORY_SIZE and len(md.orientation.x) == TRAJECTORY_SIZE:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
       self.t_idxs = np.array(md.position.t)
@@ -51,23 +49,17 @@ class LateralPlanner:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
     # Lane change logic
-    lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
+    desire_state = md.meta.desireState
+    if len(desire_state):
+      self.l_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeLeft]
+      self.r_lane_change_prob = desire_state[log.LateralPlan.Desire.laneChangeRight]
+    lane_change_prob = self.l_lane_change_prob + self.r_lane_change_prob
     self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
 
-    # Turn off lanes during lane change
-    if self.DH.desire == log.LateralPlan.Desire.laneChangeRight or self.DH.desire == log.LateralPlan.Desire.laneChangeLeft:
-      self.LP.lll_prob *= self.DH.lane_change_ll_prob
-      self.LP.rll_prob *= self.DH.lane_change_ll_prob
-
-    # Calculate final driving path and set MPC costs
-    if self.use_lanelines:
-      d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, MPC_COST_LAT.STEER_RATE)
-    else:
-      d_path_xyz = self.path_xyz
-      # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-      heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.15])
-      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.STEER_RATE)
+    d_path_xyz = self.path_xyz
+    # Heading cost is useful at low speed, otherwise end of plan can be off-heading
+    heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.15])
+    self.lat_mpc.set_weights(MPC_COST_LAT.PATH, heading_cost, MPC_COST_LAT.STEER_RATE)
 
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
@@ -112,20 +104,16 @@ class LateralPlanner:
 
     lateralPlan = plan_send.lateralPlan
     lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
-    lateralPlan.laneWidth = float(self.LP.lane_width)
     lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
     lateralPlan.curvatures = self.lat_mpc.x_sol[0:CONTROL_N, 3].tolist()
     lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
-    lateralPlan.lProb = float(self.LP.lll_prob)
-    lateralPlan.rProb = float(self.LP.rll_prob)
-    lateralPlan.dProb = float(self.LP.d_prob)
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
 
     lateralPlan.desire = self.DH.desire
-    lateralPlan.useLaneLines = self.use_lanelines
+    lateralPlan.useLaneLines = False
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
 

@@ -4,6 +4,7 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/util.h"
 
 BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
@@ -22,6 +23,13 @@ int BMX055_Accel::init() {
     ret = -1;
     goto fail;
   }
+
+  ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_NORMAL_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+  // bmx055 accel has a 1.3ms wakeup time from deep suspend mode
+  util::sleep_for(10);
 
   // High bandwidth
   // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_ENABLE);
@@ -43,7 +51,17 @@ fail:
   return ret;
 }
 
-void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
+int BMX055_Accel::shutdown()  {
+  // enter deep suspend mode (lowest power mode)
+  int ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_DEEP_SUSPEND);
+  if (ret < 0) {
+    LOGE("Could not move BMX055 ACCEL in deep suspend mode!")
+  }
+
+  return ret;
+}
+
+bool BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_ACCEL_I2C_REG_X_LSB, buffer, sizeof(buffer));
@@ -66,4 +84,5 @@ void BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }
