@@ -157,16 +157,16 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
     HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
   ],
-  # TODO: probably supports 2016, 2018
+  # TODO: may support 2016, 2018
   CAR.KIA_OPTIMA: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", harness=Harness.hyundai_b),
   CAR.KIA_OPTIMA_2019: HyundaiCarInfo("Kia Optima 2019-20", "Smart Cruise Control (SCC)", harness=Harness.hyundai_g),
   CAR.KIA_OPTIMA_H: [
-    HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control & LDWS"),  # TODO: info may be incorrect
-    HyundaiCarInfo("Kia Optima Hybrid 2019"),
+    HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control"),  # TODO: may support adjacent years
+    HyundaiCarInfo("Kia Optima Hybrid 2019", "Smart Cruise Control (SCC)"),
   ],
   CAR.KIA_SELTOS: HyundaiCarInfo("Kia Seltos 2021", harness=Harness.hyundai_a),
   CAR.KIA_SORENTO: [
-    HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control & LDWS", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
+    HyundaiCarInfo("Kia Sorento 2018", "Advanced Smart Cruise Control", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_c),
     HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_e),
   ],
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
