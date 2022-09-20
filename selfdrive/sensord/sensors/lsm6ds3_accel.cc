@@ -28,6 +28,11 @@ void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
   uint8_t drdy = 0;
   uint8_t buffer[6];
 
+  float scaleing = 0.061f;
+  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
+    scaleing = 0.122f;
+  }
+
   for (int i = 0; i < 5; i++) {
     // check for new data
     do {
@@ -39,7 +44,7 @@ void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
     assert(len == sizeof(buffer));
 
     for (int j = 0; j < 3; j++) {
-      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * 0.061f;
+      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * scaleing;
     }
   }
 
@@ -50,12 +55,12 @@ void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
 }
 
 int LSM6DS3_Accel::perform_self_test(int test_type) {
-  int ret = 0;
+  int i, ret = 0;
   float val_st_off[3] = {0};
   float val_st_on[3] = {0};
   float test_val[3] = {0};
   bool test_result = true;
-  int i;
+  uint8_t ODR_FS_MO = LSM6DS3_ACCEL_ODR_52HZ; // full scale: +-2g, ODR: 52Hz
 
   // prepare sensor for self-test
 
@@ -65,12 +70,22 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
     goto fail;
   }
 
-  // full scale: +-2g, ODR: 52Hz
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_52HZ);
+  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
+    ODR_FS_MO = LSM6DS3_ACCEL_FS_4G | LSM6DS3_ACCEL_ODR_52HZ;
+  }
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, ODR_FS_MO);
   if (ret < 0) {
     goto fail;
   }
-  // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
+
+  /*
+  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
+    // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
+    ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTR9_XL, 0);
+    if (ret < 0) {
+      goto fail;
+    }
+  }*/
 
   // wait for stable output, and discard first values
   util::sleep_for(100);
@@ -164,6 +179,15 @@ int LSM6DS3_Accel::init() {
   if (ret < 0) {
     goto fail;
   }
+
+  /*
+  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
+    // data enable for x, y, z axis
+    ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTR9_XL, LSM6DS3_ACCEL_XYZ_DEN);
+    if (ret < 0) {
+      goto fail;
+    }
+  }*/
 
   // TODO: set scale and bandwidth. Default is +- 2G, 50 Hz
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ);
