@@ -295,14 +295,19 @@ void send_empty_panda_state(PubMaster *pm) {
 
 std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
   bool ignition_local = false;
+  const uint32_t pandas_cnt = pandas.size();
 
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
-  auto pss = evt.initPandaStates(pandas.size());
+  auto pss = evt.initPandaStates(pandas_cnt);
 
   std::vector<health_t> pandaStates;
+  pandaStates.reserve(pandas_cnt);
+
   std::vector<std::array<can_health_t, PANDA_CAN_CNT>> pandaCanStates;
+  pandaCanStates.reserve(pandas_cnt);
+
   for (const auto& panda : pandas){
     auto health_opt = panda->get_state();
     if (!health_opt) {
@@ -330,7 +335,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     pandaStates.push_back(health);
   }
 
-  for (uint32_t i = 0; i < pandas.size(); i++) {
+  for (uint32_t i = 0; i < pandas_cnt; i++) {
     auto panda = pandas[i];
     const auto &health = pandaStates[i];
 
