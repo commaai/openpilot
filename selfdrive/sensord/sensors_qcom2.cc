@@ -118,8 +118,8 @@ int sensor_loop() {
   // bmx accel and gyro data is not used anymore
   BMX055_Accel bmx055_accel(i2c_bus_imu);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu);
-  bmx055_accel->shutdown();
-  bmx055_gyro->shutdown();
+  bmx055_accel.shutdown();
+  bmx055_gyro.shutdown();
 
   BMX055_Magn bmx055_magn(i2c_bus_imu);
   BMX055_Temp bmx055_temp(i2c_bus_imu);
