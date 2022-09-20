@@ -105,6 +105,8 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   const auto plan_x = (*s->sm)["longitudinalPlan"].getLongitudinalPlan().getXs();
   const auto plan_z = (*s->sm)["longitudinalPlan"].getLongitudinalPlan().getZs();
 
+  if (plan_y.size() == 0 || plan_x.size() == 0 || plan_z.size() == 0) return;
+
   update_line_data(s, plan_x, plan_y, plan_z , 0.9, 1.22, &scene.track_vertices, CONTROL_N - 1, false);
 }
 
