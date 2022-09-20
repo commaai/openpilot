@@ -115,7 +115,7 @@ class CarController:
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.ascm_steering_button, CruiseButtons.CANCEL))
         elif CC.cruiseControl.resume:
           self.last_button_frame = self.frame
-          for _ in range(2):
+          for _ in range(4):
             can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.ascm_steering_button, CruiseButtons.RES_ACCEL))
             can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.ascm_steering_button, CruiseButtons.RES_ACCEL))
 

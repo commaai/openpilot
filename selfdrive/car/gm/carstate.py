@@ -116,7 +116,7 @@ class CarState(CarStateBase):
       ("ACCButtons", "ASCMSteeringButton"),
       ("DriveModeButton", "ASCMSteeringButton"),
       ("RollingCounter", "ASCMSteeringButton"),
-      # ("SteeringButtonChecksum", "ASCMSteeringButton"),
+      ("SteeringButtonChecksum", "ASCMSteeringButton"),
       ("SteeringWheelAngle", "PSCMSteeringAngle"),
       ("SteeringWheelRate", "PSCMSteeringAngle"),
       ("FLWheelSpd", "EBCMWheelSpdFront"),
