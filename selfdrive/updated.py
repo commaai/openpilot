@@ -240,7 +240,7 @@ def handle_agnos_update() -> None:
 class Updater:
   def __init__(self):
     self.params = Params()
-    self.branches = defaultdict(lambda: None)
+    self.branches = defaultdict(lambda: '')
 
   @property
   def target_branch(self) -> str:
