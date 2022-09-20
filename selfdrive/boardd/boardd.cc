@@ -295,13 +295,19 @@ void send_empty_panda_state(PubMaster *pm) {
 
 std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
   bool ignition_local = false;
+  const uint32_t pandas_cnt = pandas.size();
 
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
-  auto pss = evt.initPandaStates(pandas.size());
+  auto pss = evt.initPandaStates(pandas_cnt);
 
   std::vector<health_t> pandaStates;
+  pandaStates.reserve(pandas_cnt);
+
+  std::vector<std::array<can_health_t, PANDA_CAN_CNT>> pandaCanStates;
+  pandaCanStates.reserve(pandas_cnt);
+
   for (const auto& panda : pandas){
     auto health_opt = panda->get_state();
     if (!health_opt) {
@@ -309,6 +315,16 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
 
     health_t health = *health_opt;
+
+    std::array<can_health_t, PANDA_CAN_CNT> can_health{};
+    for (uint32_t i = 0; i < PANDA_CAN_CNT; i++) {
+      auto can_health_opt = panda->get_can_state(i);
+      if (!can_health_opt) {
+        return std::nullopt;
+      }
+      can_health[i] = *can_health_opt;
+    }
+    pandaCanStates.push_back(can_health);
 
     if (spoofing_started) {
       health.ignition_line_pkt = 1;
@@ -319,7 +335,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     pandaStates.push_back(health);
   }
 
-  for (uint32_t i = 0; i < pandas.size(); i++) {
+  for (uint32_t i = 0; i < pandas_cnt; i++) {
     auto panda = pandas[i];
     const auto &health = pandaStates[i];
 
@@ -365,6 +381,32 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
+
+    std::array<cereal::PandaState::PandaCanState::Builder, PANDA_CAN_CNT> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
+
+    for (uint32_t j = 0; j < PANDA_CAN_CNT; j++) {
+      const auto &can_health = pandaCanStates[i][j];
+      cs[j].setBusOff((bool)can_health.bus_off);
+      cs[j].setBusOffCnt(can_health.bus_off_cnt);
+      cs[j].setErrorWarning((bool)can_health.error_warning);
+      cs[j].setErrorPassive((bool)can_health.error_passive);
+      cs[j].setLastError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_error));
+      cs[j].setLastStoredError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_stored_error));
+      cs[j].setLastDataError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_data_error));
+      cs[j].setLastDataStoredError(cereal::PandaState::PandaCanState::LecErrorCode(can_health.last_data_stored_error));
+      cs[j].setReceiveErrorCnt(can_health.receive_error_cnt);
+      cs[j].setTransmitErrorCnt(can_health.transmit_error_cnt);
+      cs[j].setTotalErrorCnt(can_health.total_error_cnt);
+      cs[j].setTotalTxLostCnt(can_health.total_tx_lost_cnt);
+      cs[j].setTotalRxLostCnt(can_health.total_rx_lost_cnt);
+      cs[j].setTotalTxCnt(can_health.total_tx_cnt);
+      cs[j].setTotalRxCnt(can_health.total_rx_cnt);
+      cs[j].setTotalFwdCnt(can_health.total_fwd_cnt);
+      cs[j].setCanSpeed(can_health.can_speed);
+      cs[j].setCanDataSpeed(can_health.can_data_speed);
+      cs[j].setCanfdEnabled(can_health.canfd_enabled);
+      cs[j].setBrsEnabled(can_health.canfd_enabled);
+    }
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(health.faults_pkt) * 8> fault_bits(health.faults_pkt);
