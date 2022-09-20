@@ -28,6 +28,10 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
+// filter first values (0.5sec) as those may contain inaccuracies
+uint64_t init_ts = 0;
+constexpr uint64_t init_delay = 500*1e6;
+
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
@@ -86,6 +90,10 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     auto events = msg.initEvent().initSensorEvents(collected_events.size());
     for (int i = 0; i < collected_events.size(); ++i) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
+    }
+
+    if (ts - init_ts < init_delay) {
+      continue;
     }
 
     std::lock_guard<std::mutex> lock(pm_mutex);
@@ -167,6 +175,7 @@ int sensor_loop() {
   }
 
   PubMaster pm({"sensorEvents"});
+  init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
@@ -185,6 +194,10 @@ int sensor_loop() {
       sensors[i]->get_event(event);
     }
 
+    if (nanos_since_boot() - init_ts < init_delay) {
+      continue;
+    }
+
     {
       std::lock_guard<std::mutex> lock(pm_mutex);
       pm.send("sensorEvents", msg);
@@ -192,6 +205,10 @@ int sensor_loop() {
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
+  }
+
+  for (Sensor *sensor :  sensors) {
+    sensor->shutdown();
   }
 
   lsm_interrupt_thread.join();

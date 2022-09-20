@@ -63,7 +63,7 @@ typedef struct FrameMetadata {
 } FrameMetadata;
 
 struct MultiCameraState;
-struct CameraState;
+class CameraState;
 class Debayer;
 
 class CameraBuf {

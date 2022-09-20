@@ -155,6 +155,16 @@ int BMX055_Magn::init() {
   return ret;
 }
 
+int BMX055_Magn::shutdown() {
+  // move to suspend mode
+  int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0);
+  if (ret < 0) {
+    LOGE("Could not move BMX055 MAGN in suspend mode!")
+  }
+
+  return ret;
+}
+
 bool BMX055_Magn::perform_self_test() {
   uint8_t buffer[8];
   int16_t x, y;
