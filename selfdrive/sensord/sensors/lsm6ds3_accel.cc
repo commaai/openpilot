@@ -85,7 +85,7 @@ int LSM6DS3_Accel::shutdown() {
   value &= 0x0F;
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, value);
   if (ret < 0) {
-    LOGE("Could not power-down lsm6ds3 acceleration!")
+    LOGE("Could not power-down lsm6ds3 accelerometer!")
     goto fail;
   }
 
