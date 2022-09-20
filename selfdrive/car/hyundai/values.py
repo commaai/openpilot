@@ -131,7 +131,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All", harness=Harness.hyundai_l),
   CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", "All", harness=Harness.hyundai_l),
   CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-22", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw", harness=Harness.hyundai_a),
-  CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19", harness=Harness.hyundai_e),
+  CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19", "Smart Cruise Control (SCC)", harness=Harness.hyundai_e),
   CAR.TUCSON: [
     HyundaiCarInfo("Hyundai Tucson 2021", "Smart Cruise Control (SCC)", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_l),
     HyundaiCarInfo("Hyundai Tucson Diesel 2019", "Smart Cruise Control (SCC)", harness=Harness.hyundai_l),
