@@ -2,8 +2,12 @@ Version 0.8.17 (2022-XX-XX)
 ========================
 * New driving model
   * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
-* torqued
-  * Learn torque parameters live for each car as opposed to using platform average values, which improves lateral control
+* Self-tuning torque lateral controller parameters
+  * Parameters are learned live for each car
+  * Enabled only on Toyota Corolla for now
+* UI updates
+  * Matched speeds shown on car's dash
+  * Improved update experience
 
 Version 0.8.16 (2022-08-26)
 ========================
