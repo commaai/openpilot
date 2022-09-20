@@ -5,11 +5,119 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/util.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
 LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) :
   I2CSensor(bus, gpio_nr, shared_gpio) {}
+
+void LSM6DS3_Gyro::wait_for_data_ready() {
+  uint8_t drdy = 0;
+  uint8_t buffer[6];
+
+  do {
+    read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
+    drdy &= LSM6DS3_GYRO_DRDY_GDA;
+  } while(drdy == 0);
+
+  // read first values and discard
+  int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
+  assert(len == sizeof(buffer));
+}
+
+void LSM6DS3_Gyro::read_and_avg_data(float* out_buf) {
+  uint8_t drdy = 0;
+  uint8_t buffer[6];
+
+  for (int i = 0; i < 5; i++) {
+    // check for new data
+    do {
+      read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
+      drdy &= LSM6DS3_GYRO_DRDY_GDA;
+    } while(drdy == 0);
+
+    int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
+    assert(len == sizeof(buffer));
+
+    for (int j = 0; j < 3; j++) {
+      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * 70.0f;
+    }
+  }
+
+  // calculate the mg average values
+  for (int i = 0; i < 3; i++) {
+    out_buf[i] /= 5.0f;
+  }
+}
+
+int LSM6DS3_Gyro::perform_self_test(int test_type) {
+  int ret = 0;
+  float val_st_off[3] = {0};
+  float val_st_on[3] = {0};
+  float test_val[3] = {0};
+  bool test_result = true;
+  int i;
+
+  // prepare sensor for self-test
+
+  // full scale: 2000dps, ODR: 208Hz
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_208HZ | LSM6DS3_GYRO_FS_2000dps);
+  if (ret < 0) {
+    goto fail;
+  }
+  util::sleep_for(400);
+
+  // TODO: check if this also holds for the gyro
+  // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
+
+  // wait for stable output, and discard first values
+  wait_for_data_ready();
+  read_and_avg_data(val_st_off);
+
+  // enable Self Test positive (or negative)
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL5_C, test_type);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // wait for stable output, and discard first values
+  util::sleep_for(100);
+  wait_for_data_ready();
+  read_and_avg_data(val_st_on);
+
+  // calculate the mg values for self test
+  for (i = 0; i < 3; i++) {
+    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  }
+
+  // verify test result
+  for (i = 0; i < 3; i++) {
+    if ((LSM6DS3_GYRO_MIN_ST_LIMIT_mdps > test_val[i]) ||
+        (test_val[i] > LSM6DS3_GYRO_MAX_ST_LIMIT_mdps)) {
+      test_result = false;
+    }
+  }
+
+  // disable sensor
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // disable self test
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL5_C, 0);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  if (!test_result) {
+    ret = -1;
+  }
+
+fail:
+  return ret;
+}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;
@@ -34,6 +142,18 @@ int LSM6DS3_Gyro::init() {
 
   ret = init_gpio();
   if (ret < 0) {
+    goto fail;
+  }
+
+  ret = perform_self_test(LSM6DS3_GYRO_POSITIVE_TEST);
+  if (ret < 0) {
+    LOGE("LSM6DS3 accel positive self-test failed!");
+    goto fail;
+  }
+
+  ret = perform_self_test(LSM6DS3_GYRO_NEGATIVE_TEST);
+  if (ret < 0) {
+    LOGE("LSM6DS3 accel negative self-test failed!");
     goto fail;
   }
 
@@ -65,7 +185,7 @@ fail:
 int LSM6DS3_Gyro::shutdown() {
   int ret = 0;
 
-  // disable data ready interrupt for accel on INT1
+  // disable data ready interrupt for gyro on INT1
   uint8_t value = 0;
   ret = read_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, &value, 1);
   if (ret < 0) {

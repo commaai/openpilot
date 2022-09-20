@@ -70,8 +70,6 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
   if (ret < 0) {
     goto fail;
   }
-  util::sleep_for(100);
-
   // 0x18, 0x19 have different meaning on lsm6ds c and non c variant
 
   // wait for stable output, and discard first values
@@ -146,13 +144,13 @@ int LSM6DS3_Accel::init() {
 
   ret = perform_self_test(LSM6DS3_ACCEL_POSITIVE_TEST);
   if (ret < 0) {
-    LOGE("LSM6DS3 positive self-test failed!");
+    LOGE("LSM6DS3 accel positive self-test failed!");
     goto fail;
   }
 
   ret = perform_self_test(LSM6DS3_ACCEL_NEGATIVE_TEST);
   if (ret < 0) {
-    LOGE("LSM6DS3 negative self-test failed!");
+    LOGE("LSM6DS3 accel negative self-test failed!");
     goto fail;
   }
 
