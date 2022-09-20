@@ -16,7 +16,6 @@
 #include "selfdrive/sensord/sensors/bmx055_magn.h"
 #include "selfdrive/sensord/sensors/bmx055_temp.h"
 #include "selfdrive/sensord/sensors/constants.h"
-#include "selfdrive/sensord/sensors/light_sensor.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_accel.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_gyro.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_temp.h"
@@ -131,7 +130,8 @@ int sensor_loop() {
 
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
 
-  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
+  // light sensor has been deprecated
+  // LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
@@ -143,8 +143,6 @@ int sensor_loop() {
   sensors_init.push_back({&lsm6ds3_temp, true});
 
   sensors_init.push_back({&mmc5603nj_magn, false});
-
-  sensors_init.push_back({&light, true});
 
   bool has_magnetometer = false;
 
