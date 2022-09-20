@@ -114,7 +114,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.ELANTRA_GT_I30: None,  # dashcamOnly and same platform as CAR.ELANTRA
   CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", "Smart Cruise Control (SCC)", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_j),  # TODO: check 2015 packages
   CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", "Smart Cruise Control (SCC)", harness=Harness.hyundai_c),
-  CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_h),  # TODO: check 2022 packages
+  CAR.IONIQ_HEV_2022: [
+    HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-21", "Smart Cruise Control (SCC)"),  # TODO: check harnesses
+    HyundaiCarInfo("Hyundai Ioniq Hybrid 2022", "Smart Cruise Control (SCC)", harness=Harness.hyundai_h),
+  ],
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", harness=Harness.hyundai_c),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", harness=Harness.hyundai_c),
