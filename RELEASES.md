@@ -8,6 +8,7 @@ Version 0.8.17 (2022-XX-XX)
 * UI updates
   * Matched speeds shown on car's dash
   * Improved update experience
+  * Added button to flag events that are shown in comma connect
 
 Version 0.8.16 (2022-08-26)
 ========================
