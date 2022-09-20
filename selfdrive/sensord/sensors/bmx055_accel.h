@@ -38,4 +38,5 @@ public:
   int init();
   bool get_event(cereal::SensorEventData::Builder &event);
   int shutdown();
+  int is_available();
 };

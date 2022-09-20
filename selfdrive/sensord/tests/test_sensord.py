@@ -12,48 +12,34 @@ from selfdrive.manager.process_config import managed_processes
 
 SENSOR_CONFIGURATIONS = (
   {
-    ('bmx055', 'acceleration'),
-    ('bmx055', 'gyroUncalibrated'),
     ('bmx055', 'magneticUncalibrated'),
-    ('bmx055', 'temperature'),
     ('lsm6ds3', 'acceleration'),
     ('lsm6ds3', 'gyroUncalibrated'),
     ('lsm6ds3', 'temperature'),
-    ('rpr0521', 'light'),
   },
   {
     ('lsm6ds3', 'acceleration'),
     ('lsm6ds3', 'gyroUncalibrated'),
     ('lsm6ds3', 'temperature'),
     ('mmc5603nj', 'magneticUncalibrated'),
-    ('rpr0521', 'light'),
   },
   {
-    ('bmx055', 'acceleration'),
-    ('bmx055', 'gyroUncalibrated'),
     ('bmx055', 'magneticUncalibrated'),
-    ('bmx055', 'temperature'),
     ('lsm6ds3trc', 'acceleration'),
     ('lsm6ds3trc', 'gyroUncalibrated'),
     ('lsm6ds3trc', 'temperature'),
-    ('rpr0521', 'light'),
   },
   {
     ('lsm6ds3trc', 'acceleration'),
     ('lsm6ds3trc', 'gyroUncalibrated'),
     ('lsm6ds3trc', 'temperature'),
     ('mmc5603nj', 'magneticUncalibrated'),
-    ('rpr0521', 'light'),
   },
 )
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
-  Sensor.rpr0521: {
-    SensorConfig("light", 0, 150),
-  },
-
   Sensor.lsm6ds3: {
     SensorConfig("acceleration", 5, 15),
     SensorConfig("gyroUncalibrated", 0, .2),
@@ -67,10 +53,7 @@ ALL_SENSORS = {
   },
 
   Sensor.bmx055: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
     SensorConfig("magneticUncalibrated", 0, 300),
-    SensorConfig("temperature", 0, 60),
   },
 
   Sensor.mmc5603nj: {

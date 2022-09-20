@@ -61,6 +61,15 @@ int BMX055_Accel::shutdown()  {
   return ret;
 }
 
+int BMX055_Accel::is_available() {
+  uint8_t buffer[1];
+  int ret = read_register(BMX055_ACCEL_I2C_REG_ID, buffer, 1);
+  if(ret < 0) {
+    return 0;
+  }
+  return 1;
+}
+
 bool BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
