@@ -34,7 +34,11 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
+  flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
+  flag_pressed_img = loadPixmap("../assets/images/button_flag_pressed.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
+
+  home_btn_img = &home_img;
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
@@ -47,14 +51,33 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 }
 
+void Sidebar::mousePressEvent(QMouseEvent *event) {
+  if (home_btn.contains(event->pos())) {
+    home_btn_img = &flag_pressed_img;
+    update();
+  }
+}
+
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   if (home_btn.contains(event->pos())) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
   }
+  if (home_btn_img == &flag_pressed_img) {
+    home_btn_img = &flag_img;
+    update();
+  }
   if (settings_btn.contains(event->pos())) {
     emit openSettings();
+  }
+}
+
+void Sidebar::offroadTransition(bool offroad) {
+  if (offroad) {
+    home_btn_img = &home_img;
+  } else {
+    home_btn_img = &flag_img;
   }
 }
 
@@ -102,11 +125,11 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   p.fillRect(rect(), QColor(57, 57, 57));
 
-  // static imgs
+  // buttons
   p.setOpacity(0.65);
   p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
   p.setOpacity(1.0);
-  p.drawPixmap(home_btn.x(), home_btn.y(), home_img);
+  p.drawPixmap(home_btn.x(), home_btn.y(), *home_btn_img);
 
   // network
   int x = 58;
