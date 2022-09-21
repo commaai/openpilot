@@ -74,25 +74,22 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
-  # def test_all_version_ecus_exist_in_config(self):
-  #   for brand, config in FW_QUERY_CONFIGS.items():
-  #     for car_model, versions in VERSIONS[brand].items():
-  #       for ecu, addr, sub_addr in versions.keys():
-  #         with self.subTest(car_model=car_model, ecu=ecu):
-  #           self.assertIn(ecu, config.ecus.values(), f"{car_model}: Ecu not in config.ecus: Ecu.{ECU_NAME[ecu]}")
-
-  def test_all_config_ecus_exist_in_versions(self):
-    """Tests that no ecus specified in brands' config exist merely for data collection"""
-
+  def test_config_ecus(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
         brand_ecus = {ecu for ecu, _, _ in get_brand_ecus(brand)}
         brand_addrs = {(addr, sub_addr) for _, addr, sub_addr in get_brand_ecus(brand)}
 
+        # Tests all defined ecus are able to be fingerprinted with
         for (addr, sub_addr), ecu in config.ecus.items():
           ecu_repr = f"(Ecu.{ECU_NAME[ecu]}, {hex(addr)})"
           self.assertIn(ecu, brand_ecus, f"{brand}: Ecu specified in FwQueryConfig does not exist in versions: {ecu_repr}")
           self.assertIn((addr, sub_addr), brand_addrs, f"{brand}: Ecu specified in FwQueryConfig does not exist in versions: {ecu_repr}")
+
+        # Tests all extra ecus are purely added for querying and data collection; not to be fingerprinted on
+        for (addr, sub_addr), ecu in config.extra_ecus.items():
+          ecu_repr = f"(Ecu.{ECU_NAME[ecu]}, {hex(addr)})"
+          self.assertNotIn((addr, sub_addr), brand_addrs, f"{brand}: Extra ecu specified in FwQueryConfig exists in versions: {ecu_repr}")
 
   def test_all_version_ecus_exist_in_config(self):
     for brand, config in FW_QUERY_CONFIGS.items():
@@ -101,12 +98,6 @@ class TestFwFingerprint(unittest.TestCase):
           ecu_repr = f"(Ecu.{ECU_NAME[ecu]}, {hex(addr)})"
           self.assertIn(ecu, config.ecus.values(), f"{brand}: Ecu specified in versions does not exist in FwQueryConfig: {ecu_repr}")
           self.assertIn((addr, sub_addr), config.ecus, f"{brand}: Ecu specified in versions does not exist in FwQueryConfig: {ecu_repr}")
-
-
-      for car_model, versions in VERSIONS[brand].items():
-        for ecu, addr, sub_addr in versions.keys():
-          with self.subTest(car_model=car_model, ecu=ecu):
-            self.assertIn(ecu, config.ecus.values(), f"{car_model}: Ecu not in config.ecus: Ecu.{ECU_NAME[ecu]}")
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
