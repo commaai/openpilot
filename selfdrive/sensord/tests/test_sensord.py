@@ -225,9 +225,10 @@ class TestSensord(unittest.TestCase):
 
     sensor_values = dict()
     for etype in self.events:
-      for m in self.events[etype]:
-        key = (m.sensorEvent.source.raw, m.sensorEvent.which())
-        values = getattr(m.sensorEvent, m.sensorEvent.which())
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
+        key = (m.source.raw, m.which())
+        values = getattr(m, m.which())
 
         if hasattr(values, 'v'):
           values = values.v
@@ -265,7 +266,8 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
     state_two = get_proc_interrupts(LSM_INT_GPIO)
 
-    assert state_one != state_two, f"no interrupts received after sensord start!\n{state_one} {state_two}"
+    error_msg = f"no interrupts received after sensord start!\n{state_one} {state_two}"
+    assert state_one != state_two, error_msg
 
     managed_processes["sensord"].stop()
     time.sleep(1)
