@@ -43,7 +43,7 @@ void rotate_if_needed(LoggerdState *s) {
 class RemoteEncoder {
  public:
   RemoteEncoder(LoggerdState *s, const std::string &name);
-  ~RemoteEncoder(){};
+  ~RemoteEncoder() {};
   uint32_t handlePacket(Message *raw_msg);
 
  protected:
@@ -84,7 +84,7 @@ RemoteEncoder::RemoteEncoder(LoggerdState *s, const std::string &name) : s(s), n
 
 uint32_t RemoteEncoder::handlePacket(Message *raw_msg) {
   std::unique_ptr<Message> msg(raw_msg);
-  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
+  capnp::FlatArrayMessageReader cmsg({(capnp::word *)msg->getData(), msg->getSize()});
   const auto event = cmsg.getRoot<cereal::Event>();
   const int32_t segment_num = (event.*getEncodeData)().getIdx().getSegmentNum();
 
@@ -124,7 +124,7 @@ uint32_t RemoteEncoder::writePacket(cereal::Event::Reader event) {
   uint32_t bytes_count = 0;
   if (!q.empty()) {
     for (Message *msg : q) {
-      capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
+      capnp::FlatArrayMessageReader cmsg({(capnp::word *)msg->getData(), msg->getSize()});
       bytes_count += write(cmsg.getRoot<cereal::Event>());
       delete msg;
     }

@@ -1,28 +1,18 @@
 #pragma once
 
-#include <unistd.h>
-
 #include <atomic>
 #include <cassert>
-#include <cerrno>
-#include <condition_variable>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <unordered_map>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
-#include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
-#include "system/hardware/hw.h"
 
-#include "selfdrive/loggerd/encoder/encoder.h"
 #include "selfdrive/loggerd/logger.h"
 #ifdef QCOM2
 #include "selfdrive/loggerd/encoder/v4l_encoder.h"
