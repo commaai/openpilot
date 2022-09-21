@@ -110,20 +110,6 @@ def read_sensor_events(sensor_types, duration_sec):
 
   return events
 
-def verify_100Hz_rate(type_name, data_list):
-  data_list.sort()
-  tdiffs = np.diff(data_list)
-
-  high_delay_diffs = set(filter(lambda d: d >= 10.1*10**6, tdiffs))
-  assert len(high_delay_diffs) < 10, f"Too many high delay packages: {high_delay_diffs} ({type_name})"
-
-  avg_diff = sum(tdiffs)/len(tdiffs)
-  assert avg_diff > 9.6*10**6, f"avg difference {avg_diff}, below threshold ({type_name})"
-
-  stddev = np.std(tdiffs)
-  assert stddev < 1.5*10**6, f"Standard-dev to big {stddev} ({type_name})"
-
-
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -163,7 +149,6 @@ class TestSensord(unittest.TestCase):
   def test_lsm6ds3_timing(self):
     # verify measurements are sampled and published at 104Hz
 
-<<<<<<< HEAD
     sensor_t = {
       1: [], # accel
       5: [], # gyro
@@ -184,17 +169,6 @@ class TestSensord(unittest.TestCase):
 
         high_delay_diffs = list(filter(lambda d: d >= 20., tdiffs))
         assert len(high_delay_diffs) < 15, f"Too many large diffs: {high_delay_diffs}"
-=======
-    accel_data = set()
-    for measurement in self.events['accelerometer']:
-      accel_data.add(getattr(measurement, measurement.which()).timestamp)
-    assert len(accel_data) != 0, "No lsm6ds3 accelerometer sensor events"
-
-    gyro_data = set()
-    for measurement in self.events['gyroscope']:
-      gyro_data.add(getattr(measurement, measurement.which()).timestamp)
-    assert len(gyro_data) != 0, "No lsm6ds3 gyroscope sensor events"
->>>>>>> 830148523 (adopt sensor tests to bmx channel)
 
         # 100-108Hz, expected 104Hz
         avg_diff = sum(tdiffs)/len(tdiffs)
