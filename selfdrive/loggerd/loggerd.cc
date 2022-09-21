@@ -136,9 +136,9 @@ uint32_t RemoteEncoder::writePacket(cereal::Event::Reader event) {
 uint32_t RemoteEncoder::write(cereal::Event::Reader event) {
   const auto edata = (event.*getEncodeData)();
   const auto idx = edata.getIdx();
-  const auto flags = idx.getFlags();
+  const bool is_key_frame = idx.getFlags() & V4L2_BUF_FLAG_KEYFRAME;
   if (!recording) {
-    if (flags & V4L2_BUF_FLAG_KEYFRAME) {
+    if (is_key_frame) {
       // only create on iframe
       if (dropped_frames) {
         // this should only happen for the first segment, maybe
@@ -162,7 +162,7 @@ uint32_t RemoteEncoder::write(cereal::Event::Reader event) {
 
   if (writer) {
     auto data = edata.getData();
-    writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof() / 1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
+    writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof() / 1000, false, is_key_frame);
   }
 
   // put it in log stream as the idx packet
