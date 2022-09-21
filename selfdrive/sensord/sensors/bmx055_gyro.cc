@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "common/swaglog.h"
+#include "common/util.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
@@ -13,6 +14,13 @@ BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
 int BMX055_Gyro::init() {
   if (!verify_chip_id(BMX055_GYRO_I2C_REG_ID, BMX055_GYRO_CHIP_ID)) return -1;
 
+  int ret = set_register(BMX055_GYRO_I2C_REG_LPM1, BMX055_GYRO_NORMAL_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+  // bmx055 gyro has a 30ms wakeup time from deep suspend mode
+  util::sleep_for(50);
+
   // High bandwidth
   // ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_ENABLE);
   // if (ret < 0) {
@@ -20,7 +28,7 @@ int BMX055_Gyro::init() {
   // }
 
   // Low bandwidth
-  int ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_DISABLE);
+  ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_DISABLE);
   if (ret < 0) {
     goto fail;
   }
@@ -38,6 +46,16 @@ int BMX055_Gyro::init() {
   }
 
 fail:
+  return ret;
+}
+
+int BMX055_Gyro::shutdown()  {
+  // enter deep suspend mode (lowest power mode)
+  int ret = set_register(BMX055_GYRO_I2C_REG_LPM1, BMX055_GYRO_DEEP_SUSPEND);
+  if (ret < 0) {
+    LOGE("Could not move BMX055 GYRO in deep suspend mode!")
+  }
+
   return ret;
 }
 

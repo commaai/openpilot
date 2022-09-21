@@ -4,11 +4,20 @@
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/util.h"
 
 BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Accel::init() {
   if (!verify_chip_id(BMX055_ACCEL_I2C_REG_ID, BMX055_ACCEL_CHIP_ID)) return -1;
+
+  int ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_NORMAL_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+  // bmx055 accel has a 1.3ms wakeup time from deep suspend mode
+  util::sleep_for(10);
+
   // High bandwidth
   // ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_ENABLE);
   // if (ret < 0) {
@@ -16,7 +25,7 @@ int BMX055_Accel::init() {
   // }
 
   // Low bandwidth
-  int ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_DISABLE);
+  ret = set_register(BMX055_ACCEL_I2C_REG_HBW, BMX055_ACCEL_HBW_DISABLE);
   if (ret < 0) {
     goto fail;
   }
@@ -26,6 +35,16 @@ int BMX055_Accel::init() {
   }
 
 fail:
+  return ret;
+}
+
+int BMX055_Accel::shutdown()  {
+  // enter deep suspend mode (lowest power mode)
+  int ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_DEEP_SUSPEND);
+  if (ret < 0) {
+    LOGE("Could not move BMX055 ACCEL in deep suspend mode!")
+  }
+
   return ret;
 }
 
