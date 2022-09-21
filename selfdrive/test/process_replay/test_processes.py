@@ -38,7 +38,6 @@ source_segments = [
 ]
 
 segments = [
-<<<<<<< HEAD
   ("BODY", "regenFA002A80700|2022-09-27--15-37-02--0"),
   ("HYUNDAI", "regenBE53A59065B|2022-09-27--16-52-03--0"),
   ("HYUNDAI", "regen11AA43BCA5F|2022-09-27--15-39-54--0"),
@@ -54,23 +53,6 @@ segments = [
   ("NISSAN", "regenC19D899B46D|2022-09-27--15-59-13--0"),
   ("VOLKSWAGEN", "regenD8F7AC4BD0D|2022-09-27--16-41-45--0"),
   ("MAZDA", "regenFC3F9ECBB64|2022-09-27--16-03-09--0"),
-=======
-  ("BODY", "regen2DC8F25571A|2022-09-19--20-27-40--0"),
-  ("HYUNDAI", "regenB3953B393C0|2022-09-09--14-49-37--0"),
-  ("HYUNDAI", "regen8DB830E5376|2022-09-13--17-24-37--0"),
-  ("TOYOTA", "regen18E356612E5|2022-09-19--20-31-06--0"),
-  ("TOYOTA2", "regen27F23C68CDD|2022-09-19--20-32-51--0"),
-  ("TOYOTA3", "regen1239EA98836|2022-09-19--20-35-03--0"),
-  ("HONDA", "regen0D6EF5F8069|2022-09-19--19-21-29--0"),
-  ("HONDA2", "regen3F7C2EFDC08|2022-09-09--19-41-19--0"),
-  ("CHRYSLER", "regen802C828D685|2022-09-19--17-22-18--0"),
-  ("RAM", "regenBE5DAAEF30F|2022-09-13--17-06-24--0"),
-  ("SUBARU", "regenF8E01F01B92|2022-09-19--17-24-12--0"),
-  ("GM", "regenE19F525721A|2022-09-19--16-44-36--0"),
-  ("NISSAN", "regenFE976D457B5|2022-09-19--20-45-04--0"),
-  ("VOLKSWAGEN", "regen370B58E7BB0|2022-09-19--20-46-50--0"),
-  ("MAZDA", "regen1994C97E977|2022-09-13--16-34-44--0"),
->>>>>>> 2d126f96c (update routes)
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
