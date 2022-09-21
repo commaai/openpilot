@@ -71,12 +71,25 @@ int LSM6DS3_Accel::shutdown() {
   value &= ~(LSM6DS3_ACCEL_INT1_DRDY_XL);
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value);
   if (ret < 0) {
+    LOGE("Could not disable lsm6ds3 acceleration interrupt!")
     goto fail;
   }
-  return ret;
+
+  // enable power-down mode
+  value = 0;
+  ret = read_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value &= 0x0F;
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, value);
+  if (ret < 0) {
+    LOGE("Could not power-down lsm6ds3 accelerometer!")
+    goto fail;
+  }
 
 fail:
-  LOGE("Could not disable lsm6ds3 acceleration interrupt!")
   return ret;
 }
 

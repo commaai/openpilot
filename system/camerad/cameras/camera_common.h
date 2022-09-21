@@ -72,7 +72,7 @@ typedef struct FrameMetadata {
   float processing_time;
 } FrameMetadata;
 
-struct CameraState;
+class CameraState;
 class Debayer;
 
 class CameraBuf {
