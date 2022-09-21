@@ -53,7 +53,7 @@ class RemoteEncoder {
   LoggerdState *s;
   const std::string name;
   std::unique_ptr<VideoWriter> writer;
-  int encoderd_segment_offset = -1;
+  std::optional<int32_t> encoderd_segment_offset;
   std::vector<Message *> q;
   int dropped_frames = 0;
   bool recording = false;
@@ -89,12 +89,12 @@ uint32_t RemoteEncoder::handlePacket(Message *raw_msg) {
   const int32_t segment_num = (event.*getEncodeData)().getIdx().getSegmentNum();
 
   // encoderd can have started long before loggerd
-  if (encoderd_segment_offset == -1) {
+  if (!encoderd_segment_offset) {
     encoderd_segment_offset = segment_num;
     LOGD("%s: has encoderd offset %d", name.c_str(), segment_num);
   }
 
-  const int offset_segment_num = segment_num - encoderd_segment_offset;
+  const int offset_segment_num = segment_num - (*encoderd_segment_offset);
   if (offset_segment_num == s->rotate_segment) {
     // loggerd is now on the segment that matches this packet
     return writePacket(event);
@@ -111,10 +111,9 @@ uint32_t RemoteEncoder::handlePacket(Message *raw_msg) {
     // queue up all the new segment messages, they go in after the rotate
     q.push_back(msg.release());
   } else {
+    // this can happen if you restart encoderd
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->rotate_segment:%d encoderd_segment_offset:%d",
-         name.c_str(), segment_num, s->rotate_segment.load(), encoderd_segment_offset);
-    // this should never happen
-    // actually, this can happen if you restart encoderd
+         name.c_str(), segment_num, s->rotate_segment.load(), *encoderd_segment_offset);
     encoderd_segment_offset = -s->rotate_segment.load();
   }
   return 0;
