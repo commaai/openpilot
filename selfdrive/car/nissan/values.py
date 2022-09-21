@@ -103,6 +103,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       rx_offset=NISSAN_RX_OFFSET,
     ),
   ],
+  ecus={(0x707, None): Ecu.fwdCamera, (0x742, None): Ecu.eps, (0x7e0, None): Ecu.engine,
+        (0x18dad0f1, None): Ecu.gateway, (0x740, None): Ecu.abs, (0x743, None): Ecu.combinationMeter},
 )
 
 FW_VERSIONS = {

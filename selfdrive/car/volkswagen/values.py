@@ -267,6 +267,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.engine, Ecu.transmission],
     ),
   ],
+  ecus={(0x7e0, None): Ecu.engine, (0x7e1, None): Ecu.transmission, (0x715, None): Ecu.srs, (0x712, None): Ecu.eps, (0x757, None): Ecu.fwdRadar},
 )
 
 FW_VERSIONS = {

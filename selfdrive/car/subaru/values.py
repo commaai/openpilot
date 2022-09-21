@@ -85,6 +85,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
   ],
+ecus={(0x7b0, None): Ecu.abs, (0x746, None): Ecu.eps, (0x787, None): Ecu.fwdCamera, (0x7e0, None): Ecu.engine, (0x7e1, None): Ecu.transmission},
 )
 
 FW_VERSIONS = {

@@ -292,6 +292,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
     ),
   ],
+  ecus={(0x7d0, None): Ecu.fwdRadar, (0x7d4, None): Ecu.eps, (0x7c4, None): Ecu.fwdCamera,
+        (0x7e0, None): Ecu.engine, (0x7e1, None): Ecu.transmission, (0x7d1, None): Ecu.abs},
 )
 
 FW_VERSIONS = {
