@@ -7,7 +7,7 @@ from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -275,21 +275,38 @@ FINGERPRINTS = {
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf100)  # Long description
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
+HYUNDAI_VERSION_RESPONSE_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(0xf100)
-HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+HYUNDAI_VERSION_REQUEST_KWP = bytes([0x1a, 0x80])
+HYUNDAI_VERSION_RESPONSE_KWP = bytes([0x1a + 0x40, 0x80])
+
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
+      [HYUNDAI_VERSION_REQUEST_KWP],
+      [HYUNDAI_VERSION_RESPONSE_KWP],
+      whitelist_ecus=[Ecu.eps],  # TODO: verify this works on the cars here that are already missing eps. this didn't respond on EV6, so that's good
+    ),
+    # VCU for EVs, and trans and for all other.
+    # using 0xf181 instead of 0xf100 for transmission should mean a much more reliable version returned
+    # that doesn't change between two values or contain redundant information (much shorter).
+    # can switch back if it doesn't work for all however
+    Request(
+      [StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.UDS_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.hcp, Ecu.transmission],
     ),
     Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
+      [StdQueries.MANUFACTURER_HARDWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_HARDWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine],  # TODO: verify this works on Sonata+other hkg. worked on Optima
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE_LONG],
+      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar],
     ),
   ],
 )
@@ -1322,6 +1339,11 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.05 99210-CV000 211027',
+    ],
+    # TODO: rename to vcu
+    # vehicle control unit, controls engine and transmission-like operation in EVs
+    (Ecu.hcp, 0x7e2, None): [
+      b"CV1A-N0KB0-V200",
     ],
   },
   CAR.IONIQ_5: {
