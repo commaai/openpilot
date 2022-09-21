@@ -150,7 +150,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
     ),
   ],
-ecus={(0x18da10f1, None): Ecu.programmedFuelInjection, (0x18da0bf1, None): Ecu.shiftByWire, (0x18da1ef1, None): Ecu.transmission,
+  ecus={(0x18da10f1, None): Ecu.programmedFuelInjection, (0x18da0bf1, None): Ecu.shiftByWire, (0x18da1ef1, None): Ecu.transmission,
         (0x18da2bf1, None): Ecu.electricBrakeBooster, (0x18da28f1, None): Ecu.vsa, (0x18da30f1, None): Ecu.eps, (0x18da3af1, None): Ecu.unknown,
         (0x18da53f1, None): Ecu.srs, (0x18da60f1, None): Ecu.combinationMeter, (0x18da61f1, None): Ecu.hud, (0x18dab0f1, None): Ecu.fwdRadar,
         (0x18dab5f1, None): Ecu.fwdCamera, (0x18daeff1, None): Ecu.gateway},
