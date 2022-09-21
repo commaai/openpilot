@@ -83,8 +83,10 @@ class TestLoggerd(unittest.TestCase):
       ("GitRemote", "gitRemote", "remote"),
     ]
     params = Params()
+    params.clear_all()
     for k, _, v in fake_params:
       params.put(k, v)
+    params.put("LaikadEphemeris", "abc")
 
     lr = list(LogReader(str(self._gen_bootlog())))
     initData = lr[0].initData
@@ -99,8 +101,14 @@ class TestLoggerd(unittest.TestCase):
       with open("/proc/version") as f:
         self.assertEqual(initData.kernelVersion, f.read())
 
-    for _, k, v in fake_params:
-      self.assertEqual(getattr(initData, k), v)
+    # check params
+    logged_params = {entry.key: entry.value for entry in initData.params.entries}
+    expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemeris'}
+    assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
+    assert logged_params['LaikadEphemeris'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemeris'])}"
+    for param_key, initData_key, v in fake_params:
+      self.assertEqual(getattr(initData, initData_key), v)
+      self.assertEqual(logged_params[param_key].decode(), v)
 
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
