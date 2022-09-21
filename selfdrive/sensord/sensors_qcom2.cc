@@ -28,6 +28,10 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
+// filter first values (0.5sec) as those may contain inaccuracies
+uint64_t init_ts = 0;
+constexpr uint64_t init_delay = 500*1e6;
+
 void interrupt_loop(const std::vector<Sensor *> &sensors, PubMaster &pm) {
   int fd = sensors[0]->gpio_fd;
   struct pollfd fd_list[1] = {0};
@@ -89,6 +93,10 @@ void interrupt_loop(const std::vector<Sensor *> &sensors, PubMaster &pm) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
     }
 
+    if (ts - init_ts < init_delay) {
+      continue;
+    }
+
     std::lock_guard<std::mutex> lock(pm_mutex);
     pm.send("sensorEvents", msg);
   }
@@ -129,6 +137,8 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   }
 
   PubMaster pm({"sensorEvents"});
+  init_ts = nanos_since_boot();
+
   // thread for reading events via interrupts
   std::thread interrupt_thread(&interrupt_loop, std::ref(intr_sensors), std::ref(pm));
 
@@ -145,6 +155,10 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
       non_intr_sensors[i]->get_event(event);
     }
 
+    if (nanos_since_boot() - init_ts < init_delay) {
+      continue;
+    }
+
     {
       std::lock_guard<std::mutex> lock(pm_mutex);
       pm.send("sensorEvents", msg);
@@ -156,7 +170,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   interrupt_thread.join();
 
-  // poweroff sensors, disable interrupts
   for (auto [sensor, _] : all_sensors) {
     sensor->shutdown();
     delete sensor;
