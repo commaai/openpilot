@@ -2,7 +2,6 @@ import os
 import shutil
 import tempfile
 from atomicwrites import AtomicWriter
-from io import BufferedReader
 
 
 def mkdirs_exists_ok(path):
@@ -58,11 +57,10 @@ class NamedTemporaryDir():
     self.close()
 
 
-class CallbackReader(BufferedReader):
+class CallbackReader:
   """Wraps a file, but overrides the read method to also
   call a callback function with the number of bytes read so far."""
   def __init__(self, f, callback, *args):
-    super().__init__(f)
     self.f = f
     self.callback = callback
     self.cb_args = args
