@@ -440,7 +440,6 @@ class Tici(HardwareBase):
     affine_irq(1, 7)    # msm_drm
     affine_irq(1, 250)  # msm_vidc
     affine_irq(1, 8)    # i2c_geni (sensord)
-    affine_irq(1, 336)    # lsm gpio (sensord)
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # *** GPU config ***

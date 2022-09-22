@@ -174,6 +174,9 @@ int sensor_loop() {
     return -1;
   }
 
+  // pin interrupt to core 1
+  system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
+
   PubMaster pm({"sensorEvents"});
   init_ts = nanos_since_boot();
 
@@ -207,7 +210,7 @@ int sensor_loop() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
 
-  for (Sensor *sensor :  sensors) {
+  for (Sensor *sensor : sensors) {
     sensor->shutdown();
   }
 
@@ -218,11 +221,6 @@ int sensor_loop() {
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -18);
-
-  cpu_set_t mask;
-  CPU_ZERO(&mask);
-  CPU_SET(1, &mask);
-  sched_setaffinity(0, sizeof(mask), &mask);
-
+  util::set_core_affinity({1});
   return sensor_loop();
 }
