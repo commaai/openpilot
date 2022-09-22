@@ -3,7 +3,7 @@
 #include "common/queue.h"
 #include "selfdrive/loggerd/encoder/encoder.h"
 
-#define BUF_IN_COUNT 7
+#define BUF_IN_COUNT 6
 #define BUF_OUT_COUNT 6
 
 class V4LEncoder : public VideoEncoder {
