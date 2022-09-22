@@ -3,8 +3,7 @@
 #include "common/queue.h"
 #include "selfdrive/loggerd/encoder/encoder.h"
 
-#define BUF_IN_COUNT 6
-#define BUF_OUT_COUNT 6
+#define BUF_COUNT 6
 
 class V4LEncoder : public VideoEncoder {
 public:
@@ -28,7 +27,6 @@ private:
   static void dequeue_handler(V4LEncoder *e);
   std::thread dequeue_handler_thread;
 
-  VisionBuf buf_in[BUF_IN_COUNT];
-  VisionBuf buf_out[BUF_OUT_COUNT];
-  SafeQueue<unsigned int> free_buf_in;
+  VisionBuf buffers[BUF_COUNT];
+  SafeQueue<unsigned int> free_buffers;
 };

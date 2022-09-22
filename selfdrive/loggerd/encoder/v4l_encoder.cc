@@ -96,8 +96,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
       dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
-      e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
-      uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
+      e->buffers[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
+      uint8_t *buf = (uint8_t*)e->buffers[index].addr;
       int64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
 
       // eof packet, we exit
@@ -116,17 +116,17 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
       if (env_debug_encoder) {
         printf("%20s got(%d) %6d bytes flags %8x idx %3d/%4d id %8d ts %ld lat %.2f ms (%lu frames free)\n",
-          e->filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buf_in.size());
+          e->filename, index, bytesused, flags, e->segment_num, idx, frame_id, ts, millis_since_boot()-(ts/1000.), e->free_buffers.size());
       }
 
       // requeue the buffer
-      queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
+      queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buffers[index]);
     }
 
     if (pfd.revents & POLLOUT) {
       unsigned int index;
       dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
-      e->free_buf_in.push(index);
+      e->free_buffers.push(index);
     }
   }
 }
@@ -231,8 +231,8 @@ void V4LEncoder::encoder_init() {
   }
 
   // allocate buffers
-  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, BUF_OUT_COUNT);
-  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, BUF_IN_COUNT);
+  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, BUF_COUNT);
+  request_buffers(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, BUF_COUNT);
 
   // start encoder
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
@@ -241,13 +241,13 @@ void V4LEncoder::encoder_init() {
   checked_ioctl(fd, VIDIOC_STREAMON, &buf_type);
 
   // queue up output buffers
-  for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
-    buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
-    queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
+  for (unsigned int i = 0; i < BUF_COUNT; i++) {
+    buffers[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
+    queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buffers[i]);
   }
   // queue up input buffers
-  for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
-    free_buf_in.push(i);
+  for (unsigned int i = 0; i < BUF_COUNT; i++) {
+    free_buffers.push(i);
   }
 
   publisher_init();
@@ -267,7 +267,7 @@ int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   };
 
   // reserve buffer
-  int buffer_in = free_buf_in.pop();
+  int buffer_in = free_buffers.pop();
 
   // push buffer
   extras.push(*extra);
@@ -280,8 +280,8 @@ int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
 void V4LEncoder::encoder_close() {
   if (this->is_open) {
     // pop all the frames before closing, then put the buffers back
-    for (int i = 0; i < BUF_IN_COUNT; i++) free_buf_in.pop();
-    for (int i = 0; i < BUF_IN_COUNT; i++) free_buf_in.push(i);
+    for (int i = 0; i < BUF_COUNT; i++) free_buffers.pop();
+    for (int i = 0; i < BUF_COUNT; i++) free_buffers.push(i);
     // no frames, stop the encoder
     struct v4l2_encoder_cmd encoder_cmd = { .cmd = V4L2_ENC_CMD_STOP };
     checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
@@ -303,8 +303,8 @@ V4LEncoder::~V4LEncoder() {
   request_buffers(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, 0);
   close(fd);
 
-  for (int i = 0; i < BUF_OUT_COUNT; i++) {
-    if (buf_out[i].free() != 0) {
+  for (int i = 0; i < BUF_COUNT; i++) {
+    if (buffers[i].free() != 0) {
       LOGE("Failed to free buffer");
     }
   }
