@@ -16,11 +16,10 @@ import sys
 import tempfile
 import threading
 import time
-from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Set, Union, cast
+from typing import Any, BinaryIO, Callable, Dict, List, NamedTuple, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -58,26 +57,16 @@ WS_FRAME_SIZE = 4096
 NetworkType = log.DeviceState.NetworkType
 
 
-@dataclass
-class UploadItem:
+class UploadItem(NamedTuple):
   path: str
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str] = None
+  id: Optional[str]
   retry_count: int = 0
   current: bool = False
   progress: float = 0
   allow_cellular: bool = False
-
-
-@dataclass
-class FileData:
-  fn: str
-  url: str
-  headers: Dict[str, str] = {}
-  allow_cellular: bool = False
-
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
@@ -116,7 +105,8 @@ class UploadQueueCache:
   @staticmethod
   def cache(upload_queue: Queue[UploadItem]) -> None:
     try:
-      items = [asdict(i) for i in upload_queue.queue if isinstance(i, UploadItem) and (i.id not in cancelled_uploads)]
+      queue: List[Optional[UploadItem]] = list(upload_queue.queue)
+      items = [i._asdict() for i in queue if isinstance(i, UploadItem) and (i.id not in cancelled_uploads)]
       UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
@@ -175,8 +165,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
   if item is not None and item.retry_count < MAX_RETRY_COUNT:
     new_retry_count = item.retry_count + 1 if increase_count else item.retry_count
 
-    item = replace(
-      item,
+    item = item._replace(
       retry_count=new_retry_count,
       progress=0,
       current=False
@@ -200,7 +189,7 @@ def upload_handler(end_event: threading.Event) -> None:
     cur_upload_items[tid] = None
 
     try:
-      cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
+      cur_upload_items[tid] = item = upload_queue.get(timeout=1)._replace(current=True)
 
       if item.id in cancelled_uploads:
         cancelled_uploads.remove(item.id)
@@ -228,7 +217,7 @@ def upload_handler(end_event: threading.Event) -> None:
           if metered and (not item.allow_cellular):
             raise AbortTransferException
 
-          cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+          cur_upload_items[tid] = item._replace(progress=cur / sz if sz else 1)
 
         fn = item.path
         try:
@@ -368,16 +357,20 @@ def reboot():
 
 @dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: Dict[str, str]):
-  return uploadFilesToUrls([FileData(fn, url, headers)])
+  return uploadFilesToUrls([{
+    "fn": fn,
+    "url": url,
+    "headers": headers,
+  }])
 
 
 @dispatcher.add_method
-def uploadFilesToUrls(files_data: List[FileData]):
+def uploadFilesToUrls(files_data: List[Dict[str, Any]]):
   items = []
   failed = []
   for file in files_data:
-    fn = file.fn
-    if len(fn) == 0 or fn[0] == '/' or '..' in fn or file.url is None:
+    fn = file.get('fn', '')
+    if len(fn) == 0 or fn[0] == '/' or '..' in fn or 'url' not in file:
       failed.append(fn)
       continue
 
@@ -387,22 +380,22 @@ def uploadFilesToUrls(files_data: List[FileData]):
       continue
 
     # Skip item if already in queue
-    url = file.url.split('?')[0]
+    url = file['url'].split('?')[0]
     if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
       continue
 
     item = UploadItem(
       path=path,
-      url=file.url,
-      headers=file.headers,
+      url=file['url'],
+      headers=file.get('headers', {}),
       created_at=int(time.time() * 1000),
       id=None,
-      allow_cellular=file.allow_cellular,
+      allow_cellular=file.get('allow_cellular', False),
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
-    item = replace(item, id=upload_id)
+    item = item._replace(id=upload_id)
     upload_queue.put_nowait(item)
-    items.append(asdict(item))
+    items.append(item._asdict())
 
   UploadQueueCache.cache(upload_queue)
 
@@ -416,7 +409,7 @@ def uploadFilesToUrls(files_data: List[FileData]):
 @dispatcher.add_method
 def listUploadQueue() -> List[Dict[str, Any]]:
   items = list(upload_queue.queue) + list(cur_upload_items.values())
-  return [asdict(i) for i in items if isinstance(i, UploadItem) and (i.id not in cancelled_uploads)]
+  return [i._asdict() for i in items if (i is not None) and (i.id not in cancelled_uploads)]
 
 
 @dispatcher.add_method
