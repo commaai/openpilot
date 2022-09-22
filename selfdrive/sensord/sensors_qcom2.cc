@@ -175,7 +175,7 @@ int sensor_loop() {
   }
 
   // pin interrupt to core 1
-  system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
+  std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
   PubMaster pm({"sensorEvents"});
   init_ts = nanos_since_boot();
