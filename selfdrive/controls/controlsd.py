@@ -233,6 +233,10 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
+    # no more events while in dashcam mode
+    if self.read_only:
+      return
+
     # Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
     if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL and resume_pressed:
