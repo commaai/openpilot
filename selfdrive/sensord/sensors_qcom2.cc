@@ -90,15 +90,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   }
 }
 
-int sensor_loop() {
-  I2CBus *i2c_bus_imu;
-
-  try {
-    i2c_bus_imu = new I2CBus(I2C_BUS_IMU);
-  } catch (std::exception &e) {
-    LOGE("I2CBus init failed");
-    return -1;
-  }
+int sensor_loop(I2CBus *i2c_bus_imu) {
 
   BMX055_Accel bmx055_accel(i2c_bus_imu, 500*1e6);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu, 500*1e6);
@@ -132,29 +124,26 @@ int sensor_loop() {
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
-  for (auto &sensor : sensors_init) {
-    int err = sensor.first->init();
+  for (auto &[sensor, required] : sensors_init) {
+    int err = sensor->init();
     if (err < 0) {
-      // Fail on required sensors
-      if (sensor.second) {
+      if (required) {
         LOGE("Error initializing sensors");
-        delete i2c_bus_imu;
         return -1;
       }
     } else {
-      if (sensor.first == &bmx055_magn || sensor.first == &mmc5603nj_magn) {
-        has_magnetometer = true;
-      }
 
-      if (!sensor.first->has_interrupt_enabled()) {
-        sensors.push_back(sensor.first);
+      has_magnetometer |= dynamic_cast<BMX055_Magn *>(sensor);
+      has_magnetometer |= dynamic_cast<MMC5603NJ_Magn *>(sensor);
+
+      if (!sensor->has_interrupt_enabled()) {
+        sensors.push_back(sensor);
       }
     }
   }
 
   if (!has_magnetometer) {
     LOGE("No magnetometer present");
-    delete i2c_bus_imu;
     return -1;
   }
 
@@ -197,15 +186,15 @@ int sensor_loop() {
   }
 
   lsm_interrupt_thread.join();
-
-  for (auto sensor : sensors) {
-    sensor->shutdown();
-  }
-
-  delete i2c_bus_imu;
   return 0;
 }
 
 int main(int argc, char *argv[]) {
-  return sensor_loop();
+  try {
+    auto i2c_bus_imu = std::make_unique<I2CBus>(I2C_BUS_IMU);
+    return sensor_loop(i2c_bus_imu.get());
+  } catch (std::exception &e) {
+    LOGE("I2CBus init failed");
+    return -1;
+  }
 }
