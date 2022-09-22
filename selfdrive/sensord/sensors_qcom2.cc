@@ -39,7 +39,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
 
-  uint64_t offset = nanos_since_epoch() - nanos_since_boot();
+  const uint64_t offset = nanos_since_epoch() - nanos_since_boot();
 
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
