@@ -42,7 +42,7 @@ def slope2rot(slope):
   return np.array([[cos, -sin], [sin, cos]])
 
 
-class npqueue:
+class NPQueue:
   def __init__(self, maxlen, rowsize):
     self.maxlen = maxlen
     self.arr = np.empty((0, rowsize))
@@ -61,7 +61,7 @@ class npqueue:
 class PointBuckets:
   def __init__(self, x_bounds, min_points):
     self.x_bounds = x_bounds
-    self.buckets = {bounds: npqueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
+    self.buckets = {bounds: NPQueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
     self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
 
   def bucket_lengths(self):
@@ -80,7 +80,7 @@ class PointBuckets:
         break
 
   def get_points(self, num_points=None):
-    points = np.concatenate([x.arr for x in self.buckets.values() if len(x) > 0])
+    points = np.vstack([x.arr for x in self.buckets.values()])
     if num_points is None:
       return points
     return points[np.random.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
