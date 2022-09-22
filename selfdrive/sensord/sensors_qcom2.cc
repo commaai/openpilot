@@ -133,8 +133,9 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
       }
     } else {
 
-      has_magnetometer |= dynamic_cast<BMX055_Magn *>(sensor);
-      has_magnetometer |= dynamic_cast<MMC5603NJ_Magn *>(sensor);
+      if (sensor == &bmx055_magn || sensor == &mmc5603nj_magn) {
+        has_magnetometer = true;
+      }
 
       if (!sensor->has_interrupt_enabled()) {
         sensors.push_back(sensor);
