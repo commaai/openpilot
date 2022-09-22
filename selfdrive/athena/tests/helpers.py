@@ -1,23 +1,26 @@
 import http.server
+import queue
 import random
 import requests
 import socket
 import time
+
 from functools import wraps
 from multiprocessing import Process
+from typing import Dict, Optional, Union
 
 from common.timeout import Timeout
 
 
 class MockResponse:
-  def __init__(self, json, status_code):
+  def __init__(self, json: str, status_code: int):
     self.json = json
     self.text = json
     self.status_code = status_code
 
 
 class EchoSocket():
-  def __init__(self, port):
+  def __init__(self, port: int):
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.socket.bind(('127.0.0.1', port))
     self.socket.listen(1)
@@ -42,15 +45,15 @@ class EchoSocket():
 
 
 class MockApi():
-  def __init__(self, dongle_id):
+  def __init__(self, dongle_id: str):
     pass
 
-  def get_token(self):
+  def get_token(self) -> str:
     return "fake-token"
 
 
 class MockParams():
-  default_params = {
+  default_params: Dict[str, Union[str, bytes, bool]] = {
     "DongleId": b"0000000000000000",
     "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private",  # noqa: E501
     "GsmMetered": True,
@@ -59,26 +62,26 @@ class MockParams():
   params = default_params.copy()
 
   @staticmethod
-  def restore_defaults():
+  def restore_defaults() -> None:
     MockParams.params = MockParams.default_params.copy()
 
-  def get_bool(self, k):
+  def get_bool(self, k: str) -> bool:
     return bool(MockParams.params.get(k))
 
-  def get(self, k, encoding=None):
+  def get(self, k: str, encoding: Optional[str] = None) -> Optional[Union[str, bytes, bool]]:
     ret = MockParams.params.get(k)
-    if ret is not None and encoding is not None:
+    if isinstance(ret, bytes) and isinstance(encoding, str):
       ret = ret.decode(encoding)
     return ret
 
-  def put(self, k, v):
+  def put(self, k: str, v: Union[str, bytes, bool]) -> None:
     if k not in MockParams.params:
       raise KeyError(f"key: {k} not in MockParams")
     MockParams.params[k] = v
 
 
 class MockWebsocket():
-  def __init__(self, recv_queue, send_queue):
+  def __init__(self, recv_queue: queue.Queue, send_queue: queue.Queue):
     self.recv_queue = recv_queue
     self.send_queue = send_queue
 

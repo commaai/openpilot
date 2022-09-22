@@ -296,7 +296,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(len(items), 0)
 
   @with_http_server
-  def test_listUploadQueueCurrent(self, host):
+  def test_listUploadQueueCurrent(self, host: str):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
@@ -416,6 +416,7 @@ class TestAthenadMethods(unittest.TestCase):
     # ensure the list is all logs except most recent
     sl = athenad.get_logs_to_send_sorted()
     self.assertListEqual(sl, fl[:-1])
+
 
 if __name__ == '__main__':
   unittest.main()
