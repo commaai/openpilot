@@ -54,7 +54,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
 FW_VERSIONS = {
   CAR.AP2_MODELS: {
-    (Ecu.fwdCamera, 0x649, None): [ # DAS (autopilot computer)
+    (Ecu.adas, 0x649, None): [
       b'\x01\x00\x8b\x07\x01\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11',
     ],
     (Ecu.electricBrakeBooster, 0x64d, None): [
