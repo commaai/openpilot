@@ -19,7 +19,7 @@ import time
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import Any, BinaryIO, Callable, Dict, List, NamedTuple, Optional, Set, Union, cast
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -258,7 +258,7 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
     compress = True
 
   with open(path, "rb") as f:
-    data: BinaryIO
+    data: Any
     if compress:
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
       compressed = bz2.compress(f.read())
