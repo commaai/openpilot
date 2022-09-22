@@ -10,6 +10,7 @@ Version 0.8.17 (2022-XX-XX)
   * Improved update experience
   * Border turns grey while overriding steering
   * Added button to flag events that are shown in comma connect
+* AGNOS 6
 
 Version 0.8.16 (2022-08-26)
 ========================
