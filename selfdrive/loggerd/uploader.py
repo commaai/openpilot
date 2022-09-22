@@ -8,7 +8,11 @@ import requests
 import threading
 import time
 import traceback
+
+from dataclasses import dataclass
 from pathlib import Path
+from requests import Response
+from typing import Any, BinaryIO, Iterator, List, Optional, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
@@ -31,19 +35,19 @@ force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
 
-def get_directory_sort(d):
+def get_directory_sort(d: str) -> List[str]:
   return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
 
-def listdir_by_creation(d):
+def listdir_by_creation(d: str) -> List[str]:
   try:
     paths = os.listdir(d)
     paths = sorted(paths, key=get_directory_sort)
     return paths
   except OSError:
     cloudlog.exception("listdir_by_creation failed")
-    return list()
+    return []
 
-def clear_locks(root):
+def clear_locks(root: str) -> None:
   for logname in os.listdir(root):
     path = os.path.join(root, logname)
     try:
@@ -54,16 +58,29 @@ def clear_locks(root):
       cloudlog.exception("clear_locks failed")
 
 
-class Uploader():
-  def __init__(self, dongle_id, root):
+@dataclass
+class UploadFile:
+  name: str
+  key: str
+  fn: str
+
+  def __iter__(self):
+    return iter((self.name, self.key, self.fn))
+
+
+class FakeResponse:
+  def __init__(self):
+    self.status_code = 200
+
+
+class Uploader:
+  def __init__(self, dongle_id: str, root: str):
     self.dongle_id = dongle_id
     self.api = Api(dongle_id)
     self.root = root
 
-    self.upload_thread = None
-
-    self.last_resp = None
-    self.last_exc = None
+    self.last_resp: Optional[Union[Response, FakeResponse]] = None
+    self.last_exc: Optional[Tuple[Exception, str]] = None
 
     self.immediate_size = 0
     self.immediate_count = 0
@@ -76,12 +93,12 @@ class Uploader():
     self.immediate_folders = ["crash/", "boot/"]
     self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
 
-  def get_upload_sort(self, name):
+  def get_upload_sort(self, name: str) -> int:
     if name in self.immediate_priority:
       return self.immediate_priority[name]
     return 1000
 
-  def list_upload_files(self):
+  def list_upload_files(self) -> Iterator[UploadFile]:
     if not os.path.isdir(self.root):
       return
 
@@ -103,7 +120,7 @@ class Uploader():
         fn = os.path.join(path, name)
         # skip files already uploaded
         try:
-          is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME)
+          is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME) is not None
         except OSError:
           cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
           is_uploaded = True  # deleter could have deleted
@@ -117,22 +134,22 @@ class Uploader():
         except OSError:
           pass
 
-        yield (name, key, fn)
+        yield UploadFile(name, key, fn)
 
-  def next_file_to_upload(self):
+  def next_file_to_upload(self) -> Optional[UploadFile]:
     upload_files = list(self.list_upload_files())
 
-    for name, key, fn in upload_files:
-      if any(f in fn for f in self.immediate_folders):
-        return (name, key, fn)
+    for file in upload_files:
+      if any(f in file.fn for f in self.immediate_folders):
+        return file
 
-    for name, key, fn in upload_files:
-      if name in self.immediate_priority:
-        return (name, key, fn)
+    for file in upload_files:
+      if file.name in self.immediate_priority:
+        return file
 
     return None
 
-  def do_upload(self, key, fn):
+  def do_upload(self, key: str, fn: str) -> None:
     try:
       url_resp = self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
       if url_resp.status_code == 412:
@@ -146,17 +163,13 @@ class Uploader():
 
       if fake_upload:
         cloudlog.debug(f"*** WARNING, THIS IS A FAKE UPLOAD TO {url} ***")
-
-        class FakeResponse():
-          def __init__(self):
-            self.status_code = 200
-
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
+          data: BinaryIO
           if key.endswith('.bz2') and not fn.endswith('.bz2'):
-            data = bz2.compress(f.read())
-            data = io.BytesIO(data)
+            compressed = bz2.compress(f.read())
+            data = io.BytesIO(compressed)
           else:
             data = f
 
@@ -165,7 +178,7 @@ class Uploader():
       self.last_exc = (e, traceback.format_exc())
       raise
 
-  def normal_upload(self, key, fn):
+  def normal_upload(self, key: str, fn: str) -> Optional[Union[Response, FakeResponse]]:
     self.last_resp = None
     self.last_exc = None
 
@@ -176,7 +189,7 @@ class Uploader():
 
     return self.last_resp
 
-  def upload(self, name, key, fn, network_type, metered):
+  def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
       sz = os.path.getsize(fn)
     except OSError:
@@ -213,7 +226,7 @@ class Uploader():
 
     return success
 
-  def get_msg(self):
+  def get_msg(self) -> Any:
     msg = messaging.new_message("uploaderState")
     us = msg.uploaderState
     us.immediateQueueSize = int(self.immediate_size / 1e6)
@@ -224,7 +237,7 @@ class Uploader():
     return msg
 
 
-def uploader_fn(exit_event):
+def uploader_fn(exit_event: threading.Event) -> None:
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
@@ -256,13 +269,13 @@ def uploader_fn(exit_event):
         time.sleep(60 if offroad else 5)
       continue
 
-    d = uploader.next_file_to_upload()
-    if d is None:  # Nothing to upload
+    file = uploader.next_file_to_upload()
+    if file is None:  # Nothing to upload
       if allow_sleep:
         time.sleep(60 if offroad else 5)
       continue
 
-    name, key, fn = d
+    name, key, fn = file
 
     # qlogs and bootlogs need to be compressed before uploading
     if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
@@ -279,7 +292,7 @@ def uploader_fn(exit_event):
     pm.send("uploaderState", uploader.get_msg())
 
 
-def main():
+def main() -> None:
   uploader_fn(threading.Event())
 
 
