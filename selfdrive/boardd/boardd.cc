@@ -138,7 +138,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
   // set to ELM327 for ECU knockouts
   for (Panda *panda : pandas) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
   std::string params;
