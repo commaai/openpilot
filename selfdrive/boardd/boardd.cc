@@ -114,9 +114,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   }
 
   // set to ELM327 for fingerprinting
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
-  for (int i = 1; i < pandas.size(); i++) {
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
+  for (Panda *panda : pandas) {
+    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
   }
 
   Params p = Params();
@@ -138,7 +137,9 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   }
 
   // set to ELM327 for ECU knockouts
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
+  for (Panda *panda : pandas) {
+    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  }
 
   std::string params;
   LOGW("waiting for params to set safety model");
