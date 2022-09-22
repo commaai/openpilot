@@ -127,12 +127,13 @@ class TorqueEstimator:
         cache_ltp = log.Event.from_bytes(torque_cache).liveTorqueParameters
         cache_CP = car.CarParams.from_bytes(params_cache)
         if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
-          initial_params = {
-            'latAccelFactor': cache_ltp.latAccelFactorFiltered,
-            'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
-            'frictionCoefficient': cache_ltp.frictionCoefficientFiltered,
-            'points': cache_ltp.points
-          }
+          if cache_ltp.liveValid:
+            initial_params = {
+              'latAccelFactor': cache_ltp.latAccelFactorFiltered,
+              'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
+              'frictionCoefficient': cache_ltp.frictionCoefficientFiltered
+            }
+          initial_params['points'] = cache_ltp.points
           self.decay = cache_ltp.decay
           self.filtered_points.load_points(initial_params['points'])
           cloudlog.info("restored torque params from cache")
