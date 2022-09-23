@@ -128,6 +128,6 @@ bool LSM6DS3_Accel::get_event(MessageBuilder &msg, std::string &service, uint64_
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = PM_ACCEL;
+  service = "accelerometer";
   return true;
 }

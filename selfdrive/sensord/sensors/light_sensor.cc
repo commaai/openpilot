@@ -25,6 +25,6 @@ bool LightSensor::get_event(MessageBuilder &msg, std::string &service, uint64_t 
   event.setTimestamp(start_time);
   event.setLight(value);
 
-  service = PM_LIGHT;
+  service = "lightSensor";
   return true;
 }

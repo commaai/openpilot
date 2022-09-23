@@ -102,6 +102,6 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, std::string &service, uint64
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = PM_MAGN;
+  service = "magnetometer";
   return true;
 }

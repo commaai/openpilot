@@ -153,7 +153,8 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   util::set_core_affinity({1});
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
-  PubMaster pm({PM_GYRO, PM_GYRO_2, PM_ACCEL, PM_ACCEL_2, PM_TEMP, PM_LIGHT, PM_MAGN});
+  PubMaster pm({"gyroscope", "gyroscope2", "accelerometer", "accelerometer2",
+                "temperatureSensor", "lightSensor", "magnetometer"});
   init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts

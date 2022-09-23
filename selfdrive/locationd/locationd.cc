@@ -522,25 +522,11 @@ int Localizer::locationd_thread() {
     }
 
     // 100Hz publish for notcars, 20Hz for cars
-    bool kalman_msg = false;
-    if (!sm["carParams"].getCarParams().getNotCar() && sm.updated("cameraOdometry"))
-    {
-      kalman_msg = true;
-    }
-
-    if (sm["carParams"].getCarParams().getNotCar() && sm.updated("accelerometer") &&
-        sm.updated("gyroscope") && sm.updated("magnetometer"))
-    {
-      kalman_msg = true;
-    }
-
-    if (kalman_msg) {
+    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
+    if (sm.updated(trigger_msg)) {
       bool inputsOK = sm.allAliveAndValid();
       bool gpsOK = this->isGpsOK();
-      bool sensorsOK = true;
-      sensorsOK &= sm.alive("accelerometer") && sm.valid("accelerometer");
-      sensorsOK &= sm.alive("gyroscope") && sm.valid("gyroscope");
-      sensorsOK &= sm.alive("magnetometer") && sm.valid("magnetometer");
+      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope", "magnetometer"});
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);

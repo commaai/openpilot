@@ -86,6 +86,6 @@ bool BMX055_Accel::get_event(MessageBuilder &msg, std::string &service, uint64_t
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = PM_ACCEL_2;
+  service = "accelerometer2";
   return true;
 }

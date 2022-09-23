@@ -3,8 +3,7 @@ import os
 import time
 import unittest
 import numpy as np
-from collections import namedtuple
-from smbus2 import SMBus
+from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
@@ -93,31 +92,17 @@ def get_proc_interrupts(int_pin):
       return ''.join(list(filter(lambda e: e != '', line.split(' ')))[1:6])
   return ""
 
-def is_bmx_available() -> bool:
-  try:
-    # to check one is enough, fails on if bmx is not present
-    with SMBus(SENSOR_BUS, force=True) as bus:
-      bus.read_byte_data(I2C_ADDR_BMX_ACCEL, BMX_REG_ID)
-    return True
-  except Exception:
-    return False
-
 def read_sensor_events(sensor_types, duration_sec):
   esocks = {}
-  events = {}
+  events = defaultdict(list)
   for stype in sensor_types:
     esocks[stype] = messaging.sub_sock(stype, timeout=0.1)
-    events[stype] = []
 
   start_time_sec = time.monotonic()
   while time.monotonic() - start_time_sec < duration_sec:
     for esock in esocks:
       events[esock] += messaging.drain_sock(esocks[esock])
-    time.sleep(0.01)
-
-  if not is_bmx_available():
-    del events['accelerometer2']
-    del events['gyroscope2']
+    time.sleep(0.1)
 
   for etype in events:
     assert len(events[etype]) != 0, f"No {etype} events collected"

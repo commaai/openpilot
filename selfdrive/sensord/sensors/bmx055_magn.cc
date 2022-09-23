@@ -254,7 +254,7 @@ bool BMX055_Magn::get_event(MessageBuilder &msg, std::string &service, uint64_t 
     svec.setV(xyz);
     svec.setStatus(true);
 
-    service = PM_MAGN;
+    service = "magnetometer";
   }
 
   // The BMX055 Magnetometer has no FIFO mode. Self running mode only goes

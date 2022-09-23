@@ -96,6 +96,6 @@ bool BMX055_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t 
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = PM_GYRO_2;
+  service = "gyroscope2";
   return true;
 }

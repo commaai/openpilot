@@ -43,6 +43,6 @@ bool BMX055_Temp::get_event(MessageBuilder &msg, std::string &service, uint64_t 
   event.setTimestamp(start_time);
   event.setTemperature(temp);
 
-  service = PM_TEMP;
+  service = "temperatureSensor";
   return true;
 }

@@ -131,6 +131,6 @@ bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = PM_GYRO;
+  service = "gyroscope";
   return true;
 }
