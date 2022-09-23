@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs
+from math import fabs, erf
 from panda import Panda
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -23,18 +23,18 @@ class CarInterface(CarInterfaceBase):
     params = CarControllerParams()
     return params.ACCEL_MIN, params.ACCEL_MAX
 
+  @staticmethod
+  def get_steer_feedforward_acadia(desired_angle, v_ego):
+    desired_angle *= 0.09760208
+    sigmoid = desired_angle / (1 + fabs(desired_angle))
+    return 0.04689655 * sigmoid * (v_ego + 10.028217)
+  
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
     desired_angle *= 0.02904609
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
-
-  @staticmethod
-  def get_steer_feedforward_acadia(desired_angle, v_ego):
-    desired_angle *= 0.09760208
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.04689655 * sigmoid * (v_ego + 10.028217)
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint == CAR.VOLT:
@@ -43,6 +43,26 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
+
+  @staticmethod
+  def torque_from_lateral_accel_bolteuv(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation, v_ego, g_lat_accel):
+    ANGLE_COEF = 0.16179233
+    ANGLE_COEF2 = 0.20691964
+    SPEED_OFFSET = -7.94958973
+    SIGMOID_COEF_RIGHT = 0.34906506
+    SIGMOID_COEF_LEFT = 0.20000000
+    SPEED_COEF = 0.38748798
+
+    x = ANGLE_COEF * lateral_accel_value * (40.23 / (max(0.2,v_ego + SPEED_OFFSET))**SPEED_COEF)
+    sigmoid = erf(x)
+    out = ((SIGMOID_COEF_RIGHT if lateral_accel_value < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * lateral_accel_value
+    return out + g_lat_accel
+  
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+    if self.CP.carFingerprint == CAR.BOLT_EUV:
+      return self.torque_from_lateral_accel_bolteuv
+    else:
+      return CarInterfaceBase.torque_from_lateral_accel_linear
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
@@ -152,7 +172,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
+    elif candidate == CAR.BOLT_EV:
       ret.minEnableSpeed = -1
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
@@ -161,6 +181,17 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      
+    elif candidate == CAR.BOLT_EUV:
+      ret.minEnableSpeed = -1
+      ret.mass = 1669. + STD_CARGO_KG
+      ret.wheelbase = 2.63779
+      ret.steerRatio = 16.8
+      ret.centerToFront = 2.15  # measured
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
 
     elif candidate == CAR.SILVERADO:
       ret.minEnableSpeed = -1
