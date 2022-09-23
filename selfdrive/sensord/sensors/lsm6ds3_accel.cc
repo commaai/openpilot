@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstring>
 
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -17,9 +18,8 @@ void LSM6DS3_Accel::wait_for_data_ready() {
   do {
     read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
     drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
-  } while(drdy == 0);
+  } while (drdy == 0);
 
-  // read first values and discard
   read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
 }
 
@@ -36,7 +36,7 @@ void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
     do {
       read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
       drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
-    } while(drdy == 0);
+    } while (drdy == 0);
 
     int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
     assert(len == sizeof(buffer));
@@ -51,20 +51,18 @@ void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
   }
 }
 
-int LSM6DS3_Accel::perform_self_test(int test_type) {
-  int i, ret = 0;
+int LSM6DS3_Accel::self_test(int test_type) {
   float val_st_off[3] = {0};
   float val_st_on[3] = {0};
   float test_val[3] = {0};
-  bool test_result = true;
   uint8_t ODR_FS_MO = LSM6DS3_ACCEL_ODR_52HZ; // full scale: +-2g, ODR: 52Hz
 
   // prepare sensor for self-test
 
   // enable block data update and automatic increment
-  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC_BDU);
+  int ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC_BDU);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
@@ -72,7 +70,7 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
   }
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, ODR_FS_MO);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // wait for stable output, and discard first values
@@ -83,7 +81,7 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
   // enable Self Test positive (or negative)
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, test_type);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // wait for stable output, and discard first values
@@ -94,33 +92,28 @@ int LSM6DS3_Accel::perform_self_test(int test_type) {
   // disable sensor
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // disable self test
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, 0);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // calculate the mg values for self test
-  for (i = 0; i < 3; i++) {
-    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  for (int i = 0; i < 3; i++) {
+    test_val[i] = fabs(val_st_on[i] - val_st_off[i]);
   }
 
   // verify test result
-  for (i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     if ((LSM6DS3_ACCEL_MIN_ST_LIMIT_mg > test_val[i]) ||
         (test_val[i] > LSM6DS3_ACCEL_MAX_ST_LIMIT_mg)) {
-      test_result = false;
+      return -1;
     }
   }
 
-  if (!test_result) {
-    ret = -1;
-  }
-
-fail:
   return ret;
 }
 
@@ -128,6 +121,12 @@ int LSM6DS3_Accel::init() {
   int ret = 0;
   uint8_t buffer[1];
   uint8_t value = 0;
+  bool do_self_test = false;
+
+  const char* env_lsm_selftest =env_lsm_selftest = std::getenv("LSM_SELF_TEST");
+  if (env_lsm_selftest != nullptr && strncmp(env_lsm_selftest, "1", 1) == 0) {
+    do_self_test = true;
+  }
 
   ret = read_register(LSM6DS3_ACCEL_I2C_REG_ID, buffer, 1);
   if(ret < 0) {
@@ -145,16 +144,16 @@ int LSM6DS3_Accel::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
-  ret = perform_self_test(LSM6DS3_ACCEL_POSITIVE_TEST);
+  ret = self_test(LSM6DS3_ACCEL_POSITIVE_TEST);
   if (ret < 0) {
     LOGE("LSM6DS3 accel positive self-test failed!");
-    goto fail;
+    if (do_self_test) goto fail;
   }
 
-  ret = perform_self_test(LSM6DS3_ACCEL_NEGATIVE_TEST);
+  ret = self_test(LSM6DS3_ACCEL_NEGATIVE_TEST);
   if (ret < 0) {
     LOGE("LSM6DS3 accel negative self-test failed!");
-    goto fail;
+    if (do_self_test) goto fail;
   }
 
   ret = init_gpio();

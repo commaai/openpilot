@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstring>
 
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -19,9 +20,8 @@ void LSM6DS3_Gyro::wait_for_data_ready() {
   do {
     read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
     drdy &= LSM6DS3_GYRO_DRDY_GDA;
-  } while(drdy == 0);
+  } while (drdy == 0);
 
-  // read first values and discard
   read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
 }
 
@@ -33,7 +33,7 @@ void LSM6DS3_Gyro::read_and_avg_data(float* out_buf) {
     do {
       read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
       drdy &= LSM6DS3_GYRO_DRDY_GDA;
-    } while(drdy == 0);
+    } while (drdy == 0);
 
     int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
     assert(len == sizeof(buffer));
@@ -49,19 +49,17 @@ void LSM6DS3_Gyro::read_and_avg_data(float* out_buf) {
   }
 }
 
-int LSM6DS3_Gyro::perform_self_test(int test_type) {
-  int i, ret = 0;
+int LSM6DS3_Gyro::self_test(int test_type) {
   float val_st_off[3] = {0};
   float val_st_on[3] = {0};
   float test_val[3] = {0};
-  bool test_result = true;
 
   // prepare sensor for self-test
 
   // full scale: 2000dps, ODR: 208Hz
-  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_208HZ | LSM6DS3_GYRO_FS_2000dps);
+  int ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_208HZ | LSM6DS3_GYRO_FS_2000dps);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // wait for stable output, and discard first values
@@ -72,7 +70,7 @@ int LSM6DS3_Gyro::perform_self_test(int test_type) {
   // enable Self Test positive (or negative)
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL5_C, test_type);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // wait for stable output, and discard first values
@@ -83,33 +81,28 @@ int LSM6DS3_Gyro::perform_self_test(int test_type) {
   // disable sensor
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // disable self test
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL5_C, 0);
   if (ret < 0) {
-    goto fail;
+    return ret;
   }
 
   // calculate the mg values for self test
-  for (i = 0; i < 3; i++) {
-    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  for (int i = 0; i < 3; i++) {
+    test_val[i] = fabs(val_st_on[i] - val_st_off[i]);
   }
 
   // verify test result
-  for (i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     if ((LSM6DS3_GYRO_MIN_ST_LIMIT_mdps > test_val[i]) ||
         (test_val[i] > LSM6DS3_GYRO_MAX_ST_LIMIT_mdps)) {
-      test_result = false;
+      return -1;
     }
   }
 
-  if (!test_result) {
-    ret = -1;
-  }
-
-fail:
   return ret;
 }
 
@@ -117,6 +110,12 @@ int LSM6DS3_Gyro::init() {
   int ret = 0;
   uint8_t buffer[1];
   uint8_t value = 0;
+  bool do_self_test = false;
+
+  const char* env_lsm_selftest =env_lsm_selftest = std::getenv("LSM_SELF_TEST");
+  if (env_lsm_selftest != nullptr && strncmp(env_lsm_selftest, "1", 1) == 0) {
+    do_self_test = true;
+  }
 
   ret = read_register(LSM6DS3_GYRO_I2C_REG_ID, buffer, 1);
   if(ret < 0) {
@@ -139,16 +138,16 @@ int LSM6DS3_Gyro::init() {
     goto fail;
   }
 
-  ret = perform_self_test(LSM6DS3_GYRO_POSITIVE_TEST);
-  if (ret < 0) {
-    LOGE("LSM6DS3 accel positive self-test failed!");
-    goto fail;
+  ret = self_test(LSM6DS3_GYRO_POSITIVE_TEST);
+  if (ret < 0 ) {
+    LOGE("LSM6DS3 gyro positive self-test failed!");
+    if (do_self_test) goto fail;
   }
 
-  ret = perform_self_test(LSM6DS3_GYRO_NEGATIVE_TEST);
+  ret = self_test(LSM6DS3_GYRO_NEGATIVE_TEST);
   if (ret < 0) {
-    LOGE("LSM6DS3 accel negative self-test failed!");
-    goto fail;
+    LOGE("LSM6DS3 gyro negative self-test failed!");
+    if (do_self_test) goto fail;
   }
 
   // TODO: set scale. Default is +- 250 deg/s

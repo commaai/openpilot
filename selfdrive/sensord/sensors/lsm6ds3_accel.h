@@ -38,7 +38,7 @@ class LSM6DS3_Accel : public I2CSensor {
   cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 
   // self test functions
-  int perform_self_test(int test_type);
+  int self_test(int test_type);
   void wait_for_data_ready();
   void read_and_avg_data(float* val_st_off);
 public:
