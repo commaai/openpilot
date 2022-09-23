@@ -15,22 +15,22 @@ from system.version import get_commit
 from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
-original_segments = [
+source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI", "d824e27e8c60172c|2022-08-19--17-58-07--2"),     # HYUNDAI.KIA_EV6
+  ("HYUNDAI", "d824e27e8c60172c|2022-09-13--11-26-50--2"),     # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),         # CHRYSLER.RAM_1500
-  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
+  ("RAM", "2f4452b03ccb98f0|2022-09-07--13-55-08--10"),        # CHRYSLER.RAM_1500
+  ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
-  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dashcamOnly is no longer set
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
@@ -38,21 +38,21 @@ original_segments = [
 ]
 
 segments = [
-  ("BODY", "regen660D86654BA|2022-07-06--14-27-15--0"),
-  ("HYUNDAI", "regen114E5FF24D8|2022-07-14--17-08-47--0"),
-  ("HYUNDAI", "d824e27e8c60172c|2022-08-19--17-58-07--2"),
-  ("TOYOTA", "regenBA97410FBEC|2022-07-06--14-26-49--0"),
-  ("TOYOTA2", "regenDEDB1D9C991|2022-07-06--14-54-08--0"),
-  ("TOYOTA3", "regenDDC1FE60734|2022-07-06--14-32-06--0"),
-  ("HONDA", "regenE62960EEC38|2022-07-14--19-33-24--0"),
-  ("HONDA2", "regenC3EBD92F029|2022-07-14--19-29-47--0"),
-  ("CHRYSLER", "regen38346FB33D0|2022-07-14--18-05-26--0"),
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),
-  ("SUBARU", "regen54A1E2BE5AA|2022-07-14--18-07-50--0"),
-  ("GM", "regen76027B408B7|2022-08-16--19-56-58--0"),
-  ("NISSAN", "regenCA0B0DC946E|2022-07-14--18-10-17--0"),
-  ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
-  ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
+  ("BODY", "regen9D38397D30D|2022-09-09--13-12-48--0"),
+  ("HYUNDAI", "regenB3953B393C0|2022-09-09--14-49-37--0"),
+  ("HYUNDAI", "regen8DB830E5376|2022-09-13--17-24-37--0"),
+  ("TOYOTA", "regen8FCBB6F06F1|2022-09-09--13-14-07--0"),
+  ("TOYOTA2", "regen956BFA75300|2022-09-09--14-51-24--0"),
+  ("TOYOTA3", "regenE909BC2F430|2022-09-09--20-44-49--0"),
+  ("HONDA", "regenD1D10209015|2022-09-09--14-53-09--0"),
+  ("HONDA2", "regen3F7C2EFDC08|2022-09-09--19-41-19--0"),
+  ("CHRYSLER", "regen92783EAE66B|2022-09-09--13-15-44--0"),
+  ("RAM", "regenBE5DAAEF30F|2022-09-13--17-06-24--0"),
+  ("SUBARU", "regen8A363AF7E14|2022-09-13--17-20-39--0"),
+  ("GM", "regen31EA3F9A37C|2022-09-09--21-06-36--0"),
+  ("NISSAN", "regenAA21ADE5921|2022-09-09--19-44-37--0"),
+  ("VOLKSWAGEN", "regenA1BF4D17761|2022-09-09--19-46-24--0"),
+  ("MAZDA", "regen1994C97E977|2022-09-13--16-34-44--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done

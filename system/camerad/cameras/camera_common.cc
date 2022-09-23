@@ -65,11 +65,9 @@ private:
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_yuv_type) {
   vipc_server = v;
   this->yuv_type = init_yuv_type;
-
-  const CameraInfo *ci = &s->ci;
-  camera_state = s;
   frame_buf_count = frame_cnt;
 
+  const CameraInfo *ci = &s->ci;
   // RAW frame
   const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
@@ -118,39 +116,29 @@ bool CameraBuf::acquire() {
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
-    release();
     return false;
   }
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
-  cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
-  cl_event event;
-
-  double start_time = millis_since_boot();
-
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
-  debayer->queue(q, camrabuf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
-
+  double start_time = millis_since_boot();
+  cl_event event;
+  debayer->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event);
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
-
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
-                        cur_frame_data.frame_id,
-                        cur_frame_data.timestamp_sof,
-                        cur_frame_data.timestamp_eof,
+    cur_frame_data.frame_id,
+    cur_frame_data.timestamp_sof,
+    cur_frame_data.timestamp_eof,
   };
   cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
   vipc_server->send(cur_yuv_buf, &extra);
 
   return true;
-}
-
-void CameraBuf::release() {
-  // Empty
 }
 
 void CameraBuf::queue(size_t buf_idx) {
@@ -159,7 +147,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -173,6 +161,12 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
+
+  if (c->camera_id == CAMERA_ID_AR0231) {
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+  } else if (c->camera_id == CAMERA_ID_OX03C10) {
+    framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
+  }
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
@@ -324,7 +318,6 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
-    cs->buf.release();
     ++cnt;
   }
   return NULL;
@@ -343,15 +336,17 @@ void camerad_thread() {
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 #endif
 
-  MultiCameraState cameras = {};
-  VisionIpcServer vipc_server("camerad", device_id, context);
+  {
+    MultiCameraState cameras = {};
+    VisionIpcServer vipc_server("camerad", device_id, context);
 
-  cameras_open(&cameras);
-  cameras_init(&vipc_server, &cameras, device_id, context);
+    cameras_open(&cameras);
+    cameras_init(&vipc_server, &cameras, device_id, context);
 
-  vipc_server.start_listener();
+    vipc_server.start_listener();
 
-  cameras_run(&cameras);
+    cameras_run(&cameras);
+  }
 
   CL_CHECK(clReleaseContext(context));
 }
