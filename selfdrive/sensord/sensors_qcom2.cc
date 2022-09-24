@@ -222,5 +222,5 @@ int sensor_loop() {
 }
 
 int main(int argc, char *argv[]) {
- return sensor_loop();
+  return sensor_loop();
 }
