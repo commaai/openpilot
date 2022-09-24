@@ -386,11 +386,12 @@ UploadFilesToUrlResponse = Dict[str, Union[int, List[UploadItemDict], List[str]]
 
 @dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: Dict[str, str]) -> UploadFilesToUrlResponse:
-  return uploadFilesToUrls([{
+  response: UploadFilesToUrlResponse = uploadFilesToUrls([{
     "fn": fn,
     "url": url,
     "headers": headers,
   }])
+  return response
 
 
 @dispatcher.add_method
