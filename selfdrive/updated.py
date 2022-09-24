@@ -52,6 +52,8 @@ OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
+OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
+
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 
@@ -134,12 +136,10 @@ def dismount_overlay() -> None:
 
 def init_overlay() -> None:
 
-  overlay_init_file = Path(os.path.join(BASEDIR, ".overlay_init"))
-
   # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-  if overlay_init_file.is_file():
+  if OVERLAY_INIT.is_file():
     git_dir_path = os.path.join(BASEDIR, ".git")
-    new_files = run(["find", git_dir_path, "-newer", str(overlay_init_file)])
+    new_files = run(["find", git_dir_path, "-newer", str(OVERLAY_INIT)])
     if not len(new_files.splitlines()):
       # A valid overlay already exists
       return
@@ -170,7 +170,7 @@ def init_overlay() -> None:
   consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
   if consistent_file.is_file():
     consistent_file.unlink()
-  overlay_init_file.touch()
+  OVERLAY_INIT.touch()
 
   os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
@@ -419,9 +419,6 @@ def main() -> None:
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
 
-  overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
-  overlay_init.unlink(missing_ok=True)
-
   updater = Updater()
   update_failed_count = 0  # TODO: Load from param?
 
@@ -461,11 +458,11 @@ def main() -> None:
         returncode=e.returncode
       )
       exception = f"command failed: {e.cmd}\n{e.output}"
-      overlay_init.unlink(missing_ok=True)
+      OVERLAY_INIT.unlink(missing_ok=True)
     except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
       exception = str(e)
-      overlay_init.unlink(missing_ok=True)
+      OVERLAY_INIT.unlink(missing_ok=True)
 
     try:
       params.put("UpdaterState", "idle")
