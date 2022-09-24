@@ -502,7 +502,7 @@ int Localizer::locationd_thread() {
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
+  SubMaster sm(service_list);
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
