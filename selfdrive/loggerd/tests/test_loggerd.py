@@ -131,6 +131,7 @@ class TestLoggerd(unittest.TestCase):
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
       managed_processes["loggerd"].start()
       managed_processes["encoderd"].start()
+      sm = messaging.SubMaster({'roadEncodeData'})
 
       fps = 20.0
       for n in range(1, int(num_segs*length*fps)+1):
@@ -143,6 +144,11 @@ class TestLoggerd(unittest.TestCase):
           frame.frameId = n
           pm.send(state, camera_state)
         time.sleep(1.0/fps)
+
+      while (True) :
+        sm.update(100)
+        if not sm.updated['roadEncodeData']:
+          break
 
       managed_processes["loggerd"].stop()
       managed_processes["encoderd"].stop()
