@@ -214,12 +214,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   // run as fast as messages come in
   while (!do_exit && check_all_connected(pandas)) {
     std::unique_ptr<Message> msg(subscriber->receive());
-    if (!msg) {
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
-    }
+    if (!msg) continue;
 
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
