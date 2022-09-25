@@ -25,7 +25,12 @@ int main() {
 
   while (!do_exit) {
     std::unique_ptr<Message> msg(subscriber->receive());
-    if (!msg) continue;
+    if (!msg) {
+      if (errno == EINTR) {
+        do_exit = true;
+      }
+      continue;
+    }
 
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
