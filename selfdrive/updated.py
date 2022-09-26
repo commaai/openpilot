@@ -137,7 +137,7 @@ def dismount_overlay() -> None:
 def init_overlay() -> None:
 
   # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-  if OVERLAY_INIT.is_file():
+  if OVERLAY_INIT.is_file() and os.path.ismount(OVERLAY_MERGED):
     git_dir_path = os.path.join(BASEDIR, ".git")
     new_files = run(["find", git_dir_path, "-newer", str(OVERLAY_INIT)])
     if not len(new_files.splitlines()):
