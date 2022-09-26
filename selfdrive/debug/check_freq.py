@@ -43,7 +43,7 @@ if __name__ == "__main__":
     if t - prev_print > 1:
       print()
       for name in socket_names:
-        dts = np.diff(rcv_times[name])
+        dts = np.diff(rcv_times[name])  # type: ignore
         mean = np.mean(dts)
         print(f"{name}: Freq {1.0 / mean:.2f} Hz, Min {np.min(dts) / mean * 100:.2f}%, Max {np.max(dts) / mean * 100:.2f}%, valid ", all(valids[name]))
 
