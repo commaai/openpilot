@@ -20,6 +20,6 @@ if __name__ == "__main__":
         ts[s].append(m.logMonoTime / 1e6)
 
       if len(ts[s]):
-        d = np.diff(ts[s])
+        d = np.diff(ts[s])  # type: ignore
         print(f"{s:25} {np.mean(d):.2f} {np.std(d):.2f} {np.max(d):.2f} {np.min(d):.2f}")
     time.sleep(1)
