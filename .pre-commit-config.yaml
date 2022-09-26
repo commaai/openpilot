@@ -28,9 +28,10 @@ repos:
     hooks:
     -   id: mypy
         name: mypy
-        entry: pipenv run mypy --config=mypy.ini
-        pass_filenames: false
+        entry: mypy
         language: system
+        types: [python]
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
