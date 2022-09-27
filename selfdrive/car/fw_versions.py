@@ -270,7 +270,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
               car_fw.append(f)
         except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+          cloudlog.error(f"FW query exception: {traceback.format_exc()}")
 
   return car_fw
 
