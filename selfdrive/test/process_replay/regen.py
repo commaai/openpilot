@@ -90,6 +90,22 @@ def replay_device_state(s, msgs):
       rk.keep_time()
 
 
+def replay_sensor_events(s, msgs):
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+  smsgs = [m for m in msgs if m.which() == s]
+  while True:
+    for m in smsgs:
+      new_m = m.as_builder()
+      new_m.logMonoTime = int(sec_since_boot() * 1e9)
+
+      for evt in new_m.sensorEvents:
+        evt.timestamp = new_m.logMonoTime
+
+      pm.send(s, new_m)
+      rk.keep_time()
+
+
 def replay_sensor_event(s, msgs):
   smsgs = [m for m in msgs if m.which() == s]
   if len(smsgs) == 0:
@@ -197,12 +213,12 @@ def migrate_carparams(lr):
 def migrate_sensorEvents(lr):
   all_msgs = []
   for msg in lr:
-    if msg.which() != 'sensorEventsDEPRECATED':
+    if msg.which() != 'sensorEvents':
       all_msgs.append(msg)
       continue
 
     # migrate to split sensor events
-    for evt in msg.sensorEventsDEPRECATED:
+    for evt in msg.sensorEvents:
       # build new message for each sensor type
       sensor_service = ''
       if evt.which() == 'acceleration':
@@ -227,6 +243,9 @@ def migrate_sensorEvents(lr):
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
       all_msgs.append(m.as_reader())
+
+    # append also legacy sensorEvents, to have both (remove later)
+    all_msgs.append(msg)
 
   return all_msgs
 
