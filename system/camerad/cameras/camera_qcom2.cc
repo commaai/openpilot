@@ -52,7 +52,8 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE, // (0xa80*12//8)
-    .extra_height = 16, // this right?
+    .extra_height = 16, // top 2 + bot 14
+    .frame_offset = 2,
   },
 };
 
@@ -821,8 +822,8 @@ void cameras_open(MultiCameraState *s) {
 
   // query icp for MMU handles
   LOG("-- Query ICP for MMU handles");
-  static struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
-  static struct cam_query_cap_cmd query_cap_cmd = {0};
+  struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
+  struct cam_query_cap_cmd query_cap_cmd = {0};
   query_cap_cmd.handle_type = 1;
   query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
   query_cap_cmd.size = sizeof(isp_query_cap_cmd);
@@ -835,7 +836,7 @@ void cameras_open(MultiCameraState *s) {
 
   // subscribe
   LOG("-- Subscribing");
-  static struct v4l2_event_subscription sub = {0};
+  struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
@@ -864,7 +865,7 @@ void CameraState::camera_close() {
     LOGD("stop csiphy: %d", ret);
     // link control stop
     LOG("-- Stop link control");
-    static struct cam_req_mgr_link_control req_mgr_link_control = {0};
+    struct cam_req_mgr_link_control req_mgr_link_control = {0};
     req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
     req_mgr_link_control.session_hdl = session_handle;
     req_mgr_link_control.num_links = 1;
@@ -874,7 +875,7 @@ void CameraState::camera_close() {
 
     // unlink
     LOG("-- Unlink");
-    static struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
+    struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
     req_mgr_unlink_info.session_hdl = session_handle;
     req_mgr_unlink_info.link_hdl = link_handle;
     ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
@@ -1180,10 +1181,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
   }
 }
 
-void camera_autoexposure(CameraState *s, float grey_frac) {
-  s->set_camera_exposure(grey_frac);
-}
-
 static float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_reg) {
   // See AR0231 Developer Guide - page 36
   float slope = (125.0 - 55.0) / ((float)calib1 - (float)calib2);
@@ -1210,15 +1207,8 @@ static void ar0231_process_registers(MultiCameraState *s, CameraState *c, cereal
   framed.setTemperaturesC({temp_0, temp_1});
 }
 
-static void driver_cam_auto_exposure(CameraState *c) {
-  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  const CameraBuf *b = &c->buf;
-  static ExpRect rect = {96, 1832, 2, 242, 1148, 4};
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  driver_cam_auto_exposure(c);
+  c->set_camera_exposure(set_exposure_target(&c->buf, 96, 1832, 2, 242, 1148, 4));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -1254,7 +1244,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
   const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
 void cameras_run(MultiCameraState *s) {
