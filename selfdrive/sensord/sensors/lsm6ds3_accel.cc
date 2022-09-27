@@ -119,9 +119,7 @@ bool LSM6DS3_Accel::get_event(MessageBuilder &msg, uint64_t ts) {
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);
   event.setType(SENSOR_TYPE_ACCELEROMETER);
-  if (ts != 0) {
-    event.setTimestamp(ts);
-  }
+  event.setTimestamp(ts);
 
   float xyz[] = {y, -x, z};
   auto svec = event.initAcceleration();

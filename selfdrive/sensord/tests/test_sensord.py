@@ -78,9 +78,6 @@ ALL_SENSORS = {
   }
 }
 
-SENSOR_BUS = 1
-I2C_ADDR_BMX_ACCEL = 0x18
-BMX_REG_ID = 0x00
 LSM_INT_GPIO = 84
 
 def get_proc_interrupts(int_pin):

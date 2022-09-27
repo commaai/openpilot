@@ -74,7 +74,7 @@ bool BMX055_Accel::get_event(MessageBuilder &msg, uint64_t ts) {
   float y = -read_12_bit(buffer[2], buffer[3]) * scale;
   float z = read_12_bit(buffer[4], buffer[5]) * scale;
 
-  auto event = msg.initEvent().initAccelerometer();
+  auto event = msg.initEvent().initAccelerometer2();
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);

@@ -122,9 +122,7 @@ bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, uint64_t ts) {
   event.setVersion(2);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
-  if (ts != 0) {
-    event.setTimestamp(ts);
-  }
+  event.setTimestamp(ts);
 
   float xyz[] = {y, -x, z};
   auto svec = event.initGyroUncalibrated();

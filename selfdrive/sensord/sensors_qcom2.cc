@@ -30,14 +30,11 @@ ExitHandler do_exit;
 std::mutex pm_mutex;
 uint64_t init_ts = 0;
 
-void send_message(PubMaster& pm, MessageBuilder& msg, std::string &service) {
-  std::lock_guard<std::mutex> lock(pm_mutex);
-  pm.send(service.c_str(), msg);
-}
-
-void interrupt_loop(std::vector<Sensor *>& sensors, PubMaster& pm,
+void interrupt_loop(std::vector<Sensor *>& sensors,
                     std::map<Sensor*, std::string>& sensor_service)
 {
+  PubMaster pm_int({"gyroscope", "accelerometer"});
+
   int fd = sensors[0]->gpio_fd;
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
@@ -83,7 +80,7 @@ void interrupt_loop(std::vector<Sensor *>& sensors, PubMaster& pm,
         continue;
       }
 
-      send_message(pm, msg, sensor_service[sensor]);
+      pm_int.send(sensor_service[sensor].c_str(), msg);
     }
   }
 
@@ -169,14 +166,14 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   util::set_core_affinity({1});
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
-  PubMaster pm({"gyroscope", "gyroscope2", "accelerometer", "accelerometer2",
-                "temperatureSensor", "lightSensor", "magnetometer"});
+  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor",
+                        "lightSensor", "magnetometer"});
   init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
   std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
-                                   std::ref(pm), std::ref(sensor_service));
+                                   std::ref(sensor_service));
 
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
@@ -192,7 +189,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
         continue;
       }
 
-      send_message(pm, msg, sensor_service[sensor]);
+      pm_non_int.send(sensor_service[sensor].c_str(), msg);
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

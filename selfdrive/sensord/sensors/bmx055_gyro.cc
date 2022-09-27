@@ -84,7 +84,7 @@ bool BMX055_Gyro::get_event(MessageBuilder &msg, uint64_t ts) {
   float y = -DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
   float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
-  auto event = msg.initEvent().initGyroscope();
+  auto event = msg.initEvent().initGyroscope2();
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
