@@ -108,8 +108,8 @@ def replay_sensor_events(s, msgs):
 
 def replay_sensor_event(s, msgs):
   smsgs = [m for m in msgs if m.which() == s]
-  if len(smsgs) == 0:
-    return
+  #if len(smsgs) == 0:
+  #  return
 
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
