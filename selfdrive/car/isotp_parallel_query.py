@@ -109,7 +109,7 @@ class IsoTpParallelQuery:
         try:
           dat: Optional[bytes] = msg.recv()
         except Exception:
-          cloudlog.exception("Error processing UDS response")
+          cloudlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
