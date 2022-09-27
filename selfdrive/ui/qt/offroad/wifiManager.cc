@@ -345,7 +345,7 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::updateGsmSettings(bool roaming, QString apn) {
+void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
   if (!lteConnectionPath.path().isEmpty()) {
     bool changes = false;
     bool auto_config = apn.isEmpty();
