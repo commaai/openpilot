@@ -195,7 +195,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
-def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
+def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.2, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
@@ -212,7 +212,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.2, debug=False, progress=False):
   versions = VERSIONS.copy()
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}

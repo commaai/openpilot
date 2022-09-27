@@ -15,7 +15,7 @@ def is_valid_vin(vin: str):
   return re.fullmatch(VIN_RE, vin) is not None
 
 
-def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
+def get_vin(logcan, sendcan, bus, timeout=0.2, retry=5, debug=False):
   addrs = [0x7e0, 0x7e2, 0x18da10f1, 0x18da0ef1]  # engine, VMCU, 29-bit engine, PGM-FI
   for i in range(retry):
     for request, response in ((StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE), (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE)):
