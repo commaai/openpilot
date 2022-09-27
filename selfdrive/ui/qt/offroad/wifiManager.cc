@@ -368,6 +368,13 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
       changes = true;
     }
 
+    int metered_int = metered ? NM_METERED_YES : NM_METERED_UNKNOWN;
+    if (settings.value("connection").value("metered").toInt() != metered_int) {
+      qWarning() << "Changing connection.metered to" << metered_int;
+      settings["connection"]["metered"] = metered_int;
+      changes = true;
+    }
+
     if (changes) {
       call(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
       deactivateConnection(lteConnectionPath);
