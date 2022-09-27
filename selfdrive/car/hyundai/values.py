@@ -7,7 +7,7 @@ from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -282,14 +282,12 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, HYUNDAI_VERSION_REQUEST_LONG],
-      [None, HYUNDAI_VERSION_RESPONSE],
-      bus=0,
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
     ),
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, HYUNDAI_VERSION_REQUEST_MULTI],
-      [None, HYUNDAI_VERSION_RESPONSE],
-      bus=0,
+      [HYUNDAI_VERSION_REQUEST_MULTI],
+      [HYUNDAI_VERSION_RESPONSE],
     ),
   ],
 )
