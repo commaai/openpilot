@@ -2,7 +2,7 @@
 import argparse
 import numpy as np
 from collections import defaultdict, deque
-from typing import DefaultDict, Deque
+from typing import DefaultDict, Deque, MutableSequence
 
 from common.realtime import sec_since_boot
 import cereal.messaging as messaging
@@ -19,7 +19,7 @@ if __name__ == "__main__":
   socket_names = args.socket
   sockets = {}
 
-  rcv_times: DefaultDict[str, Deque[float]] = defaultdict(lambda: deque(maxlen=100))
+  rcv_times: DefaultDict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
   valids: DefaultDict[str, Deque[bool]] = defaultdict(lambda: deque(maxlen=100))
 
   t = sec_since_boot()
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     if t - prev_print > 1:
       print()
       for name in socket_names:
-        dts = np.diff(rcv_times[name])  # type: ignore
+        dts = np.diff(rcv_times[name])
         mean = np.mean(dts)
         print(f"{name}: Freq {1.0 / mean:.2f} Hz, Min {np.min(dts) / mean * 100:.2f}%, Max {np.max(dts) / mean * 100:.2f}%, valid ", all(valids[name]))
 
