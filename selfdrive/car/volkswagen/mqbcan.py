@@ -83,13 +83,13 @@ def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control,
     acc_hold_type = 0
 
   acc_07_values = {
-    "ACC_Distance_to_Stop": 0.75 if stopping else 20.46,
-    "ACC_Hold_Request": stopping,
-    "ACC_Freewheel_Type": 2 if enabled else 0,
-    "ACC_Hold_Type": acc_hold_type,
-    "ACC_Hold_Release": starting,
-    "ACC_Accel_Secondary": 3.02,  # not using this unless and until we understand its impact
-    "ACC_Accel_TSK": accel if enabled else 3.01,
+    "ACC_Anhalteweg": 0.75 if stopping else 20.46,  # Distance to stop
+    "ACC_Freilauf_Info": 2 if enabled else 0,
+    "ACC_Folgebeschl": 3.02,  # not using this unless and until we understand its impact
+    "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
+    "ACC_Anforderung_HMS": acc_hold_type,
+    "ACC_Anfahren": starting,
+    "ACC_Anhalten": stopping,
   }
   commands.append(packer.make_can_msg("ACC_07", bus, acc_07_values))
 
