@@ -23,8 +23,8 @@
 class MMC5603NJ_Magn : public I2CSensor {
   uint8_t get_device_address() {return MMC5603NJ_I2C_ADDR;}
 public:
-  MMC5603NJ_Magn(I2CBus *bus, uint64_t init_delay = 0);
+  MMC5603NJ_Magn(I2CBus *bus);
   int init();
-  bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0);
+  bool get_event(MessageBuilder &msg, uint64_t ts = 0);
   int shutdown();
 };

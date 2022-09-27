@@ -11,9 +11,9 @@ protected:
   std::ifstream file;
 
 public:
-  FileSensor(std::string filename, uint64_t init_delay = 0);
+  FileSensor(std::string filename);
   ~FileSensor();
   int init();
   bool has_interrupt_enabled();
-  virtual bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0) = 0;
+  virtual bool get_event(MessageBuilder &msg, uint64_t ts = 0) = 0;
 };

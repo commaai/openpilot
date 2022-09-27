@@ -63,7 +63,7 @@ static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t 
   return (int16_t)retval;
 }
 
-BMX055_Magn::BMX055_Magn(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
+BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Magn::init() {
   int ret;
@@ -223,7 +223,7 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
 }
 
 
-bool BMX055_Magn::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
+bool BMX055_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
@@ -253,8 +253,6 @@ bool BMX055_Magn::get_event(MessageBuilder &msg, std::string &service, uint64_t 
     auto svec = event.initMagneticUncalibrated();
     svec.setV(xyz);
     svec.setStatus(true);
-
-    service = "magnetometer";
   }
 
   // The BMX055 Magnetometer has no FIFO mode. Self running mode only goes

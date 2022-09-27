@@ -6,7 +6,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-BMX055_Accel::BMX055_Accel(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
+BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Accel::init() {
   int ret = 0;
@@ -62,7 +62,7 @@ int BMX055_Accel::shutdown()  {
   return ret;
 }
 
-bool BMX055_Accel::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
+bool BMX055_Accel::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_ACCEL_I2C_REG_X_LSB, buffer, sizeof(buffer));
@@ -86,6 +86,5 @@ bool BMX055_Accel::get_event(MessageBuilder &msg, std::string &service, uint64_t
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = "accelerometer2";
   return true;
 }

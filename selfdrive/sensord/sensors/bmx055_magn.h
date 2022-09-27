@@ -57,8 +57,8 @@ class BMX055_Magn : public I2CSensor{
   bool perform_self_test();
   bool parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z);
 public:
-  BMX055_Magn(I2CBus *bus, uint64_t init_delay = 0);
+  BMX055_Magn(I2CBus *bus);
   int init();
-  bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0);
+  bool get_event(MessageBuilder &msg, uint64_t ts = 0);
   int shutdown();
 };

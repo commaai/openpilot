@@ -5,7 +5,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
+MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
 int MMC5603NJ_Magn::init() {
   int ret = 0;
@@ -79,7 +79,7 @@ fail:
   return ret;
 }
 
-bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
+bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[9];
   int len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
@@ -102,6 +102,5 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, std::string &service, uint64
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = "magnetometer";
   return true;
 }

@@ -8,8 +8,8 @@
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, uint64_t init_delay, int gpio_nr, bool shared_gpio) :
-  I2CSensor(bus, init_delay, gpio_nr, shared_gpio) {}
+LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) :
+  I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;
@@ -97,7 +97,7 @@ fail:
   return ret;
 }
 
-bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
+bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, uint64_t ts) {
 
   if (has_interrupt_enabled()) {
     // INT1 shared with accel, check STATUS_REG who triggered
@@ -131,6 +131,5 @@ bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = "gyroscope";
   return true;
 }

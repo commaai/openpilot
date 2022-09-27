@@ -6,7 +6,7 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 
-BMX055_Temp::BMX055_Temp(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
+BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Temp::init() {
   int ret = 0;
@@ -28,7 +28,7 @@ fail:
   return ret;
 }
 
-bool BMX055_Temp::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
+bool BMX055_Temp::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[1];
   int len = read_register(BMX055_ACCEL_I2C_REG_TEMP, buffer, sizeof(buffer));
@@ -43,6 +43,5 @@ bool BMX055_Temp::get_event(MessageBuilder &msg, std::string &service, uint64_t 
   event.setTimestamp(start_time);
   event.setTemperature(temp);
 
-  service = "temperatureSensor";
   return true;
 }

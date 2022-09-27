@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <map>
 #include <poll.h>
 #include <linux/gpio.h>
 
@@ -34,7 +35,10 @@ void send_message(PubMaster& pm, MessageBuilder& msg, std::string &service) {
   pm.send(service.c_str(), msg);
 }
 
-void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
+void interrupt_loop(std::vector<Sensor *>& sensors, PubMaster& pm,
+                    std::map<Sensor*, std::string>& sensor_service)
+{
+  int fd = sensors[0]->gpio_fd;
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
@@ -71,16 +75,15 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
 
     for (Sensor *sensor : sensors) {
       MessageBuilder msg;
-      std::string service;
-      if (!sensor->get_event(msg, service, ts)) {
+      if (!sensor->get_event(msg, ts)) {
         continue;
       }
 
-      if (ts - init_ts < sensor->init_delay) {
+      if (!sensor->is_data_valid(init_ts, ts)) {
         continue;
       }
 
-      send_message(pm, msg, service);
+      send_message(pm, msg, sensor_service[sensor]);
     }
   }
 
@@ -91,19 +94,32 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
 }
 
 int sensor_loop(I2CBus *i2c_bus_imu) {
+  BMX055_Accel bmx055_accel(i2c_bus_imu);
+  BMX055_Gyro bmx055_gyro(i2c_bus_imu);
+  BMX055_Magn bmx055_magn(i2c_bus_imu);
+  BMX055_Temp bmx055_temp(i2c_bus_imu);
 
-  BMX055_Accel bmx055_accel(i2c_bus_imu, 500*1e6);
-  BMX055_Gyro bmx055_gyro(i2c_bus_imu, 500*1e6);
-  BMX055_Magn bmx055_magn(i2c_bus_imu, 500*1e6);
-  BMX055_Temp bmx055_temp(i2c_bus_imu, 500*1e6);
+  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, GPIO_LSM_INT);
+  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, GPIO_LSM_INT, true); // GPIO shared with accel
+  LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
-  LSM6DS3_Accel lsm6ds3_accel(i2c_bus_imu, 500*1e6, GPIO_LSM_INT);
-  LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu, 500*1e6, GPIO_LSM_INT, true); // GPIO shared with accel
-  LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu, 500*1e6);
+  MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
 
-  MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu, 500*1e6);
+  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
-  LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw", 500*1e6);
+  std::map<Sensor*, std::string> sensor_service = {
+    {&bmx055_accel, "accelerometer2"},
+    {&bmx055_gyro, "gyroscope2"},
+    {&bmx055_magn, "magnetometer"},
+    {&bmx055_temp, "temperatureSensor"},
+
+    {&lsm6ds3_accel, "accelerometer"},
+    {&lsm6ds3_gyro, "gyroscope"},
+    {&lsm6ds3_temp, "temperatureSensor"},
+
+    {&mmc5603nj_magn, "magnetometer"},
+    {&light, "lightSensor"}
+  };
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
@@ -159,7 +175,8 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
-  std::thread lsm_interrupt_thread(&interrupt_loop, lsm6ds3_accel.gpio_fd, std::ref(lsm_interrupt_sensors), std::ref(pm));
+  std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
+                                   std::ref(pm), std::ref(sensor_service));
 
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
@@ -167,16 +184,15 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
     for (Sensor *sensor : sensors) {
       MessageBuilder msg;
-      std::string service;
-      if (!sensor->get_event(msg, service)) {
+      if (!sensor->get_event(msg)) {
         continue;
       }
 
-      if (nanos_since_boot() - init_ts < sensor->init_delay) {
+      if (!sensor->is_data_valid(init_ts, nanos_since_boot())) {
         continue;
       }
 
-      send_message(pm, msg, service);
+      send_message(pm, msg, sensor_service[sensor]);
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

@@ -9,7 +9,7 @@
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
 
-BMX055_Gyro::BMX055_Gyro(I2CBus *bus, uint64_t init_delay) : I2CSensor(bus, init_delay) {}
+BMX055_Gyro::BMX055_Gyro(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Gyro::init() {
   int ret = 0;
@@ -72,7 +72,7 @@ int BMX055_Gyro::shutdown()  {
   return ret;
 }
 
-bool BMX055_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t ts) {
+bool BMX055_Gyro::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_GYRO_I2C_REG_RATE_X_LSB, buffer, sizeof(buffer));
@@ -96,6 +96,5 @@ bool BMX055_Gyro::get_event(MessageBuilder &msg, std::string &service, uint64_t 
   svec.setV(xyz);
   svec.setStatus(true);
 
-  service = "gyroscope2";
   return true;
 }

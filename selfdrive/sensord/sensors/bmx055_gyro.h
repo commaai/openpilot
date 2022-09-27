@@ -34,8 +34,8 @@
 class BMX055_Gyro : public I2CSensor {
   uint8_t get_device_address() {return BMX055_GYRO_I2C_ADDR;}
 public:
-  BMX055_Gyro(I2CBus *bus, uint64_t init_delay = 0);
+  BMX055_Gyro(I2CBus *bus);
   int init();
-  bool get_event(MessageBuilder &msg, std::string &service, uint64_t ts = 0);
+  bool get_event(MessageBuilder &msg, uint64_t ts = 0);
   int shutdown();
 };
