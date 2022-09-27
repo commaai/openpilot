@@ -58,6 +58,10 @@
         <source>leave blank for automatic configuration</source>
         <translation>空白のままにして、自動設定にします</translation>
     </message>
+    <message>
+        <source>Metered Cellular</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
