@@ -317,6 +317,12 @@ std::optional<health_t> Panda::get_state() {
   return err >= 0 ? std::make_optional(health) : std::nullopt;
 }
 
+std::optional<can_health_t> Panda::get_can_state(uint16_t can_number) {
+  can_health_t can_health {0};
+  int err = usb_read(0xc2, can_number, 0, (unsigned char*)&can_health, sizeof(can_health));
+  return err >= 0 ? std::make_optional(can_health) : std::nullopt;
+}
+
 void Panda::set_loopback(bool loopback) {
   usb_write(0xe5, loopback, 0);
 }

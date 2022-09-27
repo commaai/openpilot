@@ -52,7 +52,8 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_STRIDE, // (0xa80*12//8)
-    .extra_height = 16, // this right?
+    .extra_height = 16, // top 2 + bot 14
+    .frame_offset = 2,
   },
 };
 

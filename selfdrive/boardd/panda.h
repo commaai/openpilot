@@ -16,6 +16,7 @@
 #include "panda/board/health.h"
 
 #define TIMEOUT 0
+#define PANDA_CAN_CNT 3
 #define PANDA_BUS_CNT 4
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
@@ -81,6 +82,7 @@ class Panda {
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
   std::optional<health_t> get_state();
+  std::optional<can_health_t> get_can_state(uint16_t can_number);
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();

@@ -960,11 +960,11 @@ location set</source>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 이 차량에는 openpilot 롱컨트롤을 사용할 수 없습니다.</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 롱컨트롤을 활성화합니다. (실험적)</translation>
     </message>
     <message>
         <source>Disengage On Accelerator Pedal</source>

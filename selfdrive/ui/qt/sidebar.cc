@@ -32,8 +32,9 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
   p.drawText(label_rect, Qt::AlignCenter, label.second);
 }
 
-Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
+Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false) {
   home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
+  flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
@@ -47,15 +48,33 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 }
 
+void Sidebar::mousePressEvent(QMouseEvent *event) {
+  if (onroad && home_btn.contains(event->pos())) {
+    flag_pressed = true;
+    update();
+  } else if (settings_btn.contains(event->pos())) {
+    settings_pressed = true;
+    update();
+  }
+}
+
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
+  if (flag_pressed || settings_pressed) {
+    flag_pressed = settings_pressed = false;
+    update();
+  }
   if (home_btn.contains(event->pos())) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
-  }
-  if (settings_btn.contains(event->pos())) {
+  } else if (settings_btn.contains(event->pos())) {
     emit openSettings();
   }
+}
+
+void Sidebar::offroadTransition(bool offroad) {
+  onroad = !offroad;
+  update();
 }
 
 void Sidebar::updateState(const UIState &s) {
@@ -102,11 +121,12 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   p.fillRect(rect(), QColor(57, 57, 57));
 
-  // static imgs
-  p.setOpacity(0.65);
+  // buttons
+  p.setOpacity(settings_pressed ? 0.65 : 1.0);
   p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
+  p.setOpacity(onroad && flag_pressed ? 0.65 : 1.0);
+  p.drawPixmap(home_btn.x(), home_btn.y(), onroad ? flag_img : home_img);
   p.setOpacity(1.0);
-  p.drawPixmap(home_btn.x(), home_btn.y(), home_img);
 
   // network
   int x = 58;

@@ -35,7 +35,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
      0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
      2.19780220e-03,  4.11497335e-19, -5.62637363e-01,
     -6.66298828e-20,  2.19780220e-03, -3.33626374e-01).finished();
-  
+
   static const auto view_from_device = (Eigen::Matrix<float, 3, 3>() <<
      0.0,  1.0,  0.0,
      0.0,  0.0,  1.0,
