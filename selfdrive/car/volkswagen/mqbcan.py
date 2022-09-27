@@ -99,7 +99,7 @@ def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control,
 def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
   values = {
     "ACC_Status_Anzeige": acc_hud_status,
-    "ACC_Wunschgeschw": set_speed if set_speed < 250 else 327.36,
+    "ACC_Wunschgeschw_02": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
     # TODO: ACC_Abstandsindex for lead car distance, must determine analog vs digital cluster for scaling
