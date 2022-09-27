@@ -2,7 +2,7 @@
 import capnp
 from dataclasses import dataclass, field
 import struct
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import panda.python.uds as uds
 
@@ -53,7 +53,7 @@ class StdQueries:
 @dataclass
 class Request:
   request: List[bytes]
-  response: List[bytes]
+  response: List[Optional[bytes]]
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
