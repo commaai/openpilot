@@ -98,6 +98,14 @@ class TestParams(unittest.TestCase):
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"
 
+  def test_params_all_keys(self):
+    keys = Params().all_keys()
+
+    # sanity checks
+    assert len(keys) > 20
+    assert len(keys) == len(set(keys))
+    assert b"CarParams" in keys
+
 
 if __name__ == "__main__":
   unittest.main()

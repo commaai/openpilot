@@ -29,10 +29,6 @@ class CarInterface(CarInterfaceBase):
     self.yaw_rate_meas = 0.
 
   @staticmethod
-  def compute_gb(accel, speed):
-    return accel
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "mock"

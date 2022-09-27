@@ -28,6 +28,10 @@
 ExitHandler do_exit;
 std::mutex pm_mutex;
 
+// filter first values (0.5sec) as those may contain inaccuracies
+uint64_t init_ts = 0;
+constexpr uint64_t init_delay = 500*1e6;
+
 void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
@@ -88,10 +92,12 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
     }
 
-    {
-      std::lock_guard<std::mutex> lock(pm_mutex);
-      pm.send("sensorEvents", msg);
+    if (ts - init_ts < init_delay) {
+      continue;
     }
+
+    std::lock_guard<std::mutex> lock(pm_mutex);
+    pm.send("sensorEvents", msg);
   }
 
   // poweroff sensors, disable interrupts
@@ -168,7 +174,13 @@ int sensor_loop() {
     return -1;
   }
 
+  // increase interrupt quality by pinning interrupt and process to core 1
+  setpriority(PRIO_PROCESS, 0, -18);
+  util::set_core_affinity({1});
+  std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
+
   PubMaster pm({"sensorEvents"});
+  init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
@@ -187,6 +199,10 @@ int sensor_loop() {
       sensors[i]->get_event(event);
     }
 
+    if (nanos_since_boot() - init_ts < init_delay) {
+      continue;
+    }
+
     {
       std::lock_guard<std::mutex> lock(pm_mutex);
       pm.send("sensorEvents", msg);
@@ -196,12 +212,15 @@ int sensor_loop() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
 
+  for (Sensor *sensor : sensors) {
+    sensor->shutdown();
+  }
+
   lsm_interrupt_thread.join();
   delete i2c_bus_imu;
   return 0;
 }
 
 int main(int argc, char *argv[]) {
-  setpriority(PRIO_PROCESS, 0, -18);
   return sensor_loop();
 }
