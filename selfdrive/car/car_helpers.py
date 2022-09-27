@@ -97,8 +97,8 @@ def fingerprint(logcan, sendcan):
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
+      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
