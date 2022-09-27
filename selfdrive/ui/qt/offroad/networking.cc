@@ -153,15 +153,13 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   ToggleControl *roamingToggle = new ToggleControl(tr("Enable Roaming"), "", "", roamingEnabled);
   QObject::connect(roamingToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     params.putBool("GsmRoaming", state);
-    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.getBool("GsmMetered"));
+    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.getBool("GsmUnmetered"));
   });
   list->addItem(roamingToggle);
 
   // APN settings
   ButtonControl *editApnButton = new ButtonControl(tr("APN Setting"), tr("EDIT"));
   connect(editApnButton, &ButtonControl::clicked, [=]() {
-    const bool roamingEnabled = params.getBool("GsmRoaming");
-    const bool metered = params.getBool("GsmMetered");
     const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
     QString apn = InputDialog::getText(tr("Enter APN"), this, tr("leave blank for automatic configuration"), false, -1, cur_apn).trimmed();
 
@@ -170,22 +168,22 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     } else {
       params.put("GsmApn", apn.toStdString());
     }
-    wifi->updateGsmSettings(roamingEnabled, apn, metered);
+    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmUnmetered"));
   });
   list->addItem(editApnButton);
 
   // Metered toggle
   // TODO: hide when on prime
-  const bool metered = params.getBool("GsmMetered");
-  ToggleControl *meteredToggle = new ToggleControl(tr("Metered Cellular"), "", "", metered);
+  const bool unmeteredOverride = params.getBool("GsmUnmetered");
+  ToggleControl *meteredToggle = new ToggleControl(tr("Metered Cellular"), "", "", !unmeteredOverride);
   QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
-    params.putBool("GsmMetered", state);
+    params.putBool("GsmUnmetered", !state);
     wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
   });
   list->addItem(meteredToggle);
 
   // Set initial config
-  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
+  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), unmeteredOverride);
 
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);

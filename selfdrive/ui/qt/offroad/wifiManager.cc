@@ -345,7 +345,7 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
+void WifiManager::updateGsmSettings(bool roaming, QString apn, bool unmeteredOverride) {
   if (!lteConnectionPath.path().isEmpty()) {
     bool changes = false;
     bool auto_config = apn.isEmpty();
@@ -368,10 +368,10 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
       changes = true;
     }
 
-    int metered_int = metered ? NM_METERED_YES : NM_METERED_UNKNOWN;
-    if (settings.value("connection").value("metered").toInt() != metered_int) {
-      qWarning() << "Changing connection.metered to" << metered_int;
-      settings["connection"]["metered"] = metered_int;
+    int metered = unmeteredOverride ? NM_METERED_NO : NM_METERED_UNKNOWN;
+    if (settings.value("connection").value("metered").toInt() != metered) {
+      qWarning() << "Changing connection.metered to" << metered;
+      settings["connection"]["metered"] = metered;
       changes = true;
     }
 
