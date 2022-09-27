@@ -4,6 +4,7 @@ on:
     branches-ignore:
       - 'testing-closet*'
   pull_request:
+    types: [opened, reopened]
 
 env:
   BASE_IMAGE: openpilot-base
