@@ -26,12 +26,12 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
-    self._FACE_THRESHOLD = 0.7
+    self._FACE_THRESHOLD = 0.5
     self._EYE_THRESHOLD = 0.65
     self._SG_THRESHOLD = 0.9
     self._BLINK_THRESHOLD = 0.87
 
-    self._EE_THRESH11 = 0.35
+    self._EE_THRESH11 = 0.3
     self._EE_THRESH12 = 3.25
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
@@ -49,7 +49,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
 
-    self._POSESTD_THRESHOLD = 0.3
+    self._POSESTD_THRESHOLD = 0.44
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
@@ -261,7 +261,7 @@ class DriverStatus():
     self.eev2 = driver_data.readyProb[0]
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_E2E in self.distracted_types) and \
+    self.driver_distracted = (DistractedType.DISTRACTED_E2E in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types or DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
                                           driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
