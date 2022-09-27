@@ -96,13 +96,11 @@ fail:
 
 bool LSM6DS3_Accel::get_event(MessageBuilder &msg, uint64_t ts) {
 
-  if (has_interrupt_enabled()) {
-    // INT1 shared with gyro, check STATUS_REG who triggered
-    uint8_t status_reg = 0;
-    read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
-    if ((status_reg & LSM6DS3_ACCEL_DRDY_XLDA) == 0) {
-      return false;
-    }
+  // INT1 shared with gyro, check STATUS_REG who triggered
+  uint8_t status_reg = 0;
+  read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+  if ((status_reg & LSM6DS3_ACCEL_DRDY_XLDA) == 0) {
+    return false;
   }
 
   uint8_t buffer[6];
