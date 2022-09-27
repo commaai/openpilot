@@ -1,7 +1,6 @@
 import time
 from collections import defaultdict
 from functools import partial
-from typing import Optional
 
 import cereal.messaging as messaging
 from system.swaglog import cloudlog
