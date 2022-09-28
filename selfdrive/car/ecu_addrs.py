@@ -72,6 +72,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Get addresses of all ECUs')
   parser.add_argument('--debug', action='store_true')
   parser.add_argument('--bus', type=int, default=1)
+  parser.add_argument('--timeout', type=float, default=1.0)
   args = parser.parse_args()
 
   logcan = messaging.sub_sock('can')
@@ -80,7 +81,7 @@ if __name__ == "__main__":
   time.sleep(1.0)
 
   print("Getting ECU addresses ...")
-  ecu_addrs = get_all_ecu_addrs(logcan, sendcan, args.bus, debug=args.debug)
+  ecu_addrs = get_all_ecu_addrs(logcan, sendcan, args.bus, timeout=args.timeout, debug=args.debug)
 
   print()
   print("Found ECUs on addresses:")
