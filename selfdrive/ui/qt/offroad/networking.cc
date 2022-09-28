@@ -144,6 +144,13 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   ipLabel = new LabelControl(tr("IP Address"), wifi->ipv4_address);
   list->addItem(ipLabel);
 
+  // Metered
+  sm.reset(new SubMaster({"deviceState"}));
+  auto deviceState = (*sm)["deviceState"].getDeviceState();
+  bool metered = deviceState.getNetworkMetered();
+  meteredLabel = new LabelControl("Metered", metered ? "Yes" : "No");
+  list->addItem(meteredLabel);
+
   // SSH keys
   list->addItem(new SshToggle());
   list->addItem(new SshControl());
@@ -191,6 +198,11 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
 void AdvancedNetworking::refresh() {
   ipLabel->setText(wifi->ipv4_address);
+
+  auto deviceState = (*sm)["deviceState"].getDeviceState();
+  bool metered = deviceState.getNetworkMetered();
+  meteredLabel->setText(metered ? "Yes" : "No");
+
   tetheringToggle->setEnabled(true);
   update();
 }

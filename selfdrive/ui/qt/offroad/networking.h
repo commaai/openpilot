@@ -39,9 +39,11 @@ public:
 
 private:
   LabelControl* ipLabel;
+  LabelControl* meteredLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
   Params params;
+  std::unique_ptr<SubMaster> sm;
 
 signals:
   void backPress();
