@@ -62,10 +62,6 @@
         <source>Force Unmetered Cellular</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Enable to force cellular network as unmetered.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
