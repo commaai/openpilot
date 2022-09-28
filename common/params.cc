@@ -13,11 +13,6 @@
 
 namespace {
 
-volatile sig_atomic_t params_do_exit = 0;
-void params_sig_handler(int signal) {
-  params_do_exit = 1;
-}
-
 int fsync_dir(const std::string &path) {
   int result = -1;
   int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
@@ -271,20 +266,18 @@ std::string Params::get(const std::string &key, bool block) {
     return util::read_file(getParamPath(key));
   } else {
     // blocking read until successful
-    params_do_exit = 0;
-    void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
-    void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
-
+    sigset_t sigset;
+    sigfillset(&sigset);
     std::string value;
-    while (!params_do_exit) {
-      if (value = util::read_file(getParamPath(key)); !value.empty()) {
-        break;
-      }
-      util::sleep_for(100);  // 0.1 s
+    while (true) {
+      if (value = util::read_file(getParamPath(key)); !value.empty()) break;
+
+      siginfo_t info = {};
+      timespec req = {.tv_nsec = (long)(100 * 1e6)};
+      sigtimedwait(&sigset, &info, &req);
+      if (info.si_signo == SIGINT || info.si_signo == SIGTERM) break;
     }
 
-    std::signal(SIGINT, prev_handler_sigint);
-    std::signal(SIGTERM, prev_handler_sigterm);
     return value;
   }
 }

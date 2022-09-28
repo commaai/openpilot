@@ -57,15 +57,6 @@ cdef class Params:
     cdef string val
     with nogil:
       val = self.p.get(k, block)
-
-    if val == b"":
-      if block:
-        # If we got no value while running in blocked mode
-        # it means we got an interrupt while waiting
-        raise KeyboardInterrupt
-      else:
-        return None
-
     return val if encoding is None else val.decode(encoding)
 
   def get_bool(self, key):
