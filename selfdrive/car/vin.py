@@ -30,7 +30,7 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
           return addr[0], rx_addr, vin.decode()
         cloudlog.error(f"vin query retry ({i+1}) ...")
       except Exception:
-        cloudlog.error(f"VIN query exception: {traceback.format_exc()}")
+        cloudlog.exception(f"VIN query exception")
 
   return 0, 0, VIN_UNKNOWN
 
