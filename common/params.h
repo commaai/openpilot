@@ -42,6 +42,10 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return put(key.c_str(), val ? "1" : "0", 1);
   }
+  void putNonBlocking(const std::string &key, const std::string &val);
+  inline void putBoolNonBlocking(const std::string &key, bool val) {
+    putNonBlocking(key, val ? "1" : "0");
+  }
 
 private:
   std::string params_path;

@@ -3,7 +3,6 @@
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-import threading
 
 cdef extern from "common/params.h":
   cpdef enum ParamKeyType:
@@ -19,6 +18,8 @@ cdef extern from "common/params.h":
     bool getBool(string, bool) nogil
     int remove(string) nogil
     int put(string, string) nogil
+    void putNonBlocking(string, string) nogil
+    void putBoolNonBlocking(string, bool) nogil
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
     string getParamPath(string) nogil
@@ -79,7 +80,7 @@ cdef class Params:
     """
     Warning: This function blocks until the param is written to disk!
     In very rare cases this can take over a second, and your code will hang.
-    Use the put_nonblocking helper function in time sensitive code, but
+    Use the put_non_blocking, put_bool_non_blocking, or the put_nonblocking helper function in time sensitive code, but
     in general try to avoid writing params as much as possible.
     """
     cdef string k = self.check_key(key)
@@ -91,6 +92,17 @@ cdef class Params:
     cdef string k = self.check_key(key)
     with nogil:
       self.p.putBool(k, val)
+
+  def put_non_blocking(self, key, dat):
+    cdef string k = self.check_key(key)
+    cdef string dat_bytes = ensure_bytes(dat)
+    with nogil:
+      self.p.putNonBlocking(k, dat_bytes)
+
+  def put_bool_non_blocking(self, key, bool val):
+    cdef string k = self.check_key(key)
+    with nogil:
+      self.p.putBoolNonBlocking(k, val)
 
   def remove(self, key):
     cdef string k = self.check_key(key)
@@ -105,7 +117,7 @@ cdef class Params:
     return self.p.allKeys()
 
 def put_nonblocking(key, val, d=""):
-  threading.Thread(target=lambda: Params(d).put(key, val)).start()
+  Params(d).put_non_blocking(key, val);
 
 def put_bool_nonblocking(key, bool val, d=""):
-  threading.Thread(target=lambda: Params(d).put_bool(key, val)).start()
+  Params(d).put_bool_non_blocking(key, val);

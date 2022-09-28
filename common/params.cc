@@ -5,8 +5,10 @@
 
 #include <algorithm>
 #include <csignal>
+#include <future>
 #include <unordered_map>
 
+#include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
@@ -325,4 +327,30 @@ void Params::clearAll(ParamKeyType key_type) {
   }
 
   fsync_dir(getParamPath());
+}
+
+struct AsyncWrite {
+  void queue(const std::tuple<std::string, std::string, std::string> &dat) {
+    q.push(dat);
+    // start thread on demand
+    if (!f.valid() || f.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+      f = std::async(std::launch::async, &AsyncWrite::write, this);
+    }
+  }
+
+  void write() {
+    std::tuple<std::string, std::string, std::string> dat;
+    while (q.try_pop(dat, 0)) {
+      auto &[path, key, value] = dat;
+      Params(path).put(key, value);
+    }
+  }
+
+  std::future<void> f;
+  SafeQueue<std::tuple<std::string, std::string, std::string> > q;
+};
+
+void Params::putNonBlocking(const std::string &key, const std::string &val) {
+  static AsyncWrite async_writer;
+  async_writer.queue({params_path, key, val});
 }
