@@ -174,7 +174,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Metered toggle
   const bool unmeteredOverride = params.getBool("GsmUnmetered");
-  ToggleControl *meteredToggle = new ToggleControl(tr("Force Unmetered Cellular"), tr("Enable to force cellular network as unmetered."), "", !unmeteredOverride);
+  ToggleControl *meteredToggle = new ToggleControl(tr("Force Unmetered Cellular"), "", "", !unmeteredOverride);
   QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
     params.putBool("GsmUnmetered", state);
     wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
