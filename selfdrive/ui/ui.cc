@@ -178,7 +178,7 @@ static void update_state(UIState *s) {
     }
   }
   if (sm.updated("wideRoadCameraState")) {
-    scene.light_sensor = sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent();
+    scene.light_sensor = 100.0f - sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent();
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
