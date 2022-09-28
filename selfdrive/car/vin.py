@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import re
-import traceback
 
 import cereal.messaging as messaging
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -30,7 +29,7 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
           return addr[0], rx_addr, vin.decode()
         cloudlog.error(f"vin query retry ({i+1}) ...")
       except Exception:
-        cloudlog.exception(f"VIN query exception")
+        cloudlog.exception("VIN query exception")
 
   return 0, 0, VIN_UNKNOWN
 

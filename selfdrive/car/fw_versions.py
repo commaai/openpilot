@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import traceback
 from collections import defaultdict
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
