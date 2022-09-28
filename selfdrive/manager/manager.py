@@ -127,7 +127,7 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
+  sm = messaging.SubMaster(['deviceState', 'carParams'])
   pm = messaging.PubMaster(['managerState'])
 
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)

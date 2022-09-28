@@ -206,7 +206,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
   set_realtime_priority(1)
 
   if sm is None:
-    sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll=['cameraOdometry'])
+    sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'])
 
   if pm is None:
     pm = messaging.PubMaster(['liveCalibration'])

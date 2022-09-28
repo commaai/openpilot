@@ -359,8 +359,8 @@ if SHARED:
   messaging = abspath([File('cereal/libmessaging_shared.so')])
 else:
   cereal = [File('#cereal/libcereal.a')]
-  messaging = [File('#cereal/libmessaging.a')]
-  visionipc = [File('#cereal/libvisionipc.a')]
+  messaging = [File('#cereal/libmessaging.a'), 'pthread']
+  visionipc = [File('#cereal/libvisionipc.a'), 'pthread']
 
 Export('cereal', 'messaging', 'visionipc')
 

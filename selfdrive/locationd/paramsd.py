@@ -108,7 +108,7 @@ def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
 
   if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
+    sm = messaging.SubMaster(['liveLocationKalman', 'carState'])
   if pm is None:
     pm = messaging.PubMaster(['liveParameters'])
 
