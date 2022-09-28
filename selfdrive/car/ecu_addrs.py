@@ -81,7 +81,7 @@ if __name__ == "__main__":
   time.sleep(1.0)
 
   print("Getting ECU addresses ...")
-  ecu_addrs = get_all_ecu_addrs(logcan, sendcan, args.bus, timeout=args.timeout, debug=args.debug)
+  ecu_addrs = get_all_ecu_addrs(logcan, sendcan, args.bus, args.timeout, debug=args.debug)
 
   print()
   print("Found ECUs on addresses:")
