@@ -339,7 +339,7 @@ class Updater:
     excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
 
     setup_git_options(OVERLAY_MERGED)
-    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
+    output = run(["git", "ls-remote", "--heads", "origin"], OVERLAY_MERGED)
 
     self.branches = defaultdict(lambda: None)
     for line in output.split('\n'):
@@ -375,6 +375,7 @@ class Updater:
     cloudlog.info("git reset in progress")
     cmds = [
       ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
+      ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdf"],
       ["git", "submodule", "init"],
