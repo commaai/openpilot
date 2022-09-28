@@ -106,6 +106,23 @@ def replay_sensor_events(s, msgs):
       rk.keep_time()
 
 
+def replay_sensor_event(s, msgs):
+  smsgs = [m for m in msgs if m.which() == s]
+  #if len(smsgs) == 0:
+  #  return
+
+  pm = messaging.PubMaster([s, ])
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
+
+  while True:
+    for m in smsgs:
+      m = m.as_builder()
+      m.logMonoTime = int(sec_since_boot() * 1e9)
+      getattr(m, m.which()).timestamp = m.logMonoTime
+      pm.send(m.which(), m)
+      rk.keep_time()
+
+
 def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
@@ -193,8 +210,49 @@ def migrate_carparams(lr):
   return all_msgs
 
 
+def migrate_sensorEvents(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() != 'sensorEvents':
+      all_msgs.append(msg)
+      continue
+
+    # migrate to split sensor events
+    for evt in msg.sensorEvents:
+      # build new message for each sensor type
+      sensor_service = ''
+      if evt.which() == 'acceleration':
+        sensor_service = 'accelerometer'
+      elif evt.which() == 'gyro' or evt.which() == 'gyroUncalibrated':
+        sensor_service = 'gyroscope'
+      elif evt.which() == 'light' or evt.which() == 'proximity':
+        sensor_service = 'lightSensor'
+      elif evt.which() == 'magnetic' or evt.which() == 'magneticUncalibrated':
+        sensor_service = 'magnetometer'
+      elif evt.which() == 'temperature':
+        sensor_service = 'temperatureSensor'
+
+      m = messaging.new_message(sensor_service)
+      m.valid = True
+
+      m_dat = getattr(m, sensor_service)
+      m_dat.version = evt.version
+      m_dat.sensor = evt.sensor
+      m_dat.type = evt.type
+      m_dat.source = evt.source
+      setattr(m_dat, evt.which(), getattr(evt, evt.which()))
+
+      all_msgs.append(m.as_reader())
+
+    # append also legacy sensorEvents, to have both (remove later)
+    all_msgs.append(msg)
+
+  return all_msgs
+
+
 def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   lr = migrate_carparams(list(lr))
+  lr = migrate_sensorEvents(list(lr))
   if frs is None:
     frs = dict()
 
@@ -213,6 +271,9 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
+      multiprocessing.Process(target=replay_sensor_event, args=('accelerometer', lr)),
+      multiprocessing.Process(target=replay_sensor_event, args=('gyroscope', lr)),
+      multiprocessing.Process(target=replay_sensor_event, args=('magnetometer', lr)),
     ],
     'pandad': [
       multiprocessing.Process(target=replay_service, args=('can', lr)),
