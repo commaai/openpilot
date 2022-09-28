@@ -83,7 +83,7 @@ I2C_ADDR_LSM = 0x6A
 LSM_INT_GPIO = 84
 
 def read_sensor_events(duration_sec):
-  sensor_events = messaging.sub_sock("sensorEvents", timeout=0.1)
+  sensor_events = messaging.sub_sock("sensorEventsDEPRECATED", timeout=0.1)
   start_time_sec = time.monotonic()
   events = []
   while time.monotonic() - start_time_sec < duration_sec:
@@ -133,7 +133,7 @@ class TestSensord(unittest.TestCase):
 
     seen = set()
     for event in self.events:
-      for measurement in event.sensorEvents:
+      for measurement in event.sensorEventsDEPRECATED:
         # filter unset events (bmx magn)
         if measurement.version == 0:
           continue
@@ -149,7 +149,7 @@ class TestSensord(unittest.TestCase):
       5: [], # gyro
     }
     for event in self.events:
-      for measurement in event.sensorEvents:
+      for measurement in event.sensorEventsDEPRECATED:
         if str(measurement.source).startswith("lsm6ds3") and measurement.sensor in sensor_t:
           sensor_t[measurement.sensor].append(measurement.timestamp)
 
@@ -173,7 +173,7 @@ class TestSensord(unittest.TestCase):
 
     sensor_events = dict()
     for event in  self.events:
-      for measurement in event.sensorEvents:
+      for measurement in event.sensorEventsDEPRECATED:
 
         # filter unset events (bmx magn)
         if measurement.version == 0:
@@ -193,7 +193,7 @@ class TestSensord(unittest.TestCase):
 
     tdiffs = list()
     for event in self.events:
-      for measurement in event.sensorEvents:
+      for measurement in event.sensorEventsDEPRECATED:
 
         # filter unset events (bmx magn)
         if measurement.version == 0:
@@ -221,7 +221,7 @@ class TestSensord(unittest.TestCase):
   def test_sensor_values_sanity_check(self):
     sensor_values = dict()
     for event in self.events:
-      for m in event.sensorEvents:
+      for m in event.sensorEventsDEPRECATED:
 
         # filter unset events (bmx magn)
         if m.version == 0:

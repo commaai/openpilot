@@ -24,10 +24,10 @@ def parseEvents(log_reader):
 
   for m in log_reader:
     # only sensorEvents
-    if m.which() != 'sensorEvents':
+    if m.which() != 'sensorEventsDEPRECATED':
       continue
 
-    for se in m.sensorEvents:
+    for se in m.sensorEventsDEPRECATED:
       # convert data to dictionary
       d = se.to_dict()
 

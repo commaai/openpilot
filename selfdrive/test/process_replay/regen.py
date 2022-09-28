@@ -99,7 +99,7 @@ def replay_sensor_events(s, msgs):
       new_m = m.as_builder()
       new_m.logMonoTime = int(sec_since_boot() * 1e9)
 
-      for evt in new_m.sensorEvents:
+      for evt in new_m.sensorEventsDEPRECATED:
         evt.timestamp = new_m.logMonoTime
 
       pm.send(s, new_m)
@@ -213,12 +213,12 @@ def migrate_carparams(lr):
 def migrate_sensorEvents(lr):
   all_msgs = []
   for msg in lr:
-    if msg.which() != 'sensorEvents':
+    if msg.which() != 'sensorEventsDEPRECATED':
       all_msgs.append(msg)
       continue
 
     # migrate to split sensor events
-    for evt in msg.sensorEvents:
+    for evt in msg.sensorEventsDEPRECATED:
       # build new message for each sensor type
       sensor_service = ''
       if evt.which() == 'acceleration':
@@ -270,7 +270,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
   fake_daemons = {
     'sensord': [
-      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
+      multiprocessing.Process(target=replay_sensor_events, args=('sensorEventsDEPRECATED', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('accelerometer', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('gyroscope', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('magnetometer', lr)),

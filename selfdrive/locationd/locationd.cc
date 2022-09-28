@@ -441,8 +441,8 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
   this->time_check(t);
-  if (log.isSensorEvents()) {
-    this->handle_sensors(t, log.getSensorEvents());
+  if (log.isSensorEventsDEPRECATED()) {
+    this->handle_sensors(t, log.getSensorEventsDEPRECATED());
   } else if (log.isGpsLocation()) {
     this->handle_gps(t, log.getGpsLocation());
   } else if (log.isGpsLocationExternal()) {
@@ -498,7 +498,7 @@ int Localizer::locationd_thread() {
   } else {
     gps_location_socket = "gpsLocationExternal";
   }
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "sensorEventsDEPRECATED", "cameraOdometry", "liveCalibration", "carState", "carParams"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
@@ -521,10 +521,10 @@ int Localizer::locationd_thread() {
     }
 
     // 100Hz publish for notcars, 20Hz for cars
-    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "sensorEvents" : "cameraOdometry";
+    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "sensorEventsDEPRECATED" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
       bool inputsOK = sm.allAliveAndValid();
-      bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
+      bool sensorsOK = sm.alive("sensorEventsDEPRECATED") && sm.valid("sensorEventsDEPRECATED");
       bool gpsOK = this->isGpsOK();
 
       MessageBuilder msg_builder;

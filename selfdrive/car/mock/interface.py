@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
 
     cloudlog.debug("Using Mock Car Interface")
 
-    self.sensor = messaging.sub_sock('sensorEvents')
+    self.sensor = messaging.sub_sock('sensorEventsDEPRECATED')
     self.gps = messaging.sub_sock('gpsLocationExternal')
 
     self.speed = 0.
@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
     # get basic data from phone and gps since CAN isn't connected
     sensors = messaging.recv_sock(self.sensor)
     if sensors is not None:
-      for sensor in sensors.sensorEvents:
+      for sensor in sensors.sensorEventsDEPRECATED:
         if sensor.type == 4:  # gyro
           self.yaw_rate_meas = -sensor.gyro.v[0]
 

@@ -87,7 +87,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
       continue;
     }
 
-    auto events = msg.initEvent().initSensorEvents(collected_events.size());
+    auto events = msg.initEvent().initSensorEventsDEPRECATED(collected_events.size());
     for (int i = 0; i < collected_events.size(); ++i) {
       events.adoptWithCaveats(i, kj::mv(collected_events[i]));
     }
@@ -97,7 +97,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     }
 
     std::lock_guard<std::mutex> lock(pm_mutex);
-    pm.send("sensorEvents", msg);
+    pm.send("sensorEventsDEPRECATED", msg);
   }
 
   // poweroff sensors, disable interrupts
@@ -179,7 +179,7 @@ int sensor_loop() {
   util::set_core_affinity({1});
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
-  PubMaster pm({"sensorEvents"});
+  PubMaster pm({"sensorEventsDEPRECATED"});
   init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
@@ -192,7 +192,7 @@ int sensor_loop() {
 
     const int num_events = sensors.size();
     MessageBuilder msg;
-    auto sensor_events = msg.initEvent().initSensorEvents(num_events);
+    auto sensor_events = msg.initEvent().initSensorEventsDEPRECATED(num_events);
 
     for (int i = 0; i < num_events; i++) {
       auto event = sensor_events[i];
@@ -205,7 +205,7 @@ int sensor_loop() {
 
     {
       std::lock_guard<std::mutex> lock(pm_mutex);
-      pm.send("sensorEvents", msg);
+      pm.send("sensorEventsDEPRECATED", msg);
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

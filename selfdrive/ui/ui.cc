@@ -162,8 +162,8 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (!scene.started && sm.updated("sensorEvents")) {
-    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
+  if (!scene.started && sm.updated("sensorEventsDEPRECATED")) {
+    for (auto sensor : sm["sensorEventsDEPRECATED"].getSensorEventsDEPRECATED()) {
       if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
@@ -229,7 +229,7 @@ void UIState::updateStatus() {
 UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
-    "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "pandaStates", "carParams", "driverMonitoringState", "sensorEventsDEPRECATED", "carState", "liveLocationKalman",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
   });
 
