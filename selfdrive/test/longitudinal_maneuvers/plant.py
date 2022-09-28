@@ -83,6 +83,7 @@ class Plant():
     lead.vLead = float(v_lead)
     lead.vLeadK = float(v_lead)
     lead.aLeadK = float(a_lead)
+    # TODO use real radard logic for this
     lead.aLeadTau = float(_LEAD_ACCEL_TAU)
     lead.status = status
     lead.modelProb = float(prob)
