@@ -31,7 +31,7 @@ repos:
         entry: mypy
         language: system
         types: [python]
-        exclude: '^(pyextra/)|(cereal/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
+        exclude: '^(pyextra/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
