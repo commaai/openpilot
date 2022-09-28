@@ -35,7 +35,6 @@ class TestCamerad(unittest.TestCase):
 
     cls.log_by_frame_id = defaultdict(list)
     for cam, msgs in cls.logs.items():
-      recv_frames = len(msgs)
       expected_frames = service_list[cam].frequency * TEST_TIMESPAN
       assert expected_frames*0.95 < len(msgs) < expected_frames*1.05, f"unexpected frame count {cam}: {expected_frames=}, got {len(msgs)}"
 
