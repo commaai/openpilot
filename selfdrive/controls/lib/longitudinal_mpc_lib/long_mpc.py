@@ -346,7 +346,7 @@ class LongitudinalMpc:
 
       x_obstacles = np.column_stack([lead_0_obstacle,
                                      lead_1_obstacle])
-      cruise_target = T_IDXS * v_cruise + x[0]
+      cruise_target = T_IDXS * np.clip(v_cruise, v_ego - 2.0, 1e3) + x[0]
       xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
       x = np.cumsum(np.insert(xforward, 0, x[0]))
 
