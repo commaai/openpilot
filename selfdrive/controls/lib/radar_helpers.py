@@ -2,9 +2,8 @@ from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
 
 
-# the longer lead decels, the more likely it will keep decelerating
-# TODO is this a good default?
-_LEAD_ACCEL_TAU = 1.5
+# Lead acceleration decay set to 50% at 2s
+_LEAD_ACCEL_TAU = 0.3
 
 # radar tracks
 SPEED, ACCEL = 0, 1   # Kalman filter states enum
@@ -38,12 +37,7 @@ class Track():
 
     self.vLeadK = float(self.kf.x[SPEED][0])
     self.aLeadK = float(self.kf.x[ACCEL][0])
-
-    # Learn if constant acceleration
-    if abs(self.aLeadK) < 0.5:
-      self.aLeadTau = _LEAD_ACCEL_TAU
-    else:
-      self.aLeadTau *= 0.9
+    self.aLeadTau = _LEAD_ACCEL_TAU
 
     self.cnt += 1
 
