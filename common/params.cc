@@ -329,12 +329,12 @@ void Params::clearAll(ParamKeyType key_type) {
   fsync_dir(getParamPath());
 }
 
-struct AsyncWrite {
+struct AsyncWriter {
   void queue(const std::tuple<std::string, std::string, std::string> &dat) {
     q.push(dat);
     // start thread on demand
     if (!f.valid() || f.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
-      f = std::async(std::launch::async, &AsyncWrite::write, this);
+      f = std::async(std::launch::async, &AsyncWriter::write, this);
     }
   }
 
@@ -351,6 +351,6 @@ struct AsyncWrite {
 };
 
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
-  static AsyncWrite async_writer;
+  static AsyncWriter async_writer;
   async_writer.queue({params_path, key, val});
 }
