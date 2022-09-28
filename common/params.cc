@@ -347,7 +347,7 @@ struct AsyncWrite {
   }
 
   std::future<void> f;
-  SafeQueue<std::tuple<std::string, std::string, std::string> > q;
+  SafeQueue<std::tuple<std::string, std::string, std::string>> q;
 };
 
 void Params::putNonBlocking(const std::string &key, const std::string &val) {
