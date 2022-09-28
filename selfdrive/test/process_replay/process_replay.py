@@ -328,7 +328,7 @@ CONFIGS = [
     proc_name="locationd",
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
-      "sensorEvents": [], "accelerometer": [], "gyroscope": [], "magnetometer": [],
+      "sensorEvents": [],
       "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
