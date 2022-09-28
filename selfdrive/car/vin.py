@@ -35,9 +35,19 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
 
 
 if __name__ == "__main__":
+  import argparse
   import time
+
+  parser = argparse.ArgumentParser(description='Get VIN of the car')
+  parser.add_argument('--debug', action='store_true')
+  parser.add_argument('--bus', type=int, default=1)
+  parser.add_argument('--timeout', type=float, default=0.1)
+  parser.add_argument('--retry', type=int, default=5)
+  args = parser.parse_args()
+
   sendcan = messaging.pub_sock('sendcan')
   logcan = messaging.sub_sock('can')
   time.sleep(1)
-  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, debug=False)
+
+  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, args.bus, args.timeout, args.retry, debug=args.debug)
   print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
