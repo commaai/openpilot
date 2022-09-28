@@ -24,18 +24,14 @@ repos:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup
         - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.931
+-   repo: local
     hooks:
     -   id: mypy
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/|(tinygrad/)|(tinygrad_repo/)'
-        additional_dependencies: ['types-PyYAML', 'lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
-        args:
-        - --warn-redundant-casts
-        - --warn-return-any
-        - --warn-unreachable
-        - --warn-unused-ignores
-        #- --html-report=/home/batman/openpilot
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        exclude: '^(pyextra/)|(cereal/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
