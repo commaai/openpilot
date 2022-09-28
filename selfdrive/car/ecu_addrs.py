@@ -62,7 +62,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
                 print(f"Duplicate ECU address: {hex(msg.address)}")
             ecu_responses.add((msg.address, subaddr, msg.src))
   except Exception:
-    cloudlog.warning(f"ECU addr scan exception: {traceback.format_exc()}")
+    cloudlog.exception(f"ECU addr scan exception")
   return ecu_responses
 
 
