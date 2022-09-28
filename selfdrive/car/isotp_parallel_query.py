@@ -1,7 +1,6 @@
 import time
 from collections import defaultdict
 from functools import partial
-from typing import Optional
 
 import cereal.messaging as messaging
 from system.swaglog import cloudlog
@@ -107,11 +106,14 @@ class IsoTpParallelQuery:
 
       for tx_addr, msg in msgs.items():
         try:
-          dat: Optional[bytes] = msg.recv()
+          dat, updated = msg.recv()
         except Exception:
           cloudlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
+
+        if updated:
+          response_timeouts[tx_addr] = time.monotonic() + timeout
 
         if not dat:
           continue
@@ -121,7 +123,6 @@ class IsoTpParallelQuery:
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
-          response_timeouts[tx_addr] = time.monotonic() + timeout
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
