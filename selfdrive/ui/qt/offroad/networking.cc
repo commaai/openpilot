@@ -180,7 +180,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(editApnButton);
 
   // Metered toggle
-  // TODO: hide when on prime
   const bool unmeteredOverride = params.getBool("GsmUnmetered");
   ToggleControl *meteredToggle = new ToggleControl(tr("Metered Cellular"), "", "", !unmeteredOverride);
   QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
