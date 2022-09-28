@@ -38,7 +38,7 @@ if __name__ == "__main__":
   import argparse
   import time
 
-  parser = argparse.ArgumentParser(description='Get addresses of all ECUs')
+  parser = argparse.ArgumentParser(description='Get VIN of the car')
   parser.add_argument('--debug', action='store_true')
   parser.add_argument('--bus', type=int, default=1)
   args = parser.parse_args()
@@ -47,5 +47,5 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
 
-  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, debug=False)
+  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, debug=args.debug)
   print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
