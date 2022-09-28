@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import capnp
 import time
-import traceback
 from typing import Optional, Set, Tuple
 
 import cereal.messaging as messaging
@@ -62,7 +61,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
                 print(f"Duplicate ECU address: {hex(msg.address)}")
             ecu_responses.add((msg.address, subaddr, msg.src))
   except Exception:
-    cloudlog.exception(f"ECU addr scan exception")
+    cloudlog.exception("ECU addr scan exception")
   return ecu_responses
 
 
