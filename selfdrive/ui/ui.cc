@@ -178,15 +178,8 @@ static void update_state(UIState *s) {
     }
   }
   if (sm.updated("wideRoadCameraState")) {
-    auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
-
-    float max_lines = 1618;
-    float max_gain = 10.0;
-    float max_ev = max_lines * max_gain / 6;
-
-    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+    auto cs = sm["wideRoadCameraState"].getWideRoadCameraState();
+    scene.light_sensor = cs.getExposureValPercent();
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
