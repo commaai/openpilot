@@ -59,7 +59,11 @@
         <translation>留空以自动配置</translation>
     </message>
     <message>
-        <source>Metered Cellular</source>
+        <source>Force Unmetered Cellular</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable to force cellular network as unmetered.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
