@@ -377,7 +377,7 @@ class Updater:
       ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
       ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
       ["git", "reset", "--hard"],
-      ["git", "clean", "-xdf"],
+      ["git", "clean", "-xdff"],
       ["git", "submodule", "init"],
       ["git", "submodule", "update"],
     ]
