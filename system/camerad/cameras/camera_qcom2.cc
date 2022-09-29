@@ -843,8 +843,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
-      gain_bytes = Params().get("CameraDebugExpGain");
-      time_bytes = Params().get("CameraDebugExpTime");
+    gain_bytes = Params().get("CameraDebugExpGain");
+    time_bytes = Params().get("CameraDebugExpTime");
   }
 
   if (gain_bytes.size() > 0 && time_bytes.size() > 0) {

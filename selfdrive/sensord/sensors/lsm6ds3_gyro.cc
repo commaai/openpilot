@@ -74,12 +74,25 @@ int LSM6DS3_Gyro::shutdown() {
   value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
   ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
   if (ret < 0) {
+    LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
     goto fail;
   }
-  return ret;
+
+  // enable power-down mode
+  value = 0;
+  ret = read_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value &= 0x0F;
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, value);
+  if (ret < 0) {
+    LOGE("Could not power-down lsm6ds3 gyroscope!")
+    goto fail;
+  }
 
 fail:
-  LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
   return ret;
 }
 

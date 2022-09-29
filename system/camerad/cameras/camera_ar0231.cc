@@ -15,14 +15,14 @@ const size_t AR0231_STATS_HEIGHT = 2 + 8;
 CameraAR0231::CameraAR0231() {
   id = CAMERA_ID_OX03C10;
   ci = {
-      .frame_width = FRAME_WIDTH,
-      .frame_height = FRAME_HEIGHT,
-      .frame_stride = FRAME_STRIDE,
-      .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
+    .frame_width = FRAME_WIDTH,
+    .frame_height = FRAME_HEIGHT,
+    .frame_stride = FRAME_STRIDE,
+    .extra_height = AR0231_REGISTERS_HEIGHT + AR0231_STATS_HEIGHT,
 
-      .registers_offset = 0,
-      .frame_offset = AR0231_REGISTERS_HEIGHT,
-      .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
+    .registers_offset = 0,
+    .frame_offset = AR0231_REGISTERS_HEIGHT,
+    .stats_offset = AR0231_REGISTERS_HEIGHT + FRAME_HEIGHT,
   };
 
   dc_gain_factor = 2.5;
