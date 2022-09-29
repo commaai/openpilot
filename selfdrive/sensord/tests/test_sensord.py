@@ -51,7 +51,7 @@ Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
   Sensor.rpr0521: {
-    SensorConfig("light", 0, 150),
+    SensorConfig("light", 0, 1023),
   },
 
   Sensor.lsm6ds3: {
