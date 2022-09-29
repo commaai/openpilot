@@ -22,4 +22,3 @@ if [ ! -d LimeGPS ]; then
   make
   cd ..
 fi
-
