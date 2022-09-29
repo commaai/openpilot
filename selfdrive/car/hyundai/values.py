@@ -916,10 +916,14 @@ FW_VERSIONS = {
     ],
   },
   CAR.GENESIS_GV70: {
-    (Ecu.transmission, 0x7e1, None): [b'\xf1\x8795441-47785\x00\xf1\x89G16\x00\x00\x00\x00\x00\x00\x00\xf1\x82SJK1T25XXXG16NS0'],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8795441-47785\x00\xf1\x89G16\x00\x00\x00\x00\x00\x00\x00\xf1\x82SJK1T25XXXG16NS0',
+      b'\xf1\x8795441-47785\x00\xf1\x89G16\x00\x00\x00\x00\x00\x00\x00\xf1\x82SJK1T25XXXG16NS1',
+    ],
     (Ecu.engine, 0x7e0, None): [b'\xf1\x82JKBWD5TMA3XXXH0E'],
     (Ecu.eps, 0x7d4, None): [b'\xf1\x8757700AR000 \xf1\x00JK  MDPS R 1.00 1.04 57700AR000  4JKDR104'],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.04 99211-AR000 210204'],
+    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00JK1_ SCC FHCUP      1.00 1.02 99110-AR000         '],
   },
   CAR.GENESIS_G90: {
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x87VDGMD15866192DD3x\x88x\x89wuFvvfUf\x88vWwgwwwvfVgx\x87o\xff\xbc^\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7'],
