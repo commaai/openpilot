@@ -98,7 +98,7 @@ def fingerprint(logcan, sendcan):
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      # PubSockets need some time to initialize
+      # Give some time to let sendcan connect to boardd
       time.sleep(0.2)
       # Sending a message to the functional addresses solves skipped iso-tp frames
       send_functional_tester_present(logcan, sendcan, bus)
