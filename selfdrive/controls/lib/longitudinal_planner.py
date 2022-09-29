@@ -111,7 +111,7 @@ class LongitudinalPlanner:
 
     if reset_state:
       self.v_desired_filter.x = v_ego
-      # Clip aEgo to cruise limits while not active to prevent large accelerations when becoming active
+      # Clip aEgo to cruise limits to prevent large accelerations when becoming active
       self.a_desired = clip(sm['carState'].aEgo, *accel_limits)
 
     # Prevent divergence, smooth in current v_ego
