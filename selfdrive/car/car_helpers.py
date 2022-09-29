@@ -91,7 +91,7 @@ def fingerprint(logcan, sendcan):
 
   # *** CAN fingerprinting ***
 
-  finger = gen_empty_fingerprint()
+  can_finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
   max_fingerprint_frames = 100  # 1s
@@ -108,9 +108,9 @@ def fingerprint(logcan, sendcan):
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
-        if can.src not in finger:
-          finger[can.src] = {}
-        finger[can.src][can.address] = len(can.dat)
+        if can.src not in can_finger:
+          can_finger[can.src] = {}
+        can_finger[can.src][can.address] = len(can.dat)
 
       for b in candidate_cars:
         # Ignore extended messages and VIN query response.
@@ -184,7 +184,7 @@ def fingerprint(logcan, sendcan):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
-  return car_fingerprint, finger, vin, car_fw, source, exact_match
+  return car_fingerprint, can_finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan):
