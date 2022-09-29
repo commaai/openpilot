@@ -22,7 +22,7 @@ To communicate with LimeSDR the LimeSuite is needed it abstracts the direct
 communication. It also contains examples for a quick start.
 
 The latest stable version(22.09) does not have the corresponding firmware
-download available at https://downloads.myriadrf.org/project/limesuite. Therfore
+download available at https://downloads.myriadrf.org/project/limesuite. Therefore
 version 20.10 was chosen.
 
 A successull build should give something like:
