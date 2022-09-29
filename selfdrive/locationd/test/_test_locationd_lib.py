@@ -51,23 +51,23 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
 
   @unittest.skip("temporarily disabled due to false positives")
   def test_device_fell(self):
-    msg = messaging.new_message('sensorEvents', 1)
-    msg.sensorEvents[0].sensor = 1
-    msg.sensorEvents[0].timestamp = msg.logMonoTime
-    msg.sensorEvents[0].type = 1
-    msg.sensorEvents[0].init('acceleration')
-    msg.sensorEvents[0].acceleration.v = [10.0, 0.0, 0.0]  # zero with gravity
+    msg = messaging.new_message('accelerometer')
+    msg.accelerometer.sensor = 1
+    msg.accelerometer.timestamp = msg.logMonoTime
+    msg.accelerometer.type = 1
+    msg.accelerometer.init('acceleration')
+    msg.accelerometer.acceleration.v = [10.0, 0.0, 0.0]  # zero with gravity
     self.localizer_handle_msg(msg)
 
     ret = self.localizer_get_msg()
     self.assertTrue(ret.liveLocationKalman.deviceStable)
 
-    msg = messaging.new_message('sensorEvents', 1)
-    msg.sensorEvents[0].sensor = 1
-    msg.sensorEvents[0].timestamp = msg.logMonoTime
-    msg.sensorEvents[0].type = 1
-    msg.sensorEvents[0].init('acceleration')
-    msg.sensorEvents[0].acceleration.v = [50.1, 0.0, 0.0]  # more than 40 m/s**2
+    msg = messaging.new_message('accelerometer')
+    msg.accelerometer.sensor = 1
+    msg.accelerometer.timestamp = msg.logMonoTime
+    msg.accelerometer.type = 1
+    msg.accelerometer.init('acceleration')
+    msg.accelerometer.acceleration.v = [50.1, 0.0, 0.0]  # more than 40 m/s**2
     self.localizer_handle_msg(msg)
 
     ret = self.localizer_get_msg()

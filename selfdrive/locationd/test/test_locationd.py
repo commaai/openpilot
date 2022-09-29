@@ -14,7 +14,8 @@ from selfdrive.manager.process_config import managed_processes
 
 class TestLocationdProc(unittest.TestCase):
   MAX_WAITS = 1000
-  LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'sensorEvents', 'liveCalibration']
+  LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'liveCalibration',
+              'accelerometer', 'gyroscope', 'magnetometer']
 
   def setUp(self):
     random.seed(123489234)

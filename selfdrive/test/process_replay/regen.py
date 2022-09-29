@@ -90,30 +90,10 @@ def replay_device_state(s, msgs):
       rk.keep_time()
 
 
-def replay_sensor_events(s, msgs):
-  pm = messaging.PubMaster([s, ])
-  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
-  smsgs = [m for m in msgs if m.which() == s]
-  while True:
-    for m in smsgs:
-      new_m = m.as_builder()
-      new_m.logMonoTime = int(sec_since_boot() * 1e9)
-
-      for evt in new_m.sensorEvents:
-        evt.timestamp = new_m.logMonoTime
-
-      pm.send(s, new_m)
-      rk.keep_time()
-
-
 def replay_sensor_event(s, msgs):
-  smsgs = [m for m in msgs if m.which() == s]
-  #if len(smsgs) == 0:
-  #  return
-
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
-
+  smsgs = [m for m in msgs if m.which() == s]
   while True:
     for m in smsgs:
       m = m.as_builder()
@@ -213,12 +193,12 @@ def migrate_carparams(lr):
 def migrate_sensorEvents(lr):
   all_msgs = []
   for msg in lr:
-    if msg.which() != 'sensorEvents':
+    if msg.which() != 'sensorEventsDEPRECATED':
       all_msgs.append(msg)
       continue
 
     # migrate to split sensor events
-    for evt in msg.sensorEvents:
+    for evt in msg.sensorEventsDEPRECATED:
       # build new message for each sensor type
       sensor_service = ''
       if evt.which() == 'acceleration':
@@ -244,9 +224,6 @@ def migrate_sensorEvents(lr):
 
       all_msgs.append(m.as_reader())
 
-    # append also legacy sensorEvents, to have both (remove later)
-    all_msgs.append(msg)
-
   return all_msgs
 
 
@@ -270,7 +247,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
   fake_daemons = {
     'sensord': [
-      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('accelerometer', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('gyroscope', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('magnetometer', lr)),
