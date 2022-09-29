@@ -42,7 +42,7 @@ def slope2rot(slope):
   return np.array([[cos, -sin], [sin, cos]])
 
 
-class npqueue:
+class NPQueue:
   def __init__(self, maxlen, rowsize):
     self.maxlen = maxlen
     self.arr = np.empty((0, rowsize))
@@ -61,7 +61,7 @@ class npqueue:
 class PointBuckets:
   def __init__(self, x_bounds, min_points):
     self.x_bounds = x_bounds
-    self.buckets = {bounds: npqueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
+    self.buckets = {bounds: NPQueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
     self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
 
   def bucket_lengths(self):
@@ -80,7 +80,7 @@ class PointBuckets:
         break
 
   def get_points(self, num_points=None):
-    points = np.concatenate([x.arr for x in self.buckets.values() if len(x) > 0])
+    points = np.vstack([x.arr for x in self.buckets.values()])
     if num_points is None:
       return points
     return points[np.random.choice(np.arange(len(points)), min(len(points), num_points), replace=False)]
@@ -127,12 +127,13 @@ class TorqueEstimator:
         cache_ltp = log.Event.from_bytes(torque_cache).liveTorqueParameters
         cache_CP = car.CarParams.from_bytes(params_cache)
         if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
-          initial_params = {
-            'latAccelFactor': cache_ltp.latAccelFactorFiltered,
-            'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
-            'frictionCoefficient': cache_ltp.frictionCoefficientFiltered,
-            'points': cache_ltp.points
-          }
+          if cache_ltp.liveValid:
+            initial_params = {
+              'latAccelFactor': cache_ltp.latAccelFactorFiltered,
+              'latAccelOffset': cache_ltp.latAccelOffsetFiltered,
+              'frictionCoefficient': cache_ltp.frictionCoefficientFiltered
+            }
+          initial_params['points'] = cache_ltp.points
           self.decay = cache_ltp.decay
           self.filtered_points.load_points(initial_params['points'])
           cloudlog.info("restored torque params from cache")
@@ -224,7 +225,7 @@ class TorqueEstimator:
         self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': friction_coeff})
         self.invalid_values_tracker = max(0.0, self.invalid_values_tracker - 0.5)
       else:
-        cloudlog.exception("live torque params are numerically unstable")
+        cloudlog.exception("Live torque parameters are outside acceptable bounds.")
         liveTorqueParameters.liveValid = False
         self.invalid_values_tracker += 1.0
         # Reset when ~10 invalid over 5 secs
