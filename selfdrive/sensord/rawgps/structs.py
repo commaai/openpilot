@@ -350,6 +350,7 @@ def relist(dat):
         break
       list_dict[list_key].append(dat[key])
       del dat[key]
+      i += 1
   return {**dat, **list_dict}
 
 

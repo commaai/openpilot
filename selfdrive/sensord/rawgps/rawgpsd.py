@@ -98,8 +98,24 @@ def mmcli(cmd: str) -> None:
   else:
     raise Exception(f"failed to execute mmcli command {cmd=}")
 
-def setup_quectel(diag: ModemDiag):
-  # enable OEMDRE in the NV
+  unpack_svpoly, _ = dict_unpacker(oemdre_svpoly_report, True)
+  unpack_position, _ = dict_unpacker(position_report)
+
+  log_types = [
+    LOG_GNSS_GPS_MEASUREMENT_REPORT,
+    LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
+    LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+    LOG_GNSS_OEMDRE_SVPOLY_REPORT,
+  ]
+  pub_types = ['qcomGnss']
+
+  log_types.append(LOG_GNSS_POSITION_REPORT)
+  pub_types.append("gpsLocation")
+
+  # connect to modem
+  diag = ModemDiag()
+
+  # NV enable OEMDRE
   # TODO: it has to reboot for this to take effect
   DIAG_NV_READ_F = 38
   DIAG_NV_WRITE_F = 39
@@ -274,7 +290,7 @@ def main() -> NoReturn:
       poly = gnss.drSvPoly
       for k,v in dat.items():
         if k == "version":
-          assert v == 0
+          assert v == 2
         else:
           setattr(poly, k, v)
       pm.send('qcomGnss', msg)
