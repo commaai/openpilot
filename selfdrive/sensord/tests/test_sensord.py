@@ -3,7 +3,7 @@ import os
 import time
 import unittest
 import numpy as np
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
@@ -78,20 +78,7 @@ ALL_SENSORS = {
   }
 }
 
-SENSOR_BUS = 1
-I2C_ADDR_LSM = 0x6A
 LSM_INT_GPIO = 84
-
-def read_sensor_events(duration_sec):
-  sensor_events = messaging.sub_sock("sensorEvents", timeout=0.1)
-  start_time_sec = time.monotonic()
-  events = []
-  while time.monotonic() - start_time_sec < duration_sec:
-    events += messaging.drain_sock(sensor_events)
-    time.sleep(0.01)
-
-  assert len(events) != 0, "No sensor events collected"
-  return events
 
 def get_proc_interrupts(int_pin):
   with open("/proc/interrupts") as f:
@@ -100,9 +87,27 @@ def get_proc_interrupts(int_pin):
   for line in lines:
     if f" {int_pin} " in line:
       return ''.join(list(filter(lambda e: e != '', line.split(' ')))[1:6])
-
   return ""
 
+def read_sensor_events(duration_sec):
+
+  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
+                  'gyroscope2', 'lightSensor', 'temperatureSensor']
+  esocks = {}
+  events = defaultdict(list)
+  for stype in sensor_types:
+    esocks[stype] = messaging.sub_sock(stype, timeout=0.1)
+
+  start_time_sec = time.monotonic()
+  while time.monotonic() - start_time_sec < duration_sec:
+    for esock in esocks:
+      events[esock] += messaging.drain_sock(esocks[esock])
+    time.sleep(0.1)
+
+  for etype in events:
+    assert len(events[etype]) != 0, f"No {etype} events collected"
+
+  return events
 
 class TestSensord(unittest.TestCase):
   @classmethod
@@ -132,12 +137,10 @@ class TestSensord(unittest.TestCase):
     # verify correct sensors configuration
 
     seen = set()
-    for event in self.events:
-      for measurement in event.sensorEvents:
-        # filter unset events (bmx magn)
-        if measurement.version == 0:
-          continue
-        seen.add((str(measurement.source), measurement.which()))
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
+        seen.add((str(m.source), m.which()))
 
     self.assertIn(seen, SENSOR_CONFIGURATIONS)
 
@@ -148,10 +151,14 @@ class TestSensord(unittest.TestCase):
       1: [], # accel
       5: [], # gyro
     }
-    for event in self.events:
-      for measurement in event.sensorEvents:
-        if str(measurement.source).startswith("lsm6ds3") and measurement.sensor in sensor_t:
-          sensor_t[measurement.sensor].append(measurement.timestamp)
+
+    for measurement in self.events['accelerometer']:
+      m = getattr(measurement, measurement.which())
+      sensor_t[m.sensor].append(m.timestamp)
+
+    for measurement in self.events['gyroscope']:
+      m = getattr(measurement, measurement.which())
+      sensor_t[m.sensor].append(m.timestamp)
 
     for s, vals in sensor_t.items():
       with self.subTest(sensor=s):
@@ -172,17 +179,14 @@ class TestSensord(unittest.TestCase):
     # verify if all sensors produce events
 
     sensor_events = dict()
-    for event in  self.events:
-      for measurement in event.sensorEvents:
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
 
-        # filter unset events (bmx magn)
-        if measurement.version == 0:
-          continue
-
-        if measurement.type in sensor_events:
-          sensor_events[measurement.type] += 1
+        if m.type in sensor_events:
+          sensor_events[m.type] += 1
         else:
-          sensor_events[measurement.type] = 1
+          sensor_events[m.type] = 1
 
     for s in sensor_events:
       err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
@@ -192,22 +196,19 @@ class TestSensord(unittest.TestCase):
     # ensure diff between the message logMonotime and sample timestamp is small
 
     tdiffs = list()
-    for event in self.events:
-      for measurement in event.sensorEvents:
-
-        # filter unset events (bmx magn)
-        if measurement.version == 0:
-          continue
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
 
         # check if gyro and accel timestamps are before logMonoTime
-        if str(measurement.source).startswith("lsm6ds3"):
-          if measurement.which() != 'temperature':
-            err_msg = f"Timestamp after logMonoTime: {measurement.timestamp} > {event.logMonoTime}"
-            assert measurement.timestamp < event.logMonoTime, err_msg
+        if str(m.source).startswith("lsm6ds3"):
+          if m.which() != 'temperature':
+            err_msg = f"Timestamp after logMonoTime: {m.timestamp} > {measurement.logMonoTime}"
+            assert m.timestamp < measurement.logMonoTime, err_msg
 
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
-        tdiffs.append(abs(event.logMonoTime - measurement.timestamp))
+        tdiffs.append(abs(measurement.logMonoTime - m.timestamp))
 
     high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
     assert len(high_delay_diffs) < 15, f"Too many high delay packages: {high_delay_diffs}"
@@ -219,16 +220,14 @@ class TestSensord(unittest.TestCase):
     assert stddev < 2*10**6, f"Timing diffs have to high stddev: {stddev}"
 
   def test_sensor_values_sanity_check(self):
+
     sensor_values = dict()
-    for event in self.events:
-      for m in event.sensorEvents:
-
-        # filter unset events (bmx magn)
-        if m.version == 0:
-          continue
-
+    for etype in self.events:
+      for measurement in self.events[etype]:
+        m = getattr(measurement, measurement.which())
         key = (m.source.raw, m.which())
         values = getattr(m, m.which())
+
         if hasattr(values, 'v'):
           values = values.v
         values = np.atleast_1d(values)
@@ -265,7 +264,8 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
     state_two = get_proc_interrupts(LSM_INT_GPIO)
 
-    assert state_one != state_two, f"no interrupts received after sensord start!\n{state_one} {state_two}"
+    error_msg = f"no interrupts received after sensord start!\n{state_one} {state_two}"
+    assert state_one != state_two, error_msg
 
     managed_processes["sensord"].stop()
     time.sleep(1)
@@ -275,7 +275,6 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
     state_two = get_proc_interrupts(LSM_INT_GPIO)
     assert state_one == state_two, "Interrupts received after sensord stop!"
-
 
 if __name__ == "__main__":
   unittest.main()

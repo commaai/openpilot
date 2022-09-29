@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <map>
 #include <poll.h>
 #include <linux/gpio.h>
 
@@ -27,17 +28,17 @@
 
 ExitHandler do_exit;
 std::mutex pm_mutex;
-
-// filter first values (0.5sec) as those may contain inaccuracies
 uint64_t init_ts = 0;
-constexpr uint64_t init_delay = 500*1e6;
 
-void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
+void interrupt_loop(std::vector<Sensor *>& sensors,
+                    std::map<Sensor*, std::string>& sensor_service)
+{
+  PubMaster pm_int({"gyroscope", "accelerometer"});
+
+  int fd = sensors[0]->gpio_fd;
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
-
-  uint64_t offset = nanos_since_epoch() - nanos_since_boot();
 
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
@@ -65,39 +66,21 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
     }
 
     int num_events = err / sizeof(*evdata);
+    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
-    MessageBuilder msg;
-    auto orphanage = msg.getOrphanage();
-    std::vector<capnp::Orphan<cereal::SensorEventData>> collected_events;
-    collected_events.reserve(sensors.size());
-
     for (Sensor *sensor : sensors) {
-      auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
-      auto event = orphan.get();
-      if (!sensor->get_event(event)) {
+      MessageBuilder msg;
+      if (!sensor->get_event(msg, ts)) {
         continue;
       }
 
-      event.setTimestamp(ts);
-      collected_events.push_back(kj::mv(orphan));
-    }
+      if (!sensor->is_data_valid(init_ts, ts)) {
+        continue;
+      }
 
-    if (collected_events.size() == 0) {
-      continue;
+      pm_int.send(sensor_service[sensor].c_str(), msg);
     }
-
-    auto events = msg.initEvent().initSensorEvents(collected_events.size());
-    for (int i = 0; i < collected_events.size(); ++i) {
-      events.adoptWithCaveats(i, kj::mv(collected_events[i]));
-    }
-
-    if (ts - init_ts < init_delay) {
-      continue;
-    }
-
-    std::lock_guard<std::mutex> lock(pm_mutex);
-    pm.send("sensorEvents", msg);
   }
 
   // poweroff sensors, disable interrupts
@@ -106,16 +89,7 @@ void interrupt_loop(int fd, std::vector<Sensor *>& sensors, PubMaster& pm) {
   }
 }
 
-int sensor_loop() {
-  I2CBus *i2c_bus_imu;
-
-  try {
-    i2c_bus_imu = new I2CBus(I2C_BUS_IMU);
-  } catch (std::exception &e) {
-    LOGE("I2CBus init failed");
-    return -1;
-  }
-
+int sensor_loop(I2CBus *i2c_bus_imu) {
   BMX055_Accel bmx055_accel(i2c_bus_imu);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu);
   BMX055_Magn bmx055_magn(i2c_bus_imu);
@@ -128,6 +102,20 @@ int sensor_loop() {
   MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
 
   LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
+
+  std::map<Sensor*, std::string> sensor_service = {
+    {&bmx055_accel, "accelerometer2"},
+    {&bmx055_gyro, "gyroscope2"},
+    {&bmx055_magn, "magnetometer"},
+    {&bmx055_temp, "temperatureSensor"},
+
+    {&lsm6ds3_accel, "accelerometer"},
+    {&lsm6ds3_gyro, "gyroscope"},
+    {&lsm6ds3_temp, "temperatureSensor"},
+
+    {&mmc5603nj_magn, "magnetometer"},
+    {&light, "lightSensor"}
+  };
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
@@ -148,29 +136,27 @@ int sensor_loop() {
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
-  for (auto &sensor : sensors_init) {
-    int err = sensor.first->init();
+  for (auto &[sensor, required] : sensors_init) {
+    int err = sensor->init();
     if (err < 0) {
-      // Fail on required sensors
-      if (sensor.second) {
+      if (required) {
         LOGE("Error initializing sensors");
-        delete i2c_bus_imu;
         return -1;
       }
     } else {
-      if (sensor.first == &bmx055_magn || sensor.first == &mmc5603nj_magn) {
+
+      if (sensor == &bmx055_magn || sensor == &mmc5603nj_magn) {
         has_magnetometer = true;
       }
 
-      if (!sensor.first->has_interrupt_enabled()) {
-        sensors.push_back(sensor.first);
+      if (!sensor->has_interrupt_enabled()) {
+        sensors.push_back(sensor);
       }
     }
   }
 
   if (!has_magnetometer) {
     LOGE("No magnetometer present");
-    delete i2c_bus_imu;
     return -1;
   }
 
@@ -179,33 +165,30 @@ int sensor_loop() {
   util::set_core_affinity({1});
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
-  PubMaster pm({"sensorEvents"});
+  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor",
+                        "lightSensor", "magnetometer"});
   init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
-  std::thread lsm_interrupt_thread(&interrupt_loop, lsm6ds3_accel.gpio_fd, std::ref(lsm_interrupt_sensors), std::ref(pm));
+  std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
+                                   std::ref(sensor_service));
 
   // polling loop for non interrupt handled sensors
   while (!do_exit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    const int num_events = sensors.size();
-    MessageBuilder msg;
-    auto sensor_events = msg.initEvent().initSensorEvents(num_events);
+    for (Sensor *sensor : sensors) {
+      MessageBuilder msg;
+      if (!sensor->get_event(msg)) {
+        continue;
+      }
 
-    for (int i = 0; i < num_events; i++) {
-      auto event = sensor_events[i];
-      sensors[i]->get_event(event);
-    }
+      if (!sensor->is_data_valid(init_ts, nanos_since_boot())) {
+        continue;
+      }
 
-    if (nanos_since_boot() - init_ts < init_delay) {
-      continue;
-    }
-
-    {
-      std::lock_guard<std::mutex> lock(pm_mutex);
-      pm.send("sensorEvents", msg);
+      pm_non_int.send(sensor_service[sensor].c_str(), msg);
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -217,10 +200,15 @@ int sensor_loop() {
   }
 
   lsm_interrupt_thread.join();
-  delete i2c_bus_imu;
   return 0;
 }
 
 int main(int argc, char *argv[]) {
-  return sensor_loop();
+  try {
+    auto i2c_bus_imu = std::make_unique<I2CBus>(I2C_BUS_IMU);
+    return sensor_loop(i2c_bus_imu.get());
+  } catch (std::exception &e) {
+    LOGE("I2CBus init failed");
+    return -1;
+  }
 }
