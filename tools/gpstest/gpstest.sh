@@ -1,8 +1,8 @@
 #!/bin/bash
 
-LimeGPS_BIN=LimeGPS/LimeGPS
+LimeGPS_BIN=bin/LimeGPS
 if test -f "$LimeGPS_BIN"; then
-  LD_PRELOAD=LimeSuite/builddir/src/libLimeSuite.so $LimeGPS_BIN $@
+    LD_PRELOAD=lib/libLimeSuite.so $LimeGPS_BIN $@
 else
-  echo "LimeGPS binary not found, run 'setup.sh' first"
+    echo "Build LimeGPS first using 'scons'"
 fi
