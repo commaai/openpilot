@@ -100,6 +100,7 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Getting VIN & FW versions")
       # Give some time to let sendcan connect to boardd
       time.sleep(0.2)
+
       # Sending a message to the functional addresses solves skipped iso-tp frames
       send_functional_tester_present(logcan, sendcan, bus)
 
