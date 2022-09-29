@@ -67,8 +67,12 @@ class Panda {
   static std::vector<std::string> list();
 
   // HW communication
-  int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
-  int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
+  inline int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT) {
+    return usb_transfer(LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, nullptr, 0, timeout);
+  }
+  int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT) {
+    return usb_transfer(LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, data, wLength, timeout);
+  }
   int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
   int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
 
@@ -97,6 +101,7 @@ class Panda {
 protected:
   // for unit tests
   Panda(uint32_t bus_offset) : bus_offset(bus_offset) {}
+  int usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout);
   void pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                          std::function<void(uint8_t *, size_t)> write_func);
   bool unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec);
