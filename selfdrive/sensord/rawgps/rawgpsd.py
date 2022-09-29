@@ -270,7 +270,7 @@ def main() -> NoReturn:
       gnss = msg.qcomGnss
       gnss.logTs = log_time
       gnss.init('drSvPoly')
-      poly = gnss.poly
+      poly = gnss.drSvPoly
       for k,v in dat.items():
         setattr(poly, k, v)
       pm.send('qcomGnss', msg)
