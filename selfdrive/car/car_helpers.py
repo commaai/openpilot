@@ -1,19 +1,27 @@
 import os
+import time
 from typing import Dict, List
 
 from cereal import car
 from common.params import Params
 from common.basedir import BASEDIR
 from system.version import is_comma_remote, is_tested_branch
+from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
+from selfdrive.car.ecu_addrs import make_tester_present_msg
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
 EventName = car.CarEvent.EventName
+
+
+def send_functional_tester_present(sendcan):
+  msg = make_tester_present_msg(0x7DF, 1)
+  sendcan.send(can_list_to_can_capnp([[0x7DF, 0, msg, 1]], msgtype='sendcan'))
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
@@ -97,6 +105,9 @@ def fingerprint(logcan, sendcan):
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
+      # pub sockets need some time to initialize
+      time.sleep(0.2)
+      send_functional_tester_present(sendcan)
       _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
