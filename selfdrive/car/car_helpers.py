@@ -86,7 +86,7 @@ def fingerprint(logcan, sendcan):
   2. FW fingerprinting:
     1. Queries the car for the VIN
     2. Queries the car for present ECU addresses
-    3. Queries the car for ECU FW versions, ordered by most likely brand using present ECUs
+    3. Queries the car for ECU FW versions, ordered by most likely brands using present ECUs
   """
 
   # *** CAN fingerprinting ***
