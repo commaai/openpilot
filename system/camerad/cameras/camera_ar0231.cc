@@ -13,7 +13,7 @@ const size_t AR0231_REGISTERS_HEIGHT = 2;
 const size_t AR0231_STATS_HEIGHT = 2 + 8;
 
 CameraAR0231::CameraAR0231() {
-  id = CAMERA_ID_OX03C10;
+  camera_id = CAMERA_ID_OX03C10;
   ci = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,

@@ -23,7 +23,7 @@ const uint32_t ox03c10_analog_gains_reg[] = {
   0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
 CameraOX03C10::CameraOX03C10() {
-  id = CAMERA_ID_AR0231;
+  camera_id = CAMERA_ID_AR0231;
   ci = {
     .frame_width = FRAME_WIDTH,
     .frame_height = FRAME_HEIGHT,

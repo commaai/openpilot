@@ -16,9 +16,17 @@
 
 class CameraState {
 public:
+  void handle_camera_event(void *evdat);
+  void set_camera_exposure(float grey_frac);
+  void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_close();
+
+  void camera_set_parameters();
+  void camera_map_bufs(MultiCameraState *s);
+
   MultiCameraState *multi_cam_state;
-  std::unique_ptr<const AbstractCamera> camera;
-  bool enabled;
+  std::unique_ptr<AbstractCamera> camera;
 
   std::mutex exp_lock;
 
@@ -33,30 +41,6 @@ public:
   float measured_grey_fraction;
   float target_grey_fraction;
 
-  unique_fd sensor_fd;
-  unique_fd csiphy_fd;
-
-  int camera_num;
-
-  void handle_camera_event(void *evdat);
-  void set_camera_exposure(float grey_frac);
-
-  void sensors_start();
-
-  void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
-  void camera_set_parameters();
-  void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
-  void camera_close();
-
-  int32_t session_handle;
-  int32_t sensor_dev_handle;
-  int32_t isp_dev_handle;
-  int32_t csiphy_dev_handle;
-
-  int32_t link_handle;
-
-  int buf0_handle;
   int buf_handle[FRAME_BUF_COUNT];
   int sync_objs[FRAME_BUF_COUNT];
   int request_ids[FRAME_BUF_COUNT];
@@ -66,17 +50,11 @@ public:
   bool skipped;
 
   CameraBuf buf;
-  MemoryManager mm;
 
 private:
-  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(int start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();
-
-  int sensors_init();
-  void sensors_poke(int request_id);
-  void sensors_i2c(const std::vector<i2c_random_wr_payload> &dat, int op_code);
 };
 
 typedef struct MultiCameraState {
