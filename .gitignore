@@ -83,3 +83,8 @@ selfdrive/modeld/models/*.thneed
 build/
 
 !**/.gitkeep
+
+tools/gpstest/bin/LimeGPS
+tools/gpstest/src/gpssim.o
+tools/gpstest/src/limegps.o
+tools/gpstest/.sconsign.dblite
