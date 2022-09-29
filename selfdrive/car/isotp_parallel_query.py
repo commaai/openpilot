@@ -29,7 +29,7 @@ class IsoTpParallelQuery:
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
 
-    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr, rx_offset=response_offset) for tx_addr in real_addrs}
+    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
