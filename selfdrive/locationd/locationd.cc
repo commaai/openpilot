@@ -60,6 +60,7 @@ Localizer::Localizer() {
   this->calib = Vector3d(0.0, 0.0, 0.0);
   this->device_from_calib = MatrixXdr::Identity(3, 3);
   this->calib_from_device = MatrixXdr::Identity(3, 3);
+  this->unix_time_from_mono_time = 0.0;
 
   for (int i = 0; i < POSENET_STD_HIST_HALF * 2; i++) {
     this->posenet_stds.push_back(10.0);
@@ -265,13 +266,15 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane){
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || std::isnan(this->last_reset_time)) {
     this->determine_gps_mode(current_time);
     return;
   }
+  
+  double sensor_time = 1e-3 * log.getUnixTimestampMillis() - this->unix_time_from_mono_time;
 
   // Process message
-  this->last_gps_fix = current_time;
+  this->last_gps_fix = sensor_time;
   this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
@@ -300,14 +303,14 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-    this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
@@ -349,6 +352,10 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
     { rot_device }, { rot_device_cov });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
     { trans_device }, { trans_device_cov });
+}
+
+void Localizer::handle_clocks(double current_time, const cereal::Clocks::Reader& log) {
+  this->unix_time_from_mono_time = 1e-9 * (log.getWallTimeNanos() - log.getMonotonicNanos());
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
@@ -452,6 +459,8 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_cam_odo(t, log.getCameraOdometry());
   } else if (log.isLiveCalibration()) {
     this->handle_live_calib(t, log.getLiveCalibration());
+  } else if (log.isClocks()) {
+    this->handle_clocks(t, log.getClocks());
   }
   this->finite_check();
   this->update_reset_tracker();
@@ -497,9 +506,8 @@ int Localizer::locationd_thread() {
   } else {
     gps_location_socket = "gpsLocation";
   }
-  const std::initializer_list<const char *> service_list = {gps_location_socket,
-    "cameraOdometry", "liveCalibration", "carState", "carParams",
-    "accelerometer", "gyroscope"};
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration", 
+                                                          "carState", "carParams", "accelerometer", "gyroscope", "clocks"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz

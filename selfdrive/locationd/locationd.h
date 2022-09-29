@@ -50,6 +50,7 @@ public:
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
+  void handle_clocks(double current_time, const cereal::Clocks::Reader& log);
 
   void input_fake_gps_observations(double current_time);
 
@@ -62,6 +63,7 @@ private:
   bool calibrated = false;
 
   double car_speed = 0.0;
+  double unix_time_from_mono_time = NAN;
   double last_reset_time = NAN;
   std::deque<double> posenet_stds;
 
