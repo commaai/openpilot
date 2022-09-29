@@ -339,7 +339,7 @@ def relist(dat):
   list_keys = set()
   for key in dat.keys():
     if '[' in key:
-      list_keys += key.split(['['])[0]
+      list_keys.add(key.split('[')[0])
   list_dict = {}
   for list_key in list_keys:
     list_dict[list_key] = []
