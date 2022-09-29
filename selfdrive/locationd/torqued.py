@@ -225,7 +225,7 @@ class TorqueEstimator:
         self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': friction_coeff})
         self.invalid_values_tracker = max(0.0, self.invalid_values_tracker - 0.5)
       else:
-        cloudlog.exception("live torque params are numerically unstable")
+        cloudlog.exception("Live torque parameters are outside acceptable bounds.")
         liveTorqueParameters.liveValid = False
         self.invalid_values_tracker += 1.0
         # Reset when ~10 invalid over 5 secs
