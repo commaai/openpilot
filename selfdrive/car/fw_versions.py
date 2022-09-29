@@ -150,7 +150,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 def send_functional_tester_present(logcan, sendcan, bus, timeout=0.1):
   query = IsoTpParallelQuery(sendcan, logcan, bus, uds.FUNCTIONAL_ADDRS, [StdQueries.TESTER_PRESENT_REQUEST], [StdQueries.TESTER_PRESENT_RESPONSE], functional_addr=True)
   try:
-    query.get_data(timeout)
+    print(query.get_data(timeout))
   except Exception:
     cloudlog.exception("Tester present functional address exception")
 
@@ -308,7 +308,8 @@ if __name__ == "__main__":
       extra[(Ecu.unknown, 0x750, i)] = []
     extra = {"any": {"debug": extra}}
 
-  time.sleep(1.)
+  time.sleep(0.1)
+  send_functional_tester_present(logcan, sendcan, 1, timeout=0.1)
 
   t = time.time()
   print("Getting vin...")

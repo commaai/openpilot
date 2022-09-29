@@ -22,12 +22,12 @@ class IsoTpParallelQuery:
       assert all([a in FUNCTIONAL_ADDRS for a in addrs]), "Non-functional addresses in addrs"
       real_addrs = []
       if 0x7DF in addrs:
-        real_addrs.extend([0x7e0 + i for i in range(8)])
+        real_addrs.extend([(0x7e0 + i, None) for i in range(8)])
       if 0x18DB33F1 in addrs:
         # TODO: is this correct?
-        real_addrs.extend([0x18da00f1 + (i << 8) for i in range(256)])
+        real_addrs.extend([(0x18da00f1 + (i << 8), None) for i in range(256)])
     else:
-      real_addrs = [a[0] if isinstance(a, tuple) else a for a in addrs]
+      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr, rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
