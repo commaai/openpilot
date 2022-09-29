@@ -8,6 +8,7 @@ from cereal import car
 from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.fw_query_definitions import StdQueries
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
 
@@ -144,6 +145,14 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
       return exact_match, matches
 
   return True, set()
+
+
+def send_functional_tester_present(logcan, sendcan, bus, timeout=0.1):
+  query = IsoTpParallelQuery(sendcan, logcan, bus, uds.FUNCTIONAL_ADDRS, [StdQueries.TESTER_PRESENT_REQUEST], [StdQueries.TESTER_PRESENT_RESPONSE], functional_addr=True)
+  try:
+    query.get_data(timeout)
+  except:
+    cloudlog.exception("Tester present functional address exception")
 
 
 def get_present_ecus(logcan, sendcan):
