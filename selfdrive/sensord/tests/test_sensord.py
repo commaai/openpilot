@@ -89,7 +89,10 @@ def get_proc_interrupts(int_pin):
       return ''.join(list(filter(lambda e: e != '', line.split(' ')))[1:6])
   return ""
 
-def read_sensor_events(sensor_types, duration_sec):
+def read_sensor_events(duration_sec):
+
+  sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
+                  'gyroscope2', 'lightSensor', 'temperatureSensor']
   esocks = {}
   events = defaultdict(list)
   for stype in sensor_types:
@@ -120,8 +123,7 @@ class TestSensord(unittest.TestCase):
     managed_processes["sensord"].start()
     time.sleep(3)
     cls.sample_secs = 10
-    cls.events = read_sensor_events(['accelerometer', 'gyroscope', 'magnetometer',
-      'accelerometer2', 'gyroscope2', 'lightSensor', 'temperatureSensor'], cls.sample_secs)
+    cls.events = read_sensor_events(cls.sample_secs)
     managed_processes["sensord"].stop()
 
   @classmethod
