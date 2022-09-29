@@ -1222,26 +1222,27 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
+  const bool widecam = c == &s->wide_road_cam;
+
+  LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", widecam ? "WideRoadCamera" : "RoadCamera");
 
   MessageBuilder msg;
-  auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
+  auto framed = widecam ? msg.initEvent().initWideRoadCameraState() : msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data, c);
-  if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
-    framed.setImage(get_raw_frame_image(b));
-  }
-  LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
-  if (c == &s->road_cam) {
+  if (!widecam) {
     framed.setTransform(b->yuv_transform.v);
+    if (env_log_raw_frames && cnt % 100 == 5) {  // no overlap with qlog decimation
+      framed.setImage(get_raw_frame_image(b));
+    }
     LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
   }
+  s->pm->send(widecam ? "wideRoadCameraState" : "roadCameraState", msg);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);
   }
 
-  s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+  const auto [x, y, w, h] = widecam ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;
   c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
