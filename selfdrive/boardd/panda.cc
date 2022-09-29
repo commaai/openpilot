@@ -167,7 +167,7 @@ int Panda::usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_
   std::lock_guard lk(usb_lock);
   while (connected) {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
-    if (err >= 0) break;
+    if (err == wLength) break;
 
     handle_usb_issue(err, __func__);
   }
