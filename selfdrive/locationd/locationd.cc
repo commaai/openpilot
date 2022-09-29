@@ -266,7 +266,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || std::isnan(this->last_reset_time)) {
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || std::isnan(this->unix_time_from_mono_time)) {
     this->determine_gps_mode(current_time);
     return;
   }
