@@ -334,3 +334,22 @@ def dict_unpacker(ss, camelcase = False):
     nams = [name_to_camelcase(x) for x in nams]
   sz = calcsize(st)
   return lambda x: dict(zip(nams, unpack_from(st, x))), sz
+
+def relist(dat):
+  list_keys = set()
+  for key in dat.keys():
+    if '[' in key:
+      list_keys += key.split['['][0]
+  list_dict = {}
+  for list_key in list_keys:
+    list_dict[list_key] = []
+    i = 0
+    while True:
+      key = list_key + f'[{i}]'
+      if key not in dat:
+        break
+      list_dict[list_key].append(dat[key])
+      del dat[key]
+  return {**dat, **list_dict}
+
+

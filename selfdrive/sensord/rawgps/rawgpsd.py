@@ -267,15 +267,19 @@ def main() -> NoReturn:
     elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
       msg = messaging.new_message('qcomGnss')
       dat = unpack_svpoly(log_payload)
+      dat = relist(dat)
       gnss = msg.qcomGnss
       gnss.logTs = log_time
       gnss.init('drSvPoly')
       poly = gnss.drSvPoly
       for k,v in dat.items():
-        setattr(poly, k, v)
+        if k == "version":
+          assert v == 0
+        else:
+          setattr(poly, k, v)
       pm.send('qcomGnss', msg)
 
-    if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
+    elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')
 
       gnss = msg.qcomGnss
