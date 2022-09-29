@@ -40,8 +40,6 @@ void interrupt_loop(std::vector<Sensor *>& sensors,
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
 
-  const uint64_t offset = nanos_since_epoch() - nanos_since_boot();
-
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
     if (err == -1) {
@@ -68,6 +66,7 @@ void interrupt_loop(std::vector<Sensor *>& sensors,
     }
 
     int num_events = err / sizeof(*evdata);
+    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
     for (Sensor *sensor : sensors) {
