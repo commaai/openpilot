@@ -1,5 +1,4 @@
 import os
-import time
 from typing import Dict, List
 
 from cereal import car
@@ -9,7 +8,7 @@ from system.version import is_comma_remote, is_tested_branch
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, send_functional_tester_present
+from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -98,12 +97,6 @@ def fingerprint(logcan, sendcan):
       car_fw = list(cached_params.carFw)
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      # Allow some time to let sendcan connect to boardd
-      time.sleep(0.1)
-
-      # Sending a message to the functional addresses solves skipped iso-tp frames
-      send_functional_tester_present(logcan, sendcan, bus)
-
       _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
