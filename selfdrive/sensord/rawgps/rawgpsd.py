@@ -291,6 +291,8 @@ def main() -> NoReturn:
       for k,v in dat.items():
         if k == "version":
           assert v == 2
+        elif k == "flags":
+          pass
         else:
           setattr(poly, k, v)
       pm.send('qcomGnss', msg)
