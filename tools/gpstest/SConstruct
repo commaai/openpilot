@@ -1,8 +1,0 @@
-env = Environment(
-        CFLAGS = ["-O2"],
-        CC='gcc',
-    )
-
-src = ["src/limegps.c", "src/gpssim.c"]
-libs = ["LimeSuite", "pthread", "m"]
-env.Program("bin/LimeGPS", src, LIBS=libs, LIBPATH=['lib'])
