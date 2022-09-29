@@ -79,7 +79,7 @@ interfaces = load_interfaces(interface_names)
 def fingerprint(logcan, sendcan):
   """
   Fingerprints the vehicle using both CAN fingerprinting and FW fingerprinting. CAN fingerprint gathering is done first
-  to give enough time to the PubSocket to connect, however we attempt to fingerprint using the FW versions first.
+  to give enough time to the PubSocket to connect, however, a successful FW fingerprinting match overrides CAN fingerprinting.
 
   1. CAN fingerprinting:
     1. Creates dictionary of CAN addresses to lengths for CAN fingerprinting and feature detection (1-2s)
