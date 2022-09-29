@@ -3,13 +3,14 @@ Version 0.8.17 (2022-XX-XX)
 * New driving model
   * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
 * Self-tuning torque lateral controller parameters
-  * Parameters are learned live for each car
+  * Parameters learned live for each car
   * Enabled only on Toyota Corolla for now
 * UI updates
+  * Multi-language in navigation
   * Matched speeds shown on car's dash
   * Improved update experience
   * Border turns grey while overriding steering
-  * Added button to flag events that are shown in comma connect
+  * Added button to bookmark events while driving; view them later in comma connect
 * AGNOS 6
 
 Version 0.8.16 (2022-08-26)
