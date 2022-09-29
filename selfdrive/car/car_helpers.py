@@ -8,7 +8,7 @@ from system.version import is_comma_remote, is_tested_branch
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
+from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -77,6 +77,18 @@ interfaces = load_interfaces(interface_names)
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan):
+  """
+  Fingerprints the vehicle using both CAN fingerprinting and FW fingerprinting. CAN fingerprint gathering is done first
+  to give enough time to the PubSocket to connect, however we attempt to fingerprint using the FW versions first.
+
+  1. CAN fingerprinting:
+    1. Creates dictionary of CAN addresses to lengths for CAN fingerprinting and feature detection (1-2s)
+  2. FW fingerprinting:
+    1. Queries the car for the VIN
+    2. Queries the car for present ECU addresses
+    3. Queries the car for ECU FW versions, ordered by most likely brand using present ECUs
+  """
+
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
