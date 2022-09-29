@@ -162,36 +162,28 @@ void Panda::handle_usb_issue(int err, const char func[]) {
 }
 
 int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
-  int err;
+  int err = LIBUSB_ERROR_NO_DEVICE;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
-
-  if (!connected) {
-    return LIBUSB_ERROR_NO_DEVICE;
-  }
-
   std::lock_guard lk(usb_lock);
-  do {
+  while (connected) {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
-    if (err < 0) handle_usb_issue(err, __func__);
-  } while (err < 0 && connected);
+    if (err >= 0) break;
 
+    handle_usb_issue(err, __func__);
+  }
   return err;
 }
 
 int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout) {
-  int err;
+  int err = LIBUSB_ERROR_NO_DEVICE;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
-
-  if (!connected) {
-    return LIBUSB_ERROR_NO_DEVICE;
-  }
-
   std::lock_guard lk(usb_lock);
-  do {
+  while (connected) {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
-    if (err < 0) handle_usb_issue(err, __func__);
-  } while (err < 0 && connected);
+    if (err >= 0) break;
 
+    handle_usb_issue(err, __func__);
+  }
   return err;
 }
 
