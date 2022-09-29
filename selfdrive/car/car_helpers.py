@@ -5,13 +5,14 @@ from typing import Dict, List
 from cereal import car
 from common.params import Params
 from common.basedir import BASEDIR
+from panda.python.uds import FUNCTIONAL_ADDRS
 from system.version import is_comma_remote, is_tested_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
+from selfdrive.car.ecu_addrs import make_tester_present_msg
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
-from selfdrive.car.ecu_addrs import make_tester_present_msg
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -19,9 +20,9 @@ from selfdrive.car import gen_empty_fingerprint
 EventName = car.CarEvent.EventName
 
 
-def send_functional_tester_present(sendcan):
-  msg = make_tester_present_msg(0x7DF, 1)
-  sendcan.send(can_list_to_can_capnp([[0x7DF, 0, msg, 1]], msgtype='sendcan'))
+def send_functional_tester_present(sendcan, bus):
+  msgs = [make_tester_present_msg(addr, bus) for addr in FUNCTIONAL_ADDRS]
+  sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
@@ -85,43 +86,21 @@ interfaces = load_interfaces(interface_names)
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan):
-  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
-  skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
-  ecu_rx_addrs = set()
+  """
+  Returns the current platform of the vehicle, as well as extra information like the fingerprint and source.
+  The first use of sendcan needs to be at least 0.1 seconds after creation, so CAN fingerprinting is done first.
 
-  if not fixed_fingerprint and not skip_fw_query:
-    # Vin query only reliably works through OBDII
-    bus = 1
+  1. CAN fingerprinting:
+    1. Creates dictionary of CAN addresses to lengths for CAN fingerprinting and feature detection (1-2s)
 
-    cached_params = Params().get("CarParamsCache")
-    if cached_params is not None:
-      cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carName == "mock":
-        cached_params = None
+  2. FW fingerprinting:
+    1. Sends tester present to functional addresses to prevent skipped iso-tp frames
+    2. Queries the car for the VIN
+    3. Queries the car for present ECU addresses
+    4. Queries the car for ECU FW versions, ordered by most likely brand using present ECUs
+  """
 
-    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
-      cloudlog.warning("Using cached CarParams")
-      vin, vin_rx_addr = cached_params.carVin, 0
-      car_fw = list(cached_params.carFw)
-    else:
-      cloudlog.warning("Getting VIN & FW versions")
-      # pub sockets need some time to initialize
-      time.sleep(0.2)
-      send_functional_tester_present(sendcan)
-      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
-      ecu_rx_addrs = get_present_ecus(logcan, sendcan)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
-
-    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
-  else:
-    vin, vin_rx_addr = VIN_UNKNOWN, 0
-    exact_fw_match, fw_candidates, car_fw = True, set(), []
-
-  if not is_valid_vin(vin):
-    cloudlog.event("Malformed VIN", vin=vin, error=True)
-    vin = VIN_UNKNOWN
-  cloudlog.warning("VIN %s", vin)
-  Params().put("CarVin", vin)
+  # --- CAN fingerprinting ---
 
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
@@ -162,6 +141,46 @@ def fingerprint(logcan, sendcan):
     done = failed or succeeded
 
     frame += 1
+
+  # --- FW fingerprinting ---
+
+  fixed_fingerprint = os.environ.get('FINGERPRINT', "")
+  skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
+  ecu_rx_addrs = set()
+
+  if not fixed_fingerprint and not skip_fw_query:
+    # Vin query only reliably works through OBDII
+    bus = 1
+
+    cached_params = Params().get("CarParamsCache")
+    if cached_params is not None:
+      cached_params = car.CarParams.from_bytes(cached_params)
+      if cached_params.carName == "mock":
+        cached_params = None
+
+    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
+      cloudlog.warning("Using cached CarParams")
+      vin, vin_rx_addr = cached_params.carVin, 0
+      car_fw = list(cached_params.carFw)
+    else:
+      cloudlog.warning("Getting VIN & FW versions")
+      # Sending a message to the functional addresses solves skipped iso-tp frames
+      send_functional_tester_present(sendcan, bus)
+
+      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
+      ecu_rx_addrs = get_present_ecus(logcan, sendcan)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
+
+    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
+  else:
+    vin, vin_rx_addr = VIN_UNKNOWN, 0
+    exact_fw_match, fw_candidates, car_fw = True, set(), []
+
+  if not is_valid_vin(vin):
+    cloudlog.event("Malformed VIN", vin=vin, error=True)
+    vin = VIN_UNKNOWN
+  cloudlog.warning("VIN %s", vin)
+  Params().put("CarVin", vin)
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can
