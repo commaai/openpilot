@@ -16,7 +16,7 @@ If `-e` is not provided the latest ephemeris file will be downloaded from
 https://cddis.nasa.gov/archive/gnss/data/daily/20xx/brdc/.
 (TODO: add auto downloader)
 
-It currently uses ony LimeGPS, to run it use:
+It currently uses only LimeGPS, to run it use:
 ```
 LD_PRELOAD=../lib/libLimeSuite.so ./LimeGPS
 ```
@@ -32,7 +32,7 @@ To communicate with LimeSDR the LimeSuite is needed it abstracts the direct
 communication. It also contains examples for a quick start.
 
 The latest stable version(22.09) does not have the corresponding firmware
-download available at https://downloads.myriadrf.org/project/limesuite. Therfore
+download available at https://downloads.myriadrf.org/project/limesuite. Therefore
 version 20.10 was chosen.
 
 A successull build should give something like:
