@@ -535,7 +535,7 @@ opendbc/honda_civic_ex_2022_can_generated.dbc
 
 opendbc/hyundai_canfd.dbc
 opendbc/hyundai_kia_generic.dbc
-opendbc/hyundai_kia_mando_front_radar.dbc
+opendbc/hyundai_kia_mando_front_radar_generated.dbc
 
 opendbc/mazda_2017.dbc
 

@@ -41,6 +41,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &HomeWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &HomeWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::offroadTransition, sidebar, &Sidebar::offroadTransition);
 }
 
 void HomeWindow::showSidebar(bool show) {
