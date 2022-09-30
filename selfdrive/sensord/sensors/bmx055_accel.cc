@@ -42,6 +42,7 @@ int BMX055_Accel::init() {
   if (ret < 0) {
     goto fail;
   }
+
   ret = set_register(BMX055_ACCEL_I2C_REG_BW, BMX055_ACCEL_BW_125HZ);
   if (ret < 0) {
     goto fail;
@@ -61,7 +62,7 @@ int BMX055_Accel::shutdown()  {
   return ret;
 }
 
-bool BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Accel::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_ACCEL_I2C_REG_X_LSB, buffer, sizeof(buffer));
@@ -73,6 +74,7 @@ bool BMX055_Accel::get_event(cereal::SensorEventData::Builder &event) {
   float y = -read_12_bit(buffer[2], buffer[3]) * scale;
   float z = read_12_bit(buffer[4], buffer[5]) * scale;
 
+  auto event = msg.initEvent().initAccelerometer2();
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);

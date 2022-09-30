@@ -290,6 +290,7 @@ void Replay::startStream(const Segment *cur_segment) {
     auto words = capnp::messageToFlatArray(builder);
     auto bytes = words.asBytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
+    Params().put("CarParamsPersistent", (const char *)bytes.begin(), bytes.size());
   } else {
     rWarning("failed to read CarParams from current segment");
   }

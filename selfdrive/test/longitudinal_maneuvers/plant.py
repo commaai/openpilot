@@ -8,7 +8,7 @@ from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-
+from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 class Plant():
   messaging_initialized = False
@@ -83,7 +83,8 @@ class Plant():
     lead.vLead = float(v_lead)
     lead.vLeadK = float(v_lead)
     lead.aLeadK = float(a_lead)
-    lead.aLeadTau = float(1.5)
+    # TODO use real radard logic for this
+    lead.aLeadTau = float(_LEAD_ACCEL_TAU)
     lead.status = status
     lead.modelProb = float(prob)
     if not self.only_lead2:
