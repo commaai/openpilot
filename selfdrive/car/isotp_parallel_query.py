@@ -19,29 +19,31 @@ class IsoTpParallelQuery:
     self.functional_addr = functional_addr
     self.response_pending_timeout = response_pending_timeout
 
-    self.real_addrs = []
-    for a in addrs:
-      if isinstance(a, tuple):
-        self.real_addrs.append(a)
-      else:
-        self.real_addrs.append((a, None))
+    # self.real_addrs = []
+    # for a in addrs:
+    #   if isinstance(a, tuple):
+    #     self.real_addrs.append(a)
+    #   else:
+    #     self.real_addrs.append((a, None))
 
     if self.functional_addr:
       # Add standard physical addresses to tx on after initial functional address query
       real_addrs = []
+      # self.msg_addrs = {}
       self.msg_addrs = {}
       for a in FUNCTIONAL_ADDRS:
         if a in addrs:
-          self.msg_addrs[a] = get_rx_addr_for_tx_addr(a, rx_offset=response_offset)
-          for fun_addr in FUNCTIONAL_ADDRS[a][1:]:
-            print(fun_addr)
-            self.msg_addrs[fun_addr] = get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)
+          for fun_addr in FUNCTIONAL_ADDRS[a]:
+            self.msg_addrs[get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)] = (a, None)
+          # self.msg_addrs[a] = get_rx_addr_for_tx_addr(a, rx_offset=response_offset)
+          # for fun_addr in FUNCTIONAL_ADDRS[a][1:]:
+          #   print(fun_addr)
+          #   self.msg_addrs[fun_addr] = get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)
           # self.msg_addrs[a].extend([get_rx_addr_for_tx_addr(fa, rx_offset=response_offset) for fa in FUNCTIONAL_ADDRS[a][1:]])
 
     else:
-      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in self.addrs]
-
-      self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
+      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
+      self.msg_addrs = {get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset): tx_addr for tx_addr in real_addrs}
     print(self.msg_addrs)
     self.msg_buffer = defaultdict(list)
 
@@ -56,7 +58,7 @@ class IsoTpParallelQuery:
             if (0x7E8 <= msg.address <= 0x7EF) or (0x18DAF100 <= msg.address <= 0x18DAF1FF):
               fn_addr = next(a for a in FUNCTIONAL_ADDRS if msg.address - a <= 32)
               self.msg_buffer[fn_addr].append((msg.address, msg.busTime, msg.dat, msg.src))
-          elif msg.address in self.msg_addrs.values():
+          elif msg.address in self.msg_addrs.keys():
             self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
@@ -94,18 +96,23 @@ class IsoTpParallelQuery:
     msgs = {}
     request_counter = {}
     request_done = {}
-    for tx_addr, rx_addr in self.msg_addrs.items():
+    tx_addrs_sent = []
+    for rx_addr, tx_addr in self.msg_addrs.items():
       # rx_addr not set when using functional tx addr
-      id_addr = rx_addr or tx_addr[0]
+      # id_addr = rx_addr or tx_addr[0]
       sub_addr = tx_addr[1]
 
-      can_client = CanClient(self._can_tx, partial(self._can_rx, id_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
+      can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
                              self.bus, sub_addr=sub_addr, debug=self.debug)
 
       max_len = 8 if sub_addr is None else 7
 
       msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
-      msg.send(self.request[0])
+
+      # Don't query functional addresses multiple times
+      if tx_addr not in tx_addrs_sent:
+        msg.send(self.request[0])
+        tx_addrs_sent.append(tx_addr)
 
       msgs[tx_addr] = msg
       request_counter[tx_addr] = 0
