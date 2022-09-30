@@ -365,37 +365,41 @@ void Replay::handleDeprecatedEvent(const Event *evt) {
     for (auto old_evt : evt->event.getSensorEventsDEPRECATED()) {
       auto old_which = old_evt.which();
       void (cereal::Event::Builder::*setSensorData)(cereal::SensorEventData::Reader) = nullptr;
+      cereal::Event::Which new_which;
 
       switch (old_which) {
         case cereal::SensorEventData::ACCELERATION:
           setSensorData = &cereal::Event::Builder::setAccelerometer;
+          new_which = cereal::Event::ACCELEROMETER;
           break;
         case cereal::SensorEventData::GYRO:
         case cereal::SensorEventData::GYRO_UNCALIBRATED:
           setSensorData = &cereal::Event::Builder::setGyroscope;
+          new_which = cereal::Event::GYROSCOPE;
           break;
         case cereal::SensorEventData::LIGHT:
         case cereal::SensorEventData::PROXIMITY:
           setSensorData = &cereal::Event::Builder::setLightSensor;
+          new_which = cereal::Event::LIGHT_SENSOR;
           break;
         case cereal::SensorEventData::MAGNETIC:
         case cereal::SensorEventData::MAGNETIC_UNCALIBRATED:
           setSensorData = &cereal::Event::Builder::setMagnetometer;
+          new_which = cereal::Event::MAGNETOMETER;
           break;
         case cereal::SensorEventData::TEMPERATURE:
           setSensorData = &cereal::Event::Builder::setTemperatureSensor;
+          new_which = cereal::Event::TEMPERATURE_SENSOR;
           break;
         default:
           break;
       }
 
-      if (setSensorData) {
+      if (setSensorData && sockets_[new_which] != nullptr) {
         MessageBuilder msg;
         auto new_evt = msg.initEvent();
         (new_evt.*setSensorData)(old_evt);
-        if (sockets_[new_evt.which()] != nullptr) {
-          publish_frame(new_evt.which(), msg);
-        }
+        publish_frame(new_which, msg);
       }
     }
   }
