@@ -10,41 +10,33 @@ from cereal import log
 from system.hardware import TICI, HARDWARE
 from selfdrive.manager.process_config import managed_processes
 
+BMX = {
+  ('bmx055', 'acceleration'),
+  ('bmx055', 'gyroUncalibrated'),
+  ('bmx055', 'magneticUncalibrated'),
+  ('bmx055', 'temperature'),
+}
+
+LSM = {
+  ('lsm6ds3', 'acceleration'),
+  ('lsm6ds3', 'gyroUncalibrated'),
+  ('lsm6ds3', 'temperature'),
+}
+LSM_C = {(x[0]+'trc', x[1]) for x in LSM}
+
+MMC = {
+  ('mmc5603nj', 'magneticUncalibrated'),
+}
+
+RPR = {
+  ('rpr0521', 'light'),
+}
+
 SENSOR_CONFIGURATIONS = (
-  {
-    ('bmx055', 'acceleration'),
-    ('bmx055', 'gyroUncalibrated'),
-    ('bmx055', 'magneticUncalibrated'),
-    ('bmx055', 'temperature'),
-    ('lsm6ds3', 'acceleration'),
-    ('lsm6ds3', 'gyroUncalibrated'),
-    ('lsm6ds3', 'temperature'),
-    ('rpr0521', 'light'),
-  },
-  {
-    ('lsm6ds3', 'acceleration'),
-    ('lsm6ds3', 'gyroUncalibrated'),
-    ('lsm6ds3', 'temperature'),
-    ('mmc5603nj', 'magneticUncalibrated'),
-    ('rpr0521', 'light'),
-  },
-  {
-    ('bmx055', 'acceleration'),
-    ('bmx055', 'gyroUncalibrated'),
-    ('bmx055', 'magneticUncalibrated'),
-    ('bmx055', 'temperature'),
-    ('lsm6ds3trc', 'acceleration'),
-    ('lsm6ds3trc', 'gyroUncalibrated'),
-    ('lsm6ds3trc', 'temperature'),
-    ('rpr0521', 'light'),
-  },
-  {
-    ('lsm6ds3trc', 'acceleration'),
-    ('lsm6ds3trc', 'gyroUncalibrated'),
-    ('lsm6ds3trc', 'temperature'),
-    ('mmc5603nj', 'magneticUncalibrated'),
-    ('rpr0521', 'light'),
-  },
+  (BMX | LSM | RPR),
+  (MMC | LSM | RPR),
+  (BMX | LSM_C | RPR),
+  (MMC| LSM_C | RPR),
 )
 
 Sensor = log.SensorEventData.SensorSource
