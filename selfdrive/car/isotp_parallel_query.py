@@ -38,9 +38,8 @@ class IsoTpParallelQuery:
 
     for packet in can_packets:
       for msg in packet.can:
-        if msg.src == self.bus:
-          if msg.address in self.msg_addrs.keys():
-            self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
+        if msg.src == self.bus and msg.address in self.msg_addrs.keys():
+          self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
     """Helper function to send single message"""
