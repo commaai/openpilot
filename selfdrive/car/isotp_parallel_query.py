@@ -21,7 +21,7 @@ class IsoTpParallelQuery:
     self.response_pending_timeout = response_pending_timeout
 
     if self.functional_addr:
-      # Add standard physical tx addresses to prepare to communicate after initial functional address query
+      # Add standard physical addresses to tx on after initial functional address query
       real_addrs = []
       for a in FUNCTIONAL_ADDRS:
         if a in self.addrs:
@@ -90,7 +90,7 @@ class IsoTpParallelQuery:
       request_done[tx_addr] = False
 
     if self.functional_addr:
-      # send first query to functional addresses, subsequent queries on physical addresses
+      # Send first query to functional addresses, subsequent queries on physical addresses that respond
       for a in FUNCTIONAL_ADDRS:
         if a in self.addrs:
           can_client = CanClient(self._can_tx, partial(self._can_rx, a), a, None, self.bus, debug=self.debug)
