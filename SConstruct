@@ -433,6 +433,10 @@ SConscript(['selfdrive/navd/SConscript'])
 
 SConscript(['tools/replay/SConscript'])
 
+opendbc = abspath([File('opendbc/can/libdbc.so')])
+Export('opendbc')
+SConscript(['tools/cabana/SConscript'])
+
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')
 
