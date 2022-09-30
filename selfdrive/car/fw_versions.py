@@ -148,11 +148,11 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 
 
 def get_present_ecus(logcan, sendcan, timeout=1.):
+  # TODO: see how fast it is to query each request individually, without doing this messy organizing by bus, then rx_addr
   parallel_queries = defaultdict(lambda: defaultdict(list))
   queries = defaultdict(lambda: defaultdict(list))
 
   for brand, config in FW_QUERY_CONFIGS.items():
-    print(brand)
     for r in config.requests:
       for brand_versions in VERSIONS[brand].values():
         for ecu_type, addr, sub_addr in brand_versions:
