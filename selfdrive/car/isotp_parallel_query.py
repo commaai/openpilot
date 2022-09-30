@@ -19,32 +19,17 @@ class IsoTpParallelQuery:
     self.functional_addr = functional_addr
     self.response_pending_timeout = response_pending_timeout
 
-    # self.real_addrs = []
-    # for a in addrs:
-    #   if isinstance(a, tuple):
-    #     self.real_addrs.append(a)
-    #   else:
-    #     self.real_addrs.append((a, None))
-
     if self.functional_addr:
       # Add standard physical addresses to tx on after initial functional address query
-      real_addrs = []
-      # self.msg_addrs = {}
       self.msg_addrs = {}
       for a in FUNCTIONAL_ADDRS:
         if a in addrs:
           for fun_addr in FUNCTIONAL_ADDRS[a]:
             self.msg_addrs[get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)] = (a, None)
-          # self.msg_addrs[a] = get_rx_addr_for_tx_addr(a, rx_offset=response_offset)
-          # for fun_addr in FUNCTIONAL_ADDRS[a][1:]:
-          #   print(fun_addr)
-          #   self.msg_addrs[fun_addr] = get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)
-          # self.msg_addrs[a].extend([get_rx_addr_for_tx_addr(fa, rx_offset=response_offset) for fa in FUNCTIONAL_ADDRS[a][1:]])
 
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
       self.msg_addrs = {get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset): tx_addr for tx_addr in real_addrs}
-    print(self.msg_addrs)
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
@@ -98,14 +83,11 @@ class IsoTpParallelQuery:
     request_done = {}
     tx_addrs_sent = []
     for rx_addr, tx_addr in self.msg_addrs.items():
-      # rx_addr not set when using functional tx addr
-      # id_addr = rx_addr or tx_addr[0]
       sub_addr = tx_addr[1]
+      max_len = 8 if sub_addr is None else 7
 
       can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
                              self.bus, sub_addr=sub_addr, debug=self.debug)
-
-      max_len = 8 if sub_addr is None else 7
 
       msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
 
