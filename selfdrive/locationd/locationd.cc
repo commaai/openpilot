@@ -499,7 +499,7 @@ int Localizer::locationd_thread() {
   }
   const std::initializer_list<const char *> service_list = {gps_location_socket,
     "cameraOdometry", "liveCalibration", "carState", "carParams",
-    "accelerometer", "gyroscope", "magnetometer"};
+    "accelerometer", "gyroscope"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
@@ -526,7 +526,7 @@ int Localizer::locationd_thread() {
     if (sm.updated(trigger_msg)) {
       bool inputsOK = sm.allAliveAndValid();
       bool gpsOK = this->isGpsOK();
-      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope", "magnetometer"});
+      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);
