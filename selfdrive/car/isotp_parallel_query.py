@@ -15,20 +15,20 @@ class IsoTpParallelQuery:
     self.bus = bus
     self.request = request
     self.response = response
+    self.response_offset = response_offset
     self.debug = debug
     self.response_pending_timeout = response_pending_timeout
 
     if functional_addr:
       # If functional_addr is True, we query the functional addrs and only process responses from addrs's respective rx addrs
       self.msg_addrs = {}
-      # TODO: try to use first tx addr as 7df, the rest as simulated ones: 0x7e1, 0x7e2, etc...
       for a in addrs:
         functional_tx_addr = 0x7DF if a < 2 ** 11 else 0x18DB33F1
-        self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (functional_tx_addr, None)
+        self.msg_addrs[get_rx_addr_for_tx_addr(a, self.response_offset)] = (functional_tx_addr, None)
 
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
-      self.msg_addrs = {get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset): tx_addr for tx_addr in real_addrs}
+      self.msg_addrs = {get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=self.response_offset): tx_addr for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
@@ -76,33 +76,32 @@ class IsoTpParallelQuery:
     request_counter = {}
     request_done = {}
     tx_addrs_sent = []
-    for rx_addr, tx_addr in self.msg_addrs.items():
-      sub_addr = tx_addr[1]
-      max_len = 8 if sub_addr is None else 7
-
-      can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
+    for rx_addr, (tx_addr, sub_addr) in self.msg_addrs.items():
+      can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr, rx_addr,
                              self.bus, sub_addr=sub_addr, debug=self.debug)
 
+      max_len = 8 if sub_addr is None else 7
       msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
-      msgs[tx_addr] = msg
-      request_counter[tx_addr] = 0
-      request_done[tx_addr] = False
+      msgs[rx_addr] = msg
+      request_counter[rx_addr] = 0
+      request_done[rx_addr] = False
 
       # Send first query to each tx addr once
-      if tx_addr not in tx_addrs_sent:
+      if (tx_addr, sub_addr) not in tx_addrs_sent:
         msg.send(self.request[0])
-        tx_addrs_sent.append(tx_addr)
+        tx_addrs_sent.append((tx_addr, sub_addr))
 
     results = {}
     start_time = time.monotonic()
-    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
+    response_timeouts = {rx_addr: start_time + timeout for rx_addr in self.msg_addrs}
     while True:
       self.rx()
 
       if all(request_done.values()):
         break
 
-      for tx_addr, msg in msgs.items():
+      for rx_addr, msg in msgs.items():
+        tx_addr = get_rx_addr_for_tx_addr(rx_addr, self.response_offset)
         try:
           dat, updated = msg.recv()
         except Exception:
