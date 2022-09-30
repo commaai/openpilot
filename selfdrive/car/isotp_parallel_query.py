@@ -15,7 +15,6 @@ class IsoTpParallelQuery:
     self.bus = bus
     self.request = request
     self.response = response
-    self.response_offset = response_offset
     self.functional_addrs = functional_addrs or []
     self.debug = debug
     self.response_pending_timeout = response_pending_timeout
