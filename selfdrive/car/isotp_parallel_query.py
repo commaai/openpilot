@@ -93,7 +93,7 @@ class IsoTpParallelQuery:
       # Send first query to functional addresses, subsequent queries on physical addresses that respond
       for a in FUNCTIONAL_ADDRS:
         if a in self.addrs:
-          can_client = CanClient(self._can_tx, partial(self._can_rx, a), a, None, self.bus, debug=self.debug)
+          can_client = CanClient(self._can_tx, partial(self._can_rx, a), a, -1, self.bus, debug=self.debug)
           msg = IsoTpMessage(can_client, timeout=0, debug=self.debug)
           msg.send(self.request[0])
 
