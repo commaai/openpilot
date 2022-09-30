@@ -61,8 +61,8 @@ class FordCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ESCAPE_MK4: [
-    FordCarInfo("Ford Escape 2020"),
-    FordCarInfo("Ford Kuga EU", "Driver Assistance Pack"),
+    FordCarInfo("Ford Escape 2020-21"),
+    FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
   ],
   CAR.EXPLORER_MK6: FordCarInfo("Ford Explorer 2020-22"),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
@@ -91,17 +91,21 @@ FW_VERSIONS = {
     ],
     (Ecu.abs, 0x760, None): [
       b'LX6C-2D053-NS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6C-2D053-NY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'LJ6T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LJ6T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'MX6A-14C204-BEF\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.shiftByWire, 0x732, None): [
+      b'LX6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.EXPLORER_MK6: {
