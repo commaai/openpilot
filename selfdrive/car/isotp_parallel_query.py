@@ -26,7 +26,23 @@ class IsoTpParallelQuery:
       else:
         self.real_addrs.append((a, None))
 
-    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
+    if self.functional_addr:
+      # Add standard physical addresses to tx on after initial functional address query
+      real_addrs = []
+      self.msg_addrs = {}
+      for a in FUNCTIONAL_ADDRS:
+        if a in addrs:
+          self.msg_addrs[a] = get_rx_addr_for_tx_addr(a, rx_offset=response_offset)
+          for fun_addr in FUNCTIONAL_ADDRS[a][1:]:
+            print(fun_addr)
+            self.msg_addrs[fun_addr] = get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)
+          # self.msg_addrs[a].extend([get_rx_addr_for_tx_addr(fa, rx_offset=response_offset) for fa in FUNCTIONAL_ADDRS[a][1:]])
+
+    else:
+      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in self.addrs]
+
+      self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
+    print(self.msg_addrs)
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
