@@ -195,51 +195,48 @@ VectorXd Localizer::get_stdev() {
   return this->kf->get_P().diagonal().array().sqrt();
 }
 
-void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
+void Localizer::handle_sensor(double current_time, const cereal::SensorEventData::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
-  for (int i = 0; i < log.size(); i++) {
-    const cereal::SensorEventData::Reader& sensor_reading = log[i];
 
-    // Ignore empty readings (e.g. in case the magnetometer had no data ready)
-    if (sensor_reading.getTimestamp() == 0) {
-      continue;
+  // Ignore empty readings (e.g. in case the magnetometer had no data ready)
+  if (log.getTimestamp() == 0) {
+    return;
+  }
+
+  double sensor_time = 1e-9 * log.getTimestamp();
+
+  // sensor time and log time should be close
+  if (std::abs(current_time - sensor_time) > 0.1) {
+    LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
+    return;
+  }
+
+  // TODO: handle messages from two IMUs at the same time
+  if (log.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
+    return;
+  }
+
+  // Gyro Uncalibrated
+  if (log.getSensor() == SENSOR_GYRO_UNCALIBRATED && log.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
+    auto v = log.getGyroUncalibrated().getV();
+    auto meas = Vector3d(-v[2], -v[1], -v[0]);
+    if (meas.norm() < ROTATION_SANITY_CHECK) {
+      this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
     }
+  }
 
-    double sensor_time = 1e-9 * sensor_reading.getTimestamp();
+  // Accelerometer
+  if (log.getSensor() == SENSOR_ACCELEROMETER && log.getType() == SENSOR_TYPE_ACCELEROMETER) {
+    auto v = log.getAcceleration().getV();
 
-    // sensor time and log time should be close
-    if (std::abs(current_time - sensor_time) > 0.1) {
-      LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
-      return;
-    }
+    // TODO: reduce false positives and re-enable this check
+    // check if device fell, estimate 10 for g
+    // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
+    // this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
-      // TODO: handle messages from two IMUs at the same time
-    if (sensor_reading.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
-      continue;
-    }
-
-    // Gyro Uncalibrated
-    if (sensor_reading.getSensor() == SENSOR_GYRO_UNCALIBRATED && sensor_reading.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
-      auto v = sensor_reading.getGyroUncalibrated().getV();
-      auto meas = Vector3d(-v[2], -v[1], -v[0]);
-      if (meas.norm() < ROTATION_SANITY_CHECK) {
-        this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
-      }
-    }
-
-    // Accelerometer
-    if (sensor_reading.getSensor() == SENSOR_ACCELEROMETER && sensor_reading.getType() == SENSOR_TYPE_ACCELEROMETER) {
-      auto v = sensor_reading.getAcceleration().getV();
-
-      // TODO: reduce false positives and re-enable this check
-      // check if device fell, estimate 10 for g
-      // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
-      //this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
-
-      auto meas = Vector3d(-v[2], -v[1], -v[0]);
-      if (meas.norm() < ACCEL_SANITY_CHECK) {
-        this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
-      }
+    auto meas = Vector3d(-v[2], -v[1], -v[0]);
+    if (meas.norm() < ACCEL_SANITY_CHECK) {
+      this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
     }
   }
 }
@@ -441,8 +438,10 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
   this->time_check(t);
-  if (log.isSensorEvents()) {
-    this->handle_sensors(t, log.getSensorEvents());
+  if (log.isAccelerometer()) {
+    this->handle_sensor(t, log.getAccelerometer());
+  } else if (log.isGyroscope()) {
+    this->handle_sensor(t, log.getGyroscope());
   } else if (log.isGpsLocation()) {
     this->handle_gps(t, log.getGpsLocation());
   } else if (log.isGpsLocationExternal()) {
@@ -498,7 +497,9 @@ int Localizer::locationd_thread() {
   } else {
     gps_location_socket = "gpsLocationExternal";
   }
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  const std::initializer_list<const char *> service_list = {gps_location_socket,
+    "cameraOdometry", "liveCalibration", "carState", "carParams",
+    "accelerometer", "gyroscope", "magnetometer"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
@@ -521,11 +522,11 @@ int Localizer::locationd_thread() {
     }
 
     // 100Hz publish for notcars, 20Hz for cars
-    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "sensorEvents" : "cameraOdometry";
+    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
       bool inputsOK = sm.allAliveAndValid();
-      bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
       bool gpsOK = this->isGpsOK();
+      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope", "magnetometer"});
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);
