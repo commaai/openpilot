@@ -16,11 +16,11 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
-  addrs = list(range(0x7e0, 0x7e8)) + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
+  addrs = [0x7e0, 0x7e2, 0x18da10f1, 0x18da0ef1]  # engine, VMCU, 29-bit engine, PGM-FI
   for i in range(retry):
     for request, response in ((StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE), (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE)):
       try:
-        query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
+        query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], debug=debug)
         for (addr, rx_addr), vin in query.get_data(timeout).items():
 
           # Honda Bosch response starts with a length, trim to correct length
