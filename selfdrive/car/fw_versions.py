@@ -147,7 +147,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, timeout=1.):
+def get_present_ecus(logcan, sendcan, timeout=0.1):
   # TODO: see how fast it is to query each request individually, without doing this messy organizing by bus, then rx_addr
   parallel_queries = defaultdict(lambda: defaultdict(list))
   queries = defaultdict(lambda: defaultdict(list))
