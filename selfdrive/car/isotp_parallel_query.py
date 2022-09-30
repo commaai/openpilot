@@ -83,15 +83,14 @@ class IsoTpParallelQuery:
                              self.bus, sub_addr=sub_addr, debug=self.debug)
 
       msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
-
-      # Don't query functional addresses multiple times
-      if tx_addr not in tx_addrs_sent:
-        msg.send(self.request[0])
-        tx_addrs_sent.append(tx_addr)
-
       msgs[tx_addr] = msg
       request_counter[tx_addr] = 0
       request_done[tx_addr] = False
+
+      # Send first query to each tx addr once
+      if tx_addr not in tx_addrs_sent:
+        msg.send(self.request[0])
+        tx_addrs_sent.append(tx_addr)
 
     results = {}
     start_time = time.monotonic()
