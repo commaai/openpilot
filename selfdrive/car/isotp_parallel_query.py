@@ -16,17 +16,19 @@ class IsoTpParallelQuery:
     self.request = request
     self.response = response
     self.debug = debug
-    self.functional_addr = functional_addr
     self.response_pending_timeout = response_pending_timeout
 
-    self.real_addrs = []
-    for a in addrs:
-      if isinstance(a, tuple):
-        self.real_addrs.append(a)
-      else:
-        self.real_addrs.append((a, None))
+    if functional_addr:
+      assert all([a in FUNCTIONAL_ADDRS for a in addrs]), "Non-functional addresses in addrs"
+      real_addrs = []
+      if 0x7DF in addrs:
+        real_addrs.extend([(0x7E0 + i, None) for i in range(8)])
+      if 0x18DB33F1 in addrs:
+        real_addrs.extend([(0x18DA00F1 + (i << 8), None) for i in range(256)])
+    else:
+      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
 
-    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
+    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
@@ -35,13 +37,8 @@ class IsoTpParallelQuery:
 
     for packet in can_packets:
       for msg in packet.can:
-        if msg.src == self.bus:
-          if self.functional_addr:
-            if (0x7E8 <= msg.address <= 0x7EF) or (0x18DAF100 <= msg.address <= 0x18DAF1FF):
-              fn_addr = next(a for a in FUNCTIONAL_ADDRS if msg.address - a <= 32)
-              self.msg_buffer[fn_addr].append((msg.address, msg.busTime, msg.dat, msg.src))
-          elif msg.address in self.msg_addrs.values():
-            self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
+        if msg.src == self.bus and msg.address in self.msg_addrs.values():
+          self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
     """Helper function to send single message"""
