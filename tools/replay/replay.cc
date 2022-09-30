@@ -365,6 +365,7 @@ void Replay::handleDeprecatedEvent(const Event *evt) {
     for (auto old_evt : evt->event.getSensorEventsDEPRECATED()) {
       auto old_which = old_evt.which();
       void (cereal::Event::Builder::*setSensorData)(cereal::SensorEventData::Reader) = nullptr;
+
       switch (old_which) {
         case cereal::SensorEventData::ACCELERATION:
           setSensorData = &cereal::Event::Builder::setAccelerometer;
