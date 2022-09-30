@@ -84,6 +84,7 @@ class IsoTpParallelQuery:
     # Send initial requests
     if len(self.functional_addrs):
       for addr in self.functional_addrs:
+        # Send first request to functional addrs, subsequent responses are handled by physical addrs
         self._create_isotp_msg(addr, None, -1).send(self.request[0])
     else:
       for msg in msgs.values():
