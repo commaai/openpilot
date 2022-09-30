@@ -5,7 +5,7 @@ from functools import partial
 import cereal.messaging as messaging
 from system.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
+from panda.python.uds import CanClient, IsoTpMessage, get_rx_addr_for_tx_addr
 
 
 class IsoTpParallelQuery:
@@ -22,10 +22,11 @@ class IsoTpParallelQuery:
     if self.functional_addr:
       # Add standard physical addresses to tx on after initial functional address query
       self.msg_addrs = {}
-      for a in FUNCTIONAL_ADDRS:
-        if a in addrs:
-          for fun_addr in FUNCTIONAL_ADDRS[a]:
-            self.msg_addrs[get_rx_addr_for_tx_addr(fun_addr, rx_offset=response_offset)] = (a, None)
+      for a in addrs:
+        if a < 2 ** 11:
+          self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (0x7DF, None)
+        else:
+          self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (0x18DB33F1, None)
 
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
