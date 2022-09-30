@@ -39,11 +39,7 @@ class IsoTpParallelQuery:
     for packet in can_packets:
       for msg in packet.can:
         if msg.src == self.bus:
-          if self.functional_addr:
-            if (0x7E8 <= msg.address <= 0x7EF) or (0x18DAF100 <= msg.address <= 0x18DAF1FF):
-              fn_addr = next(a for a in FUNCTIONAL_ADDRS if msg.address - a <= 32)
-              self.msg_buffer[fn_addr].append((msg.address, msg.busTime, msg.dat, msg.src))
-          elif msg.address in self.msg_addrs.keys():
+          if msg.address in self.msg_addrs.keys():
             self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
