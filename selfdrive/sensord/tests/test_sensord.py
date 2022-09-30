@@ -165,9 +165,9 @@ class TestSensord(unittest.TestCase):
         high_delay_diffs = list(filter(lambda d: d >= 20., tdiffs))
         assert len(high_delay_diffs) < 15, f"Too many large diffs: {high_delay_diffs}"
 
-        # 100-108Hz, expected 104Hz
         avg_diff = sum(tdiffs)/len(tdiffs)
-        assert 9.3 < avg_diff < 10., f"avg difference {avg_diff}, below threshold"
+        avg_freq = 1. / (avg_diff * 1e-3)
+        assert 92. < avg_freq < 114., f"avg freq {avg_freq}Hz wrong, expected 104Hz"
 
         stddev = np.std(tdiffs)
         assert stddev < 2.0, f"Standard-dev to big {stddev}"
