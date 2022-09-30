@@ -141,6 +141,7 @@ def imu_callback(imu, vehicle_state):
     dat.gyroscope.init('gyroUncalibrated')
     dat.gyroscope.gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
     pm.send('gyroscope', dat)
+    time.sleep(0.01)
 
 
 def panda_state_function(vs: VehicleState, exit_event: threading.Event):
