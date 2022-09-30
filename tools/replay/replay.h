@@ -78,6 +78,7 @@ protected:
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   void buildTimeline();
+  void handleDeprecatedEvent(const Event *evt);
   inline bool isSegmentMerged(int n) {
     return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
   }

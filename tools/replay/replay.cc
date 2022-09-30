@@ -345,6 +345,61 @@ void Replay::publishFrame(const Event *e) {
   }
 }
 
+void Replay::handleDeprecatedEvent(const Event *evt) {
+  auto publish_frame = [this](cereal::Event::Which which, MessageBuilder &msg) {
+    if (sm == nullptr) {
+      pm->send(sockets_[which], msg);
+    } else {
+      sm->update_msgs(nanos_since_boot(), {{sockets_[which], msg.getRoot<cereal::Event>()}});
+    }
+  };
+
+  if (evt->which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D &&
+      sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
+    MessageBuilder msg;
+    auto ps = msg.initEvent().initPandaStates(1);
+    ps[0].setIgnitionLine(true);
+    ps[0].setPandaType(cereal::PandaState::PandaType::DOS);
+    publish_frame(cereal::Event::Which::PANDA_STATES, msg);
+  } else if (evt->which == cereal::Event::Which::SENSOR_EVENTS_D_E_P_R_E_C_A_T_E_D) {
+    for (auto old_evt : evt->event.getSensorEventsDEPRECATED()) {
+      auto old_which = old_evt.which();
+      void (cereal::Event::Builder::*setSensorData)(cereal::SensorEventData::Reader) = nullptr;
+      switch (old_which) {
+        case cereal::SensorEventData::ACCELERATION:
+          setSensorData = &cereal::Event::Builder::setAccelerometer;
+          break;
+        case cereal::SensorEventData::GYRO:
+        case cereal::SensorEventData::GYRO_UNCALIBRATED:
+          setSensorData = &cereal::Event::Builder::setGyroscope;
+          break;
+        case cereal::SensorEventData::LIGHT:
+        case cereal::SensorEventData::PROXIMITY:
+          setSensorData = &cereal::Event::Builder::setLightSensor;
+          break;
+        case cereal::SensorEventData::MAGNETIC:
+        case cereal::SensorEventData::MAGNETIC_UNCALIBRATED:
+          setSensorData = &cereal::Event::Builder::setMagnetometer;
+          break;
+        case cereal::SensorEventData::TEMPERATURE:
+          setSensorData = &cereal::Event::Builder::setTemperatureSensor;
+          break;
+        default:
+          break;
+      }
+
+      if (setSensorData) {
+        MessageBuilder msg;
+        auto new_evt = msg.initEvent();
+        (new_evt.*setSensorData)(old_evt);
+        if (sockets_[new_evt.which()] != nullptr) {
+          publish_frame(new_evt.which(), msg);
+        }
+      }
+    }
+  }
+}
+
 void Replay::stream() {
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
   std::unique_lock lk(stream_lock_);
@@ -370,15 +425,7 @@ void Replay::stream() {
       cur_mono_time_ = evt->mono_time;
       setCurrentSegment(toSeconds(cur_mono_time_) / 60);
 
-      // migration for pandaState -> pandaStates to keep UI working for old segments
-      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D &&
-          sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
-        MessageBuilder msg;
-        auto ps = msg.initEvent().initPandaStates(1);
-        ps[0].setIgnitionLine(true);
-        ps[0].setPandaType(cereal::PandaState::PandaType::DOS);
-        pm->send(sockets_[cereal::Event::Which::PANDA_STATES], msg);
-      }
+      handleDeprecatedEvent(evt);
 
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         // keep time
