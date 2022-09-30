@@ -20,12 +20,13 @@ class IsoTpParallelQuery:
     self.functional_addr = functional_addr
     self.response_pending_timeout = response_pending_timeout
 
+    # After first query to functional addrs, we communicate on physical addresses
     if self.functional_addr:
-      assert all([a in FUNCTIONAL_ADDRS for a in self.addrs]), "Non-functional addresses in addrs"
       real_addrs = []
       for a in FUNCTIONAL_ADDRS:
         if a in self.addrs:
           real_addrs.extend(FUNCTIONAL_ADDRS[a])
+
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in self.addrs]
 
@@ -90,9 +91,9 @@ class IsoTpParallelQuery:
 
     if self.functional_addr:
       # send first query to functional addresses, subsequent queries on physical addresses
-      for functional_addr in [0x7DF, 0x18DB33F1]:
-        if functional_addr in self.addrs:
-          can_client = CanClient(self._can_tx, partial(self._can_rx, functional_addr), functional_addr, None, self.bus, debug=self.debug)
+      for a in FUNCTIONAL_ADDRS:
+        if a in self.addrs:
+          can_client = CanClient(self._can_tx, partial(self._can_rx, a), a, None, self.bus, debug=self.debug)
           msg = IsoTpMessage(can_client, timeout=0, debug=self.debug)
           msg.send(self.request[0])
 
