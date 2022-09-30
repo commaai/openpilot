@@ -22,9 +22,9 @@ class IsoTpParallelQuery:
       assert all([a in FUNCTIONAL_ADDRS for a in addrs]), "Non-functional addresses in addrs"
       real_addrs = []
       if 0x7DF in addrs:
-        real_addrs.extend([(0x7e0 + i, None) for i in range(8)])
+        real_addrs.extend([(0x7E0 + i, None) for i in range(8)])
       if 0x18DB33F1 in addrs:
-        real_addrs.extend([(0x18da00f1 + (i << 8), None) for i in range(256)])
+        real_addrs.extend([(0x18DA00F1 + (i << 8), None) for i in range(256)])
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
 
