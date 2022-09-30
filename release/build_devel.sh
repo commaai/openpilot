@@ -12,10 +12,7 @@ fi
 # set git identity
 source $DIR/identity.sh
 
-echo "[-] Setting up repo T=$SECONDS"
-
-cd $SOURCE_DIR
-git fetch origin
+echo "[-] Setting up target repo T=$SECONDS"
 
 rm -rf $TARGET_DIR
 mkdir -p $TARGET_DIR
