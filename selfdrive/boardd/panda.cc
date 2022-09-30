@@ -175,54 +175,39 @@ int Panda::usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_
 }
 
 int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  int err;
-  int transferred = 0;
-
-  if (!connected) {
-    return 0;
-  }
-
+int transferred = 0;
   std::lock_guard lk(usb_lock);
-  do {
+  while (connected) {
     // Try sending can messages. If the receive buffer on the panda is full it will NAK
     // and libusb will try again. After 5ms, it will time out. We will drop the messages.
-    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
-
-    if (err == LIBUSB_ERROR_TIMEOUT) {
-      LOGW("Transmit buffer full");
+    int err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+    if ((err == 0 && length == transferred) || err == LIBUSB_ERROR_TIMEOUT) {
+      if (err == LIBUSB_ERROR_TIMEOUT) {
+        LOGW("Transmit buffer full");
+      }
       break;
-    } else if (err != 0 || length != transferred) {
-      handle_usb_issue(err, __func__);
     }
-  } while(err != 0 && connected);
-
+    handle_usb_issue(err, __func__);
+  }
   return transferred;
 }
 
 int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  int err;
   int transferred = 0;
-
-  if (!connected) {
-    return 0;
-  }
-
   std::lock_guard lk(usb_lock);
-
-  do {
-    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
-
-    if (err == LIBUSB_ERROR_TIMEOUT) {
-      break; // timeout is okay to exit, recv still happened
-    } else if (err == LIBUSB_ERROR_OVERFLOW) {
-      comms_healthy = false;
-      LOGE_100("overflow got 0x%x", transferred);
-    } else if (err != 0) {
-      handle_usb_issue(err, __func__);
+  while (connected) {
+    int err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+    if (err == 0 || err == LIBUSB_ERROR_TIMEOUT) {
+      // timeout is okay to exit, recv still happened
+      break;
     }
 
-  } while(err != 0 && connected);
-
+    if (err == LIBUSB_ERROR_OVERFLOW) {
+      comms_healthy = false;
+      LOGE_100("overflow got 0x%x", transferred);
+    }
+    handle_usb_issue(err, __func__);
+  }
   return transferred;
 }
 
