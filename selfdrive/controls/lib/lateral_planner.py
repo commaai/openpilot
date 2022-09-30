@@ -45,6 +45,7 @@ class LateralPlanner:
       self.path_xyz = np.column_stack([md.position.x, md.position.y, md.position.z])
       self.t_idxs = np.array(md.position.t)
       self.plan_yaw = np.array(md.orientation.z)
+      self.plan_curv_rate = np.gradient(np.array(md.orientationRate.z) / (v_ego + 1e-3), self.t_idxs)
     if len(md.position.xStd) == TRAJECTORY_SIZE:
       self.path_xyz_stds = np.column_stack([md.position.xStd, md.position.yStd, md.position.zStd])
 
