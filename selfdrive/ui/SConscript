@@ -32,6 +32,7 @@ if maps:
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
+Export('widgets')
 qt_libs = [widgets, qt_util] + base_libs
 
 # build assets
