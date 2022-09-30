@@ -147,33 +147,46 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 
 
 def get_present_ecus(logcan, sendcan):
-  queries = list()
-  parallel_queries = list()
-  responses = set()
-
+  requests_by_rx_offset = defaultdict(list)
   for brand, r in REQUESTS:
-    for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in brand_versions:
-        # Only query ecus in whitelist if whitelist is not empty
-        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          a = (addr, sub_addr, r.bus)
-          # Build set of queries
-          if sub_addr is None:
-            if a not in parallel_queries:
-              parallel_queries.append(a)
-          else:  # subaddresses must be queried one by one
-            if [a] not in queries:
-              queries.append([a])
+    if brand not in ['toyota']:
+      continue
+    requests_by_rx_offset[r.rx_offset].append((brand, r))
 
-          # Build set of expected responses to filter
-          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
-          responses.add((response_addr, sub_addr, r.bus))
+  addrs_by_rx_offset = defaultdict(lambda: defaultdict(set))
+  parallel_addrs_by_rx_offset = defaultdict(lambda: defaultdict(set))
 
-  queries.insert(0, parallel_queries)
+
+  # for brand, r in REQUESTS:
+  for brand, config in FW_QUERY_CONFIGS.items():
+
+
+
+
+  for rx_offset, brand_requests in requests_by_rx_offset.items():
+    parallel_queries = []
+    for brand, r in brand_requests:
+      for brand_versions in VERSIONS[brand].values():
+        # print(brand_versions)
+        for ecu_type, addr, sub_addr in brand_versions.keys():
+          if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+            a = (addr, sub_addr, r.bus)
+            # Build set of queries
+            if sub_addr is None:
+              if a not in parallel_queries:
+                parallel_queries.append(a)
+            else:  # subaddresses must be queries one by one
+              if [a] not in addrs_by_rx_offset[rx_offset]:
+                addrs_by_rx_offset[rx_offset].append([a])
+
+    addrs_by_rx_offset[rx_offset].insert(0, parallel_queries)
 
   ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
-  for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+  for rx_offset, addrs in addrs_by_rx_offset:
+    query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
+
+    for query in queries:
+      ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
 
 
