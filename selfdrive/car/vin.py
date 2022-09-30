@@ -2,6 +2,7 @@
 import re
 
 import cereal.messaging as messaging
+from panda.python.uds import get_rx_addr_for_tx_addr
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.fw_query_definitions import StdQueries
 from system.swaglog import cloudlog
@@ -20,18 +21,18 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
     for request, response in ((StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE), (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE)):
       try:
         query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], debug=debug)
-        for (addr, rx_addr), vin in query.get_data(timeout).items():
+        for (tx_addr, _), vin in query.get_data(timeout).items():
 
           # Honda Bosch response starts with a length, trim to correct length
           if vin.startswith(b'\x11'):
             vin = vin[1:18]
 
-          return addr[0], rx_addr, vin.decode()
+          return get_rx_addr_for_tx_addr(tx_addr), vin.decode()
         cloudlog.error(f"vin query retry ({i+1}) ...")
       except Exception:
         cloudlog.exception("VIN query exception")
 
-  return 0, 0, VIN_UNKNOWN
+  return 0, VIN_UNKNOWN
 
 
 if __name__ == "__main__":
@@ -49,5 +50,5 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   time.sleep(1)
 
-  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, args.bus, args.timeout, args.retry, debug=args.debug)
-  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
+  vin_rx_addr, vin = get_vin(logcan, sendcan, args.bus, args.timeout, args.retry, debug=args.debug)
+  print(f'RX: {hex(vin_rx_addr)}, VIN: {vin}')
