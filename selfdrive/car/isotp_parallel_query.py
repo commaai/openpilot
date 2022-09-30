@@ -31,7 +31,7 @@ class IsoTpParallelQuery:
 
     for packet in can_packets:
       for msg in packet.can:
-        if msg.src == self.bus and msg.address in self.msg_addrs.keys():
+        if msg.src == self.bus and msg.address in self.msg_addrs.values():
           self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
@@ -76,8 +76,8 @@ class IsoTpParallelQuery:
     msgs = {}
     request_counter = {}
     request_done = {}
-    for (tx_addr, sub_addr), rx_addr in self.msg_addrs.items():
-      msgs[tx_addr] = self._create_isotp_msg(tx_addr, sub_addr, rx_addr)
+    for tx_addr, rx_addr in self.msg_addrs.items():
+      msgs[tx_addr] = self._create_isotp_msg(*tx_addr, rx_addr)
       request_counter[tx_addr] = 0
       request_done[tx_addr] = False
 
