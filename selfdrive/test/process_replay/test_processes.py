@@ -18,7 +18,7 @@ from tools.lib.logreader import LogReader
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI", "d824e27e8c60172c|2022-09-13--11-26-50--2"),     # HYUNDAI.KIA_EV6
+  ("HYUNDAI2", "d824e27e8c60172c|2022-09-13--11-26-50--2"),     # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
@@ -40,7 +40,7 @@ source_segments = [
 segments = [
   ("BODY", "regenFA002A80700|2022-09-27--15-37-02--0"),
   ("HYUNDAI", "regenBE53A59065B|2022-09-27--16-52-03--0"),
-  ("HYUNDAI", "regen11AA43BCA5F|2022-09-27--15-39-54--0"),
+  ("HYUNDAI2", "regen11AA43BCA5F|2022-09-27--15-39-54--0"),
   ("TOYOTA", "regen929C5790007|2022-09-27--16-27-47--0"),
   ("TOYOTA2", "regenEA3950D7F22|2022-09-27--15-43-24--0"),
   ("TOYOTA3", "regen89026F6BD8D|2022-09-27--15-45-37--0"),
