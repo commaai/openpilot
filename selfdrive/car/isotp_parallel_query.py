@@ -20,7 +20,8 @@ class IsoTpParallelQuery:
     self.response_pending_timeout = response_pending_timeout
 
     real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
-    assert all([tx_addr[0] not in FUNCTIONAL_ADDRS for tx_addr in real_addrs]), "Functional addresses should be defined in functional_addrs"
+    for tx_addr, _ in real_addrs:
+      assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
