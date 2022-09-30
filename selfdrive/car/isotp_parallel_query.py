@@ -16,17 +16,14 @@ class IsoTpParallelQuery:
     self.request = request
     self.response = response
     self.debug = debug
-    self.functional_addr = functional_addr
     self.response_pending_timeout = response_pending_timeout
 
-    if self.functional_addr:
-      # Add standard physical addresses to tx on after initial functional address query
+    if functional_addr:
+      # If functional_addr is True, we query the functional addrs and only process responses from addrs's respective rx addrs
       self.msg_addrs = {}
       for a in addrs:
-        if a < 2 ** 11:
-          self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (0x7DF, None)
-        else:
-          self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (0x18DB33F1, None)
+        functional_tx_addr = 0x7DF if a < 2 ** 11 else 0x18DB33F1
+        self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (functional_tx_addr, None)
 
     else:
       real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
