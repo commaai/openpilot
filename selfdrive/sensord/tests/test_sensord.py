@@ -198,26 +198,24 @@ class TestSensord(unittest.TestCase):
         m = getattr(measurement, measurement.which())
 
         # check if gyro and accel timestamps are before logMonoTime
-        if str(m.source).startswith("lsm6ds3"):
-          if m.which() != 'temperature':
-            err_msg = f"Timestamp after logMonoTime: {m.timestamp} > {measurement.logMonoTime}"
-            assert m.timestamp < measurement.logMonoTime, err_msg
+        if str(m.source).startswith("lsm6ds3") and m.which() != 'temperature':
+          err_msg = f"Timestamp after logMonoTime: {m.timestamp} > {measurement.logMonoTime}"
+          assert m.timestamp < measurement.logMonoTime, err_msg
 
         # negative values might occur, as non interrupt packages created
         # before the sensor is read
-        tdiffs.append(abs(measurement.logMonoTime - m.timestamp))
+        tdiffs.append(abs(measurement.logMonoTime - m.timestamp) / 1e6)
 
-    high_delay_diffs = set(filter(lambda d: d >= 10*10**6, tdiffs))
-    assert len(high_delay_diffs) < 15, f"Too many high delay packages: {high_delay_diffs}"
+    high_delay_diffs = set(filter(lambda d: d >= 15., tdiffs))
+    assert len(high_delay_diffs) < 20, f"Too many measurements published : {high_delay_diffs}"
 
     avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
-    assert avg_diff < 4*10**6, f"Avg packet diff: {avg_diff:.1f}ns"
+    assert avg_diff < 4, f"Avg packet diff: {avg_diff:.1f}ms"
 
     stddev = np.std(tdiffs)
-    assert stddev < 2*10**6, f"Timing diffs have to high stddev: {stddev}"
+    assert stddev < 2, f"Timing diffs have too high stddev: {stddev}"
 
   def test_sensor_values_sanity_check(self):
-
     sensor_values = dict()
     for etype in self.events:
       for measurement in self.events[etype]:
@@ -236,7 +234,6 @@ class TestSensord(unittest.TestCase):
 
     # Sanity check sensor values and counts
     for sensor, stype in sensor_values:
-
       for s in ALL_SENSORS[sensor]:
         if s.type != stype:
           continue
@@ -252,7 +249,6 @@ class TestSensord(unittest.TestCase):
         assert s.sanity_min <= mean_norm <= s.sanity_max, err_msg
 
   def test_sensor_verify_no_interrupts_after_stop(self):
-
     managed_processes["sensord"].start()
     time.sleep(3)
 
@@ -272,6 +268,7 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
     state_two = get_irq_count(LSM_IRQ)
     assert state_one == state_two, "Interrupts received after sensord stop!"
+
 
 if __name__ == "__main__":
   unittest.main()
