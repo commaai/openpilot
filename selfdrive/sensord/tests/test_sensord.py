@@ -78,19 +78,14 @@ ALL_SENSORS = {
   }
 }
 
-LSM_INT_GPIO = 84
+LSM_IRQ = 336
 
-def get_proc_interrupts(int_pin):
-  with open("/proc/interrupts") as f:
-    lines = f.read().split("\n")
-
-  for line in lines:
-    if f" {int_pin} " in line:
-      return ''.join(list(filter(lambda e: e != '', line.split(' ')))[1:6])
-  return ""
+def get_irq_count(irq: int):
+  with open(f"/sys/kernel/irq/{irq}/per_cpu_count") as f:
+    per_cpu = map(int, f.read().split(","))
+    return sum(per_cpu)
 
 def read_sensor_events(duration_sec):
-
   sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
                   'gyroscope2', 'lightSensor', 'temperatureSensor']
   esocks = {}
@@ -104,8 +99,7 @@ def read_sensor_events(duration_sec):
       events[esock] += messaging.drain_sock(esocks[esock])
     time.sleep(0.1)
 
-  for etype in events:
-    assert len(events[etype]) != 0, f"No {etype} events collected"
+  assert sum(map(len, events.values())) != 0, f"No sensor events collected!"
 
   return events
 
@@ -120,11 +114,14 @@ class TestSensord(unittest.TestCase):
 
     # read initial sensor values every test case can use
     os.system("pkill -f ./_sensord")
-    managed_processes["sensord"].start()
-    time.sleep(3)
-    cls.sample_secs = 10
-    cls.events = read_sensor_events(cls.sample_secs)
-    managed_processes["sensord"].stop()
+    try:
+      managed_processes["sensord"].start()
+      time.sleep(3)
+      cls.sample_secs = 10
+      cls.events = read_sensor_events(cls.sample_secs)
+    finally:
+      # teardown won't run if this doesn't succeed
+      managed_processes["sensord"].stop()
 
   @classmethod
   def tearDownClass(cls):
@@ -260,9 +257,9 @@ class TestSensord(unittest.TestCase):
     time.sleep(3)
 
     # read /proc/interrupts to verify interrupts are received
-    state_one = get_proc_interrupts(LSM_INT_GPIO)
+    state_one = get_irq_count(LSM_IRQ)
     time.sleep(1)
-    state_two = get_proc_interrupts(LSM_INT_GPIO)
+    state_two = get_irq_count(LSM_IRQ)
 
     error_msg = f"no interrupts received after sensord start!\n{state_one} {state_two}"
     assert state_one != state_two, error_msg
@@ -271,9 +268,9 @@ class TestSensord(unittest.TestCase):
     time.sleep(1)
 
     # read /proc/interrupts to verify no more interrupts are received
-    state_one = get_proc_interrupts(LSM_INT_GPIO)
+    state_one = get_irq_count(LSM_IRQ)
     time.sleep(1)
-    state_two = get_proc_interrupts(LSM_INT_GPIO)
+    state_two = get_irq_count(LSM_IRQ)
     assert state_one == state_two, "Interrupts received after sensord stop!"
 
 if __name__ == "__main__":
