@@ -50,10 +50,6 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
       elif started_condition:
         long_control_state = LongCtrlState.pid
 
-
-
-
-
   return long_control_state
 
 

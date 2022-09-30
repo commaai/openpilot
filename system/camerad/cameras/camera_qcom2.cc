@@ -1078,8 +1078,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
-      gain_bytes = Params().get("CameraDebugExpGain");
-      time_bytes = Params().get("CameraDebugExpTime");
+    gain_bytes = Params().get("CameraDebugExpGain");
+    time_bytes = Params().get("CameraDebugExpTime");
   }
 
   if (gain_bytes.size() > 0 && time_bytes.size() > 0) {
@@ -1150,10 +1150,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
   if (camera_id == CAMERA_ID_AR0231) {
     uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
     struct i2c_random_wr_payload exp_reg_array[] = {
-                                                    {0x3366, analog_gain_reg},
-                                                    {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
-                                                    {0x3012, (uint16_t)exposure_time},
-                                                  };
+      {0x3366, analog_gain_reg},
+      {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
+      {0x3012, (uint16_t)exposure_time},
+    };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
     // t_HCG + t_LCG + t_VS on LPD, t_SPD on SPD
@@ -1166,7 +1166,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
     uint32_t real_gain = ox03c10_analog_gains_reg[new_g];
     uint32_t min_gain = ox03c10_analog_gains_reg[0];
     struct i2c_random_wr_payload exp_reg_array[] = {
-
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
       {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},

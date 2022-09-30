@@ -32,7 +32,7 @@ git checkout -f --track origin/master-ci
 git reset --hard master-ci
 git checkout master-ci
 git reset --hard origin/devel
-git clean -xdf
+git clean -xdff
 git lfs uninstall
 
 # remove everything except .git
@@ -41,7 +41,7 @@ find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -
 
 # reset source tree
 cd $SOURCE_DIR
-git clean -xdf
+git clean -xdff
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"

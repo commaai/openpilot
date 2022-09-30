@@ -233,6 +233,10 @@ class Controls:
       self.events.add(EventName.controlsInitializing)
       return
 
+    # no more events while in dashcam mode
+    if self.read_only:
+      return
+
     # Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
     if not self.CP.pcmCruise and self.v_cruise_kph == V_CRUISE_INITIAL and resume_pressed:
@@ -591,7 +595,7 @@ class Controls:
     CC.enabled = self.enabled
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                     CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
+                   CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
     CC.longActive = self.active and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
@@ -714,7 +718,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                    and not CC.latActive and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                  and not CC.latActive and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
 
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction

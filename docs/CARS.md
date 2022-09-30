@@ -53,27 +53,27 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Honda|Passport 2019-21|All|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Honda|Pilot 2016-22|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Honda|Ridgeline 2017-22|Honda Sensing|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
-|Hyundai|Elantra 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
-|Hyundai|Elantra 2021-22|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
+|Hyundai|Elantra 2017-19|Smart Cruise Control (SCC)|Stock|19 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
+|Hyundai|Elantra 2021-22|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Hyundai|Elantra Hybrid 2021-22|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
-|Hyundai|Genesis 2015-16|Smart Cruise Control (SCC) & LKAS|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai J|
+|Hyundai|Genesis 2015-16|Smart Cruise Control (SCC)|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai J|
 |Hyundai|Ioniq 5 2022|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai Q|
-|Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|Hyundai|Ioniq Electric 2020|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
-|Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|Hyundai|Ioniq Hybrid 2020-22|Smart Cruise Control (SCC) & LFA|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
-|Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|Hyundai|Ioniq Plug-in Hybrid 2020-21|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Hyundai|Ioniq Electric 2020|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Hyundai|Ioniq Hybrid 2020-22|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Hyundai|Ioniq Plug-in Hybrid 2019|Smart Cruise Control (SCC)|openpilot|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Hyundai|Ioniq Plug-in Hybrid 2020-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Hyundai|Kona 2020|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
-|Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
+|Hyundai|Kona Electric 2018-21|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
 |Hyundai|Kona Electric 2022|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai O|
-|Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai I|
+|Hyundai|Kona Hybrid 2020|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai I|
 |Hyundai|Palisade 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Hyundai|Santa Fe 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai D|
 |Hyundai|Santa Fe 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Hyundai|Santa Fe Hybrid 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Hyundai|Santa Fe Plug-in Hybrid 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
-|Hyundai|Sonata 2018-19|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Hyundai|Sonata 2018-19|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
 |Hyundai|Sonata 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Hyundai|Sonata Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Hyundai|Tucson 2021|Smart Cruise Control (SCC)|openpilot|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
@@ -90,15 +90,15 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Niro EV 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
 |Kia|Niro EV 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Niro EV 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
-|Kia|Niro Hybrid 2021|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
-|Kia|Niro Hybrid 2022|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
+|Kia|Niro Hybrid 2021|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
+|Kia|Niro Hybrid 2022|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Kia|Niro Plug-in Hybrid 2018-19|All|openpilot|10 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Optima 2017|Advanced Smart Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai B|
 |Kia|Optima 2019-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
-|Kia|Seltos 2021|Smart Cruise Control (SCC) & LKAS|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
+|Kia|Seltos 2021|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Kia|Sorento 2018|Advanced Smart Cruise Control|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|Kia|Sorento 2019|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
-|Kia|Stinger 2018-20|Smart Cruise Control (SCC) & LKAS|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Sorento 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Kia|Stinger 2018-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Telluride 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Lexus|CT Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
