@@ -5,30 +5,25 @@ from functools import partial
 import cereal.messaging as messaging
 from system.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from panda.python.uds import CanClient, IsoTpMessage, get_rx_addr_for_tx_addr
+from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False, response_pending_timeout=10):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addrs=None, debug=False, response_pending_timeout=10):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
     self.request = request
     self.response = response
     self.response_offset = response_offset
+    self.functional_addrs = functional_addrs or []
     self.debug = debug
     self.response_pending_timeout = response_pending_timeout
 
-    if functional_addr:
-      # If functional_addr is True, we query the functional addrs and only process responses from addrs's respective rx addrs
-      self.msg_addrs = {}
-      for a in addrs:
-        functional_tx_addr = 0x7DF if a < 2 ** 11 else 0x18DB33F1
-        self.msg_addrs[get_rx_addr_for_tx_addr(a, self.response_offset)] = (functional_tx_addr, None)
+    real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
+    assert all([tx_addr[0] not in FUNCTIONAL_ADDRS for tx_addr in real_addrs]), "Functional addresses should be defined in functional_addrs"
 
-    else:
-      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
-      self.msg_addrs = {get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=self.response_offset): tx_addr for tx_addr in real_addrs}
+    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
@@ -68,6 +63,13 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
+  def _create_isotp_msg(self, tx_addr, sub_addr, rx_addr):
+    can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr, rx_addr,
+                           self.bus, sub_addr=sub_addr, debug=self.debug)
+
+    max_len = 8 if sub_addr is None else 7
+    return IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
+
   def get_data(self, timeout, total_timeout=60.):
     self._drain_rx()
 
@@ -75,33 +77,29 @@ class IsoTpParallelQuery:
     msgs = {}
     request_counter = {}
     request_done = {}
-    tx_addrs_sent = []
-    for rx_addr, (tx_addr, sub_addr) in self.msg_addrs.items():
-      can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr, rx_addr,
-                             self.bus, sub_addr=sub_addr, debug=self.debug)
+    for (tx_addr, sub_addr), rx_addr in self.msg_addrs.items():
+      msgs[tx_addr] = self._create_isotp_msg(tx_addr, sub_addr, rx_addr)
+      request_counter[tx_addr] = 0
+      request_done[tx_addr] = False
 
-      max_len = 8 if sub_addr is None else 7
-      msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
-      msgs[rx_addr] = msg
-      request_counter[rx_addr] = 0
-      request_done[rx_addr] = False
-
-      # Send first query to each tx addr once
-      if (tx_addr, sub_addr) not in tx_addrs_sent:
+    # Send initial requests
+    if len(self.functional_addrs):
+      for addr in self.functional_addrs:
+        self._create_isotp_msg(addr, None, -1).send(self.request[0])
+    else:
+      for msg in msgs.values():
         msg.send(self.request[0])
-        tx_addrs_sent.append((tx_addr, sub_addr))
 
     results = {}
     start_time = time.monotonic()
-    response_timeouts = {rx_addr: start_time + timeout for rx_addr in self.msg_addrs}
+    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
     while True:
       self.rx()
 
       if all(request_done.values()):
         break
 
-      for rx_addr, msg in msgs.items():
-        tx_addr = get_rx_addr_for_tx_addr(rx_addr, self.response_offset)
+      for tx_addr, msg in msgs.items():
         try:
           dat, updated = msg.recv()
         except Exception:
