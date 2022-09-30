@@ -16,7 +16,7 @@ from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
-from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
+from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
@@ -61,6 +61,7 @@ class Laikad:
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
+    self.gps_week = None
     self.use_qcom = use_qcom
 
   def load_cache(self):
@@ -129,9 +130,27 @@ class Laikad:
       new_meas = read_raw_ublox(report)
     return week, tow, new_meas
 
+  def is_ephemeris(self, gnss_msg):
+    if self.use_qcom:
+      return gnss_msg.which == 'drSvPoly'
+    else:
+      return gnss_msg.which == 'ephemeris'
+
+  def read_ephemeris(self, gnss_msg):
+    # TODO this only works on GLONASS
+    if self.use_qcom:
+      # TODO this is not robust to gps week rollover
+      if self.gps_week is not None:
+        ephem = parse_qcom_ephem(gnss_msg.ephemeris, self.gps_week)
+    else:
+      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
+    self.astro_dog.add_navs({ephem.prn: [ephem]})
+    self.cache_ephemeris(t=ephem.epoch)
+
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     if self.is_good_report(gnss_msg):
       week, tow, new_meas = self.read_report(gnss_msg)
+      self.gps_week = week
 
       t = gnss_mono_time * 1e-9
       if week > 0:
@@ -172,11 +191,9 @@ class Laikad:
         "correctedMeasurements": meas_msgs
       }
       return dat
-    # TODO this only works on GLONASS, qcom needs live ephemeris parsing too
-    elif gnss_msg.which == 'ephemeris':
-      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
-      self.astro_dog.add_navs({ephem.prn: [ephem]})
-      self.cache_ephemeris(t=ephem.epoch)
+    elif self.is_ephemeris(gnss_msg):
+      self.read_ephemeris(gnss_msg)
+
     #elif gnss_msg.which == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
