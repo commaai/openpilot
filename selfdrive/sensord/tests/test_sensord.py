@@ -99,7 +99,7 @@ def read_sensor_events(duration_sec):
       events[esock] += messaging.drain_sock(esocks[esock])
     time.sleep(0.1)
 
-  assert sum(map(len, events.values())) != 0, f"No sensor events collected!"
+  assert sum(map(len, events.values())) != 0, "No sensor events collected!"
 
   return events
 
