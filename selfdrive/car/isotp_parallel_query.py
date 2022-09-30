@@ -120,7 +120,9 @@ class IsoTpParallelQuery:
 
         counter = request_counter[tx_addr]
         expected_response = self.response[counter]
-        response_valid = dat[:len(expected_response)] == expected_response
+        # Valid if response starts with expected data, or wildcard None is specified
+        response_valid = (expected_response is None or
+                          dat[:len(expected_response)] == expected_response)
 
         if response_valid:
           if counter + 1 < len(self.request):
