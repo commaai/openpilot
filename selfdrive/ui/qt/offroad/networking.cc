@@ -153,7 +153,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   ToggleControl *roamingToggle = new ToggleControl(tr("Enable Roaming"), "", "", roamingEnabled);
   QObject::connect(roamingToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     params.putBool("GsmRoaming", state);
-    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.getBool("GsmUnmetered"));
+    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.getBool("GsmMetered"));
   });
   list->addItem(roamingToggle);
 
@@ -168,21 +168,21 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     } else {
       params.put("GsmApn", apn.toStdString());
     }
-    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmUnmetered"));
+    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmMetered"));
   });
   list->addItem(editApnButton);
 
   // Metered toggle
-  const bool unmeteredOverride = params.getBool("GsmUnmetered");
-  ToggleControl *meteredToggle = new ToggleControl(tr("Force Unmetered Cellular"), "", "", !unmeteredOverride);
+  const bool metered = params.getBool("GsmMetered");
+  ToggleControl *meteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
   QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
-    params.putBool("GsmUnmetered", state);
+    params.putBool("GsmMetered", state);
     wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
   });
   list->addItem(meteredToggle);
 
   // Set initial config
-  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), unmeteredOverride);
+  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);

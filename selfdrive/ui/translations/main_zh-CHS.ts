@@ -59,7 +59,11 @@
         <translation>留空以自动配置</translation>
     </message>
     <message>
-        <source>Force Unmetered Cellular</source>
+        <source>Cellular Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

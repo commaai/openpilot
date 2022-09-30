@@ -59,7 +59,11 @@
         <translation>자동설정하려면 공백으로 두세요</translation>
     </message>
     <message>
-        <source>Force Unmetered Cellular</source>
+        <source>Cellular Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
