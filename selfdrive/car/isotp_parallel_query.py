@@ -89,7 +89,7 @@ class IsoTpParallelQuery:
 
     # If querying functional addrs, set up physical IsoTpMessages to send consecutive frames
     for msg in msgs.values():
-      msg.send(self.request[0], dry_run=len(self.functional_addrs) > 0)
+      msg.send(self.request[0], setup_only=len(self.functional_addrs) > 0)
 
     results = {}
     start_time = time.monotonic()
