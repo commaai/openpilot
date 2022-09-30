@@ -21,6 +21,7 @@ class IsoTpParallelQuery:
     if functional_addr:
       # If functional_addr is True, we query the functional addrs and only process responses from addrs's respective rx addrs
       self.msg_addrs = {}
+      # TODO: try to use first tx addr as 7df, the rest as simulated ones: 0x7e1, 0x7e2, etc...
       for a in addrs:
         functional_tx_addr = 0x7DF if a < 2 ** 11 else 0x18DB33F1
         self.msg_addrs[get_rx_addr_for_tx_addr(a, response_offset)] = (functional_tx_addr, None)
