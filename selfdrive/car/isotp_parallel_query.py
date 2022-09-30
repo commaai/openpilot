@@ -81,14 +81,14 @@ class IsoTpParallelQuery:
       request_counter[tx_addr] = 0
       request_done[tx_addr] = False
 
-    # Send initial requests
+    # Send first request to functional addrs, subsequent responses are handled by physical addrs
     if len(self.functional_addrs):
       for addr in self.functional_addrs:
-        # Send first request to functional addrs, subsequent responses are handled by physical addrs
         self._create_isotp_msg(addr, None, -1).send(self.request[0])
-    else:
-      for msg in msgs.values():
-        msg.send(self.request[0])
+
+    # If querying functional addrs, set up physical IsoTpMessages to send consecutive frames
+    for msg in msgs.values():
+      msg.send(self.request[0], dry_run=len(self.functional_addrs) > 0)
 
     results = {}
     start_time = time.monotonic()
