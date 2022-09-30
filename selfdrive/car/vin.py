@@ -23,6 +23,7 @@ def get_vin(logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
       try:
         query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, [request, ], [response, ], functional_addrs=FUNCTIONAL_ADDRS, debug=debug)
         results = query.get_data(timeout)
+
         for addr in valid_vin_addrs:
           vin = results.get((addr, None))
           if vin is not None:
