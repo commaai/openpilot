@@ -13,6 +13,7 @@ class IsoTpParallelQuery:
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
+    self.addrs = addrs
     self.request = request
     self.response = response
     self.debug = debug
@@ -20,14 +21,14 @@ class IsoTpParallelQuery:
     self.response_pending_timeout = response_pending_timeout
 
     if self.functional_addr:
-      assert all([a in FUNCTIONAL_ADDRS for a in addrs]), "Non-functional addresses in addrs"
+      assert all([a in FUNCTIONAL_ADDRS for a in self.addrs]), "Non-functional addresses in addrs"
       real_addrs = []
-      if 0x7DF in addrs:
+      if 0x7DF in self.addrs:
         real_addrs.extend([(0x7E0 + i, None) for i in range(8)])
-      if 0x18DB33F1 in addrs:
+      if 0x18DB33F1 in self.addrs:
         real_addrs.extend([(0x18DA00F1 + (i << 8), None) for i in range(256)])
     else:
-      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
+      real_addrs = [a if isinstance(a, tuple) else (a, None) for a in self.addrs]
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
@@ -77,26 +78,25 @@ class IsoTpParallelQuery:
     request_counter = {}
     request_done = {}
     for tx_addr, rx_addr in self.msg_addrs.items():
-      # rx_addr not set when using functional tx addr
-      id_addr = rx_addr or tx_addr[0]
       sub_addr = tx_addr[1]
-
-      can_client = CanClient(self._can_tx, partial(self._can_rx, id_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
-                             self.bus, sub_addr=sub_addr, debug=self.debug)
-
       max_len = 8 if sub_addr is None else 7
 
+      can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
+                             self.bus, sub_addr=sub_addr, debug=self.debug)
       msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
+
       msgs[tx_addr] = msg
       request_counter[tx_addr] = 0
       request_done[tx_addr] = False
 
     if self.functional_addr:
-      # send first query to 0x7DF
-      # TODO: support both functional addresses
-      can_client = CanClient(self._can_tx, partial(self._can_rx, 0x7DF), 0x7DF, None, self.bus, debug=self.debug)
-      msg = IsoTpMessage(can_client, timeout=0, debug=self.debug)
-      msg.send(self.request[0])
+      # send first query to functional addresses, subsequent queries on physical addresses
+      for functional_addr in [0x7DF, 0x18DB33F1]:
+        if functional_addr in self.addrs:
+          can_client = CanClient(self._can_tx, partial(self._can_rx, functional_addr), functional_addr, None, self.bus, debug=self.debug)
+          msg = IsoTpMessage(can_client, timeout=0, debug=self.debug)
+          msg.send(self.request[0])
+
     else:
       for msg in msgs.values():
         msg.send(self.request[0])
