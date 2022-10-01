@@ -258,14 +258,14 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
               f.ecu = ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown)
               f.fwVersion = version
-              f.address = addr[0]
+              f.address = tx_addr
               f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
               f.request = r.request
               f.brand = brand
               f.bus = r.bus
 
-              if addr[1] is not None:
-                f.subAddress = addr[1]
+              if sub_addr is not None:
+                f.subAddress = sub_addr
 
               car_fw.append(f)
         except Exception:
