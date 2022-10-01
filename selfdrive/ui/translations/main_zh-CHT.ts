@@ -58,6 +58,14 @@
         <source>leave blank for automatic configuration</source>
         <translation>留空白將自動配置</translation>
     </message>
+    <message>
+        <source>Cellular Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
