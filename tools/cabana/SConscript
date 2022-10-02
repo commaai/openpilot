@@ -12,7 +12,7 @@ else:
   base_libs.append('OpenCL')
 
 qt_libs = ['qt_util', 'Qt5Charts'] + base_libs
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if arch in ['x86_64', 'Darwin'] and GetOption('extras'):
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
   # qt_env["LD_LIBRARY_PATH"] = [Dir(f"#opendbc/can").abspath]
