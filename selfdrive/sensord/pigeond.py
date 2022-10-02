@@ -146,6 +146,16 @@ def init_baudrate(pigeon: TTYPigeon):
   pigeon.set_baud(460800)
 
 
+def init_baudrate(pigeon: TTYPigeon):
+  # ublox default setting on startup is 9600 baudrate
+  pigeon.set_baud(9600)
+
+  # $PUBX,41,1,0007,0003,460800,0*15\r\n
+  pigeon.send(b"\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A")
+  time.sleep(0.1)
+  pigeon.set_baud(460800)
+
+
 def initialize_pigeon(pigeon: TTYPigeon) -> bool:
   # try initializing a few times
   for _ in range(10):
