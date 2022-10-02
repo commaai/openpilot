@@ -181,13 +181,13 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x08\x00\xFF\xAD\x62\xAD\x1E\x63\x00\x00\x83\x0C")
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x28\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x56\x24")
 
-      # UBX-CFG-NAV5 (0x06 0x24)
+      # UBX-CFG-NAV5 (0x06 0x24)ds
       pigeon.send_with_ack(b"\xB5\x62\x06\x24\x00\x00\x2A\x84")
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x00\x00\x29\x81")
       pigeon.send_with_ack(b"\xB5\x62\x06\x1E\x00\x00\x24\x72")
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x00\x00\x3F\xC3")
 
-      # UBX-CFG-MSG (set message rate)
+      # UBX-CFG-MSG (Set message rate)
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51")
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70")
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C")
@@ -315,6 +315,17 @@ def main():
   init_baudrate(pigeon)
   r = initialize_pigeon(pigeon)
   Params().put_bool("UbloxAvailable", r)
+
+  # start receiving data
+  run_receiving(pigeon, pm)
+
+
+def main():
+  assert TICI, "unsupported hardware for pigeond"
+
+  pigeon, pm = create_pigeon()
+  init_baudrate(pigeon)
+  initialize_pigeon(pigeon)
 
   # start receiving data
   run_receiving(pigeon, pm)

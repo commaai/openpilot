@@ -42,7 +42,7 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket):
   assert end_time != 0, "no ublox measurements received!"
 
   ttfm = (end_time - start_time)/1e9
-  assert ttfm < 35, f"Time to first measurement > 35s, {ttfm}"
+  assert ttfm < 40, f"Time to first measurement > 40s, {ttfm}"
 
   # check for satellite count in measurements
   sat_count = []
@@ -52,7 +52,7 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket):
       sat_count.append(event.ubloxGnss.measurementReport.numMeas)
 
   num_sat = int(sum(sat_count)/len(sat_count))
-  assert num_sat > 8, f"Not enough satellites {num_sat} (TestBox setup!)"
+  assert num_sat < 6, f"Not enough satellites {num_sat} (TestBox setup!)"
 
 
 def verify_gps_location(socket: messaging.SubSocket):
