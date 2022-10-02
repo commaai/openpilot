@@ -23,10 +23,14 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(combo);
 
+  filter = new QLineEdit(this);
+  filter->setPlaceholderText(tr("filter messages"));
+  main_layout->addWidget(filter);
+
   table_widget = new QTableWidget(this);
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table_widget->setSelectionMode( QAbstractItemView::SingleSelection );
-  table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+  table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
+  table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   table_widget->setColumnCount(4);
   table_widget->setColumnWidth(0, 250);
   table_widget->setColumnWidth(1, 80);
@@ -57,6 +61,7 @@ void MessagesWidget::updateState() {
 
   table_widget->setRowCount(parser->items.size());
   int i = 0;
+  const QString filter_str = filter->text();
   for (auto &[address, list] : parser->items) {
     if (list.empty()) continue;
 
@@ -65,6 +70,7 @@ void MessagesWidget::updateState() {
     if (it != parser->msg_map.end()) {
       name = it->second->name.c_str();
     }
+    if (!filter_str.isEmpty() && !name.contains(filter_str)) continue;
 
     auto item = getTableItem(i, 0);
     item->setText(name);
@@ -74,4 +80,5 @@ void MessagesWidget::updateState() {
     getTableItem(i, 3)->setText(list.back().hex_dat);
     ++i;
   }
+  table_widget->setRowCount(i);
 }

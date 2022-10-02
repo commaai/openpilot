@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QApplication>
+#include <QLineEdit>
 #include <QTableWidget>
 #include <QWidget>
 
@@ -19,5 +19,6 @@ class MessagesWidget : public QWidget {
   void addressChanged(uint32_t address);
 
  protected:
+  QLineEdit *filter;
   QTableWidget *table_widget;
 };
