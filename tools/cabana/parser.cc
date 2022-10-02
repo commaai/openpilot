@@ -20,8 +20,8 @@ Parser::~Parser() {
   thread->wait();
 }
 
-bool Parser::loadRoute(const QString &route, const QString &data_dir) {
-  replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, 0, data_dir, this);
+bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+  replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
   if (!replay->load()) {
     return false;
   }

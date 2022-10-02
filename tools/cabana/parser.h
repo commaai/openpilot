@@ -27,7 +27,7 @@ class Parser : public QObject {
  public:
   Parser(QObject *parent);
   ~Parser();
-  bool loadRoute(const QString &route, const QString &data_dir);
+  bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
   const Msg *getMsg(uint32_t address);
