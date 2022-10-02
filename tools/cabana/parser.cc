@@ -76,11 +76,3 @@ void Parser::recvThread() {
     emit received(can);
   }
 }
-
-const Msg *Parser::getMsg(uint32_t address) {
-  auto it = msg_map.find(address);
-  if (it != msg_map.end()) {
-    return it->second;
-  }
-  return nullptr;
-}

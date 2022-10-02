@@ -51,8 +51,8 @@ void ChartsWidget::removeChart(uint32_t address, const QString &name) {
 
 void ChartsWidget::updateState() {
   static double last_update = millis_since_boot();
-  auto msg = parser->msg_map.find(address_);
-  if (msg == parser->msg_map.end()) return;
+  auto msg = parser->getMsg(address_);
+  if (!msg) return;
   auto it = parser->items.find(address_);
   if (it == parser->items.end()) return;
 
@@ -61,7 +61,7 @@ void ChartsWidget::updateState() {
   if (update) {
     last_update = current_ts;
   }
-  for (auto &sig : msg->second->sigs) {
+  for (auto &sig : msg->sigs) {
     if (charts.find(sig.name.c_str()) == charts.end()) continue;
 
     auto &dat = it->second.back().dat;

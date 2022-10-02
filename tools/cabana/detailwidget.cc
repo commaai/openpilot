@@ -67,15 +67,14 @@ void DetailWidget::setItem(uint32_t addr) {
     delete edit;
   }
   signal_edit.clear();
-  auto it = parser->msg_map.find(addr);
-  if (it != parser->msg_map.end()) {
-    for (auto &s : it->second->sigs) {
+  if (auto msg = parser->getMsg(addr)) {
+    for (auto &s : msg->sigs) {
       SignalEdit *edit = new SignalEdit(this);
       edit->setSig(address, s);
       signal_edit_layout->addWidget(edit);
       signal_edit.push_back(edit);
     }
-    name = it->second->name.c_str();
+    name = msg->name.c_str();
   }
   name_label->setText(name);
 }

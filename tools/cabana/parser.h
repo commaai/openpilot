@@ -31,7 +31,10 @@ class Parser : public QObject {
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
-  const Msg *getMsg(uint32_t address);
+  const Msg *getMsg(uint32_t address) {
+    auto it = msg_map.find(address);
+    return it != msg_map.end() ? it->second : nullptr;
+  }
  signals:
   void showPlot(uint32_t address, const QString &name);
   void received(std::vector<CanData> can);

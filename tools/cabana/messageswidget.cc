@@ -75,9 +75,8 @@ void MessagesWidget::updateState() {
     if (list.empty()) continue;
 
     QString name = tr("untitled");
-    auto it = parser->msg_map.find(address);
-    if (it != parser->msg_map.end()) {
-      name = it->second->name.c_str();
+    if (auto msg = parser->getMsg(address)) {
+      name = msg->name.c_str();
     }
     if (!filter_str.isEmpty() && !name.contains(filter_str)) continue;
 
