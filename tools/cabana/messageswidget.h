@@ -6,11 +6,11 @@
 
 #include "tools/cabana/parser.h"
 
-class CanWidget : public QWidget {
+class MessagesWidget : public QWidget {
   Q_OBJECT
 
  public:
-  CanWidget(QWidget *parent);
+  MessagesWidget(QWidget *parent);
 
  public slots:
   void updateState();

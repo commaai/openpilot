@@ -10,10 +10,11 @@ Parser *parser = nullptr;
 int main(int argc, char *argv[]) {
   initApp(argc, argv);
   QApplication app(argc, argv);
+
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
   cmd_parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai");
-  cmd_parser.addOption({"demo", "load driver camera"});
+  cmd_parser.addOption({"demo", "use a demo route instead of providing your own"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();

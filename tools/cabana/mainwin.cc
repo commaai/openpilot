@@ -10,11 +10,11 @@ MainWindow::MainWindow() : QWidget() {
   QHBoxLayout *h_layout = new QHBoxLayout();
   main_layout->addLayout(h_layout);
 
-  can_widget = new CanWidget(this);
-  QObject::connect(can_widget, &CanWidget::addressChanged, [=](uint32_t address) {
+  messages_widget = new MessagesWidget(this);
+  QObject::connect(messages_widget, &MessagesWidget::addressChanged, [=](uint32_t address) {
     detail_widget->setItem(address);
   });
-  h_layout->addWidget(can_widget);
+  h_layout->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
   h_layout->addWidget(detail_widget);
@@ -27,8 +27,12 @@ MainWindow::MainWindow() : QWidget() {
   r_layout->addWidget(video_widget);
 
   charts_widget = new ChartsWidget(this);
-  r_layout->addWidget(charts_widget);
-  r_layout->addStretch();
+  QScrollArea *scroll = new QScrollArea(this);
+  scroll->setWidget(charts_widget);
+  scroll->setWidgetResizable(true);
+  scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+  r_layout->addWidget(scroll);
+  // r_layout->addStretch();
 
   h_layout->addWidget(right_container);
 }

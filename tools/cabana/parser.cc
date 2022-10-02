@@ -32,6 +32,7 @@ bool Parser::loadRoute(const QString &route, const QString &data_dir) {
 void Parser::openDBC(const QString &name) {
   dbc_name = name;
   dbc = dbc_lookup(name.toStdString());
+  msg_map.clear();
   for (auto &msg : dbc->msgs) {
     msg_map[msg.address] = &msg;
   }
@@ -39,9 +40,12 @@ void Parser::openDBC(const QString &name) {
 
 void Parser::process(std::vector<CanData> can) {
   for (auto &data : can) {
-    auto &it = items[data.address];
-    ++it.cnt;
-    it.data = data;
+    ++counters[data.address];
+    auto &list = items[data.address];
+    while (list.size() > DATA_LIST_SIZE) {
+      list.pop_front();
+    }
+    list.push_back(data);
   }
   emit updated();
 }
@@ -51,18 +55,12 @@ void Parser::recvThread() {
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "can"));
   subscriber->setTimeout(100);
-  // CANParser parser(1, "toyota_nodsu_pt_generated", true, false);
   while (!exit) {
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) continue;
 
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    // parser.UpdateCans(event.getLogMonoTime(), event.getCan());
-    // auto latest = parser.query_latest();
-    // for (auto &d : latest) {
-    //   qWarning() << d.name.c_str() << d.address << d.value;  // << d.all_values;
-    // }
     std::vector<CanData> can;
     can.reserve(event.getCan().size());
     for (const auto &c : event.getCan()) {
@@ -70,7 +68,8 @@ void Parser::recvThread() {
       data.address = c.getAddress();
       data.bus_time = c.getBusTime();
       data.source = c.getSrc();
-      data.dat.assign((char *)c.getDat().begin(), c.getDat().size());
+      data.dat.append((char *)c.getDat().begin(), c.getDat().size());
+      data.hex_dat = data.dat.toHex(' ').toUpper();
     }
     emit received(can);
   }

@@ -2,23 +2,23 @@
 
 #include <QWidget>
 
-#include "tools/cabana/canwidget.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
-#include "tools/cabana/videowidget.h"
+#include "tools/cabana/messageswidget.h"
 #include "tools/cabana/parser.h"
+#include "tools/cabana/videowidget.h"
 
 class MainWindow : public QWidget {
-Q_OBJECT
+  Q_OBJECT
 
-public:
+ public:
   MainWindow();
-public slots:
+ public slots:
   void updated();
-protected:
 
+ protected:
   VideoWidget *video_widget;
-  CanWidget *can_widget;
+  MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
 };
