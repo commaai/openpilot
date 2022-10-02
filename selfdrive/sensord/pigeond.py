@@ -7,7 +7,7 @@ import struct
 import requests
 import urllib.parse
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from cereal import messaging
 from common.params import Params
@@ -116,34 +116,48 @@ class TTYPigeon():
       time.sleep(0.001)
 
 
+def init_baudrate(pigeon: TTYPigeon):
+  # ublox default setting on startup is 9600 baudrate
+  pigeon.set_baud(9600)
+
+  # $PUBX,41,1,0007,0003,460800,0*15\r\n
+  pigeon.send(b"\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A")
+  time.sleep(0.1)
+  pigeon.set_baud(460800)
+
+
 def initialize_pigeon(pigeon: TTYPigeon) -> bool:
   # try initializing a few times
   for _ in range(10):
     try:
-      pigeon.set_baud(9600)
 
-      # up baud rate
-      pigeon.send(b"\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A")
-      time.sleep(0.1)
-      pigeon.set_baud(460800)
+      # setup port config
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F")
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35")
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x01\x00\x01\x00\x00\x00\x00\x00\xF4\x80")
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85")
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x00\x00\x06\x18")
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x01\x00\x01\x08\x22")
+      pigeon.send_with_ack(b"\xb5\x62\x06\x00\x01\x00\x03\x0A\x24")
 
-      # other configuration messages
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F")
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35")
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x01\x00\x01\x00\x00\x00\x00\x00\xF4\x80")
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85")
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x00\x00\x06\x18")
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x01\x00\x01\x08\x22")
-      pigeon.send_with_ack(b"\xB5\x62\x06\x00\x01\x00\x03\x0A\x24")
+      # UBX-CFG-RATE (0x06 0x08) measRate: 100(10Hz), navRate: 1, timeRef: 0
       pigeon.send_with_ack(b"\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10")
+
+      #UBX-CFG-NAV5 (0x06 0x24) mask: 0(dynModel), dynModel: 4 (automotive), ...
       pigeon.send_with_ack(b"\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63")
+
+      # UBX-CFG-ODO (0x06 0x1E)
       pigeon.send_with_ack(b"\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37")
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x08\x00\xFF\xAD\x62\xAD\x1E\x63\x00\x00\x83\x0C")
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x28\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x56\x24")
+
+      # UBX-CFG-NAV5 (0x06 0x24),
       pigeon.send_with_ack(b"\xB5\x62\x06\x24\x00\x00\x2A\x84")
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x00\x00\x29\x81")
       pigeon.send_with_ack(b"\xB5\x62\x06\x1E\x00\x00\x24\x72")
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x00\x00\x3F\xC3")
+
+      # UBX-CFG-MSG (Set message rate)
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51")
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70")
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C")
@@ -224,13 +238,11 @@ def deinitialize_and_exit(pigeon: Optional[TTYPigeon]):
   set_power(False)
   sys.exit(0)
 
-def main():
-  assert TICI, "unsupported hardware for pigeond"
+def create_pigeon() -> Tuple[TTYPigeon, messaging.PubMaster]:
+  pigeon = None
 
   # register exit handler
-  pigeon = None
   signal.signal(signal.SIGINT, lambda sig, frame: deinitialize_and_exit(pigeon))
-
   pm = messaging.PubMaster(['ubloxRaw'])
 
   # power cycle ublox
@@ -240,11 +252,15 @@ def main():
   time.sleep(0.5)
 
   pigeon = TTYPigeon()
-  r = initialize_pigeon(pigeon)
-  Params().put_bool("UbloxAvailable", r)
+  return pigeon, pm
 
-  # start receiving data
-  while True:
+def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0):
+
+  start_time = time.monotonic()
+  def end_condition():
+    return True if duration == 0 else time.monotonic() - start_time < duration
+
+  while end_condition():
     dat = pigeon.receive()
     if len(dat) > 0:
       if dat[0] == 0x00:
@@ -259,6 +275,18 @@ def main():
     else:
       # prevent locking up a CPU core if ublox disconnects
       time.sleep(0.001)
+
+
+def main():
+  assert TICI, "unsupported hardware for pigeond"
+
+  pigeon, pm = create_pigeon()
+  init_baudrate(pigeon)
+  r = initialize_pigeon(pigeon)
+  Params().put_bool("UbloxAvailable", r)
+
+  # start receiving data
+  run_receiving(pigeon, pm)
 
 if __name__ == "__main__":
   main()
