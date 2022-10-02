@@ -25,6 +25,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   table_widget = new QTableWidget(this);
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table_widget->setSelectionMode( QAbstractItemView::SingleSelection );
   table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   table_widget->setColumnCount(4);
   table_widget->setColumnWidth(0, 250);
@@ -57,6 +58,8 @@ void MessagesWidget::updateState() {
   table_widget->setRowCount(parser->items.size());
   int i = 0;
   for (auto &[address, list] : parser->items) {
+    if (list.empty()) continue;
+
     QString name = tr("untitled");
     auto it = parser->msg_map.find(address);
     if (it != parser->msg_map.end()) {
@@ -66,10 +69,9 @@ void MessagesWidget::updateState() {
     auto item = getTableItem(i, 0);
     item->setText(name);
     item->setData(Qt::UserRole, address);
+    getTableItem(i, 1)->setText(list.back().id);
     getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[address]));
-    if (!list.empty()) {
-      getTableItem(i, 3)->setText(list.back().hex_dat);
-    }
+    getTableItem(i, 3)->setText(list.back().hex_dat);
     ++i;
   }
 }

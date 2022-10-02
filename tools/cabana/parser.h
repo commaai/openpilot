@@ -13,6 +13,7 @@
 const int DATA_LIST_SIZE = 500;
 
 struct CanData {
+  QString id;
   uint32_t address;
   uint16_t bus_time;
   uint8_t source;

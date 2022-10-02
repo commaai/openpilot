@@ -33,14 +33,16 @@ void ChartsWidget::addChart(uint32_t address, const QString &name) {
   address_ = address;
   if (charts.find(name) == charts.end()) {
     QLineSeries *series = new QLineSeries();
+    series->setUseOpenGL(true);
     auto chart = new QChart();
     chart->setTitle(name);
     chart->addSeries(series);
     chart->createDefaultAxes();
+    chart->legend()->hide();
     auto chart_view = new QChartView(chart);
     chart_view->setRenderHint(QPainter::Antialiasing);
     main_layout->addWidget(chart_view);
-    charts[name] = chart_view;
+    charts[name] = {.chart_view = chart_view};
   }
 }
 
@@ -68,16 +70,22 @@ void ChartsWidget::updateState() {
       val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
     }
     double value = val * sig.factor + sig.offset;
-    QChart *chart = charts[sig.name.c_str()]->chart();
-    QLineSeries *series = (QLineSeries *)chart->series()[0];
-    // while (series->count() >= DATA_LIST_SIZE) {
-    //   series->remove(0);
-    // }
+    auto &signal_chart = charts[sig.name.c_str()];
 
-    series->append(series->count(), value);
+    if (value > signal_chart.max_y) signal_chart.max_y = value;
+    if (value < signal_chart.min_y) signal_chart.min_y = value;
+
+    while (signal_chart.data.size() > DATA_LIST_SIZE) {
+      signal_chart.data.pop_front();
+    }
+    signal_chart.data.push_back({(millis_since_boot() - signal_chart.ts_begin), value});
+
     if (update) {
-      chart->axisX()->setRange(series->at(0).x(), series->at(series->count() - 1).x());
-      chart->axisY()->setRange(-1, 1);
+      QChart *chart = signal_chart.chart_view->chart();
+      QLineSeries *series = (QLineSeries *)chart->series()[0];
+      series->replace(signal_chart.data);
+      chart->axisX()->setRange(signal_chart.data.front().x(), signal_chart.data.back().x());
+      chart->axisY()->setRange(signal_chart.min_y, signal_chart.max_y);
     }
   }
 }

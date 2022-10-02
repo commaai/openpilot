@@ -20,5 +20,12 @@ class ChartsWidget : public QWidget {
  protected:
   QVBoxLayout *main_layout;
   uint32_t address_ = 0;
-  std::map<QString, QtCharts::QChartView *> charts;
+  struct SignalChart{
+    int max_y = 0;
+    int min_y = 0;
+    double ts_begin = millis_since_boot();
+    QList<QPointF> data;
+    QtCharts::QChartView *chart_view = nullptr;
+  };
+  std::map<QString, SignalChart> charts;
 };
