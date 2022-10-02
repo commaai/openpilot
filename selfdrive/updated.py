@@ -1,27 +1,4 @@
 #!/usr/bin/env python3
-
-# Safe Update: A simple service that waits for network access and tries to
-# update every 10 minutes. It's intended to make the OP update process more
-# robust against Git repository corruption. This service DOES NOT try to fix
-# an already-corrupt BASEDIR Git repo, only prevent it from happening.
-#
-# During normal operation, both onroad and offroad, the update process makes
-# no changes to the BASEDIR install of OP. All update attempts are performed
-# in a disposable staging area provided by OverlayFS. It assumes the deleter
-# process provides enough disk space to carry out the process.
-#
-# If an update succeeds, a flag is set, and the update is swapped in at the
-# next reboot. If an update is interrupted or otherwise fails, the OverlayFS
-# upper layer and metadata can be discarded before trying again.
-#
-# The swap on boot is triggered by launch_chffrplus.sh
-# gated on the existence of $FINALIZED/.overlay_consistent and also the
-# existence and mtime of $BASEDIR/.overlay_init.
-#
-# Other than build byproducts, BASEDIR should not be modified while this
-# service is running. Developers modifying code directly in BASEDIR should
-# disable this service.
-
 import os
 import re
 import datetime
@@ -241,6 +218,11 @@ class Updater:
   def __init__(self):
     self.params = Params()
     self.branches = defaultdict(lambda: '')
+    self._has_internet: bool = False
+
+  @property
+  def has_internet(self) -> bool:
+    return self._has_internet
 
   @property
   def target_branch(self) -> str:
@@ -321,7 +303,7 @@ class Updater:
 
     now = datetime.datetime.utcnow()
     dt = now - last_update
-    if failed_count > 15 and exception is not None:
+    if failed_count > 15 and exception is not None and self.has_internet:
       if is_tested_branch():
         extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
       else:
@@ -338,6 +320,12 @@ class Updater:
 
     excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
 
+    try:
+      run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
+      self._has_internet = True
+    except subprocess.CalledProcessError:
+      self._has_internet = False
+
     setup_git_options(OVERLAY_MERGED)
     output = run(["git", "ls-remote", "--heads", "origin"], OVERLAY_MERGED)
 
@@ -353,9 +341,9 @@ class Updater:
     new_branch = self.target_branch
     new_commit = self.branches[new_branch]
     if (cur_branch, cur_commit) != (new_branch, new_commit):
-      cloudlog.info(f"update available, {cur_branch} ({cur_commit[:7]}) -> {new_branch} ({new_commit[:7]})")
+      cloudlog.info(f"update available, {cur_branch} ({str(cur_commit)[:7]}) -> {new_branch} ({str(new_commit)[:7]})")
     else:
-      cloudlog.info(f"up to date on {cur_branch} ({cur_commit[:7]})")
+      cloudlog.info(f"up to date on {cur_branch} ({str(cur_commit)[:7]})")
 
   def fetch_update(self) -> None:
     cloudlog.info("attempting git fetch inside staging overlay")
