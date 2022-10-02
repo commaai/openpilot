@@ -15,6 +15,7 @@ Parser::Parser(QObject *parent) : QObject(parent) {
 }
 
 Parser::~Parser() {
+  replay->stop();
   exit = true;
   thread->quit();
   thread->wait();
