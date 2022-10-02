@@ -3,12 +3,14 @@
 #include <QComboBox>
 #include <QDebug>
 #include <QHeaderView>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <bitset>
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
+  QHBoxLayout *dbc_file_layout = new QHBoxLayout();
   QComboBox *combo = new QComboBox(this);
   auto dbc_names = get_dbc_names();
   for (const auto &name : dbc_names) {
@@ -17,11 +19,18 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   connect(combo, &QComboBox::currentTextChanged, [=](const QString &dbc) {
     parser->openDBC(dbc);
   });
-
   // For test purpose
   combo->setCurrentText("toyota_nodsu_pt_generated");
+  dbc_file_layout->addWidget(combo);
 
-  main_layout->addWidget(combo);
+  dbc_file_layout->addStretch();
+  QPushButton *save_btn = new QPushButton(tr("Save DBC"), this);
+  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
+    // TODO: save DBC to file
+  });
+  dbc_file_layout->addWidget(save_btn);
+
+  main_layout->addLayout(dbc_file_layout);
 
   filter = new QLineEdit(this);
   filter->setPlaceholderText(tr("filter messages"));
