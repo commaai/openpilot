@@ -12,9 +12,15 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QLabel *title = new QLabel(tr("SELECTED MESSAGE:"), this);
   main_layout->addWidget(title);
 
+  QHBoxLayout *name_layout = new QHBoxLayout();
   name_label = new QLabel(this);
   name_label->setStyleSheet("font-weight:bold;");
-  main_layout->addWidget(name_label);
+  name_layout->addWidget(name_label);
+  name_layout->addStretch();
+  QPushButton *edit_btn = new QPushButton(tr("Edit"), this);
+  name_layout->addWidget(edit_btn);
+
+  main_layout->addLayout(name_layout);
 
   binary_view = new BinaryView(this);
   main_layout->addWidget(binary_view);
@@ -180,6 +186,8 @@ SignalEdit::SignalEdit(QWidget *parent) : QWidget(parent) {
   remove_btn = new QPushButton(tr("Remove Signal"));
   h->addWidget(remove_btn);
   h->addStretch();
+  QPushButton *save_btn = new QPushButton(tr("Save"));
+  h->addWidget(save_btn);
   v_layout->addLayout(h);
 
   main_layout->addWidget(edit_container);
