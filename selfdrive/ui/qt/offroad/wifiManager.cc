@@ -345,7 +345,7 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::updateGsmSettings(bool roaming, QString apn) {
+void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
   if (!lteConnectionPath.path().isEmpty()) {
     bool changes = false;
     bool auto_config = apn.isEmpty();
@@ -365,6 +365,13 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn) {
     if (settings.value("gsm").value("home-only").toBool() == roaming) {
       qWarning() << "Changing gsm.home-only to" << !roaming;
       settings["gsm"]["home-only"] = !roaming;
+      changes = true;
+    }
+
+    int meteredInt = metered ? NM_METERED_NO : NM_METERED_UNKNOWN;
+    if (settings.value("connection").value("metered").toInt() != meteredInt) {
+      qWarning() << "Changing connection.metered to" << meteredInt;
+      settings["connection"]["metered"] = meteredInt;
       changes = true;
     }
 

@@ -12,9 +12,9 @@ from typing import List, Optional
 from cereal import messaging
 from common.params import Params
 from system.swaglog import cloudlog
-from selfdrive.hardware import TICI
+from system.hardware import TICI
 from common.gpio import gpio_init, gpio_set
-from selfdrive.hardware.tici.pins import GPIO
+from system.hardware.tici.pins import GPIO
 
 UBLOX_TTY = "/dev/ttyHS0"
 
