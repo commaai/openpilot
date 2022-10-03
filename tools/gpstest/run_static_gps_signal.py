@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import random
 import datetime as dt
 import subprocess as sp
@@ -58,6 +59,10 @@ def main():
 
   rinex_file = download_rinex()
   lat, lon = get_random_coords(47.2020, 15.7403)
+
+  if len(sys.argv) == 3:
+    lat = float(sys.argv[1])
+    lon = float(sys.argv[2])
 
   try:
     print(f"starting LimeGPS, Location: {lat},{lon}")
