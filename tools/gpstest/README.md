@@ -1,41 +1,35 @@
 # GPS Teststation Setup
-Testing the GPS receiver inside the devices using GPS spoofing, for changing
-the location and replaying Routes in the map.
-
+Testing the GPS receiver using GPS spoofing. At the moment only
+static location relpay is supported.
 
 # Usage
 ```
-# replaying a static location
-./gpstest.sh -e <ephemeris file> -s <static location>
+# on host, start gps signal simulation
+./run_static_lime.py
 
-# replaying a prerecorded route (NMEA cvs file)
-./gpstest.sh -e <ephemeris file> -d <dynamic location>
+# on device
+python -m unittest test_gps.py
 ```
 
-If `-e` is not provided the latest ephemeris file will be downloaded from
+`run_static_lime.py` downloads the latest ephemeris file from
 https://cddis.nasa.gov/archive/gnss/data/daily/20xx/brdc/.
-(TODO: add auto downloader)
-
-It currently uses only LimeGPS, to run it use:
-```
-LD_PRELOAD=../lib/libLimeSuite.so ./LimeGPS
-```
 
 
 # Hardware Setup
-* (LimeSDR USB)[https://wiki.myriadrf.org/LimeSDR-USB]
+* [LimeSDR USB](https://wiki.myriadrf.org/LimeSDR-USB)
 * Asus AX58BT (antenna, not sure if its really this one)
 
 # Software Setup
 * https://github.com/myriadrf/LimeSuite
-To communicate with LimeSDR the LimeSuite is needed it abstracts the direct
+
+Communicate with LimeSDR the LimeSuite is needed it abstracts the direct
 communication. It also contains examples for a quick start.
 
 The latest stable version(22.09) does not have the corresponding firmware
 download available at https://downloads.myriadrf.org/project/limesuite. Therefore
 version 20.10 was chosen.
 
-A successull build should give something like:
+A successful build should gives similar to:
 ```
 ./LimeUtil --info
 ######################################################
@@ -64,15 +58,14 @@ Supported connections:
 ```
 
 * https://github.com/osqzss/LimeGPS
+
 Build on top of LimeSuite (libLimeSuite.so.20.10-1), generates the GPS signal.
 
-With a successful GPS signals can be spoofed.
-
 ```
-./LimeGPS -e <ephemeris file> -l <location coordinates>
+LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e <ephemeris file> -l <location coordinates>
 
 # Example
-./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
+LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
 ```
 
 # NOTE
