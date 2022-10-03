@@ -32,6 +32,8 @@ class Parser : public QObject {
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
+  void addNewMsg(const Msg &msg);
+  void removeSignal(uint32_t address, const QString &sig_name);
   const Msg *getMsg(uint32_t address) {
     auto it = msg_map.find(address);
     return it != msg_map.end() ? it->second : nullptr;
@@ -51,7 +53,7 @@ class Parser : public QObject {
   std::map<uint32_t, std::list<CanData>> items;
   std::map<uint32_t, uint64_t> counters;
   Replay *replay = nullptr;
-  const DBC *dbc = nullptr;
+  DBC *dbc = nullptr;
   std::map<uint32_t, const Msg *> msg_map;
 };
 

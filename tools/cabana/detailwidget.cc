@@ -2,12 +2,28 @@
 
 #include <QDebug>
 #include <QHeaderView>
+#include <QMessageBox>
 #include <QVBoxLayout>
 #include <bitset>
 
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
+
+static QVector<int> BIG_ENDIAN_START_BITS = []() {
+  QVector<int> ret;
+  for (int i = 0; i < 64; i++) {
+    for (int j = 7; j >= 0; j--) {
+      ret.push_back(j + i * 8);
+    }
+  }
+  return ret;
+}();
+
+static int bigEndianBitIndex(int index) {
+  // TODO: Add a helper function in dbc.h
+  return BIG_ENDIAN_START_BITS.indexOf(index);
+}
 
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -19,13 +35,35 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   name_label->setStyleSheet("font-weight:bold;");
   name_layout->addWidget(name_label);
   name_layout->addStretch();
-  QPushButton *edit_btn = new QPushButton(tr("Edit"), this);
+  edit_btn = new QPushButton(tr("Edit"), this);
+  edit_btn->setVisible(false);
+  QObject::connect(edit_btn, &QPushButton::clicked, [=]() {
+    EditMessageDialog dlg(address, this);
+    int ret = dlg.exec();
+    if (ret) {
+      setMsg(address);
+    }
+  });
   name_layout->addWidget(edit_btn);
-
   main_layout->addLayout(name_layout);
 
   binary_view = new BinaryView(this);
   main_layout->addWidget(binary_view);
+
+  QHBoxLayout *signals_layout = new QHBoxLayout();
+  signals_layout->addWidget(new QLabel(tr("Signals")));
+  signals_layout->addStretch();
+  add_sig_btn = new QPushButton(tr("Add signal"), this);
+  add_sig_btn->setVisible(false);
+  QObject::connect(add_sig_btn, &QPushButton::clicked, [=]() {
+    AddSignalDialog dlg(address, this);
+    int ret = dlg.exec();
+    if (ret) {
+      setMsg(address);
+    }
+  });
+  signals_layout->addWidget(add_sig_btn);
+  main_layout->addLayout(signals_layout);
 
   QWidget *container = new QWidget(this);
   QVBoxLayout *container_layout = new QVBoxLayout(container);
@@ -48,6 +86,8 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void DetailWidget::updateState() {
+  if (!address) return;
+
   auto &list = parser->items[address];
   if (!list.empty()) {
     binary_view->setData(list.back().dat);
@@ -55,79 +95,26 @@ void DetailWidget::updateState() {
   }
 }
 
-void DetailWidget::setMsg(uint32_t addr) {
-  if (address == addr) return;
-
-  address = addr;
-  QString name = tr("untitled");
-
-  for (auto edit : signal_edit) {
-    delete edit;
-  }
-  signal_edit.clear();
-  int i = 0;
-  if (auto msg = parser->getMsg(addr)) {
-    for (auto &s : msg->sigs) {
-      SignalEdit *edit = new SignalEdit(i++, this);
-      edit->setSig(address, s);
-      signal_edit_layout->addWidget(edit);
-      signal_edit.push_back(edit);
-    }
-    name = msg->name.c_str();
-  }
-  name_label->setText(name);
-  binary_view->setMsg(addr);
-}
-
-SignalEdit::SignalEdit(int idx, QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-
-  // title
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  QLabel *icon = new QLabel(">");
-  icon->setStyleSheet("font-weight:bold");
-  title_layout->addWidget(icon);
-  title = new ElidedLabel(this);
-  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(SIGNAL_COLORS[idx % std::size(SIGNAL_COLORS)]));
-  connect(title, &ElidedLabel::clicked, [=]() {
-    edit_container->isVisible() ? edit_container->hide() : edit_container->show();
-    icon->setText(edit_container->isVisible() ? "▼" : ">");
-  });
-  title_layout->addWidget(title);
-  title_layout->addStretch();
-  QPushButton *show_plot = new QPushButton(tr("Show Pilot"));
-  QObject::connect(show_plot, &QPushButton::clicked, [=]() {
-    if (show_plot->text() == tr("Show Pilot")) {
-      emit parser->showPlot(address_, name_);
-      show_plot->setText(tr("Hide Pilot"));
-    } else {
-      emit parser->hidePlot(address_, name_);
-      show_plot->setText(tr("Show Pilot"));
-    }
-  });
-  title_layout->addWidget(show_plot);
-
-  main_layout->addLayout(title_layout);
-
-  edit_container = new QWidget(this);
-  QVBoxLayout *v_layout = new QVBoxLayout(edit_container);
+SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *v_layout = new QVBoxLayout(this);
 
   QHBoxLayout *h = new QHBoxLayout();
   h->addWidget(new QLabel(tr("Name")));
-  name = new QLineEdit();
+  name = new QLineEdit(sig.name.c_str());
   h->addWidget(name);
   v_layout->addLayout(h);
 
   h = new QHBoxLayout();
   h->addWidget(new QLabel(tr("Size")));
   size = new QSpinBox();
+  size->setValue(sig.size);
   h->addWidget(size);
   v_layout->addLayout(h);
 
   h = new QHBoxLayout();
   h->addWidget(new QLabel(tr("Most significant bit")));
   msb = new QSpinBox();
+  msb->setValue(sig.msb);
   h->addWidget(msb);
   v_layout->addLayout(h);
 
@@ -135,6 +122,7 @@ SignalEdit::SignalEdit(int idx, QWidget *parent) : QWidget(parent) {
   h->addWidget(new QLabel(tr("Endianness")));
   endianness = new QComboBox();
   endianness->addItems({"Little", "Big"});
+  endianness->setCurrentIndex(sig.is_little_endian ? 0 : 1);
   h->addWidget(endianness);
   v_layout->addLayout(h);
 
@@ -142,21 +130,25 @@ SignalEdit::SignalEdit(int idx, QWidget *parent) : QWidget(parent) {
   h->addWidget(new QLabel(tr("sign")));
   sign = new QComboBox();
   sign->addItems({"Signed", "Unsigned"});
+  sign->setCurrentIndex(sig.is_signed ? 0 : 1);
   h->addWidget(sign);
   v_layout->addLayout(h);
 
   h = new QHBoxLayout();
   h->addWidget(new QLabel(tr("Factor")));
   factor = new QSpinBox();
+  factor->setValue(sig.factor);
   h->addWidget(factor);
   v_layout->addLayout(h);
 
   h = new QHBoxLayout();
   h->addWidget(new QLabel(tr("Offset")));
   offset = new QSpinBox();
+  offset->setValue(sig.offset);
   h->addWidget(offset);
   v_layout->addLayout(h);
 
+  // TODO: parse the following parameters in opendbc
   h = new QHBoxLayout();
   h->addWidget(new QLabel(tr("Unit")));
   unit = new QLineEdit();
@@ -186,9 +178,89 @@ SignalEdit::SignalEdit(int idx, QWidget *parent) : QWidget(parent) {
   val_desc = new QLineEdit();
   h->addWidget(val_desc);
   v_layout->addLayout(h);
+}
 
-  h = new QHBoxLayout();
+std::optional<Signal> SignalForm::getSignal() {
+  Signal sig = {};
+  sig.name = name->text().toStdString();
+  sig.size = size->text().toInt();
+  sig.offset = offset->text().toDouble();
+  sig.factor = factor->text().toDouble();
+  sig.msb = msb->text().toInt();
+  sig.is_signed = sign->currentIndex() == 0;
+  sig.is_little_endian = endianness->currentIndex() == 0;
+  if (sig.is_little_endian) {
+    sig.lsb = sig.start_bit;
+    sig.msb = sig.start_bit + sig.size - 1;
+  } else {
+    sig.lsb = BIG_ENDIAN_START_BITS[bigEndianBitIndex(sig.start_bit) + sig.size - 1];
+    sig.msb = sig.start_bit;
+  }
+  return (sig.name.empty() || sig.size <= 0) ? std::nullopt : std::optional(sig);
+}
+
+void DetailWidget::setMsg(uint32_t addr) {
+  address = addr;
+  QString name = tr("untitled");
+
+  for (auto edit : signal_edit) {
+    delete edit;
+  }
+  signal_edit.clear();
+  int i = 0;
+  if (auto msg = parser->getMsg(addr)) {
+    for (auto &s : msg->sigs) {
+      SignalEdit *edit = new SignalEdit(address, s, i++, this);
+      signal_edit_layout->addWidget(edit);
+      signal_edit.push_back(edit);
+    }
+    name = msg->name.c_str();
+  }
+  name_label->setText(name);
+  binary_view->setMsg(addr);
+  edit_btn->setVisible(true);
+  add_sig_btn->setVisible(true);
+}
+
+SignalEdit::SignalEdit(uint32_t address, const Signal &sig, int idx, QWidget *parent) : address_(address), name_(sig.name.c_str()), QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+
+  // title
+  QHBoxLayout *title_layout = new QHBoxLayout();
+  QLabel *icon = new QLabel(">");
+  icon->setStyleSheet("font-weight:bold");
+  title_layout->addWidget(icon);
+  title = new ElidedLabel(this);
+  title->setText(sig.name.c_str());
+  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(SIGNAL_COLORS[idx % std::size(SIGNAL_COLORS)]));
+  connect(title, &ElidedLabel::clicked, [=]() {
+    edit_container->isVisible() ? edit_container->hide() : edit_container->show();
+    icon->setText(edit_container->isVisible() ? "▼" : ">");
+  });
+  title_layout->addWidget(title);
+  title_layout->addStretch();
+  QPushButton *show_plot = new QPushButton(tr("Show Pilot"));
+  QObject::connect(show_plot, &QPushButton::clicked, [=]() {
+    if (show_plot->text() == tr("Show Pilot")) {
+      emit parser->showPlot(address_, name_);
+      show_plot->setText(tr("Hide Pilot"));
+    } else {
+      emit parser->hidePlot(address_, name_);
+      show_plot->setText(tr("Show Pilot"));
+    }
+  });
+  title_layout->addWidget(show_plot);
+  main_layout->addLayout(title_layout);
+
+  edit_container = new QWidget(this);
+  QVBoxLayout *v_layout = new QVBoxLayout(edit_container);
+  form = new SignalForm(sig, this);
+  v_layout->addWidget(form);
+
+  QHBoxLayout *h = new QHBoxLayout();
   remove_btn = new QPushButton(tr("Remove Signal"));
+  QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
   h->addWidget(remove_btn);
   h->addStretch();
   QPushButton *save_btn = new QPushButton(tr("Save"));
@@ -196,22 +268,8 @@ SignalEdit::SignalEdit(int idx, QWidget *parent) : QWidget(parent) {
   h->addWidget(save_btn);
   v_layout->addLayout(h);
 
-  main_layout->addWidget(edit_container);
-
   edit_container->setVisible(false);
-}
-
-void SignalEdit::setSig(uint32_t address, const Signal &sig) {
-  address_ = address;
-  name_ = sig.name.c_str();
-  title->setText(sig.name.c_str());
-  name->setText(sig.name.c_str());
-  size->setValue(sig.size);
-  offset->setValue(sig.offset);
-  factor->setValue(sig.factor);
-  msb->setValue(sig.msb);
-  sign->setCurrentIndex(sig.is_signed ? 0 : 1);
-  endianness->setCurrentIndex(sig.is_little_endian ? 0 : 1);
+  main_layout->addWidget(edit_container);
 }
 
 void SignalEdit::save() {
@@ -220,16 +278,23 @@ void SignalEdit::save() {
 
   for (auto &sig : msg->sigs) {
     if (name_ == sig.name.c_str()) {
-      sig.name = title->text().toStdString();
-      sig.size = size->text().toInt();
-      sig.offset = offset->text().toDouble();
-      sig.factor = factor->text().toDouble();
-      sig.msb = msb->text().toInt();
-      sig.is_signed = sign->currentIndex() == 0;
-      sig.is_little_endian = endianness->currentIndex() == 0;
-      // TODO: update msb,lsb
+      auto s = form->getSignal();
+      if (s) {
+        sig = *s;
+      }
       break;
     }
+  }
+}
+
+void SignalEdit::remove() {
+  QMessageBox msgbox;
+  msgbox.setText(tr("Remove signal"));
+  msgbox.setInformativeText(tr("Are you sure you want to remove signal '%1'").arg(name_));
+  msgbox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+  msgbox.setDefaultButton(QMessageBox::Cancel);
+  if (msgbox.exec()) {
+    parser->removeSignal(address_, name_);
   }
 }
 
@@ -246,17 +311,6 @@ BinaryView::BinaryView(QWidget *parent) {
 }
 
 void BinaryView::setMsg(uint32_t address) {
-  // TODO: Add a helper function in dbc.h
-  static QVector<int> be_bits = []() {
-    QVector<int> ret;
-    for (int i = 0; i < 64; i++) {
-      for (int j = 7; j >= 0; j--) {
-        ret.push_back(j + i * 8);
-      }
-    }
-    return ret;
-  }();
-
   auto msg = parser->getMsg(address);
   int row_count = msg ? msg->size : parser->items[address].back().dat.size();
 
@@ -278,7 +332,7 @@ void BinaryView::setMsg(uint32_t address) {
   if (msg) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
       const auto &sig = msg->sigs[i];
-      int start = sig.is_little_endian ? sig.start_bit : be_bits.indexOf(sig.start_bit);
+      int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
       for (int j = start; j <= start + sig.size - 1; ++j) {
         table->item(j / 8, j % 8)->setBackground(QColor(SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)]));
       }
@@ -286,6 +340,9 @@ void BinaryView::setMsg(uint32_t address) {
   }
 
   setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
+  if (!parser->items.empty()) {
+    setData(parser->items[address].back().dat);
+  }
 }
 
 void BinaryView::setData(const QByteArray &binary) {
@@ -330,4 +387,66 @@ void MessagesView::setMessages(const std::list<CanData> &list) {
     label->setText(it->hex_dat);
     ++j;
   }
+}
+
+EditMessageDialog::EditMessageDialog(uint32_t address, QWidget *parent) : QDialog(parent) {
+  setWindowTitle(tr("Edit message"));
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addWidget(new QLabel(tr("Address: %1").arg(address, 1, 16)));
+
+  auto msg = const_cast<Msg *>(parser->getMsg(address));
+  QHBoxLayout *h_layout = new QHBoxLayout();
+  h_layout->addWidget(new QLabel(tr("Name")));
+  h_layout->addStretch();
+  QLineEdit *name_edit = new QLineEdit(this);
+  name_edit->setText(msg ? msg->name.c_str() : "untitled");
+  h_layout->addWidget(name_edit);
+  main_layout->addLayout(h_layout);
+
+  h_layout = new QHBoxLayout();
+  h_layout->addWidget(new QLabel(tr("Size")));
+  h_layout->addStretch();
+  QSpinBox *size_spin = new QSpinBox(this);
+  size_spin->setValue(msg ? msg->size : parser->items[address].back().dat.size());
+  h_layout->addWidget(size_spin);
+  main_layout->addLayout(h_layout);
+
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  main_layout->addWidget(buttonBox);
+
+  connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
+    if (size_spin->value() <= 0 || name_edit->text().isEmpty()) return;
+
+    if (msg) {
+      msg->name = name_edit->text().toStdString();
+      msg->size = size_spin->value();
+    } else {
+      Msg m = {};
+      m.address = address;
+      m.name = name_edit->text().toStdString();
+      m.size = size_spin->value();
+      parser->addNewMsg(m);
+    }
+    QDialog::accept();
+  });
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+AddSignalDialog::AddSignalDialog(uint32_t address, QWidget *parent) {
+  setWindowTitle(tr("Add signal to %1").arg(parser->getMsg(address)->name.c_str()));
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  Signal sig = {.name = "untitled"};
+  auto form = new SignalForm(sig, this);
+  main_layout->addWidget(form);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  main_layout->addWidget(buttonBox);
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
+    if (auto msg = const_cast<Msg *>(parser->getMsg(address))) {
+      if (auto signal = form->getSignal()) {
+        msg->sigs.push_back(*signal);
+      }
+    }
+    QDialog::accept();
+  });
 }

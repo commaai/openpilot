@@ -70,15 +70,20 @@ void MessagesWidget::updateState() {
 
   table_widget->setRowCount(parser->items.size());
   int i = 0;
-  const QString filter_str = filter->text();
-  for (auto &[address, list] : parser->items) {
-    if (list.empty()) continue;
+  const QString filter_str = filter->text().toLower();
+  for (const auto &[address, list] : parser->items) {
+    assert(!list.empty());
 
-    QString name = tr("untitled");
+    QString name;
     if (auto msg = parser->getMsg(address)) {
       name = msg->name.c_str();
+    } else {
+      name = tr("untitled");
     }
-    if (!filter_str.isEmpty() && !name.contains(filter_str)) continue;
+    if (!filter_str.isEmpty() && !name.toLower().contains(filter_str)) {
+      table_widget->hideRow(i++);
+      continue;
+    }
 
     auto item = getTableItem(i, 0);
     item->setText(name);
@@ -86,7 +91,7 @@ void MessagesWidget::updateState() {
     getTableItem(i, 1)->setText(list.back().id);
     getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[address]));
     getTableItem(i, 3)->setText(list.back().hex_dat);
-    ++i;
+    table_widget->showRow(i);
+    i++;
   }
-  table_widget->setRowCount(i);
 }

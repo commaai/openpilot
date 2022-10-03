@@ -32,7 +32,7 @@ bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_q
 
 void Parser::openDBC(const QString &name) {
   dbc_name = name;
-  dbc = dbc_lookup(name.toStdString());
+  dbc = const_cast<DBC *>(dbc_lookup(name.toStdString()));
   msg_map.clear();
   for (auto &msg : dbc->msgs) {
     msg_map[msg.address] = &msg;
@@ -76,4 +76,19 @@ void Parser::recvThread() {
     }
     emit received(can);
   }
+}
+
+void Parser::addNewMsg(const Msg &msg) {
+  dbc->msgs.push_back(msg);
+  msg_map[dbc->msgs.back().address] = &dbc->msgs.back();
+}
+
+void Parser::removeSignal(uint32_t address, const QString &sig_name) {
+  qWarning() << "remove signal" << address << sig_name;
+  Msg *msg = const_cast<Msg *>(getMsg(address));
+  if (!msg) return;
+
+  // std::remove_if(msg->sigs.begin(), msg->sigs.end(), [=](auto &sig) {
+  //   return sig_name == sig.name.c_str();
+  // });
 }
