@@ -201,6 +201,13 @@ void UIState::updateStatus() {
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
   }
+
+  // Handle prime type change
+  if (prime_type != prime_type_prev) {
+    prime_type_prev = prime_type;
+    emit primeTypeChanged(prime_type);
+    Params().put("PrimeType", std::to_string(prime_type));
+  }
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
@@ -212,7 +219,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
-  prime_type = std::atoi(params.get("PrimeType").c_str());
+  prime_type = prime_type_prev = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
 
   // update timer
