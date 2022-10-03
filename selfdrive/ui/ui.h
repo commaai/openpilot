@@ -155,9 +155,6 @@ public:
   Device(QObject *parent = 0);
 
 private:
-  // auto brightness
-  const float accel_samples = 5*UI_FREQ;
-
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;
