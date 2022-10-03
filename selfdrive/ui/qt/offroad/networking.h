@@ -38,8 +38,11 @@ public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
 
 private:
-  LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
+  LabelControl* ipLabel;
+  ToggleControl *roamingToggle;
+  ButtonControl *editApnButton;
+  ToggleControl *meteredToggle;
   WifiManager* wifi = nullptr;
   Params params;
 
