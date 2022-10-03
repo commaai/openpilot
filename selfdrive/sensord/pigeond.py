@@ -9,7 +9,6 @@ import urllib.parse
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-
 from cereal import messaging
 from common.params import Params
 from system.swaglog import cloudlog
