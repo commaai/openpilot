@@ -20,10 +20,11 @@ fi
 if [ ! -d LimeGPS ]; then
   git clone https://github.com/osqzss/LimeGPS.git
   cd LimeGPS
-  sed -i 's/LimeSuite/LimeSuite -I..\/LimeSuite\/src -L..\/LimeSuite\/builddir\/src/' makefile
 
   cp ../inc_ephem_array_size.patch .
+  cp ../makefile.patch .
   git apply inc_ephem_array_size.patch
+  git apply makefile.patch
 
   make
   cd ..

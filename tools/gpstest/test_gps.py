@@ -42,7 +42,7 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket):
   assert end_time != 0, "no ublox measurements received!"
 
   ttfm = (end_time - start_time)/1e9
-  assert ttfm < 40, f"Time to first measurement > 40s, {ttfm}"
+  assert ttfm < 35, f"Time to first measurement > 35s, {ttfm}"
 
   # check for satellite count in measurements
   sat_count = []
@@ -87,7 +87,7 @@ def verify_gps_location(socket: messaging.SubSocket):
   hacc = events[-1].gpsLocationExternal.accuracy
   vacc = events[-1].gpsLocationExternal.verticalAccuracy
   assert hacc < 15, f"Horizontal accuracy too high, {hacc}"
-  assert vacc < 40,  f"Vertical accuracy too high, {vacc}"
+  assert vacc < 43,  f"Vertical accuracy too high, {vacc}"
 
 
 def verify_time_to_first_fix(pigeon):
@@ -101,7 +101,7 @@ def verify_time_to_first_fix(pigeon):
 
   values = struct.unpack("<HHHIBBBBIIH", nav_status[:24])
   ttff = values[8]/1000
-  # srms = values[9]/1000 
+  # srms = values[9]/1000
   assert ttff < 40, f"Time to first fix > 40s, {ttff}"
 
 

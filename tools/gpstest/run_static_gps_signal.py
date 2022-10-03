@@ -44,7 +44,6 @@ def main():
   rinex_file = download_rinex()
   lat, lon = get_random_coords(47.2020, 15.7403)
 
-  os.environ["LD_PRELOAD"] = os.path.join(os.getcwd(), "LimeSuite/builddir/src/libLimeSuite.so")
   try:
     print(f"starting LimeGPS, Location: {lat},{lon}")
     cmd = ["LimeGPS/LimeGPS", "-e", rinex_file, "-l", f"{lat},{lon},100"]
