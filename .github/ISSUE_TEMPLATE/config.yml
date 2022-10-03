@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report model bugs
-    url: https://github.com/commaai/openpilot/discussions?discussions_q=label%3Adrivingfb
+    url: https://github.com/commaai/openpilot/discussions/categories/model-feedback
     about: Provide feedback for the driving or driver monitoring models
   - name: Discussions
     url: https://github.com/commaai/openpilot/discussions
