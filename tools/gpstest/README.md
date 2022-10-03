@@ -59,10 +59,10 @@ Supported connections:
 Build on top of LimeSuite (libLimeSuite.so.20.10-1), generates the GPS signal.
 
 ```
-LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e <ephemeris file> -l <location coordinates>
+./LimeGPS -e <ephemeris file> -l <location coordinates>
 
 # Example
-LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
+./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
 ```
 
 # NOTE
