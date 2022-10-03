@@ -20,17 +20,13 @@ class CarInterface(CarInterfaceBase):
 
     cloudlog.debug("Using Mock Car Interface")
 
-    self.sensor = messaging.sub_sock('sensorEvents')
+    self.gyro = messaging.sub_sock('gyroscope')
     self.gps = messaging.sub_sock('gpsLocationExternal')
 
     self.speed = 0.
     self.prev_speed = 0.
     self.yaw_rate = 0.
     self.yaw_rate_meas = 0.
-
-  @staticmethod
-  def compute_gb(accel, speed):
-    return accel
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
@@ -50,11 +46,9 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     # get basic data from phone and gps since CAN isn't connected
-    sensors = messaging.recv_sock(self.sensor)
-    if sensors is not None:
-      for sensor in sensors.sensorEvents:
-        if sensor.type == 4:  # gyro
-          self.yaw_rate_meas = -sensor.gyro.v[0]
+    gyro_sensor = messaging.recv_sock(self.gyro)
+    if gyro_sensor is not None:
+      self.yaw_rate_meas = -gyro_sensor.gyroscope.gyroUncalibrated.v[0]
 
     gps = messaging.recv_sock(self.gps)
     if gps is not None:

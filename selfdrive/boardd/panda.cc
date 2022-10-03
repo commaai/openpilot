@@ -317,6 +317,12 @@ std::optional<health_t> Panda::get_state() {
   return err >= 0 ? std::make_optional(health) : std::nullopt;
 }
 
+std::optional<can_health_t> Panda::get_can_state(uint16_t can_number) {
+  can_health_t can_health {0};
+  int err = usb_read(0xc2, can_number, 0, (unsigned char*)&can_health, sizeof(can_health));
+  return err >= 0 ? std::make_optional(can_health) : std::nullopt;
+}
+
 void Panda::set_loopback(bool loopback) {
   usb_write(0xe5, loopback, 0);
 }
@@ -389,7 +395,8 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     }
     auto can_data = cmsg.getDat();
     uint8_t data_len_code = len_to_dlc(can_data.size());
-    assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8));
+    assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA ||
+                                hw_type == cereal::PandaState::PandaType::RED_PANDA_V2) ? 64 : 8));
     assert(can_data.size() == dlc_to_len[data_len_code]);
 
     can_header header;

@@ -29,7 +29,7 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
+pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'accelerometer', 'gyroscope', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
 
 def parse_args(add_args=None):
@@ -122,18 +122,26 @@ class Camerad:
     pm.send(pub_type, dat)
 
 def imu_callback(imu, vehicle_state):
-  vehicle_state.bearing_deg = math.degrees(imu.compass)
-  dat = messaging.new_message('sensorEvents', 2)
-  dat.sensorEvents[0].sensor = 4
-  dat.sensorEvents[0].type = 0x10
-  dat.sensorEvents[0].init('acceleration')
-  dat.sensorEvents[0].acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
-  # copied these numbers from locationd
-  dat.sensorEvents[1].sensor = 5
-  dat.sensorEvents[1].type = 0x10
-  dat.sensorEvents[1].init('gyroUncalibrated')
-  dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
-  pm.send('sensorEvents', dat)
+  # send 5x since 'sensor_tick' doesn't seem to work. limited by the world tick?
+  for _ in range(5):
+    vehicle_state.bearing_deg = math.degrees(imu.compass)
+    dat = messaging.new_message('accelerometer')
+    dat.accelerometer.sensor = 4
+    dat.accelerometer.type = 0x1
+    dat.accelerometer.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
+    dat.accelerometer.init('acceleration')
+    dat.accelerometer.acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
+    pm.send('accelerometer', dat)
+
+    # copied these numbers from locationd
+    dat = messaging.new_message('gyroscope')
+    dat.gyroscope.sensor = 5
+    dat.gyroscope.type = 0x10
+    dat.gyroscope.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
+    dat.gyroscope.init('gyroUncalibrated')
+    dat.gyroscope.gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
+    pm.send('gyroscope', dat)
+    time.sleep(0.01)
 
 
 def panda_state_function(vs: VehicleState, exit_event: threading.Event):
@@ -348,6 +356,7 @@ class CarlaBridge:
 
     # re-enable IMU
     imu_bp = blueprint_library.find('sensor.other.imu')
+    imu_bp.set_attribute('sensor_tick', '0.01')
     imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
     imu.listen(lambda imu: imu_callback(imu, vehicle_state))
 
