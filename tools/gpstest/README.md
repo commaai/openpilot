@@ -66,4 +66,4 @@ LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028
 ```
 
 # NOTE
-GPS spoofing is illegal, be cautious when using it.
+GPS spoofing is illegal, only use it in the testing box.
