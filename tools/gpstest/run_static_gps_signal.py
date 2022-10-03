@@ -32,6 +32,17 @@ def get_random_coords(lat, lon) -> Tuple[int, int]:
   return round(lat, 5), round(lon, 5)
 
 
+def check_availability() -> bool:
+  cmd = ["LimeSuite/builddir/LimeUtil/LimeUtil", "--find"]
+  output = sp.check_output(cmd)
+
+  if output.strip() == b"":
+    return False
+
+  print(f"Device: {output.strip().decode('utf-8')}")
+  return True
+
+
 def main():
   if not os.path.exists('LimeGPS'):
     print("LimeGPS not found run 'setup.sh' first")
@@ -41,18 +52,27 @@ def main():
     print("LimeSuite not found run 'setup.sh' first")
     return
 
+  if not check_availability():
+    print("No limeSDR device found!")
+    return
+
   rinex_file = download_rinex()
   lat, lon = get_random_coords(47.2020, 15.7403)
 
   try:
     print(f"starting LimeGPS, Location: {lat},{lon}")
     cmd = ["LimeGPS/LimeGPS", "-e", rinex_file, "-l", f"{lat},{lon},100"]
-    sp.check_output(cmd) # never returns
+    sp.check_output(cmd, stderr=sp.PIPE)
   except KeyboardInterrupt:
     print("stopping LimeGPS")
   except Exception as e:
-    print(f"LimeGPS crashed: {str(e)}")
+    out_stderr = e.stderr.decode('utf-8')# pylint:disable=no-member
+    if "Device is busy." in out_stderr:
+      print("GPS simulation is already running, Device is busy!")
+      return
 
+    print(f"LimeGPS crashed: {str(e)}")
+    print(f"stderr:\n{e.stderr.decode('utf-8')}")# pylint:disable=no-member
 
 if __name__ == "__main__":
   main()
