@@ -34,7 +34,6 @@ def set_power(enabled: bool) -> None:
   gpio_set(GPIO.UBLOX_PWR_EN, enabled)
   gpio_set(GPIO.UBLOX_RST_N, enabled)
 
-
 def add_ubx_checksum(msg: bytes) -> bytes:
   A = B = 0
   for b in msg[2:]:
