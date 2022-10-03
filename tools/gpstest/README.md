@@ -17,7 +17,7 @@ https://cddis.nasa.gov/archive/gnss/data/daily/20xx/brdc/.
 
 # Hardware Setup
 * [LimeSDR USB](https://wiki.myriadrf.org/LimeSDR-USB)
-* Asus AX58BT (antenna, not sure if its really this one)
+* Asus AX58BT (antenna)
 
 # Software Setup
 * https://github.com/myriadrf/LimeSuite
@@ -69,4 +69,4 @@ LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028
 ```
 
 # NOTE
-GPS spoofing is illegal, be cautious when using it.
+GPS spoofing is illegal, only use it in the testing box.
