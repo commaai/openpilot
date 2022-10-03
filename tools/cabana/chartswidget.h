@@ -26,7 +26,6 @@ class ChartsWidget : public QWidget {
   struct SignalChart {
     int max_y = 0;
     int min_y = 0;
-    double ts_begin = millis_since_boot();
     QList<QPointF> data;
     QtCharts::QChartView *chart_view = nullptr;
   };

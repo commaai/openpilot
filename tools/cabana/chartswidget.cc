@@ -87,7 +87,7 @@ void ChartsWidget::updateState() {
     while (signal_chart.data.size() > DATA_LIST_SIZE) {
       signal_chart.data.pop_front();
     }
-    signal_chart.data.push_back({(millis_since_boot() - signal_chart.ts_begin), value});
+    signal_chart.data.push_back({it->second.back().ts / 1000., value});
 
     if (update) {
       QChart *chart = signal_chart.chart_view->chart();
