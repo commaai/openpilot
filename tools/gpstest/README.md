@@ -18,14 +18,15 @@ https://cddis.nasa.gov/archive/gnss/data/daily/20xx/brdc/.
 
 # Software Setup
 * https://github.com/myriadrf/LimeSuite
-To communicate with LimeSDR the LimeSuite is needed it abstracts the direct
+
+Communicate with LimeSDR the LimeSuite is needed it abstracts the direct
 communication. It also contains examples for a quick start.
 
 The latest stable version(22.09) does not have the corresponding firmware
 download available at https://downloads.myriadrf.org/project/limesuite. Therefore
 version 20.10 was chosen.
 
-A successull build should give something like:
+A successful build should gives similar to:
 ```
 ./LimeUtil --info
 ######################################################
@@ -54,15 +55,14 @@ Supported connections:
 ```
 
 * https://github.com/osqzss/LimeGPS
+
 Build on top of LimeSuite (libLimeSuite.so.20.10-1), generates the GPS signal.
 
-With a successful GPS signals can be spoofed.
-
 ```
-./LimeGPS -e <ephemeris file> -l <location coordinates>
+LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e <ephemeris file> -l <location coordinates>
 
 # Example
-./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
+LD_PRELOAD=pathTo/libLimeSuite.so ./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
 ```
 
 # NOTE
