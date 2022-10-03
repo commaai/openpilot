@@ -219,7 +219,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
-  prime_type = prime_type_prev = std::atoi(params.get("PrimeType").c_str());
+  prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
 
   // update timer
