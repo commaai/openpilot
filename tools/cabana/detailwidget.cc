@@ -186,6 +186,7 @@ SignalEdit::SignalEdit(QWidget *parent) : QWidget(parent) {
   h->addWidget(remove_btn);
   h->addStretch();
   QPushButton *save_btn = new QPushButton(tr("Save"));
+  QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::save);
   h->addWidget(save_btn);
   v_layout->addLayout(h);
 
@@ -205,6 +206,24 @@ void SignalEdit::setSig(uint32_t address, const Signal &sig) {
   msb->setValue(sig.msb);
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
   endianness->setCurrentIndex(sig.is_little_endian ? 0 : 1);
+}
+
+void SignalEdit::save() {
+  Msg *msg = const_cast<Msg *>(parser->getMsg(address_));
+  if (!msg) return;
+
+  for (auto &sig : msg->sigs) {
+    if (name_ == sig.name.c_str()) {
+      sig.name = title->text().toStdString();
+      sig.size = size->text().toInt();
+      sig.offset = offset->text().toDouble();
+      sig.factor = factor->text().toDouble();
+      sig.msb = msb->text().toInt();
+      sig.is_signed = sign->getCurrentIndex() == 0;
+      sig.is_little_endian = endianness->getCurrentIndex() == 0;
+      break;
+    }
+  }
 }
 
 BinaryView::BinaryView(QWidget *parent) {

@@ -41,6 +41,7 @@ class SignalEdit : public QWidget {
  public:
   SignalEdit(QWidget *parent);
   void setSig(uint32_t address, const Signal &sig);
+  void save();
 
  signals:
   void showPlot(uint32_t address, const QString &name);
