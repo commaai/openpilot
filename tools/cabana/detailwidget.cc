@@ -7,6 +7,8 @@
 
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
+
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QLabel *title = new QLabel(tr("SELECTED MESSAGE:"), this);
@@ -27,7 +29,6 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   QWidget *container = new QWidget(this);
   QVBoxLayout *container_layout = new QVBoxLayout(container);
-  // container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
   signal_edit_layout = new QVBoxLayout();
   signal_edit_layout->setSpacing(2);
   container_layout->addLayout(signal_edit_layout);
@@ -39,10 +40,8 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidget(container);
   scroll->setWidgetResizable(true);
   scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  // scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   main_layout->addWidget(scroll);
-  // main_layout->addStretch(0);
   setFixedWidth(600);
 
   connect(parser, &Parser::updated, this, &DetailWidget::updateState);
@@ -56,20 +55,20 @@ void DetailWidget::updateState() {
   }
 }
 
-void DetailWidget::setItem(uint32_t addr) {
+void DetailWidget::setMsg(uint32_t addr) {
   if (address == addr) return;
 
   address = addr;
-
   QString name = tr("untitled");
 
   for (auto edit : signal_edit) {
     delete edit;
   }
   signal_edit.clear();
+  int i = 0;
   if (auto msg = parser->getMsg(addr)) {
     for (auto &s : msg->sigs) {
-      SignalEdit *edit = new SignalEdit(this);
+      SignalEdit *edit = new SignalEdit(i++, this);
       edit->setSig(address, s);
       signal_edit_layout->addWidget(edit);
       signal_edit.push_back(edit);
@@ -77,9 +76,10 @@ void DetailWidget::setItem(uint32_t addr) {
     name = msg->name.c_str();
   }
   name_label->setText(name);
+  binary_view->setMsg(addr);
 }
 
-SignalEdit::SignalEdit(QWidget *parent) : QWidget(parent) {
+SignalEdit::SignalEdit(int idx, QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -89,7 +89,7 @@ SignalEdit::SignalEdit(QWidget *parent) : QWidget(parent) {
   icon->setStyleSheet("font-weight:bold");
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
-  title->setStyleSheet("font-weight:bold");
+  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(SIGNAL_COLORS[idx % std::size(SIGNAL_COLORS)]));
   connect(title, &ElidedLabel::clicked, [=]() {
     edit_container->isVisible() ? edit_container->hide() : edit_container->show();
     icon->setText(edit_container->isVisible() ? "▼" : ">");
@@ -98,7 +98,13 @@ SignalEdit::SignalEdit(QWidget *parent) : QWidget(parent) {
   title_layout->addStretch();
   QPushButton *show_plot = new QPushButton(tr("Show Pilot"));
   QObject::connect(show_plot, &QPushButton::clicked, [=]() {
-    emit parser->showPlot(address_, name_);
+    if (show_plot->text() == tr("Show Pilot")) {
+      emit parser->showPlot(address_, name_);
+      show_plot->setText(tr("Hide Pilot"));
+    } else {
+      emit parser->hidePlot(address_, name_);
+      show_plot->setText(tr("Show Pilot"));
+    }
   });
   title_layout->addWidget(show_plot);
 
@@ -219,8 +225,9 @@ void SignalEdit::save() {
       sig.offset = offset->text().toDouble();
       sig.factor = factor->text().toDouble();
       sig.msb = msb->text().toInt();
-      sig.is_signed = sign->getCurrentIndex() == 0;
-      sig.is_little_endian = endianness->getCurrentIndex() == 0;
+      sig.is_signed = sign->currentIndex() == 0;
+      sig.is_little_endian = endianness->currentIndex() == 0;
+      // TODO: update msb,lsb
       break;
     }
   }
@@ -233,51 +240,67 @@ BinaryView::BinaryView(QWidget *parent) {
   table->horizontalHeader()->hide();
   table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  // table->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   main_layout->addWidget(table);
   table->setColumnCount(9);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
-void BinaryView::setData(const QByteArray &binary) {
-  auto getTableItem = [=](int row, int col) -> QTableWidgetItem * {
-    auto item = table->item(row, col);
-    if (!item) {
-      item = new QTableWidgetItem();
+void BinaryView::setMsg(uint32_t address) {
+  // TODO: Add a helper function in dbc.h
+  static QVector<int> be_bits = []() {
+    QVector<int> ret;
+    for (int i = 0; i < 64; i++) {
+      for (int j = 7; j >= 0; j--) {
+        ret.push_back(j + i * 8);
+      }
+    }
+    return ret;
+  }();
+
+  auto msg = parser->getMsg(address);
+  int row_count = msg ? msg->size : parser->items[address].back().dat.size();
+
+  table->setRowCount(row_count);
+  table->setColumnCount(9);
+  for (int i = 0; i < table->rowCount(); ++i) {
+    for (int j = 0; j < table->columnCount(); ++j) {
+      auto item = new QTableWidgetItem();
       item->setTextAlignment(Qt::AlignCenter);
-      if (col == 8) {
+      if (j == 8) {
         QFont font;
         font.setBold(true);
         item->setFont(font);
       }
-      table->setItem(row, col, item);
+      table->setItem(i, j, item);
     }
-    return item;
-  };
+  }
 
+  if (msg) {
+    for (int i = 0; i < msg->sigs.size(); ++i) {
+      const auto &sig = msg->sigs[i];
+      int start = sig.is_little_endian ? sig.start_bit : be_bits.indexOf(sig.start_bit);
+      for (int j = start; j <= start + sig.size - 1; ++j) {
+        table->item(j / 8, j % 8)->setBackground(QColor(SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)]));
+      }
+    }
+  }
+
+  setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
+}
+
+void BinaryView::setData(const QByteArray &binary) {
   std::string s;
   for (int j = 0; j < binary.size(); ++j) {
     s += std::bitset<8>(binary[j]).to_string();
   }
-  int old_row_count = table->rowCount();
-  table->setRowCount(binary.size());
 
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
-      getTableItem(i, j)->setText(QChar(s[i * 8 + j]));
+      table->item(i, j)->setText(QChar(s[i * 8 + j]));
     }
     sprintf(&hex[0], "%02X", (unsigned char)binary[i]);
-    auto item = getTableItem(i, 8);
-    item->setText(hex);
-  }
-
-  if (old_row_count != binary.size()) {
-    int height = 0;
-    for (int i = 0; i < table->rowCount(); i++) {
-      height += table->rowHeight(i);
-    }
-    setFixedHeight(height + 25);
+    table->item(i, 8)->setText(hex);
   }
 }
 

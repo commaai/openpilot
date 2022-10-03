@@ -30,6 +30,7 @@ class BinaryView : public QWidget {
 
  public:
   BinaryView(QWidget *parent);
+  void setMsg(uint32_t address);
   void setData(const QByteArray &binary);
 
   QTableWidget *table;
@@ -39,7 +40,7 @@ class SignalEdit : public QWidget {
   Q_OBJECT
 
  public:
-  SignalEdit(QWidget *parent);
+  SignalEdit(int idx, QWidget *parent);
   void setSig(uint32_t address, const Signal &sig);
   void save();
 
@@ -61,7 +62,7 @@ class DetailWidget : public QWidget {
   Q_OBJECT
  public:
   DetailWidget(QWidget *parent);
-  void setItem(uint32_t addr);
+  void setMsg(uint32_t addr);
 
  public slots:
   void updateState();

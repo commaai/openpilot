@@ -12,7 +12,7 @@ MainWindow::MainWindow() : QWidget() {
 
   messages_widget = new MessagesWidget(this);
   QObject::connect(messages_widget, &MessagesWidget::addressChanged, [=](uint32_t address) {
-    detail_widget->setItem(address);
+    detail_widget->setMsg(address);
   });
   h_layout->addWidget(messages_widget);
 
@@ -30,9 +30,9 @@ MainWindow::MainWindow() : QWidget() {
   QScrollArea *scroll = new QScrollArea(this);
   scroll->setWidget(charts_widget);
   scroll->setWidgetResizable(true);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   r_layout->addWidget(scroll);
-  // r_layout->addStretch();
 
   h_layout->addWidget(right_container);
 }

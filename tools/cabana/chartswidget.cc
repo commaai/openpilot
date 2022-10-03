@@ -25,8 +25,10 @@ int64_t get_raw_value(const QByteArray &msg, const Signal &sig) {
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
   connect(parser, &Parser::updated, this, &ChartsWidget::updateState);
   connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
+  connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
 }
 
 void ChartsWidget::addChart(uint32_t address, const QString &name) {
@@ -40,6 +42,8 @@ void ChartsWidget::addChart(uint32_t address, const QString &name) {
     chart->createDefaultAxes();
     chart->legend()->hide();
     auto chart_view = new QChartView(chart);
+    chart_view->setMinimumSize({width(), 300});
+    chart_view->setMaximumSize({width(), 300});
     chart_view->setRenderHint(QPainter::Antialiasing);
     main_layout->addWidget(chart_view);
     charts[name] = {.chart_view = chart_view};
@@ -47,6 +51,11 @@ void ChartsWidget::addChart(uint32_t address, const QString &name) {
 }
 
 void ChartsWidget::removeChart(uint32_t address, const QString &name) {
+  auto it = charts.find(name);
+  if (it == charts.end()) return;
+
+  delete it->second.chart_view;
+  charts.erase(it);
 }
 
 void ChartsWidget::updateState() {

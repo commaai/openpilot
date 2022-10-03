@@ -13,6 +13,9 @@ class ChartsWidget : public QWidget {
 
  public:
   ChartsWidget(QWidget *parent = nullptr);
+  inline bool hasChart(uint32_t address, const QString &name) {
+    return charts.find(name) != charts.end();
+  }
   void addChart(uint32_t address, const QString &name);
   void removeChart(uint32_t address, const QString &name);
   void updateState();
@@ -20,7 +23,7 @@ class ChartsWidget : public QWidget {
  protected:
   QVBoxLayout *main_layout;
   uint32_t address_ = 0;
-  struct SignalChart{
+  struct SignalChart {
     int max_y = 0;
     int min_y = 0;
     double ts_begin = millis_since_boot();

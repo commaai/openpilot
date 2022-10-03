@@ -37,6 +37,7 @@ class Parser : public QObject {
   }
  signals:
   void showPlot(uint32_t address, const QString &name);
+  void hidePlot(uint32_t address, const QString &name);
   void received(std::vector<CanData> can);
   void updated();
 
