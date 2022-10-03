@@ -42,7 +42,7 @@ class BinaryView : public QWidget {
 
  public:
   BinaryView(QWidget *parent);
-  void setMsg(uint32_t address);
+  void setMsg(const QString &id);
   void setData(const QByteArray &binary);
 
   QTableWidget *table;
@@ -52,15 +52,14 @@ class SignalEdit : public QWidget {
   Q_OBJECT
 
  public:
-  SignalEdit(uint32_t address, const Signal &sig, int idx, QWidget *parent);
+  SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *parent);
   void save();
 
- signals:
-  void showPlot(uint32_t address, const QString &name);
-
+signals:
+  void removed();
  protected:
   void remove();
-  uint32_t address_ = 0;
+  QString id;
   QString name_;
   ElidedLabel *title;
   SignalForm *form;
@@ -72,7 +71,7 @@ class DetailWidget : public QWidget {
   Q_OBJECT
  public:
   DetailWidget(QWidget *parent);
-  void setMsg(uint32_t addr);
+  void setMsg(const QString &id);
 
  public slots:
   void updateState();
@@ -83,7 +82,7 @@ class DetailWidget : public QWidget {
   QVBoxLayout *signal_edit_layout;
   Signal *sig = nullptr;
   MessagesView *messages_view;
-  uint32_t address = 0;
+  QString msg_id;
   BinaryView *binary_view;
   std::vector<SignalEdit *> signal_edit;
 };
@@ -92,12 +91,12 @@ class EditMessageDialog : public QDialog {
   Q_OBJECT
 
  public:
-  EditMessageDialog(uint32_t address, QWidget *parent);
+  EditMessageDialog(const QString &id, QWidget *parent);
 };
 
 class AddSignalDialog : public QDialog {
   Q_OBJECT
 
  public:
-  AddSignalDialog(uint32_t address, QWidget *parent);
+  AddSignalDialog(const QString &id, QWidget *parent);
 };

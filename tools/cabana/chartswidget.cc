@@ -31,13 +31,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
 }
 
-void ChartsWidget::addChart(uint32_t address, const QString &name) {
-  address_ = address;
-  if (charts.find(name) == charts.end()) {
+void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
+  const QString char_name = id + sig_name;
+  if (charts.find(char_name) == charts.end()) {
     QLineSeries *series = new QLineSeries();
     series->setUseOpenGL(true);
     auto chart = new QChart();
-    chart->setTitle(name);
+    chart->setTitle(id + ": " + sig_name);
     chart->addSeries(series);
     chart->createDefaultAxes();
     chart->legend()->hide();
@@ -46,12 +46,12 @@ void ChartsWidget::addChart(uint32_t address, const QString &name) {
     chart_view->setMaximumSize({width(), 300});
     chart_view->setRenderHint(QPainter::Antialiasing);
     main_layout->addWidget(chart_view);
-    charts[name] = {.chart_view = chart_view};
+    charts[char_name] = {.id = id, .sig_name = sig_name, .chart_view = chart_view};
   }
 }
 
-void ChartsWidget::removeChart(uint32_t address, const QString &name) {
-  auto it = charts.find(name);
+void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
+  auto it = charts.find(id + sig_name);
   if (it == charts.end()) return;
 
   delete it->second.chart_view;
@@ -60,41 +60,43 @@ void ChartsWidget::removeChart(uint32_t address, const QString &name) {
 
 void ChartsWidget::updateState() {
   static double last_update = millis_since_boot();
-  auto msg = parser->getMsg(address_);
-  if (!msg) return;
-  auto it = parser->items.find(address_);
-  if (it == parser->items.end()) return;
-
   double current_ts = millis_since_boot();
   bool update = (current_ts - last_update) > 500;
   if (update) {
     last_update = current_ts;
   }
-  for (auto &sig : msg->sigs) {
-    if (charts.find(sig.name.c_str()) == charts.end()) continue;
 
-    auto &dat = it->second.back().dat;
-    int64_t val = get_raw_value(dat, sig);
-    if (sig.is_signed) {
-      val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+  auto getSig = [=](const QString &id, const QString &name) -> const Signal * {
+    for (auto &sig : parser->getMsg(id)->sigs) {
+      if (name == sig.name.c_str()) return &sig;
     }
-    double value = val * sig.factor + sig.offset;
-    auto &signal_chart = charts[sig.name.c_str()];
+    return nullptr;
+  };
 
-    if (value > signal_chart.max_y) signal_chart.max_y = value;
-    if (value < signal_chart.min_y) signal_chart.min_y = value;
+  for (auto &[_, c] : charts) {
+    if (auto sig = getSig(c.id, c.sig_name)) {
+      const auto &can_data = parser->can_msgs[c.id].back();
+      int64_t val = get_raw_value(can_data.dat, *sig);
+      if (sig->is_signed) {
+        val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
+      }
+      double value = val * sig->factor + sig->offset;
 
-    while (signal_chart.data.size() > DATA_LIST_SIZE) {
-      signal_chart.data.pop_front();
-    }
-    signal_chart.data.push_back({it->second.back().ts / 1000., value});
+      if (value > c.max_y) c.max_y = value;
+      if (value < c.min_y) c.min_y = value;
 
-    if (update) {
-      QChart *chart = signal_chart.chart_view->chart();
-      QLineSeries *series = (QLineSeries *)chart->series()[0];
-      series->replace(signal_chart.data);
-      chart->axisX()->setRange(signal_chart.data.front().x(), signal_chart.data.back().x());
-      chart->axisY()->setRange(signal_chart.min_y, signal_chart.max_y);
+      while (c.data.size() > DATA_LIST_SIZE) {
+        c.data.pop_front();
+      }
+      c.data.push_back({can_data.ts / 1000., value});
+
+      if (update) {
+        QChart *chart = c.chart_view->chart();
+        QLineSeries *series = (QLineSeries *)chart->series()[0];
+        series->replace(c.data);
+        chart->axisX()->setRange(c.data.front().x(), c.data.back().x());
+        chart->axisY()->setRange(c.min_y, c.max_y);
+      }
     }
   }
 }

@@ -13,17 +13,18 @@ class ChartsWidget : public QWidget {
 
  public:
   ChartsWidget(QWidget *parent = nullptr);
-  inline bool hasChart(uint32_t address, const QString &name) {
-    return charts.find(name) != charts.end();
+  inline bool hasChart(const QString &id, const QString &sig_name) {
+    return charts.find(id+sig_name) != charts.end();
   }
-  void addChart(uint32_t address, const QString &name);
-  void removeChart(uint32_t address, const QString &name);
+  void addChart(const QString &id, const QString &sig_name);
+  void removeChart(const QString &id, const QString &sig_name);
   void updateState();
 
  protected:
   QVBoxLayout *main_layout;
-  uint32_t address_ = 0;
   struct SignalChart {
+    QString id;
+    QString sig_name;
     int max_y = 0;
     int min_y = 0;
     QList<QPointF> data;

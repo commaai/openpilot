@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <bitset>
 
@@ -38,10 +39,10 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   edit_btn = new QPushButton(tr("Edit"), this);
   edit_btn->setVisible(false);
   QObject::connect(edit_btn, &QPushButton::clicked, [=]() {
-    EditMessageDialog dlg(address, this);
+    EditMessageDialog dlg(msg_id, this);
     int ret = dlg.exec();
     if (ret) {
-      setMsg(address);
+      setMsg(msg_id);
     }
   });
   name_layout->addWidget(edit_btn);
@@ -56,10 +57,10 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   add_sig_btn = new QPushButton(tr("Add signal"), this);
   add_sig_btn->setVisible(false);
   QObject::connect(add_sig_btn, &QPushButton::clicked, [=]() {
-    AddSignalDialog dlg(address, this);
+    AddSignalDialog dlg(msg_id, this);
     int ret = dlg.exec();
     if (ret) {
-      setMsg(address);
+      setMsg(msg_id);
     }
   });
   signals_layout->addWidget(add_sig_btn);
@@ -86,9 +87,9 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void DetailWidget::updateState() {
-  if (!address) return;
+  if (msg_id.isEmpty()) return;
 
-  auto &list = parser->items[address];
+  auto &list = parser->can_msgs[msg_id];
   if (!list.empty()) {
     binary_view->setData(list.back().dat);
     messages_view->setMessages(list);
@@ -199,8 +200,8 @@ std::optional<Signal> SignalForm::getSignal() {
   return (sig.name.empty() || sig.size <= 0) ? std::nullopt : std::optional(sig);
 }
 
-void DetailWidget::setMsg(uint32_t addr) {
-  address = addr;
+void DetailWidget::setMsg(const QString &id) {
+  msg_id = id;
   QString name = tr("untitled");
 
   for (auto edit : signal_edit) {
@@ -208,21 +209,26 @@ void DetailWidget::setMsg(uint32_t addr) {
   }
   signal_edit.clear();
   int i = 0;
-  if (auto msg = parser->getMsg(addr)) {
+  auto msg = parser->getMsg(id);
+  if (msg) {
     for (auto &s : msg->sigs) {
-      SignalEdit *edit = new SignalEdit(address, s, i++, this);
+      SignalEdit *edit = new SignalEdit(id, s, i++, this);
+      connect(edit, &SignalEdit::removed, [=]() {
+        QTimer::singleShot(0, [=]() { setMsg(id); });
+      });
       signal_edit_layout->addWidget(edit);
       signal_edit.push_back(edit);
     }
     name = msg->name.c_str();
   }
   name_label->setText(name);
-  binary_view->setMsg(addr);
+  binary_view->setMsg(msg_id);
+
   edit_btn->setVisible(true);
-  add_sig_btn->setVisible(true);
+  add_sig_btn->setVisible(msg != nullptr);
 }
 
-SignalEdit::SignalEdit(uint32_t address, const Signal &sig, int idx, QWidget *parent) : address_(address), name_(sig.name.c_str()), QWidget(parent) {
+SignalEdit::SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *parent) : id(id), name_(sig.name.c_str()), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -240,14 +246,14 @@ SignalEdit::SignalEdit(uint32_t address, const Signal &sig, int idx, QWidget *pa
   });
   title_layout->addWidget(title);
   title_layout->addStretch();
-  QPushButton *show_plot = new QPushButton(tr("Show Pilot"));
+  QPushButton *show_plot = new QPushButton(tr("Show Plot"));
   QObject::connect(show_plot, &QPushButton::clicked, [=]() {
-    if (show_plot->text() == tr("Show Pilot")) {
-      emit parser->showPlot(address_, name_);
-      show_plot->setText(tr("Hide Pilot"));
+    if (show_plot->text() == tr("Show Plot")) {
+      emit parser->showPlot(id, name_);
+      show_plot->setText(tr("Hide Plot"));
     } else {
-      emit parser->hidePlot(address_, name_);
-      show_plot->setText(tr("Show Pilot"));
+      emit parser->hidePlot(id, name_);
+      show_plot->setText(tr("Show Plot"));
     }
   });
   title_layout->addWidget(show_plot);
@@ -273,13 +279,12 @@ SignalEdit::SignalEdit(uint32_t address, const Signal &sig, int idx, QWidget *pa
 }
 
 void SignalEdit::save() {
-  Msg *msg = const_cast<Msg *>(parser->getMsg(address_));
+  Msg *msg = const_cast<Msg *>(parser->getMsg(id));
   if (!msg) return;
 
   for (auto &sig : msg->sigs) {
     if (name_ == sig.name.c_str()) {
-      auto s = form->getSignal();
-      if (s) {
+      if (auto s = form->getSignal()) {
         sig = *s;
       }
       break;
@@ -294,7 +299,8 @@ void SignalEdit::remove() {
   msgbox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
   msgbox.setDefaultButton(QMessageBox::Cancel);
   if (msgbox.exec()) {
-    parser->removeSignal(address_, name_);
+    parser->removeSignal(id, name_);
+    emit removed();
   }
 }
 
@@ -310,9 +316,9 @@ BinaryView::BinaryView(QWidget *parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
-void BinaryView::setMsg(uint32_t address) {
-  auto msg = parser->getMsg(address);
-  int row_count = msg ? msg->size : parser->items[address].back().dat.size();
+void BinaryView::setMsg(const QString &id) {
+  auto msg = parser->getMsg(Parser::addressFromId(id));
+  int row_count = msg ? msg->size : parser->can_msgs[id].back().dat.size();
 
   table->setRowCount(row_count);
   table->setColumnCount(9);
@@ -340,8 +346,8 @@ void BinaryView::setMsg(uint32_t address) {
   }
 
   setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
-  if (!parser->items.empty()) {
-    setData(parser->items[address].back().dat);
+  if (!parser->can_msgs.empty()) {
+    setData(parser->can_msgs[id].back().dat);
   }
 }
 
@@ -389,12 +395,12 @@ void MessagesView::setMessages(const std::list<CanData> &list) {
   }
 }
 
-EditMessageDialog::EditMessageDialog(uint32_t address, QWidget *parent) : QDialog(parent) {
+EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Edit message"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addWidget(new QLabel(tr("Address: %1").arg(address, 1, 16)));
+  main_layout->addWidget(new QLabel(tr("ID: (%1)").arg(id)));
 
-  auto msg = const_cast<Msg *>(parser->getMsg(address));
+  auto msg = const_cast<Msg *>(parser->getMsg(Parser::addressFromId(id)));
   QHBoxLayout *h_layout = new QHBoxLayout();
   h_layout->addWidget(new QLabel(tr("Name")));
   h_layout->addStretch();
@@ -407,7 +413,7 @@ EditMessageDialog::EditMessageDialog(uint32_t address, QWidget *parent) : QDialo
   h_layout->addWidget(new QLabel(tr("Size")));
   h_layout->addStretch();
   QSpinBox *size_spin = new QSpinBox(this);
-  size_spin->setValue(msg ? msg->size : parser->items[address].back().dat.size());
+  size_spin->setValue(msg ? msg->size : parser->can_msgs[id].back().dat.size());
   h_layout->addWidget(size_spin);
   main_layout->addLayout(h_layout);
 
@@ -422,7 +428,7 @@ EditMessageDialog::EditMessageDialog(uint32_t address, QWidget *parent) : QDialo
       msg->size = size_spin->value();
     } else {
       Msg m = {};
-      m.address = address;
+      m.address = Parser::addressFromId(id);
       m.name = name_edit->text().toStdString();
       m.size = size_spin->value();
       parser->addNewMsg(m);
@@ -432,8 +438,8 @@ EditMessageDialog::EditMessageDialog(uint32_t address, QWidget *parent) : QDialo
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
-AddSignalDialog::AddSignalDialog(uint32_t address, QWidget *parent) {
-  setWindowTitle(tr("Add signal to %1").arg(parser->getMsg(address)->name.c_str()));
+AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(parent) {
+  setWindowTitle(tr("Add signal to %1").arg(parser->getMsg(id)->name.c_str()));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Signal sig = {.name = "untitled"};
   auto form = new SignalForm(sig, this);
@@ -442,7 +448,7 @@ AddSignalDialog::AddSignalDialog(uint32_t address, QWidget *parent) {
   main_layout->addWidget(buttonBox);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
-    if (auto msg = const_cast<Msg *>(parser->getMsg(address))) {
+    if (auto msg = const_cast<Msg *>(parser->getMsg(id))) {
       if (auto signal = form->getSignal()) {
         msg->sigs.push_back(*signal);
       }

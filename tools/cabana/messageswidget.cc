@@ -46,15 +46,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setColumnWidth(2, 80);
   table_widget->setHorizontalHeaderLabels({tr("Name"), tr("ID"), tr("Count"), tr("Bytes")});
   table_widget->horizontalHeader()->setStretchLastSection(true);
-
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    auto address = table_widget->selectedItems()[0]->data(Qt::UserRole);
-    emit addressChanged(address.toUInt());
+    auto id = table_widget->selectedItems()[0]->data(Qt::UserRole);
+    emit msgChanged(id.toString());
   });
-
   main_layout->addWidget(table_widget);
 
-  // main_layout->addStretch();
   connect(parser, &Parser::updated, this, &MessagesWidget::updateState);
 }
 
@@ -68,14 +65,14 @@ void MessagesWidget::updateState() {
     return item;
   };
 
-  table_widget->setRowCount(parser->items.size());
+  table_widget->setRowCount(parser->can_msgs.size());
   int i = 0;
   const QString filter_str = filter->text().toLower();
-  for (const auto &[address, list] : parser->items) {
+  for (const auto &[id, list] : parser->can_msgs) {
     assert(!list.empty());
 
     QString name;
-    if (auto msg = parser->getMsg(address)) {
+    if (auto msg = parser->getMsg(list.back().address)) {
       name = msg->name.c_str();
     } else {
       name = tr("untitled");
@@ -87,9 +84,9 @@ void MessagesWidget::updateState() {
 
     auto item = getTableItem(i, 0);
     item->setText(name);
-    item->setData(Qt::UserRole, address);
-    getTableItem(i, 1)->setText(list.back().id);
-    getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[address]));
+    item->setData(Qt::UserRole, id);
+    getTableItem(i, 1)->setText(id);
+    getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[id]));
     getTableItem(i, 3)->setText(list.back().hex_dat);
     table_widget->showRow(i);
     i++;

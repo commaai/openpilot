@@ -29,18 +29,22 @@ class Parser : public QObject {
  public:
   Parser(QObject *parent);
   ~Parser();
+  static uint32_t addressFromId(const QString &id);
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
   void addNewMsg(const Msg &msg);
-  void removeSignal(uint32_t address, const QString &sig_name);
+  void removeSignal(const QString &id, const QString &sig_name);
+  const Msg *getMsg(const QString &id) {
+    return getMsg(addressFromId(id));
+  }
   const Msg *getMsg(uint32_t address) {
     auto it = msg_map.find(address);
     return it != msg_map.end() ? it->second : nullptr;
   }
  signals:
-  void showPlot(uint32_t address, const QString &name);
-  void hidePlot(uint32_t address, const QString &name);
+  void showPlot(const QString &id, const QString &name);
+  void hidePlot(const QString &id, const QString &name);
   void received(std::vector<CanData> can);
   void updated();
 
@@ -50,8 +54,8 @@ class Parser : public QObject {
   QThread *thread;
   QString dbc_name;
   std::atomic<bool> exit = false;
-  std::map<uint32_t, std::list<CanData>> items;
-  std::map<uint32_t, uint64_t> counters;
+  std::map<QString, std::list<CanData>> can_msgs;
+  std::map<QString, uint64_t> counters;
   Replay *replay = nullptr;
   DBC *dbc = nullptr;
   std::map<uint32_t, const Msg *> msg_map;

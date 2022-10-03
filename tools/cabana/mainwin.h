@@ -13,8 +13,6 @@ class MainWindow : public QWidget {
 
  public:
   MainWindow();
- public slots:
-  void updated();
 
  protected:
   VideoWidget *video_widget;

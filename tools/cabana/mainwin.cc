@@ -11,8 +11,8 @@ MainWindow::MainWindow() : QWidget() {
   main_layout->addLayout(h_layout);
 
   messages_widget = new MessagesWidget(this);
-  QObject::connect(messages_widget, &MessagesWidget::addressChanged, [=](uint32_t address) {
-    detail_widget->setMsg(address);
+  QObject::connect(messages_widget, &MessagesWidget::msgChanged, [=](const QString &id) {
+    detail_widget->setMsg(id);
   });
   h_layout->addWidget(messages_widget);
 
@@ -35,7 +35,4 @@ MainWindow::MainWindow() : QWidget() {
   r_layout->addWidget(scroll);
 
   h_layout->addWidget(right_container);
-}
-
-void MainWindow::updated() {
 }

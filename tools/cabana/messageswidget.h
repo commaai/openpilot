@@ -16,7 +16,7 @@ class MessagesWidget : public QWidget {
   void updateState();
 
  signals:
-  void addressChanged(uint32_t address);
+  void msgChanged(const QString &id);
 
  protected:
   QLineEdit *filter;
