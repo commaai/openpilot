@@ -95,7 +95,7 @@ std::optional<ProcStat> procStat(std::string stat) {
       .num_threads = stol(v[StatPos::num_threads - 1]),
       .starttime = stoull(v[StatPos::starttime - 1]),
       .vms = stoul(v[StatPos::vsize - 1]),
-      .rss = stoul(v[StatPos::rss - 1]),
+      .rss = stol(v[StatPos::rss - 1]),
       .processor = stoi(v[StatPos::processor - 1]),
     };
     return p;
