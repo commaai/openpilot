@@ -130,6 +130,9 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.SHARAN_MK2:
       ret.mass = 1639 + STD_CARGO_KG
       ret.wheelbase = 2.92
+      ret.minEnableSpeed = 30 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
+      ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
