@@ -239,9 +239,14 @@ def thermald_thread(end_event, hw_queue):
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
 
-    max_comp_temp = temp_filter.update(
-      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
-    )
+    temp_sources = [
+      msg.deviceState.memoryTempC,
+      max(msg.deviceState.cpuTempC),
+      max(msg.deviceState.gpuTempC),
+    ]
+    if started_ts is not None:
+      temp_sources.append(max(msg.deviceState.pmicTempC))
+    max_comp_temp = temp_filter.update(max(temp_sources))
 
     if fan_controller is not None:
       msg.deviceState.fanSpeedPercentDesired = fan_controller.update(max_comp_temp, onroad_conditions["ignition"])
