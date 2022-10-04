@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QStackedLayout>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
 
 int64_t get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   int64_t ret = 0;
@@ -68,20 +69,13 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   auto title = new QLabel(tr("%1 %2").arg(parser->getMsg(id)->name.c_str()).arg(id));
   header_layout->addWidget(title);
   header_layout->addStretch();
-  QPushButton *zoom_out = new QPushButton(this);
-  zoom_out->setIcon(QPixmap("./assets/zoom_out.png"));
-  QObject::connect(zoom_out, &QPushButton::clicked, [this]() {
-    zoom_factor /= 2;
-    zoom();
-  });
-  header_layout->addWidget(zoom_out);
-  zoom_label = new QLabel("1.0x", this);
+  zoom_label = new QLabel("", this);
   header_layout->addWidget(zoom_label);
-  QPushButton *zoom_in = new QPushButton(this);
-  zoom_in->setIcon(QPixmap("./assets/zoom_in.png"));
-  QObject::connect(zoom_in, &QPushButton::clicked, [this]() { 
-    zoom_factor *= 2;
-    zoom(); });
+  QPushButton *zoom_in = new QPushButton("↺", this);
+  zoom_in->setToolTip(tr("reset zoom"));
+  QObject::connect(zoom_in, &QPushButton::clicked, [this]() {
+    chart_view->chart()->zoomReset();
+  });
   header_layout->addWidget(zoom_in);
 
   QPushButton *remove_btn = new QPushButton(tr("Hide plot"), this);
@@ -107,6 +101,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart_view = new QChartView(chart);
   chart_view->setFixedHeight(300);
   chart_view->setRenderHint(QPainter::Antialiasing);
+  chart_view->setRubberBand(QChartView::HorizontalRubberBand);
   chart_layout->addWidget(chart_view);
   chart_layout->addStretch();
 
@@ -124,49 +119,14 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
 }
 
 void ChartWidget::updateState() {
-  static double last_update = millis_since_boot();
-  double current_ts = millis_since_boot();
-  bool update = (current_ts - last_update) > 500;
-  if (!update) return;
-
-  last_update = current_ts;
-  line_marker->update();
-}
-
-void ChartWidget::zoom() {
-  zoom_factor = std::clamp(zoom_factor, 1, 200);
-  zoom_label->setText(QString("%1x").arg(zoom_factor));
-
-  QChart *chart = chart_view->chart();
-  QLineSeries *series = (QLineSeries *)chart->series()[0];
-  if (zoom_factor == 1.0) {
-    line_marker->x_range = {series->at(0).x(), series->at(series->count() - 1).x()};
-  } else {
-    size_t count = series->count() / zoom_factor;
-    int cur_ts = parser->replay->currentSeconds();
-    int cur_idx = 0;
-    for (; cur_idx < series->count(); ++cur_idx) {
-      if (series->at(cur_idx).x() >= cur_ts) break;
-    }
-    int start_pos = 0, end_pos = 0;
-    if ((cur_idx - count / 2) < 0) {
-      start_pos = 0;
-      end_pos = std::min(int(cur_idx + count / 2 + (count / 2 - cur_idx)), int(series->count() - 1));
-    } else if ((cur_idx + count / 2) >= series->count()) {
-      end_pos = series->count() - 1;
-      start_pos = std::max(0, int((cur_idx - count / 2) - (end_pos - count / 2)));
-    } else {
-      start_pos = cur_idx - count / 2;
-      end_pos = cur_idx + count / 2;
-    }
-    start_pos = std::max(0, start_pos);
-    end_pos = std::min(end_pos, int(series->count() - 1));
-    qWarning() << "zoom" << zoom_factor << "need" << count << "pos" << start_pos << end_pos << end_pos - start_pos;
-    line_marker->x_range = {series->at(start_pos).x(), series->at(end_pos).x()};
+  auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
+  double sec = parser->replay->currentSeconds();
+  if (sec >= (int)axis_x->max() || sec < (int)axis_x->min()) {
+    // loop replay in selected range.
+    parser->replay->seekTo(axis_x->min(), false);
   }
-  // line_marker->x_range = {series->at(0).x(), series->at(series->count() - 1).x()};
-  chart->axisX()->setRange(line_marker->x_range.first, line_marker->x_range.second);
-  // chart->axisY()->setRange(min_y, max_y);
+
+  line_marker->update();
 }
 
 void ChartWidget::updateSeries() {
@@ -186,7 +146,7 @@ void ChartWidget::updateSeries() {
   auto l = id.split(':');
   int bus = l[0].toInt();
   uint32_t address = l[1].toUInt(nullptr, 16);
-  QList<QPointF> vals;
+
   vals.reserve(3 * 60 * 100);
   double min_y = 0, max_y = 0;
   uint64_t route_start_time = parser->replay->routeStartTime();
@@ -208,10 +168,12 @@ void ChartWidget::updateSeries() {
       }
     }
   }
+  assert(vals.size() != 0);
   QLineSeries *series = (QLineSeries *)chart_view->chart()->series()[0];
   series->replace(vals);
-  chart_view->chart()->axisY()->setRange(min_y, max_y);
-  zoom();
+  if (!chart_view->chart()->isZoomed()) {
+    chart_view->chart()->axisX()->setRange(vals.front().x(), vals.back().x());
+  }
 }
 
 LineMarker::LineMarker(const QString &id, const QString &sig_name, QChart *chart, QWidget *parent)
@@ -219,10 +181,13 @@ LineMarker::LineMarker(const QString &id, const QString &sig_name, QChart *chart
 }
 
 void LineMarker::paintEvent(QPaintEvent *event) {
+  auto axis_x = dynamic_cast<QValueAxis*>(chart->axisX());
+  if (axis_x->max() <= axis_x->min()) return;
+
+  double x = chart->plotArea().left() + chart->plotArea().width() * (parser->replay->currentSeconds() - axis_x->min()) / (axis_x->max() - axis_x->min());
   QPainter p(this);
   QPen pen = QPen(Qt::black);
   pen.setWidth(2);
   p.setPen(pen);
-  double x = width() * (parser->replay->currentSeconds() - x_range.first) / (x_range.second - x_range.first);
   p.drawLine(QPointF{x, 50.}, QPointF{x, (qreal)height() - 20});
 }

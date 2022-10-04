@@ -38,15 +38,14 @@ signals:
 protected:
   void updateState();
   void addData(const CanData &can_data, const Signal &sig);
-  void zoom();
   void updateSeries();
 
-  int zoom_factor = 1;
   QString id;
   QString sig_name;
   QLabel *zoom_label;
   QChartView *chart_view = nullptr;
   LineMarker *line_marker = nullptr;
+  QList<QPointF> vals;
 };
 
 class ChartsWidget : public QWidget {
