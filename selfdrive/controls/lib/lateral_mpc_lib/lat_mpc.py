@@ -144,8 +144,8 @@ class LateralMpc():
     self.solve_time = 0.0
     self.cost = 0
 
-  def set_weights(self, path_weight, heading_weight, yaw_rate_weight):
-    W = np.asfortranarray(np.diag([path_weight, heading_weight, yaw_rate_weight, 1.0]))
+  def set_weights(self, path_weight, heading_weight, yaw_rate_weight, yaw_accel_cost):
+    W = np.asfortranarray(np.diag([path_weight, heading_weight, yaw_rate_weight, yaw_accel_cost]))
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     self.solver.cost_set(N, 'W', W[:COST_E_DIM,:COST_E_DIM])
