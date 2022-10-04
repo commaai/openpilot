@@ -17,6 +17,7 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.lka_steering_cmd_counter = 0
     self.buttons_counter = 0
+    self.frames_acc_faulted = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -77,7 +78,15 @@ class CarState(CarStateBase):
     ret.parkingBrake = pt_cp.vl["VehicleIgnitionAlt"]["ParkBrake"] == 1
     ret.cruiseState.available = pt_cp.vl["ECMEngineStatus"]["CruiseMainOn"] != 0
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
-    ret.accFaulted = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED
+
+    if pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED:
+      self.frames_acc_faulted += 1
+    else:
+      # GM uses the FAULTED state in AcceleratorPedal2->CruiseState for genuine ACC faults
+      # as well as soft disables with full longitudinal actuation (tries to brake to a stop).
+      # Set accFaulted if FAULTED less than 10 frames (immediate disable)
+      ret.accFaulted = 0 < self.frames_acc_faulted <= 10
+      self.frames_acc_faulted = 0
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
