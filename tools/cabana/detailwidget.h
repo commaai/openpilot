@@ -15,17 +15,8 @@
 #include "opendbc/can/common_dbc.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/parser.h"
+#include "tools/cabana/signalform.h"
 
-class SignalForm : public QWidget {
-  Q_OBJECT
-
- public:
-  SignalForm(const Signal &sig, QWidget *parent);
-  std::optional<Signal> getSignal();
-  QLineEdit *name, *unit, *comment, *val_desc;
-  QSpinBox *size, *msb, *lsb, *factor, *offset, *min_val, *max_val;
-  QComboBox *sign, *endianness;
-};
 
 class MessagesView : public QWidget {
   Q_OBJECT

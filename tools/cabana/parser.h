@@ -23,6 +23,21 @@ struct CanData {
   QString hex_dat;
 };
 
+static QVector<int> BIG_ENDIAN_START_BITS = []() {
+  QVector<int> ret;
+  for (int i = 0; i < 64; i++) {
+    for (int j = 7; j >= 0; j--) {
+      ret.push_back(j + i * 8);
+    }
+  }
+  return ret;
+}();
+
+inline int bigEndianBitIndex(int index) {
+  // TODO: Add a helper function in dbc.h
+  return BIG_ENDIAN_START_BITS.indexOf(index);
+}
+
 class Parser : public QObject {
   Q_OBJECT
 
