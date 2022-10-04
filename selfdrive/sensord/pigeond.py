@@ -264,6 +264,7 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
     if len(dat) > 0:
       if dat[0] == 0x00:
         cloudlog.warning("received invalid data from ublox, re-initing!")
+        init_baudrate(pigeon)
         initialize_pigeon(pigeon)
         continue
 
