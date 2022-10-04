@@ -84,7 +84,7 @@ class CarState(CarStateBase):
     else:
       # GM uses the FAULTED state in AcceleratorPedal2->CruiseState for genuine ACC faults
       # as well as soft disables with full longitudinal actuation (tries to brake to a stop).
-      # Set accFaulted if FAULTED less than 10 frames (immediate disable)
+      # Set accFaulted if state is FAULTED less than 10 frames (immediate disable)
       ret.accFaulted = 0 < self.acc_faulted_frames <= 10
       self.acc_faulted_frames = 0
 
