@@ -270,6 +270,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       segments_merged_ = segments_need_merge;
       return true;
     });
+    emit segmentsMerged();
   }
 }
 

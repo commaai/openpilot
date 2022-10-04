@@ -57,6 +57,7 @@ public:
   inline int totalSeconds() const { return segments_.size() * 60; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
+  inline const std::vector<Event *> *events() const { return events_.get(); }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
@@ -65,6 +66,7 @@ public:
 
 signals:
   void streamStarted();
+  void segmentsMerged();
 
 protected slots:
   void segmentLoadFinished(bool success);

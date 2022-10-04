@@ -12,6 +12,19 @@
 
 using namespace QtCharts;
 
+class LineMarker : public QWidget {
+Q_OBJECT
+
+public:
+  LineMarker(const QString &id, const QString &sig_name, QChart *chart, QWidget *parent);
+  void updateSigData();
+  void paintEvent(QPaintEvent *event) override;
+  QString id;
+  QString sig_name;
+  QChart *chart;
+  std::pair<double, double> x_range;
+};
+
 class ChartWidget : public QWidget {
 Q_OBJECT
 
@@ -25,16 +38,15 @@ signals:
 protected:
   void updateState();
   void addData(const CanData &can_data, const Signal &sig);
-  void zoom(float factor);
+  void zoom();
+  void updateSeries();
 
-  float zoom_factor = 1.0;
+  int zoom_factor = 1;
   QString id;
   QString sig_name;
-  int max_y = 0;
-  int min_y = 0;
-  QList<QPointF> data;
   QLabel *zoom_label;
   QChartView *chart_view = nullptr;
+  LineMarker *line_marker = nullptr;
 };
 
 class ChartsWidget : public QWidget {
