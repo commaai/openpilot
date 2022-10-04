@@ -42,6 +42,8 @@ class Parser : public QObject {
     auto it = msg_map.find(address);
     return it != msg_map.end() ? it->second : nullptr;
   }
+  const Signal *getSig(const QString &id, const QString &sig_name);
+
  signals:
   void showPlot(const QString &id, const QString &name);
   void hidePlot(const QString &id, const QString &name);

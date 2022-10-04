@@ -23,11 +23,11 @@ Parser::~Parser() {
 
 bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
-  if (!replay->load()) {
-    return false;
+  if (replay->load()) {
+    replay->start();
+    return true;
   }
-  replay->start();
-  return true;
+  return false;
 }
 
 void Parser::openDBC(const QString &name) {
@@ -50,8 +50,8 @@ void Parser::process(std::vector<CanData> can) {
     list.push_back(data);
   }
   double current_ts = millis_since_boot();
-  if ((current_ts - prev_update_ts) > 1.0 / FPS) {
-    current_ts = prev_update_ts;
+  if ((current_ts - prev_update_ts) > 1000.0 / FPS) {
+    prev_update_ts = current_ts;
     emit updated();
   }
 }
@@ -104,4 +104,14 @@ void Parser::removeSignal(const QString &id, const QString &sig_name) {
 
 uint32_t Parser::addressFromId(const QString &id) {
   return id.mid(id.indexOf(':') + 1).toUInt(nullptr, 16);
+}
+
+const Signal *Parser::getSig(const QString &id, const QString &sig_name) {
+  if (auto msg = getMsg(id)) {
+    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig_name == s.name.c_str(); });
+    if (it != msg->sigs.end()) {
+      return &(*it);
+    }
+  }
+  return nullptr;
 }

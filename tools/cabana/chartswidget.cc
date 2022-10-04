@@ -52,10 +52,8 @@ void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
 }
 
 ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *parent) : id(id), sig_name(sig_name), QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QStackedLayout *stacked = new QStackedLayout();
+  QStackedLayout *stacked = new QStackedLayout(this);
   stacked->setStackingMode(QStackedLayout::StackAll);
-  main_layout->addLayout(stacked);
 
   QWidget *chart_widget = new QWidget(this);
   QVBoxLayout *chart_layout = new QVBoxLayout(chart_widget);
@@ -121,29 +119,22 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
 }
 
 void ChartWidget::updateState() {
-  auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
-  double sec = parser->replay->currentSeconds();
-  if (sec >= (int)axis_x->max() || sec < (int)axis_x->min()) {
-    // loop replay in selected range.
-    parser->replay->seekTo(axis_x->min(), false);
+  if (chart_view->chart()->isZoomed()) {
+    auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
+    double sec = parser->replay->currentSeconds();
+    if (sec >= (int)axis_x->max() || sec < (int)axis_x->min()) {
+      // loop replay in selected range.
+      parser->replay->seekTo(axis_x->min(), false);
+    }
   }
 
   line_marker->update();
 }
 
 void ChartWidget::updateSeries() {
+  const Signal *sig = parser->getSig(id, sig_name);
   auto events = parser->replay->events();
-  if (!events) return;
-
-  auto getSig = [=]() -> const Signal * {
-    for (auto &sig : parser->getMsg(id)->sigs) {
-      if (sig_name == sig.name.c_str()) return &sig;
-    }
-    return nullptr;
-  };
-
-  const Signal *sig = getSig();
-  if (!sig) return;
+  if (!events || !events) return;
 
   auto l = id.split(':');
   int bus = l[0].toInt();
@@ -162,7 +153,7 @@ void ChartWidget::updateSeries() {
             val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
           }
           double value = val * sig->factor + sig->offset;
-          double ts = (evt->event.getLogMonoTime() - route_start_time) / (double)1e9;
+          double ts = (evt->event.getLogMonoTime() - route_start_time) / (double)1e9; // seconds
           vals.push_back({ts, value});
         }
       }

@@ -279,15 +279,10 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *p
 }
 
 void SignalEdit::save() {
-  Msg *msg = const_cast<Msg *>(parser->getMsg(id));
-  if (!msg) return;
-
-  for (auto &sig : msg->sigs) {
-    if (name_ == sig.name.c_str()) {
-      if (auto s = form->getSignal()) {
-        sig = *s;
-      }
-      break;
+  if (auto sig = const_cast<Signal *>(parser->getSig(id, name_))) {
+    if (auto s = form->getSignal()) {
+      *sig = *s;
+      // TODO: reset the chart for sig
     }
   }
 }
@@ -317,7 +312,7 @@ BinaryView::BinaryView(QWidget *parent) {
 }
 
 void BinaryView::setMsg(const QString &id) {
-  auto msg = parser->getMsg(Parser::addressFromId(id));
+  auto msg = parser->getMsg(id);
   int row_count = msg ? msg->size : parser->can_msgs[id].back().dat.size();
 
   table->setRowCount(row_count);
@@ -346,8 +341,9 @@ void BinaryView::setMsg(const QString &id) {
   }
 
   setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
-  if (!parser->can_msgs.empty()) {
-    setData(parser->can_msgs[id].back().dat);
+  auto it = parser->can_msgs.find(id); 
+  if (it != parser->can_msgs.end()) {
+    setData(it->second.back().dat);
   }
 }
 
@@ -400,7 +396,7 @@ EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : QDial
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addWidget(new QLabel(tr("ID: (%1)").arg(id)));
 
-  auto msg = const_cast<Msg *>(parser->getMsg(Parser::addressFromId(id)));
+  auto msg = const_cast<Msg *>(parser->getMsg(id));
   QHBoxLayout *h_layout = new QHBoxLayout();
   h_layout->addWidget(new QLabel(tr("Name")));
   h_layout->addStretch();
