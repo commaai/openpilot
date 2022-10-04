@@ -132,6 +132,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
+  # note that some vehicles most likely have an alternate checksum/counter definition
+  # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
   fca11_values = {
     "CR_FCA_Alive": idx % 0xF,
     "PAINT1_Status": 1,
