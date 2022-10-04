@@ -45,7 +45,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setHorizontalHeaderLabels({tr("Name"), tr("ID"), tr("Count"), tr("Bytes")});
   table_widget->horizontalHeader()->setStretchLastSection(true);
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    emit msgChanged(table_widget->selectedItems()[0]->text());
+    emit msgChanged(table_widget->selectedItems()[1]->text());
   });
   main_layout->addWidget(table_widget);
 
