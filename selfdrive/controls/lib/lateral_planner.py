@@ -57,7 +57,7 @@ class LateralPlanner:
     d_path_xyz = self.path_xyz
     # Heading cost is useful at low speed, otherwise end of plan can be off-heading
     heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
-    self.lat_mpc.set_weights(LAT_MPC_N, heading_cost, 0.0, .65)
+    self.lat_mpc.set_weights(LAT_MPC_N, heading_cost, 0.0, 0.5)
 
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
