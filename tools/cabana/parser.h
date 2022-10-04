@@ -11,7 +11,7 @@
 #include "tools/replay/replay.h"
 
 const int DATA_LIST_SIZE = 500;
-// const int FPS = 20;
+const int FPS = 20;
 
 struct CanData {
   QString id;
