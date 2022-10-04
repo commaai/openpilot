@@ -4,7 +4,7 @@ Version 0.8.17 (2022-XX-XX)
   * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
 * Self-tuning torque lateral controller parameters
   * Parameters learned live for each car
-  * Enabled only on Toyota Corolla for now
+  * Enabled only on Toyota and Hyundai cars for now
 * UI updates
   * Multi-language in navigation
   * Matched speeds shown on car's dash
