@@ -61,6 +61,16 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   auto title = new QLabel(tr("%1 %2").arg(parser->getMsg(id)->name.c_str()).arg(id));
   header_layout->addWidget(title);
   header_layout->addStretch();
+  QPushButton *zoom_out = new QPushButton(this);
+  zoom_out->setIcon(QPixmap("./assets/zoom_out.png"));
+  QObject::connect(zoom_out, &QPushButton::clicked, [this]() { zoom(-1); });
+  header_layout->addWidget(zoom_out);
+  zoom_label = new QLabel("1.0x", this);
+  header_layout->addWidget(zoom_label);
+  QPushButton *zoom_in = new QPushButton(this);
+  zoom_in->setIcon(QPixmap("./assets/zoom_in.png"));
+  QObject::connect(zoom_in, &QPushButton::clicked, [this]() { zoom(1); });
+  header_layout->addWidget(zoom_in);
 
   QPushButton *remove_btn = new QPushButton(tr("Hide plot"), this);
   QObject::connect(remove_btn, &QPushButton::clicked, [=]() {
@@ -110,26 +120,41 @@ void ChartWidget::updateState() {
   const Signal *sig = getSig();
   if (!sig) return;
 
-  const auto &can_data = parser->can_msgs[id].back();
-  int64_t val = get_raw_value(can_data.dat, *sig);
-  if (sig->is_signed) {
-    val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
+  if (data.isEmpty()) {
+    data.reserve(parser->can_msgs[id].size());
+    for (auto &can_data : parser->can_msgs[id]) {
+      addData(can_data, *sig);
+    }
+  } else {
+    addData(parser->can_msgs[id].back(), *sig);
   }
-  double value = val * sig->factor + sig->offset;
-
-  if (value > max_y) max_y = value;
-  if (value < min_y) min_y = value;
-
-  while (data.size() > DATA_LIST_SIZE) {
-    data.pop_front();
-  }
-  data.push_back({can_data.ts / 1000., value});
 
   if (update) {
     QChart *chart = chart_view->chart();
     QLineSeries *series = (QLineSeries *)chart->series()[0];
-    series->replace(data);
-    chart->axisX()->setRange(data.front().x(), data.back().x());
+    series->replace(zoom_factor == 1.0 ? data : data.mid(data.size() - data.size() / zoom_factor));
+    chart->axisX()->setRange(series->at(0).x(), series->at(series->count() - 1).x());
     chart->axisY()->setRange(min_y, max_y);
   }
+}
+
+void ChartWidget::zoom(float factor) {
+  zoom_factor += factor;
+  zoom_factor = std::clamp(zoom_factor, 1.0f, 20.0f);
+  zoom_label->setText(QString("%1x").arg(zoom_factor));
+}
+
+void ChartWidget::addData(const CanData &can_data, const Signal &sig) {
+  int64_t val = get_raw_value(can_data.dat, sig);
+  if (sig.is_signed) {
+    val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+  }
+  double value = val * sig.factor + sig.offset;
+  data.push_back({can_data.ts / 1000., value});
+  while (data.size() > 1000) {
+    data.pop_front();
+  }
+
+  if (value > max_y) max_y = value;
+  if (value < min_y) min_y = value;
 }

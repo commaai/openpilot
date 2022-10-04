@@ -1,10 +1,12 @@
 #pragma once
 
+#include <map>
+
+#include <QLabel>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
-#include <map>
 
 #include "tools/cabana/parser.h"
 
@@ -22,12 +24,16 @@ signals:
 
 protected:
   void updateState();
+  void addData(const CanData &can_data, const Signal &sig);
+  void zoom(float factor);
 
+  float zoom_factor = 1.0;
   QString id;
   QString sig_name;
   int max_y = 0;
   int min_y = 0;
   QList<QPointF> data;
+  QLabel *zoom_label;
   QChartView *chart_view = nullptr;
 };
 
