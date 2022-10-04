@@ -29,6 +29,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->setContentsMargins(0, 0, 0, 0);
   connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
   connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
+  connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
 }
 
 void ChartsWidget::addChart(const QString &id, const QString &sig_name) {

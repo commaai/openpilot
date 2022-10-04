@@ -95,6 +95,7 @@ void Parser::removeSignal(const QString &id, const QString &sig_name) {
   auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
   if (it != msg->sigs.end()) {
     msg->sigs.erase(it);
+    emit signalRemoved(id, sig_name);
   }
 }
 
