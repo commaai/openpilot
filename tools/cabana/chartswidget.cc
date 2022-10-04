@@ -97,6 +97,8 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->setTitleFont(font);
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
+  auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
+  QObject::connect(axis_x, &QValueAxis::rangeChanged, this, &ChartWidget::rangeChanged);
 
   chart_view = new QChartView(chart);
   chart_view->setFixedHeight(300);
@@ -149,7 +151,6 @@ void ChartWidget::updateSeries() {
 
   vals.clear();
   vals.reserve(3 * 60 * 100);
-  double min_y = 0, max_y = 0;
   uint64_t route_start_time = parser->replay->routeStartTime();
   for (auto &evt : *events) {
     if (evt->which == cereal::Event::Which::CAN) {
@@ -161,20 +162,30 @@ void ChartWidget::updateSeries() {
             val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
           }
           double value = val * sig->factor + sig->offset;
-          if (value > max_y) max_y = value;
-          if (value < min_y) min_y = value;
           double ts = (evt->event.getLogMonoTime() - route_start_time) / (double)1e9;
           vals.push_back({ts, value});
         }
       }
     }
   }
-  assert(vals.size() != 0);
   QLineSeries *series = (QLineSeries *)chart_view->chart()->series()[0];
   series->replace(vals);
-  if (!chart_view->chart()->isZoomed()) {
+  if (!chart_view->chart()->isZoomed() && vals.size() > 0) {
     chart_view->chart()->axisX()->setRange(vals.front().x(), vals.back().x());
   }
+}
+
+void ChartWidget::rangeChanged(qreal min, qreal max) {
+  double min_y = 0, max_y = 0;
+  for (auto &p : vals) {
+    if (p.x() > max) break;
+
+    if (p.x() >= min) {
+      if (p.y() < min_y) min_y = p.y();
+      if (p.y() > max_y) max_y = p.y();
+    }
+  }
+  chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
 }
 
 LineMarker::LineMarker(QChart *chart, QWidget *parent) : chart(chart), QWidget(parent) {}
