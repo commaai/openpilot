@@ -10,7 +10,9 @@ if [ ! -d LimeSuite ]; then
   # checkout latest version which has firmware updates available
   git checkout v20.10.0
   cp ../mcu_error.patch .
+  cp ../reference_print.patch .
   git apply mcu_error.patch
+  git apply reference_print.patch
   mkdir builddir && cd builddir
   cmake -DCMAKE_BUILD_TYPE=Release ..
   make -j4
