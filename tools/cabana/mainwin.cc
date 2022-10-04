@@ -30,6 +30,7 @@ MainWindow::MainWindow() : QWidget() {
   QScrollArea *scroll = new QScrollArea(this);
   scroll->setWidget(charts_widget);
   scroll->setWidgetResizable(true);
+  scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   r_layout->addWidget(scroll);
