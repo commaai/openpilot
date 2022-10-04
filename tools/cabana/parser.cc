@@ -61,13 +61,16 @@ void Parser::recvThread() {
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "can"));
   subscriber->setTimeout(100);
+
+  std::vector<CanData> can;
   while (!exit) {
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) continue;
 
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    std::vector<CanData> can;
+
+    can.clear();
     can.reserve(event.getCan().size());
     for (const auto &c : event.getCan()) {
       CanData &data = can.emplace_back();

@@ -78,7 +78,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   });
   header_layout->addWidget(zoom_in);
 
-  QPushButton *remove_btn = new QPushButton(tr("Hide plot"), this);
+  QPushButton *remove_btn = new QPushButton("✖", this);
   QObject::connect(remove_btn, &QPushButton::clicked, [=]() {
     emit remove(id, sig_name);
   });
@@ -106,7 +106,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart_layout->addStretch();
 
   stacked->addWidget(chart_widget);
-  line_marker = new LineMarker(id, sig_name, chart, this);
+  line_marker = new LineMarker(chart, this);
   stacked->addWidget(line_marker);
   line_marker->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   line_marker->raise();
@@ -147,6 +147,7 @@ void ChartWidget::updateSeries() {
   int bus = l[0].toInt();
   uint32_t address = l[1].toUInt(nullptr, 16);
 
+  vals.clear();
   vals.reserve(3 * 60 * 100);
   double min_y = 0, max_y = 0;
   uint64_t route_start_time = parser->replay->routeStartTime();
@@ -176,12 +177,10 @@ void ChartWidget::updateSeries() {
   }
 }
 
-LineMarker::LineMarker(const QString &id, const QString &sig_name, QChart *chart, QWidget *parent)
-    : id(id), sig_name(sig_name), chart(chart), QWidget(parent) {
-}
+LineMarker::LineMarker(QChart *chart, QWidget *parent) : chart(chart), QWidget(parent) {}
 
 void LineMarker::paintEvent(QPaintEvent *event) {
-  auto axis_x = dynamic_cast<QValueAxis*>(chart->axisX());
+  auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
   if (axis_x->max() <= axis_x->min()) return;
 
   double x = chart->plotArea().left() + chart->plotArea().width() * (parser->replay->currentSeconds() - axis_x->min()) / (axis_x->max() - axis_x->min());
@@ -189,5 +188,5 @@ void LineMarker::paintEvent(QPaintEvent *event) {
   QPen pen = QPen(Qt::black);
   pen.setWidth(2);
   p.setPen(pen);
-  p.drawLine(QPointF{x, 50.}, QPointF{x, (qreal)height() - 20});
+  p.drawLine(QPointF{x, 50.}, QPointF{x, (qreal)height() - 11});
 }

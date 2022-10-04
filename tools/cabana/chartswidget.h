@@ -16,13 +16,11 @@ class LineMarker : public QWidget {
 Q_OBJECT
 
 public:
-  LineMarker(const QString &id, const QString &sig_name, QChart *chart, QWidget *parent);
-  void updateSigData();
+  LineMarker(QChart *chart, QWidget *parent);
   void paintEvent(QPaintEvent *event) override;
-  QString id;
-  QString sig_name;
+
+private:
   QChart *chart;
-  std::pair<double, double> x_range;
 };
 
 class ChartWidget : public QWidget {

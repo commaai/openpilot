@@ -10,7 +10,7 @@
 #include "opendbc/can/common_dbc.h"
 #include "tools/replay/replay.h"
 
-const int DATA_LIST_SIZE = 500;
+const int DATA_LIST_SIZE = 50;
 const int FPS = 20;
 
 struct CanData {
