@@ -40,6 +40,7 @@ void Parser::openDBC(const QString &name) {
 }
 
 void Parser::process(std::vector<CanData> can) {
+  static double prev_update_ts = 0;
   for (auto &data : can) {
     ++counters[data.id];
     auto &list = can_msgs[data.id];
@@ -48,7 +49,11 @@ void Parser::process(std::vector<CanData> can) {
     }
     list.push_back(data);
   }
-  emit updated();
+  double current_ts = millis_since_boot();
+  if ((current_ts - prev_update_ts) > 1.0 / FPS) {
+    current_ts = prev_update_ts;
+    emit updated();
+  }
 }
 
 void Parser::recvThread() {
@@ -90,6 +95,7 @@ void Parser::removeSignal(const QString &id, const QString &sig_name) {
   auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
   if (it != msg->sigs.end()) {
     msg->sigs.erase(it);
+    emit signalRemoved(id, sig_name);
   }
 }
 

@@ -1,11 +1,9 @@
 #include "tools/cabana/messageswidget.h"
 
 #include <QComboBox>
-#include <QDebug>
 #include <QHeaderView>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <bitset>
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -47,8 +45,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setHorizontalHeaderLabels({tr("Name"), tr("ID"), tr("Count"), tr("Bytes")});
   table_widget->horizontalHeader()->setStretchLastSection(true);
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    auto id = table_widget->selectedItems()[0]->data(Qt::UserRole);
-    emit msgChanged(id.toString());
+    emit msgChanged(table_widget->selectedItems()[1]->text());
   });
   main_layout->addWidget(table_widget);
 
@@ -82,9 +79,7 @@ void MessagesWidget::updateState() {
       continue;
     }
 
-    auto item = getTableItem(i, 0);
-    item->setText(name);
-    item->setData(Qt::UserRole, id);
+    getTableItem(i, 0)->setText(name);
     getTableItem(i, 1)->setText(id);
     getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[id]));
     getTableItem(i, 3)->setText(list.back().hex_dat);
