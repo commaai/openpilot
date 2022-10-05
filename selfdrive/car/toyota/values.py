@@ -108,7 +108,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.ALPHARDH_TSS2: ToyotaCarInfo("Toyota Alphard Hybrid 2021"),
   CAR.AVALON: [
     ToyotaCarInfo("Toyota Avalon 2016", "Toyota Safety Sense P", footnotes=[Footnote.DSU]),
-    ToyotaCarInfo("Toyota Avalon 2017-18", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Avalon 2016-18", footnotes=[Footnote.DSU]),
   ],
   CAR.AVALON_2019: ToyotaCarInfo("Toyota Avalon 2019-21", footnotes=[Footnote.DSU]),
   CAR.AVALONH_2019: ToyotaCarInfo("Toyota Avalon Hybrid 2019-21", footnotes=[Footnote.DSU]),
@@ -172,7 +172,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
   CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-19", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RXH: [
+    ToyotaCarInfo("Lexus RX Hybrid 2016", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  ],
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
