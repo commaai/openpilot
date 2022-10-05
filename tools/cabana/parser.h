@@ -44,10 +44,10 @@ public:
   }
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
+  void resetRange();
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double currentSec() const {return current_sec; }
-  void resetRange();
-  // inline bool isZoomed() { return begin_sec != 0; } const;
+  inline bool isZoomed() const { return is_zoomed; }
 
  signals:
   void showPlot(const QString &id, const QString &name);

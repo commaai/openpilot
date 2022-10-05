@@ -3,9 +3,7 @@
 #include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QPushButton>
-#include <QTimer>
 #include <QVBoxLayout>
 
 #include "tools/cabana/parser.h"
@@ -24,11 +22,13 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   // slider controls
   QHBoxLayout *slider_layout = new QHBoxLayout();
-  QLabel *time_label = new QLabel("00:00");
+  time_label = new QLabel("00:00");
   slider_layout->addWidget(time_label);
 
   slider = new QSlider(Qt::Horizontal, this);
-  // slider->setFixedWidth(640);
+  QObject::connect(slider, &QSlider::sliderMoved, [=]() {
+    time_label->setText(formatTime(slider->value()));
+  });
   slider->setSingleStep(1);
   slider->setMaximum(parser->replay->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [=]() {
@@ -37,7 +37,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   });
   slider_layout->addWidget(slider);
 
-  QLabel *total_time_label = new QLabel(formatTime(parser->replay->totalSeconds()));
+  total_time_label = new QLabel(formatTime(parser->replay->totalSeconds()));
   slider_layout->addWidget(total_time_label);
 
   main_layout->addLayout(slider_layout);
@@ -68,14 +68,25 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addLayout(control_layout);
 
-  QTimer *timer = new QTimer(this);
-  timer->setInterval(1000);
-  timer->callOnTimeout([=]() {
-    int current_seconds = parser->replay->currentSeconds();
-    time_label->setText(formatTime(current_seconds));
-    if (!slider->isSliderDown()) {
-      slider->setValue(current_seconds);
-    }
-  });
-  timer->start();
+  QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
+  QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
+}
+
+void VideoWidget::rangeChanged(double min, double max) {
+  if (!parser->isZoomed()) {
+    min = 0;
+    max = parser->replay->totalSeconds();
+  }
+  time_label->setText(formatTime(min));
+  total_time_label->setText(formatTime(max));
+  slider->setMaximum(max);
+  slider->setValue(parser->currentSec());
+}
+
+void VideoWidget::updateState() {
+  if (!slider->isSliderDown()) {
+    int current_sec = parser->currentSec();
+    time_label->setText(formatTime(current_sec));
+    slider->setValue(current_sec);
+  }
 }
