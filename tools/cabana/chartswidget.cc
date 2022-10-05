@@ -3,6 +3,7 @@
 #include <QGraphicsLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QRubberBand>
 #include <QStackedLayout>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
@@ -99,6 +100,11 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart_view->setFixedHeight(300);
   chart_view->setRenderHint(QPainter::Antialiasing);
   chart_view->setRubberBand(QChartView::HorizontalRubberBand);
+  if (auto rubber = chart_view->findChild<QRubberBand *>()) {
+    QPalette pal;
+    pal.setBrush(QPalette::Base, QColor(0, 0, 0, 80));
+    rubber->setPalette(pal);
+  }
   chart_layout->addWidget(chart_view);
   chart_layout->addStretch();
 
