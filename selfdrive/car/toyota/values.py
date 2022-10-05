@@ -175,7 +175,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+", footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Lexus RX 2017-19", footnotes=[Footnote.DSU]),
   ],
-  CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RXH: [
+    ToyotaCarInfo("Lexus RX Hybrid 2016", "Lexus Safety System+", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Lexus RX Hybrid 2017-19", footnotes=[Footnote.DSU]),
+  ],
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
