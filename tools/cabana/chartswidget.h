@@ -30,9 +30,6 @@ public:
   ChartWidget(const QString &id, const QString &sig_name, QWidget *parent);
   inline QChart *chart() const { return chart_view->chart(); }
 
-signals:
-  void remove(const QString &id, const QString &sig_name);
-
 protected:
   void updateState();
   void addData(const CanData &can_data, const Signal &sig);

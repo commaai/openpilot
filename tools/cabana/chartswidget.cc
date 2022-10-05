@@ -39,7 +39,6 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
   const QString char_name = id + sig_name;
   if (charts.find(char_name) == charts.end()) {
     auto chart = new ChartWidget(id, sig_name, this);
-    QObject::connect(chart, &ChartWidget::remove, this, &ChartsWidget::removeChart);
     main_layout->addWidget(chart);
     charts[char_name] = chart;
   }
@@ -77,7 +76,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
 
   QPushButton *remove_btn = new QPushButton("✖", this);
   QObject::connect(remove_btn, &QPushButton::clicked, [=]() {
-    emit remove(id, sig_name);
+    emit parser->hidePlot(id, sig_name);
   });
   header_layout->addWidget(remove_btn);
   chart_layout->addWidget(header);

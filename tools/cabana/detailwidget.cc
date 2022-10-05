@@ -246,17 +246,17 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *p
   });
   title_layout->addWidget(title);
   title_layout->addStretch();
-  QPushButton *show_plot = new QPushButton(tr("Show Plot"));
-  QObject::connect(show_plot, &QPushButton::clicked, [=]() {
-    if (show_plot->text() == tr("Show Plot")) {
+  QPushButton *plot_btn = new QPushButton(tr("Show Plot"));
+  QObject::connect(plot_btn, &QPushButton::clicked, [=]() {
+    if (plot_btn->text() == tr("Show Plot")) {
       emit parser->showPlot(id, name_);
-      show_plot->setText(tr("Hide Plot"));
+      plot_btn->setText(tr("Hide Plot"));
     } else {
       emit parser->hidePlot(id, name_);
-      show_plot->setText(tr("Show Plot"));
+      plot_btn->setText(tr("Show Plot"));
     }
   });
-  title_layout->addWidget(show_plot);
+  title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
 
   edit_container = new QWidget(this);
@@ -276,6 +276,12 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *p
 
   edit_container->setVisible(false);
   main_layout->addWidget(edit_container);
+
+  QObject::connect(parser, &Parser::hidePlot, [=](const QString &id, const QString &sig_name) {
+    if (this->id == id && this->name_ == sig_name) {
+      plot_btn->setText(tr("Show Plot"));
+    }
+  });
 }
 
 void SignalEdit::save() {
@@ -341,7 +347,7 @@ void BinaryView::setMsg(const QString &id) {
   }
 
   setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
-  auto it = parser->can_msgs.find(id); 
+  auto it = parser->can_msgs.find(id);
   if (it != parser->can_msgs.end()) {
     setData(it->second.back().dat);
   }
