@@ -71,9 +71,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   header_layout->addWidget(zoom_label);
   QPushButton *zoom_in = new QPushButton("↺", this);
   zoom_in->setToolTip(tr("reset zoom"));
-  QObject::connect(zoom_in, &QPushButton::clicked, [this]() {
-    chart_view->chart()->zoomReset();
-  });
+  QObject::connect(zoom_in, &QPushButton::clicked, []() { parser->resetRange(); });
   header_layout->addWidget(zoom_in);
 
   QPushButton *remove_btn = new QPushButton("✖", this);
@@ -95,8 +93,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->setTitleFont(font);
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
-  auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
-  QObject::connect(axis_x, &QValueAxis::rangeChanged, this, &ChartWidget::rangeChanged);
+  QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, parser, &Parser::setRange);
 
   chart_view = new QChartView(chart);
   chart_view->setFixedHeight(300);
@@ -113,28 +110,21 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   QObject::connect(parser, &Parser::updated, this, &ChartWidget::updateState);
-  QObject::connect(parser->replay, &Replay::segmentsMerged, this, &ChartWidget::updateSeries);
+  QObject::connect(parser, &Parser::rangeChanged, this, &ChartWidget::rangeChanged);
+  QObject::connect(parser, &Parser::resetRange, [=]() { chart_view->chart()->zoomReset(); });
+  QObject::connect(parser, &Parser::eventsMerged, this, &ChartWidget::updateSeries);
 
   updateSeries();
 }
 
 void ChartWidget::updateState() {
-  if (chart_view->chart()->isZoomed()) {
-    auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
-    double sec = parser->replay->currentSeconds();
-    if (sec >= (int)axis_x->max() || sec < (int)axis_x->min()) {
-      // loop replay in selected range.
-      parser->replay->seekTo(axis_x->min(), false);
-    }
-  }
-
   line_marker->update();
 }
 
 void ChartWidget::updateSeries() {
   const Signal *sig = parser->getSig(id, sig_name);
   auto events = parser->replay->events();
-  if (!events || !events) return;
+  if (!sig || !events) return;
 
   auto l = id.split(':');
   int bus = l[0].toInt();
@@ -153,7 +143,7 @@ void ChartWidget::updateSeries() {
             val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
           }
           double value = val * sig->factor + sig->offset;
-          double ts = (evt->event.getLogMonoTime() - route_start_time) / (double)1e9; // seconds
+          double ts = (evt->mono_time - route_start_time) / (double)1e9;  // seconds
           vals.push_back({ts, value});
         }
       }
@@ -161,12 +151,16 @@ void ChartWidget::updateSeries() {
   }
   QLineSeries *series = (QLineSeries *)chart_view->chart()->series()[0];
   series->replace(vals);
-  if (!chart_view->chart()->isZoomed() && vals.size() > 0) {
-    chart_view->chart()->axisX()->setRange(vals.front().x(), vals.back().x());
-  }
+  auto [begin, end] = parser->range();
+  chart_view->chart()->axisX()->setRange(begin, end);
 }
 
 void ChartWidget::rangeChanged(qreal min, qreal max) {
+  auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
+  if (axis_x->min() != min || axis_x->max() != max) {
+    axis_x->setRange(min, max);
+  }
+  // zoom on yaxis
   double min_y = 0, max_y = 0;
   for (auto &p : vals) {
     if (p.x() > max) break;
@@ -185,7 +179,7 @@ void LineMarker::paintEvent(QPaintEvent *event) {
   auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
   if (axis_x->max() <= axis_x->min()) return;
 
-  double x = chart->plotArea().left() + chart->plotArea().width() * (parser->replay->currentSeconds() - axis_x->min()) / (axis_x->max() - axis_x->min());
+  double x = chart->plotArea().left() + chart->plotArea().width() * (parser->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
   QPainter p(this);
   QPen pen = QPen(Qt::black);
   pen.setWidth(2);

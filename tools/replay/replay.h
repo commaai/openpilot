@@ -45,7 +45,7 @@ public:
   void stop();
   void pause(bool pause);
   void seekToFlag(FindFlag flag);
-  void seekTo(int seconds, bool relative);
+  void seekTo(double seconds, bool relative);
   inline bool isPaused() const { return paused_; }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
@@ -100,7 +100,7 @@ protected:
   bool paused_ = false;
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
-  uint64_t cur_mono_time_ = 0;
+  std::atomic<uint64_t> cur_mono_time_ = 0;
   std::unique_ptr<std::vector<Event *>> events_;
   std::unique_ptr<std::vector<Event *>> new_events_;
   std::vector<int> segments_merged_;

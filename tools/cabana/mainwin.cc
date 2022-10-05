@@ -4,8 +4,6 @@
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
-  assert(parser != nullptr);
-
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QHBoxLayout *h_layout = new QHBoxLayout();
   main_layout->addLayout(h_layout);

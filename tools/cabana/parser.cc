@@ -23,6 +23,7 @@ Parser::~Parser() {
 
 bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
+  QObject::connect(replay, &Replay::segmentsMerged, this, &Parser::segmentsMerged);
   if (replay->load()) {
     replay->start();
     return true;
@@ -39,20 +40,26 @@ void Parser::openDBC(const QString &name) {
   }
 }
 
-void Parser::process(std::vector<CanData> can) {
+void Parser::process(std::vector<CanData> msgs) {
   static double prev_update_ts = 0;
-  for (auto &data : can) {
-    ++counters[data.id];
-    auto &list = can_msgs[data.id];
+  for (const auto &can_data : msgs) {
+    ++counters[can_data.id];
+    auto &list = can_msgs[can_data.id];
     while (list.size() > DATA_LIST_SIZE) {
       list.pop_front();
     }
-    list.push_back(data);
+    current_sec = can_data.ts;
+    list.push_back(can_data);
   }
   double current_ts = millis_since_boot();
   if ((current_ts - prev_update_ts) > 1000.0 / FPS) {
     prev_update_ts = current_ts;
     emit updated();
+  }
+
+  if (current_sec < begin_sec || current_sec > end_sec) {
+    // loop replay in selected range.
+    replay->seekTo(begin_sec, false);
   }
 }
 
@@ -80,7 +87,7 @@ void Parser::recvThread() {
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
       data.hex_dat = data.dat.toHex(' ').toUpper();
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
-      data.ts = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e6;
+      data.ts = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e9;  // seconds
     }
     emit received(can);
   }
@@ -114,4 +121,31 @@ const Signal *Parser::getSig(const QString &id, const QString &sig_name) {
     }
   }
   return nullptr;
+}
+
+void Parser::setRange(double min, double max) {
+  if (begin_sec != min || end_sec != max) {
+    begin_sec = min;
+    end_sec = max;
+    is_zoomed = begin_sec != event_begin_sec  || end_sec != event_end_sec;
+    emit rangeChanged(min, max);
+  }
+}
+
+void Parser::segmentsMerged() {
+  auto events = replay->events();
+  if (!events || events->empty()) return;
+
+  event_begin_sec = int64_t(events->front()->mono_time - replay->routeStartTime()) / (double)1e9;
+  if (event_begin_sec < 0) event_begin_sec = 0;
+  event_end_sec = double(events->back()->mono_time - replay->routeStartTime()) / 1e9;
+  if (!is_zoomed) {
+    begin_sec = event_begin_sec;
+    end_sec = event_end_sec;
+  }
+  emit eventsMerged();
+}
+
+void Parser::resetRange() {
+  setRange(event_begin_sec, event_end_sec);
 }
