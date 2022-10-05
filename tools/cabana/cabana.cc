@@ -5,7 +5,6 @@
 #include "tools/cabana/mainwin.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-Parser *parser = nullptr;
 
 int main(int argc, char *argv[]) {
   initApp(argc, argv);
@@ -24,8 +23,8 @@ int main(int argc, char *argv[]) {
   }
 
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  parser = new Parser(&app);
-  if (!parser->loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"))) {
+  Parser p(&app);
+  if (!p.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"))) {
     return 0;
   }
   MainWindow w;

@@ -64,24 +64,23 @@ void MessagesWidget::updateState() {
 
   table_widget->setRowCount(parser->can_msgs.size());
   int i = 0;
-  const QString filter_str = filter->text().toLower();
+  QString name, untitled = tr("untitled");
+  const QString filter_str = filter->text();
   for (const auto &[id, list] : parser->can_msgs) {
     assert(!list.empty());
-
-    QString name;
     if (auto msg = parser->getMsg(list.back().address)) {
       name = msg->name.c_str();
     } else {
-      name = tr("untitled");
+      name = untitled;
     }
-    if (!filter_str.isEmpty() && !name.toLower().contains(filter_str)) {
+    if (!filter_str.isEmpty() && !name.contains(filter_str, Qt::CaseInsensitive)) {
       table_widget->hideRow(i++);
       continue;
     }
 
     getTableItem(i, 0)->setText(name);
     getTableItem(i, 1)->setText(id);
-    getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[id]));
+    getTableItem(i, 2)->setText(QString::number(parser->counters[id]));
     getTableItem(i, 3)->setText(list.back().hex_dat);
     table_widget->showRow(i);
     i++;

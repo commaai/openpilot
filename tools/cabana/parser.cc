@@ -4,7 +4,11 @@
 
 #include "cereal/messaging/messaging.h"
 
+Parser *parser = nullptr;
+
 Parser::Parser(QObject *parent) : QObject(parent) {
+  parser = this;
+
   qRegisterMetaType<std::vector<CanData>>();
   QObject::connect(this, &Parser::received, this, &Parser::process, Qt::QueuedConnection);
 

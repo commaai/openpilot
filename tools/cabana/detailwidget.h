@@ -19,9 +19,10 @@
 class SignalForm : public QWidget {
   Q_OBJECT
 
- public:
+public:
   SignalForm(const Signal &sig, QWidget *parent);
   std::optional<Signal> getSignal();
+
   QLineEdit *name, *unit, *comment, *val_desc;
   QSpinBox *size, *msb, *lsb, *factor, *offset, *min_val, *max_val;
   QComboBox *sign, *endianness;
@@ -30,7 +31,7 @@ class SignalForm : public QWidget {
 class MessagesView : public QWidget {
   Q_OBJECT
 
- public:
+public:
   MessagesView(QWidget *parent);
   void setMessages(const std::list<CanData> &data);
   std::vector<QLabel *> messages;
@@ -40,7 +41,7 @@ class MessagesView : public QWidget {
 class BinaryView : public QWidget {
   Q_OBJECT
 
- public:
+public:
   BinaryView(QWidget *parent);
   void setMsg(const QString &id);
   void setData(const QByteArray &binary);
@@ -51,16 +52,20 @@ class BinaryView : public QWidget {
 class SignalEdit : public QWidget {
   Q_OBJECT
 
- public:
+public:
   SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *parent);
   void save();
 
 signals:
   void removed();
- protected:
+
+protected:
   void remove();
+  void plotRemoved(const QString &id, const QString &sig_name);
+
   QString id;
   QString name_;
+  QPushButton *plot_btn;
   ElidedLabel *title;
   SignalForm *form;
   QWidget *edit_container;
@@ -69,14 +74,14 @@ signals:
 
 class DetailWidget : public QWidget {
   Q_OBJECT
- public:
+
+public:
   DetailWidget(QWidget *parent);
   void setMsg(const QString &id);
 
- public slots:
+protected:
   void updateState();
 
- protected:
   QLabel *name_label = nullptr;
   QPushButton *edit_btn, *add_sig_btn;
   QVBoxLayout *signal_edit_layout;
@@ -90,13 +95,13 @@ class DetailWidget : public QWidget {
 class EditMessageDialog : public QDialog {
   Q_OBJECT
 
- public:
+public:
   EditMessageDialog(const QString &id, QWidget *parent);
 };
 
 class AddSignalDialog : public QDialog {
   Q_OBJECT
 
- public:
+public:
   AddSignalDialog(const QString &id, QWidget *parent);
 };

@@ -246,7 +246,7 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *p
   });
   title_layout->addWidget(title);
   title_layout->addStretch();
-  QPushButton *plot_btn = new QPushButton(tr("Show Plot"));
+  plot_btn = new QPushButton(tr("Show Plot"));
   QObject::connect(plot_btn, &QPushButton::clicked, [=]() {
     if (plot_btn->text() == tr("Show Plot")) {
       emit parser->showPlot(id, name_);
@@ -277,11 +277,13 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *p
   edit_container->setVisible(false);
   main_layout->addWidget(edit_container);
 
-  QObject::connect(parser, &Parser::hidePlot, [=](const QString &id, const QString &sig_name) {
-    if (this->id == id && this->name_ == sig_name) {
-      plot_btn->setText(tr("Show Plot"));
-    }
-  });
+  QObject::connect(parser, &Parser::hidePlot, this, &SignalEdit::plotRemoved);
+}
+
+void SignalEdit::plotRemoved(const QString &id_, const QString &sig_name) {
+  if (this->id == id_ && this->name_ == sig_name) {
+    plot_btn->setText(tr("Show Plot"));
+  }
 }
 
 void SignalEdit::save() {
@@ -382,10 +384,8 @@ MessagesView::MessagesView(QWidget *parent) : QWidget(parent) {
 }
 
 void MessagesView::setMessages(const std::list<CanData> &list) {
-  auto begin = list.begin();
-  std::advance(begin, std::max(0, (int)(list.size() - 100)));
   int j = 0;
-  for (auto it = begin; it != list.end(); ++it) {
+  for (const auto &can_data : list) {
     QLabel *label;
     if (j >= messages.size()) {
       label = new QLabel();
@@ -393,9 +393,13 @@ void MessagesView::setMessages(const std::list<CanData> &list) {
       messages.push_back(label);
     } else {
       label = messages[j];
+      label->setVisible(true);
     }
-    label->setText(it->hex_dat);
+    label->setText(can_data.hex_dat);
     ++j;
+  }
+  for (; j < messages.size(); ++j) {
+    messages[j]->setVisible(false);
   }
 }
 

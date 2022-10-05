@@ -46,7 +46,7 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
 
 void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
   if (auto it = charts.find(id + sig_name); it != charts.end()) {
-    delete it->second;
+    it->second->deleteLater();
     charts.erase(it);
   }
 }
@@ -116,7 +116,6 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   QObject::connect(parser, &Parser::updated, this, &ChartWidget::updateState);
   QObject::connect(parser, &Parser::rangeChanged, this, &ChartWidget::rangeChanged);
-  QObject::connect(parser, &Parser::resetRange, [=]() { chart_view->chart()->zoomReset(); });
   QObject::connect(parser, &Parser::eventsMerged, this, &ChartWidget::updateSeries);
 
   updateSeries();

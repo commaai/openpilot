@@ -49,7 +49,7 @@ public:
   inline double currentSec() const {return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
 
- signals:
+signals:
   void showPlot(const QString &id, const QString &name);
   void hidePlot(const QString &id, const QString &name);
   void signalRemoved(const QString &id, const QString &sig_name);
@@ -62,7 +62,6 @@ public:
   std::map<QString, std::list<CanData>> can_msgs;
   std::map<QString, uint64_t> counters;
   Replay *replay = nullptr;
-
 
 protected:
   void recvThread();

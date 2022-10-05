@@ -57,9 +57,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   for (float speed : {0.1, 0.5, 1., 2.}) {
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
-    QObject::connect(btn, &QPushButton::clicked, [=]() {
-      parser->replay->setSpeed(speed);
-    });
+    QObject::connect(btn, &QPushButton::clicked, [=]() { parser->replay->setSpeed(speed); });
     control_layout->addWidget(btn);
     group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
