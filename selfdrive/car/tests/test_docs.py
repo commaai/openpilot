@@ -25,9 +25,10 @@ class TestCarDocs(unittest.TestCase):
     model_model_years = defaultdict(list)
     for car in self.all_cars:
       with self.subTest(car_info_name=car.name):
+        make_model = (car.make, car.model)
         for year in car.year_list:
-          self.assertNotIn(year, model_model_years[(car.make, car.model)], f"{car.name}: Duplicate model year")
-          model_model_years[(car.make, car.model)].append(year)
+          self.assertNotIn(year, model_model_years[make_model], f"{car.name}: Duplicate model year")
+          model_model_years[make_model].append(year)
 
   def test_missing_car_info(self):
     all_car_info_platforms = get_interface_attr("CAR_INFO", combine_brands=True).keys()
