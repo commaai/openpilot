@@ -3,6 +3,7 @@
 #include <eigen3/Eigen/Dense>
 #include <fstream>
 #include <memory>
+#include <map>
 #include <string>
 
 #include "cereal/messaging/messaging.h"
@@ -33,6 +34,7 @@ public:
   void time_check(double current_time = NAN);
   void update_reset_tracker();
   bool isGpsOK();
+  bool criticalServicesSane(std::map<std::string, double> critical_services);
   void determine_gps_mode(double current_time);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder,
@@ -73,4 +75,5 @@ private:
   bool gps_mode = false;
   bool gps_valid = false;
   bool ublox_available = true;
+  std::map<std::string, double> input_invalid;  
 };

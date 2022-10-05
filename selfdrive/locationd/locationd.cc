@@ -19,6 +19,8 @@ const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
 const double SANE_GPS_UNCERTAINTY = 1500.0; // m
+const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
+const double DECAY = 0.99995; // same as reset tracker
 
 // TODO: GPS sensor time offsets are empirically calculated
 // They should be replaced with synced time from a real clock
@@ -227,6 +229,10 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
     if (meas.norm() < ROTATION_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
+      this->input_invalid["gyroscope"] *= DECAY;
+    }
+    else{
+      this->input_invalid["gyroscope"] += 1.0;
     }
   }
 
@@ -242,6 +248,10 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
     if (meas.norm() < ACCEL_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
+      this->input_invalid["accelerometer"] *= DECAY;
+    }
+    else{
+      this->input_invalid["accelerometer"] += 1.0;
     }
   }
 }
@@ -337,6 +347,7 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
 
   if ((rot_device.norm() > ROTATION_SANITY_CHECK) || (trans_device.norm() > TRANS_SANITY_CHECK)) {
+    this->input_invalid["cameraOdometry"] += 1.0;
     return;
   }
 
@@ -344,10 +355,12 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   VectorXd trans_calib_std = floatlist2vector(log.getTransStd());
 
   if ((rot_calib_std.minCoeff() <= MIN_STD_SANITY_CHECK) || (trans_calib_std.minCoeff() <= MIN_STD_SANITY_CHECK)) {
+    this->input_invalid["cameraOdometry"] += 1.0;
     return;
   }
 
   if ((rot_calib_std.norm() > 10 * ROTATION_SANITY_CHECK) || (trans_calib_std.norm() > 10 * TRANS_SANITY_CHECK)) {
+    this->input_invalid["cameraOdometry"] += 1.0;
     return;
   }
 
@@ -363,12 +376,14 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
     { rot_device }, { rot_device_cov });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
     { trans_device }, { trans_device_cov });
+  this->input_invalid["cameraOdometry"] *= DECAY;
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
   if (log.getRpyCalib().size() > 0) {
     auto live_calib = floatlist2vector(log.getRpyCalib());
     if ((live_calib.minCoeff() < -CALIB_RPY_SANITY_CHECK) || (live_calib.maxCoeff() > CALIB_RPY_SANITY_CHECK)) {
+      this->input_invalid["liveCalibration"] += 1.0;
       return;
     }
 
@@ -376,6 +391,7 @@ void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibra
     this->device_from_calib = euler2rot(this->calib);
     this->calib_from_device = this->device_from_calib.transpose();
     this->calibrated = log.getCalStatus() == 1;
+    this->input_invalid["liveCalibration"] *= DECAY;
   }
 }
 
@@ -408,7 +424,7 @@ void Localizer::time_check(double current_time) {
 void Localizer::update_reset_tracker() {
   // reset tracker is tuned to trigger when over 1reset/10s over 2min period
   if (this->isGpsOK()) {
-    this->reset_tracker *= .99995;
+    this->reset_tracker *= DECAY;
   } else {
     this->reset_tracker = 0.0;
   }
@@ -487,6 +503,16 @@ bool Localizer::isGpsOK() {
   return this->gps_valid;
 }
 
+bool Localizer::criticalServicesSane(std::map<std::string, double> critical_services) {
+  for (auto &kv : critical_services){
+    if (kv.second >= INPUT_INVALID_THRESHOLD){
+      return false;
+    }
+  }
+  return true;
+}
+
+
 void Localizer::determine_gps_mode(double current_time) {
   // 1. If the pos_std is greater than what's not acceptable and localizer is in gps-mode, reset to no-gps-mode
   // 2. If the pos_std is greater than what's not acceptable and localizer is in no-gps-mode, fake obs
@@ -521,6 +547,10 @@ int Localizer::locationd_thread() {
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
+  const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
+  for (std::string service : critical_input_services) {
+    this->input_invalid.insert({service, 1.0});
+  }
 
   while (!do_exit) {
     sm.update();
@@ -538,7 +568,7 @@ int Localizer::locationd_thread() {
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
-      bool inputsOK = sm.allAliveAndValid();
+      bool inputsOK = sm.allAliveAndValid() && this->criticalServicesSane(this->input_invalid);
       bool gpsOK = this->isGpsOK();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
