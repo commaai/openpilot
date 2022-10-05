@@ -68,7 +68,8 @@ class IsoTpParallelQuery:
                            self.bus, sub_addr=sub_addr, debug=self.debug)
 
     max_len = 8 if sub_addr is None else 7
-    return IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
+    # uses iso-tp frame separation time of 10 ms
+    return IsoTpMessage(can_client, timeout=0, separation_time=0.01, debug=self.debug, max_len=max_len)
 
   def get_data(self, timeout, total_timeout=60.):
     self._drain_rx()
