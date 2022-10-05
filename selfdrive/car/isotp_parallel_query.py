@@ -70,7 +70,7 @@ class IsoTpParallelQuery:
     max_len = 8 if sub_addr is None else 7
     # uses iso-tp frame separation time of 10 ms
     # TODO: use single_frame_mode so ECUs can send as fast as they want,
-    # as well as reduces chances we process messages from previous query
+    # as well as reduces chances we process messages from previous queries
     return IsoTpMessage(can_client, timeout=0, separation_time=0.01, debug=self.debug, max_len=max_len)
 
   def get_data(self, timeout, total_timeout=60.):
