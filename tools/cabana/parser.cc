@@ -48,13 +48,16 @@ void Parser::openDBC(const QString &name) {
 void Parser::process(std::vector<CanData> msgs) {
   static double prev_update_ts = 0;
   for (const auto &can_data : msgs) {
-    ++counters[can_data.id];
-    auto &list = can_msgs[can_data.id];
-    while (list.size() > DATA_LIST_SIZE) {
-      list.pop_front();
-    }
+    can_msgs[can_data.id] = can_data;
     current_sec = can_data.ts;
-    list.push_back(can_data);
+    ++counters[can_data.id];
+
+    if (can_data.id == current_msg_id) {
+      while (history_log.size() >= LOG_SIZE) {
+        history_log.pop_back();
+      }
+      history_log.push_front(can_data);
+    }
   }
   double current_ts = millis_since_boot();
   if ((current_ts - prev_update_ts) > 1000.0 / FPS) {
@@ -153,6 +156,11 @@ void Parser::segmentsMerged() {
 
 void Parser::resetRange() {
   setRange(event_begin_sec, event_end_sec);
+}
+
+void Parser::setCurrentMsg(const QString &id) {
+  current_msg_id = id;
+  history_log.clear();
 }
 
 // helper functions

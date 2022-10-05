@@ -45,7 +45,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setHorizontalHeaderLabels({tr("Name"), tr("ID"), tr("Count"), tr("Bytes")});
   table_widget->horizontalHeader()->setStretchLastSection(true);
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    emit msgChanged(table_widget->selectedItems()[1]->text());
+    const CanData *c = &(parser->can_msgs[table_widget->selectedItems()[1]->text()]);
+    parser->setCurrentMsg(c->id);
+    emit msgChanged(c);
   });
   main_layout->addWidget(table_widget);
 
@@ -67,9 +69,8 @@ void MessagesWidget::updateState() {
   int i = 0;
   QString name, untitled = tr("untitled");
   const QString filter_str = filter->text();
-  for (const auto &[id, list] : parser->can_msgs) {
-    assert(!list.empty());
-    if (auto msg = parser->getMsg(list.back().address)) {
+  for (const auto &[_, c] : parser->can_msgs) {
+    if (auto msg = parser->getMsg(c.address)) {
       name = msg->name.c_str();
     } else {
       name = untitled;
@@ -80,9 +81,9 @@ void MessagesWidget::updateState() {
     }
 
     getTableItem(i, 0)->setText(name);
-    getTableItem(i, 1)->setText(id);
-    getTableItem(i, 2)->setText(QString::number(parser->counters[id]));
-    getTableItem(i, 3)->setText(list.back().hex_dat);
+    getTableItem(i, 1)->setText(c.id);
+    getTableItem(i, 2)->setText(QString::number(parser->counters[c.id]));
+    getTableItem(i, 3)->setText(c.hex_dat);
     table_widget->showRow(i);
     i++;
   }

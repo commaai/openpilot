@@ -116,6 +116,7 @@ protected:
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
+  std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
   float speed_ = 1.0;
 };

@@ -12,15 +12,16 @@
 #include "tools/cabana/parser.h"
 #include "tools/cabana/signaledit.h"
 
-class MessagesView : public QWidget {
+class HistoryLog : public QWidget {
   Q_OBJECT
 
 public:
-  MessagesView(QWidget *parent);
-  void setMessages(const std::list<CanData> &data);
+  HistoryLog(QWidget *parent);
+  void clear();
+  void updateState();
 
-  std::vector<QLabel *> messages;
-  QVBoxLayout *message_layout;
+private:
+  QLabel *labels[LOG_SIZE] = {};
 };
 
 class BinaryView : public QWidget {
@@ -28,30 +29,10 @@ class BinaryView : public QWidget {
 
 public:
   BinaryView(QWidget *parent);
-  void setMsg(const QString &id);
+  void setMsg(const CanData *can_data);
   void setData(const QByteArray &binary);
 
   QTableWidget *table;
-};
-
-class DetailWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  DetailWidget(QWidget *parent);
-  void setMsg(const QString &id);
-
-private:
-  void updateState();
-  void addSignal();
-  void editMsg();
-
-  QString msg_id;
-  QLabel *name_label, *time_label;
-  QPushButton *edit_btn, *add_sig_btn;
-  QVBoxLayout *signal_edit_layout;
-  MessagesView *messages_view;
-  BinaryView *binary_view;
 };
 
 class EditMessageDialog : public QDialog {
@@ -66,4 +47,24 @@ protected:
   QLineEdit *name_edit;
   QSpinBox *size_spin;
   QString id;
+};
+
+class DetailWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  DetailWidget(QWidget *parent);
+  void setMsg(const CanData *c);
+
+private:
+  void updateState();
+  void addSignal();
+  void editMsg();
+
+  const CanData *can_data = nullptr;
+  QLabel *name_label, *time_label;
+  QPushButton *edit_btn, *add_sig_btn;
+  QVBoxLayout *signal_edit_layout;
+  HistoryLog *history_log;
+  BinaryView *binary_view;
 };

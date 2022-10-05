@@ -19,6 +19,9 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
     if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
       uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
       sockets_[which] = it.name;
+      if (!allow.empty() || !block.empty()) {
+        allow_list.insert((cereal::Event::Which)which);
+      }
       s.push_back(it.name);
     }
   }
@@ -122,7 +125,9 @@ void Replay::buildTimeline() {
 
   for (int i = 0; i < segments_.size() && !exit_; ++i) {
     LogReader log;
-    if (!log.load(route_->at(i).qlog.toStdString(), &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
+    if (!log.load(route_->at(i).qlog.toStdString(), &exit_,
+                  {cereal::Event::Which::CONTROLS_STATE, cereal::Event::Which::USER_FLAG},
+                  !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
     for (const Event *e : log.events) {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
@@ -215,7 +220,7 @@ void Replay::queueSegment() {
     if ((seg && !seg->isLoaded()) || !seg) {
       if (!seg) {
         rDebug("loading segment %d...", n);
-        seg = std::make_unique<Segment>(n, route_->at(n), flags_);
+        seg = std::make_unique<Segment>(n, route_->at(n), flags_, allow_list);
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       }
       break;

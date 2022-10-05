@@ -1,10 +1,12 @@
 #pragma once
 
-#include <QApplication>
-#include <QObject>
-#include <QThread>
 #include <atomic>
 #include <map>
+
+#include <QApplication>
+#include <QHash>
+#include <QObject>
+#include <QThread>
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
@@ -12,6 +14,7 @@
 
 const int DATA_LIST_SIZE = 50;
 const int FPS = 20;
+const static int LOG_SIZE = 25;
 
 struct CanData {
   QString id;
@@ -38,13 +41,10 @@ public:
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
   void resetRange();
+  void setCurrentMsg(const QString &id);
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
-  inline const std::list<CanData>* getCanMessages(const QString &id) const {
-    auto it = can_msgs.find(id);
-    return it != can_msgs.end() ? &(it->second) : nullptr;
-  }
   inline const Msg *getMsg(const QString &id) { return getMsg(addressFromId(id)); }
   inline const Msg *getMsg(uint32_t address) {
     auto it = msg_map.find(address);
@@ -62,8 +62,9 @@ signals:
 
 public:
   Replay *replay = nullptr;
-  std::map<QString, uint64_t> counters;
-  std::map<QString, std::list<CanData>> can_msgs;
+  QHash<QString, uint64_t> counters;
+  std::map<QString, CanData> can_msgs;
+  QList<CanData> history_log;
 
 protected:
   void recvThread();
@@ -81,6 +82,7 @@ protected:
   bool is_zoomed = false;
   DBC *dbc = nullptr;
   std::map<uint32_t, const Msg *> msg_map;
+  QString current_msg_id;
 };
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
