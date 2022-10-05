@@ -115,7 +115,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);
-  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
   connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
     stack->setCurrentIndex(prime_type ? 0 : 1);
   });
