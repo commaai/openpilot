@@ -15,6 +15,7 @@ MainWindow::MainWindow() : QWidget() {
   h_layout->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
+  detail_widget->setFixedWidth(600);
   h_layout->addWidget(detail_widget);
 
   // right widget

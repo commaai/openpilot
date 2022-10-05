@@ -1,32 +1,16 @@
 #pragma once
-#include <QComboBox>
+
 #include <QDialog>
-#include <QDialogButtonBox>
 #include <QLabel>
-#include <QLineEdit>
 #include <QPushButton>
-#include <QSpinBox>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <optional>
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/parser.h"
-
-class SignalForm : public QWidget {
-  Q_OBJECT
-
-public:
-  SignalForm(const Signal &sig, QWidget *parent);
-  std::optional<Signal> getSignal();
-
-  QLineEdit *name, *unit, *comment, *val_desc;
-  QSpinBox *size, *msb, *lsb, *factor, *offset, *min_val, *max_val;
-  QComboBox *sign, *endianness;
-};
+#include "tools/cabana/signaledit.h"
 
 class MessagesView : public QWidget {
   Q_OBJECT
@@ -34,6 +18,7 @@ class MessagesView : public QWidget {
 public:
   MessagesView(QWidget *parent);
   void setMessages(const std::list<CanData> &data);
+
   std::vector<QLabel *> messages;
   QVBoxLayout *message_layout;
 };
@@ -49,29 +34,6 @@ public:
   QTableWidget *table;
 };
 
-class SignalEdit : public QWidget {
-  Q_OBJECT
-
-public:
-  SignalEdit(const QString &id, const Signal &sig, int idx, QWidget *parent);
-  void save();
-
-signals:
-  void removed();
-
-protected:
-  void remove();
-  void plotRemoved(const QString &id, const QString &sig_name);
-
-  QString id;
-  QString name_;
-  QPushButton *plot_btn;
-  ElidedLabel *title;
-  SignalForm *form;
-  QWidget *edit_container;
-  QPushButton *remove_btn;
-};
-
 class DetailWidget : public QWidget {
   Q_OBJECT
 
@@ -79,17 +41,17 @@ public:
   DetailWidget(QWidget *parent);
   void setMsg(const QString &id);
 
-protected:
+private:
   void updateState();
+  void addSignal();
+  void editMsg();
 
-  QLabel *name_label = nullptr;
+  QString msg_id;
+  QLabel *name_label, *time_label;
   QPushButton *edit_btn, *add_sig_btn;
   QVBoxLayout *signal_edit_layout;
-  Signal *sig = nullptr;
   MessagesView *messages_view;
-  QString msg_id;
   BinaryView *binary_view;
-  std::vector<SignalEdit *> signal_edit;
 };
 
 class EditMessageDialog : public QDialog {
@@ -97,11 +59,11 @@ class EditMessageDialog : public QDialog {
 
 public:
   EditMessageDialog(const QString &id, QWidget *parent);
-};
 
-class AddSignalDialog : public QDialog {
-  Q_OBJECT
+protected:
+  void save();
 
-public:
-  AddSignalDialog(const QString &id, QWidget *parent);
+  QLineEdit *name_edit;
+  QSpinBox *size_spin;
+  QString id;
 };

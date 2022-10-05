@@ -153,3 +153,23 @@ void Parser::segmentsMerged() {
 void Parser::resetRange() {
   setRange(event_begin_sec, event_end_sec);
 }
+
+// helper functions
+
+static QVector<int> BIG_ENDIAN_START_BITS = []() {
+  QVector<int> ret;
+  for (int i = 0; i < 64; i++) {
+    for (int j = 7; j >= 0; j--) {
+      ret.push_back(j + i * 8);
+    }
+  }
+  return ret;
+}();
+
+int bigEndianStartBitsIndex(int start_bit) {
+  return BIG_ENDIAN_START_BITS[start_bit];
+}
+
+int bigEndianBitIndex(int index) {
+  return BIG_ENDIAN_START_BITS.indexOf(index);
+}

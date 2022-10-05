@@ -57,6 +57,7 @@ void MessagesWidget::updateState() {
     auto item = table_widget->item(row, col);
     if (!item) {
       item = new QTableWidgetItem();
+      item->setFlags(item->flags() ^ Qt::ItemIsEditable);
       table_widget->setItem(row, col, item);
     }
     return item;
@@ -84,5 +85,8 @@ void MessagesWidget::updateState() {
     getTableItem(i, 3)->setText(list.back().hex_dat);
     table_widget->showRow(i);
     i++;
+  }
+  if (table_widget->currentRow() == -1) {
+    table_widget->selectRow(0);
   }
 }

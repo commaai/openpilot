@@ -35,19 +35,21 @@ public:
   void saveDBC(const QString &name) {}
   void addNewMsg(const Msg &msg);
   void removeSignal(const QString &id, const QString &sig_name);
-  const Msg *getMsg(const QString &id) {
-    return getMsg(addressFromId(id));
-  }
-  const Msg *getMsg(uint32_t address) {
-    auto it = msg_map.find(address);
-    return it != msg_map.end() ? it->second : nullptr;
-  }
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
   void resetRange();
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
-  inline double currentSec() const {return current_sec; }
+  inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
+  inline const std::list<CanData>* getCanMessages(const QString &id) const {
+    auto it = can_msgs.find(id);
+    return it != can_msgs.end() ? &(it->second) : nullptr;
+  }
+  inline const Msg *getMsg(const QString &id) { return getMsg(addressFromId(id)); }
+  inline const Msg *getMsg(uint32_t address) {
+    auto it = msg_map.find(address);
+    return it != msg_map.end() ? it->second : nullptr;
+  }
 
 signals:
   void showPlot(const QString &id, const QString &name);
@@ -59,9 +61,9 @@ signals:
   void updated();
 
 public:
-  std::map<QString, std::list<CanData>> can_msgs;
-  std::map<QString, uint64_t> counters;
   Replay *replay = nullptr;
+  std::map<QString, uint64_t> counters;
+  std::map<QString, std::list<CanData>> can_msgs;
 
 protected:
   void recvThread();
@@ -82,5 +84,9 @@ protected:
 };
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
+
+// TODO: Add helper function in dbc.h
+int bigEndianStartBitsIndex(int start_bit);
+int bigEndianBitIndex(int index);
 
 extern Parser *parser;
