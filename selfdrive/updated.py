@@ -357,12 +357,19 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
 
     branch = self.target_branch
+
+    git_config_output = run(["git", "config", "--get", "remote.origin.fetch"], OVERLAY_MERGED)
+    cloudlog.info("git config success: %s", git_config_output)
+    if "refs/heads/*" not in git_config_output:
+      git_config_output = run(["git", "config", "--set", "remote.origin.fetch", f"+refs/heads/{branch}:refs/remotes/origin/{branch}"], OVERLAY_MERGED)
+      cloudlog.info("git config success: %s", git_config_output)
+
     git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
     cloudlog.info("git fetch success: %s", git_fetch_output)
 
     cloudlog.info("git reset in progress")
     cmds = [
-      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
+      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch],
       ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
