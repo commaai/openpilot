@@ -152,6 +152,7 @@ void ChartWidget::updateSeries() {
   QLineSeries *series = (QLineSeries *)chart_view->chart()->series()[0];
   series->replace(vals);
   auto [begin, end] = parser->range();
+  qWarning() << "set range" << begin << end;
   chart_view->chart()->axisX()->setRange(begin, end);
 }
 

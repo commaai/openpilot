@@ -127,7 +127,7 @@ void Parser::setRange(double min, double max) {
   if (begin_sec != min || end_sec != max) {
     begin_sec = min;
     end_sec = max;
-    is_zoomed = begin_sec != event_begin_sec  || end_sec != event_end_sec;
+    is_zoomed = begin_sec != event_begin_sec || end_sec != event_end_sec;
     emit rangeChanged(min, max);
   }
 }
@@ -136,8 +136,8 @@ void Parser::segmentsMerged() {
   auto events = replay->events();
   if (!events || events->empty()) return;
 
-  event_begin_sec = int64_t(events->front()->mono_time - replay->routeStartTime()) / (double)1e9;
-  if (event_begin_sec < 0) event_begin_sec = 0;
+  auto it = std::find_if(events->begin(), events->end(), [=](const Event *e) { return e->which == cereal::Event::Which::CAN; });
+  event_begin_sec = it == events->end() ? 0 : ((*it)->mono_time - replay->routeStartTime()) / (double)1e9;
   event_end_sec = double(events->back()->mono_time - replay->routeStartTime()) / 1e9;
   if (!is_zoomed) {
     begin_sec = event_begin_sec;
