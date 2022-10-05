@@ -273,12 +273,12 @@ def thermald_thread(end_event, hw_queue):
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
     startup_conditions["time_valid"] = (now.year > 2020) or (now.year == 2020 and now.month >= 10)
-    startup_conditions["offroad_for_5s"] = (off_ts is not None) and (sec_since_boot() - off_ts) > 5.
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
+    startup_conditions["offroad_min_time"] = (off_ts is not None) and (sec_since_boot() - off_ts) > 5.
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
