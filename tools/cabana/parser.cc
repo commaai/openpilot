@@ -38,6 +38,7 @@ bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_q
 void Parser::openDBC(const QString &name) {
   dbc_name = name;
   dbc = const_cast<DBC *>(dbc_lookup(name.toStdString()));
+  counters.clear();
   msg_map.clear();
   for (auto &msg : dbc->msgs) {
     msg_map[msg.address] = &msg;
