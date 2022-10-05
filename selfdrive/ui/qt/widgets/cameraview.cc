@@ -220,7 +220,6 @@ void CameraViewWidget::updateFrameMat() {
     // fit frame to widget size
     float widget_aspect_ratio = (float)width() / height();
     float frame_aspect_ratio = (float)stream_width  / stream_height;
-    qWarning() << frame_aspect_ratio;
     frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio);
   }
 }

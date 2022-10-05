@@ -359,6 +359,7 @@ void BinaryView::setData(const QByteArray &binary) {
     s += std::bitset<8>(binary[j]).to_string();
   }
 
+  setUpdatesEnabled(false);
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
@@ -367,6 +368,7 @@ void BinaryView::setData(const QByteArray &binary) {
     sprintf(&hex[0], "%02X", (unsigned char)binary[i]);
     table->item(i, 8)->setText(hex);
   }
+  setUpdatesEnabled(true);
 }
 
 MessagesView::MessagesView(QWidget *parent) : QWidget(parent) {
