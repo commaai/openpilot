@@ -167,7 +167,7 @@ void ChartWidget::rangeChanged(qreal min, qreal max) {
   if (axis_x->min() != min || axis_x->max() != max) {
     axis_x->setRange(min, max);
   }
-  // zoom on yaxis
+  // auto zoom on yaxis
   double min_y = 0, max_y = 0;
   for (auto &p : vals) {
     if (p.x() > max) break;

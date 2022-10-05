@@ -17,6 +17,7 @@ inline QString formatTime(int seconds) {
 VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
+  // TODO: figure out why CameraViewWidget crashed occasionally.
   cam_widget = new CameraViewWidget("camerad", VISION_STREAM_ROAD, true, this);
   cam_widget->setFixedSize(640, 480);
   main_layout->addWidget(cam_widget);
