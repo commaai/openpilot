@@ -87,8 +87,8 @@ class LongitudinalPlanner:
       j = np.zeros(len(T_IDXS_MPC))
     return x, v, a, j
 
-  def update(self, sm):
-    if self.param_read_counter % 50 == 0:
+  def update(self, sm, read=True):
+    if self.param_read_counter % 50 == 0 and read:
       self.read_param()
     self.param_read_counter += 1
 
