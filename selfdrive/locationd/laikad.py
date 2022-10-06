@@ -328,7 +328,7 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
-  use_qcom = os.path.isfile("/persist/comma/use-quectel-rawgps")
+  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom:
     raw_gnss_socket = "qcomGnss"
   else:
