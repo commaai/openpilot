@@ -3,6 +3,7 @@
 #include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -25,8 +26,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   time_label = new QLabel("00:00");
   slider_layout->addWidget(time_label);
 
-  slider = new QSlider(Qt::Horizontal, this);
-  slider->setSingleStep(1);
+  slider = new Slider(this);
+  slider->setSingleStep(0);
+  slider->setMinimum(0);
   slider->setMaximum(parser->replay->totalSeconds());
   slider_layout->addWidget(slider);
 
@@ -57,15 +59,19 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value())); });
+  QObject::connect(slider, &QSlider::sliderReleased, [this]() { setPosition(slider->value()); });
+  QObject::connect(slider, &Slider::setPosition, this, &VideoWidget::setPosition);
+
   QObject::connect(play, &QPushButton::clicked, [=]() {
     bool is_paused = parser->replay->isPaused();
     play->setText(is_paused ? "⏸" : "▶");
     parser->replay->pause(!is_paused);
   });
-  QObject::connect(slider, &QSlider::sliderReleased, [=]() {
-    time_label->setText(formatTime(slider->value()));
-    parser->replay->seekTo(slider->value(), false);
-  });
+}
+
+void VideoWidget::setPosition(int value) {
+  time_label->setText(formatTime(slider->value()));
+  parser->replay->seekTo(value, false);
 }
 
 void VideoWidget::rangeChanged(double min, double max) {
@@ -85,5 +91,19 @@ void VideoWidget::updateState() {
     int current_sec = parser->currentSec();
     time_label->setText(formatTime(current_sec));
     slider->setValue(current_sec);
+  }
+}
+
+// Slider
+// TODO: show timeline bar like what replay did.
+Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
+}
+
+void Slider::mousePressEvent(QMouseEvent *e) {
+  QSlider::mousePressEvent(e);
+  if (e->button() == Qt::LeftButton && !isSliderDown()) {
+    int value = minimum() + ((maximum() - minimum()) * e->x()) / width();
+    emit setPosition(value);
+    setValue(value);
   }
 }
