@@ -55,9 +55,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
-  QObject::connect(slider, &QSlider::sliderMoved, [=]() {
-    time_label->setText(formatTime(slider->value()));
-  });
+  QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value())); });
   QObject::connect(play, &QPushButton::clicked, [=]() {
     bool is_paused = parser->replay->isPaused();
     play->setText(is_paused ? "⏸" : "▶");
@@ -76,6 +74,7 @@ void VideoWidget::rangeChanged(double min, double max) {
   }
   time_label->setText(formatTime(min));
   total_time_label->setText(formatTime(max));
+  slider->setMinimum(min);
   slider->setMaximum(max);
   slider->setValue(parser->currentSec());
 }
