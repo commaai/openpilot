@@ -92,11 +92,11 @@ def fingerprint(logcan, sendcan):
         cached_params = None
 
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
-      cloudlog.warning("Using cached CarParams")
+      cloudlog.error("Using cached CarParams")
       vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
     else:
-      cloudlog.warning("Getting VIN & FW versions")
+      cloudlog.error("Getting VIN & FW versions")
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
