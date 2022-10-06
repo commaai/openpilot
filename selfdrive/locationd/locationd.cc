@@ -492,10 +492,10 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   const char* gps_location_socket;
-  if (util::file_exists("/persist/comma/use-quectel-rawgps")) {
-    gps_location_socket = "gpsLocation";
-  } else {
+  if (Params().getBool("UbloxAvailable", true)) {
     gps_location_socket = "gpsLocationExternal";
+  } else {
+    gps_location_socket = "gpsLocation";
   }
   const std::initializer_list<const char *> service_list = {gps_location_socket,
     "cameraOdometry", "liveCalibration", "carState", "carParams",
