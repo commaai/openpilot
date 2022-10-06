@@ -262,4 +262,3 @@ void LineMarker::paintEvent(QPaintEvent *event) {
   p.setPen(QPen(Qt::black, 2));
   p.drawLine(QPointF{x_pos, 50.}, QPointF{x_pos, (qreal)height() - 11});
 }
-
