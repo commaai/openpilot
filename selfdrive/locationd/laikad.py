@@ -366,6 +366,12 @@ def main(sm=None, pm=None):
 
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
+
+      # verify message has valid source
+      if gnss_msg.which() in ["measurementReport", "drMeasurementReport"]:
+        if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
+          continue
+
       msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
