@@ -6,27 +6,23 @@
 
 Parser *parser = nullptr;
 
+static bool event_filter(const Event *e, void *opaque) {
+  Parser *p = (Parser*)opaque;
+  return p->eventFilter(e);
+}
+
 Parser::Parser(QObject *parent) : QObject(parent) {
   parser = this;
 
   qRegisterMetaType<std::vector<CanData>>();
   QObject::connect(this, &Parser::received, this, &Parser::process, Qt::QueuedConnection);
-
-  thread = new QThread();
-  connect(thread, &QThread::started, [=]() { recvThread(); });
-  QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-  thread->start();
 }
 
-Parser::~Parser() {
-  replay->stop();
-  exit = true;
-  thread->quit();
-  thread->wait();
-}
+Parser::~Parser() {}
 
 bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
+  replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &Parser::segmentsMerged);
   if (replay->load()) {
     replay->start();
@@ -71,26 +67,17 @@ void Parser::process(std::vector<CanData> msgs) {
   }
 }
 
-void Parser::recvThread() {
-  AlignedBuffer aligned_buf;
-  std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "can"));
-  subscriber->setTimeout(100);
+bool Parser::eventFilter(const Event *event) {
+  // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
+  if (!seeking && event->which == cereal::Event::Which::CAN) {
+    current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
 
-  std::vector<CanData> can;
-  while (!exit) {
-    std::unique_ptr<Message> msg(subscriber->receive());
-    // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
-    if (!msg || !seeking) continue;
+    auto can = event->event.getCan();
+    msgs_buf.clear();
+    msgs_buf.reserve(can.size());
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    current_sec = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e9;
-
-    can.clear();
-    can.reserve(event.getCan().size());
-    for (const auto &c : event.getCan()) {
-      CanData &data = can.emplace_back();
+    for (const auto &c : can) {
+      CanData &data = msgs_buf.emplace_back();
       data.address = c.getAddress();
       data.bus_time = c.getBusTime();
       data.source = c.getSrc();
@@ -98,8 +85,9 @@ void Parser::recvThread() {
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
       data.ts = current_sec;
     }
-    emit received(can);
+    emit received(msgs_buf);
   }
+  return true;
 }
 
 void Parser::seekTo(double ts) {

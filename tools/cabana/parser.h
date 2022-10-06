@@ -6,7 +6,6 @@
 #include <QApplication>
 #include <QHash>
 #include <QObject>
-#include <QThread>
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
@@ -31,6 +30,7 @@ public:
   Parser(QObject *parent);
   ~Parser();
   static uint32_t addressFromId(const QString &id);
+  bool eventFilter(const Event *event);
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
@@ -66,14 +66,11 @@ public:
   QList<CanData> history_log;
 
 protected:
-  void recvThread();
   void process(std::vector<CanData> can);
   void segmentsMerged();
 
   std::atomic<double> current_sec = 0.;
   std::atomic<bool> seeking = false;
-  std::atomic<bool> exit = false;
-  QThread *thread;
   QString dbc_name;
   double begin_sec = 0;
   double end_sec = 0;
@@ -83,6 +80,7 @@ protected:
   DBC *dbc = nullptr;
   std::map<uint32_t, const Msg *> msg_map;
   QString current_msg_id;
+  std::vector<CanData> msgs_buf;
 };
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
