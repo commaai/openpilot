@@ -4,7 +4,7 @@ from common.numpy_fast import interp
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
-from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT
+from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
@@ -57,8 +57,8 @@ class LateralPlanner:
 
     d_path_xyz = self.path_xyz
     # Heading cost is useful at low speed, otherwise end of plan can be off-heading
-    heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.15])
-    self.lat_mpc.set_weights(LAT_MPC_N, heading_cost, 0.0, 1.0)
+    heading_cost = interp(v_ego, [5.0, 10.0], [1.0, 0.15])
+    self.lat_mpc.set_weights(1.0, heading_cost, 0.0, .075)
 
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:, 1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
