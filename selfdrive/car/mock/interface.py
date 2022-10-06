@@ -20,8 +20,7 @@ class CarInterface(CarInterfaceBase):
 
     cloudlog.debug("Using Mock Car Interface")
 
-    self.gyro = messaging.sub_sock('gyroscope')
-    self.gps = messaging.sub_sock('gpsLocationExternal')
+    self.sm = messaging.SubMaster(['gyroscope', 'gpsLocation', 'gpsLocationExternal'])
 
     self.speed = 0.
     self.prev_speed = 0.
@@ -45,15 +44,16 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c):
-    # get basic data from phone and gps since CAN isn't connected
-    gyro_sensor = messaging.recv_sock(self.gyro)
-    if gyro_sensor is not None:
-      self.yaw_rate_meas = -gyro_sensor.gyroscope.gyroUncalibrated.v[0]
+    self.sm.update(0)
 
-    gps = messaging.recv_sock(self.gps)
-    if gps is not None:
+    # get basic data from phone and gps since CAN isn't connected
+    if self.sm.updated['gyroscope']:
+      self.yaw_rate_meas = -self.sm['gyroscope'].gyroUncalibrated.v[0]
+
+    gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
+    if self.sm.updated[gps_sock]:
       self.prev_speed = self.speed
-      self.speed = gps.gpsLocationExternal.speed
+      self.speed = self.sm[gps_sock].speed
 
     # create message
     ret = car.CarState.new_message()
