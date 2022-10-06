@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QHeaderView>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -224,24 +225,20 @@ void HistoryLog::clear() {
 EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id), QDialog(parent) {
   setWindowTitle(tr("Edit message"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addWidget(new QLabel(tr("ID: (%1)").arg(id)));
+
+  QFormLayout *form_layout = new QFormLayout();
+  form_layout->addRow("ID", new QLabel(id));
 
   auto msg = const_cast<Msg *>(parser->getMsg(id));
-  QHBoxLayout *h_layout = new QHBoxLayout();
-  h_layout->addWidget(new QLabel(tr("Name")));
-  h_layout->addStretch();
   name_edit = new QLineEdit(this);
   name_edit->setText(msg ? msg->name.c_str() : "untitled");
-  h_layout->addWidget(name_edit);
-  main_layout->addLayout(h_layout);
+  form_layout->addRow(tr("Name"), name_edit);
 
-  h_layout = new QHBoxLayout();
-  h_layout->addWidget(new QLabel(tr("Size")));
-  h_layout->addStretch();
   size_spin = new QSpinBox(this);
   size_spin->setValue(msg ? msg->size : parser->can_msgs[id].dat.size());
-  h_layout->addWidget(size_spin);
-  main_layout->addLayout(h_layout);
+  form_layout->addRow(tr("Size"), size_spin);
+
+  main_layout->addLayout(form_layout);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);

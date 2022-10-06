@@ -1,6 +1,7 @@
 #include "tools/cabana/signaledit.h"
 
 #include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
@@ -9,88 +10,48 @@
 // SignalForm
 
 SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *v_layout = new QVBoxLayout(this);
+  QFormLayout *form_layout = new QFormLayout(this);
 
-  QHBoxLayout *h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Name")));
   name = new QLineEdit(sig.name.c_str());
-  h->addWidget(name);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Name"), name);
 
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Size")));
   size = new QSpinBox();
   size->setValue(sig.size);
-  h->addWidget(size);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Size"), size);
 
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Most significant bit")));
   msb = new QSpinBox();
   msb->setValue(sig.msb);
-  h->addWidget(msb);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Most significant bit"), msb);
 
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Endianness")));
   endianness = new QComboBox();
   endianness->addItems({"Little", "Big"});
   endianness->setCurrentIndex(sig.is_little_endian ? 0 : 1);
-  h->addWidget(endianness);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Endianness"), endianness);
 
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("sign")));
   sign = new QComboBox();
   sign->addItems({"Signed", "Unsigned"});
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
-  h->addWidget(sign);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("sign"), sign);
 
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Factor")));
   factor = new QSpinBox();
   factor->setValue(sig.factor);
-  h->addWidget(factor);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Factor"), factor);
 
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Offset")));
   offset = new QSpinBox();
   offset->setValue(sig.offset);
-  h->addWidget(offset);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Offset"), offset);
 
   // TODO: parse the following parameters in opendbc
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Unit")));
   unit = new QLineEdit();
-  h->addWidget(unit);
-  v_layout->addLayout(h);
-
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Comment")));
+  form_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
-  h->addWidget(comment);
-  v_layout->addLayout(h);
-
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Minimum value")));
+  form_layout->addRow(tr("Comment"), comment);
   min_val = new QSpinBox();
-  h->addWidget(min_val);
-  v_layout->addLayout(h);
-
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Maximum value")));
+  form_layout->addRow(tr("Minimum value"), min_val);
   max_val = new QSpinBox();
-  h->addWidget(max_val);
-  v_layout->addLayout(h);
-
-  h = new QHBoxLayout();
-  h->addWidget(new QLabel(tr("Value descriptions")));
+  form_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
-  h->addWidget(val_desc);
-  v_layout->addLayout(h);
+  form_layout->addRow(tr("Value descriptions"), val_desc);
 }
 
 std::optional<Signal> SignalForm::getSignal() {
@@ -126,12 +87,9 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &colo
   title = new ElidedLabel(this);
   title->setText(sig.name.c_str());
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color));
-  connect(title, &ElidedLabel::clicked, [=]() {
-    edit_container->isVisible() ? edit_container->hide() : edit_container->show();
-    icon->setText(edit_container->isVisible() ? "▼" : ">");
-  });
   title_layout->addWidget(title);
   title_layout->addStretch();
+
   plot_btn = new QPushButton("📈");
   plot_btn->setStyleSheet("font-size:16px");
   plot_btn->setToolTip(tr("Show Plot"));
@@ -148,16 +106,21 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &colo
 
   QHBoxLayout *h = new QHBoxLayout();
   remove_btn = new QPushButton(tr("Remove Signal"));
-  QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
   h->addWidget(remove_btn);
   h->addStretch();
   QPushButton *save_btn = new QPushButton(tr("Save"));
-  QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::save);
   h->addWidget(save_btn);
   v_layout->addLayout(h);
 
   edit_container->setVisible(false);
   main_layout->addWidget(edit_container);
+
+  QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
+  QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::save);
+  QObject::connect(title, &ElidedLabel::clicked, [=]() {
+    edit_container->isVisible() ? edit_container->hide() : edit_container->show();
+    icon->setText(edit_container->isVisible() ? "▼" : ">");
+  });
 }
 
 void SignalEdit::save() {
