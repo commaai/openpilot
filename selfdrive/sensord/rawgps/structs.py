@@ -352,5 +352,3 @@ def relist(dat):
       del dat[key]
       i += 1
   return {**dat, **list_dict}
-
-
