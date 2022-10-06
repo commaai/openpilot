@@ -35,14 +35,14 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // title bar
   title_bar = new QWidget(this);
   QHBoxLayout *title_layout = new QHBoxLayout(title_bar);
-  QLabel *title = new QLabel(tr("Charts"));
+  title_label = new QLabel(tr("Charts"));
 
-  title_layout->addWidget(title);
+  title_layout->addWidget(title_label);
   title_layout->addStretch();
 
   QPushButton *reset_zoom_btn = new QPushButton("⟲", this);
   reset_zoom_btn->setFixedSize(30, 30);
-  reset_zoom_btn->setToolTip(tr("reset zoom (drag on chart to zoom X-Axis)"));
+  reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   title_layout->addWidget(reset_zoom_btn);
 
   QPushButton *remove_all_btn = new QPushButton(tr("✖"));
@@ -98,6 +98,7 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
     charts[char_name] = chart;
   }
   title_bar->setVisible(true);
+  title_label->setText(tr("Charts (%1)").arg(charts.size()));
 }
 
 void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
@@ -107,6 +108,7 @@ void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
     if (charts.empty())
       title_bar->setVisible(false);
   }
+  title_label->setText(tr("Charts (%1)").arg(charts.size()));
 }
 
 void ChartsWidget::removeAll() {

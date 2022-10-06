@@ -65,6 +65,7 @@ private:
   void updateFloatButton();
 
   QWidget *title_bar;
+  QLabel *title_label;
   bool floating = false;
   QPushButton *floating_btn;
   QVBoxLayout *charts_layout;
