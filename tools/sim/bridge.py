@@ -244,11 +244,13 @@ class CarlaBridge:
   def __init__(self, arguments):
     set_params_enabled()
 
+    self.params = Params()
+
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
-    Params().put("CalibrationParams", msg.to_bytes())
-    Params().put_bool("WideCameraOnly", not arguments.dual_camera)
+    self.params.put("CalibrationParams", msg.to_bytes())
+    self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
 
     self._args = arguments
     self._carla_objects = []
@@ -363,6 +365,7 @@ class CarlaBridge:
     gps_bp = blueprint_library.find('sensor.other.gnss')
     gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
     gps.listen(lambda gps: gps_callback(gps, vehicle_state))
+    self.params.put_bool("UbloxAvailable", True)
 
     self._carla_objects.extend([imu, gps])
     # launch fake car threads
