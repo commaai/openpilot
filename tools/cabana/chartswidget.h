@@ -69,6 +69,8 @@ private:
   QLabel *title_label;
   bool docking = true;
   QPushButton *dock_btn;
+  QPushButton *reset_zoom_btn;
+  QPushButton *remove_all_btn;
   QVBoxLayout *charts_layout;
   std::map<QString, ChartWidget *> charts;
 };
