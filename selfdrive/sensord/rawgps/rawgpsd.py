@@ -101,9 +101,8 @@ def setup_quectel(diag: ModemDiag):
   DIAG_NV_READ_F = 38
   DIAG_NV_WRITE_F = 39
   NV_GNSS_OEM_FEATURE_MASK = 7165
-
-  opcode, payload = send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
-  opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
+  send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
+  send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
 
   setup_logs(diag, LOG_TYPES)
 
@@ -122,7 +121,7 @@ def setup_quectel(diag: ModemDiag):
   GPSDIAG_OEM_DRE_ON = 1
 
   # gpsdiag_OemControlReqType
-  opcode, payload = send_recv(diag, DIAG_SUBSYS_CMD_F, pack('<BHBBIIII',
+  send_recv(diag, DIAG_SUBSYS_CMD_F, pack('<BHBBIIII',
     DIAG_SUBSYS_GPS,           # Subsystem Id
     CGPS_DIAG_PDAPI_CMD,       # Subsystem Command Code
     CGPS_OEM_CONTROL,          # CGPS Command Code
@@ -148,6 +147,14 @@ def main() -> NoReturn:
   unpack_oemdre_meas_sv, size_oemdre_meas_sv = dict_unpacker(oemdre_measurement_report_sv, True)
 
   unpack_position, _ = dict_unpacker(position_report)
+
+  # wait for ModemManager to come up
+  cloudlog.warning("waiting for modem to come up")
+  while True:
+    ret = subprocess.call("mmcli -m 0 --location-status", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    if ret == 0:
+      break
+    time.sleep(0.1)
 
   # connect to modem
   diag = ModemDiag()

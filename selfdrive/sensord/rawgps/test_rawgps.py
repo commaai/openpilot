@@ -5,11 +5,8 @@ import unittest
 import subprocess
 
 import cereal.messaging as messaging
-from cereal.services import service_list
-from selfdrive.test.helpers import with_processes
-from selfdrive.manager.process_config import managed_processes
 from system.hardware import TICI
-from system.hardware.tici.pins import GPIO
+from selfdrive.manager.process_config import managed_processes
 
 
 # TODO: test TTFF when we have good A-GNSS
