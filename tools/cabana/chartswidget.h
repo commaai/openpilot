@@ -3,6 +3,7 @@
 #include <map>
 
 #include <QLabel>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtCharts/QChartView>
@@ -54,9 +55,18 @@ public:
   }
   void addChart(const QString &id, const QString &sig_name);
   void removeChart(const QString &id, const QString &sig_name);
+  void removeAll();
   void updateState();
 
+signals:
+  void floatingCharts(bool floating);
+
 protected:
-  QVBoxLayout *main_layout;
+  void updateFloatButton();
+
+  QWidget *title_bar;
+  bool floating = false;
+  QPushButton *floating_btn;
+  QVBoxLayout *charts_layout;
   std::map<QString, ChartWidget *> charts;
 };

@@ -2,7 +2,6 @@
 
 #include <QGraphicsLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QRubberBand>
 #include <QStackedLayout>
 #include <QtCharts/QLineSeries>
@@ -27,29 +26,90 @@ int64_t get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   return ret;
 }
 
+// ChartsWidget
+
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
-  main_layout = new QVBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
+
+  // title bar
+  title_bar = new QWidget(this);
+  QHBoxLayout *title_layout = new QHBoxLayout(title_bar);
+  QLabel *title = new QLabel(tr("Charts"));
+
+  title_layout->addWidget(title);
+  title_layout->addStretch();
+  QPushButton *remove_all_btn = new QPushButton(tr("✖"));
+  remove_all_btn->setFixedSize(30, 30);
+  remove_all_btn->setToolTip(tr("Remove all charts"));
+  title_layout->addWidget(remove_all_btn);
+
+  floating_btn = new QPushButton();
+  floating_btn->setFixedSize(30, 30);
+  updateFloatButton();
+  title_layout->addWidget(floating_btn);
+
+  title_bar->setVisible(false);
+  main_layout->addWidget(title_bar, 0, Qt::AlignTop);
+
+  // charts
+  QWidget *charts_container = new QWidget(this);
+  QVBoxLayout *charts_main = new QVBoxLayout(charts_container);
+  charts_layout = new QVBoxLayout();
+  charts_main->addLayout(charts_layout);
+  charts_main->addStretch();
+
+  QScrollArea *charts_scroll = new QScrollArea(this);
+  charts_scroll->setWidgetResizable(true);
+  charts_scroll->setWidget(charts_container);
+  charts_scroll->setFrameShape(QFrame::NoFrame);
+  charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  main_layout->addWidget(charts_scroll);
+
   connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
   connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
   connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
+  connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
+  connect(floating_btn, &QPushButton::clicked, [=]() {
+    emit floatingCharts(!floating);
+    floating = !floating;
+    updateFloatButton();
+  });
+}
+
+void ChartsWidget::updateFloatButton() {
+  floating_btn->setText(floating ? "⬋" : "⬈");
+  floating_btn->setToolTip(floating ? tr("Dock charts") : tr("Floating charts"));
 }
 
 void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
   const QString char_name = id + sig_name;
   if (charts.find(char_name) == charts.end()) {
     auto chart = new ChartWidget(id, sig_name, this);
-    main_layout->addWidget(chart);
+    charts_layout->addWidget(chart);
     charts[char_name] = chart;
   }
+  title_bar->setVisible(true);
 }
 
 void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
   if (auto it = charts.find(id + sig_name); it != charts.end()) {
     it->second->deleteLater();
     charts.erase(it);
+    if (charts.empty())
+      title_bar->setVisible(false);
   }
 }
+
+void ChartsWidget::removeAll() {
+  for (auto [_, chart] : charts)
+    chart->deleteLater();
+  charts.clear();
+  title_bar->setVisible(false);
+}
+
+// ChartWidget
 
 ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *parent) : id(id), sig_name(sig_name), QWidget(parent) {
   QStackedLayout *stacked = new QStackedLayout(this);
@@ -70,11 +130,14 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   zoom_label = new QLabel("", this);
   header_layout->addWidget(zoom_label);
   QPushButton *zoom_in = new QPushButton("↺", this);
+  zoom_in->setFixedSize(30, 30);
   zoom_in->setToolTip(tr("reset zoom"));
   QObject::connect(zoom_in, &QPushButton::clicked, []() { parser->resetRange(); });
   header_layout->addWidget(zoom_in);
 
   QPushButton *remove_btn = new QPushButton("✖", this);
+  remove_btn->setFixedSize(30, 30);
+  remove_btn->setToolTip(tr("Remove chart"));
   QObject::connect(remove_btn, &QPushButton::clicked, [=]() {
     emit parser->hidePlot(id, sig_name);
   });

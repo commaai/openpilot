@@ -34,8 +34,6 @@ protected:
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
-  QVBoxLayout *r_layout;
-  QScrollArea *scroll;
-  QPushButton *floating_btn;
   FloatWindow *floating_window = nullptr;
+  QVBoxLayout *r_layout;
 };
