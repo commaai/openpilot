@@ -29,6 +29,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   slider = new Slider(this);
   slider->setSingleStep(0);
   slider->setMinimum(0);
+  slider->setTickInterval(60);
+  slider->setTickPosition(QSlider::TicksBelow);
   slider->setMaximum(parser->replay->totalSeconds());
   slider_layout->addWidget(slider);
 
