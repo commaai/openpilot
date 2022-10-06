@@ -191,9 +191,6 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     _, CP = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
-def locationd_init(msgs, fsm, can_sock, fingerprint):
-  Params().put_bool("UbloxAvailable", True)
-  get_car_params(msgs, fsm, can_sock, fingerprint)
 
 def controlsd_rcv_callback(msg, CP, cfg, fsm):
   # no sendcan until controlsd is initialized
@@ -335,7 +332,7 @@ CONFIGS = [
       "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
-    init_callback=locationd_init,
+    init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
@@ -371,7 +368,7 @@ CONFIGS = [
       "clocks": []
     },
     ignore=["logMonoTime"],
-    init_callback=locationd_init,
+    init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
@@ -420,6 +417,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
+  params.put_bool("UbloxAvailable", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
