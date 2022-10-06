@@ -3,6 +3,7 @@
 #include <map>
 
 #include <QLabel>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtCharts/QChartView>
@@ -16,11 +17,12 @@ class LineMarker : public QWidget {
 Q_OBJECT
 
 public:
-  LineMarker(QChart *chart, QWidget *parent);
-  void paintEvent(QPaintEvent *event) override;
+  LineMarker(QWidget *parent) : QWidget(parent) {}
+  void setX(double x);
 
 private:
-  QChart *chart;
+  void paintEvent(QPaintEvent *event) override;
+  double x_pos = 0.0;
 };
 
 class ChartWidget : public QWidget {
@@ -30,7 +32,7 @@ public:
   ChartWidget(const QString &id, const QString &sig_name, QWidget *parent);
   inline QChart *chart() const { return chart_view->chart(); }
 
-protected:
+private:
   void updateState();
   void addData(const CanData &can_data, const Signal &sig);
   void updateSeries();
@@ -38,9 +40,9 @@ protected:
 
   QString id;
   QString sig_name;
-  QLabel *zoom_label;
   QChartView *chart_view = nullptr;
   LineMarker *line_marker = nullptr;
+  double line_marker_x = 0.0;
   QList<QPointF> vals;
 };
 
@@ -49,14 +51,26 @@ class ChartsWidget : public QWidget {
 
 public:
   ChartsWidget(QWidget *parent = nullptr);
-  inline bool hasChart(const QString &id, const QString &sig_name) {
-    return charts.find(id+sig_name) != charts.end();
-  }
   void addChart(const QString &id, const QString &sig_name);
   void removeChart(const QString &id, const QString &sig_name);
-  void updateState();
+  void removeAll();
+  inline bool hasChart(const QString &id, const QString &sig_name) {
+    return charts.find(id + sig_name) != charts.end();
+  }
 
-protected:
-  QVBoxLayout *main_layout;
+signals:
+  void dock(bool floating);
+
+private:
+  void updateState();
+  void updateDockButton();
+
+  QWidget *title_bar;
+  QLabel *title_label;
+  bool docking = true;
+  QPushButton *dock_btn;
+  QPushButton *reset_zoom_btn;
+  QPushButton *remove_all_btn;
+  QVBoxLayout *charts_layout;
   std::map<QString, ChartWidget *> charts;
 };
