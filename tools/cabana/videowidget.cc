@@ -64,6 +64,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   }
 
   main_layout->addLayout(control_layout);
+  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
