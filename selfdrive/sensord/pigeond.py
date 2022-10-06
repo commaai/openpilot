@@ -116,7 +116,7 @@ class TTYPigeon():
       time.sleep(0.001)
 
 
-def initialize_pigeon(pigeon: TTYPigeon) -> None:
+def initialize_pigeon(pigeon: TTYPigeon) -> bool:
   # try initializing a few times
   for _ in range(10):
     try:
@@ -198,6 +198,10 @@ def initialize_pigeon(pigeon: TTYPigeon) -> None:
       break
     except TimeoutError:
       cloudlog.warning("Initialization failed, trying again!")
+  else:
+    cloudlog.warning("Failed to initialize pigeon")
+    return False
+  return True
 
 def deinitialize_and_exit(pigeon: Optional[TTYPigeon]):
   cloudlog.warning("Storing almanac in ublox flash")
@@ -236,7 +240,8 @@ def main():
   time.sleep(0.5)
 
   pigeon = TTYPigeon()
-  initialize_pigeon(pigeon)
+  r = initialize_pigeon(pigeon)
+  Params().put_bool("UbloxAvailable", r)
 
   # start receiving data
   while True:
