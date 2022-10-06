@@ -18,7 +18,9 @@ Parser::Parser(QObject *parent) : QObject(parent) {
   QObject::connect(this, &Parser::received, this, &Parser::process, Qt::QueuedConnection);
 }
 
-Parser::~Parser() {}
+Parser::~Parser() {
+  replay->stop();
+}
 
 bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
