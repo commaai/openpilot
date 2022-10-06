@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
-from selfdrive.controls.lib.drive_helpers import LAT_MPC_N, CAR_ROTATION_RADIUS
+from selfdrive.controls.lib.drive_helpers import CAR_ROTATION_RADIUS
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
 
 
 def run_mpc(lat_mpc=None, v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
@@ -9,7 +10,7 @@ def run_mpc(lat_mpc=None, v_ref=30., x_init=0., y_init=0., psi_init=0., curvatur
 
   if lat_mpc is None:
     lat_mpc = LateralMpc()
-  lat_mpc.set_weights(1., 1., 1.)
+  lat_mpc.set_weights(1., 1., 0.0, 1.)
 
   y_pts = poly_shift * np.ones(LAT_MPC_N + 1)
   heading_pts = np.zeros(LAT_MPC_N + 1)
