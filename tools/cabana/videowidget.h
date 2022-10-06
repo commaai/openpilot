@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QLabel>
 #include <QSlider>
 #include <QWidget>
 
@@ -12,6 +13,10 @@ public:
   VideoWidget(QWidget *parnet = nullptr);
 
 protected:
+  void rangeChanged(double min, double max);
+  void updateState();
+
   CameraViewWidget *cam_widget;
+  QLabel *time_label, *total_time_label;
   QSlider *slider;
 };

@@ -16,6 +16,5 @@ if arch in ['x86_64', 'Darwin'] and GetOption('extras'):
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
   Import('replay_lib')
-  # qt_env["LD_LIBRARY_PATH"] = [Dir(f"#opendbc/can").abspath]
   cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
-  qt_env.Program('_cabana', ['cabana.cc', 'mainwin.cc', 'chartswidget.cc', 'videowidget.cc', 'parser.cc', 'messageswidget.cc', 'detailwidget.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+  qt_env.Program('_cabana', ['cabana.cc', 'mainwin.cc', 'chartswidget.cc', 'videowidget.cc', 'signaledit.cc', 'parser.cc', 'messageswidget.cc', 'detailwidget.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
