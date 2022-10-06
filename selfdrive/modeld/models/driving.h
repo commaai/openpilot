@@ -16,6 +16,8 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
+constexpr int FEATURE_LEN = 2048;
+constexpr int HISTORY_BUFFER_LEN = 99;
 constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
@@ -233,6 +235,11 @@ struct ModelOutputMeta {
 };
 static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
 
+struct ModelOutputFeatures {
+  std::array<float, FEATURE_LEN> feature;
+};
+static_assert(sizeof(ModelOutputFeatures) == (sizeof(float)*FEATURE_LEN));
+
 struct ModelOutput {
   const ModelOutputPlans plans;
   const ModelOutputLaneLines lane_lines;
@@ -244,22 +251,24 @@ struct ModelOutput {
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
+
 #ifdef TEMPORAL
-  constexpr int TEMPORAL_SIZE = 512;
+  constexpr int TEMPORAL_SIZE = HISTORY_BUFFER_LEN * FEATURE_LEN;
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + TEMPORAL_SIZE;
+constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
   ModelFrame *frame = nullptr;
   ModelFrame *wide_frame = nullptr;
+  std::array<float, HISTORY_BUFFER_LEN * FEATURE_LEN> feature_buffer = {};
   std::array<float, NET_OUTPUT_SIZE> output = {};
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
   float prev_desire[DESIRE_LEN] = {};
-  float pulse_desire[DESIRE_LEN] = {};
+  float pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN+1)] = {};
 #endif
 #ifdef TRAFFIC_CONVENTION
   float traffic_convention[TRAFFIC_CONVENTION_LEN] = {};

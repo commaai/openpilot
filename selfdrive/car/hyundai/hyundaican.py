@@ -132,18 +132,16 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
+  # note that some vehicles most likely have an alternate checksum/counter definition
+  # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
   fca11_values = {
-    # seems to count 2,1,0,3,2,1,0,3,2,1,0,3,2,1,0,repeat...
-    # (where first value is aligned to Supplemental_Counter == 0)
-    # test: [(idx % 0xF, -((idx % 0xF) + 2) % 4) for idx in range(0x14)]
-    "CR_FCA_Alive": ((-((idx % 0xF) + 2) % 4) << 2) + 1,
-    "Supplemental_Counter": idx % 0xF,
+    "CR_FCA_Alive": idx % 0xF,
     "PAINT1_Status": 1,
     "FCA_DrvSetStatus": 1,
     "FCA_Status": 1, # AEB disabled
   }
   fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
-  fca11_values["CR_FCA_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in fca11_dat) % 0x10
+  fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
   commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
 
   return commands
