@@ -91,9 +91,7 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &colo
   title_layout->addStretch();
 
   plot_btn = new QPushButton("📈");
-  plot_btn->setStyleSheet("font-size:16px");
   plot_btn->setToolTip(tr("Show Plot"));
-  plot_btn->setContentsMargins(5, 5, 5, 5);
   plot_btn->setFixedSize(30, 30);
   QObject::connect(plot_btn, &QPushButton::clicked, [=]() { emit parser->showPlot(id, name_); });
   title_layout->addWidget(plot_btn);

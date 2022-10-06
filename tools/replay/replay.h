@@ -32,6 +32,7 @@ enum class FindFlag {
 };
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
+typedef bool (*replayEventFilter)(const Event *, void *);
 
 class Replay : public QObject {
   Q_OBJECT
@@ -47,6 +48,13 @@ public:
   void seekToFlag(FindFlag flag);
   void seekTo(double seconds, bool relative);
   inline bool isPaused() const { return paused_; }
+  // the filter is called in streaming thread.try to return quickly from it to avoid blocking streaming.
+  // the filter function must return true if the event should be filtered.
+  // otherwise it must return false.
+  inline void installEventFilter(replayEventFilter filter, void *opaque) {
+    filter_opaque = opaque;
+    event_filter = filter;
+  }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
@@ -119,4 +127,6 @@ protected:
   std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
   float speed_ = 1.0;
+  replayEventFilter event_filter = nullptr;
+  void *filter_opaque = nullptr;
 };

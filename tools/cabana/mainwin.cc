@@ -1,6 +1,7 @@
 #include "tools/cabana/mainwin.h"
 
 #include <QHBoxLayout>
+#include <QScreen>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
@@ -16,23 +17,42 @@ MainWindow::MainWindow() : QWidget() {
   detail_widget->setFixedWidth(600);
   h_layout->addWidget(detail_widget);
 
-  // right widget
+  // right widgets
   QWidget *right_container = new QWidget(this);
   right_container->setFixedWidth(640);
-  QVBoxLayout *r_layout = new QVBoxLayout(right_container);
+  r_layout = new QVBoxLayout(right_container);
+
   video_widget = new VideoWidget(this);
-  r_layout->addWidget(video_widget);
+  r_layout->addWidget(video_widget, 0, Qt::AlignTop);
 
   charts_widget = new ChartsWidget(this);
-  QScrollArea *scroll = new QScrollArea(this);
-  scroll->setWidget(charts_widget);
-  scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  r_layout->addWidget(scroll);
+  r_layout->addWidget(charts_widget);
 
   h_layout->addWidget(right_container);
 
   QObject::connect(messages_widget, &MessagesWidget::msgChanged, detail_widget, &DetailWidget::setMsg);
+  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
+}
+
+void MainWindow::dockCharts(bool dock) {
+  charts_widget->setUpdatesEnabled(false);
+  if (dock && floating_window) {
+    r_layout->addWidget(charts_widget);
+    floating_window->deleteLater();
+    floating_window = nullptr;
+  } else if (!dock && !floating_window) {
+    floating_window = new QWidget(nullptr);
+    floating_window->setLayout(new QVBoxLayout());
+    floating_window->layout()->addWidget(charts_widget);
+    floating_window->setWindowFlags(Qt::WindowTitleHint | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
+    floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
+    floating_window->showMaximized();
+  }
+  charts_widget->setUpdatesEnabled(true);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+  if (floating_window)
+    floating_window->deleteLater();
+  QWidget::closeEvent(event);
 }

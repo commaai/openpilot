@@ -206,7 +206,7 @@ void HistoryLog::updateState() {
     const auto &c = parser->history_log[i];
     auto label = labels[i];
     label->setVisible(true);
-    label->setText(QString("%1         %2").arg(c.ts, 0, 'f', 3).arg(c.hex_dat));
+    label->setText(QString("%1         %2").arg(c.ts, 0, 'f', 3).arg(toHex(c.dat)));
   }
 
   for (; i < std::size(labels); ++i) {
