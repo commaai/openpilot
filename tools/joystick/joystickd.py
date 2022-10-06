@@ -42,7 +42,7 @@ class Joystick:
     # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
     self.min_axis_value = {'ABS_Y': 0., 'ABS_RX': 0.}
     self.max_axis_value = {'ABS_Y': 255., 'ABS_RX': 255.}
-    self.cancel_button = 'BTN_NORTH' #(BTN_NORTH=X, ABS_RZ=Right Trigger)
+    self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RZ=Right Trigger)
     self.axes_values = {'ABS_Y': 0., 'ABS_RX': 0.}  # gb, steer
     self.axes_order = ['ABS_Y', 'ABS_RX']
     self.cancel = False
