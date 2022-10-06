@@ -136,6 +136,7 @@ void ChartWidget::updateSeries() {
 
   vals.clear();
   vals.reserve(3 * 60 * 100);
+  double min_y = 0, max_y = 0;
   uint64_t route_start_time = parser->replay->routeStartTime();
   for (auto &evt : *events) {
     if (evt->which == cereal::Event::Which::CAN) {
@@ -147,6 +148,9 @@ void ChartWidget::updateSeries() {
             val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
           }
           double value = val * sig->factor + sig->offset;
+          if (value < min_y) min_y = value;
+          if (value > max_y) max_y = value;
+
           double ts = (evt->mono_time - route_start_time) / (double)1e9;  // seconds
           vals.push_back({ts, value});
         }
@@ -157,6 +161,7 @@ void ChartWidget::updateSeries() {
   series->replace(vals);
   auto [begin, end] = parser->range();
   chart_view->chart()->axisX()->setRange(begin, end);
+  chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
 }
 
 void ChartWidget::rangeChanged(qreal min, qreal max) {
