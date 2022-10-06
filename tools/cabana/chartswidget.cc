@@ -173,7 +173,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart_layout->addStretch();
 
   stacked->addWidget(chart_widget);
-  line_marker = new LineMarker(chart, this);
+  line_marker = new LineMarker(this);
   stacked->addWidget(line_marker);
   line_marker->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   line_marker->raise();
@@ -187,7 +187,15 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
 }
 
 void ChartWidget::updateState() {
-  line_marker->update();
+  auto chart = chart_view->chart();
+  auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
+  if (axis_x->max() <= axis_x->min()) return;
+
+  int x = chart->plotArea().left() + chart->plotArea().width() * (parser->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
+  if (line_marker_x != x) {
+    line_marker->setX(x);
+    line_marker_x = x;
+  }
 }
 
 void ChartWidget::updateSeries() {
@@ -242,16 +250,16 @@ void ChartWidget::rangeChanged(qreal min, qreal max) {
   chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
 }
 
-LineMarker::LineMarker(QChart *chart, QWidget *parent) : chart(chart), QWidget(parent) {}
+// LineMarker
+
+void LineMarker::setX(double x) {
+  x_pos = x;
+  update();
+}
 
 void LineMarker::paintEvent(QPaintEvent *event) {
-  auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
-  if (axis_x->max() <= axis_x->min()) return;
-
-  double x = chart->plotArea().left() + chart->plotArea().width() * (parser->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
   QPainter p(this);
-  QPen pen = QPen(Qt::black);
-  pen.setWidth(2);
-  p.setPen(pen);
-  p.drawLine(QPointF{x, 50.}, QPointF{x, (qreal)height() - 11});
+  p.setPen(QPen(Qt::black, 2));
+  p.drawLine(QPointF{x_pos, 50.}, QPointF{x_pos, (qreal)height() - 11});
 }
+

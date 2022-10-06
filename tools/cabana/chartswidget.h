@@ -17,12 +17,12 @@ class LineMarker : public QWidget {
 Q_OBJECT
 
 public:
-  LineMarker(QChart *chart, QWidget *parent);
+  LineMarker(QWidget *parent) : QWidget(parent) {}
+  void setX(double x);
 
 private:
   void paintEvent(QPaintEvent *event) override;
-
-  QChart *chart;
+  double x_pos = 0.0;
 };
 
 class ChartWidget : public QWidget {
@@ -42,6 +42,7 @@ private:
   QString sig_name;
   QChartView *chart_view = nullptr;
   LineMarker *line_marker = nullptr;
+  double line_marker_x = 0.0;
   QList<QPointF> vals;
 };
 
