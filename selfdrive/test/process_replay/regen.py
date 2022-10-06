@@ -214,6 +214,7 @@ def migrate_sensorEvents(lr):
 
       m = messaging.new_message(sensor_service)
       m.valid = True
+      m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
       m_dat.version = evt.version
