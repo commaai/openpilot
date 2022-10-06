@@ -16,10 +16,9 @@ from system.swaglog import cloudlog
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
-                                              glonass_measurement_report,glonass_measurement_report_sv,
+                                              glonass_measurement_report, glonass_measurement_report_sv,
                                               oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
                                               LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
                                               LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
                                               LOG_GNSS_OEMDRE_SVPOLY_REPORT)
 
@@ -98,24 +97,8 @@ def mmcli(cmd: str) -> None:
   else:
     raise Exception(f"failed to execute mmcli command {cmd=}")
 
-  unpack_svpoly, _ = dict_unpacker(oemdre_svpoly_report, True)
-  unpack_position, _ = dict_unpacker(position_report)
-
-  log_types = [
-    LOG_GNSS_GPS_MEASUREMENT_REPORT,
-    LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-    LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
-    LOG_GNSS_OEMDRE_SVPOLY_REPORT,
-  ]
-  pub_types = ['qcomGnss']
-
-  log_types.append(LOG_GNSS_POSITION_REPORT)
-  pub_types.append("gpsLocation")
-
-  # connect to modem
-  diag = ModemDiag()
-
-  # NV enable OEMDRE
+def setup_quectel(diag: ModemDiag):
+  # enable OEMDRE in the NV
   # TODO: it has to reboot for this to take effect
   DIAG_NV_READ_F = 38
   DIAG_NV_WRITE_F = 39
