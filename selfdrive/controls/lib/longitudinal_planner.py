@@ -58,7 +58,6 @@ class LongitudinalPlanner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, DT_MDL)
-    self.t_uniform = np.arange(0.0, T_IDXS_MPC[-1] + 0.5, 0.5)
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -76,10 +75,7 @@ class LongitudinalPlanner:
       x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x)
       v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x)
       a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
-      # Uniform interp so gradient is less noisy
-      a_sparse = np.interp(self.t_uniform, T_IDXS, model_msg.acceleration.x)
-      j_sparse = np.gradient(a_sparse, self.t_uniform)
-      j = np.interp(T_IDXS_MPC, self.t_uniform, j_sparse)
+      j = np.zeros(len(T_IDXS_MPC))
     else:
       x = np.zeros(len(T_IDXS_MPC))
       v = np.zeros(len(T_IDXS_MPC))
