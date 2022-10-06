@@ -71,7 +71,8 @@ protected:
   void process(std::vector<CanData> can);
   void segmentsMerged();
 
-  double current_sec = 0.;
+  std::atomic<double> current_sec = 0.;
+  std::atomic<bool> seeking = false;
   std::atomic<bool> exit = false;
   QThread *thread;
   QString dbc_name;

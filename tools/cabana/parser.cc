@@ -47,14 +47,9 @@ void Parser::openDBC(const QString &name) {
 
 void Parser::process(std::vector<CanData> msgs) {
   static double prev_update_ts = 0;
+
   for (const auto &can_data : msgs) {
-    if (can_data.ts < current_sec || can_data.ts > current_sec + 1) {
-      // drop old packet. this would happen if replay seeked to a new position
-      // and there still old packets in QT signal/slot queue.
-      return;
-    }
     can_msgs[can_data.id] = can_data;
-    current_sec = can_data.ts;
     ++counters[can_data.id];
 
     if (can_data.id == current_msg_id) {
@@ -85,10 +80,12 @@ void Parser::recvThread() {
   std::vector<CanData> can;
   while (!exit) {
     std::unique_ptr<Message> msg(subscriber->receive());
-    if (!msg) continue;
+    // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
+    if (!msg || !seeking) continue;
 
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+    current_sec = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e9;
 
     can.clear();
     can.reserve(event.getCan().size());
@@ -99,17 +96,16 @@ void Parser::recvThread() {
       data.source = c.getSrc();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
-      data.ts = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e9;  // seconds
+      data.ts = current_sec;
     }
     emit received(can);
   }
 }
 
 void Parser::seekTo(double ts) {
-  current_sec = ts;
-  if (ts < begin_sec) begin_sec = ts;
-  if (ts > end_sec) end_sec = ts;
+  seeking = true;
   replay->seekTo(ts, false);
+  seeking = false;
 }
 
 void Parser::addNewMsg(const Msg &msg) {
