@@ -94,7 +94,7 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
   const QString char_name = id + sig_name;
   if (charts.find(char_name) == charts.end()) {
     auto chart = new ChartWidget(id, sig_name, this);
-    charts_layout->addWidget(chart);
+    charts_layout->insertWidget(0, chart);
     charts[char_name] = chart;
   }
   title_bar->setVisible(true);
