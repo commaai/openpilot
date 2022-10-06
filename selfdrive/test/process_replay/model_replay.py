@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 SEGMENT = 0
-MAX_FRAMES = 10 if PC else 1300
+MAX_FRAMES = 100 if PC else 1300
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
@@ -170,11 +170,12 @@ if __name__ == "__main__":
         'logMonoTime',
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
+        'modelV2.leadsV3',
         'driverStateV2.modelExecutionTime',
         'driverStateV2.dspExecutionTime'
       ]
       # TODO this tolerance is absurdly large
-      tolerance = 5e-1 if PC else None
+      tolerance = 1e-12 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
