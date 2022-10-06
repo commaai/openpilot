@@ -6,7 +6,6 @@
 #include <QApplication>
 #include <QHash>
 #include <QObject>
-#include <QThread>
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
@@ -22,7 +21,6 @@ struct CanData {
   uint16_t bus_time;
   uint8_t source;
   QByteArray dat;
-  QString hex_dat;
 };
 
 class Parser : public QObject {
@@ -32,11 +30,13 @@ public:
   Parser(QObject *parent);
   ~Parser();
   static uint32_t addressFromId(const QString &id);
+  bool eventFilter(const Event *event);
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
   void addNewMsg(const Msg &msg);
   void removeSignal(const QString &id, const QString &sig_name);
+  void seekTo(double ts);
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
   void resetRange();
@@ -66,13 +66,11 @@ public:
   QList<CanData> history_log;
 
 protected:
-  void recvThread();
   void process(std::vector<CanData> can);
   void segmentsMerged();
 
-  double current_sec = 0.;
-  std::atomic<bool> exit = false;
-  QThread *thread;
+  std::atomic<double> current_sec = 0.;
+  std::atomic<bool> seeking = false;
   QString dbc_name;
   double begin_sec = 0;
   double end_sec = 0;
@@ -82,6 +80,7 @@ protected:
   DBC *dbc = nullptr;
   std::map<uint32_t, const Msg *> msg_map;
   QString current_msg_id;
+  std::vector<CanData> msgs_buf;
 };
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
@@ -89,5 +88,8 @@ Q_DECLARE_METATYPE(std::vector<CanData>);
 // TODO: Add helper function in dbc.h
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
+inline QString toHex(const QByteArray &dat) {
+  return dat.toHex(' ').toUpper();
+}
 
 extern Parser *parser;

@@ -83,7 +83,7 @@ void MessagesWidget::updateState() {
     getTableItem(i, 0)->setText(name);
     getTableItem(i, 1)->setText(c.id);
     getTableItem(i, 2)->setText(QString::number(parser->counters[c.id]));
-    getTableItem(i, 3)->setText(c.hex_dat);
+    getTableItem(i, 3)->setText(toHex(c.dat));
     table_widget->showRow(i);
     i++;
   }
