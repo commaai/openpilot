@@ -31,22 +31,22 @@ MainWindow::MainWindow() : QWidget() {
   h_layout->addWidget(right_container);
 
   QObject::connect(messages_widget, &MessagesWidget::msgChanged, detail_widget, &DetailWidget::setMsg);
-  QObject::connect(charts_widget, &ChartsWidget::floatingCharts, this, &MainWindow::floatingCharts);
+  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
 }
 
-void MainWindow::floatingCharts(bool floating) {
+void MainWindow::dockCharts(bool dock) {
   charts_widget->setUpdatesEnabled(false);
-  if (floating && !floating_window) {
+  if (dock && floating_window) {
+    r_layout->addWidget(charts_widget);
+    floating_window->deleteLater();
+    floating_window = nullptr;
+  } else if (!dock && !floating_window) {
     floating_window = new QWidget(nullptr);
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->setWindowFlags(Qt::WindowTitleHint | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
     floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
-  } else if (!floating && floating_window) {
-    r_layout->addWidget(charts_widget);
-    floating_window->deleteLater();
-    floating_window = nullptr;
   }
   charts_widget->setUpdatesEnabled(true);
 }

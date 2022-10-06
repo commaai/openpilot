@@ -45,10 +45,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   title_layout->addWidget(reset_zoom_btn);
 
-  floating_btn = new QPushButton();
-  floating_btn->setFixedSize(30, 30);
-  updateFloatButton();
-  title_layout->addWidget(floating_btn);
+  dock_btn = new QPushButton();
+  dock_btn->setFixedSize(30, 30);
+  updateDockButton();
+  title_layout->addWidget(dock_btn);
 
   QPushButton *remove_all_btn = new QPushButton(tr("✖"));
   remove_all_btn->setToolTip(tr("Remove all charts"));
@@ -78,16 +78,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
   QObject::connect(reset_zoom_btn, &QPushButton::clicked, parser, &Parser::resetRange);
   QObject::connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
-  QObject::connect(floating_btn, &QPushButton::clicked, [=]() {
-    emit floatingCharts(!floating);
-    floating = !floating;
-    updateFloatButton();
+  QObject::connect(dock_btn, &QPushButton::clicked, [=]() {
+    emit dock(!docking);
+    docking = !docking;
+    updateDockButton();
   });
 }
 
-void ChartsWidget::updateFloatButton() {
-  floating_btn->setText(floating ? "⬋" : "⬈");
-  floating_btn->setToolTip(floating ? tr("Dock charts") : tr("Floating charts"));
+void ChartsWidget::updateDockButton() {
+  dock_btn->setText(docking ? "⬈" : "⬋");
+  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::addChart(const QString &id, const QString &sig_name) {

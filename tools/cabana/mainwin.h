@@ -11,7 +11,7 @@ class MainWindow : public QWidget {
 
 public:
   MainWindow();
-  void floatingCharts(bool floating);
+  void dockCharts(bool dock);
 
 protected:
   void closeEvent(QCloseEvent *event) override;

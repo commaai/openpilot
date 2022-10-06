@@ -59,16 +59,16 @@ public:
   }
 
 signals:
-  void floatingCharts(bool floating);
+  void dock(bool floating);
 
 private:
   void updateState();
-  void updateFloatButton();
+  void updateDockButton();
 
   QWidget *title_bar;
   QLabel *title_label;
-  bool floating = false;
-  QPushButton *floating_btn;
+  bool docking = true;
+  QPushButton *dock_btn;
   QVBoxLayout *charts_layout;
   std::map<QString, ChartWidget *> charts;
 };
