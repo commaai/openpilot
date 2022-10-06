@@ -1,6 +1,7 @@
 #include "tools/cabana/mainwin.h"
 
 #include <QHBoxLayout>
+#include <QScreen>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
@@ -37,6 +38,7 @@ void MainWindow::floatingCharts(bool floating) {
   if (floating && !floating_window) {
     floating_window = new FloatWindow(nullptr);
     floating_window->layout()->addWidget(charts_widget);
+    floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
     QObject::connect(floating_window, &FloatWindow::closing, [this]() { floatingCharts(false); });
   } else if (!floating && floating_window) {
