@@ -95,16 +95,19 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Using cached CarParams")
       vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
+      cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
+      cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
     vin, vin_rx_addr = VIN_UNKNOWN, 0
     exact_fw_match, fw_candidates, car_fw = True, set(), []
+    cached = False
 
   if not is_valid_vin(vin):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
@@ -165,7 +168,7 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match,
+  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
