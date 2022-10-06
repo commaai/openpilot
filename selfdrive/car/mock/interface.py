@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
     self.sm.update(0)
 
     # get basic data from phone and gps since CAN isn't connected
-    if self.sm.updated['gryoscope']:
+    if self.sm.updated['gyroscope']:
       self.yaw_rate_meas = -self.sm['gyroscope'].gyroUncalibrated.v[0]
 
     gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
