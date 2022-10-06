@@ -25,15 +25,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   slider_layout->addWidget(time_label);
 
   slider = new QSlider(Qt::Horizontal, this);
-  QObject::connect(slider, &QSlider::sliderMoved, [=]() {
-    time_label->setText(formatTime(slider->value()));
-  });
   slider->setSingleStep(1);
   slider->setMaximum(parser->replay->totalSeconds());
-  QObject::connect(slider, &QSlider::sliderReleased, [=]() {
-    time_label->setText(formatTime(slider->value()));
-    parser->replay->seekTo(slider->value(), false);
-  });
   slider_layout->addWidget(slider);
 
   total_time_label = new QLabel(formatTime(parser->replay->totalSeconds()));
@@ -45,11 +38,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *control_layout = new QHBoxLayout();
   QPushButton *play = new QPushButton("⏸");
   play->setStyleSheet("font-weight:bold");
-  QObject::connect(play, &QPushButton::clicked, [=]() {
-    bool is_paused = parser->replay->isPaused();
-    play->setText(is_paused ? "⏸" : "▶");
-    parser->replay->pause(!is_paused);
-  });
   control_layout->addWidget(play);
 
   QButtonGroup *group = new QButtonGroup(this);
@@ -67,6 +55,18 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
+  QObject::connect(slider, &QSlider::sliderMoved, [=]() {
+    time_label->setText(formatTime(slider->value()));
+  });
+  QObject::connect(play, &QPushButton::clicked, [=]() {
+    bool is_paused = parser->replay->isPaused();
+    play->setText(is_paused ? "⏸" : "▶");
+    parser->replay->pause(!is_paused);
+  });
+  QObject::connect(slider, &QSlider::sliderReleased, [=]() {
+    time_label->setText(formatTime(slider->value()));
+    parser->replay->seekTo(slider->value(), false);
+  });
 }
 
 void VideoWidget::rangeChanged(double min, double max) {
