@@ -141,7 +141,7 @@ class Laikad:
     if self.use_qcom:
       # TODO this is not robust to gps week rollover
       if self.gps_week is not None:
-        ephem = parse_qcom_ephem(gnss_msg.ephemeris, self.gps_week)
+        ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
     else:
       ephem = convert_ublox_ephem(gnss_msg.ephemeris)
     self.astro_dog.add_navs({ephem.prn: [ephem]})
