@@ -327,7 +327,7 @@ class Updater:
       self._has_internet = False
 
     setup_git_options(OVERLAY_MERGED)
-    output = run(["git", "ls-remote", "--heads", "origin"], OVERLAY_MERGED)
+    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
 
     self.branches = defaultdict(lambda: None)
     for line in output.split('\n'):
@@ -363,7 +363,6 @@ class Updater:
     cloudlog.info("git reset in progress")
     cmds = [
       ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
-      ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
       ["git", "submodule", "init"],
