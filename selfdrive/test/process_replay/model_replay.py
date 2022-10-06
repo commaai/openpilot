@@ -170,12 +170,11 @@ if __name__ == "__main__":
         'logMonoTime',
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
-        'modelV2.leadsV3',
         'driverStateV2.modelExecutionTime',
         'driverStateV2.dspExecutionTime'
       ]
       # TODO this tolerance is absurdly large
-      tolerance = 1e-12 if PC else None
+      tolerance = 2.0 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
