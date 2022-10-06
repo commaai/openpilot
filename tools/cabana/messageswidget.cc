@@ -14,20 +14,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   for (const auto &name : dbc_names) {
     combo->addItem(QString::fromStdString(name));
   }
-  connect(combo, &QComboBox::currentTextChanged, [=](const QString &dbc) {
-    parser->openDBC(dbc);
-  });
-  // For test purpose
-  combo->setCurrentText("toyota_nodsu_pt_generated");
   dbc_file_layout->addWidget(combo);
 
   dbc_file_layout->addStretch();
   QPushButton *save_btn = new QPushButton(tr("Save DBC"), this);
-  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
-    // TODO: save DBC to file
-  });
   dbc_file_layout->addWidget(save_btn);
-
   main_layout->addLayout(dbc_file_layout);
 
   filter = new QLineEdit(this);
@@ -44,14 +35,23 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setColumnWidth(2, 80);
   table_widget->setHorizontalHeaderLabels({tr("Name"), tr("ID"), tr("Count"), tr("Bytes")});
   table_widget->horizontalHeader()->setStretchLastSection(true);
+  main_layout->addWidget(table_widget);
+
+  QObject::connect(parser, &Parser::updated, this, &MessagesWidget::updateState);
+  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
+    // TODO: save DBC to file
+  });
+  QObject::connect(combo, &QComboBox::currentTextChanged, [=](const QString &dbc) {
+    parser->openDBC(dbc);
+  });
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
     const CanData *c = &(parser->can_msgs[table_widget->selectedItems()[1]->text()]);
     parser->setCurrentMsg(c->id);
     emit msgChanged(c);
   });
-  main_layout->addWidget(table_widget);
 
-  connect(parser, &Parser::updated, this, &MessagesWidget::updateState);
+  // For test purpose
+  combo->setCurrentText("toyota_nodsu_pt_generated");
 }
 
 void MessagesWidget::updateState() {
