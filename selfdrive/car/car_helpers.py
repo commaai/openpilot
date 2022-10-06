@@ -81,7 +81,7 @@ def fingerprint(logcan, sendcan):
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
 
-  if not fixed_fingerprint and not skip_fw_query:
+  if not skip_fw_query:
     # Vin query only reliably works through OBDII
     bus = 1
 
