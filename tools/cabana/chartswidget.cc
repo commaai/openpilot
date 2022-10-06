@@ -39,9 +39,15 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   title_layout->addWidget(title);
   title_layout->addStretch();
+
+  QPushButton *reset_zoom_btn = new QPushButton("⟲", this);
+  reset_zoom_btn->setFixedSize(30, 30);
+  reset_zoom_btn->setToolTip(tr("reset zoom (drag on chart to zoom X-Axis)"));
+  title_layout->addWidget(reset_zoom_btn);
+
   QPushButton *remove_all_btn = new QPushButton(tr("✖"));
-  remove_all_btn->setFixedSize(30, 30);
   remove_all_btn->setToolTip(tr("Remove all charts"));
+  remove_all_btn->setFixedSize(30, 30);
   title_layout->addWidget(remove_all_btn);
 
   floating_btn = new QPushButton();
@@ -67,11 +73,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(charts_scroll);
 
-  connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
-  connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
-  connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
-  connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
-  connect(floating_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
+  QObject::connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
+  QObject::connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
+  QObject::connect(reset_zoom_btn, &QPushButton::clicked, parser, &Parser::resetRange);
+  QObject::connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
+  QObject::connect(floating_btn, &QPushButton::clicked, [=]() {
     emit floatingCharts(!floating);
     floating = !floating;
     updateFloatButton();
@@ -124,16 +131,9 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   header->setStyleSheet("background-color:white");
   QHBoxLayout *header_layout = new QHBoxLayout(header);
   header_layout->setContentsMargins(11, 11, 11, 0);
-  auto title = new QLabel(tr("%1 %2").arg(parser->getMsg(id)->name.c_str()).arg(id));
+  QLabel *title = new QLabel(tr("%1 %2").arg(parser->getMsg(id)->name.c_str()).arg(id));
   header_layout->addWidget(title);
   header_layout->addStretch();
-  zoom_label = new QLabel("", this);
-  header_layout->addWidget(zoom_label);
-  QPushButton *zoom_in = new QPushButton("↺", this);
-  zoom_in->setFixedSize(30, 30);
-  zoom_in->setToolTip(tr("reset zoom"));
-  QObject::connect(zoom_in, &QPushButton::clicked, []() { parser->resetRange(); });
-  header_layout->addWidget(zoom_in);
 
   QPushButton *remove_btn = new QPushButton("✖", this);
   remove_btn->setFixedSize(30, 30);
