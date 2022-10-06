@@ -251,6 +251,9 @@ def main():
       msg = messaging.new_message('ubloxRaw', len(dat))
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
+    else:
+      # prevent locking up a CPU core if ublox disconnects
+      time.sleep(0.001)
 
 if __name__ == "__main__":
   main()
