@@ -45,15 +45,15 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   title_layout->addWidget(reset_zoom_btn);
 
-  QPushButton *remove_all_btn = new QPushButton(tr("✖"));
-  remove_all_btn->setToolTip(tr("Remove all charts"));
-  remove_all_btn->setFixedSize(30, 30);
-  title_layout->addWidget(remove_all_btn);
-
   floating_btn = new QPushButton();
   floating_btn->setFixedSize(30, 30);
   updateFloatButton();
   title_layout->addWidget(floating_btn);
+
+  QPushButton *remove_all_btn = new QPushButton(tr("✖"));
+  remove_all_btn->setToolTip(tr("Remove all charts"));
+  remove_all_btn->setFixedSize(30, 30);
+  title_layout->addWidget(remove_all_btn);
 
   title_bar->setVisible(false);
   main_layout->addWidget(title_bar, 0, Qt::AlignTop);

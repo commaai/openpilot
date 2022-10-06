@@ -36,11 +36,12 @@ MainWindow::MainWindow() : QWidget() {
 
 void MainWindow::floatingCharts(bool floating) {
   if (floating && !floating_window) {
-    floating_window = new FloatWindow(nullptr);
+    floating_window = new QWidget(nullptr);
+    floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
+    floating_window->setWindowFlags(Qt::WindowTitleHint | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
     floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
-    QObject::connect(floating_window, &FloatWindow::closing, [this]() { floatingCharts(false); });
   } else if (!floating && floating_window) {
     r_layout->addWidget(charts_widget);
     floating_window->deleteLater();
@@ -51,16 +52,5 @@ void MainWindow::floatingCharts(bool floating) {
 void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
-  QWidget::closeEvent(event);
-}
-
-// FloatWindow
-
-FloatWindow::FloatWindow(QWidget *parent) : QWidget(parent) {
-  setLayout(new QVBoxLayout());
-}
-
-void FloatWindow::closeEvent(QCloseEvent *event) {
-  emit closing();
   QWidget::closeEvent(event);
 }
