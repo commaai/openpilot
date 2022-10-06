@@ -48,6 +48,11 @@ void Parser::openDBC(const QString &name) {
 void Parser::process(std::vector<CanData> msgs) {
   static double prev_update_ts = 0;
   for (const auto &can_data : msgs) {
+    if (can_data.ts < current_sec || can_data.ts > current_sec + 1) {
+      // drop old packet. this would happen if replay seeked to a new position
+      // and there still old packets in QT signal/slot queue.
+      return;
+    }
     can_msgs[can_data.id] = can_data;
     current_sec = can_data.ts;
     ++counters[can_data.id];
@@ -59,15 +64,15 @@ void Parser::process(std::vector<CanData> msgs) {
       history_log.push_front(can_data);
     }
   }
-  double current_ts = millis_since_boot();
-  if ((current_ts - prev_update_ts) > 1000.0 / FPS) {
-    prev_update_ts = current_ts;
+  double now = millis_since_boot();
+  if ((now - prev_update_ts) > 1000.0 / FPS) {
+    prev_update_ts = now;
     emit updated();
   }
 
   if (current_sec < begin_sec || current_sec > end_sec) {
     // loop replay in selected range.
-    replay->seekTo(begin_sec, false);
+    seekTo(begin_sec);
   }
 }
 
@@ -99,6 +104,13 @@ void Parser::recvThread() {
     }
     emit received(can);
   }
+}
+
+void Parser::seekTo(double ts) {
+  current_sec = ts;
+  if (ts < begin_sec) begin_sec = ts;
+  if (ts > end_sec) end_sec = ts;
+  replay->seekTo(ts, false);
 }
 
 void Parser::addNewMsg(const Msg &msg) {

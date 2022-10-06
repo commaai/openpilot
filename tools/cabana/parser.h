@@ -38,6 +38,7 @@ public:
   void saveDBC(const QString &name) {}
   void addNewMsg(const Msg &msg);
   void removeSignal(const QString &id, const QString &sig_name);
+  void seekTo(double ts);
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
   void resetRange();

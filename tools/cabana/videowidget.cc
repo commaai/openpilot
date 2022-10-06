@@ -72,8 +72,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void VideoWidget::setPosition(int value) {
-  time_label->setText(formatTime(slider->value()));
-  parser->replay->seekTo(value, false);
+  time_label->setText(formatTime(value));
+  parser->seekTo(value);
 }
 
 void VideoWidget::rangeChanged(double min, double max) {
@@ -105,7 +105,7 @@ void Slider::mousePressEvent(QMouseEvent *e) {
   QSlider::mousePressEvent(e);
   if (e->button() == Qt::LeftButton && !isSliderDown()) {
     int value = minimum() + ((maximum() - minimum()) * e->x()) / width();
-    emit setPosition(value);
     setValue(value);
+    emit setPosition(value);
   }
 }
