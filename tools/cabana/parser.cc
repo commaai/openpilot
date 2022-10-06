@@ -98,7 +98,6 @@ void Parser::recvThread() {
       data.bus_time = c.getBusTime();
       data.source = c.getSrc();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
-      data.hex_dat = data.dat.toHex(' ').toUpper();
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
       data.ts = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e9;  // seconds
     }

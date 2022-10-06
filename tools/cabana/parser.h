@@ -23,7 +23,6 @@ struct CanData {
   uint16_t bus_time;
   uint8_t source;
   QByteArray dat;
-  QString hex_dat;
 };
 
 class Parser : public QObject {
@@ -91,5 +90,8 @@ Q_DECLARE_METATYPE(std::vector<CanData>);
 // TODO: Add helper function in dbc.h
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
+inline QString toHex(const QByteArray &dat) {
+  return dat.toHex(' ').toUpper();
+}
 
 extern Parser *parser;
