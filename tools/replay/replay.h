@@ -45,18 +45,19 @@ public:
   void stop();
   void pause(bool pause);
   void seekToFlag(FindFlag flag);
-  void seekTo(int seconds, bool relative);
+  void seekTo(double seconds, bool relative);
   inline bool isPaused() const { return paused_; }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
   inline const Route* route() const { return route_.get(); }
-  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
   inline uint64_t routeStartTime() const { return route_start_ts_; }
   inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
   inline int totalSeconds() const { return segments_.size() * 60; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
+  inline const std::vector<Event *> *events() const { return events_.get(); }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
@@ -65,6 +66,7 @@ public:
 
 signals:
   void streamStarted();
+  void segmentsMerged();
 
 protected slots:
   void segmentLoadFinished(bool success);
@@ -98,7 +100,7 @@ protected:
   bool paused_ = false;
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
-  uint64_t cur_mono_time_ = 0;
+  std::atomic<uint64_t> cur_mono_time_ = 0;
   std::unique_ptr<std::vector<Event *>> events_;
   std::unique_ptr<std::vector<Event *>> new_events_;
   std::vector<int> segments_merged_;
@@ -114,6 +116,7 @@ protected:
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
+  std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
   float speed_ = 1.0;
 };

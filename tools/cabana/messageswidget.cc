@@ -1,11 +1,9 @@
 #include "tools/cabana/messageswidget.h"
 
 #include <QComboBox>
-#include <QDebug>
 #include <QHeaderView>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <bitset>
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -47,8 +45,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setHorizontalHeaderLabels({tr("Name"), tr("ID"), tr("Count"), tr("Bytes")});
   table_widget->horizontalHeader()->setStretchLastSection(true);
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    auto id = table_widget->selectedItems()[0]->data(Qt::UserRole);
-    emit msgChanged(id.toString());
+    const CanData *c = &(parser->can_msgs[table_widget->selectedItems()[1]->text()]);
+    parser->setCurrentMsg(c->id);
+    emit msgChanged(c);
   });
   main_layout->addWidget(table_widget);
 
@@ -60,6 +59,7 @@ void MessagesWidget::updateState() {
     auto item = table_widget->item(row, col);
     if (!item) {
       item = new QTableWidgetItem();
+      item->setFlags(item->flags() ^ Qt::ItemIsEditable);
       table_widget->setItem(row, col, item);
     }
     return item;
@@ -67,28 +67,27 @@ void MessagesWidget::updateState() {
 
   table_widget->setRowCount(parser->can_msgs.size());
   int i = 0;
-  const QString filter_str = filter->text().toLower();
-  for (const auto &[id, list] : parser->can_msgs) {
-    assert(!list.empty());
-
-    QString name;
-    if (auto msg = parser->getMsg(list.back().address)) {
+  QString name, untitled = tr("untitled");
+  const QString filter_str = filter->text();
+  for (const auto &[_, c] : parser->can_msgs) {
+    if (auto msg = parser->getMsg(c.address)) {
       name = msg->name.c_str();
     } else {
-      name = tr("untitled");
+      name = untitled;
     }
-    if (!filter_str.isEmpty() && !name.toLower().contains(filter_str)) {
+    if (!filter_str.isEmpty() && !name.contains(filter_str, Qt::CaseInsensitive)) {
       table_widget->hideRow(i++);
       continue;
     }
 
-    auto item = getTableItem(i, 0);
-    item->setText(name);
-    item->setData(Qt::UserRole, id);
-    getTableItem(i, 1)->setText(id);
-    getTableItem(i, 2)->setText(QString("%1").arg(parser->counters[id]));
-    getTableItem(i, 3)->setText(list.back().hex_dat);
+    getTableItem(i, 0)->setText(name);
+    getTableItem(i, 1)->setText(c.id);
+    getTableItem(i, 2)->setText(QString::number(parser->counters[c.id]));
+    getTableItem(i, 3)->setText(c.hex_dat);
     table_widget->showRow(i);
     i++;
+  }
+  if (table_widget->currentRow() == -1) {
+    table_widget->selectRow(0);
   }
 }

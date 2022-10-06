@@ -11,10 +11,10 @@
 class MainWindow : public QWidget {
   Q_OBJECT
 
- public:
+public:
   MainWindow();
 
- protected:
+protected:
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
