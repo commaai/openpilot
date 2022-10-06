@@ -23,16 +23,16 @@ class TestUpdated(unittest.TestCase):
 
     self.basedir = os.path.join(org_dir, "openpilot")
     self.git_remote_dir = os.path.join(org_dir, "openpilot_remote")
-    self.staging_dir = os.path.join(org_dir, "safe_staging")
-    for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_dir]:
+    self.staging_root = os.path.join(org_dir, "safe_staging")
+    for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_root]:
       os.mkdir(d)
 
-    self.upper_dir = os.path.join(self.staging_dir, "upper")
-    self.merged_dir = os.path.join(self.staging_dir, "merged")
-    self.finalized_dir = os.path.join(self.staging_dir, "finalized")
+    self.upper_dir = os.path.join(self.staging_root, "upper")
+    self.merged_dir = os.path.join(self.staging_root, "merged")
+    self.finalized_dir = os.path.join(self.staging_root, "finalized")
 
     # setup local submodule remotes
-    submodules = subprocess.check_output("git submodule --quiet foreach 'echo $name'",
+    submodules = subprocess.check_output("git submodule --quiet foreach 'echo $path'",
                                          shell=True, cwd=BASEDIR, encoding='utf8').split()
     for s in submodules:
       sub_path = os.path.join(org_dir, s.split("_repo")[0])
@@ -41,8 +41,7 @@ class TestUpdated(unittest.TestCase):
     # setup two git repos, a remote and one we'll run updated in
     self._run([
       f"git clone {BASEDIR} {self.git_remote_dir}",
-      f"git clone {self.git_remote_dir} {self.basedir}",
-      f"cd {self.basedir} && git submodule init && git submodule update",
+      f"git clone --recurse-submodules {self.git_remote_dir} {self.basedir}",
       f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
     ])
 
@@ -77,7 +76,7 @@ class TestUpdated(unittest.TestCase):
     os.environ["GIT_AUTHOR_EMAIL"] = "testy@tester.test"
     os.environ["GIT_COMMITTER_EMAIL"] = "testy@tester.test"
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
-    os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
+    os.environ["UPDATER_STAGING_ROOT"] = self.staging_root
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
 
