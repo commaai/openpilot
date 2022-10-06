@@ -133,6 +133,7 @@ pipeline {
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
               ["test sensord", "python selfdrive/sensord/tests/test_sensord.py"],
               ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
+              ["test updated", "python selfdrive/test/test_updated.py"],
             ])
           }
         }
