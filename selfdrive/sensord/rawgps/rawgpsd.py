@@ -160,14 +160,15 @@ def main() -> NoReturn:
   diag = ModemDiag()
 
   def cleanup(sig, frame):
+    cloudlog.warning(f"caught sig {sig}, disabling quectel gps")
     teardown_quectel(diag)
-    cloudlog.warning('rawgpsd: quectel cleanup done')
+    cloudlog.warning("quectel cleanup done")
     sys.exit(0)
   signal.signal(signal.SIGINT, cleanup)
   signal.signal(signal.SIGTERM, cleanup)
 
   setup_quectel(diag)
-  cloudlog.warning("rawgpsd: quectel setup done")
+  cloudlog.warning("quectel setup done")
 
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 

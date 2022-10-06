@@ -9,7 +9,6 @@ from system.hardware import TICI
 from selfdrive.manager.process_config import managed_processes
 
 
-# TODO: test TTFF when we have good A-GNSS
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
