@@ -35,6 +35,7 @@ MainWindow::MainWindow() : QWidget() {
 }
 
 void MainWindow::floatingCharts(bool floating) {
+  charts_widget->setUpdatesEnabled(false);
   if (floating && !floating_window) {
     floating_window = new QWidget(nullptr);
     floating_window->setLayout(new QVBoxLayout());
@@ -47,6 +48,7 @@ void MainWindow::floatingCharts(bool floating) {
     floating_window->deleteLater();
     floating_window = nullptr;
   }
+  charts_widget->setUpdatesEnabled(true);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
