@@ -75,7 +75,7 @@ class LateralPlanner:
                      y_pts,
                      heading_pts,
                      yaw_rate_pts)
-    # init state for next
+    # init state for next iteration
     # mpc.u_sol is the desired second derivative of psi given x0 curv state.
     # with x0[3] = measured_yaw_rate, this would be the actual desired yaw rate.
     # instead, interpolate x_sol so that x0[3] is the desired yaw rate for lat_control.
