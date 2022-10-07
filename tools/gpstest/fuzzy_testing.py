@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import time
 import random
 import datetime as dt
@@ -54,6 +55,15 @@ def get_random_coords(lat, lon) -> Tuple[int, int]:
   lon = ((lon + lon_add + 180) % 360) - 180
   return round(lat, 5), round(lon, 5)
 
+def get_continuous_coords(lat, lon) -> Tuple[int, int]:
+  # continuously move around the world
+
+  lat_add = random.random()*0.01
+  lon_add = random.random()*0.01
+
+  lat = ((lat + lat_add + 90) % 180) - 90
+  lon = ((lon + lon_add + 180) % 360) - 180
+  return round(lat, 5), round(lon, 5)
 
 rc_p: Any = None
 def exec_remote_checker(lat, lon, duration):
@@ -97,9 +107,14 @@ def run_remote_checker(spoof_proc, lat, lon, duration) -> bool:
 
 
 def main():
+  continuous_mode = False
+  if len(sys.argv) == 2 and sys.argv[1] == '-c':
+    print("Continuous Mode!")
+    continuous_mode = True
+
   rinex_file = download_rinex()
 
-  duration = 60*2 # max runtime in seconds
+  duration = 60*3 # max runtime in seconds
   lat, lon = get_random_coords(47.2020, 15.7403)
 
   while True:
@@ -118,7 +133,10 @@ def main():
     # -1 to count process startup
     print(f"Time to get Signal: {round(end_time - start_time - 1, 4)}")
 
-    lat, lon = get_random_coords(lat, lon)
+    if continuous_mode:
+      lat, lon = get_continuous_coords(lat, lon)
+    else:
+      lat, lon = get_random_coords(lat, lon)
 
 if __name__ == "__main__":
   main()
