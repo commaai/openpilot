@@ -66,6 +66,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidgetResizable(true);
   scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
   main_layout->addWidget(scroll);
