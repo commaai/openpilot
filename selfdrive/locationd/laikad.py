@@ -283,7 +283,8 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c.satVel = meas.sat_vel.tolist()
   ephem = meas.sat_ephemeris
   assert ephem is not None
-  if ephem.eph_type == EphemerisType.NAV:
+  if ephem.eph_type == EphemerisType.NAV or ephem.eph_type == EphemerisType.QCOM_POLY:
+    # TODO: no entry for qcom as EphemerisSourceType
     source_type = EphemerisSourceType.nav
     week, time_of_week = -1, -1
   else:
@@ -367,9 +368,14 @@ def main(sm=None, pm=None):
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
 
-      # verify message has valid source
+      # prefilter gnss messages
       if gnss_msg.which() in ["measurementReport", "drMeasurementReport"]:
         if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
+          continue
+
+        if getattr(gnss_msg, gnss_msg.which()).gpsWeek > 32768:
+          # gpsWeek 65535 is received rarely from quectel, this cannot be
+          # passed to GnssMeasurements's gpsWeek (Int16)
           continue
 
       msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
