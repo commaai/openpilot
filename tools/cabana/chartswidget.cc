@@ -46,7 +46,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   title_layout->addWidget(reset_zoom_btn);
 
-  remove_all_btn = new QPushButton(tr("✖"));
+  remove_all_btn = new QPushButton();
+  remove_all_btn->setIcon(QPixmap("./assets/remove_all.png"));
   remove_all_btn->setVisible(false);
   remove_all_btn->setToolTip(tr("Remove all charts"));
   remove_all_btn->setFixedSize(30, 30);
@@ -118,6 +119,14 @@ void ChartsWidget::removeAll() {
     chart->deleteLater();
   charts.clear();
   updateTitleBar();
+}
+
+bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
+  if (obj != this && event->type() == QEvent::Close) {
+    emit dock_btn->clicked();
+    return true;
+  }
+  return false;
 }
 
 // ChartWidget

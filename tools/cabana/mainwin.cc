@@ -37,6 +37,7 @@ MainWindow::MainWindow() : QWidget() {
 void MainWindow::dockCharts(bool dock) {
   charts_widget->setUpdatesEnabled(false);
   if (dock && floating_window) {
+    floating_window->removeEventFilter(charts_widget);
     r_layout->addWidget(charts_widget);
     floating_window->deleteLater();
     floating_window = nullptr;
@@ -44,7 +45,7 @@ void MainWindow::dockCharts(bool dock) {
     floating_window = new QWidget(nullptr);
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
-    floating_window->setWindowFlags(Qt::WindowTitleHint | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
+    floating_window->installEventFilter(charts_widget);
     floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
   }

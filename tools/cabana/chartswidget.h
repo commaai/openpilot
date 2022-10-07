@@ -64,6 +64,7 @@ signals:
 private:
   void updateState();
   void updateTitleBar();
+  bool eventFilter(QObject *obj, QEvent *event);
 
   QWidget *title_bar;
   QLabel *title_label;
