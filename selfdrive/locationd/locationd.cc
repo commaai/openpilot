@@ -60,7 +60,7 @@ Localizer::Localizer() {
   this->calib = Vector3d(0.0, 0.0, 0.0);
   this->device_from_calib = MatrixXdr::Identity(3, 3);
   this->calib_from_device = MatrixXdr::Identity(3, 3);
-  this->unix_time_from_mono_time = 0.0;
+  // this->unix_time_from_mono_time = 0.0;
 
   for (int i = 0; i < POSENET_STD_HIST_HALF * 2; i++) {
     this->posenet_stds.push_back(10.0);
