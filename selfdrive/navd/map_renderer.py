@@ -18,6 +18,7 @@ def get_ffi():
   ffi = FFI()
   ffi.cdef("""
 void* map_renderer_init(char *maps_host, char *token);
+void map_renderer_update_zoom(void *inst, float zoom);
 void map_renderer_update_position(void *inst, float lat, float lon, float bearing);
 void map_renderer_update_route(void *inst, char *polyline);
 void map_renderer_update(void *inst);
