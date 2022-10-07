@@ -103,6 +103,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
 
+    elif candidate == CAR.CRAFTER_MK2:
+      ret.mass = 2100 + STD_CARGO_KG
+      ret.wheelbase = 3.64  # SWB, LWB is 4.49, TBD how to detect difference
+
     elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
