@@ -59,7 +59,6 @@ int LSM6DS3_Gyro::init() {
   ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
 
 fail:
-  LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
   return ret;
 }
 
