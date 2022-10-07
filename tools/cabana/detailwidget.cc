@@ -243,6 +243,8 @@ EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
 
+  setFixedWidth(parent->width() * 0.9);
+
   connect(buttonBox, &QDialogButtonBox::accepted, this, &EditMessageDialog::save);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }

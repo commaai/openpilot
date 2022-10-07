@@ -54,7 +54,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   dock_btn = new QPushButton();
   dock_btn->setFixedSize(30, 30);
-  updateDockButton();
   title_layout->addWidget(dock_btn);
 
   main_layout->addWidget(title_bar, 0, Qt::AlignTop);
@@ -74,6 +73,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(charts_scroll);
 
+  updateTitleBar();
+
   QObject::connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
   QObject::connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
   QObject::connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
@@ -82,13 +83,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dock_btn, &QPushButton::clicked, [=]() {
     emit dock(!docking);
     docking = !docking;
-    updateDockButton();
+    updateTitleBar();
   });
 }
 
-void ChartsWidget::updateDockButton() {
+void ChartsWidget::updateTitleBar() {
   dock_btn->setText(docking ? "⬈" : "⬋");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
+  remove_all_btn->setVisible(!charts.empty());
+  reset_zoom_btn->setVisible(!charts.empty());
+  title_label->setText(tr("Charts (%1)").arg(charts.size()));
 }
 
 void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
@@ -98,29 +102,22 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
     charts_layout->insertWidget(0, chart);
     charts[char_name] = chart;
   }
-  remove_all_btn->setVisible(true);
-  reset_zoom_btn->setVisible(true);
-  title_label->setText(tr("Charts (%1)").arg(charts.size()));
+  updateTitleBar();
 }
 
 void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
   if (auto it = charts.find(id + sig_name); it != charts.end()) {
     it->second->deleteLater();
     charts.erase(it);
-    if (charts.empty()) {
-      remove_all_btn->setVisible(false);
-      reset_zoom_btn->setVisible(false);
-    }
   }
-  title_label->setText(tr("Charts (%1)").arg(charts.size()));
+  updateTitleBar();
 }
 
 void ChartsWidget::removeAll() {
   for (auto [_, chart] : charts)
     chart->deleteLater();
   charts.clear();
-  remove_all_btn->setVisible(false);
-  reset_zoom_btn->setVisible(false);
+  updateTitleBar();
 }
 
 // ChartWidget

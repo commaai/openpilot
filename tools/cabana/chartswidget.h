@@ -63,7 +63,7 @@ signals:
 
 private:
   void updateState();
-  void updateDockButton();
+  void updateTitleBar();
 
   QWidget *title_bar;
   QLabel *title_label;
