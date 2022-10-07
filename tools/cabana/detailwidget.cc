@@ -73,47 +73,48 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(add_sig_btn, &QPushButton::clicked, this, &DetailWidget::addSignal);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(parser, &Parser::updated, this, &DetailWidget::updateState);
+  QObject::connect(parser, &Parser::msgSelectionChanged, this, &DetailWidget::msgSelectionChanged);
 }
 
-void DetailWidget::setMsg(const CanData *c) {
-  can_data = c;
+void DetailWidget::msgSelectionChanged() {
   clearLayout(signal_edit_layout);
   edit_btn->setVisible(true);
 
-  if (auto msg = parser->getMsg(can_data->address)) {
+  if (auto msg = parser->currentMsg()) {
     name_label->setText(msg->name.c_str());
     add_sig_btn->setVisible(true);
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      signal_edit_layout->addWidget(new SignalEdit(i, can_data->id, msg->sigs[i], getColor(i)));
+      signal_edit_layout->addWidget(new SignalEdit(i, parser->currentMsgId(), msg->sigs[i], getColor(i)));
     }
   } else {
     name_label->setText(tr("untitled"));
     add_sig_btn->setVisible(false);
   }
 
-  binary_view->setMsg(can_data);
-  history_log->setMsg(can_data);
+  binary_view->msgSelectionChanged();
+  history_log->msgSelectionChanged();
 }
 
 void DetailWidget::updateState() {
-  if (!can_data) return;
+  if (parser->currentMsgId().isEmpty()) return;
 
-  time_label->setText(QString("time: %1").arg(can_data->ts, 0, 'f', 3));
-  binary_view->setData(can_data->dat);
+  auto msgs = parser->currentCanMsgs();
+  time_label->setText(QString("time: %1").arg(msgs.back().ts, 0, 'f', 3));
+  binary_view->setData(msgs.back().dat);
   history_log->updateState();
 }
 
 void DetailWidget::editMsg() {
-  EditMessageDialog dlg(can_data->id, this);
+  EditMessageDialog dlg(parser->currentMsgId(), this);
   if (dlg.exec()) {
-    setMsg(can_data);
+    msgSelectionChanged();
   }
 }
 
 void DetailWidget::addSignal() {
-  AddSignalDialog dlg(can_data->id, this);
+  AddSignalDialog dlg(parser->currentMsgId(), this);
   if (dlg.exec()) {
-    setMsg(can_data);
+    msgSelectionChanged();
   }
 }
 
@@ -131,9 +132,9 @@ BinaryView::BinaryView(QWidget *parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
-void BinaryView::setMsg(const CanData *can_data) {
-  const Msg *msg = parser->getMsg(can_data->address);
-  int row_count = msg ? msg->size : can_data->dat.size();
+void BinaryView::msgSelectionChanged() {
+  const Msg *msg = parser->currentMsg();
+  int row_count = msg ? msg->size : parser->canMsgs(parser->currentMsgId()).back().dat.size();
 
   table->setRowCount(row_count);
   table->setColumnCount(9);
@@ -188,17 +189,24 @@ void BinaryView::setData(const QByteArray &binary) {
 HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   table = new QTableWidget(this);
+  table->horizontalHeader()->setStretchLastSection(true);
+  table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  table->setFocusPolicy(Qt::NoFocus);
+  table->setSelectionMode(QAbstractItemView::NoSelection);
+  table->setSelectionMode(QAbstractItemView::NoSelection);
+  table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
+  table->verticalHeader()->setStyleSheet("QHeaderView::section {padding-left: 5px; padding-right: 5px;}");
   main_layout->addWidget(table);
 }
 
-void HistoryLog::setMsg(const CanData *data) {
-  previous_data_ts = 0.0;
+void HistoryLog::msgSelectionChanged() {
+  previous_count = 0;
   table->clear();
-  msg = parser->getMsg(data->id);
+  const auto msg = parser->currentMsg();
   if (msg && !msg->sigs.empty()) {
     table->setColumnCount(msg->sigs.size());
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      auto item = new QTableWidgetItem(QString("%1 %2").arg(msg->sigs[i].name.c_str()).arg(i + 1));
+      auto item = new QTableWidgetItem(msg->sigs[i].name.c_str());
       item->setBackground(QColor(getColor(i)));
       table->setHorizontalHeaderItem(i, item);
     }
@@ -211,8 +219,10 @@ void HistoryLog::setMsg(const CanData *data) {
 
 void HistoryLog::updateState() {
   auto model = table->model();
-  for (const auto &can_data : parser->history_log) {
-    if (can_data.ts <= previous_data_ts) break;
+  const auto &can_msgs = parser->canMsgs(parser->currentMsgId());
+  const auto &msg = parser->currentMsg();
+  for (const auto &can_data : can_msgs) {
+    if (can_data.count <= previous_count) continue;
 
     table->insertRow(0);
     table->setVerticalHeaderItem(0, new QTableWidgetItem(QString::number(can_data.ts, 'f', 2)));
@@ -229,8 +239,9 @@ void HistoryLog::updateState() {
     } else {
       model->setData(model->index(0, 0), toHex(can_data.dat));
     }
-    previous_data_ts = can_data.ts;
+    previous_count = can_data.count;
   }
+
   if (table->rowCount() > 100) {
     table->setRowCount(100);
   }
@@ -251,7 +262,7 @@ EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id
   form_layout->addRow(tr("Name"), name_edit);
 
   size_spin = new QSpinBox(this);
-  size_spin->setValue(msg ? msg->size : parser->can_msgs[id].dat.size());
+  size_spin->setValue(msg ? msg->size : parser->canMsgs(id).back().dat.size());
   form_layout->addRow(tr("Size"), size_spin);
 
   main_layout->addLayout(form_layout);

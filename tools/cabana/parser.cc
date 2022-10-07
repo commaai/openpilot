@@ -47,15 +47,11 @@ void Parser::process(std::vector<CanData> msgs) {
   static double prev_update_ts = 0;
 
   for (const auto &can_data : msgs) {
-    can_msgs[can_data.id] = can_data;
-    ++counters[can_data.id];
-
-    if (can_data.id == current_msg_id) {
-      while (history_log.size() >= LOG_SIZE) {
-        history_log.pop_back();
-      }
-      history_log.push_front(can_data);
+    auto &m = can_msgs[can_data.id];
+    while (m.size() >= LOG_SIZE) {
+      m.pop_front();
     }
+    m.push_back(can_data);
   }
   double now = millis_since_boot();
   if ((now - prev_update_ts) > 1000.0 / FPS) {
@@ -86,6 +82,7 @@ bool Parser::eventFilter(const Event *event) {
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
       data.ts = current_sec;
+      data.count = ++counters[data.id];
     }
     emit received(msgs_buf);
   }
@@ -157,7 +154,7 @@ void Parser::resetRange() {
 
 void Parser::setCurrentMsg(const QString &id) {
   current_msg_id = id;
-  history_log.clear();
+  emit msgSelectionChanged();
 }
 
 // helper functions

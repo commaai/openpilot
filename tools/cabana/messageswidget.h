@@ -9,16 +9,13 @@
 class MessagesWidget : public QWidget {
   Q_OBJECT
 
- public:
+public:
   MessagesWidget(QWidget *parent);
 
- public slots:
+public slots:
   void updateState();
 
- signals:
-  void msgChanged(const CanData *id);
-
- protected:
+protected:
   QLineEdit *filter;
   QTableWidget *table_widget;
 };

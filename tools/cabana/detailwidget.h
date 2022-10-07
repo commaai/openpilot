@@ -17,12 +17,11 @@ class HistoryLog : public QWidget {
 
 public:
   HistoryLog(QWidget *parent);
-  void setMsg(const CanData *data);
+  void msgSelectionChanged();
   void updateState();
 
 private:
-  const Msg *msg = nullptr;
-  double previous_data_ts = 0;
+  uint64_t previous_count = 0;
   QTableWidget *table;
 };
 
@@ -31,7 +30,7 @@ class BinaryView : public QWidget {
 
 public:
   BinaryView(QWidget *parent);
-  void setMsg(const CanData *can_data);
+  void msgSelectionChanged();
   void setData(const QByteArray &binary);
 
   QTableWidget *table;
@@ -56,14 +55,13 @@ class DetailWidget : public QWidget {
 
 public:
   DetailWidget(QWidget *parent);
-  void setMsg(const CanData *c);
+  void msgSelectionChanged();
 
 private:
   void updateState();
   void addSignal();
   void editMsg();
 
-  const CanData *can_data = nullptr;
   QLabel *name_label, *time_label;
   QPushButton *edit_btn, *add_sig_btn;
   QVBoxLayout *signal_edit_layout;

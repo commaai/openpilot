@@ -30,7 +30,6 @@ MainWindow::MainWindow() : QWidget() {
 
   h_layout->addWidget(right_container);
 
-  QObject::connect(messages_widget, &MessagesWidget::msgChanged, detail_widget, &DetailWidget::setMsg);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
 }
 

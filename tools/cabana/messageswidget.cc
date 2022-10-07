@@ -45,9 +45,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     parser->openDBC(dbc);
   });
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    const CanData *c = &(parser->can_msgs[table_widget->selectedItems()[1]->text()]);
-    parser->setCurrentMsg(c->id);
-    emit msgChanged(c);
+    parser->setCurrentMsg(table_widget->selectedItems()[1]->text());
   });
 
   // For test purpose
@@ -69,7 +67,9 @@ void MessagesWidget::updateState() {
   int i = 0;
   QString name, untitled = tr("untitled");
   const QString filter_str = filter->text();
-  for (const auto &[_, c] : parser->can_msgs) {
+  for (const auto &[_, msgs] : parser->can_msgs) {
+    const auto &c = msgs.back();
+
     if (auto msg = parser->getMsg(c.address)) {
       name = msg->name.c_str();
     } else {
@@ -82,7 +82,7 @@ void MessagesWidget::updateState() {
 
     getTableItem(i, 0)->setText(name);
     getTableItem(i, 1)->setText(c.id);
-    getTableItem(i, 2)->setText(QString::number(parser->counters[c.id]));
+    getTableItem(i, 2)->setText(QString::number(c.count));
     getTableItem(i, 3)->setText(toHex(c.dat));
     table_widget->showRow(i);
     i++;
