@@ -11,6 +11,7 @@ import random
 
 from common.basedir import BASEDIR
 from common.params import Params
+from system.hardware import AGNOS
 
 
 class TestUpdated(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestUpdated(unittest.TestCase):
   def setUp(self):
     self.updated_proc = None
 
-    self.tmp_dir = tempfile.TemporaryDirectory()
+    self.tmp_dir = tempfile.TemporaryDirectory(dir=os.path.abspath(os.path.join(BASEDIR, "..")) if AGNOS else None)
     org_dir = os.path.join(self.tmp_dir.name, "commaai")
 
     self.basedir = os.path.join(org_dir, "openpilot")
