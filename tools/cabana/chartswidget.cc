@@ -236,6 +236,7 @@ void ChartWidget::updateSeries() {
   series->replace(vals);
   auto [begin, end] = parser->range();
   chart_view->chart()->axisX()->setRange(begin, end);
+  if (max_y == 0) max_y = 1.0;
   chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
 }
 
