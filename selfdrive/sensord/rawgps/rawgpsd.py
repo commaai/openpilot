@@ -88,7 +88,7 @@ def try_setup_logs(diag, log_types):
 def mmcli(cmd: str) -> None:
   for _ in range(5):
     try:
-      subprocess.check_call(f"mmcli -m 0 {cmd}", shell=True)
+      subprocess.check_call(f"mmcli -m any --timeout 30 {cmd}", shell=True)
       break
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
@@ -151,7 +151,7 @@ def main() -> NoReturn:
   # wait for ModemManager to come up
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call("mmcli -m 0 --location-status", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    ret = subprocess.call("mmcli -m any --timeout 10 --location-status", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     if ret == 0:
       break
     time.sleep(0.1)
