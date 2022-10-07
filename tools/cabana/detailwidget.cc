@@ -41,7 +41,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   // binary view
   binary_view = new BinaryView(this);
-  main_layout->addWidget(binary_view);
+  main_layout->addWidget(binary_view, 0, Qt::AlignTop);
 
   // signal header
   signals_header = new QWidget(this);
@@ -78,6 +78,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void DetailWidget::updateDBCMsg(const QString &message_id) {
+  setUpdatesEnabled(false);
   msg_id = message_id;
   clearLayout(signal_edit_layout);
 
@@ -95,6 +96,7 @@ void DetailWidget::updateDBCMsg(const QString &message_id) {
 
   binary_view->updateDBCMsg(msg_id);
   history_log->updateDBCMsg(msg_id);
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState() {
@@ -190,6 +192,7 @@ void BinaryView::setData(const QByteArray &binary) {
 
 HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
   table = new QTableWidget(this);
   table->horizontalHeader()->setStretchLastSection(true);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
