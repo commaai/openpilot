@@ -2,7 +2,7 @@
 import capnp
 from dataclasses import dataclass, field
 import struct
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import panda.python.uds as uds
 
@@ -51,9 +51,15 @@ class StdQueries:
 
 
 @dataclass
+class QueryOption:
+  # Delay before sending next query, adds to IsoTpParallelQuery timeout
+  delay: float = 0
+
+
+@dataclass
 class Request:
-  request: List[bytes]
-  response: List[bytes]
+  request: List[Union[bytes, QueryOption]]
+  response: List[Optional[bytes]]
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1

@@ -7,7 +7,7 @@ from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, QueryOption, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -281,13 +281,14 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # TODO: might want to just have a parameter for FwQueryConfig to add delay/spacing between requests
     Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.2), HYUNDAI_VERSION_REQUEST_LONG],
+      [StdQueries.TESTER_PRESENT_RESPONSE, None,                   HYUNDAI_VERSION_RESPONSE],
     ),
     Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.2), HYUNDAI_VERSION_REQUEST_MULTI],
+      [StdQueries.TESTER_PRESENT_RESPONSE, None,                   HYUNDAI_VERSION_RESPONSE],
     ),
   ],
 )
