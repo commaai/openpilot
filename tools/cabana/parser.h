@@ -40,6 +40,7 @@ public:
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
   void resetRange();
+  void setCurrentMsg(const QString &id);
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
@@ -62,6 +63,7 @@ public:
   Replay *replay = nullptr;
   QHash<QString, uint64_t> counters;
   std::map<QString, CanData> can_msgs;
+  QList<CanData> history_log;
 
 protected:
   void process(std::vector<CanData> can);

@@ -194,48 +194,44 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
 void HistoryLog::setMsg(const CanData *data) {
   previous_data_ts = 0.0;
   table->clear();
-  this->can_data = data;
-  msg = parser->getMsg(can_data->id);
+  msg = parser->getMsg(data->id);
   if (msg) {
-    table->setColumnCount(msg->sigs.size() + 1);
+    table->setColumnCount(msg->sigs.size());
+    for (int i = 0; i < msg->sigs.size(); ++i) {
+      auto item = new QTableWidgetItem(QString("%1 %2").arg(msg->sigs[i].name.c_str()).arg(i + 1));
+      item->setBackground(QColor(getColor(i)));
+      table->setHorizontalHeaderItem(i, item);
+    }
   } else {
+    auto item = new QTableWidgetItem("data");
+    table->setHorizontalHeaderItem(0, item);
     table->setColumnCount(1);
   }
 }
 
 void HistoryLog::updateState() {
-  auto getTableItem = [=](int row, int col) -> QTableWidgetItem * {
-    auto item = table->item(row, col);
-    if (!item) {
-      item = new QTableWidgetItem();
-      item->setFlags(item->flags() ^ Qt::ItemIsEditable);
-      table->setItem(row, col, item);
-    }
-    if (msg)
-      item->setBackground(QColor(getColor(col)));
-    return item;
-  };
+  auto model = table->model();
+  for (const auto &can_data : parser->history_log) {
+    if (can_data.ts <= previous_data_ts) break;
 
-  if (can_data->ts == previous_data_ts) return;
-
-  table->insertRow(0);
-  table->setVerticalHeaderItem(0, new QTableWidgetItem(QString::number(can_data->ts)));
-  // getTableItem(0, 0)->setText(QString::number(can_data->ts));
-  if (msg) {
-    int i = 0;
-    for (auto &sig : msg->sigs) {
-      int64_t val = get_raw_value((uint8_t *)can_data->dat.begin(), can_data->dat.size(), sig);
-      if (sig.is_signed) {
-        val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+    table->insertRow(0);
+    table->setVerticalHeaderItem(0, new QTableWidgetItem(QString::number(can_data.ts)));
+    if (msg && !msg->sigs.empty()) {
+      int i = 0;
+      for (auto &sig : msg->sigs) {
+        int64_t val = get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), sig);
+        if (sig.is_signed) {
+          val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+        }
+        double value = val * sig.factor + sig.offset;
+        model->setData(model->index(0, i), QString::number(value));
+        ++i;
       }
-      double value = val * sig.factor + sig.offset;
-      getTableItem(0, i)->setText(QString::number(value));
-      ++i;
+    } else {
+      model->setData(model->index(0, 0), toHex(can_data.dat));
     }
-  } else {
-    getTableItem(0, 0)->setText(toHex(can_data->dat));
+    previous_data_ts = can_data.ts;
   }
-  previous_data_ts = can_data->ts;
   if (table->rowCount() > 100) {
     table->setRowCount(100);
   }

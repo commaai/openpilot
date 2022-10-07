@@ -21,7 +21,6 @@ public:
   void updateState();
 
 private:
-  const CanData *can_data = nullptr;
   const Msg *msg = nullptr;
   double previous_data_ts = 0;
   QTableWidget *table;
