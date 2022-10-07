@@ -370,7 +370,7 @@ def main(sm=None, pm=None):
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
 
-      # prefilter gnss messages
+      # TODO: Understand and use remaining unknown constellations
       if gnss_msg.which() == "drMeasurementReport":
         if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
           continue
