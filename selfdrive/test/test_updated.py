@@ -18,6 +18,7 @@ class TestUpdated(unittest.TestCase):
 
   def setUp(self):
     self.updated_proc = None
+    os.environ["GIT_LFS_SKIP_SMUDGE"] = "1"
 
     self.tmp_dir = tempfile.TemporaryDirectory(dir=os.path.abspath(os.path.join(BASEDIR, "..")) if AGNOS else None)
     org_dir = os.path.join(self.tmp_dir.name, "commaai")
