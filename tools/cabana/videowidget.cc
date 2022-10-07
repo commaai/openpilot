@@ -99,7 +99,6 @@ void VideoWidget::updateState() {
 }
 
 // Slider
-// TODO: show timeline bar like what replay did.
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   fetch_timeline_timer = new QTimer(this);
   fetch_timeline_timer->setInterval(2000);
