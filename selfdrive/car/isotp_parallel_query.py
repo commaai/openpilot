@@ -80,9 +80,11 @@ class IsoTpParallelQuery:
     msgs = {}
     request_counter = {}
     request_done = {}
+    delays = {}
     for tx_addr, rx_addr in self.msg_addrs.items():
       msgs[tx_addr] = self._create_isotp_msg(*tx_addr, rx_addr)
       request_counter[tx_addr] = 0
+      delays[tx_addr] = None
       request_done[tx_addr] = False
 
     # Send first request to functional addrs, subsequent responses are handled on physical addrs
@@ -114,16 +116,33 @@ class IsoTpParallelQuery:
         if updated:
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
+        counter = request_counter[tx_addr]
+
+        can_send_now_from_delay = delays[tx_addr] is not None and time.monotonic() >= delays[tx_addr]
+        if can_send_now_from_delay:
+          delays[tx_addr] = None
+          msg.send(self.request[counter + 1])
+          request_counter[tx_addr] += 1
+          assert not dat, dat
+          continue
+
         if not dat:
           continue
 
-        counter = request_counter[tx_addr]
         expected_response = self.response[counter]
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
           if counter + 1 < len(self.request):
-            msg.send(self.request[counter + 1])
+            if not isinstance(self.request[counter + 1], bytes):
+              query_option = self.request[counter + 1]
+              delays[tx_addr] = time.monotonic() + query_option.delay
+              # TODO: this correct?
+              print(f'Extending timeout for {tx_addr} by {timeout + query_option.delay=}s')
+              response_timeouts[tx_addr] = time.monotonic() + timeout + query_option.delay
+            else:
+              msg.send(self.request[counter + 1])
+
             request_counter[tx_addr] += 1
           else:
             results[tx_addr] = dat[len(expected_response):]

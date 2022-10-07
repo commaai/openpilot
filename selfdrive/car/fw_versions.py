@@ -260,7 +260,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               f.fwVersion = version
               f.address = tx_addr
               f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
-              f.request = r.request
+              f.request = [b for b in r.request if isinstance(b, bytes)]
               f.brand = brand
               f.bus = r.bus
 
