@@ -49,8 +49,8 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   signals_header_layout->addWidget(new QLabel(tr("Signals")));
   signals_header_layout->addStretch();
   QPushButton *add_sig_btn = new QPushButton(tr("Add signal"), this);
-  add_sig_btn->setVisible(false);
   signals_header_layout->addWidget(add_sig_btn);
+  signals_header->setVisible(false);
   main_layout->addWidget(signals_header);
 
   // scroll area
@@ -165,7 +165,7 @@ void BinaryView::updateDBCMsg(const QString &message_id) {
     }
   }
 
-  setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
+  table->setFixedHeight(table->rowHeight(0) * table->rowCount() + table->horizontalHeader()->height() + 2);
 }
 
 void BinaryView::setData(const QByteArray &binary) {
@@ -272,7 +272,8 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, QWidget *parent) : m
 }
 
 void EditMessageDialog::save() {
-  if (size_spin->value() <= 0 || name_edit->text().isEmpty()) return;
+  if (size_spin->value() <= 0 || name_edit->text().isEmpty() || name_edit->text() == tr("untitled"))
+    return;
 
   if (auto msg = const_cast<Msg *>(parser->getDBCMsg(msg_id))) {
     msg->name = name_edit->text().toStdString();

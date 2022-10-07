@@ -40,7 +40,6 @@ public:
   void seekTo(double ts);
   const Signal *getSig(const QString &id, const QString &sig_name) const;
   void setRange(double min, double max);
-  void setCurrentMsg(const QString &id);
   void resetRange();
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double currentSec() const { return current_sec; }
