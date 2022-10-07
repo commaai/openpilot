@@ -108,11 +108,11 @@ class Laikad:
     return self.last_pos_fix
 
   def is_good_report(self, gnss_msg):
-    if gnss_msg.which == 'drMeasurementReport' and self.use_qcom:
+    if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
       constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
       # TODO support GLONASS
       return constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
-    elif gnss_msg.which == 'measurementReport' and not self.use_qcom:
+    elif gnss_msg.which() == 'measurementReport' and not self.use_qcom:
       return True
     else:
       return False
@@ -132,9 +132,9 @@ class Laikad:
 
   def is_ephemeris(self, gnss_msg):
     if self.use_qcom:
-      return gnss_msg.which == 'drSvPoly'
+      return gnss_msg.which() == 'drSvPoly'
     else:
-      return gnss_msg.which == 'ephemeris'
+      return gnss_msg.which() == 'ephemeris'
 
   def read_ephemeris(self, gnss_msg):
     # TODO this only works on GLONASS
@@ -195,7 +195,7 @@ class Laikad:
     elif self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
 
-    #elif gnss_msg.which == 'ionoData':
+    #elif gnss_msg.which() == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
@@ -373,7 +373,7 @@ def main(sm=None, pm=None):
         if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
           continue
 
-        if getattr(gnss_msg, gnss_msg.which()).gpsWeek > 32768:
+        if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
           # gpsWeek 65535 is received rarely from quectel, this cannot be
           # passed to GnssMeasurements's gpsWeek (Int16)
           continue
