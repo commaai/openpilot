@@ -1,11 +1,19 @@
 from selfdrive.car import make_can_msg
 
+
 def create_buttons(packer, bus, idx, button):
   values = {
     "ACCButtons": button,
     "RollingCounter": idx,
   }
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
+
+
+def create_pscm_status(packer, pscm_status):
+  values = pscm_status.copy()
+  values["LKASteeringCmdActive"] = 0
+  values["LKASteeringCmd"] = 0
+  return packer.make_can_msg("PSCMStatus", 2, values)
 
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
