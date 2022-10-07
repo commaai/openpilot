@@ -68,6 +68,7 @@ private:
 
   QWidget *title_bar;
   QLabel *title_label;
+  QLabel *range_label;
   bool docking = true;
   QPushButton *dock_btn;
   QPushButton *reset_zoom_btn;

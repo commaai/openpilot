@@ -35,10 +35,14 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // title bar
   title_bar = new QWidget(this);
   QHBoxLayout *title_layout = new QHBoxLayout(title_bar);
+  title_layout->setContentsMargins(0, 0, 0, 0);
   title_label = new QLabel(tr("Charts"));
 
   title_layout->addWidget(title_label);
   title_layout->addStretch();
+
+  range_label = new QLabel();
+  title_layout->addWidget(range_label);
 
   reset_zoom_btn = new QPushButton("⟲", this);
   reset_zoom_btn->setVisible(false);
@@ -79,9 +83,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
   QObject::connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
   QObject::connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
+  QObject::connect(parser, &Parser::rangeChanged, [this]() { updateTitleBar(); });
   QObject::connect(reset_zoom_btn, &QPushButton::clicked, parser, &Parser::resetRange);
   QObject::connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
-  QObject::connect(dock_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(dock_btn, &QPushButton::clicked, [this]() {
     emit dock(!docking);
     docking = !docking;
     updateTitleBar();
@@ -89,11 +94,29 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void ChartsWidget::updateTitleBar() {
+  if (!charts.size()) {
+    title_bar->setVisible(false);
+    return;
+  }
+
+  title_label->setText(tr("Charts (%1)").arg(charts.size()));
+
+  // show select range
+  if (parser->isZoomed()) {
+    auto [min, max] = parser->range();
+    range_label->setText(tr("%1 - %2").arg(min, 0, 'f', 2).arg(max, 0, 'f', 2));
+    range_label->setVisible(true);
+    reset_zoom_btn->setEnabled(true);
+  } else {
+    reset_zoom_btn->setEnabled(false);
+    range_label->setVisible(false);
+  }
+
   dock_btn->setText(docking ? "⬈" : "⬋");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
   remove_all_btn->setVisible(!charts.empty());
   reset_zoom_btn->setVisible(!charts.empty());
-  title_label->setText(tr("Charts (%1)").arg(charts.size()));
+  title_bar->setVisible(true);
 }
 
 void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
@@ -169,7 +192,6 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->setTitleFont(font);
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
-  QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, parser, &Parser::setRange);
 
   chart_view = new QChartView(chart);
   chart_view->setFixedHeight(300);
@@ -193,6 +215,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   QObject::connect(parser, &Parser::updated, this, &ChartWidget::updateState);
   QObject::connect(parser, &Parser::rangeChanged, this, &ChartWidget::rangeChanged);
   QObject::connect(parser, &Parser::eventsMerged, this, &ChartWidget::updateSeries);
+  QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, parser, &Parser::setRange);
 
   updateSeries();
 }
@@ -245,7 +268,6 @@ void ChartWidget::updateSeries() {
   series->replace(vals);
   auto [begin, end] = parser->range();
   chart_view->chart()->axisX()->setRange(begin, end);
-  if (max_y == 0) max_y = 1.0;
   chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
 }
 
