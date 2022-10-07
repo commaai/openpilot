@@ -40,7 +40,6 @@ public:
   const Signal *getSig(const QString &id, const QString &sig_name);
   void setRange(double min, double max);
   void resetRange();
-  void setCurrentMsg(const QString &id);
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
@@ -63,7 +62,6 @@ public:
   Replay *replay = nullptr;
   QHash<QString, uint64_t> counters;
   std::map<QString, CanData> can_msgs;
-  QList<CanData> history_log;
 
 protected:
   void process(std::vector<CanData> can);
@@ -86,6 +84,7 @@ protected:
 Q_DECLARE_METATYPE(std::vector<CanData>);
 
 // TODO: Add helper function in dbc.h
+int64_t get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 inline QString toHex(const QByteArray &dat) {

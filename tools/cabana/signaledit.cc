@@ -75,7 +75,7 @@ std::optional<Signal> SignalForm::getSignal() {
 
 // SignalEdit
 
-SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &color, QWidget *parent) : id(id), name_(sig.name.c_str()), QWidget(parent) {
+SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent) : id(id), name_(sig.name.c_str()), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -85,7 +85,7 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &colo
   icon->setStyleSheet("font-weight:bold");
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
-  title->setText(sig.name.c_str());
+  title->setText(QString("%1. %2").arg(index + 1).arg(sig.name.c_str()));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color));
   title_layout->addWidget(title);
   title_layout->addStretch();

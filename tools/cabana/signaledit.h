@@ -27,7 +27,7 @@ class SignalEdit : public QWidget {
   Q_OBJECT
 
 public:
-  SignalEdit(const QString &id, const Signal &sig, const QString &color, QWidget *parent = nullptr);
+  SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent = nullptr);
   void save();
 
 protected:

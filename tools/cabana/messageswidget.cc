@@ -46,7 +46,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
     const CanData *c = &(parser->can_msgs[table_widget->selectedItems()[1]->text()]);
-    parser->setCurrentMsg(c->id);
     emit msgChanged(c);
   });
 

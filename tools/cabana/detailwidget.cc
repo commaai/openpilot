@@ -84,7 +84,7 @@ void DetailWidget::setMsg(const CanData *c) {
     name_label->setText(msg->name.c_str());
     add_sig_btn->setVisible(true);
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      signal_edit_layout->addWidget(new SignalEdit(can_data->id, msg->sigs[i], getColor(i)));
+      signal_edit_layout->addWidget(new SignalEdit(i, can_data->id, msg->sigs[i], getColor(i)));
     }
   } else {
     name_label->setText(tr("untitled"));
@@ -92,7 +92,7 @@ void DetailWidget::setMsg(const CanData *c) {
   }
 
   binary_view->setMsg(can_data);
-  history_log->clear();
+  history_log->setMsg(can_data);
 }
 
 void DetailWidget::updateState() {
@@ -187,37 +187,58 @@ void BinaryView::setData(const QByteArray &binary) {
 
 HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QLabel *title = new QLabel("TIME         BYTES");
-  main_layout->addWidget(title);
+  table = new QTableWidget(this);
+  main_layout->addWidget(table);
+}
 
-  QVBoxLayout *message_layout = new QVBoxLayout();
-  for (int i = 0; i < std::size(labels); ++i) {
-    labels[i] = new QLabel();
-    labels[i]->setVisible(false);
-    message_layout->addWidget(labels[i]);
+void HistoryLog::setMsg(const CanData *data) {
+  previous_data_ts = 0.0;
+  table->clear();
+  this->can_data = data;
+  msg = parser->getMsg(can_data->id);
+  if (msg) {
+    table->setColumnCount(msg->sigs.size() + 1);
+  } else {
+    table->setColumnCount(1);
   }
-  main_layout->addLayout(message_layout);
-  main_layout->addStretch();
 }
 
 void HistoryLog::updateState() {
-  int i = 0;
-  for (; i < parser->history_log.size(); ++i) {
-    const auto &c = parser->history_log[i];
-    auto label = labels[i];
-    label->setVisible(true);
-    label->setText(QString("%1         %2").arg(c.ts, 0, 'f', 3).arg(toHex(c.dat)));
-  }
+  auto getTableItem = [=](int row, int col) -> QTableWidgetItem * {
+    auto item = table->item(row, col);
+    if (!item) {
+      item = new QTableWidgetItem();
+      item->setFlags(item->flags() ^ Qt::ItemIsEditable);
+      table->setItem(row, col, item);
+    }
+    if (msg)
+      item->setBackground(QColor(getColor(col)));
+    return item;
+  };
 
-  for (; i < std::size(labels); ++i) {
-    labels[i]->setVisible(false);
-  }
-}
+  if (can_data->ts == previous_data_ts) return;
 
-void HistoryLog::clear() {
-  setUpdatesEnabled(false);
-  for (auto l : labels) l->setVisible(false);
-  setUpdatesEnabled(true);
+  table->insertRow(0);
+  table->setVerticalHeaderItem(0, new QTableWidgetItem(QString::number(can_data->ts)));
+  // getTableItem(0, 0)->setText(QString::number(can_data->ts));
+  if (msg) {
+    int i = 0;
+    for (auto &sig : msg->sigs) {
+      int64_t val = get_raw_value((uint8_t *)can_data->dat.begin(), can_data->dat.size(), sig);
+      if (sig.is_signed) {
+        val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+      }
+      double value = val * sig.factor + sig.offset;
+      getTableItem(0, i)->setText(QString::number(value));
+      ++i;
+    }
+  } else {
+    getTableItem(0, 0)->setText(toHex(can_data->dat));
+  }
+  previous_data_ts = can_data->ts;
+  if (table->rowCount() > 100) {
+    table->setRowCount(100);
+  }
 }
 
 // EditMessageDialog

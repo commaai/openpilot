@@ -17,11 +17,14 @@ class HistoryLog : public QWidget {
 
 public:
   HistoryLog(QWidget *parent);
-  void clear();
+  void setMsg(const CanData *data);
   void updateState();
 
 private:
-  QLabel *labels[LOG_SIZE] = {};
+  const CanData *can_data = nullptr;
+  const Msg *msg = nullptr;
+  double previous_data_ts = 0;
+  QTableWidget *table;
 };
 
 class BinaryView : public QWidget {
