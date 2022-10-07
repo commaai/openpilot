@@ -144,7 +144,7 @@ TEST_CASE("util::create_directories") {
   }
 }
 
-TEST_CASE("util::remove_all_in_dir") {
+TEST_CASE("util::remove_files_in_dir") {
   std::string tmp_dir = "/tmp/test_remove_all_in_dir";
   system("rm /tmp/test_remove_all_in_dir -rf");
   REQUIRE(util::create_directories(tmp_dir, 0755));
