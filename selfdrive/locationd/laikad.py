@@ -369,7 +369,7 @@ def main(sm=None, pm=None):
       gnss_msg = sm[raw_gnss_socket]
 
       # prefilter gnss messages
-      if gnss_msg.which() in ["measurementReport", "drMeasurementReport"]:
+      if gnss_msg.which() == "drMeasurementReport":
         if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
           continue
 
