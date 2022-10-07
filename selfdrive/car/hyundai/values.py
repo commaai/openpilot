@@ -283,11 +283,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # TODO: might want to just have a parameter for FwQueryConfig to add delay/spacing between requests
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.2), HYUNDAI_VERSION_REQUEST_LONG],
+      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.3), HYUNDAI_VERSION_REQUEST_LONG],
       [StdQueries.TESTER_PRESENT_RESPONSE, None,                   HYUNDAI_VERSION_RESPONSE],
     ),
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.2), HYUNDAI_VERSION_REQUEST_MULTI],
+      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.3), HYUNDAI_VERSION_REQUEST_MULTI],
       [StdQueries.TESTER_PRESENT_RESPONSE, None,                   HYUNDAI_VERSION_RESPONSE],
     ),
   ],
