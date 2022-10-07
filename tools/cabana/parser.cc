@@ -6,27 +6,25 @@
 
 Parser *parser = nullptr;
 
+static bool event_filter(const Event *e, void *opaque) {
+  Parser *p = (Parser*)opaque;
+  return p->eventFilter(e);
+}
+
 Parser::Parser(QObject *parent) : QObject(parent) {
   parser = this;
 
   qRegisterMetaType<std::vector<CanData>>();
   QObject::connect(this, &Parser::received, this, &Parser::process, Qt::QueuedConnection);
-
-  thread = new QThread();
-  connect(thread, &QThread::started, [=]() { recvThread(); });
-  QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-  thread->start();
 }
 
 Parser::~Parser() {
   replay->stop();
-  exit = true;
-  thread->quit();
-  thread->wait();
 }
 
 bool Parser::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
+  replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &Parser::segmentsMerged);
   if (replay->load()) {
     replay->start();
@@ -47,9 +45,9 @@ void Parser::openDBC(const QString &name) {
 
 void Parser::process(std::vector<CanData> msgs) {
   static double prev_update_ts = 0;
+
   for (const auto &can_data : msgs) {
     can_msgs[can_data.id] = can_data;
-    current_sec = can_data.ts;
     ++counters[can_data.id];
 
     if (can_data.id == current_msg_id) {
@@ -59,46 +57,45 @@ void Parser::process(std::vector<CanData> msgs) {
       history_log.push_front(can_data);
     }
   }
-  double current_ts = millis_since_boot();
-  if ((current_ts - prev_update_ts) > 1000.0 / FPS) {
-    prev_update_ts = current_ts;
+  double now = millis_since_boot();
+  if ((now - prev_update_ts) > 1000.0 / FPS) {
+    prev_update_ts = now;
     emit updated();
   }
 
   if (current_sec < begin_sec || current_sec > end_sec) {
     // loop replay in selected range.
-    replay->seekTo(begin_sec, false);
+    seekTo(begin_sec);
   }
 }
 
-void Parser::recvThread() {
-  AlignedBuffer aligned_buf;
-  std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "can"));
-  subscriber->setTimeout(100);
+bool Parser::eventFilter(const Event *event) {
+  // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
+  if (!seeking && event->which == cereal::Event::Which::CAN) {
+    current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
 
-  std::vector<CanData> can;
-  while (!exit) {
-    std::unique_ptr<Message> msg(subscriber->receive());
-    if (!msg) continue;
+    auto can = event->event.getCan();
+    msgs_buf.clear();
+    msgs_buf.reserve(can.size());
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    can.clear();
-    can.reserve(event.getCan().size());
-    for (const auto &c : event.getCan()) {
-      CanData &data = can.emplace_back();
+    for (const auto &c : can) {
+      CanData &data = msgs_buf.emplace_back();
       data.address = c.getAddress();
       data.bus_time = c.getBusTime();
       data.source = c.getSrc();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
-      data.hex_dat = data.dat.toHex(' ').toUpper();
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
-      data.ts = (event.getLogMonoTime() - replay->routeStartTime()) / (double)1e9;  // seconds
+      data.ts = current_sec;
     }
-    emit received(can);
+    emit received(msgs_buf);
   }
+  return true;
+}
+
+void Parser::seekTo(double ts) {
+  seeking = true;
+  replay->seekTo(ts, false);
+  seeking = false;
 }
 
 void Parser::addNewMsg(const Msg &msg) {
