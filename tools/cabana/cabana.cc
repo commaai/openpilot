@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QStyleFactory>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
@@ -27,7 +26,6 @@ int main(int argc, char *argv[]) {
   if (!p.loadRoute(route, cmd_parser.value("data_dir"), true)) {
     return 0;
   }
-  app.setStyle(QStyleFactory::create("Fusion"));
   MainWindow w;
   w.showMaximized();
   return app.exec();

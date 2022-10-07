@@ -12,7 +12,7 @@
 #include "tools/replay/replay.h"
 
 const int FPS = 20;
-const static int LOG_SIZE = 25;
+const static int LOG_SIZE = 50;
 
 struct CanData {
   QString id;
