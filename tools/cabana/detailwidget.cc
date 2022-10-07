@@ -78,7 +78,6 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void DetailWidget::updateDBCMsg(const QString &message_id) {
-  setUpdatesEnabled(false);
   msg_id = message_id;
   clearLayout(signal_edit_layout);
 
@@ -96,7 +95,6 @@ void DetailWidget::updateDBCMsg(const QString &message_id) {
 
   binary_view->updateDBCMsg(msg_id);
   history_log->updateDBCMsg(msg_id);
-  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState() {
