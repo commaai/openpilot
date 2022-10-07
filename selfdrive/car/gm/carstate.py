@@ -124,7 +124,7 @@ class CarState(CarStateBase):
       ("HandsOffSWDetectionMode", "PSCMStatus"),
       ("HandsOffSWlDetectionStatus", "PSCMStatus"),
       ("LKATorqueDeliveredStatus", "PSCMStatus"),
-      ("LKADriverAppldTrq ", "PSCMStatus"),
+      ("LKADriverAppldTrq", "PSCMStatus"),
       ("LKATorqueDelivered", "PSCMStatus"),
       ("LKATotalTorqueDelivered", "PSCMStatus"),
       ("NEW_SIGNAL_1", "PSCMStatus"),
