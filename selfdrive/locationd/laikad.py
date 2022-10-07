@@ -283,10 +283,11 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c.satVel = meas.sat_vel.tolist()
   ephem = meas.sat_ephemeris
   assert ephem is not None
-  if ephem.eph_type == EphemerisType.NAV or ephem.eph_type == EphemerisType.QCOM_POLY:
-    # TODO: no entry for qcom as EphemerisSourceType
+  week, time_of_week = -1, -1
+  if ephem.eph_type == EphemerisType.NAV:
     source_type = EphemerisSourceType.nav
-    week, time_of_week = -1, -1
+  elif ephem.eph_type == EphemerisType.QCOM_POLY:
+    source_type = EphemerisSourceType.qcom
   else:
     assert ephem.file_epoch is not None
     week = ephem.file_epoch.week
@@ -344,6 +345,7 @@ class EphemerisSourceType(IntEnum):
   nav = 0
   nasaUltraRapid = 1
   glonassIacUltraRapid = 2
+  qcom = 3
 
 
 def main(sm=None, pm=None):
