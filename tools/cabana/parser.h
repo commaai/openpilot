@@ -12,7 +12,7 @@
 #include "tools/replay/replay.h"
 
 const int FPS = 20;
-const static int LOG_SIZE = 50;
+const static int CAN_MSG_LOG_SIZE = 50;
 
 struct CanData {
   QString id;
@@ -38,7 +38,7 @@ public:
   void addNewMsg(const Msg &msg);
   void removeSignal(const QString &id, const QString &sig_name);
   void seekTo(double ts);
-  const Signal *getSig(const QString &id, const QString &sig_name);
+  const Signal *getSig(const QString &id, const QString &sig_name) const;
   void setRange(double min, double max);
   void setCurrentMsg(const QString &id);
   void resetRange();
@@ -46,17 +46,13 @@ public:
   inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
   inline const QList<CanData> &canMsgs(const QString &id) { return can_msgs[id]; }
-  inline const QList<CanData> &currentCanMsgs() { return can_msgs[current_msg_id]; }
-  inline const Msg *currentMsg() const { return getMsg(current_msg_id); }
-  inline const QString currentMsgId() const { return current_msg_id; }
-  inline const Msg *getMsg(const QString &id) const { return getMsg(addressFromId(id)); }
-  inline const Msg *getMsg(uint32_t address) const {
+  inline const Msg *getDBCMsg(const QString &id) const { return getDBCMsg(addressFromId(id)); }
+  inline const Msg *getDBCMsg(uint32_t address) const {
     auto it = msg_map.find(address);
     return it != msg_map.end() ? it->second : nullptr;
   }
 
 signals:
-  void msgSelectionChanged();
   void showPlot(const QString &id, const QString &name);
   void hidePlot(const QString &id, const QString &name);
   void signalRemoved(const QString &id, const QString &sig_name);
@@ -85,13 +81,12 @@ protected:
   DBC *dbc = nullptr;
   std::map<uint32_t, const Msg *> msg_map;
   std::vector<CanData> msgs_buf;
-  QString current_msg_id;
 };
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
 
 // TODO: Add helper function in dbc.h
-int64_t get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
+double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 inline QString toHex(const QByteArray &dat) {

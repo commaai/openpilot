@@ -45,7 +45,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     parser->openDBC(dbc);
   });
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
-    parser->setCurrentMsg(table_widget->selectedItems()[1]->text());
+    emit msgSelectionChanged(table_widget->selectedItems()[1]->text());
   });
 
   // For test purpose
@@ -70,7 +70,7 @@ void MessagesWidget::updateState() {
   for (const auto &[_, msgs] : parser->can_msgs) {
     const auto &c = msgs.back();
 
-    if (auto msg = parser->getMsg(c.address)) {
+    if (auto msg = parser->getDBCMsg(c.address)) {
       name = msg->name.c_str();
     } else {
       name = untitled;

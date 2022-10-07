@@ -119,7 +119,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   header->setStyleSheet("background-color:white");
   QHBoxLayout *header_layout = new QHBoxLayout(header);
   header_layout->setContentsMargins(11, 11, 11, 0);
-  QLabel *title = new QLabel(tr("%1 %2").arg(parser->getMsg(id)->name.c_str()).arg(id));
+  QLabel *title = new QLabel(tr("%1 %2").arg(parser->getDBCMsg(id)->name.c_str()).arg(id));
   header_layout->addWidget(title);
   header_layout->addStretch();
 
@@ -202,11 +202,7 @@ void ChartWidget::updateSeries() {
       for (auto c : evt->event.getCan()) {
         if (bus == c.getSrc() && address == c.getAddress()) {
           auto dat = c.getDat();
-          int64_t val = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig);
-          if (sig->is_signed) {
-            val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
-          }
-          double value = val * sig->factor + sig->offset;
+          double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig);
           if (value < min_y) min_y = value;
           if (value > max_y) max_y = value;
 

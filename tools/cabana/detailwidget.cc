@@ -43,15 +43,17 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   binary_view = new BinaryView(this);
   main_layout->addWidget(binary_view);
 
-  // scroll area
-  QHBoxLayout *signals_layout = new QHBoxLayout();
-  signals_layout->addWidget(new QLabel(tr("Signals")));
-  signals_layout->addStretch();
-  add_sig_btn = new QPushButton(tr("Add signal"), this);
+  // signal header
+  signals_header = new QWidget(this);
+  QHBoxLayout *signals_header_layout = new QHBoxLayout(signals_header);
+  signals_header_layout->addWidget(new QLabel(tr("Signals")));
+  signals_header_layout->addStretch();
+  QPushButton *add_sig_btn = new QPushButton(tr("Add signal"), this);
   add_sig_btn->setVisible(false);
-  signals_layout->addWidget(add_sig_btn);
-  main_layout->addLayout(signals_layout);
+  signals_header_layout->addWidget(add_sig_btn);
+  main_layout->addWidget(signals_header);
 
+  // scroll area
   QWidget *container = new QWidget(this);
   QVBoxLayout *container_layout = new QVBoxLayout(container);
   signal_edit_layout = new QVBoxLayout();
@@ -73,48 +75,48 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(add_sig_btn, &QPushButton::clicked, this, &DetailWidget::addSignal);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(parser, &Parser::updated, this, &DetailWidget::updateState);
-  QObject::connect(parser, &Parser::msgSelectionChanged, this, &DetailWidget::msgSelectionChanged);
 }
 
-void DetailWidget::msgSelectionChanged() {
+void DetailWidget::updateDBCMsg(const QString &message_id) {
+  msg_id = message_id;
   clearLayout(signal_edit_layout);
-  edit_btn->setVisible(true);
 
-  if (auto msg = parser->currentMsg()) {
-    name_label->setText(msg->name.c_str());
-    add_sig_btn->setVisible(true);
+  if (auto msg = parser->getDBCMsg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      signal_edit_layout->addWidget(new SignalEdit(i, parser->currentMsgId(), msg->sigs[i], getColor(i)));
+      signal_edit_layout->addWidget(new SignalEdit(i, msg_id, msg->sigs[i], getColor(i)));
     }
+    name_label->setText(msg->name.c_str());
+    signals_header->setVisible(true);
   } else {
     name_label->setText(tr("untitled"));
-    add_sig_btn->setVisible(false);
+    signals_header->setVisible(false);
   }
+  edit_btn->setVisible(true);
 
-  binary_view->msgSelectionChanged();
-  history_log->msgSelectionChanged();
+  binary_view->updateDBCMsg(msg_id);
+  history_log->updateDBCMsg(msg_id);
 }
 
 void DetailWidget::updateState() {
-  if (parser->currentMsgId().isEmpty()) return;
+  if (msg_id.isEmpty()) return;
 
-  auto msgs = parser->currentCanMsgs();
-  time_label->setText(QString("time: %1").arg(msgs.back().ts, 0, 'f', 3));
-  binary_view->setData(msgs.back().dat);
+  const auto &can_data = parser->canMsgs(msg_id).back();
+  time_label->setText(QString("time: %1").arg(can_data.ts, 0, 'f', 3));
+  binary_view->setData(can_data.dat);
   history_log->updateState();
 }
 
 void DetailWidget::editMsg() {
-  EditMessageDialog dlg(parser->currentMsgId(), this);
+  EditMessageDialog dlg(msg_id, this);
   if (dlg.exec()) {
-    msgSelectionChanged();
+    updateDBCMsg(msg_id);
   }
 }
 
 void DetailWidget::addSignal() {
-  AddSignalDialog dlg(parser->currentMsgId(), this);
+  AddSignalDialog dlg(msg_id, this);
   if (dlg.exec()) {
-    msgSelectionChanged();
+    updateDBCMsg(msg_id);
   }
 }
 
@@ -132,9 +134,9 @@ BinaryView::BinaryView(QWidget *parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
-void BinaryView::msgSelectionChanged() {
-  const Msg *msg = parser->currentMsg();
-  int row_count = msg ? msg->size : parser->canMsgs(parser->currentMsgId()).back().dat.size();
+void BinaryView::updateDBCMsg(const QString &message_id) {
+  const Msg *msg = parser->getDBCMsg(message_id);
+  int row_count = msg ? msg->size : parser->canMsgs(message_id).back().dat.size();
 
   table->setRowCount(row_count);
   table->setColumnCount(9);
@@ -152,8 +154,8 @@ void BinaryView::msgSelectionChanged() {
     }
   }
 
+  // set background color
   if (msg) {
-    // set background color
     for (int i = 0; i < msg->sigs.size(); ++i) {
       const auto &sig = msg->sigs[i];
       int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
@@ -199,10 +201,11 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(table);
 }
 
-void HistoryLog::msgSelectionChanged() {
+void HistoryLog::updateDBCMsg(const QString &message_id) {
+  msg_id = message_id;
   previous_count = 0;
   table->clear();
-  const auto msg = parser->currentMsg();
+  const auto msg = parser->getDBCMsg(msg_id);
   if (msg && !msg->sigs.empty()) {
     table->setColumnCount(msg->sigs.size());
     for (int i = 0; i < msg->sigs.size(); ++i) {
@@ -211,29 +214,24 @@ void HistoryLog::msgSelectionChanged() {
       table->setHorizontalHeaderItem(i, item);
     }
   } else {
-    auto item = new QTableWidgetItem("data");
-    table->setHorizontalHeaderItem(0, item);
     table->setColumnCount(1);
+    table->setHorizontalHeaderItem(0, new QTableWidgetItem("data"));
   }
 }
 
 void HistoryLog::updateState() {
   auto model = table->model();
-  const auto &can_msgs = parser->canMsgs(parser->currentMsgId());
-  const auto &msg = parser->currentMsg();
+  const auto &can_msgs = parser->canMsgs(msg_id);
+  const auto msg = parser->getDBCMsg(msg_id);
   for (const auto &can_data : can_msgs) {
-    if (can_data.count <= previous_count) continue;
+    if (can_data.count <= previous_count)
+      continue;
 
     table->insertRow(0);
     table->setVerticalHeaderItem(0, new QTableWidgetItem(QString::number(can_data.ts, 'f', 2)));
     if (msg && !msg->sigs.empty()) {
       for (int i = 0; i < msg->sigs.size(); ++i) {
-        const auto &sig = msg->sigs[i];
-        int64_t val = get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), sig);
-        if (sig.is_signed) {
-          val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
-        }
-        double value = val * sig.factor + sig.offset;
+        double value = get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), msg->sigs[i]);
         model->setData(model->index(0, i), QString::number(value));
       }
     } else {
@@ -242,27 +240,26 @@ void HistoryLog::updateState() {
     previous_count = can_data.count;
   }
 
-  if (table->rowCount() > 100) {
-    table->setRowCount(100);
-  }
+  if (table->rowCount() > CAN_MSG_LOG_SIZE)
+    table->setRowCount(CAN_MSG_LOG_SIZE);
 }
 
 // EditMessageDialog
 
-EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id), QDialog(parent) {
+EditMessageDialog::EditMessageDialog(const QString &msg_id, QWidget *parent) : msg_id(msg_id), QDialog(parent) {
   setWindowTitle(tr("Edit message"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QFormLayout *form_layout = new QFormLayout();
-  form_layout->addRow("ID", new QLabel(id));
+  form_layout->addRow("ID", new QLabel(msg_id));
 
-  auto msg = const_cast<Msg *>(parser->getMsg(id));
+  const auto msg = parser->getDBCMsg(msg_id);
   name_edit = new QLineEdit(this);
   name_edit->setText(msg ? msg->name.c_str() : "untitled");
   form_layout->addRow(tr("Name"), name_edit);
 
   size_spin = new QSpinBox(this);
-  size_spin->setValue(msg ? msg->size : parser->canMsgs(id).back().dat.size());
+  size_spin->setValue(msg ? msg->size : parser->canMsgs(msg_id).back().dat.size());
   form_layout->addRow(tr("Size"), size_spin);
 
   main_layout->addLayout(form_layout);
@@ -277,12 +274,12 @@ EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id
 void EditMessageDialog::save() {
   if (size_spin->value() <= 0 || name_edit->text().isEmpty()) return;
 
-  if (auto msg = const_cast<Msg *>(parser->getMsg(id))) {
+  if (auto msg = const_cast<Msg *>(parser->getDBCMsg(msg_id))) {
     msg->name = name_edit->text().toStdString();
     msg->size = size_spin->value();
   } else {
     Msg m = {};
-    m.address = Parser::addressFromId(id);
+    m.address = Parser::addressFromId(msg_id);
     m.name = name_edit->text().toStdString();
     m.size = size_spin->value();
     parser->addNewMsg(m);

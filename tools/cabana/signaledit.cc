@@ -145,7 +145,7 @@ void SignalEdit::remove() {
 // AddSignalDialog
 
 AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Add signal to %1").arg(parser->getMsg(id)->name.c_str()));
+  setWindowTitle(tr("Add signal to %1").arg(parser->getDBCMsg(id)->name.c_str()));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Signal sig = {.name = "untitled"};
   auto form = new SignalForm(sig, this);
@@ -154,7 +154,7 @@ AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(p
   main_layout->addWidget(buttonBox);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
-    if (auto msg = const_cast<Msg *>(parser->getMsg(id))) {
+    if (auto msg = const_cast<Msg *>(parser->getDBCMsg(id))) {
       if (auto signal = form->getSignal()) {
         msg->sigs.push_back(*signal);
       }

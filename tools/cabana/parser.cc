@@ -7,7 +7,7 @@
 Parser *parser = nullptr;
 
 static bool event_filter(const Event *e, void *opaque) {
-  Parser *p = (Parser*)opaque;
+  Parser *p = (Parser *)opaque;
   return p->eventFilter(e);
 }
 
@@ -48,7 +48,7 @@ void Parser::process(std::vector<CanData> msgs) {
 
   for (const auto &can_data : msgs) {
     auto &m = can_msgs[can_data.id];
-    while (m.size() >= LOG_SIZE) {
+    while (m.size() >= CAN_MSG_LOG_SIZE) {
       m.pop_front();
     }
     m.push_back(can_data);
@@ -101,7 +101,7 @@ void Parser::addNewMsg(const Msg &msg) {
 }
 
 void Parser::removeSignal(const QString &id, const QString &sig_name) {
-  Msg *msg = const_cast<Msg *>(getMsg(id));
+  Msg *msg = const_cast<Msg *>(getDBCMsg(id));
   if (!msg) return;
 
   auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
@@ -115,8 +115,8 @@ uint32_t Parser::addressFromId(const QString &id) {
   return id.mid(id.indexOf(':') + 1).toUInt(nullptr, 16);
 }
 
-const Signal *Parser::getSig(const QString &id, const QString &sig_name) {
-  if (auto msg = getMsg(id)) {
+const Signal *Parser::getSig(const QString &id, const QString &sig_name) const {
+  if (auto msg = getDBCMsg(id)) {
     auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig_name == s.name.c_str(); });
     if (it != msg->sigs.end()) {
       return &(*it);
@@ -152,11 +152,6 @@ void Parser::resetRange() {
   setRange(event_begin_sec, event_end_sec);
 }
 
-void Parser::setCurrentMsg(const QString &id) {
-  current_msg_id = id;
-  emit msgSelectionChanged();
-}
-
 // helper functions
 
 static QVector<int> BIG_ENDIAN_START_BITS = []() {
@@ -177,8 +172,8 @@ int bigEndianBitIndex(int index) {
   return BIG_ENDIAN_START_BITS.indexOf(index);
 }
 
-int64_t get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
-  int64_t ret = 0;
+double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
+  int64_t val = 0;
 
   int i = sig.msb / 8;
   int bits = sig.size;
@@ -188,10 +183,14 @@ int64_t get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
     int size = msb - lsb + 1;
 
     uint64_t d = (data[i] >> (lsb - (i * 8))) & ((1ULL << size) - 1);
-    ret |= d << (bits - size);
+    val |= d << (bits - size);
 
     bits -= size;
     i = sig.is_little_endian ? i - 1 : i + 1;
   }
-  return ret;
+  if (sig.is_signed) {
+    val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+  }
+  double value = val * sig.factor + sig.offset;
+  return value;
 }

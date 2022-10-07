@@ -15,6 +15,9 @@ public:
 public slots:
   void updateState();
 
+signals:
+  void msgSelectionChanged(const QString &message_id);
+
 protected:
   QLineEdit *filter;
   QTableWidget *table_widget;
