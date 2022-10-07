@@ -74,7 +74,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(add_sig_btn, &QPushButton::clicked, this, &DetailWidget::addSignal);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
-  QObject::connect(parser, &Parser::updated, this, &DetailWidget::updateState);
+  QObject::connect(parser, &Parser::canMsgsUpdated, this, &DetailWidget::updateState);
 }
 
 void DetailWidget::updateDBCMsg(const QString &message_id) {

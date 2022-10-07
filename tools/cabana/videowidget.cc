@@ -60,7 +60,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
-  QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
+  QObject::connect(parser, &Parser::canMsgsUpdated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value())); });
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { setPosition(slider->value()); });
   QObject::connect(slider, &Slider::setPosition, this, &VideoWidget::setPosition);

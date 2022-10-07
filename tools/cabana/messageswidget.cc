@@ -37,7 +37,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->horizontalHeader()->setStretchLastSection(true);
   main_layout->addWidget(table_widget);
 
-  QObject::connect(parser, &Parser::updated, this, &MessagesWidget::updateState);
+  QObject::connect(parser, &Parser::canMsgsUpdated, this, &MessagesWidget::updateState);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     // TODO: save DBC to file
   });

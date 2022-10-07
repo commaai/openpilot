@@ -59,7 +59,7 @@ signals:
   void eventsMerged();
   void rangeChanged(double min, double max);
   void received(std::vector<CanData> can);
-  void updated();
+  void canMsgsUpdated();
 
 public:
   Replay *replay = nullptr;

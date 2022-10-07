@@ -165,7 +165,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   line_marker->raise();
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  QObject::connect(parser, &Parser::updated, this, &ChartWidget::updateState);
+  QObject::connect(parser, &Parser::canMsgsUpdated, this, &ChartWidget::updateState);
   QObject::connect(parser, &Parser::rangeChanged, this, &ChartWidget::rangeChanged);
   QObject::connect(parser, &Parser::eventsMerged, this, &ChartWidget::updateSeries);
 

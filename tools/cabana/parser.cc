@@ -56,7 +56,7 @@ void Parser::process(std::vector<CanData> msgs) {
   double now = millis_since_boot();
   if ((now - prev_update_ts) > 1000.0 / FPS) {
     prev_update_ts = now;
-    emit updated();
+    emit canMsgsUpdated();
   }
 
   if (current_sec < begin_sec || current_sec > end_sec) {
