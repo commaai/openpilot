@@ -2,7 +2,6 @@
 
 #include <QLabel>
 #include <QSlider>
-#include <QTimer>
 #include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
@@ -20,7 +19,6 @@ signals:
 
 private:
    void paintEvent(QPaintEvent *ev) override;
-   QTimer *fetch_timeline_timer;
    std::vector<std::tuple<int, int, TimelineType>> timeline;
 };
 

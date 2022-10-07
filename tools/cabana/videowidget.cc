@@ -6,6 +6,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "tools/cabana/parser.h"
@@ -100,12 +101,10 @@ void VideoWidget::updateState() {
 
 // Slider
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
-  fetch_timeline_timer = new QTimer(this);
-  fetch_timeline_timer->setInterval(2000);
-  fetch_timeline_timer->callOnTimeout([this]() {
-    timeline = parser->replay->getTimeline();
-  });
-  fetch_timeline_timer->start();
+  QTimer *timer = new QTimer(this);
+  timer->setInterval(2000);
+  timer->callOnTimeout([this]() { timeline = parser->replay->getTimeline(); });
+  timer->start();
 }
 
 void Slider::paintEvent(QPaintEvent *ev) {
