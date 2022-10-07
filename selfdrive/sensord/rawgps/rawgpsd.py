@@ -111,7 +111,7 @@ def setup_quectel(diag: ModemDiag):
   # don't automatically turn on GNSS on powerup
   mmcli("--command='AT+QGPSCFG=\"autogps\",0'")
   # setup AGPS
-  mmcli("--location-set-supl-server=http://supl.google.com:7276")
+  mmcli("--location-set-supl-server=supl.google.com:7276")
   mmcli("--location-enable-gps-raw --location-enable-gps-nmea")
 
   # enable OEMDRE mode
