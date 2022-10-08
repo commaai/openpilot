@@ -8,7 +8,7 @@ def create_buttons(packer, bus, idx, button):
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
 def create_pscm_status(packer, pscm_status):
-  checksum_mod = (1 - pscm_status["HandsOffSWlDetectionStatus"]) << 5
+  checksum_mod = int(1 - pscm_status["HandsOffSWlDetectionStatus"]) << 5
   pscm_status["HandsOffSWlDetectionStatus"] = 1
   pscm_status["PSCMStatusChecksum"] += checksum_mod
   return packer.make_can_msg("PSCMStatus", 2, pscm_status)
