@@ -1,6 +1,4 @@
-import os
 from selfdrive.car import make_can_msg
-
 
 def create_buttons(packer, bus, idx, button):
   values = {
@@ -10,17 +8,10 @@ def create_buttons(packer, bus, idx, button):
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
 def create_pscm_status(packer, pscm_status):
-  values = pscm_status
-  hands_on = os.path.exists('/data/hands_on')
-  if hands_on:
-    checksum_mod = (1 - values["HandsOffSWlDetectionStatus"]) << 5
-    values["HandsOffSWlDetectionStatus"] = 1
-    values["PSCMStatusChecksum"] += checksum_mod
-  else:
-    checksum_mod = values["HandsOffSWlDetectionStatus"] << 5
-    values["HandsOffSWlDetectionStatus"] = 0
-    values["PSCMStatusChecksum"] -= checksum_mod
-  return packer.make_can_msg("PSCMStatus", 2, values)
+  checksum_mod = (1 - pscm_status["HandsOffSWlDetectionStatus"]) << 5
+  pscm_status["HandsOffSWlDetectionStatus"] = 1
+  pscm_status["PSCMStatusChecksum"] += checksum_mod
+  return packer.make_can_msg("PSCMStatus", 2, pscm_status)
 
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
