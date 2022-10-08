@@ -89,13 +89,15 @@ def gen_lat_ocp():
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
+  v_ego_offset = v_ego + SPEED_OFFSET
   ocp.model.cost_y_expr = vertcat(y_ego,
-                                  ((v_ego + SPEED_OFFSET) * psi_ego),
-                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego),
-                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego_dot))
+                                  v_ego_offset * psi_ego,
+                                  v_ego_offset * psi_rate_ego,
+                                  v_ego_offset * psi_rate_ego_dot + 
+                                  100*psi_rate_ego_dot / (v_ego + 0.1))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
-                                  ((v_ego + SPEED_OFFSET) * psi_ego),
-                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego))
+                                   v_ego_offset * psi_ego,
+                                   v_ego_offset * psi_rate_ego)
 
   # set constraints
   ocp.constraints.constr_type = 'BGH'
