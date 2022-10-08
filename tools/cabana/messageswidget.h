@@ -14,6 +14,7 @@ public:
 
 public slots:
   void updateState();
+  void dbcSelectionChanged(const QString &dbc_file);
 
 signals:
   void msgSelectionChanged(const QString &message_id);

@@ -1,6 +1,7 @@
 #include "tools/cabana/messageswidget.h"
 
 #include <QComboBox>
+#include <QCompleter>
 #include <QHeaderView>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -14,6 +15,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   for (const auto &name : dbc_names) {
     combo->addItem(QString::fromStdString(name));
   }
+  combo->setEditable(true);
+  combo->setCurrentText(QString());
+  combo->setInsertPolicy(QComboBox::NoInsert);
+  combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   dbc_file_layout->addWidget(combo);
 
   dbc_file_layout->addStretch();
@@ -38,11 +43,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(table_widget);
 
   QObject::connect(parser, &Parser::canMsgsUpdated, this, &MessagesWidget::updateState);
+  QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     // TODO: save DBC to file
-  });
-  QObject::connect(combo, &QComboBox::currentTextChanged, [=](const QString &dbc) {
-    parser->openDBC(dbc);
   });
   QObject::connect(table_widget, &QTableWidget::itemSelectionChanged, [=]() {
     emit msgSelectionChanged(table_widget->selectedItems()[1]->text());
@@ -50,6 +53,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // For test purpose
   combo->setCurrentText("toyota_nodsu_pt_generated");
+}
+
+void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
+  parser->openDBC(dbc_file);
+  // update detailwidget & charts
+  emit msgSelectionChanged(table_widget->selectedItems()[1]->text());
 }
 
 void MessagesWidget::updateState() {
