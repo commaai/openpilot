@@ -178,7 +178,6 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
 void ChartWidget::updateState() {
   auto chart = chart_view->chart();
   auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
-  if (axis_x->max() <= axis_x->min()) return;
 
   int x = chart->plotArea().left() + chart->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
   if (line_marker_x != x) {
@@ -198,18 +197,18 @@ void ChartWidget::updateSeries() {
 
   vals.clear();
   vals.reserve(3 * 60 * 100);
-  double min_y = 0, max_y = 0;
-  double route_start_time = can->routeStartTime();
+  uint64_t route_start_time = can->routeStartTime();
   for (auto &evt : *events) {
     if (evt->which == cereal::Event::Which::CAN) {
       for (auto c : evt->event.getCan()) {
         if (bus == c.getSrc() && address == c.getAddress()) {
           auto dat = c.getDat();
-          double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig);
-          if (value < min_y) min_y = value;
-          if (value > max_y) max_y = value;
-
-          double ts = (evt->mono_time / (double)1e9) - route_start_time;
+          int64_t val = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig);
+          if (sig->is_signed) {
+            val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
+          }
+          double value = val * sig->factor + sig->offset;
+          double ts = (evt->mono_time - route_start_time) / (double)1e9;  // seconds
           vals.push_back({ts, value});
         }
       }
@@ -219,7 +218,7 @@ void ChartWidget::updateSeries() {
   series->replace(vals);
   auto [begin, end] = can->range();
   chart_view->chart()->axisX()->setRange(begin, end);
-  chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
+  updateAxisY();
 }
 
 void ChartWidget::rangeChanged(qreal min, qreal max) {
@@ -227,17 +226,20 @@ void ChartWidget::rangeChanged(qreal min, qreal max) {
   if (axis_x->min() != min || axis_x->max() != max) {
     axis_x->setRange(min, max);
   }
-  // auto zoom on yaxis
-  double min_y = 0, max_y = 0;
-  for (auto &p : vals) {
-    if (p.x() > max) break;
+  updateAxisY();
+}
 
-    if (p.x() >= min) {
-      if (p.y() < min_y) min_y = p.y();
-      if (p.y() > max_y) max_y = p.y();
-    }
-  }
-  chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
+// auto zoom on yaxis
+void ChartWidget::updateAxisY() {
+  const auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
+  // vals is a sorted list
+  auto begin = std::lower_bound(vals.begin(), vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+  if (begin == vals.end())
+    return;
+
+  auto end = std::upper_bound(vals.begin(), vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
+  const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
+  chart_view->chart()->axisY()->setRange(min->y(), max->y());
 }
 
 // LineMarker
