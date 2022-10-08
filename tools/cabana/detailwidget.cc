@@ -104,7 +104,7 @@ void DetailWidget::updateState() {
 
   const auto &can_data = can->lastMessage(msg_id);
   time_label->setText(QString("time: %1").arg(can_data.ts, 0, 'f', 3));
-  binary_view->setData(can_data.dat);
+  binary_view->updateState();
   history_log->updateState();
 }
 
@@ -137,8 +137,9 @@ BinaryView::BinaryView(QWidget *parent) {
 }
 
 void BinaryView::setMessage(const QString &message_id) {
-  const Msg *msg = dbc()->msg(message_id);
-  int row_count = msg ? msg->size : can->lastMessage(message_id).dat.size();
+  msg_id = message_id;
+  const Msg *msg = dbc()->msg(msg_id);
+  int row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
 
   table->setRowCount(row_count);
   table->setColumnCount(9);
@@ -168,9 +169,11 @@ void BinaryView::setMessage(const QString &message_id) {
   }
 
   table->setFixedHeight(table->rowHeight(0) * table->rowCount() + table->horizontalHeader()->height() + 2);
+  updateState();
 }
 
-void BinaryView::setData(const QByteArray &binary) {
+void BinaryView::updateState() {
+  const auto &binary = can->lastMessage(msg_id).dat;
   std::string s;
   for (int j = 0; j < binary.size(); ++j) {
     s += std::bitset<8>(binary[j]).to_string();
@@ -220,6 +223,8 @@ void HistoryLog::setMessage(const QString &message_id) {
     table->setColumnCount(1);
     table->setHorizontalHeaderItem(0, new QTableWidgetItem("data"));
   }
+
+  updateState();
 }
 
 void HistoryLog::updateState() {

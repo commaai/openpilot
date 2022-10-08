@@ -19,8 +19,10 @@ class BinaryView : public QWidget {
 public:
   BinaryView(QWidget *parent);
   void setMessage(const QString &message_id);
-  void setData(const QByteArray &binary);
+  void updateState();
 
+private:
+  QString msg_id;
   QTableWidget *table;
 };
 
