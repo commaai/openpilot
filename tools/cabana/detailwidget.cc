@@ -100,10 +100,9 @@ void DetailWidget::setMessage(const QString &message_id) {
 }
 
 void DetailWidget::updateState() {
+  time_label->setText(QString("time: %1").arg(can->currentSec(), 0, 'f', 3));
   if (msg_id.isEmpty()) return;
 
-  const auto &can_data = can->lastMessage(msg_id);
-  time_label->setText(QString("time: %1").arg(can_data.ts, 0, 'f', 3));
   binary_view->updateState();
   history_log->updateState();
 }
