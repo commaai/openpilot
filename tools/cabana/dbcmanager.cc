@@ -2,9 +2,7 @@
 
 #include <QVector>
 
-DBCManager::DBCManager(QObject *parent) : QObject(parent) {
-  // dbc = 
-}
+DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 
 DBCManager::~DBCManager() {}
 

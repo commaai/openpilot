@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {

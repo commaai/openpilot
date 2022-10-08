@@ -38,7 +38,6 @@ protected:
   QSpinBox *size_spin;
 };
 
-
 class HistoryLog : public QWidget {
   Q_OBJECT
 
