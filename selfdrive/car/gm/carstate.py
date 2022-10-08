@@ -87,6 +87,9 @@ class CarState(CarStateBase):
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
 
+      ret.stockFcw = cam_cp.vl["ASCMActiveCruiseControlStatus"]["FCWAlert"] != 0
+      ret.stockFcw = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
+
     return ret
 
   @staticmethod
@@ -94,8 +97,15 @@ class CarState(CarStateBase):
     signals = []
     checks = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      signals.append(("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"))
-      checks.append(("ASCMActiveCruiseControlStatus", 25))
+      signals += [
+        ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
+        ("FCWAlert", "ASCMActiveCruiseControlStatus"),
+        ("AEBCmdActive", "AEBCmd"),
+      ]
+      checks += [
+        ("ASCMActiveCruiseControlStatus", 25),
+        ("AEBCmd", 10),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.CAMERA)
 
