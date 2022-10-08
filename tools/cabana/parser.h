@@ -30,14 +30,16 @@ class Parser : public QObject {
 public:
   Parser(QObject *parent);
   ~Parser();
+  void addSignal(const QString &id, const Signal &sig);
+  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
+  void removeSignal(const QString &id, const QString &sig_name);
+
   static uint32_t addressFromId(const QString &id);
   bool eventFilter(const Event *event);
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
   void addNewMsg(const Msg &msg);
-  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
-  void removeSignal(const QString &id, const QString &sig_name);
   void seekTo(double ts);
   const Signal *getSig(const QString &id, const QString &sig_name) const;
   void setRange(double min, double max);
@@ -55,6 +57,7 @@ public:
 signals:
   void showPlot(const QString &id, const QString &name);
   void hidePlot(const QString &id, const QString &name);
+  void signalAdded(const QString &id, const QString &sig_name);
   void signalRemoved(const QString &id, const QString &sig_name);
   void signalUpdated(const QString &id, const QString &sig_name);
   void eventsMerged();

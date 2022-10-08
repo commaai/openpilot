@@ -155,7 +155,7 @@ AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(p
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
     if (auto msg = const_cast<Msg *>(parser->getDBCMsg(id))) {
       if (auto signal = form->getSignal()) {
-        msg->sigs.push_back(*signal);
+        parser->addSignal(id, *signal);
       }
     }
     QDialog::accept();

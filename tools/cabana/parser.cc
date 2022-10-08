@@ -112,6 +112,14 @@ void Parser::updateSignal(const QString &id, const QString &sig_name, const Sign
   }
 }
 
+void Parser::addSignal(const QString &id, const Signal &sig) {
+  Msg *msg = const_cast<Msg *>(getDBCMsg(id));
+  if (!msg) return;
+
+  msg->sigs.push_back(sig);
+  emit signalAdded(id, QString::fromStdString(sig.name));
+}
+
 void Parser::removeSignal(const QString &id, const QString &sig_name) {
   Msg *msg = const_cast<Msg *>(getDBCMsg(id));
   if (!msg) return;
