@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs
+from math import fabs, atan, erf
 from panda import Panda
 
 from common.conversions import Conversions as CV
@@ -17,6 +17,19 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
 
+# meant for traditional ff fits
+def get_steer_feedforward_sigmoid1(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+  x = ANGLE_COEF * (angle) / max(0.01,speed)
+  sigmoid = x / (1. + fabs(x))
+  return ((SIGMOID_COEF_RIGHT if angle > 0. else SIGMOID_COEF_LEFT) * sigmoid) * (0.01 + speed + SPEED_OFFSET) ** ANGLE_COEF2 + ANGLE_OFFSET * (angle * SPEED_COEF - atan(angle * SPEED_COEF))
+
+# meant for torque fits
+def get_steer_feedforward_erf(angle, speed, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF):
+  x = ANGLE_COEF * (angle) * (40.23 / (max(0.05,speed + SPEED_OFFSET))**SPEED_COEF)
+  sigmoid = erf(x)
+  return ((SIGMOID_COEF_RIGHT if angle < 0. else SIGMOID_COEF_LEFT) * sigmoid) + ANGLE_COEF2 * angle
+
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -30,11 +43,30 @@ class CarInterface(CarInterfaceBase):
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
 
+  # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_acadia(desired_angle, v_ego):
-    desired_angle *= 0.09760208
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.04689655 * sigmoid * (v_ego + 10.028217)
+    ANGLE_COEF = 5.00000000
+    ANGLE_COEF2 = 1.92485619
+    ANGLE_OFFSET = 0.05042997
+    SPEED_OFFSET = 12.46988687
+    SIGMOID_COEF_RIGHT = 0.00100000
+    SIGMOID_COEF_LEFT = 0.00106132
+    SPEED_COEF = 0.27338908
+    return get_steer_feedforward_sigmoid1(desired_angle, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+  
+  # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
+  @staticmethod
+  def get_steer_feedforward_acadia_torque(desired_lateral_accel, v_ego):
+    ANGLE_COEF = 0.13340297
+    ANGLE_COEF2 = 0.26371663
+    ANGLE_OFFSET = 0.58480016
+    SPEED_OFFSET = -5.91363790
+    SIGMOID_COEF_RIGHT = 0.36313205
+    SIGMOID_COEF_LEFT = 0.32968596
+    SPEED_COEF = 0.35831698
+    return get_steer_feedforward_erf(desired_lateral_accel, v_ego, ANGLE_COEF, ANGLE_COEF2, ANGLE_OFFSET, SPEED_OFFSET, SIGMOID_COEF_RIGHT, SIGMOID_COEF_LEFT, SPEED_COEF)
+  
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint == CAR.VOLT:
@@ -124,10 +156,28 @@ class CarInterface(CarInterfaceBase):
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.86
-      ret.steerRatio = 14.4  # end to end is 13.46
+      ret.steerRatio = 16.0  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
-      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
+      #ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
+      ret.longitudinalActuatorDelayLowerBound = 0.42
+      ret.longitudinalActuatorDelayUpperBound = 0.42
+      ret.steerActuatorDelay = 0.24
+
+      ret.lateralTuning.pid.kpBP = [i * CV.MPH_TO_MS for i in [0., 80.]]
+      ret.lateralTuning.pid.kpV = [0., 0.2]
+      ret.lateralTuning.pid.kiBP = [0., 35.]
+      ret.lateralTuning.pid.kiV = [0.012, 0.018]
+      # ret.lateralTuning.pid.kdBP = [0.]
+      # ret.lateralTuning.pid.kdV = [1.0]
+      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
+      
+      ret.longitudinalTuning.kpBP = [5., 20., 35.]
+      ret.longitudinalTuning.kpV = [1.0, 1.0, 0.9]
+      ret.longitudinalTuning.kiBP = [5., 20., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.2, 0.18]
+      # ret.longitudinalTuning.kdBP = [5., 25.]
+      # ret.longitudinalTuning.kdV = [0.4, 0.]
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
