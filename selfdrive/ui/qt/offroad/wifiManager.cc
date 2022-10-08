@@ -415,16 +415,16 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
-    int prime_type = uiState()->prime_type;
-    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+  int prime_type = uiState()->prime_type;
+  int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
 
-    if (!ipv4_forward) {
-      QTimer::singleShot(5000, this, [=] {
-        qWarning() << "net.ipv4.ip_forward = 0";
-        std::system("sudo sysctl net.ipv4.ip_forward=0");
-      });
-    }
-    call->deleteLater();
+  if (!ipv4_forward) {
+    QTimer::singleShot(5000, this, [=] {
+      qWarning() << "net.ipv4.ip_forward = 0";
+      std::system("sudo sysctl net.ipv4.ip_forward=0");
+    });
+  }
+  call->deleteLater();
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {

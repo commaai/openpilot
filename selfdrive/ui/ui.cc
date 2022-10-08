@@ -201,6 +201,13 @@ void UIState::updateStatus() {
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
   }
+
+  // Handle prime type change
+  if (prime_type != prime_type_prev) {
+    prime_type_prev = prime_type;
+    emit primeTypeChanged(prime_type);
+    Params().put("PrimeType", std::to_string(prime_type));
+  }
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
