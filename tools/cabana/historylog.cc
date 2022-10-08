@@ -33,7 +33,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
         return QString::fromStdString(msg->sigs[section].name);
     }
   } else if (role == Qt::DisplayRole && section < values.size()) {
-    return QString::number(values[section].first);
+    return values[section].first;
   }
   return {};
 }
@@ -63,7 +63,7 @@ void HistoryLogModel::updateState() {
     } else {
       data.append(toHex(can_data.dat));
     }
-    values.push_front({can_data.ts, data});
+    values.push_front({QString::number(can_data.ts, 'f', 2), data});
     new_count = can_data.count;
   }
   if (new_count != previous_count) {
