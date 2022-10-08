@@ -4,7 +4,9 @@
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QPushButton>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "tools/cabana/parser.h"
@@ -98,8 +100,50 @@ void VideoWidget::updateState() {
 }
 
 // Slider
-// TODO: show timeline bar like what replay did.
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
+  QTimer *timer = new QTimer(this);
+  timer->setInterval(2000);
+  timer->callOnTimeout([this]() { timeline = parser->replay->getTimeline(); });
+  timer->start();
+}
+
+void Slider::paintEvent(QPaintEvent *ev) {
+  auto getPaintRange = [this](double begin, double end) -> std::pair<double, double> {
+    double total_sec = maximum() - minimum();
+    int start_pos = ((std::max((double)minimum(), (double)begin) - minimum()) / total_sec) * width();
+    int end_pos = ((std::min((double)maximum(), (double)end) - minimum()) / total_sec) * width();
+    return {start_pos, end_pos};
+  };
+
+  QPainter p(this);
+  const int v_margin = 2;
+  p.fillRect(rect().adjusted(0, v_margin, 0, -v_margin), QColor(0, 0, 128));
+
+  for (auto [begin, end, type] : timeline) {
+    if (begin > maximum() || end < minimum()) continue;
+
+    if (type == TimelineType::Engaged) {
+      auto [start_pos, end_pos] = getPaintRange(begin, end);
+      p.fillRect(QRect(start_pos, v_margin, end_pos - start_pos, height() - v_margin * 2), QColor(0, 135, 0));
+    }
+  }
+  for (auto [begin, end, type] : timeline) {
+    if (type == TimelineType::Engaged || begin > maximum() || end < minimum()) continue;
+
+    auto [start_pos, end_pos] = getPaintRange(begin, end);
+    if (type == TimelineType::UserFlag) {
+      p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), Qt::white);
+    } else {
+      QColor color(Qt::green);
+      if (type != TimelineType::AlertInfo)
+        color = type == TimelineType::AlertWarning ? Qt::yellow : Qt::red;
+
+      p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), color);
+    }
+  }
+  p.setPen(QPen(Qt::black, 2));
+  qreal x = width() * ((value() - minimum()) / double(maximum() - minimum()));
+  p.drawLine(QPointF{x, 0.}, QPointF{x, (qreal)height()});
 }
 
 void Slider::mousePressEvent(QMouseEvent *e) {
