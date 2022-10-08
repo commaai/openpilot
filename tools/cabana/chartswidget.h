@@ -9,7 +9,8 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 
-#include "tools/cabana/parser.h"
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
 
 using namespace QtCharts;
 
@@ -31,6 +32,9 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const QString &sig_name, QWidget *parent);
   inline QChart *chart() const { return chart_view->chart(); }
+
+signals:
+  void remove();
 
 private:
   void updateState();

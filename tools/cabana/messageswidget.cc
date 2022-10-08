@@ -6,12 +6,14 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "tools/cabana/dbcmanager.h"
+
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QHBoxLayout *dbc_file_layout = new QHBoxLayout();
   QComboBox *combo = new QComboBox(this);
-  auto dbc_names = get_dbc_names();
+  auto dbc_names = dbc()->allDBCNames();
   for (const auto &name : dbc_names) {
     combo->addItem(QString::fromStdString(name));
   }
@@ -45,7 +47,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->horizontalHeader()->setStretchLastSection(true);
   main_layout->addWidget(table_widget);
 
-  QObject::connect(parser, &Parser::canMsgsUpdated, this, &MessagesWidget::updateState);
+  QObject::connect(can, &CANMessages::updated, this, &MessagesWidget::updateState);
   QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     // TODO: save DBC to file
@@ -59,7 +61,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
-  parser->openDBC(dbc_file);
+  dbc()->open(dbc_file);
   // update detailwidget
   auto selected = table_widget->selectedItems();
   if (!selected.isEmpty())
@@ -77,14 +79,14 @@ void MessagesWidget::updateState() {
     return item;
   };
 
-  table_widget->setRowCount(parser->can_msgs.size());
+  table_widget->setRowCount(can->can_msgs.size());
   int i = 0;
   QString name, untitled = tr("untitled");
   const QString filter_str = filter->text();
-  for (const auto &[_, msgs] : parser->can_msgs) {
+  for (const auto &[_, msgs] : can->can_msgs) {
     const auto &c = msgs.back();
 
-    if (auto msg = parser->getDBCMsg(c.address)) {
+    if (auto msg = dbc()->msg(c.address)) {
       name = msg->name.c_str();
     } else {
       name = untitled;

@@ -93,7 +93,7 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
   plot_btn = new QPushButton("📈");
   plot_btn->setToolTip(tr("Show Plot"));
   plot_btn->setFixedSize(30, 30);
-  QObject::connect(plot_btn, &QPushButton::clicked, [=]() { emit parser->showPlot(id, name_); });
+  QObject::connect(plot_btn, &QPushButton::clicked, [=]() { emit showChart(id, name_); });
   title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
 
@@ -122,9 +122,9 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
 }
 
 void SignalEdit::save() {
-  if (auto sig = const_cast<Signal *>(parser->getSig(id, name_))) {
+  if (auto sig = const_cast<Signal *>(dbc()->getSig(id, name_))) {
     if (auto s = form->getSignal()) {
-      parser->updateSignal(id, name_, *s);
+      dbc()->updateSignal(id, name_, *s);
     }
   }
 }
@@ -136,7 +136,7 @@ void SignalEdit::remove() {
   msgbox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
   msgbox.setDefaultButton(QMessageBox::Cancel);
   if (msgbox.exec()) {
-    parser->removeSignal(id, name_);
+    dbc()->removeSignal(id, name_);
     deleteLater();
   }
 }
@@ -144,7 +144,7 @@ void SignalEdit::remove() {
 // AddSignalDialog
 
 AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Add signal to %1").arg(parser->getDBCMsg(id)->name.c_str()));
+  setWindowTitle(tr("Add signal to %1").arg(dbc()->msg(id)->name.c_str()));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Signal sig = {.name = "untitled"};
   auto form = new SignalForm(sig, this);
@@ -153,9 +153,9 @@ AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(p
   main_layout->addWidget(buttonBox);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
-    if (auto msg = const_cast<Msg *>(parser->getDBCMsg(id))) {
+    if (auto msg = const_cast<Msg *>(dbc()->msg(id))) {
       if (auto signal = form->getSignal()) {
-        parser->addSignal(id, *signal);
+        dbc()->addSignal(id, *signal);
       }
     }
     QDialog::accept();

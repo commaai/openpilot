@@ -9,7 +9,9 @@
 #include <QSpinBox>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/cabana/parser.h"
+
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
 
 class SignalForm : public QWidget {
   Q_OBJECT
@@ -29,6 +31,9 @@ class SignalEdit : public QWidget {
 public:
   SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent = nullptr);
   void save();
+
+signals:
+  void showChart(const QString &msg_id, const QString &sig_name);
 
 protected:
   void remove();

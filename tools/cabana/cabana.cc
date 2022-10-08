@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   }
 
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  Parser p(&app);
+  CANMessages p(&app);
   if (!p.loadRoute(route, cmd_parser.value("data_dir"), true)) {
     return 0;
   }

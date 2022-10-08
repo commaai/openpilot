@@ -9,7 +9,8 @@
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
-#include "tools/cabana/parser.h"
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/signaledit.h"
 
 class BinaryView : public QWidget {
@@ -17,7 +18,7 @@ class BinaryView : public QWidget {
 
 public:
   BinaryView(QWidget *parent);
-  void updateDBCMsg(const QString &message_id);
+  void setMessage(const QString &message_id);
   void setData(const QByteArray &binary);
 
   QTableWidget *table;
@@ -43,7 +44,7 @@ class HistoryLog : public QWidget {
 
 public:
   HistoryLog(QWidget *parent);
-  void updateDBCMsg(const QString &message_id);
+  void setMessage(const QString &message_id);
   void updateState();
 
 private:
@@ -57,7 +58,10 @@ class DetailWidget : public QWidget {
 
 public:
   DetailWidget(QWidget *parent);
-  void updateDBCMsg(const QString &message_id);
+  void setMessage(const QString &message_id);
+
+signals:
+  void showChart(const QString &msg_id, const QString &sig_name);
 
 private:
   void addSignal();

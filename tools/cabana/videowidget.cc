@@ -9,7 +9,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "tools/cabana/parser.h"
+#include "tools/cabana/canmessages.h"
 
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh::mm::ss" : "mm::ss");
@@ -33,10 +33,10 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   slider->setMinimum(0);
   slider->setTickInterval(60);
   slider->setTickPosition(QSlider::TicksBelow);
-  slider->setMaximum(parser->replay->totalSeconds());
+  slider->setMaximum(can->totalSeconds());
   slider_layout->addWidget(slider);
 
-  total_time_label = new QLabel(formatTime(parser->replay->totalSeconds()));
+  total_time_label = new QLabel(formatTime(can->totalSeconds()));
   slider_layout->addWidget(total_time_label);
 
   main_layout->addLayout(slider_layout);
@@ -52,7 +52,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   for (float speed : {0.1, 0.5, 1., 2.}) {
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
-    QObject::connect(btn, &QPushButton::clicked, [=]() { parser->replay->setSpeed(speed); });
+    QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
     control_layout->addWidget(btn);
     group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
@@ -61,39 +61,39 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(control_layout);
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
-  QObject::connect(parser, &Parser::canMsgsUpdated, this, &VideoWidget::updateState);
+  QObject::connect(can, &CANMessages::rangeChanged, this, &VideoWidget::rangeChanged);
+  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value())); });
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { setPosition(slider->value()); });
   QObject::connect(slider, &Slider::setPosition, this, &VideoWidget::setPosition);
 
   QObject::connect(play, &QPushButton::clicked, [=]() {
-    bool is_paused = parser->replay->isPaused();
+    bool is_paused = can->isPaused();
     play->setText(is_paused ? "⏸" : "▶");
-    parser->replay->pause(!is_paused);
+    can->pause(!is_paused);
   });
 }
 
 void VideoWidget::setPosition(int value) {
   time_label->setText(formatTime(value));
-  parser->seekTo(value);
+  can->seekTo(value);
 }
 
 void VideoWidget::rangeChanged(double min, double max) {
-  if (!parser->isZoomed()) {
+  if (!can->isZoomed()) {
     min = 0;
-    max = parser->replay->totalSeconds();
+    max = can->totalSeconds();
   }
   time_label->setText(formatTime(min));
   total_time_label->setText(formatTime(max));
   slider->setMinimum(min);
   slider->setMaximum(max);
-  slider->setValue(parser->currentSec());
+  slider->setValue(can->currentSec());
 }
 
 void VideoWidget::updateState() {
   if (!slider->isSliderDown()) {
-    int current_sec = parser->currentSec();
+    int current_sec = can->currentSec();
     time_label->setText(formatTime(current_sec));
     slider->setValue(current_sec);
   }
@@ -103,7 +103,7 @@ void VideoWidget::updateState() {
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   QTimer *timer = new QTimer(this);
   timer->setInterval(2000);
-  timer->callOnTimeout([this]() { timeline = parser->replay->getTimeline(); });
+  timer->callOnTimeout([this]() { timeline = can->getTimeline(); });
   timer->start();
 }
 

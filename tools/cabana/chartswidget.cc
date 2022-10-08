@@ -55,11 +55,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(charts_scroll);
 
-  QObject::connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
-  QObject::connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
-  QObject::connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
-  QObject::connect(parser, &Parser::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(reset_zoom_btn, &QPushButton::clicked, parser, &Parser::resetRange);
+  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeChart);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
+  QObject::connect(reset_zoom_btn, &QPushButton::clicked, can, &CANMessages::resetRange);
   QObject::connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
   QObject::connect(dock_btn, &QPushButton::clicked, [=]() {
     emit dock(!docking);
@@ -77,6 +75,9 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
   const QString char_name = id + ":" + sig_name;
   if (charts.find(char_name) == charts.end()) {
     auto chart = new ChartWidget(id, sig_name, this);
+    QObject::connect(chart, &ChartWidget::remove, [=]() {
+      removeChart(id, sig_name);
+    });
     charts_layout->insertWidget(0, chart);
     charts[char_name] = chart;
   }
@@ -120,16 +121,14 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   header->setStyleSheet("background-color:white");
   QHBoxLayout *header_layout = new QHBoxLayout(header);
   header_layout->setContentsMargins(11, 11, 11, 0);
-  QLabel *title = new QLabel(tr("%1 %2").arg(parser->getDBCMsg(id)->name.c_str()).arg(id));
+  QLabel *title = new QLabel(tr("%1 %2").arg(dbc()->msg(id)->name.c_str()).arg(id));
   header_layout->addWidget(title);
   header_layout->addStretch();
 
   QPushButton *remove_btn = new QPushButton("✖", this);
   remove_btn->setFixedSize(30, 30);
   remove_btn->setToolTip(tr("Remove chart"));
-  QObject::connect(remove_btn, &QPushButton::clicked, [=]() {
-    emit parser->hidePlot(id, sig_name);
-  });
+  QObject::connect(remove_btn, &QPushButton::clicked, this, &ChartWidget::remove);
   header_layout->addWidget(remove_btn);
   chart_layout->addWidget(header);
 
@@ -145,7 +144,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->setTitleFont(font);
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
-  QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, parser, &Parser::setRange);
+  QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, can, &CANMessages::setRange);
 
   chart_view = new QChartView(chart);
   chart_view->setFixedHeight(300);
@@ -166,10 +165,10 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   line_marker->raise();
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  QObject::connect(parser, &Parser::canMsgsUpdated, this, &ChartWidget::updateState);
-  QObject::connect(parser, &Parser::rangeChanged, this, &ChartWidget::rangeChanged);
-  QObject::connect(parser, &Parser::eventsMerged, this, &ChartWidget::updateSeries);
-  QObject::connect(parser, &Parser::signalUpdated, [this](const QString &msg_id, const QString &sig_name) {
+  QObject::connect(can, &CANMessages::updated, this, &ChartWidget::updateState);
+  QObject::connect(can, &CANMessages::rangeChanged, this, &ChartWidget::rangeChanged);
+  QObject::connect(can, &CANMessages::eventsMerged, this, &ChartWidget::updateSeries);
+  QObject::connect(dbc(), &DBCManager::signalUpdated, [this](const QString &msg_id, const QString &sig_name) {
     if (this->id == msg_id && this->sig_name == sig_name)
       updateSeries();
   });
@@ -181,7 +180,7 @@ void ChartWidget::updateState() {
   auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
   if (axis_x->max() <= axis_x->min()) return;
 
-  int x = chart->plotArea().left() + chart->plotArea().width() * (parser->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
+  int x = chart->plotArea().left() + chart->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
   if (line_marker_x != x) {
     line_marker->setX(x);
     line_marker_x = x;
@@ -189,8 +188,8 @@ void ChartWidget::updateState() {
 }
 
 void ChartWidget::updateSeries() {
-  const Signal *sig = parser->getSig(id, sig_name);
-  auto events = parser->replay->events();
+  const Signal *sig = dbc()->getSig(id, sig_name);
+  auto events = can->events();
   if (!sig || !events) return;
 
   auto l = id.split(':');
@@ -200,7 +199,7 @@ void ChartWidget::updateSeries() {
   vals.clear();
   vals.reserve(3 * 60 * 100);
   double min_y = 0, max_y = 0;
-  uint64_t route_start_time = parser->replay->routeStartTime();
+  double route_start_time = can->routeStartTime();
   for (auto &evt : *events) {
     if (evt->which == cereal::Event::Which::CAN) {
       for (auto c : evt->event.getCan()) {
@@ -210,7 +209,7 @@ void ChartWidget::updateSeries() {
           if (value < min_y) min_y = value;
           if (value > max_y) max_y = value;
 
-          double ts = (evt->mono_time - route_start_time) / (double)1e9;  // seconds
+          double ts = (evt->mono_time / (double)1e9) - route_start_time;
           vals.push_back({ts, value});
         }
       }
@@ -218,7 +217,7 @@ void ChartWidget::updateSeries() {
   }
   QLineSeries *series = (QLineSeries *)chart_view->chart()->series()[0];
   series->replace(vals);
-  auto [begin, end] = parser->range();
+  auto [begin, end] = can->range();
   chart_view->chart()->axisX()->setRange(begin, end);
   chart_view->chart()->axisY()->setRange(min_y * 0.95, max_y * 1.05);
 }

@@ -4,7 +4,7 @@
 #include <QTableWidget>
 #include <QWidget>
 
-#include "tools/cabana/parser.h"
+#include "tools/cabana/canmessages.h"
 
 class MessagesWidget : public QWidget {
   Q_OBJECT
