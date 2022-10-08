@@ -19,6 +19,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   combo->setCurrentText(QString());
   combo->setInsertPolicy(QComboBox::NoInsert);
   combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  QFont font;
+  font.setBold(true);
+  combo->lineEdit()->setFont(font);
   dbc_file_layout->addWidget(combo);
 
   dbc_file_layout->addStretch();
