@@ -14,12 +14,13 @@ import cereal.messaging as messaging
 from laika.gps_time import GPSTime
 from system.swaglog import cloudlog
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report,
+from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
-                                              oemdre_measurement_report, oemdre_measurement_report_sv,
+                                              oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
                                               LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT)
+                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+                                              LOG_GNSS_OEMDRE_SVPOLY_REPORT)
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 
@@ -28,6 +29,7 @@ LOG_TYPES = [
   LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
   LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
   LOG_GNSS_POSITION_REPORT,
+  LOG_GNSS_OEMDRE_SVPOLY_REPORT,
 ]
 
 
@@ -146,6 +148,9 @@ def main() -> NoReturn:
   unpack_oemdre_meas, size_oemdre_meas = dict_unpacker(oemdre_measurement_report, True)
   unpack_oemdre_meas_sv, size_oemdre_meas_sv = dict_unpacker(oemdre_measurement_report_sv, True)
 
+  unpack_svpoly, _ = dict_unpacker(oemdre_svpoly_report, True)
+  unpack_position, _ = dict_unpacker(position_report)
+
   unpack_position, _ = dict_unpacker(position_report)
 
   # wait for ModemManager to come up
@@ -258,7 +263,24 @@ def main() -> NoReturn:
 
       pm.send('gpsLocation', msg)
 
-    if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
+    elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
+      msg = messaging.new_message('qcomGnss')
+      dat = unpack_svpoly(log_payload)
+      dat = relist(dat)
+      gnss = msg.qcomGnss
+      gnss.logTs = log_time
+      gnss.init('drSvPoly')
+      poly = gnss.drSvPoly
+      for k,v in dat.items():
+        if k == "version":
+          assert v == 2
+        elif k == "flags":
+          pass
+        else:
+          setattr(poly, k, v)
+      pm.send('qcomGnss', msg)
+
+    elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')
 
       gnss = msg.qcomGnss
