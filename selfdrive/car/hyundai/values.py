@@ -85,8 +85,8 @@ class CAR:
   KIA_NIRO_EV = "KIA NIRO EV 2020"
   KIA_NIRO_PHEV = "KIA NIRO HYBRID 2019"
   KIA_NIRO_HEV_2021 = "KIA NIRO HYBRID 2021"
-  KIA_OPTIMA = "KIA OPTIMA 2016"
-  KIA_OPTIMA_2019 = "KIA OPTIMA 2019"
+  KIA_OPTIMA_G4 = "KIA OPTIMA 4TH GEN"
+  KIA_OPTIMA_G4_FL = "KIA OPTIMA 4TH GEN FACELIFT"
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
   KIA_SELTOS = "KIA SELTOS 2021"
   KIA_SORENTO = "KIA SORENTO GT LINE 2018"
@@ -155,8 +155,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
     HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
   ],
-  CAR.KIA_OPTIMA: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", harness=Harness.hyundai_b),  # TODO: may support 2016, 2018
-  CAR.KIA_OPTIMA_2019: HyundaiCarInfo("Kia Optima 2019-20", harness=Harness.hyundai_g),
+  CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", harness=Harness.hyundai_b),  # TODO: may support 2016, 2018
+  CAR.KIA_OPTIMA_G4_FL: HyundaiCarInfo("Kia Optima 2019-20", harness=Harness.hyundai_g),
   CAR.KIA_OPTIMA_H: [
     HyundaiCarInfo("Kia Optima Hybrid 2017", "Advanced Smart Cruise Control"),  # TODO: may support adjacent years
     HyundaiCarInfo("Kia Optima Hybrid 2019"),
@@ -1136,7 +1136,7 @@ FW_VERSIONS = {
       b'\xf1\x87954A22D200\xf1\x81T01950A1  \xf1\000T0190XBL  T01950A1  DSP2T16X4X950NS8\r\xfe\x9c\x8b',
     ],
   },
-  CAR.KIA_OPTIMA: {
+  CAR.KIA_OPTIMA_G4: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4100         ',
     ],
@@ -1150,7 +1150,7 @@ FW_VERSIONS = {
       b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6J0051\x00\x00\xf1\x006T6J0_C2\x00\x006T6J0051\x00\x00TJF0T20NSB\x00\x00\x00\x00',
     ],
   },
-  CAR.KIA_OPTIMA_2019: {
+  CAR.KIA_OPTIMA_G4_FL: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4110         ',
     ],
@@ -1367,7 +1367,7 @@ CHECKSUM = {
 FEATURES = {
   # which message has the gear
   "use_cluster_gears": {CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA},
-  "use_tcu_gears": {CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_2019, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON},
+  "use_tcu_gears": {CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.SONATA_LF, CAR.VELOSTER, CAR.TUCSON},
   "use_elect_gears": {CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.KONA_EV_2022},
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
@@ -1383,7 +1383,7 @@ HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_N
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KONA_EV_2022}
 
 # these cars require a special panda safety mode due to missing counters and checksums in the messages
-LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_2019, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022}
+LEGACY_SAFETY_MODE_CAR = {CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO, CAR.SONATA_LF, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.VELOSTER, CAR.KIA_STINGER, CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022}
 
 # If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
 # If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
@@ -1408,8 +1408,8 @@ DBC = {
   CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.KIA_NIRO_PHEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.KIA_NIRO_HEV_2021: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_2019: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_OPTIMA_G4: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_OPTIMA_G4_FL: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
