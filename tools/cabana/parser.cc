@@ -41,6 +41,7 @@ void Parser::openDBC(const QString &name) {
   for (auto &msg : dbc->msgs) {
     msg_map[msg.address] = &msg;
   }
+  emit DBCFileChanged();
 }
 
 void Parser::process(std::vector<CanData> msgs) {

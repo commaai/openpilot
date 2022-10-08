@@ -59,6 +59,7 @@ signals:
   void rangeChanged(double min, double max);
   void received(std::vector<CanData> can);
   void canMsgsUpdated();
+  void DBCFileChanged();
 
 public:
   Replay *replay = nullptr;

@@ -53,7 +53,6 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void addChart(const QString &id, const QString &sig_name);
   void removeChart(const QString &id, const QString &sig_name);
-  void removeAll();
   inline bool hasChart(const QString &id, const QString &sig_name) {
     return charts.find(id + sig_name) != charts.end();
   }
@@ -64,6 +63,7 @@ signals:
 private:
   void updateState();
   void updateDockButton();
+  void removeAll();
 
   QWidget *title_bar;
   QLabel *title_label;

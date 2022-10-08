@@ -58,6 +58,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(parser, &Parser::showPlot, this, &ChartsWidget::addChart);
   QObject::connect(parser, &Parser::hidePlot, this, &ChartsWidget::removeChart);
   QObject::connect(parser, &Parser::signalRemoved, this, &ChartsWidget::removeChart);
+  QObject::connect(parser, &Parser::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QPushButton::clicked, parser, &Parser::resetRange);
   QObject::connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
   QObject::connect(dock_btn, &QPushButton::clicked, [=]() {
@@ -73,7 +74,7 @@ void ChartsWidget::updateDockButton() {
 }
 
 void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
-  const QString char_name = id + sig_name;
+  const QString char_name = id + ":" + sig_name;
   if (charts.find(char_name) == charts.end()) {
     auto chart = new ChartWidget(id, sig_name, this);
     charts_layout->insertWidget(0, chart);
@@ -85,7 +86,7 @@ void ChartsWidget::addChart(const QString &id, const QString &sig_name) {
 }
 
 void ChartsWidget::removeChart(const QString &id, const QString &sig_name) {
-  if (auto it = charts.find(id + sig_name); it != charts.end()) {
+  if (auto it = charts.find(id + ":" + sig_name); it != charts.end()) {
     it->second->deleteLater();
     charts.erase(it);
     if (charts.empty()) {
