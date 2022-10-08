@@ -205,12 +205,13 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
   table->verticalHeader()->setStyleSheet("QHeaderView::section {padding-left: 5px; padding-right: 5px;}");
   main_layout->addWidget(table);
+
+  QObject::connect(can, &CANMessages::rangeChanged, this, &HistoryLog::clear);
 }
 
 void HistoryLog::setMessage(const QString &message_id) {
   msg_id = message_id;
-  previous_count = 0;
-  table->clear();
+  clear();
   const auto msg = dbc()->msg(msg_id);
   if (msg && !msg->sigs.empty()) {
     table->setColumnCount(msg->sigs.size());
@@ -250,6 +251,11 @@ void HistoryLog::updateState() {
 
   if (table->rowCount() > CAN_MSG_LOG_SIZE)
     table->setRowCount(CAN_MSG_LOG_SIZE);
+}
+
+void HistoryLog::clear() {
+  previous_count = 0;
+  table->clearContents();
 }
 
 // EditMessageDialog

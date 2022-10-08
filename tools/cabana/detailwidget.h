@@ -49,6 +49,8 @@ public:
   void updateState();
 
 private:
+  void clear();
+
   QString msg_id;
   uint64_t previous_count = 0;
   QTableWidget *table;
