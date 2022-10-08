@@ -22,18 +22,17 @@ inline const QString &getColor(int i) {
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  name_label = new QLabel(this);
-  name_label->setStyleSheet("font-weight:bold;");
-  name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  name_label->setAlignment(Qt::AlignCenter);
-  main_layout->addWidget(name_label);
-
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
+  title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   title_layout->addWidget(time_label);
+  time_label->setStyleSheet("font-weight:bold");
   title_layout->addStretch();
-
+  name_label = new QLabel(this);
+  name_label->setStyleSheet("font-weight:bold;");
+  title_layout->addWidget(name_label);
+  title_layout->addStretch();
   edit_btn = new QPushButton(tr("Edit"), this);
   edit_btn->setVisible(false);
   title_layout->addWidget(edit_btn);
@@ -100,7 +99,7 @@ void DetailWidget::setMessage(const QString &message_id) {
 }
 
 void DetailWidget::updateState() {
-  time_label->setText(QString("time: %1").arg(can->currentSec(), 0, 'f', 3));
+  time_label->setText(QString::number(can->currentSec(), 'f', 3));
   if (msg_id.isEmpty()) return;
 
   binary_view->updateState();
