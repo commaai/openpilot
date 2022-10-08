@@ -1,5 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QScreen>
 #include <QVBoxLayout>

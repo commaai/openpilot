@@ -9,7 +9,6 @@ DBCManager::~DBCManager() {}
 void DBCManager::open(const QString &dbc_file_name) {
   dbc_name = dbc_file_name;
   dbc = const_cast<DBC *>(dbc_lookup(dbc_name.toStdString()));
-  // counters.clear();
   msg_map.clear();
   for (auto &msg : dbc->msgs) {
     msg_map[msg.address] = &msg;
@@ -34,41 +33,34 @@ void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
-  Msg *m = const_cast<Msg *>(msg(id));
-  if (!m) return;
-
-  m->sigs.push_back(sig);
-  emit signalAdded(id, QString::fromStdString(sig.name));
+  if (Msg *m = const_cast<Msg *>(msg(id))) {
+    m->sigs.push_back(sig);
+    emit signalAdded(id, QString::fromStdString(sig.name));
+  }
 }
 
 void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
-  Msg *m = const_cast<Msg *>(msg(id));
-  if (!m) return;
-
-  auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
-  if (it != m->sigs.end()) {
-    (*it) = sig;
+  if (Signal *s = const_cast<Signal *>(signal(id, sig_name))) {
+    *s = sig;
     emit signalUpdated(id, sig_name);
   }
 }
 
 void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
-  Msg *m = const_cast<Msg *>(msg(id));
-  if (!m) return;
-
-  auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
-  if (it != m->sigs.end()) {
-    m->sigs.erase(it);
-    emit signalRemoved(id, sig_name);
+  if (Msg *m = const_cast<Msg *>(msg(id))) {
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
+    if (it != m->sigs.end()) {
+      m->sigs.erase(it);
+      emit signalRemoved(id, sig_name);
+    }
   }
 }
 
-const Signal *DBCManager::getSig(const QString &id, const QString &sig_name) const {
+const Signal *DBCManager::signal(const QString &id, const QString &sig_name) const {
   if (auto m = msg(id)) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return sig_name == s.name.c_str(); });
-    if (it != m->sigs.end()) {
+    if (it != m->sigs.end())
       return &(*it);
-    }
   }
   return nullptr;
 }
@@ -82,16 +74,13 @@ DBCManager *dbc() {
   return &dbc_manager;
 }
 
-
 // helper functions
 
 static QVector<int> BIG_ENDIAN_START_BITS = []() {
   QVector<int> ret;
-  for (int i = 0; i < 64; i++) {
-    for (int j = 7; j >= 0; j--) {
+  for (int i = 0; i < 64; i++)
+    for (int j = 7; j >= 0; j--)
       ret.push_back(j + i * 8);
-    }
-  }
   return ret;
 }();
 

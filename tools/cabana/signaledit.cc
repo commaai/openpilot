@@ -75,7 +75,8 @@ std::optional<Signal> SignalForm::getSignal() {
 
 // SignalEdit
 
-SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent) : id(id), name_(sig.name.c_str()), QWidget(parent) {
+SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent)
+    : id(id), name_(sig.name.c_str()), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -122,11 +123,8 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
 }
 
 void SignalEdit::save() {
-  if (auto sig = const_cast<Signal *>(dbc()->getSig(id, name_))) {
-    if (auto s = form->getSignal()) {
-      dbc()->updateSignal(id, name_, *s);
-    }
-  }
+  if (auto s = form->getSignal())
+    dbc()->updateSignal(id, name_, *s);
 }
 
 void SignalEdit::remove() {
@@ -153,10 +151,8 @@ AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(p
   main_layout->addWidget(buttonBox);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
-    if (auto msg = const_cast<Msg *>(dbc()->msg(id))) {
-      if (auto signal = form->getSignal()) {
-        dbc()->addSignal(id, *signal);
-      }
+    if (auto signal = form->getSignal()) {
+      dbc()->addSignal(id, *signal);
     }
     QDialog::accept();
   });

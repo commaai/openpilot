@@ -188,7 +188,7 @@ void ChartWidget::updateState() {
 }
 
 void ChartWidget::updateSeries() {
-  const Signal *sig = dbc()->getSig(id, sig_name);
+  const Signal *sig = dbc()->signal(id, sig_name);
   auto events = can->events();
   if (!sig || !events) return;
 

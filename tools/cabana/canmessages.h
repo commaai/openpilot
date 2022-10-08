@@ -3,10 +3,7 @@
 #include <atomic>
 #include <map>
 
-#include <QApplication>
 #include <QHash>
-#include <QObject>
-
 
 #include "tools/replay/replay.h"
 
