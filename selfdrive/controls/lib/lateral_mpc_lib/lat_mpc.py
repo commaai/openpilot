@@ -20,6 +20,7 @@ P_DIM = 2
 N = 16
 COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 1
+SPEED_OFFSET = 10.0
 MODEL_NAME = 'lat'
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
 
@@ -88,14 +89,13 @@ def gen_lat_ocp():
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
-  # TODO hacky weights to keep behavior the same
   ocp.model.cost_y_expr = vertcat(y_ego,
-                                  ((v_ego + 5.0) * psi_ego),
-                                  ((v_ego + 5.0) * psi_rate_ego),
-                                  ((v_ego + 5.0) * psi_rate_ego_dot))
+                                  ((v_ego + SPEED_OFFSET) * psi_ego),
+                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego),
+                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego_dot))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
-                                  ((v_ego + 5.0) * psi_ego),
-                                  ((v_ego + 5.0) * psi_rate_ego))
+                                  ((v_ego + SPEED_OFFSET) * psi_ego),
+                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego))
 
   # set constraints
   ocp.constraints.constr_type = 'BGH'
@@ -158,8 +158,8 @@ class LateralMpc():
     self.yref[:,0] = y_pts
     v_ego = p_cp[0]
     # rotation_radius = p_cp[1]
-    self.yref[:,1] = heading_pts * (v_ego+5.0)
-    self.yref[:,2] = yaw_rate_pts * (v_ego+5.0)
+    self.yref[:,1] = heading_pts * (v_ego + SPEED_OFFSET)
+    self.yref[:,2] = yaw_rate_pts * (v_ego + SPEED_OFFSET)
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
       self.solver.set(i, "p", p_cp)
