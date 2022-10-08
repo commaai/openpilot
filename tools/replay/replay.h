@@ -8,7 +8,7 @@
 #include "tools/replay/route.h"
 
 // one segment uses about 100M of memory
-constexpr int FORWARD_SEGS = 5;
+constexpr int FORWARD_FETCH_SEGS = 3;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,
@@ -55,6 +55,8 @@ public:
     filter_opaque = opaque;
     event_filter = filter;
   }
+  inline int segmentCacheLimit() const { return segment_cache_limit; }
+  inline void setSegmentCacheLimit(int n) { segment_cache_limit = std::max(3, n); }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
@@ -129,4 +131,5 @@ protected:
   float speed_ = 1.0;
   replayEventFilter event_filter = nullptr;
   void *filter_opaque = nullptr;
+  int segment_cache_limit = 3;
 };

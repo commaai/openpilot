@@ -211,7 +211,7 @@ void Replay::queueSegment() {
 
   SegmentMap::iterator cur, end;
   cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  for (int i = 0; end != segments_.end() && i <= FORWARD_SEGS; ++i) {
+  for (int i = 0; end != segments_.end() && i <= segment_cache_limit + FORWARD_FETCH_SEGS; ++i) {
     ++end;
   }
   // load one segment at a time
@@ -250,7 +250,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
   size_t new_events_size = 0;
-  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < 3; ++it) {
+  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < segment_cache_limit; ++it) {
     segments_need_merge.push_back(it->first);
     new_events_size += it->second->log->events.size();
   }
