@@ -75,5 +75,10 @@ inline QString toHex(const QByteArray &dat) {
   return dat.toHex(' ').toUpper();
 }
 
+inline const QString &getColor(int i) {
+  static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
+  return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
+}
+
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;
