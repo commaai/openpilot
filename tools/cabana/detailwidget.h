@@ -40,6 +40,26 @@ protected:
   QSpinBox *size_spin;
 };
 
+class HistoryLogModel : public QAbstractTableModel {
+Q_OBJECT
+
+public:
+  HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
+  void setMessage(const QString &message_id);
+  void clear();
+  void updateState();
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return CAN_MSG_LOG_SIZE; }
+
+private:
+  QString msg_id;
+  QList<QPair<double, QStringList>> values;
+  uint64_t previous_count = 0;
+  int column_count = 0;
+};
+
 class HistoryLog : public QWidget {
   Q_OBJECT
 
@@ -49,11 +69,10 @@ public:
   void updateState();
 
 private:
-  void clear();
-
   QString msg_id;
   uint64_t previous_count = 0;
-  QTableWidget *table;
+  QTableView *table;
+  HistoryLogModel *model;
 };
 
 class DetailWidget : public QWidget {
