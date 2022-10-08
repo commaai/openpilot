@@ -10,7 +10,7 @@ from selfdrive.car.hyundai.values import HyundaiFlags, DBC, FEATURES, CAMERA_SCC
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
-CLUSTER_SAMPLE_RATE = 20  # frames
+CLUSTER_SAMPLE_RATE = 20  # framess
 
 
 class CarState(CarStateBase):
