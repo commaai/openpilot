@@ -208,7 +208,7 @@ void ChartWidget::updateSeries() {
             val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
           }
           double value = val * sig->factor + sig->offset;
-          double ts = (evt->mono_time - route_start_time) / (double)1e9;  // seconds
+          double ts = (evt->mono_time / (double)1e9) - route_start_time;  // seconds
           vals.push_back({ts, value});
         }
       }

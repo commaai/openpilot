@@ -56,8 +56,8 @@ void HistoryLogModel::updateState() {
 
     QStringList data;
     if (msg && !msg->sigs.empty()) {
-      for (int i = 0; i < msg->sigs.size(); ++i) {
-        double value = get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), msg->sigs[i]);
+      for (const auto &sig : msg->sigs) {
+        double value = get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), sig);
         data.append(QString::number(value));
       }
     } else {
@@ -82,14 +82,13 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   table->horizontalHeader()->setStretchLastSection(true);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
-  table->verticalHeader()->setStyleSheet("QHeaderView::section {padding-left: 5px; padding-right: 5px;}");
+  table->verticalHeader()->setStyleSheet("QHeaderView::section {padding-left: 5px; padding-right: 5px;min-width:40px;}");
   main_layout->addWidget(table);
 
   QObject::connect(can, &CANMessages::rangeChanged, model, &HistoryLogModel::clear);
 }
 
 void HistoryLog::setMessage(const QString &message_id) {
-  msg_id = message_id;
   model->setMessage(message_id);
   model->updateState();
 }

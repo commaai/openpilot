@@ -34,8 +34,6 @@ public:
   void updateState();
 
 private:
-  QString msg_id;
-  uint64_t previous_count = 0;
   QTableView *table;
   HistoryLogModel *model;
 };
