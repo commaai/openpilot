@@ -30,6 +30,7 @@ void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size
     dbc->msgs.push_back({.address = address, .name = name.toStdString(), .size = size});
     msg_map[address] = &dbc->msgs.back();
   }
+  emit msgUpdated(id);
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {

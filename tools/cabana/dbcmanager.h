@@ -34,8 +34,8 @@ signals:
   void signalAdded(const QString &id, const QString &sig_name);
   void signalRemoved(const QString &id, const QString &sig_name);
   void signalUpdated(const QString &id, const QString &sig_name);
+  void msgUpdated(const QString &id);
   void DBCFileChanged();
-
 
 private:
   QString dbc_name;
