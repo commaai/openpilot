@@ -39,6 +39,8 @@ Options:
   --high_quality        Set simulator to higher quality (requires good GPU)
   --town TOWN           Select map to drive in
   --spawn_point NUM     Number of the spawn point to start in
+  --ip                  Set IP address of Carla server (127.0.0.1 as default)
+  --port                Set port of Carla server (2000 as default)
 ```
 
 To engage openpilot press 1 a few times while focused on bridge.py to increase the cruise speed.
