@@ -57,8 +57,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
 void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
   parser->openDBC(dbc_file);
-  // update detailwidget & charts
-  emit msgSelectionChanged(table_widget->selectedItems()[1]->text());
+  // update detailwidget
+  auto selected = table_widget->selectedItems();
+  if (!selected.isEmpty())
+    emit msgSelectionChanged(selected[1]->text());
 }
 
 void MessagesWidget::updateState() {
