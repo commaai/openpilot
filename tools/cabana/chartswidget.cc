@@ -169,7 +169,10 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   QObject::connect(parser, &Parser::canMsgsUpdated, this, &ChartWidget::updateState);
   QObject::connect(parser, &Parser::rangeChanged, this, &ChartWidget::rangeChanged);
   QObject::connect(parser, &Parser::eventsMerged, this, &ChartWidget::updateSeries);
-
+  QObject::connect(parser, &Parser::signalUpdated, [this](const QString &msg_id, const QString &sig_name) {
+    if (this->id == msg_id && this->sig_name == sig_name)
+      updateSeries();
+  });
   updateSeries();
 }
 

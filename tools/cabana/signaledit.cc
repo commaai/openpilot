@@ -124,8 +124,7 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
 void SignalEdit::save() {
   if (auto sig = const_cast<Signal *>(parser->getSig(id, name_))) {
     if (auto s = form->getSignal()) {
-      *sig = *s;
-      // TODO: reset the chart for sig
+      parser->updateSignal(id, name_, *s);
     }
   }
 }

@@ -36,6 +36,7 @@ public:
   void openDBC(const QString &name);
   void saveDBC(const QString &name) {}
   void addNewMsg(const Msg &msg);
+  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
   void removeSignal(const QString &id, const QString &sig_name);
   void seekTo(double ts);
   const Signal *getSig(const QString &id, const QString &sig_name) const;
@@ -55,6 +56,7 @@ signals:
   void showPlot(const QString &id, const QString &name);
   void hidePlot(const QString &id, const QString &name);
   void signalRemoved(const QString &id, const QString &sig_name);
+  void signalUpdated(const QString &id, const QString &sig_name);
   void eventsMerged();
   void rangeChanged(double min, double max);
   void received(std::vector<CanData> can);

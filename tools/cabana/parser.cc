@@ -101,6 +101,17 @@ void Parser::addNewMsg(const Msg &msg) {
   msg_map[dbc->msgs.back().address] = &dbc->msgs.back();
 }
 
+void Parser::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
+  Msg *msg = const_cast<Msg *>(getDBCMsg(id));
+  if (!msg) return;
+
+  auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
+  if (it != msg->sigs.end()) {
+    (*it) = sig;
+    emit signalUpdated(id, sig_name);
+  }
+}
+
 void Parser::removeSignal(const QString &id, const QString &sig_name) {
   Msg *msg = const_cast<Msg *>(getDBCMsg(id));
   if (!msg) return;
