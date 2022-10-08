@@ -264,10 +264,11 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (rubber && rubber->isVisible()) {
     if (rubber->width() == 0) {
       auto [begin, end] = parser->range();
-      double seek_to = begin + ((event->pos().x() - chart()->plotArea().x()) / chart()->plotArea().width()) * (end-begin);
+      double seek_to = begin + ((event->pos().x() - chart()->plotArea().x()) / chart()->plotArea().width()) * (end - begin);
       parser->seekTo(seek_to);
     }
   }
+  // TODO: right-click to reset zoom
   QChartView::mouseReleaseEvent(event);
 }
 
