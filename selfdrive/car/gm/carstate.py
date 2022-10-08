@@ -1,3 +1,4 @@
+import copy
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -59,7 +60,7 @@ class CarState(CarStateBase):
     self.lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
-    self.pscm_status = pt_cp.vl["PSCMStatus"]
+    self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
     ret.steerFaultTemporary = self.lkas_status == 2
     ret.steerFaultPermanent = self.lkas_status == 3
@@ -127,11 +128,8 @@ class CarState(CarStateBase):
       ("LKADriverAppldTrq", "PSCMStatus"),
       ("LKATorqueDelivered", "PSCMStatus"),
       ("LKATotalTorqueDelivered", "PSCMStatus"),
-      ("NEW_SIGNAL_1", "PSCMStatus"),
-      ("NEW_SIGNAL_2", "PSCMStatus"),
-      ("NEW_SIGNAL_3", "PSCMStatus"),
-      ("NEW_SIGNAL_4", "PSCMStatus"),
-      ("NEW_SIGNAL_5", "PSCMStatus"),
+      ("PSCMStatusChecksum", "PSCMStatus"),
+      ("RollingCounter", "PSCMStatus"),
       ("TractionControlOn", "ESPStatus"),
       ("ParkBrake", "VehicleIgnitionAlt"),
       ("CruiseMainOn", "ECMEngineStatus"),
