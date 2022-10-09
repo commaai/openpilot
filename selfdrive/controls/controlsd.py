@@ -443,7 +443,6 @@ class Controls:
       for can_msg in filter(lambda can_msg: can_msg.src >= 192, can.can):
         blocked_msgs[can_msg.src - 192].append(can_msg.address)
 
-    can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     CS = self.CI.update(self.CC, [can.as_builder().to_bytes() for can in can_packets])
 
     self.sm.update(0)
@@ -460,7 +459,7 @@ class Controls:
         Params().put_bool("ControlsReady", True)
 
     # Check for CAN timeout
-    if not can_strs:
+    if not can_packets:
       self.can_rcv_timeout_counter += 1
       self.can_rcv_timeout = True
     else:
