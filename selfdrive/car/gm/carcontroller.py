@@ -21,8 +21,7 @@ class CarController:
     self.frame = 0
     self.last_button_frame = 0
 
-    self.lka_steering_cmd_counter_last = 0
-    self.lka_steering_cmd_counter_offset = 0
+    self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
 
     self.params = CarControllerParams()
@@ -43,15 +42,12 @@ class CarController:
     can_sends = []
 
     # Steering (50Hz)
-    # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
-    # next Panda loopback confirmation in the current CS frame.
+    # Avoid GM EPS faults when transmitting messages too close together:
+    # skip this transmit if we just received a Panda loopback confirmation
 
-    # TODO: previous behavior was always to wait 1 frame to start sending
-    # don't think it was intentional? it shouldn't have mattered on ASCM cars (maybe on GM camera ACC)
-
+    # Initialize ASCMLKASteeringCmd counter using the camera
     if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
-      # self.lka_steering_cmd_counter_offset = CS.camera_lka_steering_cmd_counter
-      self.lka_steering_cmd_counter_last = CS.camera_lka_steering_cmd_counter
+      self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter
 
     if self.frame % self.params.STEER_STEP == 0:
       if not CS.loopback_lka_steering_cmd_updated:
@@ -62,10 +58,8 @@ class CarController:
           apply_steer = 0
 
         self.apply_steer_last = apply_steer
-        # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
-        # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
-        self.lka_steering_cmd_counter_last += 1
-        idx = self.lka_steering_cmd_counter_last % 4
+        self.lka_steering_cmd_counter += 1
+        idx = self.lka_steering_cmd_counter % 4
 
         can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
 
