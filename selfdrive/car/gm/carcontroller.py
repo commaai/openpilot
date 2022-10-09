@@ -44,11 +44,6 @@ class CarController:
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together:
     # skip this transmit if we just received a Panda loopback confirmation
-
-    # Initialize ASCMLKASteeringCmd counter using the camera
-    if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
-      self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter
-
     if self.frame % self.params.STEER_STEP == 0:
       if not CS.loopback_lka_steering_cmd_updated:
         if CC.latActive:

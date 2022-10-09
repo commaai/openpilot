@@ -16,7 +16,6 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.loopback_lka_steering_cmd_updated = False
-    self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
@@ -60,11 +59,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = pt_cp.vl["PSCMStatus"]["LKADriverAppldTrq"]
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]["LKATorqueDelivered"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-
-    # Variables used for avoiding faults in the EPS by gm/carcontroller.py
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]) > 0
-    if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.lkas_status = pt_cp.vl["PSCMStatus"]["LKATorqueDeliveredStatus"]
@@ -99,14 +94,8 @@ class CarState(CarStateBase):
     signals = []
     checks = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      signals += [
-        ("RollingCounter", "ASCMLKASteeringCmd"),
-        ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
-      ]
-      checks += [
-        ("ASCMLKASteeringCmd", 10),
-        ("ASCMActiveCruiseControlStatus", 25),
-      ]
+      signals.append(("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"))
+      checks.append(("ASCMActiveCruiseControlStatus", 25))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.CAMERA)
 
@@ -171,7 +160,7 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 10),   # 10 Hz is the stock inactive rate (every 100ms).
+      ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms).
       #                             While active 50 Hz (every 20 ms) is normal
       #                             EPS will tolerate around 200ms when active before faulting
     ]
