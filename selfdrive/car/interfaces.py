@@ -291,6 +291,7 @@ class RadarInterfaceBase(ABC):
 class CarControllerBase:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.frame = -1
     self.apply_steer_last = 0
     self.steering_msg_addr = -1
     self.steering_msg_bus = -1
@@ -298,6 +299,7 @@ class CarControllerBase:
   def update(self, CC, CS):
     if self.steering_msg_addr in CS.blocked_msgs[self.steering_msg_bus]:
       self.apply_steer_last = 0
+    self.frame += 1
 
 
 class CarStateBase(ABC):

@@ -21,7 +21,6 @@ class CarController(CarControllerBase):
     self.start_time = 0.
     self.apply_gas = 0
     self.apply_brake = 0
-    self.frame = 0
     self.last_button_frame = 0
 
     self.lka_steering_cmd_counter_last = -1
@@ -137,5 +136,4 @@ class CarController(CarControllerBase):
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
 
-    self.frame += 1
     return new_actuators, can_sends
