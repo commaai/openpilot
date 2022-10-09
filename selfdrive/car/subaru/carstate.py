@@ -76,7 +76,7 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
       ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
-      ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] in (1, 2)
+      ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
