@@ -49,8 +49,8 @@ class CarController:
     if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter
 
-    if self.frame % self.params.STEER_STEP == 0:
-      if not CS.loopback_lka_steering_cmd_updated and self.frame != 0:
+    if self.frame % self.params.STEER_STEP == 0 and self.frame != 0:
+      if not CS.loopback_lka_steering_cmd_updated:
         if CC.latActive:
           new_steer = int(round(actuators.steer * self.params.STEER_MAX))
           apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
