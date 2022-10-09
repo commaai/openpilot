@@ -166,15 +166,3 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
-
-  @staticmethod
-  def get_blocked_can_parser(CP):
-    signals = [
-      ("RollingCounter", "ASCMLKASteeringCmd"),
-    ]
-
-    checks = [
-      ("ASCMLKASteeringCmd", 0),
-    ]
-
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.BLOCKED)

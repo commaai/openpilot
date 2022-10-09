@@ -38,7 +38,7 @@ class CarController:
     if hud_v_cruise > 70:
       hud_v_cruise = 0
 
-    if len(CS.blocked_msgs["ASCMLKASteeringCmd"]):
+    if 384 in CS.blocked_msgs[0]:
       self.apply_steer_last = 0
 
     # Send CAN commands.

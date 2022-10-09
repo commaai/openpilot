@@ -76,7 +76,6 @@ class CarInterfaceBase(ABC):
       self.cp_adas = self.CS.get_adas_can_parser(CP)
       self.cp_body = self.CS.get_body_can_parser(CP)
       self.cp_loopback = self.CS.get_loopback_can_parser(CP)
-      self.cp_blocked = self.CS.get_blocked_can_parser(CP)
       self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
     self.CC = None
@@ -174,7 +173,7 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
+  def update(self, c: car.CarControl, can_strings: List[bytes], blocked_msgs: Dict[int, List[int]]) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
@@ -192,8 +191,7 @@ class CarInterfaceBase(ABC):
       self.v_ego_cluster_seen = True
 
     if self.CS is not None:
-      if self.cp_blocked is not None:
-        self.CS.blocked_msgs = self.cp_blocked.vl_all
+      self.CS.blocked_msgs = blocked_msgs
 
       # Many cars apply hysteresis to the ego dash speed
       ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
@@ -303,7 +301,7 @@ class CarStateBase(ABC):
     self.right_blinker_prev = False
     self.cluster_speed_hyst_gap = 0.0
     self.cluster_min_speed = 0.0  # min speed before dropping to 0
-    self.blocked_msgs = []
+    self.blocked_msgs = gen_empty_fingerprint()
 
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
@@ -392,10 +390,6 @@ class CarStateBase(ABC):
 
   @staticmethod
   def get_loopback_can_parser(CP):
-    return None
-
-  @staticmethod
-  def get_blocked_can_parser(CP):
     return None
 
 

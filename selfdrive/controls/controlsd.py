@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 import os
 import math
 from typing import SupportsFloat
@@ -436,8 +437,14 @@ class Controls:
     """Receive data from sockets and update carState"""
 
     # Update carState from CAN
+    can_packets = messaging.drain_sock(self.can_sock, wait_for_one=True)
+    blocked_msgs = defaultdict(list)
+    for can in can_packets:
+      for can_msg in filter(lambda can_msg: can_msg.src >= 192, can.can):
+        blocked_msgs[can_msg.src - 192].append(can_msg.address)
+
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    CS = self.CI.update(self.CC, can_strs)
+    CS = self.CI.update(self.CC, [can.as_builder().to_bytes() for can in can_packets])
 
     self.sm.update(0)
 
