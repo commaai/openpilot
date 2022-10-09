@@ -15,6 +15,9 @@ NetworkLocation = car.CarParams.NetworkLocation
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
+    self.steering_msg_addr = 384
+    self.steering_msg_bus = 0
+
     self.start_time = 0.
     self.apply_gas = 0
     self.apply_brake = 0
@@ -38,9 +41,6 @@ class CarController(CarControllerBase):
     hud_v_cruise = hud_control.setSpeed
     if hud_v_cruise > 70:
       hud_v_cruise = 0
-
-    if 384 in CS.blocked_msgs[0]:
-      self.apply_steer_last = 0
 
     # Send CAN commands.
     can_sends = []
