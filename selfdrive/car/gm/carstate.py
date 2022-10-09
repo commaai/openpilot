@@ -16,10 +16,11 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.loopback_lka_steering_cmd_updated = False
+    self.loopback_lka_steering_cmd_blocked = False
     self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
-  def update(self, pt_cp, cam_cp, loopback_cp):
+  def update(self, pt_cp, cam_cp, loopback_cp, blocked_cp):
     ret = car.CarState.new_message()
 
     self.prev_cruise_buttons = self.cruise_buttons
@@ -63,6 +64,7 @@ class CarState(CarStateBase):
 
     # Variables used for avoiding faults in the EPS by gm/carcontroller.py
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]) > 0
+    self.loopback_lka_steering_cmd_blocked = len(blocked_cp.vl_all["ASCMLKASteeringCmd"]) > 0
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
@@ -177,3 +179,15 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
+
+  @staticmethod
+  def get_blocked_can_parser(CP):
+    signals = [
+      ("RollingCounter", "ASCMLKASteeringCmd"),
+    ]
+
+    checks = [
+      ("ASCMLKASteeringCmd", 0),
+    ]
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.BLOCKED)
