@@ -89,12 +89,19 @@ def gen_lat_ocp():
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
+  # Add offset to smooth out low speed control
+  # TODO unclear if this right solution long term
   v_ego_offset = v_ego + SPEED_OFFSET
+  # TODO there are two costs on psi_rate_ego_dot, one
+  # is correlated to jerk the other to steering wheel movement
+  # the steering wheel movement cost is added to prevent excessive
+  # wheel movements at very low speed, with current tuning
+  # 2 parts of cost are equal at 2m/s
   ocp.model.cost_y_expr = vertcat(y_ego,
                                   v_ego_offset * psi_ego,
                                   v_ego_offset * psi_rate_ego,
-                                  v_ego_offset * psi_rate_ego_dot + 
-                                  100*psi_rate_ego_dot / (v_ego + 0.1))
+                                  v_ego_offset * psi_rate_ego_dot +
+                                  25*psi_rate_ego_dot / (v_ego + 0.1))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
                                    v_ego_offset * psi_ego,
                                    v_ego_offset * psi_rate_ego)
