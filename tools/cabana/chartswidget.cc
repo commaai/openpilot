@@ -180,10 +180,7 @@ void ChartWidget::updateState() {
   auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
 
   int x = chart->plotArea().left() + chart->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
-  if (line_marker_x != x) {
-    line_marker->setX(x);
-    line_marker_x = x;
-  }
+  line_marker->setX(x);
 }
 
 void ChartWidget::updateSeries() {
@@ -203,11 +200,7 @@ void ChartWidget::updateSeries() {
       for (auto c : evt->event.getCan()) {
         if (bus == c.getSrc() && address == c.getAddress()) {
           auto dat = c.getDat();
-          int64_t val = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig);
-          if (sig->is_signed) {
-            val -= ((val >> (sig->size - 1)) & 0x1) ? (1ULL << sig->size) : 0;
-          }
-          double value = val * sig->factor + sig->offset;
+          double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig);
           double ts = (evt->mono_time / (double)1e9) - route_start_time;  // seconds
           vals.push_back({ts, value});
         }
@@ -245,8 +238,10 @@ void ChartWidget::updateAxisY() {
 // LineMarker
 
 void LineMarker::setX(double x) {
-  x_pos = x;
-  update();
+  if (x != x_pos) {
+    x_pos = x;
+    update();
+  }
 }
 
 void LineMarker::paintEvent(QPaintEvent *event) {

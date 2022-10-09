@@ -2,8 +2,6 @@
 
 #include <QDebug>
 
-#include "cereal/messaging/messaging.h"
-
 Q_DECLARE_METATYPE(std::vector<CanData>);
 
 CANMessages *can = nullptr;

@@ -21,8 +21,10 @@ public:
   std::optional<Signal> getSignal();
 
   QLineEdit *name, *unit, *comment, *val_desc;
-  QSpinBox *size, *msb, *lsb, *factor, *offset, *min_val, *max_val;
+  QSpinBox *size, *msb, *lsb, *offset;
+  QDoubleSpinBox *factor, *min_val, *max_val;
   QComboBox *sign, *endianness;
+  int start_bit = 0;
 };
 
 class SignalEdit : public QWidget {

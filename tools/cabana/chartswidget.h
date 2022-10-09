@@ -47,7 +47,6 @@ private:
   QString sig_name;
   QChartView *chart_view = nullptr;
   LineMarker *line_marker = nullptr;
-  double line_marker_x = 0.0;
   QList<QPointF> vals;
 };
 

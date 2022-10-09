@@ -1,13 +1,11 @@
 
 #include "tools/cabana/detailwidget.h"
 
-#include <QDebug>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <bitset>
 
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -167,18 +165,15 @@ void BinaryView::setMessage(const QString &message_id) {
 
 void BinaryView::updateState() {
   const auto &binary = can->lastMessage(msg_id).dat;
-  std::string s;
-  for (int j = 0; j < binary.size(); ++j) {
-    s += std::bitset<8>(binary[j]).to_string();
-  }
 
   setUpdatesEnabled(false);
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
-      table->item(i, j)->setText(QChar(s[i * 8 + j]));
+      table->item(i, j)->setText(QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0'));
     }
-    sprintf(&hex[0], "%02X", (unsigned char)binary[i]);
+    hex[0] = toHex(binary[i] >> 4);
+    hex[1] = toHex(binary[i] & 0xf);
     table->item(i, 8)->setText(hex);
   }
   setUpdatesEnabled(true);

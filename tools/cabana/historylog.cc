@@ -27,7 +27,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       auto msg = dbc()->msg(msg_id);
       if (msg && msg->sigs.size() > 0)
         return QBrush(QColor(getColor(section)));
-    } else if (role == Qt::DisplayRole) {
+    } else if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
       auto msg = dbc()->msg(msg_id);
       if (msg && section < msg->sigs.size())
         return QString::fromStdString(msg->sigs[section].name);

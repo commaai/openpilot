@@ -9,7 +9,7 @@
 
 // SignalForm
 
-SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
+SignalForm::SignalForm(const Signal &sig, QWidget *parent) : start_bit(sig.start_bit), QWidget(parent) {
   QFormLayout *form_layout = new QFormLayout(this);
 
   name = new QLineEdit(sig.name.c_str());
@@ -33,7 +33,8 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
   form_layout->addRow(tr("sign"), sign);
 
-  factor = new QSpinBox();
+  factor = new QDoubleSpinBox();
+  factor->setDecimals(3);
   factor->setValue(sig.factor);
   form_layout->addRow(tr("Factor"), factor);
 
@@ -46,9 +47,11 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   form_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
   form_layout->addRow(tr("Comment"), comment);
-  min_val = new QSpinBox();
+  min_val = new QDoubleSpinBox();
+  factor->setDecimals(3);
   form_layout->addRow(tr("Minimum value"), min_val);
-  max_val = new QSpinBox();
+  max_val = new QDoubleSpinBox();
+  factor->setDecimals(3);
   form_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
   form_layout->addRow(tr("Value descriptions"), val_desc);
@@ -56,11 +59,11 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
 
 std::optional<Signal> SignalForm::getSignal() {
   Signal sig = {};
+  sig.start_bit = start_bit;
   sig.name = name->text().toStdString();
   sig.size = size->text().toInt();
   sig.offset = offset->text().toDouble();
   sig.factor = factor->text().toDouble();
-  sig.msb = msb->text().toInt();
   sig.is_signed = sign->currentIndex() == 0;
   sig.is_little_endian = endianness->currentIndex() == 0;
   if (sig.is_little_endian) {
@@ -113,6 +116,11 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
 
   edit_container->setVisible(false);
   main_layout->addWidget(edit_container);
+
+  QFrame* hline = new QFrame();
+  hline->setFrameShape(QFrame::HLine);
+  hline->setFrameShadow(QFrame::Sunken);
+  main_layout->addWidget(hline);
 
   QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
   QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::save);
