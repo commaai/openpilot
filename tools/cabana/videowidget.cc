@@ -6,6 +6,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
+#include <QStyleOptionSlider>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -121,45 +122,32 @@ void Slider::sliderChange(QAbstractSlider::SliderChange change) {
 }
 
 void Slider::paintEvent(QPaintEvent *ev) {
-  auto getPaintRange = [this](double begin, double end) -> std::pair<double, double> {
-    double total_sec = maximum() - minimum();
-    int start_pos = ((std::max((double)minimum(), (double)begin) - minimum()) / total_sec) * width();
-    int end_pos = ((std::min((double)maximum(), (double)end) - minimum()) / total_sec) * width();
-    return {start_pos, end_pos};
-  };
+  static const QColor colors[] = {
+    [(int)TimelineType::None] = QColor(111, 143, 175),
+    [(int)TimelineType::Engaged] = QColor(0, 163, 108),
+    [(int)TimelineType::UserFlag] = Qt::white,
+    [(int)TimelineType::AlertInfo] = Qt::green,
+    [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
+    [(int)TimelineType::AlertCritical] = QColor(199, 0, 57)};
+
+  QStyleOptionSlider opt;
+  opt.initFrom(this);
+  opt.minimum = minimum() / 1000.0;
+  opt.maximum = maximum() / 1000.0;
+  opt.subControls = QStyle::SC_SliderHandle;
+  opt.sliderPosition = value() / 1000.0;
 
   QPainter p(this);
-  const int v_margin = 2;
-  p.fillRect(rect().adjusted(0, v_margin, 0, -v_margin), QColor(111, 143, 175));
-
+  QRect r = rect().adjusted(0, 4, 0, -4);
+  p.fillRect(r, colors[(int)TimelineType::None]);
   for (auto [begin, end, type] : timeline) {
-    begin *= 1000;
-    end *= 1000;
-    if (begin > maximum() || end < minimum()) continue;
-
-    if (type == TimelineType::Engaged) {
-      auto [start_pos, end_pos] = getPaintRange(begin, end);
-      p.fillRect(QRect(start_pos, v_margin, end_pos - start_pos, height() - v_margin * 2), QColor(0, 163, 108));
+    if (begin < opt.maximum && end >= opt.minimum) {
+      r.setLeft(((std::max(opt.minimum, begin) - opt.minimum) / double(opt.maximum - opt.minimum)) * width());
+      r.setRight(((std::min(opt.maximum, end) - opt.minimum) / double(opt.maximum - opt.minimum)) * width());
+      p.fillRect(r, colors[(int)type]);
     }
   }
-  for (auto [begin, end, type] : timeline) {
-    begin *= 1000;
-    end *= 1000;
-    if (type == TimelineType::Engaged || begin > maximum() || end < minimum()) continue;
-
-    auto [start_pos, end_pos] = getPaintRange(begin, end);
-    if (type == TimelineType::UserFlag) {
-      p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), Qt::white);
-    } else {
-      QColor color(Qt::green);
-      if (type != TimelineType::AlertInfo)
-        color = type == TimelineType::AlertWarning ? QColor(255, 195, 0) : QColor(199, 0, 57);
-
-      p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), color);
-    }
-  }
-  p.setPen(QPen(QColor(88, 24, 69), 3));
-  p.drawLine(QPoint{slider_x, 0}, QPoint{slider_x, height()});
+  style()->drawComplexControl(QStyle::CC_Slider, &opt, &p);
 }
 
 void Slider::mousePressEvent(QMouseEvent *e) {
