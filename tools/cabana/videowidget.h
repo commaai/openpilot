@@ -13,6 +13,7 @@ class Slider : public QSlider {
 public:
   Slider(QWidget *parent);
   void mousePressEvent(QMouseEvent* e) override;
+  void sliderChange(QAbstractSlider::SliderChange change) override;
 
 signals:
   void setPosition(int value);
@@ -20,6 +21,8 @@ signals:
 private:
    void paintEvent(QPaintEvent *ev) override;
    std::vector<std::tuple<int, int, TimelineType>> timeline;
+
+  int slider_x = -1;
 };
 
 class VideoWidget : public QWidget {

@@ -31,9 +31,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   slider = new Slider(this);
   slider->setSingleStep(0);
   slider->setMinimum(0);
-  slider->setTickInterval(60);
-  slider->setTickPosition(QSlider::TicksBelow);
-  slider->setMaximum(parser->replay->totalSeconds());
+  slider->setMaximum(parser->replay->totalSeconds() * 1000);
   slider_layout->addWidget(slider);
 
   total_time_label = new QLabel(formatTime(parser->replay->totalSeconds()));
@@ -63,7 +61,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(parser, &Parser::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(parser, &Parser::updated, this, &VideoWidget::updateState);
-  QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value())); });
+  QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value() / 1000)); });
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { setPosition(slider->value()); });
   QObject::connect(slider, &Slider::setPosition, this, &VideoWidget::setPosition);
 
@@ -75,8 +73,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void VideoWidget::setPosition(int value) {
-  time_label->setText(formatTime(value));
-  parser->seekTo(value);
+  time_label->setText(formatTime(value / 1000.0));
+  parser->seekTo(value / 1000.0);
 }
 
 void VideoWidget::rangeChanged(double min, double max) {
@@ -86,16 +84,16 @@ void VideoWidget::rangeChanged(double min, double max) {
   }
   time_label->setText(formatTime(min));
   total_time_label->setText(formatTime(max));
-  slider->setMinimum(min);
-  slider->setMaximum(max);
-  slider->setValue(parser->currentSec());
+  slider->setMinimum(min * 1000);
+  slider->setMaximum(max * 1000);
+  slider->setValue(parser->currentSec() * 1000);
 }
 
 void VideoWidget::updateState() {
   if (!slider->isSliderDown()) {
-    int current_sec = parser->currentSec();
+    double current_sec = parser->currentSec();
     time_label->setText(formatTime(current_sec));
-    slider->setValue(current_sec);
+    slider->setValue(current_sec * 1000);
   }
 }
 
@@ -103,8 +101,23 @@ void VideoWidget::updateState() {
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   QTimer *timer = new QTimer(this);
   timer->setInterval(2000);
-  timer->callOnTimeout([this]() { timeline = parser->replay->getTimeline(); });
+  timer->callOnTimeout([this]() {
+    timeline = parser->replay->getTimeline();
+    update();
+  });
   timer->start();
+}
+
+void Slider::sliderChange(QAbstractSlider::SliderChange change) {
+  if (change == QAbstractSlider::SliderValueChange) {
+    qreal x = width() * ((value() - minimum()) / double(maximum() - minimum()));
+    if (x != slider_x) {
+      slider_x = x;
+      update();
+    }
+  } else {
+    QAbstractSlider::sliderChange(change);
+  }
 }
 
 void Slider::paintEvent(QPaintEvent *ev) {
@@ -117,17 +130,21 @@ void Slider::paintEvent(QPaintEvent *ev) {
 
   QPainter p(this);
   const int v_margin = 2;
-  p.fillRect(rect().adjusted(0, v_margin, 0, -v_margin), QColor(0, 0, 128));
+  p.fillRect(rect().adjusted(0, v_margin, 0, -v_margin), QColor(111, 143, 175));
 
   for (auto [begin, end, type] : timeline) {
+    begin *= 1000;
+    end *= 1000;
     if (begin > maximum() || end < minimum()) continue;
 
     if (type == TimelineType::Engaged) {
       auto [start_pos, end_pos] = getPaintRange(begin, end);
-      p.fillRect(QRect(start_pos, v_margin, end_pos - start_pos, height() - v_margin * 2), QColor(0, 135, 0));
+      p.fillRect(QRect(start_pos, v_margin, end_pos - start_pos, height() - v_margin * 2), QColor(0, 163, 108));
     }
   }
   for (auto [begin, end, type] : timeline) {
+    begin *= 1000;
+    end *= 1000;
     if (type == TimelineType::Engaged || begin > maximum() || end < minimum()) continue;
 
     auto [start_pos, end_pos] = getPaintRange(begin, end);
@@ -136,14 +153,13 @@ void Slider::paintEvent(QPaintEvent *ev) {
     } else {
       QColor color(Qt::green);
       if (type != TimelineType::AlertInfo)
-        color = type == TimelineType::AlertWarning ? Qt::yellow : Qt::red;
+        color = type == TimelineType::AlertWarning ? QColor(255, 195, 0) : QColor(199, 0, 57);
 
       p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), color);
     }
   }
-  p.setPen(QPen(Qt::black, 2));
-  qreal x = width() * ((value() - minimum()) / double(maximum() - minimum()));
-  p.drawLine(QPointF{x, 0.}, QPointF{x, (qreal)height()});
+  p.setPen(QPen(QColor(88, 24, 69), 3));
+  p.drawLine(QPoint{slider_x, 0}, QPoint{slider_x, height()});
 }
 
 void Slider::mousePressEvent(QMouseEvent *e) {
