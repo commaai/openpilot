@@ -6,16 +6,16 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR
+from selfdrive.car.interfaces import CarControllerBase
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.start_time = 0.
-    self.apply_steer_last = 0
     self.apply_gas = 0
     self.apply_brake = 0
     self.frame = 0
@@ -31,6 +31,7 @@ class CarController:
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
 
   def update(self, CC, CS):
+    super().update(CC, CS)
     actuators = CC.actuators
     hud_control = CC.hudControl
     hud_alert = hud_control.visualAlert
