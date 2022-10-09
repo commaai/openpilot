@@ -46,8 +46,42 @@ class CarController:
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
 
+    # TODO: previous behavior was always to wait 1 frame to start sending
+    # don't think it was intentional? it shouldn't have mattered on ASCM cars (maybe on GM camera ACC)
+
     if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.lka_steering_cmd_counter_offset = CS.camera_lka_steering_cmd_counter
+
+    if self.frame % self.params.STEER_STEP == 0:
+      if not len(CS.loopback_lka_steering_cmd_counter):
+        if CC.latActive:
+          new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+          apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+        else:
+          apply_steer = 0
+
+        self.apply_steer_last = apply_steer
+        # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
+        # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
+        idx = (CS.loopback_lka_steering_cmd_counter + self.lka_steering_cmd_counter_offset + 1) % 4
+
+        can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
+
+    if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
+      self.lka_steering_cmd_counter_offset = CS.camera_lka_steering_cmd_counter
+
+    if len(CS.loopback_lka_steering_cmd_counter) or self.frame == 0:
+    # if self.frame == 0:
+    #   if self.CP.networkLocation == NetworkLocation.fwdCamera:
+    #     self.lka_steering_cmd_counter_offset = CS.camera_lka_steering_cmd_counter
+    # # elif not len(CS.loopback_lka_steering_cmd_counter) and:
+
+
+    if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
+      self.lka_steering_cmd_counter_offset = CS.camera_lka_steering_cmd_counter
+
+    if len(CS.loopback_lka_steering_cmd_counter):
+      pass
 
     if CS.loopback_lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
       self.lka_steering_cmd_counter_last = CS.loopback_lka_steering_cmd_counter
