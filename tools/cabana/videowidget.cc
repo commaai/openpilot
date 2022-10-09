@@ -101,11 +101,23 @@ void VideoWidget::updateState() {
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   QTimer *timer = new QTimer(this);
   timer->setInterval(2000);
-  timer->callOnTimeout([this]() { 
-    timeline = parser->replay->getTimeline(); 
+  timer->callOnTimeout([this]() {
+    timeline = parser->replay->getTimeline();
     update();
   });
   timer->start();
+}
+
+void Slider::sliderChange(QAbstractSlider::SliderChange change) {
+  if (change == QAbstractSlider::SliderValueChange) {
+    qreal x = width() * ((value() - minimum()) / double(maximum() - minimum()));
+    if (x != slider_x) {
+      slider_x = x;
+      update();
+    }
+  } else {
+    QAbstractSlider::sliderChange(change);
+  }
 }
 
 void Slider::paintEvent(QPaintEvent *ev) {
@@ -121,6 +133,8 @@ void Slider::paintEvent(QPaintEvent *ev) {
   p.fillRect(rect().adjusted(0, v_margin, 0, -v_margin), QColor(111, 143, 175));
 
   for (auto [begin, end, type] : timeline) {
+    begin *= 1000;
+    end *= 1000;
     if (begin > maximum() || end < minimum()) continue;
 
     if (type == TimelineType::Engaged) {
@@ -129,6 +143,8 @@ void Slider::paintEvent(QPaintEvent *ev) {
     }
   }
   for (auto [begin, end, type] : timeline) {
+    begin *= 1000;
+    end *= 1000;
     if (type == TimelineType::Engaged || begin > maximum() || end < minimum()) continue;
 
     auto [start_pos, end_pos] = getPaintRange(begin, end);
@@ -143,8 +159,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
     }
   }
   p.setPen(QPen(QColor(88, 24, 69), 3));
-  qreal x = width() * ((value() - minimum()) / double(maximum() - minimum()));
-  p.drawLine(QPointF{x, 0.}, QPointF{x, (qreal)height()});
+  p.drawLine(QPoint{slider_x, 0}, QPoint{slider_x, height()});
 }
 
 void Slider::mousePressEvent(QMouseEvent *e) {
