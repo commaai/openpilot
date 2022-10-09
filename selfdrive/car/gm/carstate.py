@@ -15,7 +15,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
-    self.lka_steering_cmd_counter = 0
+    self.loopback_lka_steering_cmd_counter = 0
     self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
@@ -62,7 +62,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
     # Variables used for avoiding faults in the EPS by gm/carcontroller.py
-    self.lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+    self.loopback_lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
