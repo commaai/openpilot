@@ -301,7 +301,7 @@ class CarStateBase(ABC):
     self.right_blinker_prev = False
     self.cluster_speed_hyst_gap = 0.0
     self.cluster_min_speed = 0.0  # min speed before dropping to 0
-    self.blocked_msgs = gen_empty_fingerprint()
+    self.blocked_msgs = {i: [] for i in range(0, 8)}
 
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
