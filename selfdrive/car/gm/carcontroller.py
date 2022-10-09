@@ -43,8 +43,8 @@ class CarController:
 
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together:
-    # skip this transmit if we just received a Panda loopback confirmation
-    if self.frame % self.params.STEER_STEP == 0:
+    # skip this transmit if we just received a Panda loopback confirmation, or if first frame
+    if self.frame % self.params.STEER_STEP == 0 and self.frame != 0:
       if not CS.loopback_lka_steering_cmd_updated:
         if CC.latActive:
           new_steer = int(round(actuators.steer * self.params.STEER_MAX))
