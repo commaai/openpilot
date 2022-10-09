@@ -49,6 +49,7 @@ class CarController:
     if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
 
+    # If panda blocks a single message, re-transmit the previous counter
     if CS.loopback_lka_steering_cmd_blocked:
       self.lka_steering_cmd_counter -= 1
 
