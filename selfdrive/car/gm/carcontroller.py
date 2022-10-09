@@ -22,6 +22,7 @@ class CarController:
     self.last_button_frame = 0
 
     self.lka_steering_cmd_counter_last = -1
+    self.lka_steering_cmd_counter_offset = 0
     self.lka_icon_status_last = (False, False)
 
     self.params = CarControllerParams()
@@ -44,6 +45,10 @@ class CarController:
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
+
+    if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
+      self.lka_steering_cmd_counter_offset = CS.camera_lka_steering_cmd_counter
+
     if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
       self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
     elif (self.frame % self.params.STEER_STEP) == 0:
@@ -56,7 +61,7 @@ class CarController:
       self.apply_steer_last = apply_steer
       # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
       # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
-      idx = (CS.lka_steering_cmd_counter + 1) % 4
+      idx = (CS.lka_steering_cmd_counter + self.lka_steering_cmd_counter_offset + 1) % 4
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
 
