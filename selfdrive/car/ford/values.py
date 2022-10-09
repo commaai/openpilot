@@ -22,8 +22,8 @@ class CarControllerParams:
   LKAS_UI_STEP = 100
   # Message: ACCDATA_3
   ACC_UI_STEP = 5
-  # Message: Steering_Data_FD1
-  BUTTONS_STEP = 10
+  # Message: Steering_Data_FD1, but send twice as fast
+  BUTTONS_STEP = 10 / 2
 
   LKAS_STEER_RATIO = 2.75       # Approximate ratio between LatCtlPath_An_Actl and steering angle in radians
                                 # TODO: remove this once we understand how the EPS calculates the steering angle better
