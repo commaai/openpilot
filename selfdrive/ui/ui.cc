@@ -162,31 +162,8 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (!scene.started && sm.updated("sensorEvents")) {
-    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
-          scene.accel_sensor = accel[2];
-        }
-      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount) {
-          scene.gyro_sensor = gyro[1];
-        }
-      }
-    }
-  }
   if (sm.updated("wideRoadCameraState")) {
-    auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
-
-    float max_lines = 1618;
-    float max_gain = 10.0;
-    float max_ev = max_lines * max_gain / 6;
-
-    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+    scene.light_sensor = 100.0f - sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent();
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
@@ -195,6 +172,7 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+  s->scene.end_to_end_long = params.getBool("EndToEndLong");
 }
 
 void UIState::updateStatus() {
@@ -223,18 +201,26 @@ void UIState::updateStatus() {
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
   }
+
+  // Handle prime type change
+  if (prime_type != prime_type_prev) {
+    prime_type_prev = prime_type;
+    emit primeTypeChanged(prime_type);
+    Params().put("PrimeType", std::to_string(prime_type));
+  }
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
-    "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
   });
 
   Params params;
   wide_camera = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
+  language = QString::fromStdString(params.get("LanguageSetting"));
 
   // update timer
   timer = new QTimer(this);
@@ -284,8 +270,7 @@ void Device::resetInteractiveTimout() {
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = BACKLIGHT_OFFROAD;
   if (s.scene.started) {
-    // Scale to 0% to 100%
-    clipped_brightness = 100.0 * s.scene.light_sensor;
+    clipped_brightness = s.scene.light_sensor;
 
     // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
     if (clipped_brightness <= 8) {
@@ -311,24 +296,11 @@ void Device::updateBrightness(const UIState &s) {
   }
 }
 
-bool Device::motionTriggered(const UIState &s) {
-  static float accel_prev = 0;
-  static float gyro_prev = 0;
-
-  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-
-  gyro_prev = s.scene.gyro_sensor;
-  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
-
-  return (!awake && accel_trigger && gyro_trigger);
-}
-
 void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
 
-  if (ignition_just_turned_off || motionTriggered(s)) {
+  if (ignition_just_turned_off) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimout();

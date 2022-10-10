@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <sys/file.h>
 
+#include <algorithm>
 #include <csignal>
 #include <unordered_map>
 
@@ -93,6 +94,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarBatteryCapacity", PERSISTENT},
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
+    {"CarParamsPersistent", PERSISTENT},
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
@@ -101,8 +103,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
     {"EndToEndLong", PERSISTENT},
-    {"DisableRadar_Allow", PERSISTENT},
-    {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
+    {"ExperimentalLongitudinalEnabled", PERSISTENT}, // WARNING: THIS MAY DISABLE AEB
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
     {"DongleId", PERSISTENT},
@@ -117,6 +118,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GithubUsername", PERSISTENT},
     {"GitRemote", PERSISTENT},
     {"GsmApn", PERSISTENT},
+    {"GsmMetered", PERSISTENT},
     {"GsmRoaming", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
@@ -143,6 +145,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
+    {"LiveTorqueCarParams", PERSISTENT},
+    {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"NavSettingTime24h", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
@@ -154,18 +158,25 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PrimeType", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
-    {"ReleaseNotes", PERSISTENT},
     {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
     {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"SshEnabled", PERSISTENT},
     {"SubscriberInfo", PERSISTENT},
-    {"SwitchToBranch", CLEAR_ON_MANAGER_START},
     {"TermsVersion", PERSISTENT},
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
+    {"UbloxAvailable", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
+    {"UpdaterState", CLEAR_ON_MANAGER_START},
+    {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
+    {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
+    {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
+    {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
+    {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
+    {"UpdaterNewDescription", CLEAR_ON_MANAGER_START},
+    {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
     {"WideCameraOnly", PERSISTENT},
@@ -191,10 +202,16 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 
 Params::Params(const std::string &path) {
-  const char* env = std::getenv("OPENPILOT_PREFIX");
-  prefix = env ? "/" + std::string(env) : "/d";
-  std::string default_param_path = ensure_params_path(prefix);
-  params_path = path.empty() ? default_param_path : ensure_params_path(prefix, path);
+  prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
+  params_path = ensure_params_path(prefix, path);
+}
+
+std::vector<std::string> Params::allKeys() const {
+  std::vector<std::string> ret;
+  for (auto &p : keys) {
+    ret.push_back(p.first);
+  }
+  return ret;
 }
 
 bool Params::checkKey(const std::string &key) {
@@ -282,10 +299,13 @@ std::map<std::string, std::string> Params::readAll() {
 void Params::clearAll(ParamKeyType key_type) {
   FileLock file_lock(params_path + "/.lock");
 
-  std::string path;
-  for (auto &[key, type] : keys) {
-    if (type & key_type) {
-      unlink(getParamPath(key).c_str());
+  if (key_type == ALL) {
+    util::remove_files_in_dir(getParamPath());
+  } else {
+    for (auto &[key, type] : keys) {
+      if (type & key_type) {
+        unlink(getParamPath(key).c_str());
+      }
     }
   }
 

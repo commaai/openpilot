@@ -55,13 +55,11 @@ int main(int argc, char** argv) {
   bool r = util::create_directories(LOG_ROOT + "/boot/", 0775);
   assert(r);
 
-  RawFile bz_file(path.c_str());
-
+  RawFile file(path.c_str());
   // Write initdata
-  bz_file.write(logger_build_init_data().asBytes());
-
+  file.write(logger_build_init_data().asBytes());
   // Write bootlog
-  bz_file.write(build_boot_log().asBytes());
+  file.write(build_boot_log().asBytes());
 
   return 0;
 }
