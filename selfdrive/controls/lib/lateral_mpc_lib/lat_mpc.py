@@ -96,12 +96,12 @@ def gen_lat_ocp():
   # is correlated to jerk the other to steering wheel movement
   # the steering wheel movement cost is added to prevent excessive
   # wheel movements at very low speed, with current tuning
-  # 2 parts of cost are equal at 2m/s
+  # 2 parts of cost are equal at 3m/s
   ocp.model.cost_y_expr = vertcat(y_ego,
                                   v_ego_offset * psi_ego,
                                   v_ego_offset * psi_rate_ego,
                                   v_ego_offset * psi_rate_ego_dot +
-                                  25*psi_rate_ego_dot / (v_ego + 0.1))
+                                  40*psi_rate_ego_dot / (v_ego + 0.1))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
                                    v_ego_offset * psi_ego,
                                    v_ego_offset * psi_rate_ego)
