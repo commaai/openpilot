@@ -122,14 +122,6 @@ class IsoTpParallelQuery:
 
         counter = request_counter[tx_addr]
 
-        # can_send_now_from_delay = delays[tx_addr] is not None and time.monotonic() >= delays[tx_addr]
-        # if can_send_now_from_delay:
-        #   delays[tx_addr] = None
-        #   msg.send(self.request[counter + 1])
-        #   request_counter[tx_addr] += 1
-        #   assert not dat, dat
-        #   continue
-
         if not dat:
           continue
 
@@ -140,15 +132,9 @@ class IsoTpParallelQuery:
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             delays[tx_addr] = time.monotonic() + self.query_interval
-
-            if not isinstance(self.request[counter + 1], bytes):
-              query_option = self.request[counter + 1]
-              delays[tx_addr] = time.monotonic() + query_option.delay
-              # TODO: this correct?
-              print(f'Extending timeout for {tx_addr} by {timeout + query_option.delay=}s')
-              response_timeouts[tx_addr] = time.monotonic() + timeout + query_option.delay
-            else:
-              msg.send(self.request[counter + 1])
+            # TODO
+            print(f'Extending timeout for {tx_addr} by {timeout + self.query_interval=}s')
+            response_timeouts[tx_addr] = time.monotonic() + timeout + self.query_interval
 
             request_counter[tx_addr] += 1
           else:
