@@ -281,14 +281,15 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    # TODO: might want to just have a parameter for FwQueryConfig to add delay/spacing between requests
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.2), HYUNDAI_VERSION_REQUEST_LONG],
-      [StdQueries.TESTER_PRESENT_RESPONSE, None,                   HYUNDAI_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST,  HYUNDAI_VERSION_REQUEST_LONG],
+      [StdQueries.ANY_RESPONSE, HYUNDAI_VERSION_RESPONSE],
+      query_interval=0.2,
     ),
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST,  QueryOption(delay=0.2), HYUNDAI_VERSION_REQUEST_MULTI],
-      [StdQueries.TESTER_PRESENT_RESPONSE, None,                   HYUNDAI_VERSION_RESPONSE],
+      [StdQueries.TESTER_PRESENT_REQUEST, HYUNDAI_VERSION_REQUEST_MULTI],
+      [StdQueries.ANY_RESPONSE, HYUNDAI_VERSION_RESPONSE],
+      query_interval=0.2,
     ),
   ],
 )

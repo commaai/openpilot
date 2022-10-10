@@ -13,6 +13,8 @@ def p16(val):
 
 class StdQueries:
   # FW queries
+  ANY_RESPONSE = b""
+
   TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
   TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40, 0x0])
 
@@ -51,17 +53,12 @@ class StdQueries:
 
 
 @dataclass
-class QueryOption:
-  # Delay before sending next query, adds to IsoTpParallelQuery timeout
-  delay: float = 0
-
-
-@dataclass
 class Request:
-  request: List[Union[bytes, QueryOption]]
+  request: List[bytes]
   response: List[Optional[bytes]]
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
+  query_interval: float = 0
   bus: int = 1
 
 

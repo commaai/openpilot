@@ -9,13 +9,14 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addrs=None, debug=False, response_pending_timeout=10):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addrs=None, query_interval=0, debug=False, response_pending_timeout=10):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
     self.request = request
     self.response = response
     self.functional_addrs = functional_addrs or []
+    self.query_interval = query_interval
     self.debug = debug
     self.response_pending_timeout = response_pending_timeout
 
@@ -80,11 +81,9 @@ class IsoTpParallelQuery:
     msgs = {}
     request_counter = {}
     request_done = {}
-    delays = {}
     for tx_addr, rx_addr in self.msg_addrs.items():
       msgs[tx_addr] = self._create_isotp_msg(*tx_addr, rx_addr)
       request_counter[tx_addr] = 0
-      delays[tx_addr] = None
       request_done[tx_addr] = False
 
     # Send first request to functional addrs, subsequent responses are handled on physical addrs
@@ -98,7 +97,8 @@ class IsoTpParallelQuery:
 
     results = {}
     start_time = time.monotonic()
-    response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
+    response_timeouts = {tx_addr: start_time + timeout + self.query_interval for tx_addr in self.msg_addrs}
+    delays = {tx_addr: start_time + self.query_interval for tx_addr in self.msg_addrs}
     while True:
       self.rx()
 
@@ -106,6 +106,10 @@ class IsoTpParallelQuery:
         break
 
       for tx_addr, msg in msgs.items():
+        if time.monotonic() < delays[tx_addr]:
+          response_timeouts[tx_addr] = time.monotonic() + timeout + self.query_interval
+          continue
+
         try:
           dat, updated = msg.recv()
         except Exception:
@@ -118,13 +122,13 @@ class IsoTpParallelQuery:
 
         counter = request_counter[tx_addr]
 
-        can_send_now_from_delay = delays[tx_addr] is not None and time.monotonic() >= delays[tx_addr]
-        if can_send_now_from_delay:
-          delays[tx_addr] = None
-          msg.send(self.request[counter + 1])
-          request_counter[tx_addr] += 1
-          assert not dat, dat
-          continue
+        # can_send_now_from_delay = delays[tx_addr] is not None and time.monotonic() >= delays[tx_addr]
+        # if can_send_now_from_delay:
+        #   delays[tx_addr] = None
+        #   msg.send(self.request[counter + 1])
+        #   request_counter[tx_addr] += 1
+        #   assert not dat, dat
+        #   continue
 
         if not dat:
           continue
@@ -134,6 +138,9 @@ class IsoTpParallelQuery:
 
         if response_valid:
           if counter + 1 < len(self.request):
+            msg.send(self.request[counter + 1])
+            delays[tx_addr] = time.monotonic() + self.query_interval
+
             if not isinstance(self.request[counter + 1], bytes):
               query_option = self.request[counter + 1]
               delays[tx_addr] = time.monotonic() + query_option.delay
