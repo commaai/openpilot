@@ -40,6 +40,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 
 void HistoryLogModel::clear() {
   values.clear();
+  previous_count = 0;
   emit dataChanged(index(0, 0), index(CAN_MSG_LOG_SIZE - 1, column_count - 1));
 }
 

@@ -225,6 +225,7 @@ void ChartWidget::rangeChanged(qreal min, qreal max) {
 // auto zoom on yaxis
 void ChartWidget::updateAxisY() {
   const auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
+  const auto axis_y = dynamic_cast<QValueAxis *>(chart_view->chart()->axisY());
   // vals is a sorted list
   auto begin = std::lower_bound(vals.begin(), vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
   if (begin == vals.end())
@@ -232,7 +233,15 @@ void ChartWidget::updateAxisY() {
 
   auto end = std::upper_bound(vals.begin(), vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
   const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
-  chart_view->chart()->axisY()->setRange(min->y(), max->y());
+  if (min->y() == max->y()) {
+    if (max->y() < 0) {
+      axis_y->setRange(max->y(), 0);
+    } else {
+      axis_y->setRange(0, max->y() == 0 ? 1 : max->y());
+    }
+  } else {
+    axis_y->setRange(min->y(), max->y());
+  }
 }
 
 // LineMarker
