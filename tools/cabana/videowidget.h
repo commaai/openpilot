@@ -5,6 +5,7 @@
 #include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "tools/replay/replay.h"
 
 class Slider : public QSlider {
   Q_OBJECT
@@ -12,9 +13,16 @@ class Slider : public QSlider {
 public:
   Slider(QWidget *parent);
   void mousePressEvent(QMouseEvent* e) override;
+  void sliderChange(QAbstractSlider::SliderChange change) override;
 
 signals:
   void setPosition(int value);
+
+private:
+   void paintEvent(QPaintEvent *ev) override;
+   std::vector<std::tuple<int, int, TimelineType>> timeline;
+
+  int slider_x = -1;
 };
 
 class VideoWidget : public QWidget {
