@@ -66,11 +66,13 @@ signals:
 
 private:
   void updateState();
-  void updateDockButton();
+  void updateTitleBar();
   void removeAll();
+  bool eventFilter(QObject *obj, QEvent *event);
 
   QWidget *title_bar;
   QLabel *title_label;
+  QLabel *range_label;
   bool docking = true;
   QPushButton *dock_btn;
   QPushButton *reset_zoom_btn;

@@ -157,6 +157,8 @@ AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(p
   main_layout->addWidget(form);
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
+  setFixedWidth(parent->width() * 0.9);
+
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
     if (auto signal = form->getSignal()) {

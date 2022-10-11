@@ -60,6 +60,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidgetResizable(true);
   scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
   main_layout->addWidget(scroll);
@@ -201,6 +202,8 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, QWidget *parent) : m
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
+
+  setFixedWidth(parent->width() * 0.9);
 
   connect(buttonBox, &QDialogButtonBox::accepted, this, &EditMessageDialog::save);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
