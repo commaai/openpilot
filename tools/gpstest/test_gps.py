@@ -96,7 +96,7 @@ def verify_gps_location(socket: messaging.SubSocket):
   assert end_time != 0, "GPS location never converged!"
 
   ttfl = (end_time - start_time)/1e9
-  assert ttfl < 40, f"Time to first location > 40s, {ttfl}"
+  assert ttfl < 60, f"Time to first location > 60s, {ttfl}"
 
   hacc = events[-1].gpsLocationExternal.accuracy
   vacc = events[-1].gpsLocationExternal.verticalAccuracy
@@ -146,12 +146,12 @@ class TestGPS(unittest.TestCase):
     gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
 
     # receive some messages (restart after cold start takes up to 30seconds)
-    pd.run_receiving(pigeon, pm, 40)
+    pd.run_receiving(pigeon, pm, 120)
 
     # store almanac for next test
     create_backup(pigeon)
 
-    verify_ubloxgnss_data(ugs, 40)
+    verify_ubloxgnss_data(ugs, 120)
     verify_gps_location(gle)
 
     # skip for now, this might hang for a while
