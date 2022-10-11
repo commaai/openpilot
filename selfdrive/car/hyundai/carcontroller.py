@@ -111,7 +111,7 @@ class CarController:
         if self.frame % 100 == 0:
           can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-      # Count up to STEER_FAULT_MAX_ANGLE, at which point we need to cut torque to avoid a steering fault
+      # Count up to STEER_FAULT_MAX_FRAMES, at which point we need to cut torque to avoid a steering fault
       if CC.latActive and abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
         self.angle_limit_counter += 1
       else:
@@ -123,9 +123,9 @@ class CarController:
         self.angle_limit_counter = 0
 
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
-                                     cut_steer_temp, CS.lkas11, sys_warning, sys_state, CC.enabled,
-                                     hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                     left_lane_warning, right_lane_warning))
+                                                cut_steer_temp, CS.lkas11, sys_warning, sys_state, CC.enabled,
+                                                hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                left_lane_warning, right_lane_warning))
 
       if not self.CP.openpilotLongitudinalControl:
         if CC.cruiseControl.cancel:
