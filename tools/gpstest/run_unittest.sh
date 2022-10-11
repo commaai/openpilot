@@ -2,8 +2,8 @@
 
 # NOTE: can only run inside the limeGPS test box!
 
-# run limeGPS with static location
-./run_static_gps_signal.py >/dev/null &
+# run limeGPS with random static location
+./simulate_gps_signal.py &
 gps_PID=$?
 
 echo "starting limeGPS..."
