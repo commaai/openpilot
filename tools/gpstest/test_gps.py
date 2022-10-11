@@ -117,9 +117,6 @@ class TestGPS(unittest.TestCase):
 
     pigeon, pm = pd.create_pigeon()
     pd.init_baudrate(pigeon)
-
-    # deleting the backup does not always work on first try
-    # mostly works on second try
     assert pigeon.reset_device(), "Could not reset device!"
 
     pd.initialize_pigeon(pigeon)
