@@ -6,6 +6,8 @@ import itertools
 import math
 import time
 import subprocess
+import pycurl
+from datetime import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
@@ -76,6 +78,35 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
+def quectel_xtradata_downloader():
+  urls = [
+    "http://xtrapath4.izatcloud.net/xtra2.bin",
+    "http://xtrapath5.izatcloud.net/xtra2.bin",
+    "http://xtrapath6.izatcloud.net/xtra2.bin"
+  ]
+
+  # TODO: move to a cache directory
+  filename = f"/data/{datetime.utcnow().strftime('%y%m%d')}xtra2.bin"
+  if os.path.exists(filename):
+    return filename
+
+  try:
+    for u in urls:
+      with open(filename, "wb+") as f:
+        crl = pycurl.Curl()
+        crl.setopt(pycurl.URL, u)
+        crl.setopt(pycurl.WRITEDATA, f)
+        crl.perform()
+        response = crl.getinfo(pycurl.RESPONSE_CODE)
+        crl.close()
+        if response == 200:
+          return filename
+  except Exception:
+    os.remove(filename)
+    return None
+
+  # could not download file
+  return None
 
 def try_setup_logs(diag, log_types):
   for _ in range(5):
@@ -112,6 +143,15 @@ def setup_quectel(diag: ModemDiag):
   mmcli("--command='AT+QGPSCFG=\"dpoenable\",0'")
   # don't automatically turn on GNSS on powerup
   mmcli("--command='AT+QGPSCFG=\"autogps\",0'")
+
+  # upload xtra data binary
+  bin_file = quectel_xtradata_downloader()
+  if bin_file is not None:
+    try:
+      mmcli(f"--location-inject-assistance-data={bin_file}")
+    except Exception:
+      cloudlog.warning("Could not inject assistance data")
+
   mmcli("--location-enable-gps-raw --location-enable-gps-nmea")
 
   # enable OEMDRE mode
