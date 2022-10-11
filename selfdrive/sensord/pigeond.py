@@ -114,6 +114,26 @@ class TTYPigeon():
         raise TimeoutError('No response from ublox')
       time.sleep(0.001)
 
+  def reset_device(self) -> bool:
+    for _ in range(5):
+      # device cold start
+      self.send(b"\xb5\x62\x06\x04\x04\x00\xff\xff\x00\x00\x0c\x5d")
+      time.sleep(1) # wait for cold start
+      init_baudrate(self)
+
+      # clear configuration
+      self.send_with_ack(b"\xb5\x62\x06\x09\x0d\x00\x00\x00\x1f\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x17\x71\x5b")
+
+      # clear flash memory (almanac backup)
+      self.send_with_ack(b"\xB5\x62\x09\x14\x04\x00\x01\x00\x00\x00\x22\xf0")
+
+      # try restoring backup to verify it got deleted
+      self.send(b"\xB5\x62\x09\x14\x00\x00\x1D\x60")
+      # 1: failed to restore, 2: could restore, 3: no backup
+      status = self.wait_for_backup_restore_status()
+      if status == 1 or status == 3:
+        return True
+    return False
 
 def init_baudrate(pigeon: TTYPigeon):
   # ublox default setting on startup is 9600 baudrate

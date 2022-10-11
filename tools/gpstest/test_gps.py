@@ -120,28 +120,7 @@ class TestGPS(unittest.TestCase):
 
     # deleting the backup does not always work on first try
     # mostly works on second try
-    got_deleted = False
-    for _ in range(5):
-      # device cold start
-      pigeon.send(b"\xb5\x62\x06\x04\x04\x00\xff\xff\x00\x00\x0c\x5d")
-      time.sleep(1) # wait for cold start
-      pd.init_baudrate(pigeon)
-
-      # clear configuration
-      pigeon.send_with_ack(b"\xb5\x62\x06\x09\x0d\x00\x00\x00\x1f\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x17\x71\x5b")
-
-      # clear flash memory (almanac backup)
-      pigeon.send_with_ack(b"\xB5\x62\x09\x14\x04\x00\x01\x00\x00\x00\x22\xf0")
-
-      # try restoring backup to verify it got deleted
-      pigeon.send(b"\xB5\x62\x09\x14\x00\x00\x1D\x60")
-      # 1: failed to restore, 2: could restore, 3: no backup
-      status = pigeon.wait_for_backup_restore_status()
-      if status == 1 or status == 3:
-        got_deleted = True
-        break
-
-    assert got_deleted, "Could not delete almanac backup"
+    assert pigeon.reset_device(), "Could not reset device!"
 
     pd.initialize_pigeon(pigeon)
 
