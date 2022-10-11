@@ -26,7 +26,7 @@ download available at https://downloads.myriadrf.org/project/limesuite. Therefor
 version 20.10 was chosen.
 
 * https://github.com/osqzss/LimeGPS
-Build on top of LimeSuite (libLimeSuite.so.20.10-1), generates the GPS signal.
+Built on top of LimeSuite (libLimeSuite.so.20.10-1), generates the GPS signal.
 
 ```
 ./LimeGPS -e <ephemeris file> -l <location coordinates>
