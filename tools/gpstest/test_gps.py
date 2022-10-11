@@ -148,14 +148,14 @@ class TestGPS(unittest.TestCase):
     # receive some messages (restart after cold start takes up to 30seconds)
     pd.run_receiving(pigeon, pm, 40)
 
+    # store almanac for next test
+    create_backup(pigeon)
+
     verify_ubloxgnss_data(ugs, 40)
     verify_gps_location(gle)
 
     # skip for now, this might hang for a while
     #verify_time_to_first_fix(pigeon)
-
-    # store almanac for next test
-    create_backup(pigeon)
 
 
   @with_processes(['ubloxd'])
