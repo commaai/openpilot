@@ -19,7 +19,7 @@ X_DIM = 4
 P_DIM = 2
 N = 16
 COST_E_DIM = 3
-COST_DIM = COST_E_DIM + 1
+COST_DIM = COST_E_DIM + 2
 SPEED_OFFSET = 10.0
 MODEL_NAME = 'lat'
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
@@ -100,8 +100,8 @@ def gen_lat_ocp():
   ocp.model.cost_y_expr = vertcat(y_ego,
                                   v_ego_offset * psi_ego,
                                   v_ego_offset * psi_rate_ego,
-                                  v_ego_offset * psi_rate_ego_dot +
-                                  40*psi_rate_ego_dot / (v_ego + 0.1))
+                                  v_ego_offset * psi_rate_ego_dot,
+                                  psi_rate_ego_dot / (v_ego + 0.1))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
                                    v_ego_offset * psi_ego,
                                    v_ego_offset * psi_rate_ego)
@@ -153,8 +153,12 @@ class LateralMpc():
     self.solve_time = 0.0
     self.cost = 0
 
-  def set_weights(self, path_weight, heading_weight, yaw_rate_weight, yaw_accel_cost):
-    W = np.asfortranarray(np.diag([path_weight, heading_weight, yaw_rate_weight, yaw_accel_cost]))
+  def set_weights(self, path_weight, heading_weight,
+                  lat_accel_weight, lat_jerk_weight,
+                  steering_rate_weight):
+    W = np.asfortranarray(np.diag([path_weight, heading_weight,
+                                   lat_accel_weight, lat_jerk_weight,
+                                   steering_rate_weight]))
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     self.solver.cost_set(N, 'W', W[:COST_E_DIM,:COST_E_DIM])
