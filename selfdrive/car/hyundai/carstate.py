@@ -31,7 +31,6 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
     self.brake_error = False
-    self.park_brake = False
     self.buttons_counter = 0
 
     # On some cars, CLU15->CF_Clu_VehicleSpeed can oscillate faster than the dash updates. Sample at 5 Hz
@@ -127,12 +126,12 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.CP.carFingerprint in FEATURES["use_fca"]:
-        ret.stockAeb = cp_cruise.vl["FCA11"]["FCA_CmdAct"] != 0
-        ret.stockFcw = cp_cruise.vl["FCA11"]["CF_VSM_Warn"] == 2
-      else:
-        ret.stockAeb = cp_cruise.vl["SCC12"]["AEB_CmdAct"] != 0
-        ret.stockFcw = cp_cruise.vl["SCC12"]["CF_VSM_Warn"] == 2
+      aeb_src = "FCA11" if self.CP.carFingerprint in FEATURES["use_fca"] else "SCC12"
+      aeb_sig = "FCA_CmdAct" if self.CP.carFingerprint in FEATURES["use_fca"] else "AEB_CmdAct"
+      aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
+      aeb_braking = cp_cruise.vl[aeb_src]["CF_VSM_DecCmdAct"] != 0 or cp_cruise.vl[aeb_src][aeb_sig] != 0
+      ret.stockFcw = aeb_warning and not aeb_braking
+      ret.stockAeb = aeb_warning and aeb_braking
 
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
@@ -181,6 +180,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
     ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
+    ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
                                                                       cp.vl["BLINKERS"]["RIGHT_LAMP"])
@@ -295,12 +295,14 @@ class CarState(CarStateBase):
         signals += [
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
+          ("CF_VSM_DecCmdAct", "FCA11"),
         ]
         checks.append(("FCA11", 50))
       else:
         signals += [
           ("AEB_CmdAct", "SCC12"),
           ("CF_VSM_Warn", "SCC12"),
+          ("CF_VSM_DecCmdAct", "SCC12"),
         ]
 
     if CP.enableBsm:
@@ -384,12 +386,14 @@ class CarState(CarStateBase):
         signals += [
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
+          ("CF_VSM_DecCmdAct", "FCA11"),
         ]
         checks.append(("FCA11", 50))
       else:
         signals += [
           ("AEB_CmdAct", "SCC12"),
           ("CF_VSM_Warn", "SCC12"),
+          ("CF_VSM_DecCmdAct", "SCC12"),
         ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
@@ -411,6 +415,7 @@ class CarState(CarStateBase):
       ("STEERING_ANGLE", "STEERING_SENSORS"),
       ("STEERING_COL_TORQUE", "MDPS"),
       ("STEERING_OUT_TORQUE", "MDPS"),
+      ("LKA_FAULT", "MDPS"),
 
       ("CRUISE_ACTIVE", "SCC1"),
       ("COUNTER", cruise_btn_msg),

@@ -136,7 +136,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19", footnotes=[Footnote.DSU]),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
   CAR.PRIUS: [
-    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", "https://www.youtube.com/watch?v=8zopPJI8XQ0", [Footnote.DSU]),
     ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
     ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0", footnotes=[Footnote.DSU]),
   ],
@@ -150,7 +150,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota RAV4 2017-18", footnotes=[Footnote.DSU])
   ],
   CAR.RAV4H: [
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", "https://youtu.be/LhT5VzJVfNI?t=26", [Footnote.DSU]),
     ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26", footnotes=[Footnote.DSU])
   ],
   CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
@@ -171,8 +171,14 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
-  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-19", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RX: [
+    ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Lexus RX 2017-19", footnotes=[Footnote.DSU]),
+  ],
+  CAR.LEXUS_RXH: [
+    ToyotaCarInfo("Lexus RX Hybrid 2016", "Lexus Safety System+", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Lexus RX Hybrid 2017-19", footnotes=[Footnote.DSU]),
+  ],
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
@@ -751,6 +757,7 @@ FW_VERSIONS = {
       b'\x03312N6000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
+      b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203202\x00\x00\x00\x00',
       b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x02312K4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02312U5000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
