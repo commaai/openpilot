@@ -7,6 +7,7 @@ import math
 import time
 import subprocess
 import pycurl
+import glob
 from datetime import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
@@ -85,10 +86,13 @@ def quectel_xtradata_downloader():
     "http://xtrapath6.izatcloud.net/xtra2.bin"
   ]
 
-  # TODO: move to a cache directory
-  filename = f"/data/{datetime.utcnow().strftime('%y%m%d')}xtra2.bin"
+  filename = f"/data/tmp/{datetime.utcnow().strftime('%y%m%d')}xtra2.bin"
   if os.path.exists(filename):
     return filename
+
+  # delete old files
+  for f in glob.iglob("/data/tmp/*xtra2.bin"):
+    os.remove(f)
 
   try:
     for u in urls:
@@ -105,7 +109,6 @@ def quectel_xtradata_downloader():
     os.remove(filename)
     return None
 
-  # could not download file
   return None
 
 def try_setup_logs(diag, log_types):
