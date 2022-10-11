@@ -77,9 +77,9 @@ class TestLateralMpc(unittest.TestCase):
 
   def test_switch_convergence(self):
     lat_mpc = LateralMpc()
-    sol = run_mpc(lat_mpc=lat_mpc, poly_shift=30.0, v_ref=7.0)
+    sol = run_mpc(lat_mpc=lat_mpc, poly_shift=3.0, v_ref=7.0)
     right_psi_deg = np.degrees(sol[:,2])
-    sol = run_mpc(lat_mpc=lat_mpc, poly_shift=-30.0, v_ref=7.0)
+    sol = run_mpc(lat_mpc=lat_mpc, poly_shift=-3.0, v_ref=7.0)
     left_psi_deg = np.degrees(sol[:,2])
     np.testing.assert_almost_equal(right_psi_deg, -left_psi_deg, decimal=3)
 
