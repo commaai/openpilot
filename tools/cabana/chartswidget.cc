@@ -174,7 +174,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
-  chart_view = new QChartView(chart);
+  chart_view = new ChartView(chart);
   chart_view->setFixedHeight(300);
   chart_view->setRenderHint(QPainter::Antialiasing);
   chart_view->setRubberBand(QChartView::HorizontalRubberBand);
@@ -272,6 +272,22 @@ void ChartWidget::updateAxisY() {
     axis_y->setRange(min->y(), max->y());
   }
 }
+
+// ChartView
+
+void ChartView::mouseReleaseEvent(QMouseEvent *event) {
+  auto rubber = findChild<QRubberBand *>();
+  if (rubber && rubber->isVisible()) {
+    if (rubber->width() == 0) {
+      auto [begin, end] = parser->range();
+      double seek_to = begin + ((event->pos().x() - chart()->plotArea().x()) / chart()->plotArea().width()) * (end - begin);
+      parser->seekTo(seek_to);
+    }
+  }
+  // TODO: right-click to reset zoom
+  QChartView::mouseReleaseEvent(event);
+}
+
 
 // LineMarker
 

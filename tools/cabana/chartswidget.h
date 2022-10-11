@@ -26,6 +26,14 @@ private:
   double x_pos = 0.0;
 };
 
+class ChartView : public QChartView {
+  Q_OBJECT
+
+public:
+  ChartView(QChart *chart, QWidget *parent = nullptr) : QChartView(chart, parent) {}
+  void mouseReleaseEvent(QMouseEvent *event) override;
+};
+
 class ChartWidget : public QWidget {
 Q_OBJECT
 
@@ -45,7 +53,7 @@ private:
 
   QString id;
   QString sig_name;
-  QChartView *chart_view = nullptr;
+  ChartView *chart_view = nullptr;
   LineMarker *line_marker = nullptr;
   QList<QPointF> vals;
 };
