@@ -33,48 +33,61 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   return false;
 }
 
-void CANMessages::process(std::vector<CanData> msgs) {
-  static double prev_update_ts = 0;
-
-  for (const auto &can_data : msgs) {
-    auto &m = can_msgs[can_data.id];
-    while (m.size() >= CAN_MSG_LOG_SIZE) {
-      m.pop_front();
+void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
+  for (auto it = messages->begin(); it != messages->end(); ++it) {
+    ++counters[it.key()];
+    auto &msgs = can_msgs[it.key()];
+    const auto &new_msgs = it.value();
+    if (msgs.size() == CAN_MSG_LOG_SIZE || can_msgs[it.key()].size() == 0) {
+      msgs = std::move(new_msgs);
+    } else {
+      msgs.insert(msgs.end(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
+      while (msgs.size() >= CAN_MSG_LOG_SIZE) {
+        msgs.pop_front();
+      }
     }
-    m.push_back(can_data);
-    ++counters[can_data.id];
   }
-  double now = millis_since_boot();
-  if ((now - prev_update_ts) > 1000.0 / FPS) {
-    prev_update_ts = now;
-    emit updated();
-  }
+  delete messages;
 
   if (current_sec < begin_sec || current_sec > end_sec) {
     // loop replay in selected range.
     seekTo(begin_sec);
+  } else {
+    emit updated();
   }
 }
 
 bool CANMessages::eventFilter(const Event *event) {
+  static double prev_update_sec = 0;
   // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
   if (!seeking && event->which == cereal::Event::Which::CAN) {
+    if (!filter_msgs) {
+      filter_msgs.reset(new QHash<QString, std::deque<CanData>>);
+      filter_msgs->reserve(1000);
+    }
+
     current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
-
     auto can_events = event->event.getCan();
-    msgs_buf.clear();
-    msgs_buf.reserve(can_events.size());
-
     for (const auto &c : can_events) {
-      CanData &data = msgs_buf.emplace_back();
+      QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
+      auto &list = (*filter_msgs)[id];
+      while (list.size() >= CAN_MSG_LOG_SIZE) {
+        list.pop_front();
+      }
+      CanData &data = list.emplace_back();
+      data.id = id;
+      data.ts = current_sec;
+      data.source = c.getSrc();
       data.address = c.getAddress();
       data.bus_time = c.getBusTime();
-      data.source = c.getSrc();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
-      data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
-      data.ts = current_sec;
     }
-    emit received(msgs_buf);
+
+    if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / FPS) {
+      prev_update_sec = current_sec;
+      // use pointer to avoid data copy in queued connection.
+      emit received(filter_msgs.release());
+    }
   }
   return true;
 }

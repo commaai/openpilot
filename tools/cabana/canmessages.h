@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <deque>
 #include <map>
 
 #include <QHash>
@@ -36,7 +37,7 @@ public:
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
-  inline const QList<CanData> &messages(const QString &id) { return can_msgs[id]; }
+  inline const std::deque<CanData> &messages(const QString &id) { return can_msgs[id]; }
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id].back(); }
 
   inline const std::vector<Event *> *events() const { return replay->events(); }
@@ -49,14 +50,15 @@ signals:
   void eventsMerged();
   void rangeChanged(double min, double max);
   void updated();
-  void received(std::vector<CanData> can);
+  void received(QHash<QString, std::deque<CanData>> *);
 
 public:
-  QHash<QString, QList<CanData>> can_msgs;
+  QHash<QString, std::deque<CanData>> can_msgs;
+  std::unique_ptr<QHash<QString, std::deque<CanData>>> filter_msgs = nullptr;
   QHash<QString, uint64_t> counters;
 
 protected:
-  void process(std::vector<CanData> can);
+  void process(QHash<QString, std::deque<CanData>> *);
   void segmentsMerged();
 
   std::atomic<double> current_sec = 0.;
@@ -66,7 +68,6 @@ protected:
   double event_begin_sec = 0;
   double event_end_sec = 0;
   bool is_zoomed = false;
-  std::vector<CanData> msgs_buf;
   Replay *replay = nullptr;
 };
 
