@@ -70,9 +70,17 @@ class CarController:
       # use LatCtlPath_An_Actl to actuate steering
       path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
 
-      # ramp rate: 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      # TODO: try slower ramp speed when driver torque detected
-      ramp_type = 3
+      # set slower ramp type when small steering angle change
+      # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
+      steer_change = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
+      if steer_change < 2.0:
+        ramp_type = 0
+      elif steer_change < 4.0:
+        ramp_type = 1
+      elif steer_change < 6.0:
+        ramp_type = 2
+      else:
+        ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
       self.apply_angle_last = apply_angle
