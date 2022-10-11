@@ -160,7 +160,7 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
       pigeon.send_with_ack(b"\xb5\x62\x06\x00\x01\x00\x01\x08\x22")
       pigeon.send_with_ack(b"\xb5\x62\x06\x00\x01\x00\x03\x0A\x24")
 
-      # UBX-CFG-RATE (0x06 0x08) measRate: 100(10Hz), navRate: 1, timeRef: 0
+      # UBX-CFG-RATE (0x06 0x08)
       pigeon.send_with_ack(b"\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10")
 
       # UBX-CFG-NAV5 (0x06 0x24)
