@@ -7,7 +7,7 @@
 gps_PID=$?
 
 echo "starting limeGPS..."
-sleep 3
+sleep 10
 
 # run unit tests (skipped when module not present)
 python -m unittest test_gps.py
