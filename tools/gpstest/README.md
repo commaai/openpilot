@@ -34,6 +34,3 @@ Built on top of LimeSuite (libLimeSuite.so.20.10-1), generates the GPS signal.
 # Example
 ./LimeGPS -e /pathTo/brdc2660.22n -l 47.202028,15.740394,100
 ```
-
-# NOTE
-GPS spoofing is illegal, only use it in the testing box.
