@@ -3,6 +3,7 @@ import time
 import unittest
 import subprocess as sp
 
+from common.params import Params
 from system.hardware import TICI
 import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
@@ -35,6 +36,9 @@ class TestGPS(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
+    ublox_available = Params().get_bool("UbloxAvailable")
+    if ublox_available:
+      raise unittest.SkipTest
 
   @unittest.skip("Skip cold start test due to time")
   def test_quectel_cold_start(self):
@@ -55,16 +59,13 @@ class TestGPS(unittest.TestCase):
     timedout = wait_for_location(glo, timeout)
     managed_processes['rawgpsd'].stop()
 
-    assert timedout == False, "Waiting for location timed out (25min)!"
+    assert timedout is False, "Waiting for location timed out (25min)!"
 
     duration = time.monotonic() - start_time
     assert duration < 50, f"Received GPS location {duration}!"
 
 
   def test_quectel_cold_start_AGPS(self):
-    # delete assistance data to enforce cold start for GNSS
-    # testing shows that this takes up to 20min
-
     _, err = exec_mmcli("--command='AT+QGPSDEL=0'")
     assert len(err) == 0, f"GPSDEL failed: {err}"
 
@@ -79,7 +80,7 @@ class TestGPS(unittest.TestCase):
     timedout = wait_for_location(glo, timeout)
     managed_processes['rawgpsd'].stop()
 
-    assert timedout == False, "Waiting for location timed out (1min)!"
+    assert timedout is False, "Waiting for location timed out (1min)!"
 
     duration = time.monotonic() - start_time
     assert duration < 50, f"Received GPS location {duration}!"

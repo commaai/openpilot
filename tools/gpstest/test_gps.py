@@ -4,6 +4,7 @@ import unittest
 import struct
 import numpy as np
 
+from common.params import Params
 import cereal.messaging as messaging
 import selfdrive.sensord.pigeond as pd
 from system.hardware import TICI
@@ -123,6 +124,11 @@ class TestGPS(unittest.TestCase):
   def setUpClass(cls):
     if not TICI:
       raise unittest.SkipTest
+
+    ublox_available = Params().get_bool("UbloxAvailable")
+    if not ublox_available:
+      raise unittest.SkipTest
+
 
   def tearDown(self):
     pd.set_power(False)

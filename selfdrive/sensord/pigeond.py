@@ -319,14 +319,5 @@ def main():
   # start receiving data
   run_receiving(pigeon, pm)
 
-
-def main():
-  assert TICI, "unsupported hardware for pigeond"
-
-  pigeon, pm = create_pigeon()
-  init_baudrate(pigeon)
-  initialize_pigeon(pigeon)
-  run_receiving(pigeon, pm)
-
 if __name__ == "__main__":
   main()

@@ -66,13 +66,13 @@ def get_continuous_coords(lat, lon) -> Tuple[int, int]:
   return round(lat, 5), round(lon, 5)
 
 rc_p: Any = None
-def exec_remote_checker(lat, lon, duration, ip_addr, gps_module):
+def exec_remote_checker(lat, lon, duration, ip_addr):
   global rc_p
   # TODO: good enough for testing
   remote_cmd =  "export PYTHONPATH=/data/pythonpath:/data/pythonpath/pyextra && "
   remote_cmd += "cd /data/openpilot && "
   remote_cmd += f"timeout {duration} /usr/local/pyenv/shims/python tools/gpstest/remote_checker.py "
-  remote_cmd += f"{gps_module} {lat} {lon}"
+  remote_cmd += f"{lat} {lon}"
 
   ssh_cmd = ["ssh", "-i", "/home/batman/openpilot/xx/phone/key/id_rsa",
              f"comma@{ip_addr}"]
@@ -84,9 +84,9 @@ def exec_remote_checker(lat, lon, duration, ip_addr, gps_module):
   print(f"Checker Result: {rc_output.strip().decode('utf-8')}")
 
 
-def run_remote_checker(spoof_proc, lat, lon, duration, ip_addr, gps_module) -> bool:
+def run_remote_checker(spoof_proc, lat, lon, duration, ip_addr) -> bool:
   checker_thread = threading.Thread(target=exec_remote_checker,
-                                    args=(lat, lon, duration, ip_addr, gps_module))
+                                    args=(lat, lon, duration, ip_addr))
   checker_thread.start()
 
   tcnt = 0
@@ -108,24 +108,17 @@ def run_remote_checker(spoof_proc, lat, lon, duration, ip_addr, gps_module) -> b
 
 
 def main():
-  if len(sys.argv) < 3:
-    print(f"usage: {sys.argv[0]} <u|q> <ip_addr> [-c]")
-  gps_module = sys.argv[1]
-  ip_addr = sys.argv[2]
+  if len(sys.argv) < 2:
+    print(f"usage: {sys.argv[0]} <ip_addr> [-c]")
+  ip_addr = sys.argv[1]
 
   continuous_mode = False
-  if len(sys.argv) == 4 and sys.argv[3] == '-c':
+  if len(sys.argv) == 3 and sys.argv[2] == '-c':
     print("Continuous Mode!")
     continuous_mode = True
 
   rinex_file = download_rinex()
   duration = 60*3 # max runtime in seconds
-
-  if gps_module != 'u' and gps_module != 'q':
-    print(f"Invalid gps module: {gps_module}, allowed 'u' (ublox), 'q' (quectel)")
-    return
-
-  print(f"GPS module: {gps_module}")
 
   duration = 60*2 # max runtime in seconds
   rinex_file = download_rinex()
@@ -137,7 +130,7 @@ def main():
     start_time = time.monotonic()
 
     # remote checker runs blocking
-    if not run_remote_checker(spoof_proc, lat, lon, duration, ip_addr, gps_module):
+    if not run_remote_checker(spoof_proc, lat, lon, duration, ip_addr):
       # location could not be matched by ublox module
       pass
 

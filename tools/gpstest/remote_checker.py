@@ -3,6 +3,7 @@ import sys
 import time
 from typing import List
 
+from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
 
@@ -13,10 +14,10 @@ procs: List[str] = []#"ubloxd", "pigeond"]
 
 def main():
   if len(sys.argv) != 4:
-    print("args: <q|u> <latitude> <longitude>")
+    print("args: <latitude> <longitude>")
     return
 
-  quectel_mod = sys.argv[1] == 'q'
+  quectel_mod = Params().get_bool("UbloxAvailable")
   sol_lat = float(sys.argv[2])
   sol_lon = float(sys.argv[3])
 
