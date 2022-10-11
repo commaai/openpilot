@@ -17,7 +17,7 @@ def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
 
   # absolute limit (LatCtlPath_An_Actl)
   apply_path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
-  apply_path_angle = clip(apply_path_angle, -0.4995, 0.5240)
+  apply_path_angle = clip(apply_path_angle, -0.5, 0.5235)
   apply_angle = math.degrees(apply_path_angle) * CarControllerParams.LKAS_STEER_RATIO
 
   return apply_angle

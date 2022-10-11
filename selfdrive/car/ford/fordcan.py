@@ -47,7 +47,7 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
     "LatCtlRampType_D_Rq": ramp_type,                       # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
     "LatCtlPrecision_D_Rq": precision,                      # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
     "LatCtlPathOffst_L_Actl": path_offset,                  # Path offset [-5.12|5.11] meter
-    "LatCtlPath_An_Actl": path_angle,                       # Path angle [-0.4995|0.5240] radians
+    "LatCtlPath_An_Actl": path_angle,                       # Path angle [-0.5|0.5235] radians
     "LatCtlCurv_NoRate_Actl": curvature_rate,               # Curvature rate [-0.001024|0.00102375] 1/meter^2
     "LatCtlCurv_No_Actl": curvature,                        # Curvature [-0.02|0.02094] 1/meter
   }
