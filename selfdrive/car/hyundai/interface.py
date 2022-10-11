@@ -81,7 +81,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-    elif candidate in (CAR.ELANTRA, CAR.ELANTRA_I30_3G):
+    elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
