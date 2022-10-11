@@ -11,7 +11,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STEER_FAULT_MAX_ANGLE = 85  # EPS max is 90
-STEER_FAULT_MAX_FRAMES = 39  # EPS counter is 95
+STEER_FAULT_MAX_FRAMES = 89  # EPS counter is 95
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -111,15 +111,15 @@ class CarController:
         if self.frame % 100 == 0:
           can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
+      # Count up to STEER_FAULT_MAX_ANGLE, at which point we need to cut torque to avoid a steering fault
       if CC.latActive and abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
         self.angle_limit_counter += 1
       else:
         self.angle_limit_counter = 0
 
-      # stop requesting torque to avoid 90 degree fault and hold torque with induced temporary fault
-      cut_steer_temp = False
-      if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES:
-        cut_steer_temp = True
+      # Cut steer actuation bit for two frames and hold torque with induced temporary fault
+      cut_steer_temp = self.angle_limit_counter > STEER_FAULT_MAX_FRAMES
+      if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES + 1:
         self.angle_limit_counter = 0
 
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
