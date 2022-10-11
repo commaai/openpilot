@@ -190,7 +190,7 @@ def migrate_carparams(lr):
   return all_msgs
 
 
-def migrate_sensorEvents(lr):
+def migrate_sensorEvents(lr, old_logtime=False):
   all_msgs = []
   for msg in lr:
     if msg.which() != 'sensorEventsDEPRECATED':
@@ -214,6 +214,8 @@ def migrate_sensorEvents(lr):
 
       m = messaging.new_message(sensor_service)
       m.valid = True
+      if old_logtime:
+        m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
       m_dat.version = evt.version

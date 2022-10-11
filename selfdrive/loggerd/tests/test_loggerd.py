@@ -110,6 +110,8 @@ class TestLoggerd(unittest.TestCase):
       self.assertEqual(getattr(initData, initData_key), v)
       self.assertEqual(logged_params[param_key].decode(), v)
 
+    params.put("LaikadEphemeris", "")
+
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")

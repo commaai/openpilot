@@ -9,6 +9,8 @@ os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
 import onnxruntime as ort # pylint: disable=import-error
 
+ORT_TYPES_TO_NP_TYPES = {'tensor(float16)': np.float16, 'tensor(float)': np.float32, 'tensor(uint8)': np.uint8}
+
 def read(sz, tf8=False):
   dd = []
   gt = 0
@@ -18,7 +20,7 @@ def read(sz, tf8=False):
     assert(len(st) > 0)
     dd.append(st)
     gt += len(st)
-  r = np.frombuffer(b''.join(dd), dtype=np.uint8 if tf8 else np.float32).astype(np.float32)
+  r = np.frombuffer(b''.join(dd), dtype=np.uint8 if tf8 else np.float32)
   if tf8:
     r = r / 255.
   return r
@@ -29,22 +31,23 @@ def write(d):
 def run_loop(m, tf8_input=False):
   ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
   keys = [x.name for x in m.get_inputs()]
+  itypes = [ORT_TYPES_TO_NP_TYPES[x.type] for x in m.get_inputs()]
 
   # run once to initialize CUDA provider
   if "CUDAExecutionProvider" in m.get_providers():
-    m.run(None, dict(zip(keys, [np.zeros(shp, dtype=np.float32) for shp in ishapes])))
+    m.run(None, dict(zip(keys, [np.zeros(shp, dtype=itp) for shp, itp in zip(ishapes, itypes)])))
 
   print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
-    for k, shp in zip(keys, ishapes):
+    for k, shp, itp in zip(keys, ishapes, itypes):
       ts = np.product(shp)
       #print("reshaping %s with offset %d" % (str(shp), offset), file=sys.stderr)
-      inputs.append(read(ts, (k=='input_img' and tf8_input)).reshape(shp))
+      inputs.append(read(ts, (k=='input_img' and tf8_input)).reshape(shp).astype(itp))
     ret = m.run(None, dict(zip(keys, inputs)))
     #print(ret, file=sys.stderr)
     for r in ret:
-      write(r)
+      write(r.astype(np.float32))
 
 
 if __name__ == "__main__":

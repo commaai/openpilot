@@ -22,6 +22,7 @@ class TestLocationdProc(unittest.TestCase):
 
     self.pm = messaging.PubMaster(self.LLD_MSGS)
 
+    Params().put_bool("UbloxAvailable", True)
     managed_processes['locationd'].prepare()
     managed_processes['locationd'].start()
 
