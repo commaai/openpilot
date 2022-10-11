@@ -39,7 +39,7 @@ Options:
   --high_quality        Set simulator to higher quality (requires good GPU)
   --town TOWN           Select map to drive in
   --spawn_point NUM     Number of the spawn point to start in
-  --ip IP_ADDRESS       IP address of Carla client (127.0.0.1 as default)
+  --host HOST           Host address of Carla client (127.0.0.1 as default)
   --port PORT           Port of Carla client (2000 as default)
 ```
 
