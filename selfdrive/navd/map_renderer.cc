@@ -10,7 +10,7 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
 const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int WIDTH = 256;
+const int WIDTH = 512;
 const int HEIGHT = WIDTH;
 
 const int NUM_VIPC_BUFFERS = 4;
@@ -206,7 +206,7 @@ void MapRenderer::initLayers() {
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
-    m_map->setPaintProperty("navLayer", "line-width", 3);
+    m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
 }
