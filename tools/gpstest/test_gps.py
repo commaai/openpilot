@@ -146,12 +146,12 @@ class TestGPS(unittest.TestCase):
     gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
 
     # receive some messages (restart after cold start takes up to 30seconds)
-    pd.run_receiving(pigeon, pm, 120)
+    pd.run_receiving(pigeon, pm, 60)
 
     # store almanac for next test
     create_backup(pigeon)
 
-    verify_ubloxgnss_data(ugs, 120)
+    verify_ubloxgnss_data(ugs, 60)
     verify_gps_location(gle)
 
     # skip for now, this might hang for a while
