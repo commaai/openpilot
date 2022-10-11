@@ -279,9 +279,9 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   auto rubber = findChild<QRubberBand *>();
   if (rubber && rubber->isVisible()) {
     if (rubber->width() == 0) {
-      auto [begin, end] = parser->range();
+      auto [begin, end] = can->range();
       double seek_to = begin + ((event->pos().x() - chart()->plotArea().x()) / chart()->plotArea().width()) * (end - begin);
-      parser->seekTo(seek_to);
+      can->seekTo(seek_to);
     }
   }
   // TODO: right-click to reset zoom

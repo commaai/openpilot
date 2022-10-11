@@ -6,10 +6,9 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
+#include <QStyleOptionSlider>
 #include <QTimer>
 #include <QVBoxLayout>
-
-#include "tools/cabana/canmessages.h"
 
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh::mm::ss" : "mm::ss");
@@ -25,7 +24,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   // slider controls
   QHBoxLayout *slider_layout = new QHBoxLayout();
-  time_label = new QLabel("00:00");
+  QLabel *time_label = new QLabel("00:00");
   slider_layout->addWidget(time_label);
 
   slider = new Slider(this);
@@ -34,9 +33,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   slider->setMaximum(can->totalSeconds() * 1000);
   slider_layout->addWidget(slider);
 
-  total_time_label = new QLabel(formatTime(can->totalSeconds()));
-  slider_layout->addWidget(total_time_label);
-
+  end_time_label = new QLabel(formatTime(can->totalSeconds()));
+  slider_layout->addWidget(end_time_label);
   main_layout->addLayout(slider_layout);
 
   // btn controls
@@ -55,16 +53,14 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
     group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
   }
-
   main_layout->addLayout(control_layout);
+
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   QObject::connect(can, &CANMessages::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
-  QObject::connect(slider, &QSlider::sliderMoved, [=]() { time_label->setText(formatTime(slider->value() / 1000)); });
-  QObject::connect(slider, &QSlider::sliderReleased, [this]() { setPosition(slider->value()); });
-  QObject::connect(slider, &Slider::setPosition, this, &VideoWidget::setPosition);
-
+  QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
+  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(play, &QPushButton::clicked, [=]() {
     bool is_paused = can->isPaused();
     play->setText(is_paused ? "⏸" : "▶");
@@ -72,29 +68,19 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   });
 }
 
-void VideoWidget::setPosition(int value) {
-  time_label->setText(formatTime(value / 1000.0));
-  can->seekTo(value / 1000.0);
-}
-
 void VideoWidget::rangeChanged(double min, double max) {
   if (!can->isZoomed()) {
     min = 0;
     max = can->totalSeconds();
   }
-  time_label->setText(formatTime(min));
-  total_time_label->setText(formatTime(max));
+  end_time_label->setText(formatTime(max));
   slider->setMinimum(min * 1000);
   slider->setMaximum(max * 1000);
-  slider->setValue(can->currentSec() * 1000);
 }
 
 void VideoWidget::updateState() {
-  if (!slider->isSliderDown()) {
-    double current_sec = can->currentSec();
-    time_label->setText(formatTime(current_sec));
-    slider->setValue(current_sec * 1000);
-  }
+  if (!slider->isSliderDown())
+    slider->setValue(can->currentSec() * 1000);
 }
 
 // Slider
@@ -110,7 +96,7 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
 
 void Slider::sliderChange(QAbstractSlider::SliderChange change) {
   if (change == QAbstractSlider::SliderValueChange) {
-    qreal x = width() * ((value() - minimum()) / double(maximum() - minimum()));
+    int x = width() * ((value() - minimum()) / double(maximum() - minimum()));
     if (x != slider_x) {
       slider_x = x;
       update();
@@ -121,45 +107,34 @@ void Slider::sliderChange(QAbstractSlider::SliderChange change) {
 }
 
 void Slider::paintEvent(QPaintEvent *ev) {
-  auto getPaintRange = [this](double begin, double end) -> std::pair<double, double> {
-    double total_sec = maximum() - minimum();
-    int start_pos = ((std::max((double)minimum(), (double)begin) - minimum()) / total_sec) * width();
-    int end_pos = ((std::min((double)maximum(), (double)end) - minimum()) / total_sec) * width();
-    return {start_pos, end_pos};
-  };
+  static const QColor colors[] = {
+    [(int)TimelineType::None] = QColor(111, 143, 175),
+    [(int)TimelineType::Engaged] = QColor(0, 163, 108),
+    [(int)TimelineType::UserFlag] = Qt::white,
+    [(int)TimelineType::AlertInfo] = Qt::green,
+    [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
+    [(int)TimelineType::AlertCritical] = QColor(199, 0, 57)};
 
   QPainter p(this);
-  const int v_margin = 2;
-  p.fillRect(rect().adjusted(0, v_margin, 0, -v_margin), QColor(111, 143, 175));
-
+  QRect r = rect().adjusted(0, 4, 0, -4);
+  p.fillRect(r, colors[(int)TimelineType::None]);
+  double min = minimum() / 1000.0;
+  double max = maximum() / 1000.0;
   for (auto [begin, end, type] : timeline) {
-    begin *= 1000;
-    end *= 1000;
-    if (begin > maximum() || end < minimum()) continue;
-
-    if (type == TimelineType::Engaged) {
-      auto [start_pos, end_pos] = getPaintRange(begin, end);
-      p.fillRect(QRect(start_pos, v_margin, end_pos - start_pos, height() - v_margin * 2), QColor(0, 163, 108));
-    }
+    if (begin > max || end < min)
+      continue;
+    r.setLeft(((std::max(min, (double)begin) - min) / (max - min)) * width());
+    r.setRight(((std::min(max, (double)end) - min) / (max - min)) * width());
+    p.fillRect(r, colors[(int)type]);
   }
-  for (auto [begin, end, type] : timeline) {
-    begin *= 1000;
-    end *= 1000;
-    if (type == TimelineType::Engaged || begin > maximum() || end < minimum()) continue;
 
-    auto [start_pos, end_pos] = getPaintRange(begin, end);
-    if (type == TimelineType::UserFlag) {
-      p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), Qt::white);
-    } else {
-      QColor color(Qt::green);
-      if (type != TimelineType::AlertInfo)
-        color = type == TimelineType::AlertWarning ? QColor(255, 195, 0) : QColor(199, 0, 57);
-
-      p.fillRect(QRect(start_pos, height() - v_margin - 3, end_pos - start_pos, 3), color);
-    }
-  }
-  p.setPen(QPen(QColor(88, 24, 69), 3));
-  p.drawLine(QPoint{slider_x, 0}, QPoint{slider_x, height()});
+  QStyleOptionSlider opt;
+  opt.initFrom(this);
+  opt.minimum = minimum();
+  opt.maximum = maximum();
+  opt.subControls = QStyle::SC_SliderHandle;
+  opt.sliderPosition = value();
+  style()->drawComplexControl(QStyle::CC_Slider, &opt, &p);
 }
 
 void Slider::mousePressEvent(QMouseEvent *e) {
@@ -167,6 +142,6 @@ void Slider::mousePressEvent(QMouseEvent *e) {
   if (e->button() == Qt::LeftButton && !isSliderDown()) {
     int value = minimum() + ((maximum() - minimum()) * e->x()) / width();
     setValue(value);
-    emit setPosition(value);
+    emit sliderReleased();
   }
 }
