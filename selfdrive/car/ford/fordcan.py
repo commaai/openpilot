@@ -141,7 +141,7 @@ def create_acc_ui_command(packer, main_on: bool, enabled: bool, hud_control, sto
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
-def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False, bus = CANBUS.camera):
+def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False, bus: int = CANBUS.camera):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
