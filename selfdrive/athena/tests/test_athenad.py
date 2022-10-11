@@ -46,11 +46,19 @@ class TestAthenadMethods(unittest.TestCase):
       else:
         os.unlink(p)
 
-  def wait_for_upload(self):
+
+  # *** test helpers ***
+
+
+  def _wait_for_upload(self):
     now = time.time()
     while time.time() - now < 5:
       if athenad.upload_queue.qsize() == 0:
         break
+
+
+  # *** test cases ***
+
 
   def test_echo(self):
     assert dispatcher["echo"]("bob") == "bob"
@@ -182,7 +190,7 @@ class TestAthenadMethods(unittest.TestCase):
 
     athenad.upload_queue.put_nowait(item)
     try:
-      self.wait_for_upload()
+      self._wait_for_upload()
       time.sleep(0.1)
 
       # TODO: verify that upload actually succeeded
@@ -205,7 +213,7 @@ class TestAthenadMethods(unittest.TestCase):
 
       athenad.upload_queue.put_nowait(item)
       try:
-        self.wait_for_upload()
+        self._wait_for_upload()
         time.sleep(0.1)
 
         self.assertEqual(athenad.upload_queue.qsize(), 1 if retry else 0)
@@ -228,14 +236,14 @@ class TestAthenadMethods(unittest.TestCase):
 
     try:
       athenad.upload_queue.put_nowait(item_no_retry)
-      self.wait_for_upload()
+      self._wait_for_upload()
       time.sleep(0.1)
 
       # Check that upload with retry count exceeded is not put back
       self.assertEqual(athenad.upload_queue.qsize(), 0)
 
       athenad.upload_queue.put_nowait(item)
-      self.wait_for_upload()
+      self._wait_for_upload()
       time.sleep(0.1)
 
       # Check that upload item was put back in the queue with incremented retry count
@@ -256,7 +264,7 @@ class TestAthenadMethods(unittest.TestCase):
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
     thread.start()
     try:
-      self.wait_for_upload()
+      self._wait_for_upload()
       time.sleep(0.1)
 
       self.assertEqual(athenad.upload_queue.qsize(), 0)
@@ -279,7 +287,7 @@ class TestAthenadMethods(unittest.TestCase):
     thread.start()
     try:
       athenad.upload_queue.put_nowait(item)
-      self.wait_for_upload()
+      self._wait_for_upload()
       time.sleep(0.1)
 
       self.assertEqual(athenad.upload_queue.qsize(), 0)
@@ -302,7 +310,7 @@ class TestAthenadMethods(unittest.TestCase):
 
     try:
       athenad.upload_queue.put_nowait(item)
-      self.wait_for_upload()
+      self._wait_for_upload()
 
       items = dispatcher["listUploadQueue"]()
       self.assertEqual(len(items), 1)
