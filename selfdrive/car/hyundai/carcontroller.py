@@ -133,7 +133,7 @@ class CarController:
         stopping = actuators.longControlState == LongCtrlState.stopping
         set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                        hud_control.leadVisible, set_speed_in_units, stopping, CS.out.gasPressed))
+                                                        hud_control.leadVisible, set_speed_in_units, stopping, CC.cruiseControl.override))
         self.accel = accel
 
       # 20 Hz LFA MFA message
