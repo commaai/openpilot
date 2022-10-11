@@ -53,9 +53,9 @@ signals:
   void received(QHash<QString, std::deque<CanData>> *);
 
 public:
-  QHash<QString, std::deque<CanData>> can_msgs;
+  QMap<QString, std::deque<CanData>> can_msgs;
   std::unique_ptr<QHash<QString, std::deque<CanData>>> filter_msgs = nullptr;
-  QHash<QString, uint64_t> counters;
+  QHash<QString, uint32_t> counters;
 
 protected:
   void process(QHash<QString, std::deque<CanData>> *);

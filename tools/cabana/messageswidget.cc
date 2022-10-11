@@ -4,6 +4,7 @@
 #include <QCompleter>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QSortFilterProxyModel>
 #include <QVBoxLayout>
 
 #include "tools/cabana/dbcmanager.h"
@@ -37,7 +38,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   table_widget = new QTableView(this);
   model = new MessageListModel(this);
-  table_widget->setModel(model);
+  QSortFilterProxyModel *proxy_model = new QSortFilterProxyModel(this);
+  proxy_model->setSourceModel(model);
+  proxy_model->setFilterCaseSensitivity(Qt::CaseInsensitive);
+  proxy_model->setDynamicSortFilter(false);
+  table_widget->setModel(proxy_model);
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -46,10 +51,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setColumnWidth(1, 80);
   table_widget->setColumnWidth(2, 80);
   table_widget->horizontalHeader()->setStretchLastSection(true);
+  table_widget->verticalHeader()->hide();
   table_widget->sortByColumn(0, Qt::AscendingOrder);
   main_layout->addWidget(table_widget);
 
-  QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setNameFilter);
+  QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
   QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
@@ -80,64 +86,36 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
     return (QString[]){"name", "id", "count", "data"}[section];
   else if (orientation == Qt::Vertical && role == Qt::DisplayRole) {
-    return QString::number(section);
+    // return QString::number(section);
   }
   return {};
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
-    assert(index.row() < messages.size());
-    const auto &d = messages[index.row()];
-    switch (index.column()) {
-      case 0: return d->name;
-      case 1: return d->id;
-      case 2: return QString::number(d->count);
-      case 3: return toHex(can->can_msgs[d->id].back().dat);
+    auto it = std::next(can->can_msgs.begin(), index.row());
+    if (it != can->can_msgs.end()) {
+      const auto &d = it.value().back();
+      switch (index.column()) {
+        case 0: {
+          auto msg = dbc()->msg(it.key());
+          QString name = msg ? msg->name.c_str() : "untitled";
+          return name;
+        }
+        case 1: return d.id;
+        case 2: return can->counters[d.id];
+        case 3: return toHex(d.dat);
+      }
     }
   } else if (role == Qt::UserRole) {
-    return messages[index.row()]->id;
+    return std::next(can->can_msgs.begin(), index.row()).key();
   }
   return {};
 }
 
 void MessageListModel::updateState() {
-  int prev_row_count = messages.size();
-  int row_count = 0;
-  for (auto it = can->can_msgs.constBegin(); it != can->can_msgs.constEnd(); ++it) {
-    auto msg = dbc()->msg(it.key());
-    QString name = msg ? msg->name.c_str() : "untitled";
-    if (name_filter.isEmpty() || name.contains(name_filter, Qt::CaseInsensitive)) {
-      if (row_count >= messages.size()) {
-        messages.emplace_back(new Data);
-      }
-      Data *d = messages[row_count].get();
-      d->name = name;
-      d->id = it.key();
-      d->count = can->counters[it.key()];
-      ++row_count;
-    }
-  }
-  messages.resize(row_count);
-
-  // sort messages
-  if (sort_column == 0) {
-    std::sort(messages.begin(), messages.end(), [&](auto &v1, auto &v2) {
-      bool ret = v1->name < v2->name || (v1->name == v2->name && v1->id < v2->id);
-      return sort_order == Qt::AscendingOrder ? ret : !ret;
-    });
-  } else if (sort_column == 1) {
-    std::sort(messages.begin(), messages.end(), [=](auto &v1, auto &v2) {
-      return sort_order == Qt::AscendingOrder ? v1->id < v2->id : v1->id > v2->id;
-    });
-  } else if (sort_column == 2) {
-    std::sort(messages.begin(), messages.end(), [this](auto &v1, auto &v2) {
-      bool ret = v1->count < v2->count || (v1->count == v2->count && v1->id < v2->id);
-      return sort_order == Qt::AscendingOrder ? ret : !ret;
-    });
-  }
-
-  // update view
+  int prev_row_count = row_count;
+  row_count = can->can_msgs.size();
   int delta = row_count - prev_row_count;
   if (delta > 0) {
     beginInsertRows({}, prev_row_count, row_count - 1);
@@ -149,13 +127,5 @@ void MessageListModel::updateState() {
 
   if (row_count > 0) {
     emit dataChanged(index(0, 0), index(row_count - 1, 3));
-  }
-}
-
-void MessageListModel::sort(int column, Qt::SortOrder order) {
-  if (column != 3) {
-    sort_column = column;
-    sort_order = order;
-    updateState();
   }
 }
