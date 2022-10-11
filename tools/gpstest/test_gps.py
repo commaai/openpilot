@@ -111,6 +111,8 @@ class TestGPS(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
+  def tearDown(self):
+      pd.set_power(False)
 
   @with_processes(['ubloxd'])
   def test_ublox_reset(self):
@@ -132,8 +134,6 @@ class TestGPS(unittest.TestCase):
 
     # skip for now, this might hang for a while
     #verify_time_to_first_fix(pigeon)
-
-    pd.set_power(False)
 
 
 if __name__ == "__main__":
