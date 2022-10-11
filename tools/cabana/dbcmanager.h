@@ -40,7 +40,7 @@ signals:
 private:
   QString dbc_name;
   DBC *dbc = nullptr;
-  std::map<uint32_t, const Msg *> msg_map;
+  std::unordered_map<uint32_t, const Msg *> msg_map;
 };
 
 // TODO: Add helper function in dbc.h

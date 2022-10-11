@@ -42,6 +42,7 @@ void CANMessages::process(std::vector<CanData> msgs) {
       m.pop_front();
     }
     m.push_back(can_data);
+    ++counters[can_data.id];
   }
   double now = millis_since_boot();
   if ((now - prev_update_ts) > 1000.0 / FPS) {
@@ -72,7 +73,6 @@ bool CANMessages::eventFilter(const Event *event) {
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
       data.id = QString("%1:%2").arg(data.source).arg(data.address, 1, 16);
       data.ts = current_sec;
-      data.count = ++counters[data.id];
     }
     emit received(msgs_buf);
   }

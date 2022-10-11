@@ -21,7 +21,7 @@ public:
 private:
   QString msg_id;
   QList<QPair<QString, QStringList>> values;
-  uint64_t previous_count = 0;
+  double current_ts = 0;
   int column_count = 0;
 };
 

@@ -7,8 +7,8 @@
 
 #include "tools/replay/replay.h"
 
-const int FPS = 20;
-const static int CAN_MSG_LOG_SIZE = 50;
+const int FPS = 10;
+const int CAN_MSG_LOG_SIZE = 50;
 
 struct CanData {
   QString id;
@@ -16,7 +16,6 @@ struct CanData {
   uint32_t address;
   uint16_t bus_time;
   uint8_t source;
-  uint64_t count;
   QByteArray dat;
 };
 
@@ -53,7 +52,8 @@ signals:
   void received(std::vector<CanData> can);
 
 public:
-  std::map<QString, QList<CanData>> can_msgs;
+  QHash<QString, QList<CanData>> can_msgs;
+  QHash<QString, uint64_t> counters;
 
 protected:
   void process(std::vector<CanData> can);
@@ -61,7 +61,6 @@ protected:
 
   std::atomic<double> current_sec = 0.;
   std::atomic<bool> seeking = false;
-  QHash<QString, uint64_t> counters;
   double begin_sec = 0;
   double end_sec = 0;
   double event_begin_sec = 0;

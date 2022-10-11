@@ -17,7 +17,7 @@ void HistoryLogModel::setMessage(const QString &message_id) {
   const auto msg = dbc()->msg(message_id);
   column_count = msg && !msg->sigs.empty() ? msg->sigs.size() : 1;
   values.clear();
-  previous_count = 0;
+  current_ts = 0;
   endResetModel();
 }
 
@@ -40,16 +40,16 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 
 void HistoryLogModel::clear() {
   values.clear();
-  previous_count = 0;
+  current_ts = 0;
   emit dataChanged(index(0, 0), index(CAN_MSG_LOG_SIZE - 1, column_count - 1));
 }
 
 void HistoryLogModel::updateState() {
   const auto &can_msgs = can->messages(msg_id);
   const auto msg = dbc()->msg(msg_id);
-  uint64_t new_count = previous_count;
+  double previous_ts = current_ts;
   for (const auto &can_data : can_msgs) {
-    if (can_data.count <= previous_count)
+    if (can_data.ts <= previous_ts)
       continue;
 
     if (values.size() >= CAN_MSG_LOG_SIZE)
@@ -65,10 +65,9 @@ void HistoryLogModel::updateState() {
       data.append(toHex(can_data.dat));
     }
     values.push_front({QString::number(can_data.ts, 'f', 2), data});
-    new_count = can_data.count;
+    current_ts = can_data.ts;
   }
-  if (new_count != previous_count) {
-    previous_count = new_count;
+  if (current_ts > previous_ts) {
     emit dataChanged(index(0, 0), index(CAN_MSG_LOG_SIZE - 1, column_count - 1));
     emit headerDataChanged(Qt::Vertical, 0, CAN_MSG_LOG_SIZE - 1);
   }
