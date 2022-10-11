@@ -76,14 +76,14 @@ class TestGPS(unittest.TestCase):
     start_time = time.monotonic()
     glo = messaging.sub_sock("gpsLocation", timeout=0.1)
 
-    timeout = 10*60 # 1 minute
+    timeout = 10*60*5 # 1 minute
     timedout = wait_for_location(glo, timeout)
     managed_processes['rawgpsd'].stop()
 
     assert timedout is False, "Waiting for location timed out (1min)!"
 
     duration = time.monotonic() - start_time
-    assert duration < 50, f"Received GPS location {duration}!"
+    assert duration < 60, f"Received GPS location {duration}!"
 
 
 if __name__ == "__main__":

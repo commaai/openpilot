@@ -148,12 +148,14 @@ def setup_quectel(diag: ModemDiag):
   mmcli("--command='AT+QGPSCFG=\"autogps\",0'")
 
   # upload xtra data binary
+  '''
   bin_file = quectel_xtradata_downloader()
   if bin_file is not None:
     try:
       mmcli(f"--location-inject-assistance-data={bin_file}")
     except Exception:
       cloudlog.warning("Could not inject assistance data")
+  '''
 
   mmcli("--location-enable-gps-raw --location-enable-gps-nmea")
 
