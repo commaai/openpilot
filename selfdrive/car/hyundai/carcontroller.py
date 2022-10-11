@@ -10,8 +10,11 @@ from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerPar
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
-STEER_FAULT_MAX_ANGLE = 85  # EPS max is 90
-STEER_FAULT_MAX_FRAMES = 89  # EPS counter is 95
+# EPS faults if you apply torque while the steering angle is above 90 degrees for more than 1 second
+# All slightly below EPS thresholds to avoid fault
+ANGLE_FAULT_MAX_ANGLE = 85
+ANGLE_FAULT_MAX_FRAMES = 89
+ANGLE_FAULT_CONSECUTIVE_FRAMES = 2
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -111,19 +114,21 @@ class CarController:
         if self.frame % 100 == 0:
           can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-      # Count up to STEER_FAULT_MAX_FRAMES, at which point we need to cut torque to avoid a steering fault
-      if CC.latActive and abs(CS.out.steeringAngleDeg) >= STEER_FAULT_MAX_ANGLE:
+      # Count up to ANGLE_FAULT_MAX_FRAMES, at which point we need to cut torque to avoid a steering fault
+      if CC.latActive and abs(CS.out.steeringAngleDeg) >= ANGLE_FAULT_MAX_ANGLE:
         self.angle_limit_counter += 1
       else:
         self.angle_limit_counter = 0
 
       # Cut steer actuation bit for two frames and hold torque with induced temporary fault
-      cut_steer_temp = self.angle_limit_counter > STEER_FAULT_MAX_FRAMES
-      if self.angle_limit_counter > STEER_FAULT_MAX_FRAMES + 1:
+      lat_active = CC.latActive and self.angle_limit_counter <= ANGLE_FAULT_MAX_FRAMES
+      torque_fault = CC.latActive and self.angle_limit_counter > ANGLE_FAULT_MAX_FRAMES
+
+      if self.angle_limit_counter >= ANGLE_FAULT_MAX_FRAMES + ANGLE_FAULT_CONSECUTIVE_FRAMES:
         self.angle_limit_counter = 0
 
-      can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, CC.latActive,
-                                                cut_steer_temp, CS.lkas11, sys_warning, sys_state, CC.enabled,
+      can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+                                                torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                 left_lane_warning, right_lane_warning))
 
