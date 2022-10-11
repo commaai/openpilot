@@ -112,7 +112,7 @@ class TestGPS(unittest.TestCase):
       raise unittest.SkipTest
 
   def tearDown(self):
-      pd.set_power(False)
+    pd.set_power(False)
 
   @with_processes(['ubloxd'])
   def test_ublox_reset(self):
