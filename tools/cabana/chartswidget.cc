@@ -277,12 +277,12 @@ void ChartWidget::updateAxisY() {
 void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   auto rubber = findChild<QRubberBand *>();
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
+    auto [begin, end] = can->range();
     if (rubber->width() <= 0) {
-      auto [begin, end] = can->range();
       double seek_to = begin + ((event->pos().x() - chart()->plotArea().x()) / chart()->plotArea().width()) * (end - begin);
       can->seekTo(seek_to);
-    } else if (rubber->width() < 5) {
-      // don't zoom if selected range is too small
+    } else if (((double)rubber->width() / chart()->plotArea().width()) * (end - begin) < 0.5) {
+      // don't zoom if selected range is less than 0.5s
       rubber->hide();
       event->accept();
       return;
