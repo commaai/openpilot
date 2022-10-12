@@ -92,8 +92,8 @@ class CarState(CarStateBase):
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
 
+      ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
       ret.stockFcw = cam_cp.vl["ASCMActiveCruiseControlStatus"]["FCWAlert"] != 0
-      ret.stockFcw = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
 
     return ret
 
