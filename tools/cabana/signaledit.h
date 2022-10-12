@@ -4,6 +4,7 @@
 
 #include <QComboBox>
 #include <QDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSpinBox>
@@ -32,10 +33,13 @@ class SignalEdit : public QWidget {
 
 public:
   SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent = nullptr);
+  void setFormVisible(bool show);
+  inline bool isFormVisible() const { return form_container->isVisible(); }
   void save();
 
 signals:
   void showChart(const QString &msg_id, const QString &sig_name);
+  void showFormClicked();
 
 protected:
   void remove();
@@ -45,8 +49,9 @@ protected:
   QPushButton *plot_btn;
   ElidedLabel *title;
   SignalForm *form;
-  QWidget *edit_container;
+  QWidget *form_container;
   QPushButton *remove_btn;
+  QLabel *icon;
 };
 
 class AddSignalDialog : public QDialog {

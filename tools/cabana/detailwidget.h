@@ -61,16 +61,21 @@ public:
 signals:
   void showChart(const QString &msg_id, const QString &sig_name);
 
+private slots:
+  void showForm();
+
 private:
   void addSignal();
   void editMsg();
   void updateState();
+
 
   QString msg_id;
   QLabel *name_label, *time_label;
   QPushButton *edit_btn;
   QVBoxLayout *signal_edit_layout;
   QWidget *signals_header;
+  QList<SignalEdit *> signal_forms;
   HistoryLog *history_log;
   BinaryView *binary_view;
 };

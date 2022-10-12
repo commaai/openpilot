@@ -7,7 +7,6 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 // DetailWidget
@@ -69,13 +68,18 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
 void DetailWidget::setMessage(const QString &message_id) {
   msg_id = message_id;
-  clearLayout(signal_edit_layout);
+  for (auto f : signal_forms) {
+    f->deleteLater();
+  }
+  signal_forms.clear();
 
   if (auto msg = dbc()->msg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      auto edit = new SignalEdit(i, msg_id, msg->sigs[i], getColor(i));
-      signal_edit_layout->addWidget(edit);
-      QObject::connect(edit, &SignalEdit::showChart, this, &DetailWidget::showChart);
+      auto form = new SignalEdit(i, msg_id, msg->sigs[i], getColor(i));
+      signal_edit_layout->addWidget(form);
+      QObject::connect(form, &SignalEdit::showChart, this, &DetailWidget::showChart);
+      QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
+      signal_forms.push_back(form);
     }
     name_label->setText(msg->name.c_str());
     signals_header->setVisible(true);
@@ -108,6 +112,16 @@ void DetailWidget::addSignal() {
   AddSignalDialog dlg(msg_id, this);
   if (dlg.exec()) {
     setMessage(msg_id);
+  }
+}
+
+void DetailWidget::showForm() {
+  SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
+  if (sender->isFormVisible()) {
+    sender->setFormVisible(false);
+  } else {
+    for (auto f : signal_forms)
+      f->setFormVisible(f == sender);
   }
 }
 

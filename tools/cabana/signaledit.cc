@@ -3,7 +3,6 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QMessageBox>
 #include <QVBoxLayout>
 
@@ -85,7 +84,7 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
 
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
-  QLabel *icon = new QLabel(">");
+  icon = new QLabel(">");
   icon->setStyleSheet("font-weight:bold");
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
@@ -101,8 +100,8 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
   title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
 
-  edit_container = new QWidget(this);
-  QVBoxLayout *v_layout = new QVBoxLayout(edit_container);
+  form_container = new QWidget(this);
+  QVBoxLayout *v_layout = new QVBoxLayout(form_container);
   form = new SignalForm(sig, this);
   v_layout->addWidget(form);
 
@@ -114,8 +113,8 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
   h->addWidget(save_btn);
   v_layout->addLayout(h);
 
-  edit_container->setVisible(false);
-  main_layout->addWidget(edit_container);
+  form_container->setVisible(false);
+  main_layout->addWidget(form_container);
 
   QFrame* hline = new QFrame();
   hline->setFrameShape(QFrame::HLine);
@@ -124,10 +123,12 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
 
   QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
   QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::save);
-  QObject::connect(title, &ElidedLabel::clicked, [=]() {
-    edit_container->isVisible() ? edit_container->hide() : edit_container->show();
-    icon->setText(edit_container->isVisible() ? "▼" : ">");
-  });
+  QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
+}
+
+void SignalEdit::setFormVisible(bool visible) {
+  form_container->setVisible(visible);
+  icon->setText(visible ? "▼" : ">");
 }
 
 void SignalEdit::save() {
