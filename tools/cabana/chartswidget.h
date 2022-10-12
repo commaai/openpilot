@@ -23,7 +23,7 @@ public:
 
 private:
   void paintEvent(QPaintEvent *event) override;
-  double x_pos = 0.0;
+  double x_pos = -1;
 };
 
 class ChartView : public QChartView {
