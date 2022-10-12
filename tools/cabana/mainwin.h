@@ -3,7 +3,6 @@
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
-#include "tools/cabana/parser.h"
 #include "tools/cabana/videowidget.h"
 
 class MainWindow : public QWidget {

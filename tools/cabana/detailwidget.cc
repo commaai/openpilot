@@ -1,39 +1,29 @@
 
 #include "tools/cabana/detailwidget.h"
 
-#include <QDebug>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHeaderView>
+#include <QScrollBar>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <bitset>
-
-#include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/scrollview.h"
-
-inline const QString &getColor(int i) {
-  static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
-  return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
-}
 
 // DetailWidget
 
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  name_label = new QLabel(this);
-  name_label->setStyleSheet("font-weight:bold;");
-  name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  name_label->setAlignment(Qt::AlignCenter);
-  main_layout->addWidget(name_label);
-
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
+  title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   title_layout->addWidget(time_label);
+  time_label->setStyleSheet("font-weight:bold");
   title_layout->addStretch();
-
+  name_label = new QLabel(this);
+  name_label->setStyleSheet("font-weight:bold;");
+  title_layout->addWidget(name_label);
+  title_layout->addStretch();
   edit_btn = new QPushButton(tr("Edit"), this);
   edit_btn->setVisible(false);
   title_layout->addWidget(edit_btn);
@@ -41,79 +31,104 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   // binary view
   binary_view = new BinaryView(this);
-  main_layout->addWidget(binary_view);
+  main_layout->addWidget(binary_view, 0, Qt::AlignTop);
+
+  // signal header
+  signals_header = new QWidget(this);
+  QHBoxLayout *signals_header_layout = new QHBoxLayout(signals_header);
+  signals_header_layout->addWidget(new QLabel(tr("Signals")));
+  signals_header_layout->addStretch();
+  QPushButton *add_sig_btn = new QPushButton(tr("Add signal"), this);
+  signals_header_layout->addWidget(add_sig_btn);
+  signals_header->setVisible(false);
+  main_layout->addWidget(signals_header);
 
   // scroll area
-  QHBoxLayout *signals_layout = new QHBoxLayout();
-  signals_layout->addWidget(new QLabel(tr("Signals")));
-  signals_layout->addStretch();
-  add_sig_btn = new QPushButton(tr("Add signal"), this);
-  add_sig_btn->setVisible(false);
-  signals_layout->addWidget(add_sig_btn);
-  main_layout->addLayout(signals_layout);
-
+  scroll = new ScrollArea(this);
   QWidget *container = new QWidget(this);
+  container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   QVBoxLayout *container_layout = new QVBoxLayout(container);
   signal_edit_layout = new QVBoxLayout();
   signal_edit_layout->setSpacing(2);
   container_layout->addLayout(signal_edit_layout);
 
-  history_log = new HistoryLog(this);
-  container_layout->addWidget(history_log);
-
-  QScrollArea *scroll = new QScrollArea(this);
   scroll->setWidget(container);
   scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-
   main_layout->addWidget(scroll);
+
+  history_log = new HistoryLog(this);
+  main_layout->addWidget(history_log);
 
   QObject::connect(add_sig_btn, &QPushButton::clicked, this, &DetailWidget::addSignal);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
-  QObject::connect(parser, &Parser::updated, this, &DetailWidget::updateState);
+  QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
 }
 
-void DetailWidget::setMsg(const CanData *c) {
-  can_data = c;
-  clearLayout(signal_edit_layout);
-  edit_btn->setVisible(true);
+void DetailWidget::setMessage(const QString &message_id) {
+  msg_id = message_id;
+  for (auto f : signal_forms) {
+    f->deleteLater();
+  }
+  signal_forms.clear();
 
-  if (auto msg = parser->getMsg(can_data->address)) {
-    name_label->setText(msg->name.c_str());
-    add_sig_btn->setVisible(true);
+  if (auto msg = dbc()->msg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      signal_edit_layout->addWidget(new SignalEdit(can_data->id, msg->sigs[i], getColor(i)));
+      auto form = new SignalEdit(i, msg_id, msg->sigs[i], getColor(i));
+      signal_edit_layout->addWidget(form);
+      QObject::connect(form, &SignalEdit::showChart, this, &DetailWidget::showChart);
+      QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
+      signal_forms.push_back(form);
     }
+    name_label->setText(msg->name.c_str());
+    signals_header->setVisible(true);
   } else {
     name_label->setText(tr("untitled"));
-    add_sig_btn->setVisible(false);
+    signals_header->setVisible(false);
   }
+  edit_btn->setVisible(true);
 
-  binary_view->setMsg(can_data);
-  history_log->clear();
+  binary_view->setMessage(msg_id);
+  history_log->setMessage(msg_id);
 }
 
 void DetailWidget::updateState() {
-  if (!can_data) return;
+  time_label->setText(QString::number(can->currentSec(), 'f', 3));
+  if (msg_id.isEmpty()) return;
 
-  time_label->setText(QString("time: %1").arg(can_data->ts, 0, 'f', 3));
-  binary_view->setData(can_data->dat);
+  binary_view->updateState();
   history_log->updateState();
 }
 
 void DetailWidget::editMsg() {
-  EditMessageDialog dlg(can_data->id, this);
+  EditMessageDialog dlg(msg_id, this);
   if (dlg.exec()) {
-    setMsg(can_data);
+    setMessage(msg_id);
   }
 }
 
 void DetailWidget::addSignal() {
-  AddSignalDialog dlg(can_data->id, this);
+  AddSignalDialog dlg(msg_id, this);
   if (dlg.exec()) {
-    setMsg(can_data);
+    setMessage(msg_id);
+  }
+}
+
+void DetailWidget::showForm() {
+  SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
+  if (sender->isFormVisible()) {
+    sender->setFormVisible(false);
+  } else {
+    for (auto f : signal_forms) {
+      f->setFormVisible(f == sender);
+      if (f == sender) {
+        // scroll to header
+        QTimer::singleShot(0, [=]() {
+          const QPoint p = f->mapTo(scroll, QPoint(0, 0));
+          scroll->verticalScrollBar()->setValue(p.y() + scroll->verticalScrollBar()->value());
+        });
+      }
+    }
   }
 }
 
@@ -121,6 +136,7 @@ void DetailWidget::addSignal() {
 
 BinaryView::BinaryView(QWidget *parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
   table = new QTableWidget(this);
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->horizontalHeader()->hide();
@@ -131,9 +147,10 @@ BinaryView::BinaryView(QWidget *parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
-void BinaryView::setMsg(const CanData *can_data) {
-  const Msg *msg = parser->getMsg(can_data->address);
-  int row_count = msg ? msg->size : can_data->dat.size();
+void BinaryView::setMessage(const QString &message_id) {
+  msg_id = message_id;
+  const Msg *msg = dbc()->msg(msg_id);
+  int row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
 
   table->setRowCount(row_count);
   table->setColumnCount(9);
@@ -151,8 +168,8 @@ void BinaryView::setMsg(const CanData *can_data) {
     }
   }
 
+  // set background color
   if (msg) {
-    // set background color
     for (int i = 0; i < msg->sigs.size(); ++i) {
       const auto &sig = msg->sigs[i];
       int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
@@ -162,80 +179,44 @@ void BinaryView::setMsg(const CanData *can_data) {
     }
   }
 
-  setFixedHeight(table->rowHeight(0) * table->rowCount() + 25);
+  table->setFixedHeight(table->rowHeight(0) * table->rowCount() + table->horizontalHeader()->height() + 2);
+  updateState();
 }
 
-void BinaryView::setData(const QByteArray &binary) {
-  std::string s;
-  for (int j = 0; j < binary.size(); ++j) {
-    s += std::bitset<8>(binary[j]).to_string();
-  }
+void BinaryView::updateState() {
+  if (msg_id.isEmpty()) return;
+
+  const auto &binary = can->lastMessage(msg_id).dat;
 
   setUpdatesEnabled(false);
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
-      table->item(i, j)->setText(QChar(s[i * 8 + j]));
+      table->item(i, j)->setText(QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0'));
     }
-    sprintf(&hex[0], "%02X", (unsigned char)binary[i]);
+    hex[0] = toHex(binary[i] >> 4);
+    hex[1] = toHex(binary[i] & 0xf);
     table->item(i, 8)->setText(hex);
   }
   setUpdatesEnabled(true);
 }
 
-// HistoryLog
-
-HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QLabel *title = new QLabel("TIME         BYTES");
-  main_layout->addWidget(title);
-
-  QVBoxLayout *message_layout = new QVBoxLayout();
-  for (int i = 0; i < std::size(labels); ++i) {
-    labels[i] = new QLabel();
-    labels[i]->setVisible(false);
-    message_layout->addWidget(labels[i]);
-  }
-  main_layout->addLayout(message_layout);
-  main_layout->addStretch();
-}
-
-void HistoryLog::updateState() {
-  int i = 0;
-  for (; i < parser->history_log.size(); ++i) {
-    const auto &c = parser->history_log[i];
-    auto label = labels[i];
-    label->setVisible(true);
-    label->setText(QString("%1         %2").arg(c.ts, 0, 'f', 3).arg(toHex(c.dat)));
-  }
-
-  for (; i < std::size(labels); ++i) {
-    labels[i]->setVisible(false);
-  }
-}
-
-void HistoryLog::clear() {
-  setUpdatesEnabled(false);
-  for (auto l : labels) l->setVisible(false);
-  setUpdatesEnabled(true);
-}
-
 // EditMessageDialog
 
-EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id), QDialog(parent) {
+EditMessageDialog::EditMessageDialog(const QString &msg_id, QWidget *parent) : msg_id(msg_id), QDialog(parent) {
   setWindowTitle(tr("Edit message"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QFormLayout *form_layout = new QFormLayout();
-  form_layout->addRow("ID", new QLabel(id));
+  form_layout->addRow("ID", new QLabel(msg_id));
 
-  auto msg = const_cast<Msg *>(parser->getMsg(id));
+  const auto msg = dbc()->msg(msg_id);
   name_edit = new QLineEdit(this);
   name_edit->setText(msg ? msg->name.c_str() : "untitled");
   form_layout->addRow(tr("Name"), name_edit);
 
   size_spin = new QSpinBox(this);
-  size_spin->setValue(msg ? msg->size : parser->can_msgs[id].dat.size());
+  size_spin->setValue(msg ? msg->size : can->lastMessage(msg_id).dat.size());
   form_layout->addRow(tr("Size"), size_spin);
 
   main_layout->addLayout(form_layout);
@@ -243,22 +224,33 @@ EditMessageDialog::EditMessageDialog(const QString &id, QWidget *parent) : id(id
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
 
+  setFixedWidth(parent->width() * 0.9);
+
   connect(buttonBox, &QDialogButtonBox::accepted, this, &EditMessageDialog::save);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
 void EditMessageDialog::save() {
-  if (size_spin->value() <= 0 || name_edit->text().isEmpty()) return;
+  const QString name = name_edit->text();
+  if (size_spin->value() <= 0 || name_edit->text().isEmpty() || name == tr("untitled"))
+    return;
 
-  if (auto msg = const_cast<Msg *>(parser->getMsg(id))) {
-    msg->name = name_edit->text().toStdString();
-    msg->size = size_spin->value();
-  } else {
-    Msg m = {};
-    m.address = Parser::addressFromId(id);
-    m.name = name_edit->text().toStdString();
-    m.size = size_spin->value();
-    parser->addNewMsg(m);
-  }
+  dbc()->updateMsg(msg_id, name, size_spin->value());
   QDialog::accept();
+}
+
+// ScrollArea
+
+bool ScrollArea::eventFilter(QObject *obj, QEvent *ev) {
+  if (obj == widget() && ev->type() == QEvent::Resize) {
+    int height = widget()->height() + 4;
+    setMinimumHeight(height > 480 ? 480 : height);
+    setMaximumHeight(height);
+  }
+  return QScrollArea::eventFilter(obj, ev);
+}
+
+void ScrollArea::setWidget(QWidget *w) {
+  QScrollArea::setWidget(w);
+  w->installEventFilter(this);
 }
