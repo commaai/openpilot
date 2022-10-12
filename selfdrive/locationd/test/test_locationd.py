@@ -15,7 +15,7 @@ from selfdrive.manager.process_config import managed_processes
 class TestLocationdProc(unittest.TestCase):
   MAX_WAITS = 1000
   LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'liveCalibration',
-              'accelerometer', 'gyroscope', 'magnetometer', 'clocks']
+              'accelerometer', 'gyroscope', 'magnetometer']
 
   def setUp(self):
     random.seed(123489234)
@@ -45,10 +45,7 @@ class TestLocationdProc(unittest.TestCase):
     except capnp.lib.capnp.KjException:
       msg = messaging.new_message(name, 0)
 
-    if name == "clocks":
-      msg.clocks.wallTimeNanos = t
-      msg.clocks.monotonicNanos = t
-    elif name == "gpsLocationExternal":
+    if name == "gpsLocationExternal":
       msg.gpsLocationExternal.flags = 1
       msg.gpsLocationExternal.verticalAccuracy = 1.0
       msg.gpsLocationExternal.speedAccuracy = 1.0
