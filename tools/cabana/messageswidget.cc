@@ -89,7 +89,7 @@ void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-    return (QString[]){"name", "id", "count", "data"}[section];
+    return (QString[]){"Name", "ID", "Count", "Bytes"}[section];
   else if (orientation == Qt::Vertical && role == Qt::DisplayRole) {
     // return QString::number(section);
   }
