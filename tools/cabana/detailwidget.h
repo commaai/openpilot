@@ -3,35 +3,28 @@
 #include <QDialog>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
-#include "tools/cabana/parser.h"
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
-
-class HistoryLog : public QWidget {
-  Q_OBJECT
-
-public:
-  HistoryLog(QWidget *parent);
-  void clear();
-  void updateState();
-
-private:
-  QLabel *labels[LOG_SIZE] = {};
-};
 
 class BinaryView : public QWidget {
   Q_OBJECT
 
 public:
   BinaryView(QWidget *parent);
-  void setMsg(const CanData *can_data);
-  void setData(const QByteArray &binary);
+  void setMessage(const QString &message_id);
+  void updateState();
 
+private:
+  QString msg_id;
   QTableWidget *table;
 };
 
@@ -39,14 +32,23 @@ class EditMessageDialog : public QDialog {
   Q_OBJECT
 
 public:
-  EditMessageDialog(const QString &id, QWidget *parent);
+  EditMessageDialog(const QString &msg_id, QWidget *parent);
 
 protected:
   void save();
 
+  QString msg_id;
   QLineEdit *name_edit;
   QSpinBox *size_spin;
-  QString id;
+};
+
+class ScrollArea : public QScrollArea {
+  Q_OBJECT
+
+public:
+  ScrollArea(QWidget *parent) : QScrollArea(parent) {}
+  bool eventFilter(QObject *obj, QEvent *ev) override;
+  void setWidget(QWidget *w);
 };
 
 class DetailWidget : public QWidget {
@@ -54,17 +56,26 @@ class DetailWidget : public QWidget {
 
 public:
   DetailWidget(QWidget *parent);
-  void setMsg(const CanData *c);
+  void setMessage(const QString &message_id);
+
+signals:
+  void showChart(const QString &msg_id, const QString &sig_name);
+
+private slots:
+  void showForm();
 
 private:
-  void updateState();
   void addSignal();
   void editMsg();
+  void updateState();
 
-  const CanData *can_data = nullptr;
+  QString msg_id;
   QLabel *name_label, *time_label;
-  QPushButton *edit_btn, *add_sig_btn;
+  QPushButton *edit_btn;
   QVBoxLayout *signal_edit_layout;
+  QWidget *signals_header;
+  QList<SignalEdit *> signal_forms;
   HistoryLog *history_log;
   BinaryView *binary_view;
+  ScrollArea *scroll;
 };

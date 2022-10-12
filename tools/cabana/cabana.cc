@@ -1,14 +1,14 @@
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QStyleFactory>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 
-const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-
 int main(int argc, char *argv[]) {
   initApp(argc, argv);
   QApplication app(argc, argv);
+  app.setStyle(QStyleFactory::create("Fusion"));
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   }
 
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  Parser p(&app);
+  CANMessages p(&app);
   if (!p.loadRoute(route, cmd_parser.value("data_dir"), true)) {
     return 0;
   }
