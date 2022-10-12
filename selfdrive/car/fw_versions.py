@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
+import time
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
 
@@ -252,8 +253,16 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
+            if r.delay != 0:
+              time.sleep(r.delay)
+
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (tx_addr, sub_addr), version in query.get_data(timeout).items():
+            results = query.get_data(timeout)
+
+            if not r.log:
+              continue
+
+            for (tx_addr, sub_addr), version in results.items():
               if not r.fingerprint:
                 break
 
@@ -278,7 +287,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
 
 if __name__ == "__main__":
-  import time
   import argparse
   import cereal.messaging as messaging
   from selfdrive.car.vin import get_vin

@@ -57,7 +57,8 @@ class Request:
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
-  fingerprint: bool = True
+  log: bool = True
+  delay: float = 0
 
 
 @dataclass
