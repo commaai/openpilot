@@ -95,7 +95,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     auto it = std::next(can->can_msgs.begin(), index.row());
     if (it != can->can_msgs.end()) {
-      const auto &d = it.value().back();
+      const auto &d = it.value().front();
       switch (index.column()) {
         case 0: {
           auto msg = dbc()->msg(it.key());

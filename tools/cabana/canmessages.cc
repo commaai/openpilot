@@ -41,9 +41,9 @@ void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
     if (msgs.size() == CAN_MSG_LOG_SIZE || can_msgs[it.key()].size() == 0) {
       msgs = std::move(new_msgs);
     } else {
-      msgs.insert(msgs.end(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
+      msgs.insert(msgs.begin(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
       while (msgs.size() >= CAN_MSG_LOG_SIZE) {
-        msgs.pop_front();
+        msgs.pop_back();
       }
     }
   }
@@ -72,9 +72,9 @@ bool CANMessages::eventFilter(const Event *event) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
       auto &list = (*filter_msgs)[id];
       while (list.size() >= CAN_MSG_LOG_SIZE) {
-        list.pop_front();
+        list.pop_back();
       }
-      CanData &data = list.emplace_back();
+      CanData &data = list.emplace_front();
       data.id = id;
       data.ts = current_sec;
       data.source = c.getSrc();

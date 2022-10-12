@@ -38,7 +38,7 @@ public:
   inline double currentSec() const { return current_sec; }
   inline bool isZoomed() const { return is_zoomed; }
   inline const std::deque<CanData> &messages(const QString &id) { return can_msgs[id]; }
-  inline const CanData &lastMessage(const QString &id) { return can_msgs[id].back(); }
+  inline const CanData &lastMessage(const QString &id) { return can_msgs[id].front(); }
 
   inline const std::vector<Event *> *events() const { return replay->events(); }
   inline void setSpeed(float speed) { replay->setSpeed(speed); }

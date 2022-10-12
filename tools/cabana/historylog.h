@@ -11,17 +11,15 @@ Q_OBJECT
 public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const QString &message_id);
-  void clear();
   void updateState();
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return CAN_MSG_LOG_SIZE; }
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
 
 private:
   QString msg_id;
-  QList<QPair<QString, QStringList>> values;
-  double current_ts = 0;
+  int row_count = 0;
   int column_count = 0;
 };
 

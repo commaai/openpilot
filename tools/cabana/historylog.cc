@@ -5,8 +5,16 @@
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
-    if (index.row() < values.size() && index.column() < values[index.row()].second.size())
-      return values[index.row()].second[index.column()];
+    const auto &can_msgs = can->messages(msg_id);
+    if (index.row() < can_msgs.size()) {
+      const auto &can_data = can_msgs[index.row()];
+      auto msg = dbc()->msg(msg_id);
+      if (msg && index.column() < msg->sigs.size()) {
+        return get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), msg->sigs[index.column()]);
+      } else {
+        return toHex(can_data.dat);
+      }
+    }
   }
   return {};
 }
@@ -16,63 +24,46 @@ void HistoryLogModel::setMessage(const QString &message_id) {
   msg_id = message_id;
   const auto msg = dbc()->msg(message_id);
   column_count = msg && !msg->sigs.empty() ? msg->sigs.size() : 1;
-  values.clear();
-  current_ts = 0;
+  row_count = 0;
   endResetModel();
+
+  updateState();
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal) {
-    if (role == Qt::BackgroundRole) {
-      auto msg = dbc()->msg(msg_id);
-      if (msg && msg->sigs.size() > 0)
+    auto msg = dbc()->msg(msg_id);
+    if (msg && section < msg->sigs.size()) {
+      if (role == Qt::BackgroundRole) {
         return QBrush(QColor(getColor(section)));
-    } else if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
-      auto msg = dbc()->msg(msg_id);
-      if (msg && section < msg->sigs.size())
+      } else if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
         return QString::fromStdString(msg->sigs[section].name);
+      }
     }
-  } else if (role == Qt::DisplayRole && section < values.size()) {
-    return values[section].first;
+  } else if (role == Qt::DisplayRole) {
+    const auto &can_msgs = can->messages(msg_id);
+    if (section < can_msgs.size()) {
+      return QString::number(can_msgs[section].ts, 'f', 2);
+    }
   }
   return {};
 }
 
-void HistoryLogModel::clear() {
-  values.clear();
-  current_ts = 0;
-  emit dataChanged(index(0, 0), index(CAN_MSG_LOG_SIZE - 1, column_count - 1));
-}
-
 void HistoryLogModel::updateState() {
   const auto &can_msgs = can->messages(msg_id);
-  const auto msg = dbc()->msg(msg_id);
-  if (can->currentSec() < current_ts) {
-    clear();
+  int prev_row_count = row_count;
+  row_count = can_msgs.size();
+  int delta = row_count - prev_row_count;
+  if (delta > 0) {
+    beginInsertRows({}, prev_row_count, row_count - 1);
+    endInsertRows();
+  } else if (delta < 0) {
+    beginRemoveRows({}, row_count, prev_row_count - 1);
+    endRemoveRows();
   }
-  double previous_ts = current_ts;
-  for (const auto &can_data : can_msgs) {
-    if (can_data.ts <= previous_ts)
-      continue;
-
-    if (values.size() >= CAN_MSG_LOG_SIZE)
-      values.pop_back();
-
-    QStringList data;
-    if (msg && !msg->sigs.empty()) {
-      for (const auto &sig : msg->sigs) {
-        double value = get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), sig);
-        data.append(QString::number(value));
-      }
-    } else {
-      data.append(toHex(can_data.dat));
-    }
-    values.push_front({QString::number(can_data.ts, 'f', 2), data});
-    current_ts = can_data.ts;
-  }
-  if (current_ts > previous_ts) {
-    emit dataChanged(index(0, 0), index(CAN_MSG_LOG_SIZE - 1, column_count - 1));
-    emit headerDataChanged(Qt::Vertical, 0, CAN_MSG_LOG_SIZE - 1);
+  if (row_count > 0) {
+    emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1));
+    emit headerDataChanged(Qt::Vertical, 0, row_count - 1);
   }
 }
 
@@ -88,13 +79,10 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   table->verticalHeader()->setStyleSheet("QHeaderView::section {padding-left: 5px; padding-right: 5px;min-width:40px;}");
   table->setMinimumHeight(300);
   main_layout->addWidget(table);
-
-  QObject::connect(can, &CANMessages::rangeChanged, model, &HistoryLogModel::clear);
 }
 
 void HistoryLog::setMessage(const QString &message_id) {
   model->setMessage(message_id);
-  model->updateState();
 }
 
 void HistoryLog::updateState() {
