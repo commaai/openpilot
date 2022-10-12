@@ -46,7 +46,7 @@ public:
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);
   void handle_sensor(double current_time, const cereal::SensorEventData::Reader& log);
-  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log);
+  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset);
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
@@ -63,7 +63,6 @@ private:
   bool calibrated = false;
 
   double car_speed = 0.0;
-  double unix_time_from_mono_time = NAN;
   double last_reset_time = NAN;
   std::deque<double> posenet_stds;
 
