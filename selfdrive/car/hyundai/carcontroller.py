@@ -75,11 +75,25 @@ class CarController:
     sys_warning, sys_state, left_lane_warning, right_lane_warning = process_hud_alert(CC.enabled, self.car_fingerprint,
                                                                                       hud_control)
 
+    # >90 degree steering fault prevention
+    # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
+    if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
+      self.angle_limit_counter += 1
+    else:
+      self.angle_limit_counter = 0
+
+    # Cut steer actuation bit for two frames and hold torque with induced temporary fault
+    torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
+    lat_active = CC.latActive and not torque_fault
+
+    if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
+      self.angle_limit_counter = 0
+
     can_sends = []
 
     if self.CP.carFingerprint in CANFD_CAR:
       # steering control
-      can_sends.append(hyundaicanfd.create_lkas(self.packer, self.CP, CC.enabled, CC.latActive, apply_steer))
+      can_sends.append(hyundaicanfd.create_lkas(self.packer, self.CP, CC.enabled, lat_active, apply_steer))
 
       # block LFA on HDA2
       if self.frame % 5 == 0 and (self.CP.flags & HyundaiFlags.CANFD_HDA2):
@@ -113,19 +127,6 @@ class CarController:
       if self.CP.openpilotLongitudinalControl:
         if self.frame % 100 == 0:
           can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
-
-      # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
-      if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
-        self.angle_limit_counter += 1
-      else:
-        self.angle_limit_counter = 0
-
-      # Cut steer actuation bit for two frames and hold torque with induced temporary fault
-      torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
-      lat_active = CC.latActive and not torque_fault
-
-      if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
-        self.angle_limit_counter = 0
 
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
