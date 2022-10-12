@@ -165,6 +165,8 @@ void BinaryView::setMessage(const QString &message_id) {
 }
 
 void BinaryView::updateState() {
+  if (msg_id.isEmpty()) return;
+
   const auto &binary = can->lastMessage(msg_id).dat;
 
   setUpdatesEnabled(false);
