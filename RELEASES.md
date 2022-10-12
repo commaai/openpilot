@@ -11,6 +11,7 @@ Version 0.8.17 (2022-XX-XX)
   * Improved update experience
   * Border turns grey while overriding steering
   * Added button to bookmark events while driving; view them later in comma connect
+* Fixed two steering faults on Hyundai and Toyota cars
 * AGNOS 6
 
 Version 0.8.16 (2022-08-26)
