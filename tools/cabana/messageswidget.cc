@@ -99,7 +99,7 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     auto it = std::next(can->can_msgs.begin(), index.row());
-    if (it != can->can_msgs.end()) {
+    if (it != can->can_msgs.end() && !it.value().empty()) {
       const auto &d = it.value().front();
       switch (index.column()) {
         case 0: {
