@@ -1221,14 +1221,17 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None) : [
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.05 99210-AA000 210930',
       b'\xf1\000CN7HMFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
+      b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.07 99210-AA000 220426',
     ],
     (Ecu.fwdRadar, 0x7d0, None) : [
       b'\xf1\000CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
       b'\xf1\x8799110BY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
     ],
     (Ecu.eps, 0x7d4, None) :[
+      b'\xf1\x00CN7 MDPS C 1.00 1.03 56310BY050\x00 4CNHC103',
       b'\xf1\x8756310/BY050\xf1\x00CN7 MDPS C 1.00 1.03 56310/BY050 4CNHC103',
       b'\xf1\x8756310/BY050\xf1\000CN7 MDPS C 1.00 1.02 56310/BY050 4CNHC102',
+      b'\xf1\x8756310BY050\x00\xf1\x00CN7 MDPS C 1.00 1.03 56310BY050\x00 4CNHC103',
     ],
     (Ecu.transmission, 0x7e1, None) :[
       b'\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\xb9?A\xaa',
@@ -1238,6 +1241,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None) : [
       b'\xf1\x816H6G5051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x816H6G6051\x00\x00\x00\x00\x00\x00\x00\x00',
     ]
   },
   CAR.KONA_HEV: {
