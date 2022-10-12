@@ -3,6 +3,7 @@
 #include <QComboBox>
 #include <QCompleter>
 #include <QHeaderView>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
@@ -12,6 +13,7 @@
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
+  // DBC file selector
   QHBoxLayout *dbc_file_layout = new QHBoxLayout();
   QComboBox *combo = new QComboBox(this);
   auto dbc_names = dbc()->allDBCNames();
@@ -32,10 +34,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   dbc_file_layout->addWidget(save_btn);
   main_layout->addLayout(dbc_file_layout);
 
-  filter = new QLineEdit(this);
+  // message filter
+  QLineEdit *filter = new QLineEdit(this);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
 
+  // message table
   table_widget = new QTableView(this);
   model = new MessageListModel(this);
   QSortFilterProxyModel *proxy_model = new QSortFilterProxyModel(this);
@@ -55,6 +59,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->sortByColumn(0, Qt::AscendingOrder);
   main_layout->addWidget(table_widget);
 
+  // sigals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
   QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));

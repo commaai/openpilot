@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QAbstractTableModel>
-#include <QLineEdit>
 #include <QTableView>
 
 #include "tools/cabana/canmessages.h"
@@ -34,7 +33,6 @@ signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
-  QLineEdit *filter;
   QTableView *table_widget;
   MessageListModel *model;
 };
