@@ -101,14 +101,15 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     auto it = std::next(can->can_msgs.begin(), index.row());
     if (it != can->can_msgs.end() && !it.value().empty()) {
       const auto &d = it.value().front();
+      const QString &msg_id = it.key();
       switch (index.column()) {
         case 0: {
-          auto msg = dbc()->msg(it.key());
+          auto msg = dbc()->msg(msg_id);
           QString name = msg ? msg->name.c_str() : "untitled";
           return name;
         }
-        case 1: return d.id;
-        case 2: return can->counters[d.id];
+        case 1: return msg_id;
+        case 2: return can->counters[msg_id];
         case 3: return toHex(d.dat);
       }
     }

@@ -85,13 +85,14 @@ SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QS
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
   icon = new QLabel(">");
+  icon->setFixedSize(15, 30);
   icon->setStyleSheet("font-weight:bold");
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
+  title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   title->setText(QString("%1. %2").arg(index + 1).arg(sig.name.c_str()));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color));
   title_layout->addWidget(title);
-  title_layout->addStretch();
 
   plot_btn = new QPushButton("📈");
   plot_btn->setToolTip(tr("Show Plot"));

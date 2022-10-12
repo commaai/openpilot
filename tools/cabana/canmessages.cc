@@ -61,24 +61,21 @@ bool CANMessages::eventFilter(const Event *event) {
   static double prev_update_sec = 0;
   // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
   if (!seeking && event->which == cereal::Event::Which::CAN) {
-    if (!filter_msgs) {
-      filter_msgs.reset(new QHash<QString, std::deque<CanData>>);
-      filter_msgs->reserve(1000);
+    if (!received_msgs) {
+      received_msgs.reset(new QHash<QString, std::deque<CanData>>);
+      received_msgs->reserve(1000);
     }
 
     current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
-      auto &list = (*filter_msgs)[id];
+      auto &list = (*received_msgs)[id];
       while (list.size() >= CAN_MSG_LOG_SIZE) {
         list.pop_back();
       }
       CanData &data = list.emplace_front();
-      data.id = id;
       data.ts = current_sec;
-      data.source = c.getSrc();
-      data.address = c.getAddress();
       data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
     }
@@ -86,7 +83,7 @@ bool CANMessages::eventFilter(const Event *event) {
     if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / FPS) {
       prev_update_sec = current_sec;
       // use pointer to avoid data copy in queued connection.
-      emit received(filter_msgs.release());
+      emit received(received_msgs.release());
     }
   }
   return true;

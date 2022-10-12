@@ -9,14 +9,11 @@
 #include "tools/replay/replay.h"
 
 const int FPS = 10;
-const int CAN_MSG_LOG_SIZE = 50;
+const int CAN_MSG_LOG_SIZE = 100;
 
 struct CanData {
-  QString id;
   double ts;
-  uint32_t address;
   uint16_t bus_time;
-  uint8_t source;
   QByteArray dat;
 };
 
@@ -54,7 +51,7 @@ signals:
 
 public:
   QMap<QString, std::deque<CanData>> can_msgs;
-  std::unique_ptr<QHash<QString, std::deque<CanData>>> filter_msgs = nullptr;
+  std::unique_ptr<QHash<QString, std::deque<CanData>>> received_msgs = nullptr;
   QHash<QString, uint32_t> counters;
 
 protected:
