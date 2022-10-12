@@ -59,7 +59,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->sortByColumn(0, Qt::AscendingOrder);
   main_layout->addWidget(table_widget);
 
-  // sigals/slots
+  // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
   QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
