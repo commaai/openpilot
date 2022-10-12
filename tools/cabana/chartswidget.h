@@ -37,6 +37,7 @@ private:
   void addData(const CanData &can_data, const Signal &sig);
   void updateSeries();
   void rangeChanged(qreal min, qreal max);
+  void updateAxisY();
 
   QString id;
   QString sig_name;
