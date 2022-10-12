@@ -4,10 +4,9 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHeaderView>
+#include <QScrollBar>
 #include <QTimer>
 #include <QVBoxLayout>
-
-#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 // DetailWidget
 
@@ -45,7 +44,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(signals_header);
 
   // scroll area
-  ScrollArea *scroll = new ScrollArea(this);
+  scroll = new ScrollArea(this);
   QWidget *container = new QWidget(this);
   container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   QVBoxLayout *container_layout = new QVBoxLayout(container);
@@ -120,8 +119,16 @@ void DetailWidget::showForm() {
   if (sender->isFormVisible()) {
     sender->setFormVisible(false);
   } else {
-    for (auto f : signal_forms)
+    for (auto f : signal_forms) {
       f->setFormVisible(f == sender);
+      if (f == sender) {
+        // scroll to header
+        QTimer::singleShot(0, [=]() {
+          const QPoint p = f->mapTo(scroll, QPoint(0, 0));
+          scroll->verticalScrollBar()->setValue(p.y() + scroll->verticalScrollBar()->value());
+        });
+      }
+    }
   }
 }
 

@@ -69,7 +69,6 @@ private:
   void editMsg();
   void updateState();
 
-
   QString msg_id;
   QLabel *name_label, *time_label;
   QPushButton *edit_btn;
@@ -78,4 +77,5 @@ private:
   QList<SignalEdit *> signal_forms;
   HistoryLog *history_log;
   BinaryView *binary_view;
+  ScrollArea *scroll;
 };
