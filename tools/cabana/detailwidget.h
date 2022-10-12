@@ -3,6 +3,7 @@
 #include <QDialog>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -39,6 +40,15 @@ protected:
   QString msg_id;
   QLineEdit *name_edit;
   QSpinBox *size_spin;
+};
+
+class ScrollArea : public QScrollArea {
+  Q_OBJECT
+
+public:
+  ScrollArea(QWidget *parent) : QScrollArea(parent) {}
+  bool eventFilter(QObject *obj, QEvent *ev) override;
+  void setWidget(QWidget *w);
 };
 
 class DetailWidget : public QWidget {

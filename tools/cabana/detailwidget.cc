@@ -46,24 +46,21 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(signals_header);
 
   // scroll area
+  ScrollArea *scroll = new ScrollArea(this);
   QWidget *container = new QWidget(this);
+  container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   QVBoxLayout *container_layout = new QVBoxLayout(container);
   signal_edit_layout = new QVBoxLayout();
   signal_edit_layout->setSpacing(2);
   container_layout->addLayout(signal_edit_layout);
 
-  history_log = new HistoryLog(this);
-  container_layout->addWidget(history_log);
-
-  QScrollArea *scroll = new QScrollArea(this);
   scroll->setWidget(container);
   scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-  scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-
   main_layout->addWidget(scroll);
+
+  history_log = new HistoryLog(this);
+  main_layout->addWidget(history_log);
 
   QObject::connect(add_sig_btn, &QPushButton::clicked, this, &DetailWidget::addSignal);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
@@ -118,6 +115,7 @@ void DetailWidget::addSignal() {
 
 BinaryView::BinaryView(QWidget *parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
   table = new QTableWidget(this);
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->horizontalHeader()->hide();
@@ -218,4 +216,20 @@ void EditMessageDialog::save() {
 
   dbc()->updateMsg(msg_id, name, size_spin->value());
   QDialog::accept();
+}
+
+// ScrollArea
+
+bool ScrollArea::eventFilter(QObject *obj, QEvent *ev) {
+  if (obj == widget() && ev->type() == QEvent::Resize) {
+    int height = widget()->height() + 4;
+    setMinimumHeight(height > 480 ? 480 : height);
+    setMaximumHeight(height);
+  }
+  return QScrollArea::eventFilter(obj, ev);
+}
+
+void ScrollArea::setWidget(QWidget *w) {
+  QScrollArea::setWidget(w);
+  w->installEventFilter(this);
 }

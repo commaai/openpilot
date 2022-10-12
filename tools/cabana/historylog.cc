@@ -79,7 +79,6 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
   table->verticalHeader()->setStyleSheet("QHeaderView::section {padding-left: 5px; padding-right: 5px;min-width:40px;}");
-  table->setMinimumHeight(300);
   main_layout->addWidget(table);
 }
 
