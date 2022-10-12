@@ -9,6 +9,7 @@ import threading
 import queue
 import unittest
 from datetime import datetime, timedelta
+from typing import Optional
 
 from multiprocessing import Process
 from pathlib import Path
@@ -56,8 +57,8 @@ class TestAthenadMethods(unittest.TestCase):
       if athenad.upload_queue.qsize() == 0:
         break
 
-  def _create_file(self, file: str, parent: str = athenad.ROOT) -> str:
-    fn = os.path.join(parent, file)
+  def _create_file(self, file: str, parent: Optional[str] = None) -> str:
+    fn = os.path.join(athenad.ROOT if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     Path(fn).touch()
     return fn
