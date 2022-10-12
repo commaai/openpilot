@@ -116,6 +116,7 @@ class CAR:
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
   PASSAT_NMS = "VOLKSWAGEN PASSAT NMS"              # Chassis A3, North America/China/Mideast NMS Passat, incl. facelift
   POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
+  SHARAN_MK2 = "VOLKSWAGEN SHARAN 2ND GEN"          # Chassis 7N, Mk2 Volkswagen Sharan and SEAT Alhambra
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
@@ -135,7 +136,7 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
-PQ_CARS = {CAR.PASSAT_NMS}
+PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
@@ -205,6 +206,10 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.POLO_MK6: [
     VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  ],
+  CAR.SHARAN_MK2: [
+    VWCarInfo("Volkswagen Sharan 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("SEAT Alhambra 2018-20", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   ],
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -623,6 +628,18 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
+    ],
+  },
+  CAR.SHARAN_MK2: {
+    # TODO: Sharan Mk2 EPS and DQ250 auto trans both require KWP2000 support for fingerprinting
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906016HE\xf1\x894635',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x877N0959655D \xf1\x890016\xf1\x82\x0801100705----10--',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0153',
     ],
   },
   CAR.TAOS_MK1: {

@@ -30,6 +30,7 @@ class CarState(CarStateBase):
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
+    self.is_metric = False
     self.brake_error = False
     self.buttons_counter = 0
 
@@ -45,8 +46,8 @@ class CarState(CarStateBase):
 
     ret = car.CarState.new_message()
     cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
-    is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
-    speed_conv = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
+    self.is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
+    speed_conv = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
 
     ret.doorOpen = any([cp.vl["CGW1"]["CF_Gway_DrvDrSw"], cp.vl["CGW1"]["CF_Gway_AstDrSw"],
                         cp.vl["CGW2"]["CF_Gway_RLDrSw"], cp.vl["CGW2"]["CF_Gway_RRDrSw"]])
@@ -69,7 +70,7 @@ class CarState(CarStateBase):
       self.cluster_speed_counter = 0
 
       # mimic how dash converts to imperial
-      if not is_metric:
+      if not self.is_metric:
         self.cluster_speed = math.floor(self.cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
 
     ret.vEgoCluster = self.cluster_speed * speed_conv
@@ -126,12 +127,12 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     if not self.CP.openpilotLongitudinalControl:
-      if self.CP.carFingerprint in FEATURES["use_fca"]:
-        ret.stockAeb = cp_cruise.vl["FCA11"]["FCA_CmdAct"] != 0
-        ret.stockFcw = cp_cruise.vl["FCA11"]["CF_VSM_Warn"] == 2
-      else:
-        ret.stockAeb = cp_cruise.vl["SCC12"]["AEB_CmdAct"] != 0
-        ret.stockFcw = cp_cruise.vl["SCC12"]["CF_VSM_Warn"] == 2
+      aeb_src = "FCA11" if self.CP.carFingerprint in FEATURES["use_fca"] else "SCC12"
+      aeb_sig = "FCA_CmdAct" if self.CP.carFingerprint in FEATURES["use_fca"] else "AEB_CmdAct"
+      aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
+      aeb_braking = cp_cruise.vl[aeb_src]["CF_VSM_DecCmdAct"] != 0 or cp_cruise.vl[aeb_src][aeb_sig] != 0
+      ret.stockFcw = aeb_warning and not aeb_braking
+      ret.stockAeb = aeb_warning and aeb_braking
 
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
@@ -180,22 +181,26 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
     ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
+    ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
                                                                       cp.vl["BLINKERS"]["RIGHT_LAMP"])
 
     ret.cruiseState.available = True
     ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
-    cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
-    speed_factor = CV.MPH_TO_MS if cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] == 1 else CV.KPH_TO_MS
-    ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
-    ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
+    self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
+    if not self.CP.openpilotLongitudinalControl:
+      speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
+      cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+      ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
+      ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
+    self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
-    self.cruise_info_copy = copy.copy(cp_cruise_info.vl["CRUISE_INFO"])
+    self.cruise_info_copy =  {}
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
@@ -294,12 +299,14 @@ class CarState(CarStateBase):
         signals += [
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
+          ("CF_VSM_DecCmdAct", "FCA11"),
         ]
         checks.append(("FCA11", 50))
       else:
         signals += [
           ("AEB_CmdAct", "SCC12"),
           ("CF_VSM_Warn", "SCC12"),
+          ("CF_VSM_DecCmdAct", "SCC12"),
         ]
 
     if CP.enableBsm:
@@ -383,12 +390,14 @@ class CarState(CarStateBase):
         signals += [
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
+          ("CF_VSM_DecCmdAct", "FCA11"),
         ]
         checks.append(("FCA11", 50))
       else:
         signals += [
           ("AEB_CmdAct", "SCC12"),
           ("CF_VSM_Warn", "SCC12"),
+          ("CF_VSM_DecCmdAct", "SCC12"),
         ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
@@ -410,6 +419,7 @@ class CarState(CarStateBase):
       ("STEERING_ANGLE", "STEERING_SENSORS"),
       ("STEERING_COL_TORQUE", "MDPS"),
       ("STEERING_OUT_TORQUE", "MDPS"),
+      ("LKA_FAULT", "MDPS"),
 
       ("CRUISE_ACTIVE", "SCC1"),
       ("COUNTER", cruise_btn_msg),
@@ -442,13 +452,18 @@ class CarState(CarStateBase):
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR"),
         ("GEAR", "ACCELERATOR"),
-        ("SET_SPEED", "CRUISE_INFO"),
-        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
       ]
       checks += [
-        ("CRUISE_INFO", 50),
         ("ACCELERATOR", 100),
       ]
+      if not CP.openpilotLongitudinalControl:
+        signals += [
+          ("SET_SPEED", "CRUISE_INFO"),
+          ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+        ]
+        checks += [
+          ("CRUISE_INFO", 50),
+        ]
     else:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
@@ -472,16 +487,13 @@ class CarState(CarStateBase):
         ("CRUISE_MAIN", "CRUISE_INFO"),
         ("CRUISE_STATUS", "CRUISE_INFO"),
         ("CRUISE_INACTIVE", "CRUISE_INFO"),
-        ("NEW_SIGNAL_2", "CRUISE_INFO"),
+        ("ZEROS_9", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-        ("NEW_SIGNAL_3", "CRUISE_INFO"),
-        ("BYTE11", "CRUISE_INFO"),
+        ("ZEROS_5", "CRUISE_INFO"),
+        ("DISTANCE_SETTING", "CRUISE_INFO"),
         ("SET_SPEED", "CRUISE_INFO"),
         ("NEW_SIGNAL_4", "CRUISE_INFO"),
       ]
-
-      signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(3, 7)]
-      signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(13, 31)]
 
       checks = [
         ("CRUISE_INFO", 50),
