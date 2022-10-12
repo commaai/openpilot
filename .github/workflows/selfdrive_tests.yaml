@@ -1,9 +1,14 @@
 name: selfdrive
+
 on:
   push:
     branches-ignore:
       - 'testing-closet*'
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 env:
   BASE_IMAGE: openpilot-base
