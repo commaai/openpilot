@@ -315,6 +315,7 @@ def getMessage(service: str, timeout: int = 1000) -> Dict[str, Any]:
   if ret is None:
     raise TimeoutError
 
+  # this is because capnp._DynamicStructReader doesn't have typing information
   return cast(Dict[str, Any], ret.to_dict())
 
 
@@ -386,6 +387,7 @@ UploadFilesToUrlResponse = Dict[str, Union[int, List[UploadItemDict], List[str]]
 
 @dispatcher.add_method
 def uploadFileToUrl(fn: str, url: str, headers: Dict[str, str]) -> UploadFilesToUrlResponse:
+  # this is because mypy doesn't understand that the decorator doesn't change the return type
   response: UploadFilesToUrlResponse = uploadFilesToUrls([{
     "fn": fn,
     "url": url,
