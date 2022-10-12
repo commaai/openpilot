@@ -408,8 +408,9 @@ class TestAthenadMethods(unittest.TestCase):
   def test_get_logs_to_send_sorted(self):
     fl = list()
     for i in range(10):
-      fn = self._create_file(f'swaglog.{i:010}', athenad.SWAGLOG_DIR)
-      fl.append(os.path.basename(fn))
+      file = f'swaglog.{i:010}'
+      self._create_file(file, athenad.SWAGLOG_DIR)
+      fl.append(file)
 
     # ensure the list is all logs except most recent
     sl = athenad.get_logs_to_send_sorted()
