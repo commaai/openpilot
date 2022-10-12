@@ -22,6 +22,7 @@ class CarController:
     self.last_button_frame = 0
 
     self.lka_steering_cmd_counter = 0
+    self.sent_lka_steering_cmd = False
     self.lka_icon_status_last = (False, False)
 
     self.params = CarControllerParams()
@@ -44,13 +45,14 @@ class CarController:
     # Steering (50Hz)
 
     # Initialize ASCMLKASteeringCmd counter using the camera
-    if self.frame == 0 and self.CP.networkLocation == NetworkLocation.fwdCamera:
+    if not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
     if CS.loopback_lka_steering_cmd_updated:
       self.lka_steering_cmd_counter += 1
+      self.sent_lka_steering_cmd = True
     elif (self.frame % self.params.STEER_STEP) == 0:
       if CC.latActive:
         new_steer = int(round(actuators.steer * self.params.STEER_MAX))
