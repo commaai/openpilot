@@ -19,6 +19,9 @@ const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
 const double SANE_GPS_UNCERTAINTY = 1500.0; // m
+
+// TODO: GPS sensor time offsets are empirically calculated
+// They should be replaced with synced time from a real clock
 const double GPS_LOCATION_SENSOR_TIME_OFFSET = 0.630; // s
 const double GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET = 0.095; // s
 
