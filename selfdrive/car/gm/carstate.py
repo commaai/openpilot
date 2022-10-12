@@ -105,8 +105,8 @@ class CarState(CarStateBase):
       signals += [
         ("AEBCmdActive", "AEBCmd"),
         ("RollingCounter", "ASCMLKASteeringCmd"),
-        ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
         ("FCWAlert", "ASCMActiveCruiseControlStatus"),
+        ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
       ]
       checks += [
         ("AEBCmd", 10),
