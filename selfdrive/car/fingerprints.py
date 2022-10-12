@@ -3,6 +3,7 @@ from selfdrive.car.interfaces import get_interface_attr
 
 FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
 _FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True)
+_DBCS = get_interface_attr('DBC', combine_brands=True, ignore_none=True)
 
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 
@@ -40,7 +41,7 @@ def eliminate_incompatible_cars(msg, candidate_cars):
 
 def all_known_cars():
   """Returns a list of all known car strings."""
-  return list({*FW_VERSIONS.keys(), *_FINGERPRINTS.keys()})
+  return list({*FW_VERSIONS.keys(), *_FINGERPRINTS.keys(), *_DBCS.keys()})
 
 
 def all_legacy_fingerprint_cars():
