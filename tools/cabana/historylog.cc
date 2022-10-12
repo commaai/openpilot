@@ -47,6 +47,9 @@ void HistoryLogModel::clear() {
 void HistoryLogModel::updateState() {
   const auto &can_msgs = can->messages(msg_id);
   const auto msg = dbc()->msg(msg_id);
+  if (can->currentSec() < current_ts) {
+    clear();
+  }
   double previous_ts = current_ts;
   for (const auto &can_data : can_msgs) {
     if (can_data.ts <= previous_ts)
