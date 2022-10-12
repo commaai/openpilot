@@ -56,6 +56,12 @@ class TestAthenadMethods(unittest.TestCase):
       if athenad.upload_queue.qsize() == 0:
         break
 
+  def _create_file(self, file: str, parent: str = athenad.ROOT):
+    fn = os.path.join(parent, file)
+    os.makedirs(os.path.dirname(fn), exist_ok=True)
+    Path(fn).touch()
+    return fn
+
 
   # *** test cases ***
 
@@ -93,9 +99,7 @@ class TestAthenadMethods(unittest.TestCase):
     filenames = ['qlog', 'qcamera.ts', 'rlog', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
     files = [f'{route}--{s}/{f}' for s in segments for f in filenames]
     for file in files:
-      fn = os.path.join(athenad.ROOT, file)
-      os.makedirs(os.path.dirname(fn), exist_ok=True)
-      Path(fn).touch()
+      self._create_file(file)
 
     resp = dispatcher["listDataDirectory"]()
     self.assertTrue(resp, 'list empty!')
@@ -129,16 +133,14 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertCountEqual(resp, expected)
 
   def test_strip_bz2_extension(self):
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
     if fn.endswith('.bz2'):
       self.assertEqual(athenad.strip_bz2_extension(fn), fn[:-4])
 
 
   @with_http_server
   def test_do_upload(self, host):
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
 
     item = athenad.UploadItem(path=fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
     with self.assertRaises(requests.exceptions.ConnectionError):
@@ -150,8 +152,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
 
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
@@ -162,8 +163,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   @with_http_server
   def test_uploadFileToUrl_duplicate(self, host):
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    self._create_file('qlog.bz2')
 
     url1 = f"{host}/qlog.bz2?sig=sig1"
     dispatcher["uploadFileToUrl"]("qlog.bz2", url1, {})
@@ -180,8 +180,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   @with_http_server
   def test_upload_handler(self, host):
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
     end_event = threading.Event()
@@ -203,8 +202,7 @@ class TestAthenadMethods(unittest.TestCase):
   def test_upload_handler_retry(self, host, mock_put):
     for status, retry in ((500, True), (412, False)):
       mock_put.return_value.status_code = status
-      fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-      Path(fn).touch()
+      fn = self._create_file('qlog.bz2')
       item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
       end_event = threading.Event()
@@ -225,8 +223,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
     item_no_retry = item._replace(retry_count=MAX_RETRY_COUNT)
 
@@ -277,8 +274,7 @@ class TestAthenadMethods(unittest.TestCase):
     ts = int(t_future.strftime("%s")) * 1000
 
     # Item that would time out if actually uploaded
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=ts, id='', allow_cellular=True)
 
 
@@ -300,8 +296,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   @with_http_server
   def test_listUploadQueueCurrent(self, host):
-    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
-    Path(fn).touch()
+    fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
     end_event = threading.Event()
@@ -413,8 +408,7 @@ class TestAthenadMethods(unittest.TestCase):
   def test_get_logs_to_send_sorted(self):
     fl = list()
     for i in range(10):
-      fn = os.path.join(swaglog.SWAGLOG_DIR, f'swaglog.{i:010}')
-      Path(fn).touch()
+      fn = self._create_file(f'swaglog.{i:010}', athenad.SWAGLOG_DIR)
       fl.append(os.path.basename(fn))
 
     # ensure the list is all logs except most recent
