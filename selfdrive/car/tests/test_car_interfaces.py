@@ -18,7 +18,6 @@ class TestCarInterfaces(unittest.TestCase):
       fingerprint = FINGERPRINTS[car_name][0]
     else:
       fingerprint = {}
-    print(car_name)
 
     CarInterface, CarController, CarState = interfaces[car_name]
     fingerprints = gen_empty_fingerprint()
