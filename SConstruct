@@ -431,11 +431,12 @@ SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 
-SConscript(['tools/replay/SConscript'])
+if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+  SConscript(['tools/replay/SConscript'])
 
-opendbc = abspath([File('opendbc/can/libdbc.so')])
-Export('opendbc')
-SConscript(['tools/cabana/SConscript'])
+  opendbc = abspath([File('opendbc/can/libdbc.so')])
+  Export('opendbc')
+  SConscript(['tools/cabana/SConscript'])
 
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')

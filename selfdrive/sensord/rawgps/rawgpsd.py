@@ -179,6 +179,9 @@ def main() -> NoReturn:
 
   while 1:
     opcode, payload = diag.recv()
+    if opcode != DIAG_LOG_F:
+      cloudlog.error(f"Unhandled opcode: {opcode}")
+      continue
     assert opcode == DIAG_LOG_F
 
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
