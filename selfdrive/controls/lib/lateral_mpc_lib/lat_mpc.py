@@ -19,7 +19,7 @@ X_DIM = 4
 P_DIM = 2
 N = 16
 COST_E_DIM = 3
-COST_DIM = COST_E_DIM + 1
+COST_DIM = COST_E_DIM + 2
 SPEED_OFFSET = 10.0
 MODEL_NAME = 'lat'
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
@@ -89,13 +89,21 @@ def gen_lat_ocp():
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
+  # Add offset to smooth out low speed control
+  # TODO unclear if this right solution long term
+  v_ego_offset = v_ego + SPEED_OFFSET
+  # TODO there are two costs on psi_rate_ego_dot, one
+  # is correlated to jerk the other to steering wheel movement
+  # the steering wheel movement cost is added to prevent excessive
+  # wheel movements
   ocp.model.cost_y_expr = vertcat(y_ego,
-                                  ((v_ego + SPEED_OFFSET) * psi_ego),
-                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego),
-                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego_dot))
+                                  v_ego_offset * psi_ego,
+                                  v_ego_offset * psi_rate_ego,
+                                  v_ego_offset * psi_rate_ego_dot,
+                                  psi_rate_ego_dot / (v_ego + 0.1))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
-                                  ((v_ego + SPEED_OFFSET) * psi_ego),
-                                  ((v_ego + SPEED_OFFSET) * psi_rate_ego))
+                                   v_ego_offset * psi_ego,
+                                   v_ego_offset * psi_rate_ego)
 
   # set constraints
   ocp.constraints.constr_type = 'BGH'
@@ -144,8 +152,12 @@ class LateralMpc():
     self.solve_time = 0.0
     self.cost = 0
 
-  def set_weights(self, path_weight, heading_weight, yaw_rate_weight, yaw_accel_cost):
-    W = np.asfortranarray(np.diag([path_weight, heading_weight, yaw_rate_weight, yaw_accel_cost]))
+  def set_weights(self, path_weight, heading_weight,
+                  lat_accel_weight, lat_jerk_weight,
+                  steering_rate_weight):
+    W = np.asfortranarray(np.diag([path_weight, heading_weight,
+                                   lat_accel_weight, lat_jerk_weight,
+                                   steering_rate_weight]))
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     self.solver.cost_set(N, 'W', W[:COST_E_DIM,:COST_E_DIM])

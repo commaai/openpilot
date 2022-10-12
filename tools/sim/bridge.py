@@ -39,6 +39,8 @@ def parse_args(add_args=None):
   parser.add_argument('--dual_camera', action='store_true')
   parser.add_argument('--town', type=str, default='Town04_Opt')
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
+  parser.add_argument('--host', dest='host', type=str, default='127.0.0.1')
+  parser.add_argument('--port', dest='port', type=int, default=2000)
 
   return parser.parse_args(add_args)
 
@@ -233,8 +235,8 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
     i += 1
 
 
-def connect_carla_client():
-  client = carla.Client("127.0.0.1", 2000)
+def connect_carla_client(host: str, port: int):
+  client = carla.Client(host, port)
   client.set_timeout(5)
   return client
 
@@ -291,7 +293,7 @@ class CarlaBridge:
       self.close()
 
   def _run(self, q: Queue):
-    client = connect_carla_client()
+    client = connect_carla_client(self._args.host, self._args.port)
     world = client.load_world(self._args.town)
 
     settings = world.get_settings()
