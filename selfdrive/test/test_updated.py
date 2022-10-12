@@ -11,10 +11,12 @@ import random
 
 from common.basedir import BASEDIR
 from common.params import Params
+from common.timeout import Timeout
 from system.hardware import AGNOS
 
 
 class TestUpdated(unittest.TestCase):
+  """Changes to updated.py need to be committed before they are applied in the test environment."""
 
   def setUp(self):
     self.updated_proc = None
@@ -24,6 +26,7 @@ class TestUpdated(unittest.TestCase):
     org_dir = os.path.join(self.tmp_dir.name, "commaai")
 
     self.basedir = os.path.join(org_dir, "openpilot")
+    self.params_path = os.path.join(self.basedir, "persist/params")
     self.git_remote_dir = os.path.join(org_dir, "openpilot_remote")
     self.staging_root = os.path.join(org_dir, "safe_staging")
     for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_root]:
@@ -47,7 +50,7 @@ class TestUpdated(unittest.TestCase):
       f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
     ])
 
-    self.params = Params(os.path.join(self.basedir, "persist/params"))
+    self.params = Params(self.params_path)
     self.params.clear_all()
     os.sync()
 
@@ -58,6 +61,10 @@ class TestUpdated(unittest.TestCase):
         self.updated_proc.wait(30)
     except Exception as e:
       print(e)
+    finally:
+      self._run(f"sudo umount -l {self.merged_dir}")
+    exception = self._read_param("LastUpdateException")
+    self.assertIsNone(exception, f"LastUpdateException: {exception}")
     self.tmp_dir.cleanup()
 
 
@@ -77,22 +84,22 @@ class TestUpdated(unittest.TestCase):
     os.environ["GIT_COMMITTER_NAME"] = "testy tester"
     os.environ["GIT_AUTHOR_EMAIL"] = "testy@tester.test"
     os.environ["GIT_COMMITTER_EMAIL"] = "testy@tester.test"
+    os.environ["UPDATER_PARAMS_PATH"] = self.params_path
     os.environ["UPDATER_LOCK_FILE"] = os.path.join(self.tmp_dir.name, "updater.lock")
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_root
     updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
 
-  def _start_updater(self, offroad=True, nosleep=False):
+  def _start_updater(self, offroad=True):
     self.params.put_bool("IsOffroad", offroad)
     self.updated_proc = self._get_updated_proc()
-    if not nosleep:
-      time.sleep(1)
+    self._wait_for_idle()
 
   def _update_now(self):
     self.updated_proc.send_signal(signal.SIGHUP)
 
   # TODO: this should be implemented in params
-  def _read_param(self, key, timeout=1):
+  def _read_param(self, key: str, timeout=1):
     ret = None
     start_time = time.monotonic()
     while ret is None:
@@ -102,14 +109,20 @@ class TestUpdated(unittest.TestCase):
       time.sleep(0.01)
     return ret
 
-  def _wait_for_update(self, timeout=30, clear_param=False):
+  def _wait_for_idle(self, timeout=120):
+    with Timeout(timeout, "timed out waiting for updated to be idle"):
+      while True:
+        state = self._read_param("UpdaterState")
+        if state == "idle":
+          break
+        time.sleep(0.1)
+
+  def _wait_for_update(self, timeout=120, clear_param=False):
     if clear_param:
-      self.params.remove("LastUpdateTime")
+      self.params.remove("UpdaterState")
 
     self._update_now()
-    t = self._read_param("LastUpdateTime", timeout=timeout)
-    if t is None:
-      raise Exception("timed out waiting for update to complete")
+    self._wait_for_idle(timeout)
 
   def _make_commit(self):
     all_dirs, all_files = [], []
@@ -151,7 +164,7 @@ class TestUpdated(unittest.TestCase):
       "git commit -m 'an update'",
     ], cwd=self.git_remote_dir)
 
-  def _check_update_state(self, update_available):
+  def _check_update_state(self, update_available: bool):
     # make sure LastUpdateTime is recent
     t = self._read_param("LastUpdateTime")
     last_update_time = datetime.datetime.fromisoformat(t)
@@ -160,7 +173,7 @@ class TestUpdated(unittest.TestCase):
     self.params.remove("LastUpdateTime")
 
     # wait a bit for the rest of the params to be written
-    time.sleep(0.1)
+    time.sleep(1)
 
     # check params
     update = self._read_param("UpdateAvailable")
@@ -170,17 +183,18 @@ class TestUpdated(unittest.TestCase):
     # TODO: check that the finalized update actually matches remote
     # check the .overlay_init and .overlay_consistent flags
     self.assertTrue(os.path.isfile(os.path.join(self.basedir, ".overlay_init")))
-    self.assertEqual(os.path.isfile(os.path.join(self.finalized_dir, ".overlay_consistent")), update_available)
+    self.assertTrue(os.path.isfile(os.path.join(self.finalized_dir, ".overlay_consistent")))
 
 
   # *** test cases ***
 
 
-  # Run updated without crashing for 10 seconds
+  # Run updated for 10 cycles with no update
   def test_no_update(self):
     self._start_updater()
-    time.sleep(10)
-    assert self.updated_proc.poll() is None, "updated crashed"
+    for _ in range(10):
+      self._wait_for_update(clear_param=True)
+      self._check_update_state(False)
 
 
 if __name__ == "__main__":

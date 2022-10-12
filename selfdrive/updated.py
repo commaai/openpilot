@@ -21,6 +21,7 @@ from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.version import is_tested_branch
 
+PARAMS_PATH = os.getenv("UPDATER_PARAMS_PATH", "")
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
@@ -125,7 +126,7 @@ def init_overlay() -> None:
 
   cloudlog.info("preparing new safe staging area")
 
-  params = Params()
+  params = Params(PARAMS_PATH)
   params.put_bool("UpdateAvailable", False)
   set_consistent_flag(False)
   dismount_overlay()
@@ -216,7 +217,7 @@ def handle_agnos_update() -> None:
 
 class Updater:
   def __init__(self):
-    self.params = Params()
+    self.params = Params(PARAMS_PATH)
     self.branches = defaultdict(lambda: '')
     self._has_internet: bool = False
 
@@ -383,7 +384,7 @@ class Updater:
 
 
 def main() -> None:
-  params = Params()
+  params = Params(PARAMS_PATH)
 
   if params.get_bool("DisableUpdates"):
     cloudlog.warning("updates are disabled by the DisableUpdates param")
@@ -454,8 +455,8 @@ def main() -> None:
       OVERLAY_INIT.unlink(missing_ok=True)
 
     try:
-      params.put("UpdaterState", "idle")
       updater.set_params(update_failed_count, exception)
+      params.put("UpdaterState", "idle")
     except Exception:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
