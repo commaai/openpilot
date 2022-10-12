@@ -12,9 +12,9 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # EPS faults if you apply torque while the steering angle is above 90 degrees for more than 1 second
 # All slightly below EPS thresholds to avoid fault
-ANGLE_FAULT_MAX_ANGLE = 85
-ANGLE_FAULT_MAX_FRAMES = 89
-ANGLE_FAULT_CONSECUTIVE_FRAMES = 2
+MAX_ANGLE = 85
+MAX_ANGLE_MAX_FRAMES = 89
+MAX_ANGLE_CONSECUTIVE_FRAMES = 2
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -114,17 +114,17 @@ class CarController:
         if self.frame % 100 == 0:
           can_sends.append([0x7D0, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 0])
 
-      # Count up to ANGLE_FAULT_MAX_FRAMES, at which point we need to cut torque to avoid a steering fault
-      if CC.latActive and abs(CS.out.steeringAngleDeg) >= ANGLE_FAULT_MAX_ANGLE:
+      # Count up to MAX_ANGLE_MAX_FRAMES, at which point we need to cut torque to avoid a steering fault
+      if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
         self.angle_limit_counter += 1
       else:
         self.angle_limit_counter = 0
 
       # Cut steer actuation bit for two frames and hold torque with induced temporary fault
-      lat_active = CC.latActive and self.angle_limit_counter <= ANGLE_FAULT_MAX_FRAMES
-      torque_fault = CC.latActive and self.angle_limit_counter > ANGLE_FAULT_MAX_FRAMES
+      torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_MAX_FRAMES
+      lat_active = CC.latActive and not torque_fault
 
-      if self.angle_limit_counter >= ANGLE_FAULT_MAX_FRAMES + ANGLE_FAULT_CONSECUTIVE_FRAMES:
+      if self.angle_limit_counter >= MAX_ANGLE_MAX_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
         self.angle_limit_counter = 0
 
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
