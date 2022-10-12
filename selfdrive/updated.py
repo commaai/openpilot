@@ -21,6 +21,7 @@ from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.version import is_tested_branch
 
+DEFAULT_BRANCH = os.getenv("GIT_BRANCH", "release3")
 PARAMS_PATH = os.getenv("UPDATER_PARAMS_PATH", "")
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -230,6 +231,8 @@ class Updater:
     b: Union[str, None] = self.params.get("UpdaterTargetBranch", encoding='utf-8')
     if b is None:
       b = self.get_branch(BASEDIR)
+      if b == "HEAD":
+        b = DEFAULT_BRANCH
       self.params.put("UpdaterTargetBranch", b)
     return b
 
