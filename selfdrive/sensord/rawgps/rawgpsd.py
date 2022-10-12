@@ -13,7 +13,7 @@ from cereal import log
 import cereal.messaging as messaging
 from laika.gps_time import GPSTime
 from system.swaglog import cloudlog
-from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, DIAG_EVENT_REPORT_F, setup_logs, send_recv
+from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
@@ -179,10 +179,9 @@ def main() -> NoReturn:
 
   while 1:
     opcode, payload = diag.recv()
-    if opcode == DIAG_EVENT_REPORT_F:
-      continue
     if opcode != DIAG_LOG_F:
-      cloudlog.exception(f"Unhandled opcode: {opcode}")
+      cloudlog.error(f"Unhandled opcode: {opcode}")
+      continue
     assert opcode == DIAG_LOG_F
 
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
