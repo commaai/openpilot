@@ -184,5 +184,16 @@ class TestGPS(unittest.TestCase):
     verify_ubloxgnss_data(ugs, 15)
 
 
+  @with_processes(['ubloxd'])
+  def test_c_ublox_warmstart(self):
+    pigeon, pm = pd.create_pigeon()
+    pd.init_baudrate(pigeon)
+    pd.initialize_pigeon(pigeon)
+
+    ugs = messaging.sub_sock("ubloxGnss", timeout=0.1)
+    pd.run_receiving(pigeon, pm, 10)
+    verify_ubloxgnss_data(ugs, 10)
+
+
 if __name__ == "__main__":
   unittest.main()
