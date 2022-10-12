@@ -185,7 +185,7 @@ class TestGPS(unittest.TestCase):
 
 
   @with_processes(['ubloxd'])
-  def test_c_ublox_warmstart(self):
+  def test_c_ublox_startup(self):
     pigeon, pm = pd.create_pigeon()
     pd.init_baudrate(pigeon)
     pd.initialize_pigeon(pigeon)
