@@ -56,7 +56,7 @@ class TestAthenadMethods(unittest.TestCase):
       if athenad.upload_queue.qsize() == 0:
         break
 
-  def _create_file(self, file: str, parent: str = athenad.ROOT):
+  def _create_file(self, file: str, parent: str = athenad.ROOT) -> str:
     fn = os.path.join(parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     Path(fn).touch()
