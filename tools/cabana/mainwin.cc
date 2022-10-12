@@ -1,5 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QScreen>
 #include <QVBoxLayout>
@@ -30,13 +31,15 @@ MainWindow::MainWindow() : QWidget() {
 
   h_layout->addWidget(right_container);
 
-  QObject::connect(messages_widget, &MessagesWidget::msgChanged, detail_widget, &DetailWidget::setMsg);
+  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
+  QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
 }
 
 void MainWindow::dockCharts(bool dock) {
   charts_widget->setUpdatesEnabled(false);
   if (dock && floating_window) {
+    floating_window->removeEventFilter(charts_widget);
     r_layout->addWidget(charts_widget);
     floating_window->deleteLater();
     floating_window = nullptr;
@@ -44,7 +47,7 @@ void MainWindow::dockCharts(bool dock) {
     floating_window = new QWidget(nullptr);
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
-    floating_window->setWindowFlags(Qt::WindowTitleHint | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
+    floating_window->installEventFilter(charts_widget);
     floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
   }

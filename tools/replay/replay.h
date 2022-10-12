@@ -7,6 +7,8 @@
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"
 
+const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
+
 // one segment uses about 100M of memory
 constexpr int FORWARD_SEGS = 5;
 
