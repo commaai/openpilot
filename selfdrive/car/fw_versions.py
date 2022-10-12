@@ -254,6 +254,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             for (tx_addr, sub_addr), version in query.get_data(timeout).items():
+              if not r.fingerprint:
+                break
+
               f = car.CarParams.CarFw.new_message()
 
               f.ecu = ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown)
