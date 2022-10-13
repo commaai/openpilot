@@ -49,9 +49,9 @@ class TestFwFingerprint(unittest.TestCase):
       config = FW_QUERY_CONFIGS[brand]
 
       for car_model, ecus in car_models.items():
+        bad_ecus = set(ecus).intersection(config.extra_ecus)
         with self.subTest(car_model=car_model):
-          self.assertFalse(len(set(ecus).intersection(config.extra_ecus)),
-                           f'{car_model}: Fingerprints contain ECU added for data collection')
+          self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
