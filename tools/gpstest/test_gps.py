@@ -2,7 +2,6 @@
 import time
 import unittest
 import struct
-import numpy as np
 
 from common.params import Params
 import cereal.messaging as messaging
@@ -69,34 +68,23 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket, max_time: int):
   assert num_sat > 5, f"Not enough satellites {num_sat} (TestBox setup!)"
 
 
-def verify_gps_location(socket: messaging.SubSocket):
-  buf_lon = [0]*10
-  buf_lat = [0]*10
-  buf_i = 0
+def verify_gps_location(socket: messaging.SubSocket, max_time: int):
   events = messaging.drain_sock(socket)
   assert len(events) != 0, "no gpsLocationExternal measurements"
 
   start_time = events[0].logMonoTime
   end_time = 0
   for event in events:
-    buf_lon[buf_i % 10] = event.gpsLocationExternal.longitude
-    buf_lat[buf_i % 10] = event.gpsLocationExternal.latitude
-    buf_i += 1
+    gps_valid = event.gpsLocationExternal.flags % 2
 
-    if buf_i < 9:
-      continue
-
-    if any([lat == 0 or lon == 0 for lat,lon in zip(buf_lat, buf_lon)]):
-      continue
-
-    if np.std(buf_lon) < 1e-5 and np.std(buf_lat) < 1e-5:
+    if gps_valid:
       end_time = event.logMonoTime
       break
 
   assert end_time != 0, "GPS location never converged!"
 
   ttfl = (end_time - start_time)/1e9
-  assert ttfl < 60, f"Time to first location > 60s, {ttfl}"
+  assert ttfl < max_time, f"Time to first location > {max_time}s, {ttfl}"
 
   hacc = events[-1].gpsLocationExternal.accuracy
   vacc = events[-1].gpsLocationExternal.verticalAccuracy
@@ -152,7 +140,7 @@ class TestGPS(unittest.TestCase):
     create_backup(pigeon)
 
     verify_ubloxgnss_data(ugs, 60)
-    verify_gps_location(gle)
+    verify_gps_location(gle, 60)
 
     # skip for now, this might hang for a while
     #verify_time_to_first_fix(pigeon)
@@ -179,9 +167,11 @@ class TestGPS(unittest.TestCase):
     pd.initialize_pigeon(pigeon)
 
     ugs = messaging.sub_sock("ubloxGnss", timeout=0.1)
+    gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
 
     pd.run_receiving(pigeon, pm, 15)
     verify_ubloxgnss_data(ugs, 15)
+    verify_gps_location(gle, 20)
 
 
   @with_processes(['ubloxd'])
@@ -191,8 +181,10 @@ class TestGPS(unittest.TestCase):
     pd.initialize_pigeon(pigeon)
 
     ugs = messaging.sub_sock("ubloxGnss", timeout=0.1)
+    gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
     pd.run_receiving(pigeon, pm, 10)
     verify_ubloxgnss_data(ugs, 10)
+    verify_gps_location(gle, 10)
 
 
 if __name__ == "__main__":
