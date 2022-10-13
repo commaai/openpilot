@@ -30,10 +30,11 @@ def replay_panda_states(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
-  # TODO: new safety params from flags, remove after getting new routes for Toyota
+  # TODO: safety param migration should be handled automatically
   safety_param_migration = {
     "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
     "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
   # Migrate safety param base on carState
@@ -56,6 +57,7 @@ def replay_panda_states(s, msgs):
         pm.send(s, new_m)
       else:
         new_m = m.as_builder()
+        new_m.pandaStates[-1].safetyParam = safety_param
         new_m.logMonoTime = int(sec_since_boot() * 1e9)
       pm.send(s, new_m)
 
