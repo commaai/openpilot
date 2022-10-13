@@ -46,7 +46,7 @@ if [ -d "./xx" ]; then
   echo "WARNING: using xx Pipfile ******"
   export PIPENV_SYSTEM=1
   export PIPENV_PIPFILE=./xx/Pipfile
-  pip install pipenv==2021.11.23
+  pip install pipenv==2022.10.12
 
   echo "pip packages install..."
   pipenv sync --dev
