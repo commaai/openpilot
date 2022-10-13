@@ -59,6 +59,7 @@ class Request:
   bus: int = 1
   log: bool = True
   delay: float = 0
+  retries: int = 0
 
 
 @dataclass

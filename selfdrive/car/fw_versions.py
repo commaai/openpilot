@@ -253,11 +253,13 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
-            if r.delay != 0:
-              time.sleep(r.delay)
-
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            results = query.get_data(timeout)
+            results = {}
+
+            for _ in range(r.retries + 1):
+              if r.delay != 0:
+                time.sleep(r.delay)
+              results.update(query.get_data(timeout))
 
             if not r.log:
               continue
