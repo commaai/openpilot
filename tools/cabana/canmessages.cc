@@ -1,9 +1,11 @@
 #include "tools/cabana/canmessages.h"
 
 #include <QDebug>
+#include <QSettings>
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
 
+Settings settings;
 CANMessages *can = nullptr;
 
 CANMessages::CANMessages(QObject *parent) : QObject(parent) {
@@ -11,6 +13,7 @@ CANMessages::CANMessages(QObject *parent) : QObject(parent) {
 
   qRegisterMetaType<std::vector<CanData>>();
   QObject::connect(this, &CANMessages::received, this, &CANMessages::process, Qt::QueuedConnection);
+  QObject::connect(&settings, &Settings::changed, this, &CANMessages::settingChanged);
 }
 
 CANMessages::~CANMessages() {
@@ -24,6 +27,7 @@ static bool event_filter(const Event *e, void *opaque) {
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
+  replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::segmentsMerged);
   if (replay->load()) {
@@ -38,11 +42,11 @@ void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
     ++counters[it.key()];
     auto &msgs = can_msgs[it.key()];
     const auto &new_msgs = it.value();
-    if (msgs.size() == CAN_MSG_LOG_SIZE || can_msgs[it.key()].size() == 0) {
+    if (new_msgs.size() == settings.can_msg_log_size || msgs.empty()) {
       msgs = std::move(new_msgs);
     } else {
       msgs.insert(msgs.begin(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
-      while (msgs.size() >= CAN_MSG_LOG_SIZE) {
+      while (msgs.size() >= settings.can_msg_log_size) {
         msgs.pop_back();
       }
     }
@@ -71,7 +75,7 @@ bool CANMessages::eventFilter(const Event *event) {
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
       auto &list = (*received_msgs)[id];
-      while (list.size() >= CAN_MSG_LOG_SIZE) {
+      while (list.size() >= settings.can_msg_log_size) {
         list.pop_back();
       }
       CanData &data = list.emplace_front();
@@ -80,7 +84,7 @@ bool CANMessages::eventFilter(const Event *event) {
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
     }
 
-    if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / FPS) {
+    if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / settings.fps) {
       prev_update_sec = current_sec;
       // use pointer to avoid data copy in queued connection.
       emit received(received_msgs.release());
@@ -120,4 +124,28 @@ void CANMessages::segmentsMerged() {
 
 void CANMessages::resetRange() {
   setRange(event_begin_sec, event_end_sec);
+}
+
+void CANMessages::settingChanged() {
+  replay->setSegmentCacheLimit(settings.cached_segment_limit);
+}
+
+// Settings
+
+Settings::Settings() {
+  load();
+}
+
+void Settings::save() {
+  QSettings s("settings", QSettings::IniFormat);
+  s.setValue("fps", fps);
+  s.setValue("log_size", can_msg_log_size);
+  s.setValue("cached_segment", cached_segment_limit);
+}
+
+void Settings::load() {
+  QSettings s("settings", QSettings::IniFormat);
+  fps = s.value("fps", 10).toInt();
+  can_msg_log_size = s.value("log_size", 100).toInt();
+  cached_segment_limit = s.value("cached_segment", 3.).toInt();
 }
