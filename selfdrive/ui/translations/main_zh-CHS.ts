@@ -24,11 +24,11 @@
     </message>
     <message>
         <source>Enable Tethering</source>
-        <translation>启用WiFi热点</translation>
+        <translation>启用无线热点</translation>
     </message>
     <message>
         <source>Tethering Password</source>
-        <translation>WiFi热点密码</translation>
+        <translation>无线热点密码</translation>
     </message>
     <message>
         <source>EDIT</source>
@@ -36,7 +36,7 @@
     </message>
     <message>
         <source>Enter new tethering password</source>
-        <translation>输入新的WiFi热点密码</translation>
+        <translation>输入新的无线热点密码</translation>
     </message>
     <message>
         <source>IP Address</source>
@@ -56,22 +56,22 @@
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
-        <translation>留空以自动配置</translation>
+        <translation>留空以便自动配置</translation>
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>按流量计费的蜂窝移动网络</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>当使用按流量计费的连接时，避免上传大流量数据</translation>
     </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
-        <translation>好的</translation>
+        <translation>确认</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -82,7 +82,7 @@
     <name>DeclinePage</name>
     <message>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>您必须接受条款和条件以使用openpilot。</translation>
+        <translation>您必须接受条款与条件，以便使用openpilot。</translation>
     </message>
     <message>
         <source>Back</source>
@@ -90,14 +90,14 @@
     </message>
     <message>
         <source>Decline, uninstall %1</source>
-        <translation>拒绝并卸载%1</translation>
+        <translation>拒绝并卸载 %1</translation>
     </message>
 </context>
 <context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
-        <translation>设备ID（Dongle ID）</translation>
+        <translation>设备ID</translation>
     </message>
     <message>
         <source>N/A</source>
@@ -117,7 +117,7 @@
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>打开并预览驾驶员摄像头，以确保驾驶员监控具有良好视野。仅熄火时可用。</translation>
+        <translation>预览驾驶员摄像头，确保其具有良好视野。（仅熄火时可用）</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
@@ -133,19 +133,19 @@
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>新手指南</translation>
+        <translation>查阅培训指南</translation>
     </message>
     <message>
         <source>REVIEW</source>
-        <translation>查看</translation>
+        <translation>查阅</translation>
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>查看openpilot的使用规则，以及其功能和限制。</translation>
+        <translation>查阅openpilot使用规则、功能和限制</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>您确定要查看新手指南吗？</translation>
+        <translation>您确定要查阅培训指南吗？</translation>
     </message>
     <message>
         <source>Regulatory</source>
@@ -177,27 +177,27 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
+        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。openpilot会自动更新校准，很少需要重置。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation>您的设备校准为%1° %2、%3° %4。</translation>
+        <translation> 您的设备校准为 %1° %2、%3° %4。</translation>
     </message>
     <message>
         <source>down</source>
-        <translation>朝下</translation>
+        <translation>向下</translation>
     </message>
     <message>
         <source>up</source>
-        <translation>朝上</translation>
+        <translation>向上</translation>
     </message>
     <message>
         <source>left</source>
-        <translation>朝左</translation>
+        <translation>向左</translation>
     </message>
     <message>
         <source>right</source>
-        <translation>朝右</translation>
+        <translation>向右</translation>
     </message>
     <message>
         <source>Are you sure you want to reboot?</source>
@@ -205,7 +205,7 @@
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>取消openpilot以重新启动</translation>
+        <translation>脱离openpilot以重新启动</translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
@@ -213,7 +213,7 @@
     </message>
     <message>
         <source>Disengage to Power Off</source>
-        <translation>取消openpilot以关机</translation>
+        <translation>脱离openpilot以关机</translation>
     </message>
 </context>
 <context>
@@ -247,7 +247,7 @@
     <name>DriverViewScene</name>
     <message>
         <source>camera starting</source>
-        <translation>正在启动相机</translation>
+        <translation>正在启动摄像头</translation>
     </message>
 </context>
 <context>
@@ -259,7 +259,7 @@
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>至少需要 %n 个字符！</numerusform>
+            <numerusform>需要至少 %n 个字符！</numerusform>
         </translation>
     </message>
 </context>
@@ -267,7 +267,7 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>正在安装……</translation>
+        <translation>正在安装…</translation>
     </message>
     <message>
         <source>Receiving objects: </source>
@@ -286,7 +286,7 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>埃塔</translation>
+        <translation>预计到达</translation>
     </message>
     <message>
         <source>min</source>
@@ -298,30 +298,30 @@
     </message>
     <message>
         <source>km</source>
-        <translation>km</translation>
+        <translation>公里</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>mi</translation>
+        <translation>英里</translation>
     </message>
 </context>
 <context>
     <name>MapInstructions</name>
     <message>
         <source> km</source>
-        <translation> km</translation>
+        <translation> 公里</translation>
     </message>
     <message>
         <source> m</source>
-        <translation> m</translation>
+        <translation> 米</translation>
     </message>
     <message>
         <source> mi</source>
-        <translation> mi</translation>
+        <translation> 英里</translation>
     </message>
     <message>
         <source> ft</source>
-        <translation> ft</translation>
+        <translation> 英尺</translation>
     </message>
 </context>
 <context>
@@ -336,7 +336,7 @@
     </message>
     <message>
         <source>Recent Destinations</source>
-        <translation>最近目的地</translation>
+        <translation>近期目的地</translation>
     </message>
     <message>
         <source>Try the Navigation Beta</source>
@@ -345,22 +345,22 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>订阅comma prime以获取导航。 
+        <translation>订阅comma prime以显示导航路线规划及更多功能。 
 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
         <source>No home
 location set</source>
-        <translation>家：未设定</translation>
+        <translation>未设定家庭地址</translation>
     </message>
     <message>
         <source>No work
 location set</source>
-        <translation>工作：未设定</translation>
+        <translation>未设定工作地址</translation>
     </message>
     <message>
         <source>no recent destinations</source>
-        <translation>无最近目的地</translation>
+        <translation>无近期目的地</translation>
     </message>
 </context>
 <context>
@@ -420,11 +420,11 @@ location set</source>
     </message>
     <message>
         <source>SPEED</source>
-        <translation>SPEED</translation>
+        <translation>车速</translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation>LIMIT</translation>
+        <translation>限速</translation>
     </message>
 </context>
 <context>
@@ -458,7 +458,7 @@ location set</source>
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>将 connect.comma.ai 收藏到您的主屏幕，以便像应用程序一样使用它</translation>
+        <translation>将connect.comma.ai添加到您的主屏幕，像应用程序一样使用它</translation>
     </message>
 </context>
 <context>
@@ -469,11 +469,11 @@ location set</source>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>打开connect.comma.ai以注册comma prime会员</translation>
+        <translation>comma prime 会员</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>comma prime特权：</translation>
+        <translation>PRIME会员专享：</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -504,7 +504,7 @@ location set</source>
     </message>
     <message>
         <source>COMMA POINTS</source>
-        <translation>COMMA POINTS点数</translation>
+        <translation>COMMA 积分</translation>
     </message>
 </context>
 <context>
@@ -548,7 +548,7 @@ location set</source>
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
-        <translation>重置失败。 重新启动以重试。</translation>
+        <translation>重置失败。 重新启动后再次尝试。</translation>
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
@@ -564,7 +564,7 @@ location set</source>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>已触发系统重置：确认以删除所有内容和设置。取消以正常启动设备。</translation>
+        <translation>已触发系统重置：选择“确认”将删除所有内容和设置。选择“取消”将继续启动设备。</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -580,14 +580,14 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>无法挂载数据分区。 确认以重置您的设备。</translation>
+        <translation>无法挂载数据分区。 选择“确认”以重置您的设备。</translation>
     </message>
 </context>
 <context>
     <name>RichTextDialog</name>
     <message>
         <source>Ok</source>
-        <translation>好的</translation>
+        <translation>确认</translation>
     </message>
 </context>
 <context>
@@ -606,7 +606,7 @@ location set</source>
     </message>
     <message>
         <source>Toggles</source>
-        <translation>设定</translation>
+        <translation>选项</translation>
     </message>
     <message>
         <source>Software</source>
@@ -625,7 +625,7 @@ location set</source>
     </message>
     <message>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>请使用car harness线束为您的设备供电，或自行承担风险。</translation>
+        <translation>请连接车辆线束为您的设备供电，或自行承担风险。</translation>
     </message>
     <message>
         <source>Power off</source>
@@ -645,7 +645,7 @@ location set</source>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到WiFi</translation>
+        <translation>连接Wi-Fi</translation>
     </message>
     <message>
         <source>Back</source>
@@ -661,11 +661,11 @@ location set</source>
     </message>
     <message>
         <source>Choose Software to Install</source>
-        <translation>选择要安装的软件</translation>
+        <translation>选择需要安装的软件</translation>
     </message>
     <message>
         <source>Dashcam</source>
-        <translation>Dashcam（行车记录仪）</translation>
+        <translation>行车记录仪</translation>
     </message>
     <message>
         <source>Custom Software</source>
@@ -681,7 +681,7 @@ location set</source>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation>正在下载……</translation>
+        <translation>正在下载…</translation>
     </message>
     <message>
         <source>Download Failed</source>
@@ -689,7 +689,7 @@ location set</source>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>请确保互联网连接良好且输入的URL有效。</translation>
+        <translation>请确认输入的网址无误，且网络连接正常。</translation>
     </message>
     <message>
         <source>Reboot device</source>
@@ -697,7 +697,7 @@ location set</source>
     </message>
     <message>
         <source>Start over</source>
-        <translation>重来</translation>
+        <translation>重新开始</translation>
     </message>
 </context>
 <context>
@@ -708,7 +708,7 @@ location set</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>将您的设备与comma connect （connect.comma.ai）配对并领取您的comma prime优惠。</translation>
+        <translation>将您的设备与comma connect (connect.comma.ai) 配对，并领取您的comma prime优惠。</translation>
     </message>
     <message>
         <source>Pair device</source>
@@ -719,7 +719,7 @@ location set</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECT</translation>
+        <translation>网络连接</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -731,7 +731,7 @@ location set</source>
     </message>
     <message>
         <source>ERROR</source>
-        <translation>连接出错</translation>
+        <translation>错误</translation>
     </message>
     <message>
         <source>TEMP</source>
@@ -747,7 +747,7 @@ location set</source>
     </message>
     <message>
         <source>OK</source>
-        <translation>一般</translation>
+        <translation>正常</translation>
     </message>
     <message>
         <source>VEHICLE</source>
@@ -755,7 +755,7 @@ location set</source>
     </message>
     <message>
         <source>NO</source>
-        <translation>无</translation>
+        <translation>断开</translation>
     </message>
     <message>
         <source>PANDA</source>
@@ -802,35 +802,35 @@ location set</source>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>车辆熄火时才能下载升级文件。</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>当前版本</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>下载</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>安装更新</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>安装</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>目标分支</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>选择</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>选择分支</translation>
     </message>
     <message>
         <source>UNINSTALL</source>
@@ -857,7 +857,7 @@ location set</source>
     </message>
     <message>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation>警告：这将授予SSH访问权限给您GitHub设置中的所有公钥。切勿输入您自己以外的GitHub用户名。comma员工永远不会要求您添加他们的GitHub用户名。</translation>
+        <translation>警告：此操作将允许SSH访问您GitHub账户设置的所有公钥。切勿输入其他人的GitHub用户名。comma员工绝对不会要求您添加他们的GitHub用户名。</translation>
     </message>
     <message>
         <source>ADD</source>
@@ -885,7 +885,7 @@ location set</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>GitHub上不存在用户名“%1”</translation>
+        <translation>GitHub不存在用户名“%1”</translation>
     </message>
 </context>
 <context>
@@ -930,7 +930,7 @@ location set</source>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>车速超过31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
+        <translation>车速超过50km/h时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
     </message>
     <message>
         <source>Use Metric System</source>
@@ -942,43 +942,43 @@ location set</source>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
-        <translation>录制并上传驾驶员摄像头</translation>
+        <translation>录制并上传驾驶员摄像头数据</translation>
     </message>
     <message>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation>上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
+        <translation>上传驾驶员摄像头数据，可以帮助改进驾驶员监控算法。</translation>
     </message>
     <message>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 端对端纵向控制（实验性功能） 🌮</translation>
+        <translation>🌮 端到端纵向控制（早期试验性功能）🌮</translation>
     </message>
     <message>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>试验性的openpilot纵向控制</translation>
     </message>
     <message>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;警告： 此车辆的openpilot纵向控制是试验性功能，且将禁用AEB自动刹车功能。&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>让驾驶模型直接控制油门和刹车，openpilot将会模仿人类司机的驾驶方式。该功能仍非常实验性。</translation>
+        <translation>让AI驾驶模型控制油门和刹车，openpilot会模仿人类驾驶车辆。该功能仍处于非常试验性阶段。</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>目前此车辆无法使用openpilot纵向控制功能。</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>启用试验性的纵向控制功能。</translation>
     </message>
     <message>
         <source>Disengage On Accelerator Pedal</source>
-        <translation>踩油门时取消控制</translation>
+        <translation>踩加速踏板时脱离</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>启用后，踩下油门踏板将取消openpilot。</translation>
+        <translation>启用后，踩下加速踏板将脱离openpilot功能。</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
@@ -986,11 +986,11 @@ location set</source>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>使用24小时制代替am/pm</translation>
+        <translation>使用24小时格式代替上午/下午</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>在介面左侧显示地图</translation>
+        <translation>用户界面左侧显示地图</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
@@ -1005,11 +1005,11 @@ location set</source>
     </message>
     <message>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>操作系统需要更新。请将您的设备连接到WiFi以获取更快的更新体验。下载大小约为1GB。</translation>
+        <translation>操作系统需要更新。请将您的设备连接到Wi-Fi以获取更快的更新体验。下载数据量约为1GB。</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>连接到WiFi</translation>
+        <translation>连接到Wi-Fi</translation>
     </message>
     <message>
         <source>Install</source>
@@ -1021,7 +1021,7 @@ location set</source>
     </message>
     <message>
         <source>Loading...</source>
-        <translation>正在加载……</translation>
+        <translation>正在加载…</translation>
     </message>
     <message>
         <source>Reboot</source>
@@ -1036,19 +1036,19 @@ location set</source>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
-        <translation>正在扫描网络……</translation>
+        <translation>正在扫描网络…</translation>
     </message>
     <message>
         <source>CONNECTING...</source>
-        <translation>正在连接……</translation>
+        <translation>正在连接…</translation>
     </message>
     <message>
         <source>FORGET</source>
-        <translation>忘记</translation>
+        <translation>忽略</translation>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>忘记WiFi网络 &quot;%1&quot;?</translation>
+        <translation>忽略Wi-Fi网络 &quot;%1&quot;?</translation>
     </message>
 </context>
 </TS>
