@@ -1,27 +1,4 @@
 #!/usr/bin/env python3
-
-# Safe Update: A simple service that waits for network access and tries to
-# update every 10 minutes. It's intended to make the OP update process more
-# robust against Git repository corruption. This service DOES NOT try to fix
-# an already-corrupt BASEDIR Git repo, only prevent it from happening.
-#
-# During normal operation, both onroad and offroad, the update process makes
-# no changes to the BASEDIR install of OP. All update attempts are performed
-# in a disposable staging area provided by OverlayFS. It assumes the deleter
-# process provides enough disk space to carry out the process.
-#
-# If an update succeeds, a flag is set, and the update is swapped in at the
-# next reboot. If an update is interrupted or otherwise fails, the OverlayFS
-# upper layer and metadata can be discarded before trying again.
-#
-# The swap on boot is triggered by launch_chffrplus.sh
-# gated on the existence of $FINALIZED/.overlay_consistent and also the
-# existence and mtime of $BASEDIR/.overlay_init.
-#
-# Other than build byproducts, BASEDIR should not be modified while this
-# service is running. Developers modifying code directly in BASEDIR should
-# disable this service.
-
 import os
 import re
 import datetime
@@ -51,6 +28,8 @@ OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
 OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
+
+OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
 DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
@@ -134,12 +113,10 @@ def dismount_overlay() -> None:
 
 def init_overlay() -> None:
 
-  overlay_init_file = Path(os.path.join(BASEDIR, ".overlay_init"))
-
   # Re-create the overlay if BASEDIR/.git has changed since we created the overlay
-  if overlay_init_file.is_file():
+  if OVERLAY_INIT.is_file() and os.path.ismount(OVERLAY_MERGED):
     git_dir_path = os.path.join(BASEDIR, ".git")
-    new_files = run(["find", git_dir_path, "-newer", str(overlay_init_file)])
+    new_files = run(["find", git_dir_path, "-newer", str(OVERLAY_INIT)])
     if not len(new_files.splitlines()):
       # A valid overlay already exists
       return
@@ -170,7 +147,7 @@ def init_overlay() -> None:
   consistent_file = Path(os.path.join(BASEDIR, ".overlay_consistent"))
   if consistent_file.is_file():
     consistent_file.unlink()
-  overlay_init_file.touch()
+  OVERLAY_INIT.touch()
 
   os.sync()
   overlay_opts = f"lowerdir={BASEDIR},upperdir={OVERLAY_UPPER},workdir={OVERLAY_METADATA}"
@@ -241,6 +218,11 @@ class Updater:
   def __init__(self):
     self.params = Params()
     self.branches = defaultdict(lambda: '')
+    self._has_internet: bool = False
+
+  @property
+  def has_internet(self) -> bool:
+    return self._has_internet
 
   @property
   def target_branch(self) -> str:
@@ -321,7 +303,7 @@ class Updater:
 
     now = datetime.datetime.utcnow()
     dt = now - last_update
-    if failed_count > 15 and exception is not None:
+    if failed_count > 15 and exception is not None and self.has_internet:
       if is_tested_branch():
         extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
       else:
@@ -338,6 +320,12 @@ class Updater:
 
     excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
 
+    try:
+      run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
+      self._has_internet = True
+    except subprocess.CalledProcessError:
+      self._has_internet = False
+
     setup_git_options(OVERLAY_MERGED)
     output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
 
@@ -353,9 +341,9 @@ class Updater:
     new_branch = self.target_branch
     new_commit = self.branches[new_branch]
     if (cur_branch, cur_commit) != (new_branch, new_commit):
-      cloudlog.info(f"update available, {cur_branch} ({cur_commit[:7]}) -> {new_branch} ({new_commit[:7]})")
+      cloudlog.info(f"update available, {cur_branch} ({str(cur_commit)[:7]}) -> {new_branch} ({str(new_commit)[:7]})")
     else:
-      cloudlog.info(f"up to date on {cur_branch} ({cur_commit[:7]})")
+      cloudlog.info(f"up to date on {cur_branch} ({str(cur_commit)[:7]})")
 
   def fetch_update(self) -> None:
     cloudlog.info("attempting git fetch inside staging overlay")
@@ -376,7 +364,7 @@ class Updater:
     cmds = [
       ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
       ["git", "reset", "--hard"],
-      ["git", "clean", "-xdf"],
+      ["git", "clean", "-xdff"],
       ["git", "submodule", "init"],
       ["git", "submodule", "update"],
     ]
@@ -419,9 +407,6 @@ def main() -> None:
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
 
-  overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
-  overlay_init.unlink(missing_ok=True)
-
   updater = Updater()
   update_failed_count = 0  # TODO: Load from param?
 
@@ -461,11 +446,11 @@ def main() -> None:
         returncode=e.returncode
       )
       exception = f"command failed: {e.cmd}\n{e.output}"
-      overlay_init.unlink(missing_ok=True)
+      OVERLAY_INIT.unlink(missing_ok=True)
     except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
       exception = str(e)
-      overlay_init.unlink(missing_ok=True)
+      OVERLAY_INIT.unlink(missing_ok=True)
 
     try:
       params.put("UpdaterState", "idle")

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import traceback
 from collections import defaultdict
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
@@ -254,23 +253,23 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (addr, rx_addr), version in query.get_data(timeout).items():
+            for (tx_addr, sub_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types.get((brand, addr[0], addr[1]), Ecu.unknown)
+              f.ecu = ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown)
               f.fwVersion = version
-              f.address = addr[0]
-              f.responseAddress = rx_addr
+              f.address = tx_addr
+              f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
               f.request = r.request
               f.brand = brand
               f.bus = r.bus
 
-              if addr[1] is not None:
-                f.subAddress = addr[1]
+              if sub_addr is not None:
+                f.subAddress = sub_addr
 
               car_fw.append(f)
         except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+          cloudlog.exception("FW query exception")
 
   return car_fw
 
@@ -304,8 +303,8 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
-  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
+  vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
+  print(f'RX: {hex(vin_rx_addr)}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
