@@ -15,7 +15,7 @@ SOURCES = [
 ]
 
 
-def initialize_azure_keys():
+def get_azure_keys():
   dest_key = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
   source_keys = [azureutil.get_user_token(account, bucket) for account, bucket in SOURCES]
   service = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=dest_key)
@@ -23,7 +23,7 @@ def initialize_azure_keys():
 
 
 def upload_route(path, exclude_patterns=None):
-  dest_key, _, _ = initialize_azure_keys()
+  dest_key, _, _ = get_azure_keys()
   if exclude_patterns is None:
     exclude_patterns = ['*/dcamera.hevc']
 
@@ -41,7 +41,7 @@ def upload_route(path, exclude_patterns=None):
   subprocess.check_call(cmd)
 
 def sync_to_ci_public(route):
-  dest_key, source_keys, service = initialize_azure_keys()
+  dest_key, source_keys, service = get_azure_keys()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
