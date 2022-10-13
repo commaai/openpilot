@@ -39,6 +39,7 @@ Q_OBJECT
 
 public:
   ChartWidget(const QString &id, const QString &sig_name, QWidget *parent);
+  void setHeight(int height);
   inline QChart *chart() const { return chart_view->chart(); }
 
 signals:

@@ -69,6 +69,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
     docking = !docking;
     updateTitleBar();
   });
+  QObject::connect(&settings, &Settings::changed, [this]() {
+    for (auto [_, chart] : charts) {
+      chart->setHeight(settings.chart_height);
+    }
+  });
 }
 
 void ChartsWidget::updateTitleBar() {
@@ -173,7 +178,7 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
   chart_view = new ChartView(chart);
-  chart_view->setFixedHeight(300);
+  chart_view->setFixedHeight(settings.chart_height);
   chart_view->setRenderHint(QPainter::Antialiasing);
   chart_view->setRubberBand(QChartView::HorizontalRubberBand);
   if (auto rubber = chart_view->findChild<QRubberBand *>()) {
@@ -200,6 +205,10 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
       updateSeries();
   });
   updateSeries();
+}
+
+void ChartWidget::setHeight(int height) {
+  chart_view->setFixedHeight(height);
 }
 
 void ChartWidget::updateState() {
