@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openpilot"
-version = "0.8.17"
+version = "0.1.0"
 description = "an open source driver assistance system"
 authors = ["Vehicle Researcher <user@comma.ai>"]
 license = "MIT"
