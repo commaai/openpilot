@@ -44,14 +44,13 @@ pip install pip==22.2.2
 
 if [ -d "./xx" ]; then
   echo "WARNING: using xx Pipfile ******"
+  export PIPENV_SYSTEM=1
   export PIPENV_PIPFILE=./xx/Pipfile
   pip install pipenv==2021.11.23
 
   echo "pip packages install..."
   pipenv sync --dev
   pipenv --clear
-
-  RUN=""
 else
   echo "PYTHONPATH=${PWD}" > .env
   pip install poetry==1.2.2
@@ -59,8 +58,13 @@ else
 
   echo "pip packages install..."
   poetry install
+fi
 
+if [ -z "$PIPENV_SYSTEM" ] && [ -z "$POETRY_VIRTUALENVS_CREATE" ]; then
+  echo "PYTHONPATH=${PWD}" > .env
   RUN="poetry run"
+else
+  RUN=""
 fi
 
 pyenv rehash
