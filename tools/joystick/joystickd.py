@@ -38,13 +38,20 @@ class Keyboard:
 
 
 class Joystick:
-  def __init__(self):
+  def __init__(self, gamepad=False):
     # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
-    self.min_axis_value = {'ABS_Y': 0., 'ABS_RX': 0.}
-    self.max_axis_value = {'ABS_Y': 255., 'ABS_RX': 255.}
-    self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RZ=Right Trigger)
-    self.axes_values = {'ABS_Y': 0., 'ABS_RX': 0.}  # gb, steer
-    self.axes_order = ['ABS_Y', 'ABS_RX']
+    if gamepad:
+      self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RZ=Right Trigger)
+      accel_axis = 'ABS_Y'
+      steer_axis = 'ABS_RX'
+    else:
+      self.cancel_button = 'BTN_TRIGGER'
+      accel_axis = 'ABS_Y'
+      steer_axis = 'ABS_RZ'
+    self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
+    self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
+    self.axes_values = {accel_axis: 0., steer_axis: 0.}
+    self.axes_order = [accel_axis, steer_axis]
     self.cancel = False
 
   def update(self):
