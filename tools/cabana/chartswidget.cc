@@ -53,7 +53,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QScrollArea *charts_scroll = new QScrollArea(this);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
-  charts_scroll->setFrameShape(QFrame::NoFrame);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   main_layout->addWidget(charts_scroll);
