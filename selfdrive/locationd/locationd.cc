@@ -21,6 +21,7 @@ const double MAX_RESET_TRACKER = 5.0;
 const double SANE_GPS_UNCERTAINTY = 1500.0; // m
 const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
 const double DECAY = 0.99995; // same as reset tracker
+const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
 // TODO: GPS sensor time offsets are empirically calculated
 // They should be replaced with synced time from a real clock
@@ -211,10 +212,15 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   double sensor_time = 1e-9 * log.getTimestamp();
-
+  
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
+    this->observation_timings_valid = false;
+    return;
+  }
+  else if (this->is_timestamp_valid(sensor_time, this->kf->get_filter_time())) {
+    this->observation_timings_valid = false;
     return;
   }
 
@@ -345,6 +351,11 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
+  
+  if (this->is_timestamp_valid(current_time, this->kf->get_filter_time())) {
+    this->observation_timings_valid = false;
+    return;
+  }
 
   if ((rot_device.norm() > ROTATION_SANITY_CHECK) || (trans_device.norm() > TRANS_SANITY_CHECK)) {
     this->input_invalid["cameraOdometry"] += 1.0;
@@ -380,6 +391,11 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
+  if (this->is_timestamp_valid(current_time, this->kf->get_filter_time())) {
+    this->observation_timings_valid = false;
+    return;
+  }
+
   if (log.getRpyCalib().size() > 0) {
     auto live_calib = floatlist2vector(log.getRpyCalib());
     if ((live_calib.minCoeff() < -CALIB_RPY_SANITY_CHECK) || (live_calib.maxCoeff() > CALIB_RPY_SANITY_CHECK)) {
@@ -503,7 +519,7 @@ bool Localizer::isGpsOK() {
   return this->gps_valid;
 }
 
-bool Localizer::criticalServicesSane(std::map<std::string, double> critical_services) {
+bool Localizer::critical_services_sane(std::map<std::string, double> critical_services) {
   for (auto &kv : critical_services){
     if (kv.second >= INPUT_INVALID_THRESHOLD){
       return false;
@@ -512,6 +528,13 @@ bool Localizer::criticalServicesSane(std::map<std::string, double> critical_serv
   return true;
 }
 
+bool Localizer::is_timestamp_valid(double current_time, double filter_time) {  
+  if (!std::isnan(filter_time) && (filter_time - current_time > MAX_FILTER_REWIND_TIME)) {
+    LOGE("Observation timestamp is older than the max rewind threshold of the filter");
+    return false;
+  }
+  return true;
+}
 
 void Localizer::determine_gps_mode(double current_time) {
   // 1. If the pos_std is greater than what's not acceptable and localizer is in gps-mode, reset to no-gps-mode
@@ -555,6 +578,7 @@ int Localizer::locationd_thread() {
   while (!do_exit) {
     sm.update();
     if (filterInitialized){
+      this->observation_timings_valid = true;
       for (const char* service : service_list) {
         if (sm.updated(service) && sm.valid(service)){
           const cereal::Event::Reader log = sm[service];
@@ -568,7 +592,7 @@ int Localizer::locationd_thread() {
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
-      bool inputsOK = sm.allAliveAndValid() && this->criticalServicesSane(this->input_invalid);
+      bool inputsOK = sm.allAliveAndValid() && this->critical_services_sane(this->input_invalid) && this->observation_timings_valid;
       bool gpsOK = this->isGpsOK();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
