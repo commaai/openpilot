@@ -18,18 +18,17 @@ def exec_mmcli(cmd):
 def wait_for_location(socket, timeout):
   while True:
     events = messaging.drain_sock(socket)
-    if len(events) == 0:
-
-      timeout -= 1
-      if timeout <= 0:
-        return True
-
-      time.sleep(0.1)
-      continue
-
     for event in events:
-      if  event.gpsLocationExternal.flags % 2:
+      if  event.gpsLocation.flags % 2:
         return False
+
+    timeout -= 1
+    if timeout <= 0:
+      return True
+
+    time.sleep(0.1)
+    continue
+
 
 
 class TestGPS(unittest.TestCase):
