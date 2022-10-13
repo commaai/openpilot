@@ -5,24 +5,19 @@
 #include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/replay/replay.h"
+#include "tools/cabana/canmessages.h"
 
 class Slider : public QSlider {
   Q_OBJECT
 
 public:
   Slider(QWidget *parent);
-  void mousePressEvent(QMouseEvent* e) override;
+  void mousePressEvent(QMouseEvent *e) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
-
-signals:
-  void setPosition(int value);
-
-private:
-   void paintEvent(QPaintEvent *ev) override;
-   std::vector<std::tuple<int, int, TimelineType>> timeline;
+  void paintEvent(QPaintEvent *ev) override;
 
   int slider_x = -1;
+  std::vector<std::tuple<int, int, TimelineType>> timeline;
 };
 
 class VideoWidget : public QWidget {
@@ -34,9 +29,8 @@ public:
 protected:
   void rangeChanged(double min, double max);
   void updateState();
-  void setPosition(int value);
 
   CameraViewWidget *cam_widget;
-  QLabel *time_label, *total_time_label;
+  QLabel *end_time_label;
   Slider *slider;
 };
