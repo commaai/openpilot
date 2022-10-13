@@ -45,7 +45,8 @@ def create_buttons(packer, cnt, btn):
     "SET_ME_1": 1,
     "CRUISE_BUTTONS": btn,
   }
-  return packer.make_can_msg("CRUISE_BUTTONS", 5, values)
+  #this needs to be bus 6 for hda1 cars and bus 5 for hda2
+  return packer.make_can_msg("CRUISE_BUTTONS", 6, values)
 
 def create_acc_cancel(packer, CP, cruise_info_copy):
   values = cruise_info_copy
