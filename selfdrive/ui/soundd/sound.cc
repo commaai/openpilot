@@ -72,7 +72,7 @@ void Sound::setAlert(const Alert &alert) {
     }
 
     // play sound
-    if (alert.sound == AudibleAlert::WARNING_SOFT || alert.sound == AudibleAlert::WARNING_IMMEDIATE) {
+    if (alert.sound != AudibleAlert::NONE) {
       auto &[s, loops] = sounds[alert.sound];
       s->setLoopCount(loops);
       s->play();
