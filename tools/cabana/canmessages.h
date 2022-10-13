@@ -8,8 +8,21 @@
 
 #include "tools/replay/replay.h"
 
-const int FPS = 10;
-const int CAN_MSG_LOG_SIZE = 100;
+class Settings : public QObject {
+  Q_OBJECT
+
+public:
+  Settings();
+  void save();
+  void load();
+
+  int fps = 10;
+  int can_msg_log_size = 100;
+  int cached_segment_limit = 3;
+
+signals:
+  void changed();
+};
 
 struct CanData {
   double ts;
@@ -57,6 +70,7 @@ public:
 protected:
   void process(QHash<QString, std::deque<CanData>> *);
   void segmentsMerged();
+  void settingChanged();
 
   std::atomic<double> current_sec = 0.;
   std::atomic<bool> seeking = false;
@@ -82,3 +96,4 @@ inline const QString &getColor(int i) {
 
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;
+extern Settings settings;
