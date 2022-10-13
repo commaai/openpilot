@@ -288,13 +288,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      [Ecu.fwdRadar],
+      whitelist_ecus=[Ecu.fwdRadar],
       bus=4,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      [Ecu.fwdCamera, Ecu.adas],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas],
       bus=5,
     ),
     Request(
