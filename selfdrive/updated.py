@@ -358,7 +358,17 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
 
     branch = self.target_branch
-    git_fetch_output = run(["git", "fetch", "--verbose", "origin", branch], OVERLAY_MERGED)
+
+    retries = 2
+    while retries > 0:
+      try:
+        git_fetch_output = run(["git", "fetch", "--verbose", "origin", branch], OVERLAY_MERGED)
+        break
+      except subprocess.CalledProcessError as e:
+        retries -= 1
+        if retries == 0:
+          raise e
+
     cloudlog.info("git fetch success: %s", git_fetch_output)
 
     cloudlog.info("git reset in progress")

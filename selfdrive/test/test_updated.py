@@ -117,7 +117,7 @@ class TestUpdated(unittest.TestCase):
           break
         time.sleep(0.1)
 
-  def _wait_for_update(self, timeout=120, clear_param=False):
+  def _wait_for_update(self, timeout=240, clear_param=False):
     if clear_param:
       self.params.remove("UpdaterState")
 
