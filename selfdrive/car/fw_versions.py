@@ -12,7 +12,7 @@ from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
-ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa, Ecu.adas]
 
 FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
