@@ -311,7 +311,7 @@ class CarInterface(CarInterfaceBase):
                            get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd)]
 
       if ret.openpilotLongitudinalControl:
-        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_LONG
+        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_LONG
       if ret.flags & HyundaiFlags.CANFD_HDA2:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
