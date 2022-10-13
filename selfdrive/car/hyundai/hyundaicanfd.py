@@ -47,12 +47,13 @@ def create_buttons(packer, cnt, btn):
   }
   return packer.make_can_msg("CRUISE_BUTTONS", 5, values)
 
-def create_cruise_info(packer, cruise_info_copy, cancel):
+def create_acc_cancel(packer, CP, cruise_info_copy):
   values = cruise_info_copy
-  if cancel:
-    values["CRUISE_STATUS"] = 0
-    values["CRUISE_INACTIVE"] = 1
-  return packer.make_can_msg("CRUISE_INFO", 5, values)
+  values.update({
+    "CRUISE_STATUS": 0,
+    "CRUISE_INACTIVE": 1,
+  })
+  return packer.make_can_msg("CRUISE_INFO", get_e_can_bus(CP), values)
 
 def create_lfahda_cluster(packer, CP, enabled):
   values = {
