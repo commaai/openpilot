@@ -3,7 +3,6 @@
 #include <QGraphicsLayout>
 #include <QLabel>
 #include <QRubberBand>
-#include <QStackedLayout>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
@@ -136,8 +135,7 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 // ChartWidget
 
 ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *parent) : id(id), sig_name(sig_name), QWidget(parent) {
-  QStackedLayout *stacked = new QStackedLayout(this);
-  stacked->setStackingMode(QStackedLayout::StackAll);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QWidget *chart_widget = new QWidget(this);
   QVBoxLayout *chart_layout = new QVBoxLayout(chart_widget);
@@ -159,9 +157,23 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   header_layout->addWidget(remove_btn);
   chart_layout->addWidget(header);
 
+  chart_view = new ChartView(id, sig_name, this);
+  chart_view->setFixedHeight(300);
+  chart_layout->addWidget(chart_view);
+  chart_layout->addStretch();
+
+  main_layout->addWidget(chart_widget);
+
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+}
+
+// ChartView
+
+ChartView::ChartView(const QString &id, const QString &sig_name, QWidget *parent)
+    : id(id), sig_name(sig_name), QChartView(nullptr, parent) {
   QLineSeries *series = new QLineSeries();
   series->setUseOpenGL(true);
-  auto chart = new QChart();
+  QChart *chart = new QChart();
   chart->setTitle(sig_name);
   chart->addSeries(series);
   chart->createDefaultAxes();
@@ -172,28 +184,26 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
-  chart_view = new ChartView(chart);
-  chart_view->setFixedHeight(300);
-  chart_view->setRenderHint(QPainter::Antialiasing);
-  chart_view->setRubberBand(QChartView::HorizontalRubberBand);
-  if (auto rubber = chart_view->findChild<QRubberBand *>()) {
+  track_line = new QGraphicsLineItem(chart);
+  track_line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
+  value_text = new QGraphicsSimpleTextItem(chart);
+  value_text->setBrush(Qt::gray);
+  line_marker = new QGraphicsLineItem(chart);
+  line_marker->setPen(QPen(Qt::black, 2));
+
+  setChart(chart);
+
+  setRenderHint(QPainter::Antialiasing);
+  setRubberBand(QChartView::HorizontalRubberBand);
+  if (auto rubber = findChild<QRubberBand *>()) {
     QPalette pal;
     pal.setBrush(QPalette::Base, QColor(0, 0, 0, 80));
     rubber->setPalette(pal);
   }
-  chart_layout->addWidget(chart_view);
-  chart_layout->addStretch();
 
-  stacked->addWidget(chart_widget);
-  line_marker = new LineMarker(this);
-  stacked->addWidget(line_marker);
-  line_marker->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  line_marker->raise();
-
-  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  QObject::connect(can, &CANMessages::updated, this, &ChartWidget::updateState);
-  QObject::connect(can, &CANMessages::rangeChanged, this, &ChartWidget::rangeChanged);
-  QObject::connect(can, &CANMessages::eventsMerged, this, &ChartWidget::updateSeries);
+  QObject::connect(can, &CANMessages::updated, this, &ChartView::updateState);
+  QObject::connect(can, &CANMessages::rangeChanged, this, &ChartView::rangeChanged);
+  QObject::connect(can, &CANMessages::eventsMerged, this, &ChartView::updateSeries);
   QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, can, &CANMessages::setRange);
   QObject::connect(dbc(), &DBCManager::signalUpdated, [this](const QString &msg_id, const QString &sig_name) {
     if (this->id == msg_id && this->sig_name == sig_name)
@@ -202,15 +212,13 @@ ChartWidget::ChartWidget(const QString &id, const QString &sig_name, QWidget *pa
   updateSeries();
 }
 
-void ChartWidget::updateState() {
-  auto chart = chart_view->chart();
-  auto axis_x = dynamic_cast<QValueAxis *>(chart->axisX());
-
-  int x = chart->plotArea().left() + chart->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
-  line_marker->setX(x);
+void ChartView::updateState() {
+  auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
+  int x = chart()->plotArea().left() + chart()->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
+  line_marker->setLine(x, 0, x, height());
 }
 
-void ChartWidget::updateSeries() {
+void ChartView::updateSeries() {
   const Signal *sig = dbc()->signal(id, sig_name);
   auto events = can->events();
   if (!sig || !events) return;
@@ -234,15 +242,16 @@ void ChartWidget::updateSeries() {
       }
     }
   }
-  QLineSeries *series = (QLineSeries *)chart_view->chart()->series()[0];
+  QLineSeries *series = (QLineSeries *)chart()->series()[0];
   series->replace(vals);
+  series->setPointLabelsColor(Qt::black);
   auto [begin, end] = can->range();
-  chart_view->chart()->axisX()->setRange(begin, end);
+  chart()->axisX()->setRange(begin, end);
   updateAxisY();
 }
 
-void ChartWidget::rangeChanged(qreal min, qreal max) {
-  auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
+void ChartView::rangeChanged(qreal min, qreal max) {
+  auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
   if (axis_x->min() != min || axis_x->max() != max) {
     axis_x->setRange(min, max);
   }
@@ -250,9 +259,9 @@ void ChartWidget::rangeChanged(qreal min, qreal max) {
 }
 
 // auto zoom on yaxis
-void ChartWidget::updateAxisY() {
-  const auto axis_x = dynamic_cast<QValueAxis *>(chart_view->chart()->axisX());
-  const auto axis_y = dynamic_cast<QValueAxis *>(chart_view->chart()->axisY());
+void ChartView::updateAxisY() {
+  const auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
+  const auto axis_y = dynamic_cast<QValueAxis *>(chart()->axisY());
   // vals is a sorted list
   auto begin = std::lower_bound(vals.begin(), vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
   if (begin == vals.end())
@@ -271,7 +280,17 @@ void ChartWidget::updateAxisY() {
   }
 }
 
-// ChartView
+void ChartView::enterEvent(QEvent *event) {
+  track_line->setVisible(true);
+  value_text->setVisible(true);
+  QChartView::enterEvent(event);
+}
+
+void ChartView::leaveEvent(QEvent *event) {
+  track_line->setVisible(false);
+  value_text->setVisible(false);
+  QChartView::leaveEvent(event);
+}
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   auto rubber = findChild<QRubberBand *>();
@@ -289,20 +308,31 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   }
   // TODO: right-click to reset zoom
   QChartView::mouseReleaseEvent(event);
+  line_marker->setVisible(true);
 }
 
+void ChartView::mouseMoveEvent(QMouseEvent *ev) {
+  auto rubber = findChild<QRubberBand *>();
+  bool show = !(rubber && rubber->isVisible());
 
-// LineMarker
+  if (show) {
+    const auto plot_area = chart()->plotArea();
+    float x = std::clamp((float)ev->pos().x(), (float)plot_area.left(), (float)plot_area.right());
+    track_line->setLine(x, plot_area.top(), x, plot_area.bottom());
 
-void LineMarker::setX(double x) {
-  if (x != x_pos) {
-    x_pos = x;
-    update();
+    auto [begin, end] = can->range();
+    double sec = begin + ((x - plot_area.x()) / plot_area.width()) * (end - begin);
+    auto value = std::lower_bound(vals.begin(), vals.end(), sec, [](auto &p, double x) { return p.x() < x; });
+    value_text->setPos(x + 6, plot_area.bottom() - 25);
+    if (value != vals.end()) {
+      value_text->setText(QString("(%1, %2)").arg(value->x(), 0, 'f', 3).arg(value->y()));
+    } else {
+      value_text->setText("(--, --)");
+    }
   }
-}
 
-void LineMarker::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
-  p.setPen(QPen(Qt::black, 2));
-  p.drawLine(QPointF{x_pos, 50.}, QPointF{x_pos, (qreal)height() - 11});
+  value_text->setVisible(show);
+  track_line->setVisible(show);
+  line_marker->setVisible(show);
+  QChartView::mouseMoveEvent(ev);
 }
