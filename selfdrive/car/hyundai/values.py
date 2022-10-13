@@ -287,18 +287,21 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE],
+      [Ecu.fwdCamera],
       delay=0.3,
       log=False,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
+      [Ecu.fwdCamera],
       delay=0.3,
       retries=1,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
+      [Ecu.fwdCamera],
       delay=0.3,
       retries=1,
     ),
