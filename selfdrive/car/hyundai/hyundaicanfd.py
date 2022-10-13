@@ -3,7 +3,7 @@ from selfdrive.car.hyundai.values import HyundaiFlags
 
 def get_e_can_bus(CP):
   # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
-  # have a a different harness than the HDA1 and non-HDA variants in order to split
+  # have a different harness than the HDA1 and non-HDA variants in order to split
   # a different bus, since the steering is done by different ECUs.
   return 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
 
@@ -39,14 +39,13 @@ def create_cam_0x2a4(packer, camera_values):
   })
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
 
-def create_buttons(packer, cnt, btn):
+def create_buttons(packer, CP, cnt, btn):
   values = {
     "COUNTER": cnt,
     "SET_ME_1": 1,
     "CRUISE_BUTTONS": btn,
   }
-  #this needs to be bus 6 for hda1 cars and bus 5 for hda2
-  return packer.make_can_msg("CRUISE_BUTTONS", 6, values)
+  return packer.make_can_msg("CRUISE_BUTTONS", get_e_can_bus(CP), values)
 
 def create_acc_cancel(packer, CP, cruise_info_copy):
   values = cruise_info_copy
