@@ -35,7 +35,7 @@ public:
   void update_reset_tracker();
   bool isGpsOK();
   bool critical_services_sane(std::map<std::string, double> critical_services);
-  bool is_timetsamp_valid(double current_time, double filter_time);
+  bool is_timestamp_valid(double current_time, double filter_time);
   void determine_gps_mode(double current_time);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder,
