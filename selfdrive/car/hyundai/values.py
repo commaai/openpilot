@@ -287,8 +287,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE],
-      log=False,
       delay=0.3,
+      log=False,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
