@@ -54,7 +54,7 @@ if [ -d "./xx" ]; then
   RUN=""
 else
   echo "PYTHONPATH=${PWD}" > .env
-  pip install poetry==1.2.1
+  pip install poetry==1.2.2
   poetry config virtualenvs.prefer-active-python true --local
 
   echo "pip packages install..."
