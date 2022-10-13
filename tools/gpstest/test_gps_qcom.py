@@ -27,7 +27,9 @@ def wait_for_location(socket, timeout):
       time.sleep(0.1)
       continue
 
-    return False
+    for event in events:
+      if  event.gpsLocationExternal.flags % 2:
+        return False
 
 
 class TestGPS(unittest.TestCase):
