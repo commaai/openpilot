@@ -50,7 +50,7 @@ class TestFwFingerprint(unittest.TestCase):
 
       for car_model, ecus in car_models.items():
         with self.subTest(car_model=car_model):
-          self.assertFalse(any([ecu in ecus for ecu in config.extra_ecus]),
+          self.assertFalse(len(set(ecus).intersection(config.extra_ecus)),
                            f'{car_model}: Fingerprints contain ECU added for data collection')
 
   def test_blacklisted_ecus(self):
