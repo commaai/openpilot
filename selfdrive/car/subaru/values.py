@@ -104,6 +104,7 @@ FW_VERSIONS = {
       b'\000\000e~\037@ \'',
       b'\x00\x00e@\x1f@ $',
       b'\x00\x00d\xb9\x00\x00\x00\x00',
+      b'\x00\x00e@\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xbb,\xa0t\a',
@@ -111,33 +112,38 @@ FW_VERSIONS = {
       b'\xf1\x82\xbb,\xa0t\a',
       b'\xf1\x82\xd9,\xa0@\a',
       b'\xf1\x82\xd1,\xa0q\x07',
+      b'\xd1,\xa0q\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x00\xfe\xf7\x00\x00',
       b'\001\xfe\xf9\000\000',
       b'\x01\xfe\xf7\x00\x00',
+      b'\x01\xfe\xfa\x00\x00',
     ],
   },
   CAR.LEGACY: {
     (Ecu.abs, 0x7b0, None): [
       b'\xa1\\  x04\x01',
-      b'\xa1  \x03\x03'
+      b'\xa1  \x03\x03',
+      b'\xa1  \x02\x01',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9b\xc0\x11\x00',
-      b'\x9b\xc0\x11\x02'
+      b'\x9b\xc0\x11\x02',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00e\x80\x00\x1f@ \x19\x00',
-      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00'
+      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xde\"a0\x07',
-      b'\xe2"aq\x07'
+      b'\xe2"aq\x07',
+      b'\xde,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xf6\x05@\x00',
-      b'\xa7\xf6\x04@\x00'
+      b'\xa7\xf6\x04@\x00',
+      b'\xa5\xfe\xc7@\x00',
     ],
   },
   CAR.IMPREZA: {

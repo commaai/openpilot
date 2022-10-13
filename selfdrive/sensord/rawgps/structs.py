@@ -56,6 +56,29 @@ oemdre_measurement_report = """
   uint8_t source;
 """
 
+oemdre_svpoly_report = """
+  uint8_t version;
+  uint16_t sv_id;
+  int8_t frequency_index;
+  uint8_t flags;
+  uint16_t iode;
+  double t0;
+  double xyz0[3];
+  double xyzN[9];
+  float other[4];
+  float position_uncertainty;
+  float iono_delay;
+  float iono_dot;
+  float sbas_iono_delay;
+  float sbas_iono_dot;
+  float tropo_delay;
+  float elevation;
+  float elevation_dot;
+  float elevation_uncertainty;
+  double velocity_coeff[12];
+"""
+
+
 oemdre_measurement_report_sv = """
   uint8_t sv_id;
   uint8_t unkn;
@@ -311,3 +334,21 @@ def dict_unpacker(ss, camelcase = False):
     nams = [name_to_camelcase(x) for x in nams]
   sz = calcsize(st)
   return lambda x: dict(zip(nams, unpack_from(st, x))), sz
+
+def relist(dat):
+  list_keys = set()
+  for key in dat.keys():
+    if '[' in key:
+      list_keys.add(key.split('[')[0])
+  list_dict = {}
+  for list_key in list_keys:
+    list_dict[list_key] = []
+    i = 0
+    while True:
+      key = list_key + f'[{i}]'
+      if key not in dat:
+        break
+      list_dict[list_key].append(dat[key])
+      del dat[key]
+      i += 1
+  return {**dat, **list_dict}

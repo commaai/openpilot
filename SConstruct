@@ -99,9 +99,6 @@ if arch == "larch64":
     "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu"
   ]
-  cpppath += [
-    "#system/camerad/include",
-  ]
   cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   rpath += ["/usr/local/lib"]
@@ -434,7 +431,12 @@ SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 
-SConscript(['tools/replay/SConscript'])
+if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+  SConscript(['tools/replay/SConscript'])
+
+  opendbc = abspath([File('opendbc/can/libdbc.so')])
+  Export('opendbc')
+  SConscript(['tools/cabana/SConscript'])
 
 if GetOption('test'):
   SConscript('panda/tests/safety/SConscript')

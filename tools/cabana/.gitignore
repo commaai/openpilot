@@ -1,0 +1,5 @@
+moc_*
+*.moc
+
+_cabana
+settings

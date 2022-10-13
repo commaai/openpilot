@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
@@ -22,17 +22,15 @@ class CarControllerParams:
   LKAS_UI_STEP = 100
   # Message: ACCDATA_3
   ACC_UI_STEP = 5
+  # Message: Steering_Data_FD1, but send twice as fast
+  BUTTONS_STEP = 10 / 2
 
-  STEER_RATIO = 2.75
-  STEER_DRIVER_ALLOWANCE = 0.8
+  LKAS_STEER_RATIO = 2.75       # Approximate ratio between LatCtlPath_An_Actl and steering angle in radians
+                                # TODO: remove this once we understand how the EPS calculates the steering angle better
+  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold in Nm
 
   RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
   RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
-
-
-class RADAR:
-  DELPHI_ESR = 'ford_fusion_2018_adas'
-  DELPHI_MRR = 'FORD_CADS'
 
 
 class CANBUS:
@@ -45,6 +43,14 @@ class CAR:
   ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
   EXPLORER_MK6 = "FORD EXPLORER 6TH GEN"
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
+
+
+class RADAR:
+  DELPHI_ESR = 'ford_fusion_2018_adas'
+  DELPHI_MRR = 'FORD_CADS'
+
+
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
 
 @dataclass
@@ -142,11 +148,4 @@ FW_VERSIONS = {
     (Ecu.shiftByWire, 0x732, None): [
     ],
   },
-}
-
-
-DBC = {
-  CAR.ESCAPE_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
-  CAR.EXPLORER_MK6: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
-  CAR.FOCUS_MK4: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR),
 }

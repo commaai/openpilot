@@ -17,6 +17,8 @@ public:
 
 private:
   WifiManager *wifi = nullptr;
+  QVBoxLayout *list_layout = nullptr;
+  QLabel *scanningLabel = nullptr;
   QVBoxLayout* main_layout;
   QPixmap lock;
   QPixmap checkmark;
@@ -38,6 +40,9 @@ public:
 private:
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
+  ToggleControl* roamingToggle;
+  ButtonControl* editApnButton;
+  ToggleControl* meteredToggle;
   WifiManager* wifi = nullptr;
   Params params;
 
