@@ -28,6 +28,6 @@ class LSM6DS3_Accel : public I2CSensor {
 public:
   LSM6DS3_Accel(I2CBus *bus, int gpio_nr = 0, bool shared_gpio = false);
   int init();
-  bool get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(MessageBuilder &msg, uint64_t ts = 0);
   int shutdown();
 };

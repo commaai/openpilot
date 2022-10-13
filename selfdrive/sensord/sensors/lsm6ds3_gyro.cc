@@ -8,7 +8,8 @@
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
-LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) : I2CSensor(bus, gpio_nr, shared_gpio) {}
+LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus, int gpio_nr, bool shared_gpio) :
+  I2CSensor(bus, gpio_nr, shared_gpio) {}
 
 int LSM6DS3_Gyro::init() {
   int ret = 0;
@@ -74,24 +75,35 @@ int LSM6DS3_Gyro::shutdown() {
   value &= ~(LSM6DS3_GYRO_INT1_DRDY_G);
   ret = set_register(LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value);
   if (ret < 0) {
+    LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
     goto fail;
   }
-  return ret;
+
+  // enable power-down mode
+  value = 0;
+  ret = read_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value &= 0x0F;
+  ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, value);
+  if (ret < 0) {
+    LOGE("Could not power-down lsm6ds3 gyroscope!")
+    goto fail;
+  }
 
 fail:
-  LOGE("Could not disable lsm6ds3 gyroscope interrupt!")
   return ret;
 }
 
-bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+bool LSM6DS3_Gyro::get_event(MessageBuilder &msg, uint64_t ts) {
 
-  if (has_interrupt_enabled()) {
-    // INT1 shared with accel, check STATUS_REG who triggered
-    uint8_t status_reg = 0;
-    read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
-    if ((status_reg & LSM6DS3_GYRO_DRDY_GDA) == 0) {
-      return false;
-    }
+  // INT1 shared with accel, check STATUS_REG who triggered
+  uint8_t status_reg = 0;
+  read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, &status_reg, sizeof(status_reg));
+  if ((status_reg & LSM6DS3_GYRO_DRDY_GDA) == 0) {
+    return false;
   }
 
   uint8_t buffer[6];
@@ -103,10 +115,12 @@ bool LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   float y = DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
   float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
+  auto event = msg.initEvent().initGyroscope();
   event.setSource(source);
   event.setVersion(2);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
+  event.setTimestamp(ts);
 
   float xyz[] = {y, -x, z};
   auto svec = event.initGyroUncalibrated();

@@ -23,15 +23,15 @@ class CarControllerParams:
   ADAS_KEEPALIVE_STEP = 100
   CAMERA_KEEPALIVE_STEP = 100
 
-  # Volt gasbrake lookups
-  # TODO: These values should be confirmed on non-Volt vehicles
+  # Volt gas/brake lookups
+  # TODO: These values should be confirmed on non-Volt vehicles.
+  # MAX_GAS should achieve 2 m/s^2 and MAX_BRAKE with regen should achieve -4.0 m/s^2
   # 3072 is reportedly slow on ICE
   # TODO: need to find what is 2 m/s/s on Bolt/other cars
   MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
   ZERO_GAS = 2048  # Coasting  # TODO: this roughly looks correct. might actually be 2100 tho
   MAX_ACC_REGEN = 1514  # TODO: see if paddle regen is 1514
-  MAX_BRAKE = 400  # ~ -3.5 m/s^2 with regen
-  INACTIVE_GAS_REGEN = 1554  # Max ACC regen is slightly less than max paddle regen
+  MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
@@ -43,15 +43,14 @@ class CarControllerParams:
   # it does not multiply against MAX_BRAKE, it'd only change the breakpoint...
   ACCEL_MIN = -4.0  # m/s^2  # TODO: with max regen of 1514, this looks correct. got average of -3.44 in one example
 
-  EV_GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
-  EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
-
   # ICE has much less engine braking force compared to regen in EVs,
   # lower threshold removes some braking deadzone
   GAS_LOOKUP_BP = [-0.1, 0., ACCEL_MAX]
-  BRAKE_LOOKUP_BP = [ACCEL_MIN, -0.1]
-
+  EV_GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
   GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+
+  BRAKE_LOOKUP_BP = [ACCEL_MIN, -0.1]
+  EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
   BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
 
 
@@ -91,13 +90,13 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-  CAR.BOLT_EV: GMCarInfo("Chevrolet Bolt EV 2022-23", "Adaptive Cruise Control (ACC)", footnotes=[], harness=Harness.gm),
-  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
+  CAR.BOLT_EV: GMCarInfo("Chevrolet Bolt EV 2022-23", footnotes=[], harness=Harness.gm),
+  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", "https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
   CAR.SILVERADO: [
     GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II", footnotes=[], harness=Harness.gm),
     GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", footnotes=[], harness=Harness.gm),
   ],
-  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22", "Adaptive Cruise Control (ACC)", footnotes=[], harness=Harness.gm),
+  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22", footnotes=[], harness=Harness.gm),
 }
 
 
