@@ -407,6 +407,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       cs[j].setCanDataSpeed(can_health.can_data_speed);
       cs[j].setCanfdEnabled(can_health.canfd_enabled);
       cs[j].setBrsEnabled(can_health.brs_enabled);
+      cs[j].setCanfdNonIso(can_health.canfd_non_iso);
     }
 
     // Convert faults bitset to capnp list

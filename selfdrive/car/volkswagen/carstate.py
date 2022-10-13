@@ -110,20 +110,21 @@ class CarState(CarStateBase):
       ret.cruiseState.available = True
       ret.cruiseState.enabled = False
     elif pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5):
-      # ACC okay and enabled, currently regulating speed (3) or driver accel override (4) or overrun coast-down (5)
+      # ACC okay and enabled, currently regulating speed (3) or driver accel override (4) or brake only (5)
       ret.cruiseState.available = True
       ret.cruiseState.enabled = True
     else:
       # ACC okay but disabled (1), or a radar visibility or other fault/disruption (6 or 7)
       ret.cruiseState.available = False
       ret.cruiseState.enabled = False
-    ret.cruiseState.standstill = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
+    self.esp_hold_confirmation = bool(pt_cp.vl["ESP_21"]["ESP_Haltebestaetigung"])
+    ret.cruiseState.standstill = self.CP.pcmCruise and self.esp_hold_confirmation
     ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
     if self.CP.pcmCruise:
-      ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw"] * CV.KPH_TO_MS
+      ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw_02"] * CV.KPH_TO_MS
       if ret.cruiseState.speed > 90:
         ret.cruiseState.speed = 0
 
@@ -478,7 +479,7 @@ class CarState(CarStateBase):
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
-    ("ACC_Wunschgeschw", "ACC_02"),              # ACC set speed
+    ("ACC_Wunschgeschw_02", "ACC_02"),           # ACC set speed
     ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10"),     # AEB target braking release
