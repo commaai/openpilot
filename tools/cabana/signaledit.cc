@@ -3,13 +3,12 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QMessageBox>
 #include <QVBoxLayout>
 
 // SignalForm
 
-SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
+SignalForm::SignalForm(const Signal &sig, QWidget *parent) : start_bit(sig.start_bit), QWidget(parent) {
   QFormLayout *form_layout = new QFormLayout(this);
 
   name = new QLineEdit(sig.name.c_str());
@@ -33,7 +32,8 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
   form_layout->addRow(tr("sign"), sign);
 
-  factor = new QSpinBox();
+  factor = new QDoubleSpinBox();
+  factor->setDecimals(3);
   factor->setValue(sig.factor);
   form_layout->addRow(tr("Factor"), factor);
 
@@ -46,9 +46,11 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   form_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
   form_layout->addRow(tr("Comment"), comment);
-  min_val = new QSpinBox();
+  min_val = new QDoubleSpinBox();
+  factor->setDecimals(3);
   form_layout->addRow(tr("Minimum value"), min_val);
-  max_val = new QSpinBox();
+  max_val = new QDoubleSpinBox();
+  factor->setDecimals(3);
   form_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
   form_layout->addRow(tr("Value descriptions"), val_desc);
@@ -56,11 +58,11 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
 
 std::optional<Signal> SignalForm::getSignal() {
   Signal sig = {};
+  sig.start_bit = start_bit;
   sig.name = name->text().toStdString();
   sig.size = size->text().toInt();
   sig.offset = offset->text().toDouble();
   sig.factor = factor->text().toDouble();
-  sig.msb = msb->text().toInt();
   sig.is_signed = sign->currentIndex() == 0;
   sig.is_little_endian = endianness->currentIndex() == 0;
   if (sig.is_little_endian) {
@@ -75,30 +77,32 @@ std::optional<Signal> SignalForm::getSignal() {
 
 // SignalEdit
 
-SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &color, QWidget *parent) : id(id), name_(sig.name.c_str()), QWidget(parent) {
+SignalEdit::SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent)
+    : id(id), name_(sig.name.c_str()), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
-  QLabel *icon = new QLabel(">");
+  icon = new QLabel(">");
+  icon->setFixedSize(15, 30);
   icon->setStyleSheet("font-weight:bold");
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
-  title->setText(sig.name.c_str());
+  title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  title->setText(QString("%1. %2").arg(index + 1).arg(sig.name.c_str()));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color));
   title_layout->addWidget(title);
-  title_layout->addStretch();
 
   plot_btn = new QPushButton("📈");
   plot_btn->setToolTip(tr("Show Plot"));
   plot_btn->setFixedSize(30, 30);
-  QObject::connect(plot_btn, &QPushButton::clicked, [=]() { emit parser->showPlot(id, name_); });
+  QObject::connect(plot_btn, &QPushButton::clicked, [=]() { emit showChart(id, name_); });
   title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
 
-  edit_container = new QWidget(this);
-  QVBoxLayout *v_layout = new QVBoxLayout(edit_container);
+  form_container = new QWidget(this);
+  QVBoxLayout *v_layout = new QVBoxLayout(form_container);
   form = new SignalForm(sig, this);
   v_layout->addWidget(form);
 
@@ -110,24 +114,27 @@ SignalEdit::SignalEdit(const QString &id, const Signal &sig, const QString &colo
   h->addWidget(save_btn);
   v_layout->addLayout(h);
 
-  edit_container->setVisible(false);
-  main_layout->addWidget(edit_container);
+  form_container->setVisible(false);
+  main_layout->addWidget(form_container);
+
+  QFrame* hline = new QFrame();
+  hline->setFrameShape(QFrame::HLine);
+  hline->setFrameShadow(QFrame::Sunken);
+  main_layout->addWidget(hline);
 
   QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
   QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::save);
-  QObject::connect(title, &ElidedLabel::clicked, [=]() {
-    edit_container->isVisible() ? edit_container->hide() : edit_container->show();
-    icon->setText(edit_container->isVisible() ? "▼" : ">");
-  });
+  QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
+}
+
+void SignalEdit::setFormVisible(bool visible) {
+  form_container->setVisible(visible);
+  icon->setText(visible ? "▼" : ">");
 }
 
 void SignalEdit::save() {
-  if (auto sig = const_cast<Signal *>(parser->getSig(id, name_))) {
-    if (auto s = form->getSignal()) {
-      *sig = *s;
-      // TODO: reset the chart for sig
-    }
-  }
+  if (auto s = form->getSignal())
+    dbc()->updateSignal(id, name_, *s);
 }
 
 void SignalEdit::remove() {
@@ -137,7 +144,7 @@ void SignalEdit::remove() {
   msgbox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
   msgbox.setDefaultButton(QMessageBox::Cancel);
   if (msgbox.exec()) {
-    parser->removeSignal(id, name_);
+    dbc()->removeSignal(id, name_);
     deleteLater();
   }
 }
@@ -145,19 +152,19 @@ void SignalEdit::remove() {
 // AddSignalDialog
 
 AddSignalDialog::AddSignalDialog(const QString &id, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Add signal to %1").arg(parser->getMsg(id)->name.c_str()));
+  setWindowTitle(tr("Add signal to %1").arg(dbc()->msg(id)->name.c_str()));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Signal sig = {.name = "untitled"};
   auto form = new SignalForm(sig, this);
   main_layout->addWidget(form);
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
+  setFixedWidth(parent->width() * 0.9);
+
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
-    if (auto msg = const_cast<Msg *>(parser->getMsg(id))) {
-      if (auto signal = form->getSignal()) {
-        msg->sigs.push_back(*signal);
-      }
+    if (auto signal = form->getSignal()) {
+      dbc()->addSignal(id, *signal);
     }
     QDialog::accept();
   });

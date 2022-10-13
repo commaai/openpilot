@@ -3,26 +3,42 @@
 #include <map>
 
 #include <QLabel>
+#include <QGraphicsLineItem>
+#include <QGraphicsSimpleTextItem>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 
-#include "tools/cabana/parser.h"
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
 
 using namespace QtCharts;
 
-class LineMarker : public QWidget {
-Q_OBJECT
+class ChartView : public QChartView {
+  Q_OBJECT
 
 public:
-  LineMarker(QWidget *parent) : QWidget(parent) {}
-  void setX(double x);
+  ChartView(const QString &id, const QString &sig_name, QWidget *parent = nullptr);
 
 private:
-  void paintEvent(QPaintEvent *event) override;
-  double x_pos = 0.0;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *ev) override;
+  void enterEvent(QEvent *event) override;
+  void leaveEvent(QEvent *event) override;
+
+  void updateSeries();
+  void rangeChanged(qreal min, qreal max);
+  void updateAxisY();
+  void updateState();
+
+  QGraphicsLineItem *track_line;
+  QGraphicsSimpleTextItem *value_text;
+  QGraphicsLineItem *line_marker;
+  QList<QPointF> vals;
+  QString id;
+  QString sig_name;
 };
 
 class ChartWidget : public QWidget {
@@ -32,19 +48,13 @@ public:
   ChartWidget(const QString &id, const QString &sig_name, QWidget *parent);
   inline QChart *chart() const { return chart_view->chart(); }
 
-private:
-  void updateState();
-  void addData(const CanData &can_data, const Signal &sig);
-  void updateSeries();
-  void rangeChanged(qreal min, qreal max);
-  void updateAxisY();
+signals:
+  void remove();
 
+protected:
   QString id;
   QString sig_name;
-  QChartView *chart_view = nullptr;
-  LineMarker *line_marker = nullptr;
-  double line_marker_x = 0.0;
-  QList<QPointF> vals;
+  ChartView *chart_view = nullptr;
 };
 
 class ChartsWidget : public QWidget {
@@ -54,7 +64,6 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void addChart(const QString &id, const QString &sig_name);
   void removeChart(const QString &id, const QString &sig_name);
-  void removeAll();
   inline bool hasChart(const QString &id, const QString &sig_name) {
     return charts.find(id + sig_name) != charts.end();
   }
@@ -64,10 +73,13 @@ signals:
 
 private:
   void updateState();
-  void updateDockButton();
+  void updateTitleBar();
+  void removeAll();
+  bool eventFilter(QObject *obj, QEvent *event);
 
   QWidget *title_bar;
   QLabel *title_label;
+  QLabel *range_label;
   bool docking = true;
   QPushButton *dock_btn;
   QPushButton *reset_zoom_btn;
