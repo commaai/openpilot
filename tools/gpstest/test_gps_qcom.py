@@ -30,7 +30,6 @@ def wait_for_location(socket, timeout):
     continue
 
 
-
 class TestGPS(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
