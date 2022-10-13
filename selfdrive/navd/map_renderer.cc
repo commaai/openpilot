@@ -15,15 +15,6 @@ const int HEIGHT = WIDTH;
 
 const int NUM_VIPC_BUFFERS = 4;
 
-const std::string get_style_path() {
-  char *basedir = std::getenv("BASEDIR");
-  if (basedir != NULL) {
-    return std::string(basedir) + "/selfdrive/navd/style.json";
-  } else {
-    return "/home/batman/openpilot/selfdrive/navd/style.json";
-  }
-}
-
 MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
@@ -46,7 +37,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   QOpenGLFramebufferObjectFormat fbo_format;
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
-  std::string style = util::read_file(get_style_path());
+  std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
   m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
   m_map->setStyleJson(style.c_str());
