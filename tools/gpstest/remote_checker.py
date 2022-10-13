@@ -35,13 +35,9 @@ def main():
   while True:
     events = messaging.drain_sock(gps_sock)
     for e in events:
-
-      if quectel_mod:
-        lat = e.gpsLocation.latitude
-        lon = e.gpsLocation.longitude
-      else:
-        lat = e.gpsLocationExternal.latitude
-        lon = e.gpsLocationExternal.longitude
+      loc = e.gpsLocation if quectel_mod else e.gpsLocationExternal
+      lat = loc.latitude
+      lon = loc.longitude
 
       if abs(lat - sol_lat) < DELTA and abs(lon - sol_lon) < DELTA:
         print("MATCH")
