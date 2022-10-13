@@ -25,10 +25,7 @@ def main():
     managed_processes[p].start()
     time.sleep(0.5) # give time to startup
 
-  socket = 'gpsLocationExternal'
-  if quectel_mod:
-    socket = 'gpsLocation'
-
+  socket = 'gpsLocation' if quectel_mod else 'gpsLocationExternal'
   gps_sock = messaging.sub_sock(socket, timeout=0.1)
 
   # analyze until the location changed

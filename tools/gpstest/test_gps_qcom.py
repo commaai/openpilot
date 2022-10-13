@@ -19,7 +19,7 @@ def wait_for_location(socket, timeout):
   while True:
     events = messaging.drain_sock(socket)
     for event in events:
-      if  event.gpsLocation.flags % 2:
+      if event.gpsLocation.flags % 2:
         return False
 
     timeout -= 1

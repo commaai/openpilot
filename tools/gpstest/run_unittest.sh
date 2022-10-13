@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# NOTE: can only run inside the limeGPS test box!
+# NOTE: can only run inside limeGPS test box!
 
 # run limeGPS with random static location
 timeout 300 ./simulate_gps_signal.py &
