@@ -154,7 +154,7 @@ class CarState(CarStateBase):
   def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
+    if self.CP.carFingerprint in EV_CAR:
       ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
     else:
       ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
@@ -450,22 +450,22 @@ class CarState(CarStateBase):
       ("DOORS_SEATBELTS", 4),
     ]
 
-    if CP.flags & HyundaiFlags.CANFD_HDA2:
+    if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
+      signals += [
+        ("SET_SPEED", "CRUISE_INFO"),
+        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+      ]
+      checks += [
+        ("CRUISE_INFO", 50),
+      ]
+
+    if CP.carFingerprint in EV_CAR:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR"),
-        ("GEAR", "ACCELERATOR"),
       ]
       checks += [
         ("ACCELERATOR", 100),
       ]
-      if not CP.openpilotLongitudinalControl:
-        signals += [
-          ("SET_SPEED", "CRUISE_INFO"),
-          ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-        ]
-        checks += [
-          ("CRUISE_INFO", 50),
-        ]
     else:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
