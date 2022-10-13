@@ -9,11 +9,11 @@ openpilot is developed and tested on **Ubuntu 20.04**, which is the primary deve
 
 First, clone openpilot:
 ``` bash
+# openpilot expects to be cloned in ~/openpilot
 cd ~
-git clone https://github.com/commaai/openpilot.git
+git clone --recursive https://github.com/commaai/openpilot.git
 
 cd openpilot
-git submodule update --init
 ```
 
 Then, run the setup script:
@@ -26,10 +26,10 @@ tools/ubuntu_setup.sh
 tools/mac_setup.sh
 ```
 
-Activate a shell with the install Python dependencies:
+Spawn a shell within the virtual environment with the dependencies installed:
 
 ``` bash
-cd openpilot && poetry shell
+poetry shell
 ```
 
 Build openpilot with this command:
