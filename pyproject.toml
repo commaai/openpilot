@@ -12,7 +12,7 @@ documentation = "https://docs.comma.ai"
 [tool.poetry.dependencies]
 python = "^3.8"
 atomicwrites = "*"
-casadi = { version = "3.5.5", markers = "platform_system != 'Darwin'" }
+casadi = { version = "*", markers = "platform_system != 'Darwin'" }
 cffi = "*"
 crcmod = "*"
 cryptography = "*"
