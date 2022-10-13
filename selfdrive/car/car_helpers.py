@@ -91,7 +91,7 @@ def fingerprint(logcan, sendcan):
       if cached_params.carName == "mock":
         cached_params = None
 
-    if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
+    if False and cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
       vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
@@ -102,6 +102,13 @@ def fingerprint(logcan, sendcan):
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
       cached = False
+
+      print("{")
+      padding = max([len(fw.brand) for fw in car_fw] or [0])
+      for version in car_fw:
+        subaddr = None if version.subAddress == 0 else hex(version.subAddress)
+        print(f"  Brand: {version.brand:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+      print("}")
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
