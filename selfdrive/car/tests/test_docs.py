@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 import re
 import unittest
 
@@ -19,6 +20,15 @@ class TestCarDocs(unittest.TestCase):
 
     self.assertEqual(generated_cars_md, current_cars_md,
                      "Run selfdrive/car/docs.py to update the compatibility documentation")
+
+  def test_duplicate_years(self):
+    make_model_years = defaultdict(list)
+    for car in self.all_cars:
+      with self.subTest(car_info_name=car.name):
+        make_model = (car.make, car.model)
+        for year in car.year_list:
+          self.assertNotIn(year, make_model_years[make_model], f"{car.name}: Duplicate model year")
+          make_model_years[make_model].append(year)
 
   def test_missing_car_info(self):
     all_car_info_platforms = get_interface_attr("CAR_INFO", combine_brands=True).keys()

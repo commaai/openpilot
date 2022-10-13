@@ -30,10 +30,11 @@ def replay_panda_states(s, msgs):
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() in ['pandaStates', 'pandaStateDEPRECATED']]
 
-  # TODO: new safety params from flags, remove after getting new routes for Toyota
+  # TODO: safety param migration should be handled automatically
   safety_param_migration = {
     "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
     "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
   # Migrate safety param base on carState
@@ -56,6 +57,7 @@ def replay_panda_states(s, msgs):
         pm.send(s, new_m)
       else:
         new_m = m.as_builder()
+        new_m.pandaStates[-1].safetyParam = safety_param
         new_m.logMonoTime = int(sec_since_boot() * 1e9)
       pm.send(s, new_m)
 
@@ -90,30 +92,10 @@ def replay_device_state(s, msgs):
       rk.keep_time()
 
 
-def replay_sensor_events(s, msgs):
-  pm = messaging.PubMaster([s, ])
-  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
-  smsgs = [m for m in msgs if m.which() == s]
-  while True:
-    for m in smsgs:
-      new_m = m.as_builder()
-      new_m.logMonoTime = int(sec_since_boot() * 1e9)
-
-      for evt in new_m.sensorEvents:
-        evt.timestamp = new_m.logMonoTime
-
-      pm.send(s, new_m)
-      rk.keep_time()
-
-
 def replay_sensor_event(s, msgs):
-  smsgs = [m for m in msgs if m.which() == s]
-  #if len(smsgs) == 0:
-  #  return
-
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
-
+  smsgs = [m for m in msgs if m.which() == s]
   while True:
     for m in smsgs:
       m = m.as_builder()
@@ -210,15 +192,15 @@ def migrate_carparams(lr):
   return all_msgs
 
 
-def migrate_sensorEvents(lr):
+def migrate_sensorEvents(lr, old_logtime=False):
   all_msgs = []
   for msg in lr:
-    if msg.which() != 'sensorEvents':
+    if msg.which() != 'sensorEventsDEPRECATED':
       all_msgs.append(msg)
       continue
 
     # migrate to split sensor events
-    for evt in msg.sensorEvents:
+    for evt in msg.sensorEventsDEPRECATED:
       # build new message for each sensor type
       sensor_service = ''
       if evt.which() == 'acceleration':
@@ -234,6 +216,8 @@ def migrate_sensorEvents(lr):
 
       m = messaging.new_message(sensor_service)
       m.valid = True
+      if old_logtime:
+        m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
       m_dat.version = evt.version
@@ -243,9 +227,6 @@ def migrate_sensorEvents(lr):
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
       all_msgs.append(m.as_reader())
-
-    # append also legacy sensorEvents, to have both (remove later)
-    all_msgs.append(msg)
 
   return all_msgs
 
@@ -270,7 +251,6 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
   fake_daemons = {
     'sensord': [
-      multiprocessing.Process(target=replay_sensor_events, args=('sensorEvents', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('accelerometer', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('gyroscope', lr)),
       multiprocessing.Process(target=replay_sensor_event, args=('magnetometer', lr)),

@@ -70,3 +70,10 @@ repos:
         - --quiet
         - --force
         - -j8
+-   repo: local
+    hooks:
+    -   id: test_translations
+        name: test translations
+        entry: selfdrive/ui/tests/test_translations.py
+        language: script
+        pass_filenames: false

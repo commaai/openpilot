@@ -1,9 +1,14 @@
 name: selfdrive
+
 on:
   push:
     branches-ignore:
       - 'testing-closet*'
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 env:
   BASE_IMAGE: openpilot-base
@@ -62,7 +67,7 @@ jobs:
         cp .pylintrc $STRIPPED_DIR
         cp mypy.ini $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "pre-commit run --all"
+        ${{ env.RUN }} "SKIP=test_translations pre-commit run --all"
 
   build_all:
     name: build all

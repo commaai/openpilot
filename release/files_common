@@ -305,6 +305,8 @@ selfdrive/ui/soundd/soundd
 selfdrive/ui/soundd/.gitignore
 selfdrive/ui/translations/*.ts
 selfdrive/ui/translations/languages.json
+selfdrive/ui/update_translations.py
+selfdrive/ui/tests/test_translations.py
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -572,3 +574,4 @@ tinygrad_repo/tinygrad/ops.py
 tinygrad_repo/tinygrad/shapetracker.py
 tinygrad_repo/tinygrad/tensor.py
 tinygrad_repo/tinygrad/nn/__init__.py
+tinygrad_repo/tinygrad/nn/optim.py

@@ -171,8 +171,14 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
   CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
-  CAR.LEXUS_RX: ToyotaCarInfo("Lexus RX 2016-19", footnotes=[Footnote.DSU]),
-  CAR.LEXUS_RXH: ToyotaCarInfo("Lexus RX Hybrid 2016-19", footnotes=[Footnote.DSU]),
+  CAR.LEXUS_RX: [
+    ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Lexus RX 2017-19", footnotes=[Footnote.DSU]),
+  ],
+  CAR.LEXUS_RXH: [
+    ToyotaCarInfo("Lexus RX Hybrid 2016", "Lexus Safety System+", footnotes=[Footnote.DSU]),
+    ToyotaCarInfo("Lexus RX Hybrid 2017-19", footnotes=[Footnote.DSU]),
+  ],
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
   CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
 }
@@ -751,6 +757,7 @@ FW_VERSIONS = {
       b'\x03312N6000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
+      b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203202\x00\x00\x00\x00',
       b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
       b'\x02312K4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02312U5000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -1356,6 +1363,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896634AA0000\x00\x00\x00\x00',
+      b'\x01896634AA0100\x00\x00\x00\x00',      
       b'\x01896634AA1000\x00\x00\x00\x00',
       b'\x01896634A88000\x00\x00\x00\x00',
       b'\x01896634A89000\x00\x00\x00\x00',
