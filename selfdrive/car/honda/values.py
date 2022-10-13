@@ -447,7 +447,7 @@ FW_VERSIONS = {
       b'78109-TED-Q510\x00\x00',
       b'78109-TEG-A310\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TBA-A020\x00\x00',
       b'36161-TBA-A030\x00\x00',
       b'36161-TBA-A040\x00\x00',
@@ -965,7 +965,7 @@ FW_VERSIONS = {
       b'77959-THR-A110\x00\x00',
       b'77959-THR-X010\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-THR-A020\x00\x00',
       b'36161-THR-A030\x00\x00',
       b'36161-THR-A110\x00\x00',
@@ -1069,7 +1069,7 @@ FW_VERSIONS = {
       b'39990-TG7-A070\x00\x00',
       b'39990-TGS-A230\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TG7-A310\x00\x00',
       b'36161-TG7-A520\x00\x00',
       b'36161-TG7-A630\x00\x00',
@@ -1177,7 +1177,7 @@ FW_VERSIONS = {
       b'57114-TX5-A220\x00\x00',
       b'57114-TX4-A220\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TX5-A030\x00\x00',
       b'36161-TX4-A030\x00\x00',
     ],
@@ -1274,7 +1274,7 @@ FW_VERSIONS = {
       b'39990-T6Z-A030\x00\x00',
       b'39990-T6Z-A050\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-T6Z-A020\x00\x00',
       b'36161-T6Z-A310\x00\x00',
       b'36161-T6Z-A420\x00\x00',
