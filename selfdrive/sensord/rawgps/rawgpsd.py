@@ -76,6 +76,7 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
+
 def try_setup_logs(diag, log_types):
   for _ in range(5):
     try:
