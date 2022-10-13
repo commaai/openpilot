@@ -120,7 +120,6 @@ def main():
   rinex_file = download_rinex()
 
   duration = 60*3 # max runtime in seconds
-  rinex_file = download_rinex()
   lat, lon = get_random_coords(47.2020, 15.7403)
 
   while True:
