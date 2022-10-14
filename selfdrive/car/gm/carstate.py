@@ -50,8 +50,8 @@ class CarState(CarStateBase):
     # that the brake is being intermittently pressed without user interaction.
     # To avoid a cruise fault we need to match the ECM's brake pressed signal and threshold
     # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
-    ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] / 0xd0
-    ret.brakePressed = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 8
+    ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
+    ret.brakePressed = ret.brake >= 8
 
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
