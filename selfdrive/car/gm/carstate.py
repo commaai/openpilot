@@ -39,7 +39,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = (pt_cp["ECMVehicleSpeed"]["VehicleSpeed"] + pt_cp["ECMVehicleSpeed"]["VehicleSpeedLeft"]) != 0
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
@@ -121,6 +121,8 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("BrakePedalPos", "ECMAcceleratorPos"),
+      ("VehicleSpeed", "ECMVehicleSpeed"),
+      ("VehicleSpeedLeft", "ECMVehicleSpeed"),
       ("FrontLeftDoor", "BCMDoorBeltStatus"),
       ("FrontRightDoor", "BCMDoorBeltStatus"),
       ("RearLeftDoor", "BCMDoorBeltStatus"),
@@ -162,6 +164,7 @@ class CarState(CarStateBase):
       ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
+      ("ECMVehicleSpeed", 80),
     ]
 
     if CP.transmissionType == TransmissionType.direct:
