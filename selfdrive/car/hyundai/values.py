@@ -299,6 +299,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
     ),
   ],
+  extra_ecus=[
+    (Ecu.adas, 0x730, None),  # ADAS Driving ECU on HDA2 platforms
+  ],
 )
 
 FW_VERSIONS = {
