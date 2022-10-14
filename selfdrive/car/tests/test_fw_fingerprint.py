@@ -47,7 +47,7 @@ class TestFwFingerprint(unittest.TestCase):
   def test_data_collection_ecus(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
-        bad_ecus = set(ecus).intersection(FW_QUERY_CONFIGS[brand].extra_ecus)
+        bad_ecus = set(ecus).intersection(config.extra_ecus)
         with self.subTest(car_model=car_model):
           self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
 
