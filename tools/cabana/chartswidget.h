@@ -3,6 +3,8 @@
 #include <map>
 
 #include <QLabel>
+#include <QGraphicsLineItem>
+#include <QGraphicsSimpleTextItem>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -14,24 +16,29 @@
 
 using namespace QtCharts;
 
-class LineMarker : public QWidget {
-Q_OBJECT
-
-public:
-  LineMarker(QWidget *parent) : QWidget(parent) {}
-  void setX(double x);
-
-private:
-  void paintEvent(QPaintEvent *event) override;
-  double x_pos = -1;
-};
-
 class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(QChart *chart, QWidget *parent = nullptr) : QChartView(chart, parent) {}
+  ChartView(const QString &id, const QString &sig_name, QWidget *parent = nullptr);
+
+private:
   void mouseReleaseEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *ev) override;
+  void enterEvent(QEvent *event) override;
+  void leaveEvent(QEvent *event) override;
+
+  void updateSeries();
+  void rangeChanged(qreal min, qreal max);
+  void updateAxisY();
+  void updateState();
+
+  QGraphicsLineItem *track_line;
+  QGraphicsSimpleTextItem *value_text;
+  QGraphicsLineItem *line_marker;
+  QList<QPointF> vals;
+  QString id;
+  QString sig_name;
 };
 
 class ChartWidget : public QWidget {
@@ -44,18 +51,10 @@ public:
 signals:
   void remove();
 
-private:
-  void updateState();
-  void addData(const CanData &can_data, const Signal &sig);
-  void updateSeries();
-  void rangeChanged(qreal min, qreal max);
-  void updateAxisY();
-
+protected:
   QString id;
   QString sig_name;
   ChartView *chart_view = nullptr;
-  LineMarker *line_marker = nullptr;
-  QList<QPointF> vals;
 };
 
 class ChartsWidget : public QWidget {
