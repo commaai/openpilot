@@ -16,27 +16,27 @@ index 7115151c..049f0e93 100644
 +#link_directories(${FFTW_LIBRARY_DIRS})
  
  SET(TOOLS
-        hackrf_transfer
--       hackrf_spiflash
--       hackrf_cpldjtag
--       hackrf_info
--       hackrf_debug
--       hackrf_clock
--       hackrf_sweep
--       hackrf_operacake
-+       #hackrf_spiflash
-+       #hackrf_cpldjtag
-+       #hackrf_info
-+       #hackrf_debug
-+       #hackrf_clock
-+       #hackrf_sweep
-+       #hackrf_operacake
+ 	hackrf_transfer
+-	hackrf_spiflash
+-	hackrf_cpldjtag
+-	hackrf_info
+-	hackrf_debug
+-	hackrf_clock
+-	hackrf_sweep
+-	hackrf_operacake
++	#hackrf_spiflash
++	#hackrf_cpldjtag
++	#hackrf_info
++	#hackrf_debug
++	#hackrf_clock
++	#hackrf_sweep
++	#hackrf_operacake
  )
  
  if(MSVC)
 @@ -45,7 +45,7 @@ if(MSVC)
-        )
-        LIST(APPEND TOOLS_LINK_LIBS ${FFTW_LIBRARIES})
+ 	)
+ 	LIST(APPEND TOOLS_LINK_LIBS ${FFTW_LIBRARIES})
  else()
 -    LIST(APPEND TOOLS_LINK_LIBS m fftw3f)
 +    LIST(APPEND TOOLS_LINK_LIBS m)# fftw3f)
