@@ -192,7 +192,8 @@ class TestUpdated(unittest.TestCase):
   # Run updated for 10 cycles with no update
   def test_no_update(self):
     self._start_updater()
-    for _ in range(10):
+    for i in range(10):
+      print(f"test_no_update {i}")
       self._wait_for_update(clear_param=True)
       self._check_update_state(False)
 
