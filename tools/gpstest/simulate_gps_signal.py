@@ -46,28 +46,7 @@ def check_availability() -> bool:
   print(f"Device: {output.strip().decode('utf-8')}")
   return True
 
-def main(lat, lon, jump_sim, contin_sim):
-  if not os.path.exists('LimeGPS'):
-    print("LimeGPS not found run 'setup.sh' first")
-    return
-
-  if not os.path.exists('LimeSuite'):
-    print("LimeSuite not found run 'setup.sh' first")
-    return
-
-  if not check_availability():
-    print("No limeSDR device found!")
-    return
-
-  rinex_file = download_rinex()
-
-  if lat == 0 and lon == 0:
-    lat, lon = get_random_coords(47.2020, 15.7403)
-
-  timeout = None
-  if jump_sim:
-    timeout = 30
-
+def run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout):
   while True:
     try:
       print(f"starting LimeGPS, Location: {lat},{lon}")
@@ -92,11 +71,77 @@ def main(lat, lon, jump_sim, contin_sim):
     else:
       lat, lon = get_random_coords(lat, lon)
 
+def run_hackRF_loop(lat, lon, contin_sim, rinex_file, timeout):
+
+  if timeout != 0:
+    print("no jump mode for hackrf!")
+    return
+
+  try:
+    print(f"starting gps-sdr-sim, Location: {lat},{lon}")
+    # create 30second file and replay with hackrf endless
+    cmd = ["gps-sdr-sim/gps-sdr-sim", "-e", rinex_file, "-l", f"{lat},{lon},100", "-d", 30]
+    sp.check_output(cmd, stderr=sp.PIPE, timeout=timeout)
+    # created in current working directory
+  except Exception:
+    print("Failed to generate gpssim.bin")
+
+  try:
+    print("starting hackrf_transfer")
+    # create 30second file and replay with hackrf endless
+    cmd = ["hackrf/host/hackrf-tools/src/hackrf_transfer", "-t", "gpssim.bin",
+           "-f", "1575420000", "-s", "2600000", "-a", "1"]
+    sp.check_output(cmd, stderr=sp.PIPE, timeout=timeout)
+  except KeyboardInterrupt:
+    print("stopping hackrf_transfer")
+    return
+  except Exception as e:
+    print(f"hackrf_transfer crashed:{str(e)}")
+
+
+def main(lat, lon, jump_sim, contin_sim, hackrf_mode):
+
+  if not os.path.exists('LimeGPS') and not hackrf_mode:
+    print("LimeGPS not found run 'setup.sh' first")
+    return
+
+  if not os.path.exists('LimeSuite') and not hackrf_mode:
+    print("LimeSuite not found run 'setup.sh' first")
+    return
+
+  if not check_availability() and not hackrf_mode:
+    print("No limeSDR device found!")
+    return
+
+  if not os.path.exists('hackrf') and hackrf_mode:
+    print("hackrf not found run 'setup_hackrf.sh' first")
+    return
+
+  if not os.path.exists('gps-sdr-sim') and hackrf_mode:
+    print("gps-sdr-sim not found run 'setup_hackrf.sh' first")
+    return
+
+  if lat == 0 and lon == 0:
+    lat, lon = get_random_coords(47.2020, 15.7403)
+
+  rinex_file = download_rinex()
+
+  timeout = None
+  if jump_sim:
+    timeout = 30
+
+  if not hackrf_mode:
+    run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout)
+  else:
+    #run_hackRF_loop()
+    pass
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Simulate static [or random jumping] GPS signal.")
   parser.add_argument("lat", type=float, nargs='?', default=0)
   parser.add_argument("lon", type=float, nargs='?', default=0)
   parser.add_argument("--jump", action="store_true", help="signal that jumps around the world")
   parser.add_argument("--contin", action="store_true", help="continuously/slowly moving around the world")
+  parser.add_argument("--hackrf", action="store_true", help="hackrf mode (DEFAULT: LimeSDR)")
   args = parser.parse_args()
-  main(args.lat, args.lon, args.jump, args.contin)
+  main(args.lat, args.lon, args.jump, args.contin, args.hackrf)
