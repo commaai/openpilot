@@ -54,7 +54,8 @@ class CarState(CarStateBase):
     if self.CP.networkLocation != NetworkLocation.fwdCamera:
       ret.brakePressed = ret.brake >= 8
     else:
-      # Match the ECM's brake pressed threshold at a stop
+      # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
+      # Match ECM threshold at a standstill to allow the camera to cancel earlier
       ret.brakePressed = ret.brake >= 20
 
     # Regen braking is braking
