@@ -57,8 +57,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Hyundai|Elantra 2021-22|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Hyundai|Elantra Hybrid 2021-23|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Hyundai|Genesis 2015-16|Smart Cruise Control (SCC)|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai J|
-|Hyundai|Ioniq 5 2022 (with HDA II)|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai Q|
-|Hyundai|Ioniq 5 2022 (without HDA II)|Highway Driving Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
+|Hyundai|Ioniq 5 (with HDA II) 2022|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai Q|
+|Hyundai|Ioniq 5 (without HDA II) 2022|Highway Driving Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Hyundai|Ioniq Electric 2020|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Hyundai|Ioniq Hybrid 2017-19|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
@@ -84,8 +84,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Kia|Ceed 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
-|Kia|EV6 2022 (with HDA II)|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai P|
-|Kia|EV6 2022 (without HDA II)|Highway Driving Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Kia|EV6 (with HDA II) 2022|Highway Driving Assist II|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai P|
+|Kia|EV6 (without HDA II) 2022|Highway Driving Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
 |Kia|K5 2021-22|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Kia|Niro EV 2019|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|

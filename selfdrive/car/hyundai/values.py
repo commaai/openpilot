@@ -142,8 +142,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
   CAR.IONIQ_5: [
-    HyundaiCarInfo("Hyundai Ioniq 5 2022 (without HDA II)" , "Highway Driving Assist", harness=Harness.hyundai_k),
-    HyundaiCarInfo("Hyundai Ioniq 5 2022 (with HDA II)", "Highway Driving Assist II", harness=Harness.hyundai_q),
+    HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022" , "Highway Driving Assist", harness=Harness.hyundai_k),
+    HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022", "Highway Driving Assist II", harness=Harness.hyundai_q),
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
 
@@ -175,8 +175,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
   CAR.KIA_EV6: [
-    HyundaiCarInfo("Kia EV6 2022 (without HDA II)", "Highway Driving Assist", harness=Harness.hyundai_l),
-    HyundaiCarInfo("Kia EV6 2022 (with HDA II)", "Highway Driving Assist II", harness=Harness.hyundai_p)
+    HyundaiCarInfo("Kia EV6 (without HDA II) 2022", "Highway Driving Assist", harness=Harness.hyundai_l),
+    HyundaiCarInfo("Kia EV6 (with HDA II) 2022", "Highway Driving Assist II", harness=Harness.hyundai_p)
   ],
 
   # Genesis
@@ -298,6 +298,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
     ),
+  ],
+  extra_ecus=[
+    (Ecu.adas, 0x730, None),  # ADAS Driving ECU on HDA2 platforms
   ],
 )
 
@@ -1319,11 +1322,13 @@ FW_VERSIONS = {
   },
   CAR.KIA_EV6: {
     (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00CV  IEB \x02 101!\x10\x18 58520-CV100',
       b'\xf1\x00CV  IEB \x03 101!\x10\x18 58520-CV100',
       b'\xf1\x8758520CV100\xf1\x00CV  IEB \x02 101!\x10\x18 58520-CV100',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00CV1 MDPS R 1.00 1.04 57700-CV000 1B30',
+      b'\xf1\x00CV1 MDPS R 1.00 1.05 57700-CV000 2425',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
@@ -1331,6 +1336,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
+      b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.05 99210-CV000 211027',
     ],
   },
