@@ -78,7 +78,7 @@ def run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout):
 
 def run_hackRF_loop(lat, lon, rinex_file, timeout):
 
-  if timeout != 0:
+  if timeout is not None:
     print("no jump mode for hackrf!")
     return
 
@@ -95,7 +95,7 @@ def run_hackRF_loop(lat, lon, rinex_file, timeout):
     print("starting hackrf_transfer")
     # create 30second file and replay with hackrf endless
     cmd = ["hackrf/host/hackrf-tools/src/hackrf_transfer", "-t", "gpssim.bin",
-           "-f", "1575420000", "-s", "2600000", "-a", "1"]
+           "-f", "1575420000", "-s", "2600000", "-a", "1", "-R"]
     sp.check_output(cmd, stderr=sp.PIPE, timeout=timeout)
   except KeyboardInterrupt:
     print("stopping hackrf_transfer")
