@@ -213,6 +213,11 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
   versions = VERSIONS.copy()
+
+  # Each brand can define extra ECUs to query for data collection
+  for brand, config in FW_QUERY_CONFIGS.items():
+    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
+
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
 
