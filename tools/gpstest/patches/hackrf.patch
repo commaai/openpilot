@@ -1,5 +1,5 @@
 diff --git a/host/hackrf-tools/src/CMakeLists.txt b/host/hackrf-tools/src/CMakeLists.txt
-index 7115151c..049f0e93 100644
+index 7115151c..a51388ba 100644
 --- a/host/hackrf-tools/src/CMakeLists.txt
 +++ b/host/hackrf-tools/src/CMakeLists.txt
 @@ -23,20 +23,20 @@
@@ -19,14 +19,13 @@ index 7115151c..049f0e93 100644
  	hackrf_transfer
 -	hackrf_spiflash
 -	hackrf_cpldjtag
--	hackrf_info
++	#hackrf_spiflash
++	#hackrf_cpldjtag
+ 	hackrf_info
 -	hackrf_debug
 -	hackrf_clock
 -	hackrf_sweep
 -	hackrf_operacake
-+	#hackrf_spiflash
-+	#hackrf_cpldjtag
-+	#hackrf_info
 +	#hackrf_debug
 +	#hackrf_clock
 +	#hackrf_sweep
