@@ -81,7 +81,8 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    if experimental_long and bool(fingerprint[0]):  # FIXME: hack to delay CI/doc/harness stuff for now
+    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway and False  # Disabled for now
+    if experimental_long and False:  # Disabled for now
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
@@ -89,7 +90,6 @@ class CarInterface(CarInterfaceBase):
         ret.minEnableSpeed = 4.5
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
-    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway
     ret.stoppingControl = True
     ret.startingState = True
     ret.startAccel = 1.0
