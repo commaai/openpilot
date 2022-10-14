@@ -207,16 +207,19 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
-    # On some GMs, the ECM has a higher brake pressed threshold than the camera, causing
-    # a cruise fault when you engage at a stop with your foot partially on the brake.
-    if ret.vEgoRaw <= 0.5 and ret.brake <= 20:
-      events.add(EventName.depressBrakePedal)
     if ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
+
+    if self.CP.networkLocation == NetworkLocation.fwdCamera:
+      # The ECM has a higher brake pressed threshold than the camera, causing an
+      # ACC fault when you engage at a stop with your foot partially on the brake
+      # TODO: use ECM's standstill threshold
+      if ret.vEgoRaw <= 0.5 and ret.brake <= 20:
+        events.add(EventName.depressBrakePedal)
 
     ret.events = events.to_msg()
 
