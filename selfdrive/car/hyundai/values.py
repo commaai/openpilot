@@ -1342,9 +1342,6 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.05 99210-CV000 211027',
     ],
-    (Ecu.adas, 0x730, None): [
-      b'\xf1\x00CV1 ADRV 1.00 1.04 211027',
-    ],
   },
   CAR.IONIQ_5: {
     (Ecu.abs, 0x7d1, None): [
