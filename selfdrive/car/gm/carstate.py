@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     if self.CP.networkLocation != NetworkLocation.fwdCamera:
       ret.brakePressed = ret.brake >= 8
     else:
-      # Match ECM brake threshold on GM Camera ACC cars
+      # Match the ECM's brake pressed threshold at a stop
       ret.brakePressed = ret.brake >= 20
 
     # Regen braking is braking
