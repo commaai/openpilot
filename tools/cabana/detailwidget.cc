@@ -141,17 +141,14 @@ BinaryView::BinaryView(QWidget *parent) {
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->horizontalHeader()->hide();
   table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   main_layout->addWidget(table);
   table->setColumnCount(9);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
 void BinaryView::setMessage(const QString &message_id) {
   msg_id = message_id;
   const Msg *msg = dbc()->msg(msg_id);
-  int row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
-
+  const int row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   table->setRowCount(row_count);
   table->setColumnCount(9);
   for (int i = 0; i < table->rowCount(); ++i) {
@@ -178,8 +175,7 @@ void BinaryView::setMessage(const QString &message_id) {
       }
     }
   }
-
-  table->setFixedHeight(table->rowHeight(0) * table->rowCount() + table->horizontalHeader()->height() + 2);
+  table->setFixedHeight(table->rowHeight(0) * std::min(row_count, 8) + 2);
   updateState();
 }
 
