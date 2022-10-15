@@ -50,14 +50,15 @@ class TestAthenadMethods(unittest.TestCase):
 
   # *** test helpers ***
 
-
-  def _wait_for_upload(self):
+  @staticmethod
+  def _wait_for_upload():
     now = time.time()
     while time.time() - now < 5:
       if athenad.upload_queue.qsize() == 0:
         break
 
-  def _create_file(self, file: str, parent: Optional[str] = None) -> str:
+  @staticmethod
+  def _create_file(file: str, parent: Optional[str] = None) -> str:
     fn = os.path.join(athenad.ROOT if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     Path(fn).touch()
@@ -65,7 +66,6 @@ class TestAthenadMethods(unittest.TestCase):
 
 
   # *** test cases ***
-
 
   def test_echo(self):
     assert dispatcher["echo"]("bob") == "bob"
