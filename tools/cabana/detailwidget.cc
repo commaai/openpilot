@@ -1,4 +1,3 @@
-
 #include "tools/cabana/detailwidget.h"
 
 #include <QDialogButtonBox>
@@ -138,6 +137,7 @@ BinaryView::BinaryView(QWidget *parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   table = new QTableWidget(this);
+  table->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->horizontalHeader()->hide();
   table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
