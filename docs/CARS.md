@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 210 Supported Cars
+# 211 Supported Cars
 
 |Make| Model                                                  |Supported Package|               ACC               |No ACC accel below|No ALC below|Steering Torque|Resume from stop|    Harness    |
 |---|--------------------------------------------------------|---|:-------------------------------:|:---:|:---:|:---:|:---:|:-------------:|
@@ -29,6 +29,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |comma| body                                                   |All|            openpilot            |0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|     None      |
 |Genesis| G70 2018-19                                            |All|              Stock              |0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|   Hyundai F   |
 |Genesis| G70 2020                                               |All|            openpilot            |0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|   Hyundai F   |
+|Genesis| GV70 2022-23                                            |All|              stock              |0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|   Hyundai L   |
 |Genesis| G80 2017-19                                            |All|              Stock              |0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|   Hyundai H   |
 |Genesis| G90 2017-18                                            |All|            openpilot            |0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|   Hyundai C   |
 |GMC| Acadia 2018[<sup>1</sup>](#footnotes)                  |Adaptive Cruise Control (ACC)|            openpilot            |0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|    OBD-II     |

@@ -12,8 +12,9 @@ Version 0.8.17 (2022-XX-XX)
   * Border turns grey while overriding steering
   * Added button to bookmark events while driving; view them later in comma connect
 * AGNOS 6
-* Hyundai Santa Cruz 2022 support thanks to sunnyhaibin!
-* Kia Sportage 2023 support thanks to sunnyhaibin!
+* Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
+* Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
+* Kia Sportage 2021-23 support thanks to sunnyhaibin!
 
 Version 0.8.16 (2022-08-26)
 ========================
