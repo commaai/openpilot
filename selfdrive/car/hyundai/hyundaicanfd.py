@@ -53,6 +53,7 @@ def create_buttons(packer, CP, cnt, btn):
     ret.append(packer.make_can_msg("CRUISE_BUTTONS",5, values))
    else:
     ret.append(packer.make_can_msg("CRUISE_BUTTONS",6, values))
+  
   return ret 
 
 def create_acc_cancel(packer, CP, cruise_info_copy):
