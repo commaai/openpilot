@@ -143,6 +143,8 @@ class CarState(CarStateBase):
     # save the entire LKAS11 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
+    self.fca11 = copy.copy(cp_cruise.vl["FCA11"])
+    self.fca12 = copy.copy(cp_cruise.vl["FCA12"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.brake_error = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
     self.prev_cruise_buttons = self.cruise_buttons[-1]
@@ -390,11 +392,30 @@ class CarState(CarStateBase):
 
       if CP.carFingerprint in FEATURES["use_fca"]:
         signals += [
+          ("CF_VSM_Prefill", "FCA11"),
+          ("CF_VSM_HBACmd", "FCA11"),
+          ("CF_VSM_BeltCmd", "FCA11"),
+          ("CR_VSM_DecCmd", "FCA11"),
+          ("FCA_Status", "FCA11"),
+          ("FCA_StopReq", "FCA11"),
+          ("FCA_DrvSetStatus", "FCA11"),
+          ("FCA_Failinfo", "FCA11"),
+          ("CR_FCA_Alive", "FCA11"),
+          ("FCA_RelativeVelocity", "FCA11"),
+          ("FCA_TimetoCollision", "FCA11"),
+          ("CR_FCA_ChkSum", "FCA11"),
+          ("PAINT1_Status", "FCA11"),
           ("FCA_CmdAct", "FCA11"),
           ("CF_VSM_Warn", "FCA11"),
           ("CF_VSM_DecCmdAct", "FCA11"),
+
+          ("FCA_USM", "FCA12"),
+          ("FCA_DrvSetState", "FCA12"),
         ]
-        checks.append(("FCA11", 50))
+        checks += [
+          ("FCA11", 50),
+          ("FCA12", 50),
+        ]
       else:
         signals += [
           ("AEB_CmdAct", "SCC12"),
