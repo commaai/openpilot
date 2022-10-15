@@ -159,17 +159,15 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in EV_CAR:
       ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    elif not (self.CP.flags & HyundaiFlags.CANFD_ALT_PEDALS):
+    elif self.CP.carFingerprint in HYBRID_CAR:
       ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
-    else:
-      ret.gas = 0
 
-    if self.CP.flags & HyundaiFlags.CANFD_ALT_PEDALS:
+    if self.CP.carFingerprint not in (EV_CAR | HYBRID_CAR):
       ret.gasPressed = bool(cp.vl["ACCELERATOR_BRAKE_ALT"]["ACCELERATOR_PEDAL_PRESSED"])
     else:
       ret.gasPressed = ret.gas > 1e-5
 
-    brake_msg = "ACCELERATOR_BRAKE_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_PEDALS else "BRAKE"
+    brake_msg = "ACCELERATOR_BRAKE_ALT" if self.CP.carFingerprint not in (EV_CAR | HYBRID_CAR) else "BRAKE"
     ret.brakePressed = cp.vl[brake_msg]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
@@ -421,7 +419,7 @@ class CarState(CarStateBase):
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     gear_msg = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
-    brake_msg = "ACCELERATOR_BRAKE_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_PEDALS else "BRAKE"
+    brake_msg = "ACCELERATOR_BRAKE_ALT" if CP.carFingerprint not in (EV_CAR | HYBRID_CAR) else "BRAKE"
     signals = [
       ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
@@ -480,19 +478,19 @@ class CarState(CarStateBase):
       checks += [
         ("ACCELERATOR", 100),
       ]
-    elif CP.flags & HyundaiFlags.CANFD_ALT_PEDALS:
-      signals += [
-        ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_BRAKE_ALT"),
-      ]
-      checks += [
-        ("ACCELERATOR_BRAKE_ALT", 100),
-      ]
-    else:
+    elif CP.carFingerprint in HYBRID_CAR:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]
       checks += [
         ("ACCELERATOR_ALT", 100),
+      ]
+    else:
+      signals += [
+        ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_BRAKE_ALT"),
+      ]
+      checks += [
+        ("ACCELERATOR_BRAKE_ALT", 100),
       ]
 
     bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
