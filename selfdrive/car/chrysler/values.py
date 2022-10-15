@@ -166,14 +166,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
   ],
+  extra_ecus=[
+    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+  ],
 )
 
 FW_VERSIONS = {
-  CAR.PACIFICA_2019_HYBRID: {
-    (Ecu.hcp, 0x7e2, None): [],
-    (Ecu.abs, 0x7e4, None): [],
-  },
-
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294063AH',

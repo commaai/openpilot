@@ -240,6 +240,7 @@ selfdrive/locationd/models/live_kf.cc
 selfdrive/locationd/models/constants.py
 selfdrive/locationd/models/gnss_helpers.py
 
+selfdrive/locationd/torqued.py
 selfdrive/locationd/calibrationd.py
 
 system/logcatd/.gitignore
@@ -304,6 +305,8 @@ selfdrive/ui/soundd/soundd
 selfdrive/ui/soundd/.gitignore
 selfdrive/ui/translations/*.ts
 selfdrive/ui/translations/languages.json
+selfdrive/ui/update_translations.py
+selfdrive/ui/tests/test_translations.py
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -534,7 +537,7 @@ opendbc/honda_civic_ex_2022_can_generated.dbc
 
 opendbc/hyundai_canfd.dbc
 opendbc/hyundai_kia_generic.dbc
-opendbc/hyundai_kia_mando_front_radar.dbc
+opendbc/hyundai_kia_mando_front_radar_generated.dbc
 
 opendbc/mazda_2017.dbc
 
@@ -571,3 +574,4 @@ tinygrad_repo/tinygrad/ops.py
 tinygrad_repo/tinygrad/shapetracker.py
 tinygrad_repo/tinygrad/tensor.py
 tinygrad_repo/tinygrad/nn/__init__.py
+tinygrad_repo/tinygrad/nn/optim.py

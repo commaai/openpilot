@@ -15,7 +15,8 @@ int32_t read_20_bit(uint8_t b2, uint8_t b1, uint8_t b0) {
   return int32_t(combined) / (1 << 4);
 }
 
-I2CSensor::I2CSensor(I2CBus *bus, int gpio_nr, bool shared_gpio) : bus(bus), gpio_nr(gpio_nr), shared_gpio(shared_gpio) {}
+I2CSensor::I2CSensor(I2CBus *bus, int gpio_nr, bool shared_gpio) :
+  bus(bus), gpio_nr(gpio_nr), shared_gpio(shared_gpio) {}
 
 I2CSensor::~I2CSensor() {
   if (gpio_fd != -1) {
