@@ -217,7 +217,6 @@ class CarInterface(CarInterfaceBase):
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       # The ECM has a higher brake pressed threshold than the camera, causing an
       # ACC fault when you engage at a stop with your foot partially on the brake
-      # TODO: use ECM's standstill threshold
       if ret.vEgoRaw < 0.1 and ret.brake < 20:
         events.add(EventName.gmAccFaultedTemp)
 
