@@ -305,8 +305,14 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       event->accept();
       return;
     }
+  } else if (event->button() == Qt::RightButton) {
+    // reset zoom
+    if (can->isZoomed()) {
+      can->resetRange();
+      event->accept();
+      return;
+    }
   }
-  // TODO: right-click to reset zoom
   QChartView::mouseReleaseEvent(event);
   line_marker->setVisible(true);
 }
