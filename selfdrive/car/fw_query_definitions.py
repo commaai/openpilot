@@ -2,7 +2,7 @@
 import capnp
 from dataclasses import dataclass, field
 import struct
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 import panda.python.uds as uds
 
@@ -64,3 +64,5 @@ class FwQueryConfig:
   requests: List[Request]
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
+  # Ecus added for data collection, not to be fingerprinted on
+  extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
