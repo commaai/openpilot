@@ -212,7 +212,13 @@ class CarInterface(CarInterfaceBase):
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
-      events.add(car.CarEvent.EventName.belowSteerSpeed)
+      events.add(EventName.belowSteerSpeed)
+
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.pcmCruise:
+      # The ECM has a higher brake pressed threshold than the camera, causing an
+      # ACC fault when you engage at a stop with your foot partially on the brake
+      if ret.vEgoRaw < 0.1 and ret.brake < 20:
+        events.add(EventName.gmAccFaultedTemp)
 
     ret.events = events.to_msg()
 
