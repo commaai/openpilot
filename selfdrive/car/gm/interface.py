@@ -210,7 +210,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
 
     # TODO: (generically?) allow engaging with brake pressed (not regen paddle)
-    if ret.vEgo < self.CP.minEnableSpeed and not (ret.vEgoRaw < 0.1 and self.CS.brake_pressed):
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.vEgoRaw < 0.1 and ret.brake >= 20):
       events.add(EventName.belowEngageSpeed)
 
     ret.events = events.to_msg()
