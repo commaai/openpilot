@@ -1388,6 +1388,23 @@ FW_VERSIONS = {
       b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81HM6M1_0a0_K60',
     ],
   },
+  CAR.KIA_SPORTAGE_5TH_GEN: {
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00NQ5 MDPS C 1.00 1.01 56300-DW000 2111',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1030 662',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00HT6WA280BLHT6WAEH0A1TNQ5G25X0XSC1NS1vK3 ',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8739100-2S226\xf1\x81HM6M1_0a0_L70',
+    ],
+  }
 }
 
 CHECKSUM = {
