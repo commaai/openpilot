@@ -203,6 +203,11 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.timeConstantV = [1.4]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
+    elif candidate == CAR.KIA_SPORTAGE_5TH_GEN:
+      ret.mass = 1700. + STD_CARGO_KG  # weight from SX and above trims, average of FWD and AWD versions
+      ret.wheelbase = 2.756
+      ret.steerRatio = 13.6 # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H):
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
