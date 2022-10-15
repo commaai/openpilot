@@ -40,9 +40,6 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-        # 2021 Santa Cruz has accelerator pedal message on 0x100
-        if 0x100 in fingerprint[4]:
-          ret.flags |= HyundaiFlags.CANFD_ALT_PEDALS.value
         # 2021 Santa Cruz does not have 0x130; GEARS message on 0x40
         if 0x130 not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
@@ -325,8 +322,6 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
-      if ret.flags & HyundaiFlags.CANFD_ALT_PEDALS:
-        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_PEDALS
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
