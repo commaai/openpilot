@@ -283,6 +283,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 12.9
+    elif candidate == CAR.GENESIS_GV70_1ST_GEN:
+      ret.mass = 1950. + STD_CARGO_KG
+      ret.wheelbase = 2.87
+      ret.steerRatio = 14.6
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate == CAR.GENESIS_G80:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
