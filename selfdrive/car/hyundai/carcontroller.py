@@ -15,6 +15,8 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
+CANFD_MAX_ANGLE_FRAMES = 33
+CANFD_MAX_ANGLE_CONSECUTIVE_FRAMES = 1
 
 
 def process_hud_alert(enabled, fingerprint, hud_control):
@@ -52,6 +54,14 @@ class CarController:
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
+
+    if self.CP.carFingerprint in CANFD_CAR:
+      self.MAX_ANGLE_FRAMES = CANFD_MAX_ANGLE_FRAMES
+      self.MAX_ANGLE_CONSECUTIVE_FRAMES = CANFD_MAX_ANGLE_CONSECUTIVE_FRAMES
+    else:
+      self.MAX_ANGLE_FRAMES = MAX_ANGLE_CONSECUTIVE_FRAMES
+      self.MAX_ANGLE_CONSECUTIVE_FRAMES = MAX_ANGLE_FRAMES
+
 
   def update(self, CC, CS):
     actuators = CC.actuators
@@ -98,10 +108,10 @@ class CarController:
       self.angle_limit_counter = 0
 
     # Cut steer actuation bit for two frames and hold torque with induced temporary fault
-    torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
+    torque_fault = CC.latActive and self.angle_limit_counter > self.MAX_ANGLE_FRAMES
     lat_active = CC.latActive and not torque_fault
 
-    if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
+    if self.angle_limit_counter >= self.MAX_ANGLE_FRAMES + self.MAX_ANGLE_CONSECUTIVE_FRAMES:
       self.angle_limit_counter = 0
 
     # CAN-FD platforms
