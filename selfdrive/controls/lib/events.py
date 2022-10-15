@@ -648,10 +648,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("Press Set to Engage"),
   },
 
-  EventName.depressBrakePedal: {
-    ET.NO_ENTRY: NoEntryAlert("Depress Brake Pedal to Engage"),
-  },
-
   EventName.wrongCruiseMode: {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
     ET.NO_ENTRY: NoEntryAlert("Adaptive Cruise Disabled"),
@@ -813,6 +809,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Faulted"),
     ET.PERMANENT: NormalPermanentAlert("Cruise Faulted", ""),
     ET.NO_ENTRY: NoEntryAlert("Cruise Faulted"),
+  },
+
+  EventName.gmAccFaultedTemp: {
+    ET.NO_ENTRY: NoEntryAlert("Cruise Temporarily Faulted"),
   },
 
   EventName.controlsMismatch: {
