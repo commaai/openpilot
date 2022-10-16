@@ -45,10 +45,11 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
+    ret.autoResumeSng = False
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -70,10 +71,11 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
-    ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+    # Some GMs need some tolerance above 10 kph to avoid a fault
+    ret.minSteerSpeed = 10.1 * CV.KPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
@@ -137,25 +139,25 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1601. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.centerToFront = ret.wheelbase * 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate == CAR.BOLT_EUV:
+    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
       ret.minEnableSpeed = -1
       ret.mass = 1669. + STD_CARGO_KG
-      ret.wheelbase = 2.675
+      ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
-      ret.centerToFront = ret.wheelbase * 0.4
+      ret.centerToFront = 2.15  # measured
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
@@ -167,6 +169,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * 0.5
       tire_stiffness_factor = 1.0
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.EQUINOX:
+      ret.minEnableSpeed = -1
+      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.72
+      ret.steerRatio = 14.4
+      ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # TODO: get actual value, for now starting with reasonable value for
@@ -202,7 +212,13 @@ class CarInterface(CarInterfaceBase):
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
-      events.add(car.CarEvent.EventName.belowSteerSpeed)
+      events.add(EventName.belowSteerSpeed)
+
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.pcmCruise:
+      # The ECM has a higher brake pressed threshold than the camera, causing an
+      # ACC fault when you engage at a stop with your foot partially on the brake
+      if ret.vEgoRaw < 0.1 and ret.brake < 20:
+        events.add(EventName.gmAccFaultedTemp)
 
     ret.events = events.to_msg()
 

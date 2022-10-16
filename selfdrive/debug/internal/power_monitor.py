@@ -59,6 +59,6 @@ if __name__ == '__main__':
     print(f"  {(stop_time - start_time).total_seconds():.2f} Seconds     {voltage_average[1]} samples")
     print("----------------------------------------------------------------")
 
-    # reenable charging
+    # re-enable charging
     os.system('echo "1" > /sys/class/power_supply/battery/charging_enabled')
     print("charging enabled\n")

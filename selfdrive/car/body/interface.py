@@ -8,7 +8,7 @@ from selfdrive.car.body.values import SPEED_FROM_RPM
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=None, car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=None, car_fw=None, experimental_long=False):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 

@@ -38,14 +38,14 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #else
   s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
 #endif
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true);
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true, false, context);
 
 #ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
+  s->m->addRecurrent(&s->feature_buffer[0], TEMPORAL_SIZE);
 #endif
 
 #ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+  s->m->addDesire(s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
 
 #ifdef TRAFFIC_CONVENTION
@@ -56,18 +56,20 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
                               const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
 #ifdef DESIRE
+  std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
       if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[i] = desire_in[i];
+        s->pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN-1)+i] = desire_in[i];
       } else {
-        s->pulse_desire[i] = 0.0;
+        s->pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN-1)+i] = 0.0;
       }
       s->prev_desire[i] = desire_in[i];
     }
   }
+LOGT("Desire enqueued");
 #endif
 
   int rhd_idx = is_rhd;
@@ -92,11 +94,18 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
   s->m->execute();
   LOGT("Execution finished");
 
+  #ifdef TEMPORAL
+    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
+    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+    LOGT("Features enqueued");
+  #endif
+
   return (ModelOutput*)&s->output;
 }
 
 void model_free(ModelState* s) {
   delete s->frame;
+  delete s->wide_frame;
 }
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
@@ -202,6 +211,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
   std::array<float, TRAJECTORY_SIZE> rot_x, rot_y, rot_z;
+  std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
   for(int i=0; i<TRAJECTORY_SIZE; i++) {
@@ -214,6 +224,9 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
     vel_x[i] = plan.mean[i].velocity.x;
     vel_y[i] = plan.mean[i].velocity.y;
     vel_z[i] = plan.mean[i].velocity.z;
+    acc_x[i] = plan.mean[i].acceleration.x;
+    acc_y[i] = plan.mean[i].acceleration.y;
+    acc_z[i] = plan.mean[i].acceleration.z;
     rot_x[i] = plan.mean[i].rotation.x;
     rot_y[i] = plan.mean[i].rotation.y;
     rot_z[i] = plan.mean[i].rotation.z;
@@ -224,6 +237,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
 
   fill_xyzt(framed.initPosition(), T_IDXS_FLOAT, pos_x, pos_y, pos_z, pos_x_std, pos_y_std, pos_z_std);
   fill_xyzt(framed.initVelocity(), T_IDXS_FLOAT, vel_x, vel_y, vel_z);
+  fill_xyzt(framed.initAcceleration(), T_IDXS_FLOAT, acc_x, acc_y, acc_z);
   fill_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rot_x, rot_y, rot_z);
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }

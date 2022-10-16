@@ -65,7 +65,7 @@ class TestLaikad(unittest.TestCase):
     cls.first_gps_time = first_gps_time
 
   def setUp(self):
-    Params().delete(EPHEMERIS_CACHE)
+    Params().remove(EPHEMERIS_CACHE)
 
   def test_fetch_orbits_non_blocking(self):
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
@@ -226,7 +226,7 @@ class TestLaikad(unittest.TestCase):
     # Test cache with no ephemeris
     laikad.cache_ephemeris(t=GPSTime(0, 0))
     wait_for_cache()
-    Params().delete(EPHEMERIS_CACHE)
+    Params().remove(EPHEMERIS_CACHE)
 
     laikad.astro_dog.get_navs(self.first_gps_time)
     laikad.fetch_orbits(self.first_gps_time, block=True)

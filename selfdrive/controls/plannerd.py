@@ -3,7 +3,7 @@ from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
 from system.swaglog import cloudlog
-from selfdrive.controls.lib.longitudinal_planner import Planner
+from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.lib.lateral_planner import LateralPlanner
 import cereal.messaging as messaging
 
@@ -16,13 +16,8 @@ def plannerd_thread(sm=None, pm=None):
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
-  use_lanelines = False
-  wide_camera = params.get_bool('WideCameraOnly')
-
-  cloudlog.event("e2e mode", on=use_lanelines)
-
-  longitudinal_planner = Planner(CP)
-  lateral_planner = LateralPlanner(CP, use_lanelines=use_lanelines, wide_camera=wide_camera)
+  longitudinal_planner = LongitudinalPlanner(CP)
+  lateral_planner = LateralPlanner(CP)
 
   if sm is None:
     sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],

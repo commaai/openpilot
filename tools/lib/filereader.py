@@ -1,7 +1,7 @@
 import os
 from tools.lib.url_file import URLFile
 
-DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.internal/")
+DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 def FileReader(fn, debug=False):
   if fn.startswith("cd:/"):

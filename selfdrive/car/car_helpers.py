@@ -81,8 +81,8 @@ def fingerprint(logcan, sendcan):
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
 
-  if not fixed_fingerprint and not skip_fw_query:
-    # Vin query only reliably works thorugh OBDII
+  if not skip_fw_query:
+    # Vin query only reliably works through OBDII
     bus = 1
 
     cached_params = Params().get("CarParamsCache")
@@ -95,16 +95,19 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Using cached CarParams")
       vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
+      cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
+      vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs)
+      cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
     vin, vin_rx_addr = VIN_UNKNOWN, 0
     exact_fw_match, fw_candidates, car_fw = True, set(), []
+    cached = False
 
   if not is_valid_vin(vin):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
@@ -165,7 +168,7 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match,
+  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
@@ -177,10 +180,10 @@ def get_car(logcan, sendcan):
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
-  disable_radar = Params().get_bool("DisableRadar")
+  experimental_long = Params().get_bool("ExperimentalLongitudinalEnabled")
 
   CarInterface, CarController, CarState = interfaces[candidate]
-  CP = CarInterface.get_params(candidate, fingerprints, car_fw, disable_radar)
+  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source

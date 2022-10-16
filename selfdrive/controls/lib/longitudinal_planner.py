@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-from common.numpy_fast import interp
+from common.numpy_fast import clip, interp
 
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
+from common.params import Params
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longcontrol import LongCtrlState
@@ -17,8 +18,8 @@ from system.swaglog import cloudlog
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2  # car smoothly decel at .2m/s^2 when user is distracted
 A_CRUISE_MIN = -1.2
-A_CRUISE_MAX_VALS = [1.2, 1.2, 0.8, 0.6]
-A_CRUISE_MAX_BP = [0., 15., 25., 40.]
+A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
+A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -44,10 +45,14 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-class Planner:
+class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
+    self.params = Params()
+    self.param_read_counter = 0
+
     self.mpc = LongitudinalMpc()
+    self.read_param()
 
     self.fcw = False
 
@@ -59,9 +64,31 @@ class Planner:
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
 
-  def update(self, sm):
-    v_ego = sm['carState'].vEgo
+  def read_param(self):
+    e2e = self.params.get_bool('EndToEndLong') and self.CP.openpilotLongitudinalControl
+    self.mpc.mode = 'blended' if e2e else 'acc'
 
+  def parse_model(self, model_msg):
+    if (len(model_msg.position.x) == 33 and
+       len(model_msg.velocity.x) == 33 and
+       len(model_msg.acceleration.x) == 33):
+      x = np.interp(T_IDXS_MPC, T_IDXS, model_msg.position.x)
+      v = np.interp(T_IDXS_MPC, T_IDXS, model_msg.velocity.x)
+      a = np.interp(T_IDXS_MPC, T_IDXS, model_msg.acceleration.x)
+      j = np.zeros(len(T_IDXS_MPC))
+    else:
+      x = np.zeros(len(T_IDXS_MPC))
+      v = np.zeros(len(T_IDXS_MPC))
+      a = np.zeros(len(T_IDXS_MPC))
+      j = np.zeros(len(T_IDXS_MPC))
+    return x, v, a, j
+
+  def update(self, sm, read=True):
+    if self.param_read_counter % 50 == 0 and read:
+      self.read_param()
+    self.param_read_counter += 1
+
+    v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
@@ -75,15 +102,17 @@ class Planner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
+    accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+
     if reset_state:
       self.v_desired_filter.x = v_ego
-      self.a_desired = 0.0
+      # Clip aEgo to cruise limits to prevent large accelerations when becoming active
+      self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
 
-    accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
-    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
@@ -95,14 +124,16 @@ class Planner:
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
+    x, v, a, j = self.parse_model(sm['modelV2'])
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, x, v, a, j)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 5
+    # TODO write fcw in e2e_long mode
+    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5
     if self.fcw:
       cloudlog.info("FCW triggered")
 

@@ -8,7 +8,7 @@ Before getting started, make sure you have set up the openpilot Ubuntu developme
 
 ### Policy
 
-Most of the languages supported by openpilot come from and are maintained by the community via pull requests. A pull request likely to be merged is one that [fixes a translation or adds missing translations.](https://github.com/commaai/openpilot/blob/lang-policy/selfdrive/ui/translations/README.md#improving-an-existing-language)
+Most of the languages supported by openpilot come from and are maintained by the community via pull requests. A pull request likely to be merged is one that [fixes a translation or adds missing translations.](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/README.md#improving-an-existing-language)
 
 We also generally merge pull requests adding support for a new language if there are community members willing to maintain it. Maintaining a language is ensuring quality and completion of translations before each openpilot release.
 

@@ -43,6 +43,12 @@ carla = {version = "==0.9.13", markers="platform_system != 'Darwin'"}
 ft4222 = "*"
 pandas = "*"
 tabulate = "*"
+types-pyyaml = "*"
+lxml = "*"
+types-atomicwrites = "*"
+types-pycurl = "*"
+types-requests = "*"
+types-certifi = "*"
 
 [packages]
 atomicwrites = "*"
@@ -88,6 +94,7 @@ urllib3 = "*"
 utm = "*"
 websocket_client = "*"
 hatanaka = "==2.4"
+PySide2 = "*"
 
 [requires]
 python_version = "3.8"
