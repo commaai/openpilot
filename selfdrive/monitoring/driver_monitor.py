@@ -31,8 +31,8 @@ class DRIVER_MONITOR_SETTINGS():
     self._SG_THRESHOLD = 0.9
     self._BLINK_THRESHOLD = 0.895
 
-    self._EE_THRESH11 = 0.3
-    self._EE_THRESH12 = 3.25
+    self._EE_THRESH11 = 0.275
+    self._EE_THRESH12 = 3.0
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 
@@ -203,7 +203,7 @@ class DriverStatus():
     if (self.blink.left_blink + self.blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD:
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
-    if False and self.ee1_calibrated:
+    if self.ee1_calibrated:
       ee1_dist = self.eev1 > self.ee1_offseter.filtered_stat.M * self.settings._EE_THRESH12
     else:
       ee1_dist = self.eev1 > self.settings._EE_THRESH11
