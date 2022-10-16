@@ -67,7 +67,7 @@ jobs:
   build_all:
     name: build all
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 30
     steps:
     - uses: actions/checkout@v3
       with:
@@ -181,7 +181,7 @@ jobs:
   valgrind:
     name: valgrind
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
@@ -199,7 +199,7 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 40
     steps:
     - uses: actions/checkout@v3
       with:
@@ -241,7 +241,7 @@ jobs:
   process_replay:
     name: process replay
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 25
     steps:
     - uses: actions/checkout@v3
       with:
@@ -278,7 +278,7 @@ jobs:
   model_replay_onnx:
     name: model replay onnx
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
@@ -288,6 +288,7 @@ jobs:
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
     - name: Run replay
+      timeout-minutes: 2
       run: |
         ${{ env.RUN_CL }} "scons -j$(nproc) && \
                            ONNXCPU=1 CI=1 coverage run \
@@ -297,7 +298,7 @@ jobs:
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
@@ -312,6 +313,7 @@ jobs:
                         cd selfdrive/test/longitudinal_maneuvers && \
                         coverage run ./test_longitudinal.py && \
                         coverage xml"
+      timeout-minutes: 2
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - uses: actions/upload-artifact@v2
@@ -324,7 +326,7 @@ jobs:
   test_cars:
     name: cars
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -343,6 +345,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
+      timeout-minutes: 12
       run: |
         ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
                         coverage xml && \
@@ -356,7 +359,7 @@ jobs:
   car_docs_diff:
     name: comment on PR with car docs diff
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3
