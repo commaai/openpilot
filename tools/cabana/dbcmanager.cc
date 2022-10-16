@@ -1,5 +1,6 @@
 #include "tools/cabana/dbcmanager.h"
 
+#include <sstream>
 #include <QVector>
 
 DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
@@ -9,6 +10,17 @@ DBCManager::~DBCManager() {}
 void DBCManager::open(const QString &dbc_file_name) {
   dbc_name = dbc_file_name;
   dbc = const_cast<DBC *>(dbc_lookup(dbc_name.toStdString()));
+  msg_map.clear();
+  for (auto &msg : dbc->msgs) {
+    msg_map[msg.address] = &msg;
+  }
+  emit DBCFileChanged();
+}
+
+void DBCManager::open(const QString &name, const QString &content) {
+  this->dbc_name = name;
+  std::istringstream stream(content.toStdString());
+  dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
   msg_map.clear();
   for (auto &msg : dbc->msgs) {
     msg_map[msg.address] = &msg;
