@@ -60,12 +60,10 @@ jobs:
       run: eval "$BUILD"
     - name: Build base cl image
       run: eval "$BUILD_CL"
-    - name: Pull latest simulator image
-      run: docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
     - name: Build simulator image
-      run: docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+      run: DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
     - name: Push to container registry
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      #if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
@@ -82,7 +80,7 @@ jobs:
       run: |
         DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     - name: Push docker container
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
