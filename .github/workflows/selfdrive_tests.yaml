@@ -38,7 +38,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        #fetch-depth: 0
         submodules: true
     - name: Build devel
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
@@ -142,7 +142,7 @@ jobs:
   docker_push:
     name: docker push
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 22
     #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     #needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
@@ -151,12 +151,14 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
+      timeout-minutes: 13
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
     - name: Build CL Docker image
       run: eval "$BUILD_CL"
+      timeout-minutes: 4
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
@@ -165,7 +167,7 @@ jobs:
   static_analysis:
     name: static analysis
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
@@ -173,6 +175,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
+      timeout-minutes: 4
       run: ${{ env.RUN }} "pre-commit run --all"
 
   valgrind:
