@@ -2,6 +2,7 @@
 
 #include <QCompleter>
 #include <QDialogButtonBox>
+#include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
@@ -120,6 +121,10 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
   } else if (role == Qt::UserRole) {
     return std::next(can->can_msgs.begin(), index.row()).key();
+  } else if (role == Qt::FontRole) {
+    if (index.column() == 3) {
+      return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    }
   }
   return {};
 }
