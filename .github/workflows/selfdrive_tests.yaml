@@ -253,10 +253,12 @@ jobs:
       with:
         path: /tmp/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"
     - name: Print diff
       if: always()
@@ -270,8 +272,7 @@ jobs:
     - name: Upload reference logs
       if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
@@ -287,11 +288,13 @@ jobs:
     - name: Build Docker image
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "scons -j$(nproc) && \
-                           ONNXCPU=1 CI=1 coverage run \
+        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run \
                            selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
                            coverage xml"
 
@@ -357,7 +360,7 @@ jobs:
       uses: codecov/codecov-action@v2
 
   car_docs_diff:
-    name: comment on PR with car docs diff
+    name: PR comments
     runs-on: ubuntu-20.04
     timeout-minutes: 20
     if: github.event_name == 'pull_request'
