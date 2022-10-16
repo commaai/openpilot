@@ -174,7 +174,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
-      timeout-minutes: 4
+      timeout-minutes: 5
       run: ${{ env.RUN }} "pre-commit run --all"
 
   valgrind:
@@ -222,7 +222,6 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \
-                        $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
@@ -276,8 +275,8 @@ jobs:
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
-  model_replay_onnx:
-    name: model replay onnx
+  test_modeld:
+    name: model tests
     runs-on: ubuntu-20.04
     timeout-minutes: 20
     steps:
@@ -291,12 +290,18 @@ jobs:
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run replay
+    - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run \
-                           selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
+    - name: Run unit tests
+      timeout-minutes: 5
+      run: |
+        ${{ env.RUN_CL }} "$UNIT_TEST selfdrive/modeld && \
+                           coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   test_longitudinal:
     name: longitudinal
