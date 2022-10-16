@@ -5,7 +5,6 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QSortFilterProxyModel>
 #include <QVBoxLayout>
 
 #include "tools/cabana/dbcmanager.h"
@@ -42,11 +41,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // message table
   table_widget = new QTableView(this);
   model = new MessageListModel(this);
-  QSortFilterProxyModel *proxy_model = new QSortFilterProxyModel(this);
-  proxy_model->setSourceModel(model);
-  proxy_model->setFilterCaseSensitivity(Qt::CaseInsensitive);
-  proxy_model->setDynamicSortFilter(false);
-  table_widget->setModel(proxy_model);
+  filter_model = new QSortFilterProxyModel(this);
+  filter_model->setSourceModel(model);
+  filter_model->setFilterCaseSensitivity(Qt::CaseInsensitive);
+  filter_model->setDynamicSortFilter(false);
+  table_widget->setModel(filter_model);
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -60,7 +59,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(table_widget);
 
   // signals/slots
-  QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
+  QObject::connect(filter, &QLineEdit::textChanged, this, &MessagesWidget::filterStringChanged);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
   QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
@@ -83,6 +82,11 @@ void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
   if (current.isValid()) {
     emit msgSelectionChanged(table_widget->model()->data(current, Qt::UserRole).toString());
   }
+}
+
+void MessagesWidget::filterStringChanged(const QString &text) {
+  filter_model->setFilterKeyColumn(text.contains(':') ? 1 : 0);
+  filter_model->setFilterFixedString(text);
 }
 
 // MessageListModel

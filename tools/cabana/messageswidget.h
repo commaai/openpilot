@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
 #include <QTableView>
 
 #include "tools/cabana/canmessages.h"
@@ -28,11 +29,13 @@ public:
 
 public slots:
   void dbcSelectionChanged(const QString &dbc_file);
+  void filterStringChanged(const QString &text);
 
 signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
   QTableView *table_widget;
+  QSortFilterProxyModel *filter_model;
   MessageListModel *model;
 };
