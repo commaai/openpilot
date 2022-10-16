@@ -49,9 +49,9 @@ def create_buttons(packer, CP, cnt, btn):
     "CRUISE_BUTTONS": btn,
   }
   
-   if CP.flags & HyundaiFlags.CANFD_HDA2:
+  if CP.flags & HyundaiFlags.CANFD_HDA2:
     ret.append(packer.make_can_msg("CRUISE_BUTTONS",5, values))
-   else:
+  else:
     ret.append(packer.make_can_msg("CRUISE_BUTTONS",6, values))
   
   return ret 
