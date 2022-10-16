@@ -1,19 +1,24 @@
 #include "tools/cabana/historylog.h"
 
+#include <QFontDatabase>
 #include <QHeaderView>
 #include <QVBoxLayout>
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
+  auto msg = dbc()->msg(msg_id);
   if (role == Qt::DisplayRole) {
     const auto &can_msgs = can->messages(msg_id);
     if (index.row() < can_msgs.size()) {
       const auto &can_data = can_msgs[index.row()];
-      auto msg = dbc()->msg(msg_id);
       if (msg && index.column() < msg->sigs.size()) {
         return get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), msg->sigs[index.column()]);
       } else {
         return toHex(can_data.dat);
       }
+    }
+  } else if (role == Qt::FontRole) {
+    if (index.column() == 0 && !(msg && msg->sigs.size() > 0)) {
+      return QFontDatabase::systemFont(QFontDatabase::FixedFont);
     }
   }
   return {};

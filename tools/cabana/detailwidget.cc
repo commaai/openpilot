@@ -1,6 +1,7 @@
 #include "tools/cabana/detailwidget.h"
 
 #include <QDialogButtonBox>
+#include <QFontDatabase>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QMessageBox>
@@ -179,7 +180,7 @@ void BinaryView::setMessage(const QString &message_id) {
       item->setFlags(item->flags() ^ Qt::ItemIsEditable);
       item->setTextAlignment(Qt::AlignCenter);
       if (j == 8) {
-        QFont font;
+        QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
         font.setBold(true);
         item->setFont(font);
         item->setFlags(item->flags() ^ Qt::ItemIsSelectable);
