@@ -156,7 +156,7 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in EV_CAR:
       ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    else:
+    elif self.CP.carFingerprint in HYBRID_CAR:
       ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
     ret.gasPressed = ret.gas > 1e-5
     ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
@@ -466,7 +466,7 @@ class CarState(CarStateBase):
       checks += [
         ("ACCELERATOR", 100),
       ]
-    else:
+    elif CP.carFingerprint in HYBRID_CAR:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]

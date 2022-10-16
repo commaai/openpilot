@@ -1,4 +1,3 @@
-
 #include "tools/cabana/detailwidget.h"
 
 #include <QDialogButtonBox>
@@ -145,6 +144,7 @@ void DetailWidget::removeSignal() {
 
 BinaryView::BinaryView(QWidget *parent) : QTableWidget(parent) {
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->hide();
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setColumnCount(9);
