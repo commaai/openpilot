@@ -52,9 +52,8 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 void HistoryLogModel::updateState() {
   if (msg_id.isEmpty()) return;
 
-  const auto &can_msgs = can->messages(msg_id);
   int prev_row_count = row_count;
-  row_count = can_msgs.size();
+  row_count = can->messages(msg_id).size();
   int delta = row_count - prev_row_count;
   if (delta > 0) {
     beginInsertRows({}, prev_row_count, row_count - 1);
@@ -64,7 +63,7 @@ void HistoryLogModel::updateState() {
     endRemoveRows();
   }
   if (row_count > 0) {
-    emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1));
+    emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1), {Qt::DisplayRole});
     emit headerDataChanged(Qt::Vertical, 0, row_count - 1);
   }
 }
