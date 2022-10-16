@@ -39,7 +39,6 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
 
 void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
-    ++counters[it.key()];
     auto &msgs = can_msgs[it.key()];
     const auto &new_msgs = it.value();
     if (new_msgs.size() == settings.can_msg_log_size || msgs.empty()) {
@@ -82,6 +81,9 @@ bool CANMessages::eventFilter(const Event *event) {
       data.ts = current_sec;
       data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
+
+      std::lock_guard lk(counters_mutex);
+      ++counters[id];
     }
 
     if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / settings.fps) {
@@ -96,6 +98,9 @@ bool CANMessages::eventFilter(const Event *event) {
 void CANMessages::seekTo(double ts) {
   seeking = true;
   replay->seekTo(ts, false);
+  std::lock_guard lk(counters_mutex);
+  counters.clear();
+  counters_begin_sec = ts;
   seeking = false;
 }
 
@@ -128,6 +133,11 @@ void CANMessages::resetRange() {
 
 void CANMessages::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
+}
+
+uint32_t CANMessages::freq(const QString &id) {
+  std::lock_guard lk(counters_mutex);
+  return ((current_sec - counters_begin_sec) > 0) ? counters[id] / (current_sec - counters_begin_sec) : 0;
 }
 
 // Settings

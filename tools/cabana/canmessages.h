@@ -41,7 +41,7 @@ public:
   void resetRange();
   void setRange(double min, double max);
   bool eventFilter(const Event *event);
-
+  uint32_t freq(const QString &id);
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
@@ -65,12 +65,15 @@ signals:
 public:
   QMap<QString, std::deque<CanData>> can_msgs;
   std::unique_ptr<QHash<QString, std::deque<CanData>>> received_msgs = nullptr;
-  QHash<QString, uint32_t> counters;
 
 protected:
   void process(QHash<QString, std::deque<CanData>> *);
   void segmentsMerged();
   void settingChanged();
+
+  std::mutex counters_mutex;
+  double counters_begin_sec = 0.;
+  QHash<QString, uint32_t> counters;
 
   std::atomic<double> current_sec = 0.;
   std::atomic<bool> seeking = false;
