@@ -14,7 +14,6 @@ public:
   void open(const QString &dbc_file_name);
   void save(const QString &dbc_file_name);
 
-  const Signal *signal(const QString &id, const QString &sig_name) const;
   void addSignal(const QString &id, const Signal &sig);
   void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
   void removeSignal(const QString &id, const QString &sig_name);
@@ -31,9 +30,9 @@ public:
   }
 
 signals:
-  void signalAdded(const QString &id, const QString &sig_name);
-  void signalRemoved(const QString &id, const QString &sig_name);
-  void signalUpdated(const QString &id, const QString &sig_name);
+  void signalAdded(const Signal *sig);
+  void signalRemoved(const Signal *sig);
+  void signalUpdated(const Signal *sig);
   void msgUpdated(const QString &id);
   void DBCFileChanged();
 
