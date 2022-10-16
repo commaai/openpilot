@@ -11,7 +11,7 @@
 #include <QVBoxLayout>
 
 inline QString formatTime(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh::mm::ss" : "mm::ss");
+  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 
 VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
