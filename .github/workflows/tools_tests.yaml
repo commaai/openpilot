@@ -2,6 +2,8 @@ name: tools
 
 on:
   push:
+    branches-ignore:
+      - 'testing-closet*'
   pull_request:
 
 concurrency:
@@ -28,7 +30,7 @@ jobs:
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
