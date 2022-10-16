@@ -1,13 +1,8 @@
 #pragma once
 
-#include <QDialog>
-#include <QLabel>
-#include <QPushButton>
 #include <QScrollArea>
 #include <QStyledItemDelegate>
 #include <QTableView>
-#include <QVBoxLayout>
-#include <QWidget>
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
@@ -38,7 +33,7 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
 
 struct Item {
@@ -55,30 +50,33 @@ private:
   std::vector<Item> items;
 };
 
-class BinaryView : public QWidget {
-  Q_OBJECT
-
+class BinarySelectionModel : public QItemSelectionModel {
 public:
-  BinaryView(QWidget *parent);
+  BinarySelectionModel(QAbstractItemModel *model = nullptr) : QItemSelectionModel(model) {}
+  void select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) override;
+};
+
+class BinaryView : public QTableView {
+  Q_OBJECT
+public:
+  BinaryView(QWidget *parent = nullptr);
+  void mouseReleaseEvent(QMouseEvent *event) override;
   void setMessage(const QString &message_id);
   void updateState();
+signals:
+  void cellsSelected(int start_bit, int size);
 
 private:
   QString msg_id;
   BinaryViewModel *model;
-  QTableView *table;
 };
 
 class EditMessageDialog : public QDialog {
   Q_OBJECT
 
 public:
-  EditMessageDialog(const QString &msg_id, QWidget *parent);
+  EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
 
-protected:
-  void save();
-
-  QString msg_id;
   QLineEdit *name_edit;
   QSpinBox *size_spin;
 };
@@ -98,24 +96,24 @@ class DetailWidget : public QWidget {
 public:
   DetailWidget(QWidget *parent);
   void setMessage(const QString &message_id);
+  void dbcMsgChanged();
 
 signals:
-  void showChart(const QString &msg_id, const QString &sig_name);
-
-private slots:
-  void showForm();
+  void showChart(const QString &msg_id, const Signal *sig);
+  void removeChart(const Signal *sig);
 
 private:
-  void addSignal();
+  void addSignal(int start_bit, int size);
+  void saveSignal();
+  void removeSignal();
   void editMsg();
+  void showForm();
   void updateState();
 
   QString msg_id;
   QLabel *name_label, *time_label;
   QPushButton *edit_btn;
-  QVBoxLayout *signal_edit_layout;
-  QWidget *signals_header;
-  QList<SignalEdit *> signal_forms;
+  QWidget *signals_container;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
