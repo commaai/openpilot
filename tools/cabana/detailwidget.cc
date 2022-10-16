@@ -1,12 +1,12 @@
 #include "tools/cabana/detailwidget.h"
 
 #include <QDialogButtonBox>
-#include <QFontDatabase>
 #include <QFormLayout>
-#include <QHeaderView>
 #include <QMessageBox>
-#include <QScrollBar>
 #include <QTimer>
+
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
 
 // DetailWidget
 
@@ -139,138 +139,6 @@ void DetailWidget::removeSignal() {
     dbc()->removeSignal(msg_id, sig_form->sig_name);
     dbcMsgChanged();
   }
-}
-
-// BinaryView
-
-void BinaryViewModel::setMessage(const QString &message_id) {
-  msg_id = message_id;
-  beginResetModel();
-  msg_id = message_id;
-  const Msg *msg = dbc()->msg(msg_id);
-  row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
-  items.clear();
-  items.resize(row_count * column_count);
-  if (msg) {
-    for (int i = 0; i < msg->sigs.size(); ++i) {
-      const auto &sig = msg->sigs[i];
-      int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
-      for (int j = start; j <= start + sig.size - 1; ++j) {
-        int idx = column_count * (j / (column_count - 1)) + j % (column_count - 1);
-        if (j == sig.msb) {
-          items[idx].is_msb = true;
-        } else if (j == sig.lsb) {
-          items[idx].is_lsb = true;
-        }
-        items[idx].bg_color = QColor(getColor(i));
-      }
-    }
-  }
-  endResetModel();
-  updateState();
-}
-
-QModelIndex BinaryViewModel::index(int row, int column, const QModelIndex &parent) const {
-  return createIndex(row, column, (void *)&items[row * column_count + column]);
-}
-
-void BinaryViewModel::updateState() {
-  if (msg_id.isEmpty()) return;
-
-  const auto &binary = can->lastMessage(msg_id).dat;
-  char hex[3] = {'\0'};
-  for (int i = 0; i < binary.size(); ++i) {
-    for (int j = 0; j < column_count - 1; ++j) {
-      items[i * column_count + j].val = QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0');
-    }
-    hex[0] = toHex(binary[i] >> 4);
-    hex[1] = toHex(binary[i] & 0xf);
-    items[i * column_count + 8].val = hex;
-  }
-
-  emit dataChanged(index(0, 0), index(row_count - 1, 8));
-}
-
-QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  return role == Qt::DisplayRole && orientation == Qt::Vertical ? QVariant(section + 1) : QVariant();
-}
-
-QVariant BinaryViewModel::data(const QModelIndex &index, int role) const { 
-  if (role == Qt::DisplayRole) {
-    return items[index.row() * column_count + index.column()].val;
-  }
-  return {};
-}
-
-void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  painter->save();
-  QStyleOptionViewItem opt = option;
-  auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  painter->fillRect(opt.rect, item->bg_color);
-  if (index.column() == 8) {
-    QFont f;
-    f.setBold(true);
-    painter->setFont(f);
-  }
-  painter->drawText(opt.rect, Qt::AlignCenter, item->val);
-  if (item->is_msb || item->is_lsb) {
-    QFont f;
-    f.setPointSize(8);
-    painter->setPen(Qt::black);
-    painter->drawText(opt.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
-  }
-  painter->restore();
-}
-
-BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
-  model = new BinaryViewModel(this);
-  setModel(model);
-  setItemDelegate(new BinaryItemDelegate(this));
-  horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  horizontalHeader()->hide();
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-  // replace selection model
-  auto old_model = selectionModel();
-  setSelectionModel(new BinarySelectionModel(model));
-  delete old_model;
-}
-
-void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
-  QTableView::mouseReleaseEvent(event);
-
-  if (auto indexes = selectedIndexes(); !indexes.isEmpty()) {
-    int start_bit = indexes.first().row() * 8 + indexes.first().column();
-    int size = indexes.back().row() * 8 + indexes.back().column() - start_bit + 1;
-    emit cellsSelected(start_bit, size);
-  }
-}
-
-void BinaryView::setMessage(const QString &message_id) {
-  msg_id = message_id;
-  model->setMessage(message_id);
-  resizeRowsToContents();
-  setFixedHeight(rowHeight(0) * std::min(model->rowCount(), 8) + 2);
-  clearSelection();
-  updateState();
-}
-
-void BinaryView::updateState() {
-  model->updateState();
-}
-
-void BinarySelectionModel::select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) {
-  QItemSelection new_selection = selection;
-  if (auto indexes = selection.indexes(); !indexes.isEmpty()) {
-    auto [begin_idx, end_idx] = (QModelIndex[]){indexes.first(), indexes.back()};
-    for (int row = begin_idx.row(); row <= end_idx.row(); ++row) {
-      int left_col = (row == begin_idx.row()) ? begin_idx.column() : 0;
-      int right_col = (row == end_idx.row()) ? end_idx.column() : 7;
-      new_selection.merge({model()->index(row, left_col), model()->index(row, right_col)}, command);
-    }
-  }
-  QItemSelectionModel::select(new_selection, command);
 }
 
 // EditMessageDialog

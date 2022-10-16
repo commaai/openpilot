@@ -1,75 +1,10 @@
 #pragma once
 
 #include <QScrollArea>
-#include <QStyledItemDelegate>
-#include <QTableView>
 
-#include "opendbc/can/common.h"
-#include "opendbc/can/common_dbc.h"
-#include "tools/cabana/canmessages.h"
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
-
-class BinaryItemDelegate : public QStyledItemDelegate {
-  Q_OBJECT
-
-public:
-  BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
-  void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
-    QSize sz = QStyledItemDelegate::sizeHint(option, index);
-    return {sz.width(), 40};
-  }
-};
-
-class BinaryViewModel : public QAbstractTableModel {
-Q_OBJECT
-
-public:
-  BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
-  void updateState();
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
-
-struct Item {
-    QColor bg_color = QColor(Qt::white);
-    bool is_msb = false;
-    bool is_lsb = false;
-    QString val = "0";
-  };
-
-private:
-  QString msg_id;
-  int row_count = 0;
-  const int column_count = 9;
-  std::vector<Item> items;
-};
-
-class BinarySelectionModel : public QItemSelectionModel {
-public:
-  BinarySelectionModel(QAbstractItemModel *model = nullptr) : QItemSelectionModel(model) {}
-  void select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) override;
-};
-
-class BinaryView : public QTableView {
-  Q_OBJECT
-public:
-  BinaryView(QWidget *parent = nullptr);
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void setMessage(const QString &message_id);
-  void updateState();
-signals:
-  void cellsSelected(int start_bit, int size);
-
-private:
-  QString msg_id;
-  BinaryViewModel *model;
-};
 
 class EditMessageDialog : public QDialog {
   Q_OBJECT
