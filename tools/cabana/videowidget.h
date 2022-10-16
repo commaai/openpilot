@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QLabel>
+#include <QPushButton>
 #include <QSlider>
 #include <QWidget>
 
@@ -29,8 +30,10 @@ public:
 protected:
   void rangeChanged(double min, double max);
   void updateState();
+  void pause(bool pause);
 
   CameraViewWidget *cam_widget;
   QLabel *end_time_label;
+  QPushButton *play_btn;
   Slider *slider;
 };
