@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+import asyncio
+import sys
 import time
 import threading
 from flask import Flask
+from struct import unpack
+
+sys.path.append('/data/openpilot/third_party/websockets/src')
+from websockets import serve
 
 import cereal.messaging as messaging
 
@@ -18,6 +24,13 @@ index = """
 <script type="text/javascript">
 // Set up gamepad handlers
 let gamepad = null;
+function ws_gen() {
+  var ws_ = new WebSocket('ws://' + location.hostname + ':5001');
+  ws_.onclose = e => setTimeout(() => { console.log("reconnecting"); ws = ws_gen(); }, 50);
+  return ws_;
+}
+var ws = ws_gen();
+
 window.addEventListener("gamepadconnected", function(e) {
   gamepad = e.gamepad;
 });
@@ -26,6 +39,7 @@ window.addEventListener("gamepaddisconnected", function(e) {
 });
 // Create JoyStick object into the DIV 'joyDiv'
 var joy = new JoyStick('joyDiv');
+var axes = new Float32Array([0.0, 0.0]);
 setInterval(function(){
   var x = -joy.GetX()/100;
   var y = joy.GetY()/100;
@@ -34,9 +48,9 @@ setInterval(function(){
     x = -gamepadstate.axes[0];
     y = -gamepadstate.axes[1];
   }
-  let xhr = new XMLHttpRequest();
-  xhr.open("GET", "/control/"+x+"/"+y);
-  xhr.send();
+  axes[0] = x;
+  axes[1] = y;
+  ws.send(axes);
 }, 50);
 </script>
 """
@@ -46,18 +60,26 @@ def hello_world():
   return index
 
 last_send_time = time.monotonic()
-@app.route("/control/<x>/<y>")
-def control(x, y):
-  global last_send_time
-  x,y = float(x), float(y)
-  x = max(-1, min(1, x))
-  y = max(-1, min(1, y))
-  dat = messaging.new_message('testJoystick')
-  dat.testJoystick.axes = [y,x]
-  dat.testJoystick.buttons = [False]
-  pm.send('testJoystick', dat)
-  last_send_time = time.monotonic()
-  return ""
+async def handle_message(ws):
+  async for message in ws:
+    global last_send_time
+    if not len(message) == 8:
+      pass
+    else:
+      x,y = unpack('ff', message)
+      x = max(-1, min(1, x))
+      y = max(-1, min(1, y))
+      dat = messaging.new_message('testJoystick')
+      dat.testJoystick.axes = [y,x]
+      dat.testJoystick.buttons = [False]
+      pm.send('testJoystick', dat)
+      last_send_time = time.monotonic()
+
+async def maine():
+  async with serve(handle_message, "0.0.0.0", 5001):
+    await asyncio.Future() # run forever
+def websocket_thread():
+  asyncio.run(maine())
 
 def handle_timeout():
   while 1:
@@ -72,7 +94,8 @@ def handle_timeout():
 
 def main():
   threading.Thread(target=handle_timeout, daemon=True).start()
-  app.run(host="0.0.0.0")
+  threading.Thread(target=websocket_thread, daemon=True).start()
+  app.run(host="0.0.0.0", port="5000")
 
 if __name__ == '__main__':
   main()

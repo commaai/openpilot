@@ -19,3 +19,6 @@
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = ../../commaai/tinygrad.git
+[submodule "third_party/websockets"]
+	path = third_party/websockets
+	url = https://github.com/aaugustin/websockets
