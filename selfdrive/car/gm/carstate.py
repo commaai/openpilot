@@ -41,7 +41,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
-    ret.standstill = all([spd < STANDSTILL_THRESHOLD for spd in ret.wheelSpeeds[-2:]])
+    ret.standstill = ret.wheelSpeeds.rl < STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr < STANDSTILL_THRESHOLD
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
