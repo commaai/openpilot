@@ -1,6 +1,7 @@
 #include "tools/cabana/detailwidget.h"
 
 #include <QDialogButtonBox>
+#include <QFontDatabase>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QScrollBar>
@@ -133,68 +134,100 @@ void DetailWidget::showForm() {
 
 // BinaryView
 
-BinaryView::BinaryView(QWidget *parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  table = new QTableWidget(this);
-  table->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  table->horizontalHeader()->hide();
-  table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(table);
-  table->setColumnCount(9);
-}
-
-void BinaryView::setMessage(const QString &message_id) {
+void BinaryViewModel::setMessage(const QString &message_id) {
+  msg_id = message_id;
+  beginResetModel();
   msg_id = message_id;
   const Msg *msg = dbc()->msg(msg_id);
-  const int row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
-  table->setRowCount(row_count);
-  table->setColumnCount(9);
-  for (int i = 0; i < table->rowCount(); ++i) {
-    for (int j = 0; j < table->columnCount(); ++j) {
-      auto item = new QTableWidgetItem();
-      item->setFlags(item->flags() ^ Qt::ItemIsEditable);
-      item->setTextAlignment(Qt::AlignCenter);
-      if (j == 8) {
-        QFont font;
-        font.setBold(true);
-        item->setFont(font);
-      }
-      table->setItem(i, j, item);
-    }
-  }
-
-  // set background color
+  row_count = msg ? msg->size : can->lastMessage(msg_id).dat.size();
+  items.clear();
+  items.resize(row_count * column_count);
   if (msg) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
       const auto &sig = msg->sigs[i];
       int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
       for (int j = start; j <= start + sig.size - 1; ++j) {
-        table->item(j / 8, j % 8)->setBackground(QColor(getColor(i)));
+        int idx = column_count * (j/(column_count-1)) +  j % (column_count-1);
+        if (j == sig.msb) {
+          items[idx].is_msb = true;
+        } else if (j == sig.lsb) {
+          items[idx].is_lsb = true;
+        }
+        items[idx].bg_color = QColor(getColor(i));
       }
     }
   }
-  table->setFixedHeight(table->rowHeight(0) * std::min(row_count, 8) + 2);
+  // table->setFixedHeight(table->rowHeight(0) * std::min(row_count, 8) + 2);
+  endResetModel();
   updateState();
 }
 
-void BinaryView::updateState() {
+QModelIndex BinaryViewModel::index(int row, int column, const QModelIndex &parent) const {
+  return createIndex(row, column, (void*)&items[row * column_count + column]);
+}
+
+void BinaryViewModel::updateState() {
   if (msg_id.isEmpty()) return;
 
   const auto &binary = can->lastMessage(msg_id).dat;
-
-  setUpdatesEnabled(false);
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
-    for (int j = 0; j < 8; ++j) {
-      table->item(i, j)->setText(QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0'));
+    for (int j = 0; j < column_count - 1; ++j) {
+      items[i * column_count + j].val = QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0');
     }
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
-    table->item(i, 8)->setText(hex);
+    items[i * column_count + 8].val = hex;
   }
-  setUpdatesEnabled(true);
+
+  emit dataChanged(index(0, 0), index(row_count - 1, 8));
+}
+
+QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
+  return role == Qt::DisplayRole ? QVariant(section) : QVariant();
+}
+
+BinaryView::BinaryView(QWidget *parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  table = new QTableView(this);
+  model = new BinaryViewModel(this);
+  table->setModel(model);
+  table->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  table->horizontalHeader()->hide();
+  table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  table->setItemDelegate(new BinaryItemDelegate(this));
+  main_layout->addWidget(table);
+}
+
+void BinaryView::setMessage(const QString &message_id) {
+  model->setMessage(message_id);
+}
+
+void BinaryView::updateState() {
+  model->updateState();
+}
+
+void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  painter->save();
+  QStyleOptionViewItem opt = option;
+  auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  painter->fillRect(opt.rect, item->bg_color);
+  if (index.column() == 8) {
+    QFont f;
+    f.setBold(true);
+    painter->setFont(f);
+  }
+  painter->drawText(opt.rect, Qt::AlignCenter, item->val);
+  if (item->is_msb || item->is_lsb) {
+    QFont f;
+    f.setPointSize(8);
+    painter->setFont(f);
+    painter->setPen(Qt::white);
+    painter->drawText(opt.rect, item->is_msb ? "MSB" : "LSB");
+  }
+  painter->restore();
 }
 
 // EditMessageDialog

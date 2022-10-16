@@ -4,7 +4,8 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QTableWidget>
+#include <QStyledItemDelegate>
+#include <QTableView>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -14,6 +15,44 @@
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
+
+class BinaryItemDelegate : public QStyledItemDelegate {
+  Q_OBJECT
+
+public:
+  BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
+  void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override { return QSize(150, 150);}
+};
+
+class BinaryViewModel : public QAbstractTableModel {
+Q_OBJECT
+
+public:
+  BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
+  void setMessage(const QString &message_id);
+  void updateState();
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
+
+struct Item {
+    QColor bg_color = QColor(Qt::white);
+    bool is_msb = false;
+    bool is_lsb = false;
+    QString val = "0";
+  };
+  
+private:
+  QString msg_id;
+  int row_count = 0;
+  const int column_count = 9;
+  
+  std::vector<Item> items;
+  QByteArray dat;
+};
 
 class BinaryView : public QWidget {
   Q_OBJECT
@@ -25,7 +64,8 @@ public:
 
 private:
   QString msg_id;
-  QTableWidget *table;
+  BinaryViewModel *model;
+  QTableView *table;
 };
 
 class EditMessageDialog : public QDialog {
