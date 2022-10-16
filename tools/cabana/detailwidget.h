@@ -22,7 +22,10 @@ class BinaryItemDelegate : public QStyledItemDelegate {
 public:
   BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override { return QSize(150, 150);}
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+    QSize sz = QStyledItemDelegate::sizeHint(option, index);
+    return {sz.width(), 40};
+  }
 };
 
 class BinaryViewModel : public QAbstractTableModel {
@@ -44,14 +47,12 @@ struct Item {
     bool is_lsb = false;
     QString val = "0";
   };
-  
+
 private:
   QString msg_id;
   int row_count = 0;
   const int column_count = 9;
-  
   std::vector<Item> items;
-  QByteArray dat;
 };
 
 class BinaryView : public QWidget {

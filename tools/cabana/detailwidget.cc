@@ -157,7 +157,6 @@ void BinaryViewModel::setMessage(const QString &message_id) {
       }
     }
   }
-  // table->setFixedHeight(table->rowHeight(0) * std::min(row_count, 8) + 2);
   endResetModel();
   updateState();
 }
@@ -203,6 +202,8 @@ BinaryView::BinaryView(QWidget *parent) {
 
 void BinaryView::setMessage(const QString &message_id) {
   model->setMessage(message_id);
+  table->resizeRowsToContents();
+  table->setFixedHeight(table->rowHeight(0) * std::min(model->rowCount(), 8) + 2);
 }
 
 void BinaryView::updateState() {
@@ -223,9 +224,8 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   if (item->is_msb || item->is_lsb) {
     QFont f;
     f.setPointSize(8);
-    painter->setFont(f);
-    painter->setPen(Qt::white);
-    painter->drawText(opt.rect, item->is_msb ? "MSB" : "LSB");
+    painter->setPen(Qt::black);
+    painter->drawText(opt.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
   }
   painter->restore();
 }
