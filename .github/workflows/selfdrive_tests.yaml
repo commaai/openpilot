@@ -18,15 +18,12 @@ env:
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
-      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
   BUILD_CL: |
-      docker pull $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
+      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
   RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
@@ -46,8 +43,6 @@ jobs:
     - name: Build devel
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup
-      with:
-        save-cache: true
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: release/check-submodules.sh
@@ -78,12 +73,14 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+      with:
+        save-cache: true
     - name: Build openpilot with all flags
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --extras --cache-populate"
+                          scons -j$(nproc) --cache-populate"
 
   #build_mac:
   #  name: build macos
@@ -146,8 +143,8 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 50
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
+    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    #needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v3
       with:
@@ -187,10 +184,11 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        python selfdrive/test/test_valgrind_replay.py"
+        ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
       run: cat selfdrive/test/valgrind_logs.txt
@@ -204,10 +202,11 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        scons -j$(nproc) && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
@@ -301,10 +300,12 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test longitudinal
       run: |
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
-                        scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
                         coverage run ./test_longitudinal.py && \
                         coverage xml"
@@ -336,10 +337,11 @@ jobs:
       with:
         path: /tmp/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        coverage run -m pytest selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
                         coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
@@ -347,25 +349,6 @@ jobs:
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
-
-  docs:
-    name: build docs
-    runs-on: ubuntu-20.04
-    timeout-minutes: 50
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Build docker container
-      run: |
-        docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-        docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
-        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
-    - name: Push docker container
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-      run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/openpilot-docs:latest
 
   car_docs_diff:
     name: comment on PR with car docs diff
