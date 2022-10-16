@@ -15,8 +15,8 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setModel(model);
   setItemDelegate(new BinaryItemDelegate(this));
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->hide();
+  verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   // replace selection model
@@ -115,7 +115,14 @@ void BinaryViewModel::updateState() {
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  return role == Qt::DisplayRole && orientation == Qt::Vertical ? QVariant(section + 1) : QVariant();
+  if (orientation == Qt::Vertical) {
+    switch (role) {
+      case Qt::DisplayRole: return section + 1;
+      case Qt::SizeHintRole: return QSize(30, CELL_HEIGHT);
+      case Qt::TextAlignmentRole: return Qt::AlignCenter;
+    }
+  }
+  return {};
 }
 
 // BinarySelectionModel
