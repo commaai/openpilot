@@ -38,7 +38,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        #fetch-depth: 0
         submodules: true
     - name: Build devel
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
@@ -143,8 +142,8 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 22
-    #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    #needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v3
       with:
@@ -199,7 +198,7 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ubuntu-20.04
-    timeout-minutes: 40
+    timeout-minutes: 30
     steps:
     - uses: actions/checkout@v3
       with:
@@ -208,6 +207,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         $UNIT_TEST common && \
