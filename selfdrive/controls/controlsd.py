@@ -101,7 +101,7 @@ class Controls:
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
 
-      num_pandas = len(messaging.recv_one_retry(self.sm['pandaStates']).pandaStates)
+      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
