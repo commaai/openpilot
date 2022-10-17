@@ -27,6 +27,7 @@ private:
   void mouseMoveEvent(QMouseEvent *ev) override;
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void adjustChartMargins();
 
   void rangeChanged(qreal min, qreal max);
   void updateAxisY();
