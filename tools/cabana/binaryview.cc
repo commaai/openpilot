@@ -169,7 +169,7 @@ QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
   painter->save();
-
+  // TODO: highlight signal cells on mouse over
   painter->fillRect(option.rect, option.state & QStyle::State_Selected ? highlight_color : item->bg_color);
   if (index.column() == 8) {
     painter->setFont(bold_font);
