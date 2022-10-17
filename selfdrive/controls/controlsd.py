@@ -83,8 +83,6 @@ class Controls:
     self.log_sock = messaging.sub_sock('androidLog')
 
     params = Params()
-    self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
-    joystick_packet = ['testJoystick'] if self.joystick_mode else []
 
     self.sm = sm
     if self.sm is None:
@@ -95,7 +93,7 @@ class Controls:
         ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters'] + self.camera_packets + joystick_packet,
+                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
 
     if CI is None:
@@ -107,6 +105,11 @@ class Controls:
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
+
+    self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
+    if not self.joystick_mode:
+      self.sm.ignore_alive.append('testJoystick')
+      self.sm.ignore_average_freq.append('testJoystick')
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
