@@ -252,8 +252,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, r in requests:
-        # Skip queries requiring external panda
-        aux_panda_query = r.bus > 3 and aux_panda
+        # Skip queries based off presence of external panda
+        aux_panda_query = r.bus > 3
         if (aux_panda_query and not aux_panda) or (not aux_panda_query and aux_panda):
           continue
 
