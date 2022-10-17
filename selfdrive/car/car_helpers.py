@@ -76,7 +76,7 @@ interfaces = load_interfaces(interface_names)
 
 
 # **** for use live only ****
-def fingerprint(logcan, sendcan):
+def fingerprint(logcan, sendcan, aux_panda):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
@@ -99,8 +99,8 @@ def fingerprint(logcan, sendcan):
     else:
       cloudlog.warning("Getting VIN & FW versions")
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
-      ecu_rx_addrs, aux_panda = get_present_ecus(logcan, sendcan)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, aux_panda)
+      ecu_rx_addrs = get_present_ecus(logcan, sendcan)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, aux_panda=aux_panda)
       cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
