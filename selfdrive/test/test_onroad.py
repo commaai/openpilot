@@ -202,7 +202,7 @@ class TestOnroad(unittest.TestCase):
     print(result)
 
     self.assertGreater(len(ts), 20*50, f"insufficient samples")
-    self.assertLess(max(ts), 15.)
+    self.assertLess(max(ts), 20.)
     self.assertLess(np.mean(ts), 10.)
     self.assertLess(np.std(ts), 5.)
 
