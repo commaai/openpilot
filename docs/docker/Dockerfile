@@ -9,13 +9,6 @@ ENV POETRY_VIRUALENVS_CREATE false
 RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
 
-COPY pyproject.toml poetry.lock $OPENPILOT_PATH
-RUN pip install --no-cache-dir poetry==1.2.1 pip==22.3 && \
-    poetry install --no-ansi --no-interaction && \
-    pip uninstall -y poetry && \
-    rm -rf /root/.cache
-
-
 COPY SConstruct ${OPENPILOT_PATH}
 
 COPY ./pyextra ${OPENPILOT_PATH}/pyextra
