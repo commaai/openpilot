@@ -57,7 +57,7 @@ else
   poetry config virtualenvs.prefer-active-python true --local
 
   echo "pip packages install..."
-  poetry install
+  poetry install --no-root
 fi
 
 if [ -z "$PIPENV_SYSTEM" ] && [ -z "$POETRY_VIRTUALENVS_CREATE" ]; then
