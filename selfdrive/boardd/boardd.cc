@@ -113,8 +113,9 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   }
 
   // set to ELM327 for fingerprinting
-  for (Panda *panda : pandas) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  for (int i = 0; i < pandas.size(); i++) {
+    const uint16_t safety_param = (i > 0) ? 1U : 0U;
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
   }
 
   Params p = Params();
