@@ -253,7 +253,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
     for addr_chunk in chunks(addr):
       for brand, r in requests:
         # Skip queries requiring external panda
-        if r.bus > 3 and not aux_panda:
+        aux_panda_query = r.bus > 3 and aux_panda
+        if (aux_panda_query and not aux_panda) or (not aux_panda_query and aux_panda):
           continue
 
         try:
@@ -310,7 +311,7 @@ if __name__ == "__main__":
     extra = {"any": {"debug": extra}}
 
   time.sleep(1.)
-  aux_panda = len(messaging.recv_one_retry(pandaStates_sock)) > 1
+  aux_panda = len(messaging.recv_one_retry(pandaStates_sock).pandaStates) > 1
 
   t = time.time()
   print("Getting vin...")

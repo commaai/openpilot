@@ -88,7 +88,7 @@ class Controls:
       get_one_can(self.can_sock)
 
       pandaStates_sock = messaging.sub_sock('pandaStates')
-      aux_panda = len(messaging.recv_one_retry(pandaStates_sock)) > 1
+      aux_panda = len(messaging.recv_one_retry(pandaStates_sock).pandaStates) > 1
 
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], aux_panda)
     else:
