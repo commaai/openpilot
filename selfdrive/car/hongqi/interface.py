@@ -11,7 +11,7 @@ class CarInterface(CarInterfaceBase):
   #   super().__init__(CP, CarController, CarState)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "hongqi"
     ret.radarOffCan = True
