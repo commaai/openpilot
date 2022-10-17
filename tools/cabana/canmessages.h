@@ -41,7 +41,7 @@ public:
   void resetRange();
   void setRange(double min, double max);
   bool eventFilter(const Event *event);
-  uint32_t freq(const QString &id);
+  std::pair<uint32_t, uint32_t> countAndFreq(const QString &id);
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }

@@ -52,9 +52,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   table_widget->setSortingEnabled(true);
-  table_widget->setColumnWidth(0, 250);
-  table_widget->setColumnWidth(1, 80);
-  table_widget->setColumnWidth(2, 80);
+  // table_widget->setColumnWidth(0, 220);
+  // table_widget->setColumnWidth(1, 80);
+  // table_widget->setColumnWidth(2, 60);
+  // table_widget->setColumnWidth(3, 60);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
   table_widget->sortByColumn(0, Qt::AscendingOrder);
@@ -86,8 +87,8 @@ void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
 // MessageListModel
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-    return (QString[]){"Name", "ID", "Freq", "Bytes"}[section];
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {qWarning() << section;
+    return (QString[]){"Name", "ID", "Freq", "Count" "Bytes"}[section];}
   return {};
 }
 
@@ -96,14 +97,16 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     auto it = std::next(can->can_msgs.begin(), index.row());
     if (it != can->can_msgs.end() && !it.value().empty()) {
       const QString &msg_id = it.key();
+      auto [count, freq] = can->countAndFreq(msg_id);
       switch (index.column()) {
         case 0: {
           auto msg = dbc()->msg(msg_id);
           return msg ? msg->name.c_str() : "untitled";
         }
         case 1: return msg_id;
-        case 2: return can->freq(msg_id);
-        case 3: return toHex(it.value().front().dat);
+        case 2: return freq;
+        case 3: return count;
+        case 4: return toHex(it.value().front().dat);
       }
     }
   } else if (role == Qt::UserRole) {

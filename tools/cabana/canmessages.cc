@@ -135,9 +135,9 @@ void CANMessages::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
 }
 
-uint32_t CANMessages::freq(const QString &id) {
+std::pair<uint32_t, uint32_t> CANMessages::countAndFreq(const QString &id) {
   std::lock_guard lk(counters_mutex);
-  return ((current_sec - counters_begin_sec) > 0) ? counters[id] / (current_sec - counters_begin_sec) : 0;
+  return {counters[id], ((current_sec - counters_begin_sec) > 0) ? counters[id] / (current_sec - counters_begin_sec) : 0};
 }
 
 // Settings
