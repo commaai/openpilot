@@ -14,7 +14,4 @@ if [ -z "$PASSIVE" ]; then
   export PASSIVE="1"
 fi
 
-# FIXME -- remove this
-export FINGERPRINT="HONGQI HS5 1ST GEN"
-
 export STAGING_ROOT="/data/safe_staging"
