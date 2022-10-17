@@ -296,6 +296,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   logcan = messaging.sub_sock('can')
+  pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
   extra: Any = None
@@ -309,6 +310,7 @@ if __name__ == "__main__":
     extra = {"any": {"debug": extra}}
 
   time.sleep(1.)
+  aux_panda = len(messaging.recv_one_retry(pandaStates_sock)) > 1
 
   t = time.time()
   print("Getting vin...")
@@ -318,7 +320,7 @@ if __name__ == "__main__":
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, aux_panda=aux_panda, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
