@@ -91,7 +91,8 @@ Qt::ItemFlags BinaryViewModel::flags(const QModelIndex &index) const {
 }
 
 void BinaryViewModel::updateState() {
-  char hex[3] = {'\0'};
+  auto prev_items = items;
+
   const auto &binary = can->lastMessage(msg_id).dat;
   // data size may changed.
   if (!dbc_msg && binary.size() != row_count) {
@@ -102,6 +103,7 @@ void BinaryViewModel::updateState() {
     endResetModel();
   }
 
+  char hex[3] = {'\0'};
   for (int i = 0; i < std::min(binary.size(), row_count); ++i) {
     for (int j = 0; j < column_count - 1; ++j) {
       items[i * column_count + j].val = QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0');
@@ -111,7 +113,12 @@ void BinaryViewModel::updateState() {
     items[i * column_count + 8].val = hex;
   }
 
-  emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1));
+  for (int i = 0; i < items.size(); ++i) {
+    if (i >= prev_items.size() || prev_items[i].val != items[i].val) {
+      auto idx = index(i / column_count, i % column_count);
+      emit dataChanged(idx, idx);
+    }
+  }
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
