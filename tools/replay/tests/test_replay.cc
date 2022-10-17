@@ -207,8 +207,7 @@ void TestReplay::test_seek() {
 }
 
 TEST_CASE("Replay") {
-  auto flag = GENERATE(REPLAY_FLAG_NO_FILE_CACHE, REPLAY_FLAG_NONE);
-  TestReplay replay(DEMO_ROUTE, flag);
+  TestReplay replay(DEMO_ROUTE, (uint8_t)REPLAY_FLAG_NO_VIPC);
   REQUIRE(replay.load());
   replay.test_seek();
 }

@@ -36,14 +36,17 @@ void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (Msg *m = const_cast<Msg *>(msg(id))) {
     m->sigs.push_back(sig);
-    emit signalAdded(id, QString::fromStdString(sig.name));
+    emit signalAdded(&m->sigs.back());
   }
 }
 
 void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
-  if (Signal *s = const_cast<Signal *>(signal(id, sig_name))) {
-    *s = sig;
-    emit signalUpdated(id, sig_name);
+  if (Msg *m = const_cast<Msg *>(msg(id))) {
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
+    if (it != m->sigs.end()) {
+      *it = sig;
+      emit signalUpdated(&(*it));
+    }
   }
 }
 
@@ -51,19 +54,10 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
   if (Msg *m = const_cast<Msg *>(msg(id))) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
     if (it != m->sigs.end()) {
+      emit signalRemoved(&(*it));
       m->sigs.erase(it);
-      emit signalRemoved(id, sig_name);
     }
   }
-}
-
-const Signal *DBCManager::signal(const QString &id, const QString &sig_name) const {
-  if (auto m = msg(id)) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return sig_name == s.name.c_str(); });
-    if (it != m->sigs.end())
-      return &(*it);
-  }
-  return nullptr;
 }
 
 uint32_t DBCManager::addressFromId(const QString &id) {
