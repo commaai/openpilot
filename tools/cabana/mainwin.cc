@@ -21,6 +21,7 @@ MainWindow::MainWindow() : QWidget() {
 
   detail_widget = new DetailWidget(this);
   splitter->addWidget(detail_widget);
+
   splitter->setSizes({100, 500});
   h_layout->addWidget(splitter);
 
