@@ -224,12 +224,13 @@ def migrate_sensorEvents(lr, old_logtime=False):
       m_dat.sensor = evt.sensor
       m_dat.type = evt.type
       m_dat.source = evt.source
+      if old_logtime:
+        m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
       all_msgs.append(m.as_reader())
 
   return all_msgs
-
 
 def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   lr = migrate_carparams(list(lr))

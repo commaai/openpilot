@@ -1,14 +1,16 @@
 #include "selfdrive/navd/map_renderer.h"
 
+#include <string>
 #include <QApplication>
 #include <QBuffer>
 #include <QDebug>
 
+#include "common/util.h"
 #include "common/timing.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
-const float ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int WIDTH = 256;
+const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
+const int WIDTH = 512;
 const int HEIGHT = WIDTH;
 
 const int NUM_VIPC_BUFFERS = 4;
@@ -35,9 +37,10 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   QOpenGLFramebufferObjectFormat fbo_format;
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
+  std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
-  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), ZOOM);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckvmksrpd4n0a14pfdo5heqzr");
+  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
+  m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
 
   m_map->resize(fbo->size());
@@ -80,6 +83,15 @@ void MapRenderer::msgUpdate() {
     }
     updateRoute(route);
   }
+}
+
+void MapRenderer::updateZoom(float zoom) {
+  if (m_map.isNull()) {
+    return;
+  }
+
+  m_map->setZoom(zoom);
+  update();
 }
 
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
@@ -185,7 +197,7 @@ void MapRenderer::initLayers() {
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
-    m_map->setPaintProperty("navLayer", "line-width", 3);
+    m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
 }
@@ -208,6 +220,11 @@ extern "C" {
     settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
+  }
+
+  void map_renderer_update_zoom(MapRenderer *inst, float zoom) {
+    inst->updateZoom(zoom);
+    QApplication::processEvents();
   }
 
   void map_renderer_update_position(MapRenderer *inst, float lat, float lon, float bearing) {
