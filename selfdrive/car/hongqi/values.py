@@ -48,16 +48,3 @@ class HongqiCarInfo(CarInfo):
 CAR_INFO: Dict[str, Union[HongqiCarInfo, List[HongqiCarInfo]]] = {
   CAR.HS5_G1: HongqiCarInfo("Hongqi HS5 2020"),
 }
-
-
-# TODO -- UDS fingerprinting known to work relatively easily
-FW_VERSIONS = {
-  CAR.HS5_G1: {
-    (Ecu.engine, 0x7e0, None): [
-      b'PLACEHOLDER',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'PLACEHOLDER',
-    ],
-  }
-}
