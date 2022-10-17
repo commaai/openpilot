@@ -58,6 +58,14 @@
         <source>leave blank for automatic configuration</source>
         <translation>deixe em branco para configuração automática</translation>
     </message>
+    <message>
+        <source>Cellular Metered</source>
+        <translation>Plano de Dados Limitado</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection</source>
+        <translation>Evite grandes uploads de dados quando estiver em uma conexão limitada</translation>
+    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
@@ -468,7 +476,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>APRIMORAMENTOS PRIME:</translation>
+        <translation>BENEFÍCIOS PRIME:</translation>
     </message>
     <message>
         <source>Remote access</source>
