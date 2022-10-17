@@ -66,13 +66,14 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     items.resize(row_count * column_count);
     for (int i = 0; i < dbc_msg->sigs.size(); ++i) {
       const auto &sig = dbc_msg->sigs[i];
-      int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
-      for (int j = start; j <= start + sig.size - 1; ++j) {
-        int idx = column_count * (j / (column_count - 1)) + j % (column_count - 1);
-        if (j == sig.msb) {
-          items[idx].is_msb = true;
-        } else if (j == sig.lsb) {
-          items[idx].is_lsb = true;
+      const int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
+      const int end = start + sig.size - 1;
+      for (int j = start; j <= end; ++j) {
+        int idx = column_count * (j / 8) + j % 8;
+        if (j == start) {
+          sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        } else if (j == end) {
+          sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         }
         items[idx].bg_color = QColor(getColor(i));
       }
