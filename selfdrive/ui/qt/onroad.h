@@ -68,6 +68,7 @@ private:
   bool has_eu_speed_limit = false;
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
+  std::unique_ptr<PubMaster> pm;
 
 protected:
   void paintGL() override;

@@ -187,6 +187,21 @@ class TestOnroad(unittest.TestCase):
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 
+  def test_ui_timings(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-------------- UI Draw Timing ------------------\n"
+    result += "------------------------------------------------\n"
+
+    ts = [m.uiDebug.drawTimeMillis for m in self.lr if m.which() == 'uiDebug']
+    assert len(ts) > 20*50
+    result += f"min  {min(ts):.5f}s\n"
+    result += f"max  {max(ts):.5f}s\n"
+    result += f"mean {np.mean(ts):.5f}s\n"
+    self.assertLess(min(ts), 0.025, f"high execution time: {min(ts)}")
+    result += "------------------------------------------------\n"
+    print(result)
+
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
