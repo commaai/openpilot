@@ -78,9 +78,8 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7a2, None): [
       b'3418310-DD01\x00\x00\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x715, None): [
+    (Ecu.fwdCamera, 0x722, None): [
       b'3616215-DD03-B  ',
     ],
   },
 }
-
