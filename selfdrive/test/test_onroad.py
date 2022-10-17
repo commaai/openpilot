@@ -120,8 +120,8 @@ class TestOnroad(unittest.TestCase):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      print(segs[-1])
-      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog")))
+      print(segs[-2])
+      cls.lr = list(LogReader(os.path.join(segs[-2], "rlog")))
       return
 
     # setup env
@@ -194,13 +194,17 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
 
     ts = [m.uiDebug.drawTimeMillis for m in self.lr if m.which() == 'uiDebug']
-    assert len(ts) > 20*50
-    result += f"min  {min(ts):.5f}s\n"
-    result += f"max  {max(ts):.5f}s\n"
-    result += f"mean {np.mean(ts):.5f}s\n"
-    self.assertLess(min(ts), 0.025, f"high execution time: {min(ts)}")
+    result += f"min  {min(ts):.2f}ms\n"
+    result += f"max  {max(ts):.2f}ms\n"
+    result += f"std  {np.std(ts):.2f}ms\n"
+    result += f"mean {np.mean(ts):.2f}ms\n"
     result += "------------------------------------------------\n"
     print(result)
+
+    self.assertGreater(len(ts), 20*50, f"insufficient samples")
+    self.assertLess(max(ts), 15.)
+    self.assertLess(np.mean(ts), 10.)
+    self.assertLess(np.std(ts), 5.)
 
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
