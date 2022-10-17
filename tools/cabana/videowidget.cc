@@ -5,7 +5,6 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPushButton>
 #include <QStyleOptionSlider>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -39,9 +38,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
-  QPushButton *play = new QPushButton("⏸");
-  play->setStyleSheet("font-weight:bold");
-  control_layout->addWidget(play);
+  play_btn = new QPushButton("⏸");
+  play_btn->setStyleSheet("font-weight:bold");
+  control_layout->addWidget(play_btn);
 
   QButtonGroup *group = new QButtonGroup(this);
   group->setExclusive(true);
@@ -61,11 +60,13 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
-  QObject::connect(play, &QPushButton::clicked, [=]() {
-    bool is_paused = can->isPaused();
-    play->setText(is_paused ? "⏸" : "▶");
-    can->pause(!is_paused);
-  });
+  QObject::connect(cam_widget, &CameraViewWidget::clicked, [this]() { pause(!can->isPaused()); });
+  QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
+}
+
+void VideoWidget::pause(bool pause) {
+  play_btn->setText(!pause ? "⏸" : "▶");
+  can->pause(pause);
 }
 
 void VideoWidget::rangeChanged(double min, double max) {

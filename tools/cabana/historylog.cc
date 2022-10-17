@@ -1,19 +1,24 @@
 #include "tools/cabana/historylog.h"
 
+#include <QFontDatabase>
 #include <QHeaderView>
 #include <QVBoxLayout>
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
+  auto msg = dbc()->msg(msg_id);
   if (role == Qt::DisplayRole) {
     const auto &can_msgs = can->messages(msg_id);
     if (index.row() < can_msgs.size()) {
       const auto &can_data = can_msgs[index.row()];
-      auto msg = dbc()->msg(msg_id);
       if (msg && index.column() < msg->sigs.size()) {
         return get_raw_value((uint8_t *)can_data.dat.begin(), can_data.dat.size(), msg->sigs[index.column()]);
       } else {
         return toHex(can_data.dat);
       }
+    }
+  } else if (role == Qt::FontRole) {
+    if (index.column() == 0 && !(msg && msg->sigs.size() > 0)) {
+      return QFontDatabase::systemFont(QFontDatabase::FixedFont);
     }
   }
   return {};
@@ -52,9 +57,8 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 void HistoryLogModel::updateState() {
   if (msg_id.isEmpty()) return;
 
-  const auto &can_msgs = can->messages(msg_id);
   int prev_row_count = row_count;
-  row_count = can_msgs.size();
+  row_count = can->messages(msg_id).size();
   int delta = row_count - prev_row_count;
   if (delta > 0) {
     beginInsertRows({}, prev_row_count, row_count - 1);
@@ -64,7 +68,7 @@ void HistoryLogModel::updateState() {
     endRemoveRows();
   }
   if (row_count > 0) {
-    emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1));
+    emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1), {Qt::DisplayRole});
     emit headerDataChanged(Qt::Vertical, 0, row_count - 1);
   }
 }
