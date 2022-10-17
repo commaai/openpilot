@@ -46,6 +46,7 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
   void updateTitle();
+  void setHeight(int height);
 
 signals:
   void remove();

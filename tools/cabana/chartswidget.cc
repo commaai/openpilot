@@ -76,6 +76,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
     docking = !docking;
     updateTitleBar();
   });
+  QObject::connect(&settings, &Settings::changed, [this]() {
+    for (auto chart : charts) {
+      chart->setHeight(settings.chart_height);
+    }
+  });
 }
 
 void ChartsWidget::updateTitleBar() {
@@ -152,7 +157,7 @@ ChartWidget::ChartWidget(const QString &id, const Signal *sig, QWidget *parent) 
   main_layout->addWidget(header);
 
   chart_view = new ChartView(id, sig, this);
-  chart_view->setFixedHeight(300);
+  chart_view->setFixedHeight(settings.chart_height);
   main_layout->addWidget(chart_view);
   main_layout->addStretch();
 
@@ -203,6 +208,10 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, can, &CANMessages::setRange);
 
   updateSeries();
+}
+
+void ChartWidget::setHeight(int height) {
+  chart_view->setFixedHeight(height);
 }
 
 void ChartView::updateState() {
