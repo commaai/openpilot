@@ -254,7 +254,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
       for brand, r in requests:
         # Skip queries based off presence of external panda
         aux_panda_query = r.bus > 3
-        if (aux_panda_query and not aux_panda) or (not aux_panda_query and aux_panda):
+        if aux_panda_query != aux_panda:
           continue
 
         try:
