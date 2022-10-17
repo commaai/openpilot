@@ -9,7 +9,6 @@ openpilot is developed and tested on **Ubuntu 20.04**, which is the primary deve
 
 First, clone openpilot:
 ``` bash
-# openpilot expects to be cloned in ~/openpilot
 cd ~
 git clone --recursive https://github.com/commaai/openpilot.git
 
