@@ -171,10 +171,14 @@ def get_present_ecus(logcan, sendcan):
 
   queries.insert(0, parallel_queries)
 
-  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  ecu_buses: Set[int] = set()
+  ecu_responses: Dict[int, Set[Tuple[int, Optional[int], int]]] = set()
   for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
-  return ecu_responses
+    ecu_addrs = get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1)
+    ecu_responses.update(ecu_addrs)
+    if len(ecu_addrs):
+      ecu_buses.add(query[2])
+  return ecu_responses, any([b > 3 for b in ecu_buses])
 
 
 def get_brand_ecu_matches(ecu_rx_addrs):
@@ -194,14 +198,14 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
-def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
+def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, aux_panda, timeout=0.1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
-    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
+    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, aux_panda=aux_panda, timeout=timeout, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     # Try to match using FW returned from this brand only
     matches = match_fw_to_car_exact(build_fw_dict(car_fw))
@@ -211,7 +215,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=Fa
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, aux_panda=False, timeout=0.1, debug=False, progress=False):
   versions = VERSIONS.copy()
 
   # Each brand can define extra ECUs to query for data collection
@@ -252,6 +256,10 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, r in requests:
+        # Skip queries requiring external panda
+        if r.bus > 3 and not aux_panda:
+          continue
+
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
