@@ -70,6 +70,10 @@ void BinaryViewModel::setMessage(const QString &message_id) {
       const int end = start + sig.size - 1;
       for (int j = start; j <= end; ++j) {
         int idx = column_count * (j / 8) + j % 8;
+        if (idx >= items.size()) {
+          qWarning() << "signal " << sig.name.c_str() << "out of bounds.start_bit:" << sig.start_bit << "size:" << sig.size;
+          break;
+        }
         if (j == start) {
           sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
         } else if (j == end) {
