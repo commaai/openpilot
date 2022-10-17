@@ -2,7 +2,7 @@ import math
 from cereal import car
 from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
-from selfdrive.car.ford import fordcan
+from selfdrive.car.ford.fordcan import FordCAN
 from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -18,9 +18,9 @@ def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.VM = VM
-    self.packer = CANPacker(dbc_name)
     self.frame = 0
+    self.packer = CANPacker(dbc_name)
+    self.ford_can = FordCAN(self.packer)
 
     self.apply_angle_last = 0.
     self.main_on_last = False
@@ -38,15 +38,15 @@ class CarController:
 
     ### acc buttons ###
     if CC.cruiseControl.cancel:
-      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, cancel=True))
-      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, cancel=True, bus=CANBUS.main))
+      can_sends.append(self.ford_can.create_button_msg(CS.buttons_stock_values, cancel=True))
+      can_sends.append(self.ford_can.create_button_msg(CS.buttons_stock_values, cancel=True, bus=CANBUS.main))
     elif CC.cruiseControl.resume and (self.frame % CarControllerParams.BUTTONS_STEP) == 0:
-      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True))
-      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True, bus=CANBUS.main))
+      can_sends.append(self.ford_can.create_button_msg(CS.buttons_stock_values, resume=True))
+      can_sends.append(self.ford_can.create_button_msg(CS.buttons_stock_values, resume=True, bus=CANBUS.main))
     # if stock lane centering isn't off, send a button press to toggle it off
     # the stock system checks for steering pressed, and eventually disengages cruise control
     elif CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0 and (self.frame % CarControllerParams.ACC_UI_STEP) == 0:
-      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, tja_toggle=True))
+      can_sends.append(self.ford_can.create_button_msg(CS.buttons_stock_values, tja_toggle=True))
 
 
     ### lateral control ###
@@ -80,21 +80,24 @@ class CarController:
         ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
-      can_sends.append(fordcan.create_lka_command(self.packer, 0., 0.))
-      can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
-                                                  0., path_angle, 0., 0.))
+      can_sends.append(self.ford_can.create_lka_msg(0., 0.))
+      can_sends.append(self.ford_can.create_tja_msg(lca_rq, ramp_type, precision,
+                                                    0., path_angle, 0., 0.))
 
 
     ### ui ###
-    send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
+    send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or \
+              (self.steer_alert_last != steer_alert)
 
     # send lkas ui command at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
-      can_sends.append(fordcan.create_lkas_ui_command(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
+      can_sends.append(self.ford_can.create_lkas_ui_msg(main_on, CC.latActive, steer_alert, hud_control,
+                                                        CS.lkas_status_stock_values))
 
     # send acc ui command at 20Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      can_sends.append(fordcan.create_acc_ui_command(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
+      can_sends.append(self.ford_can.create_acc_ui_msg(main_on, CC.latActive, hud_control,
+                                                       CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
