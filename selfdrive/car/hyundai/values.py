@@ -293,10 +293,12 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
   ],
   extra_ecus=[
