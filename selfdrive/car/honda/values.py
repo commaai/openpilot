@@ -120,8 +120,8 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
   CAR.CIVIC_2022: [
-    HondaCarInfo("Honda Civic 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
-    HondaCarInfo("Honda Civic Hatchback 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
+    HondaCarInfo("Honda Civic 2022", "All", harness=Harness.bosch_b),
+    HondaCarInfo("Honda Civic Hatchback 2022", "All", harness=Harness.bosch_b),
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
@@ -131,7 +131,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
-  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
+  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", harness=Harness.nidec),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
