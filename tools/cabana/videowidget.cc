@@ -16,8 +16,8 @@ inline QString formatTime(int seconds) {
 VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  // TODO: figure out why the CameraViewWidget crashed occasionally.
-  cam_widget = new CameraViewWidget("camerad", VISION_STREAM_ROAD, false, this);
+  // TODO: figure out why the CameraWidget crashed occasionally.
+  cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false, this);
   cam_widget->setFixedSize(parent->width(), parent->width() / 1.596);
   main_layout->addWidget(cam_widget);
 
@@ -60,7 +60,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
-  QObject::connect(cam_widget, &CameraViewWidget::clicked, [this]() { pause(!can->isPaused()); });
+  QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
 }
 

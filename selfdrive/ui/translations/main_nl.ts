@@ -489,7 +489,7 @@ ingesteld</translation>
     </message>
 </context>
 <context>
-    <name>NvgWindow</name>
+    <name>AnnotatedCameraWidget</name>
     <message>
         <location filename="../qt/onroad.cc" line="218"/>
         <source>km/h</source>
