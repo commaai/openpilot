@@ -68,6 +68,29 @@
     </message>
 </context>
 <context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>LIMITE</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>MAX</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>VELO</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -405,29 +428,6 @@ trabalho definido</translation>
     <message>
         <source>Wrong password</source>
         <translation>Senha incorreta</translation>
-    </message>
-</context>
-<context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>LIMITE</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>VELO</translation>
     </message>
 </context>
 <context>

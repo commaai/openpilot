@@ -12,5 +12,5 @@ else:
 
 qt_libs = ['qt_util', 'Qt5Charts'] + base_libs
 cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
-qt_env.Program('_cabana', ['cabana.cc', 'mainwin.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
+qt_env.Program('_cabana', ['cabana.cc', 'mainwin.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
                             'canmessages.cc', 'messageswidget.cc', 'detailwidget.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)

@@ -1,9 +1,20 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QComboBox>
+#include <QDialog>
 #include <QTableView>
+#include <QTextEdit>
 
 #include "tools/cabana/canmessages.h"
+
+class LoadDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  LoadDBCDialog(QWidget *parent);
+  QTextEdit *dbc_edit;
+};
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -28,11 +39,13 @@ public:
 
 public slots:
   void dbcSelectionChanged(const QString &dbc_file);
+  void loadFromPaste();
 
 signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
   QTableView *table_widget;
+  QComboBox *dbc_combo;
   MessageListModel *model;
 };
