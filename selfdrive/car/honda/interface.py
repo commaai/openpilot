@@ -359,6 +359,9 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
 
+    if ret.vEgo < self.CP.minSteerSpeed:
+      events.add(EventName.belowSteerSpeed)
+
     ret.events = events.to_msg()
 
     return ret
