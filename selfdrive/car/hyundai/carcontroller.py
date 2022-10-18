@@ -53,7 +53,6 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-
   def update(self, CC, CS):
     actuators = CC.actuators
     hud_control = CC.hudControl
