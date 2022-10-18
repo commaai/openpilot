@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QSettings>
 
+#include "tools/cabana/dbcmanager.h"
+
 Q_DECLARE_METATYPE(std::vector<CanData>);
 
 Settings settings;
@@ -35,6 +37,38 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
     return true;
   }
   return false;
+}
+
+QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *signal, double value, FindFlags flag, int size) {
+  auto evts = events();
+  if (!evts) return {};
+
+  auto l = id.split(':');
+  int bus = l[0].toInt();
+  uint32_t address = l[1].toUInt(nullptr, 16);
+
+  QList<QPointF> ret;
+  ret.reserve(size);
+  uint64_t route_start_time = can->routeStartTime();
+  for (auto &evt : *evts) {
+    if (evt->which != cereal::Event::Which::CAN) continue;
+
+    for (auto c : evt->event.getCan()) {
+      if (bus == c.getSrc() && address == c.getAddress()) {
+        auto dat = c.getDat();
+        double val = get_raw_value((uint8_t *)dat.begin(), dat.size(), *signal);
+        if ((flag == EQ && val == value) ||
+            (flag == LT && val < value) ||
+            (flag == GT && val > value)) {
+          double ts = (evt->mono_time / (double)1e9) - route_start_time;  // seconds
+          ret.push_back({ts, val});
+        }
+        if (ret.size() >= size)
+          return ret;
+      }
+    }
+  }
+  return ret;
 }
 
 void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {

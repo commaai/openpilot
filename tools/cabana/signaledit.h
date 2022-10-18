@@ -31,8 +31,11 @@ public:
   SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent = nullptr);
   void setFormVisible(bool show);
   inline bool isFormVisible() const { return form_container->isVisible(); }
+  void signalSeek();
   QString sig_name;
+  QString msg_id;
   SignalForm *form;
+  const Signal *sig;
 
 signals:
   void showChart();
@@ -50,4 +53,11 @@ class AddSignalDialog : public QDialog {
 public:
   AddSignalDialog(const QString &id, int start_bit, int size, QWidget *parent);
   SignalForm *form;
+};
+
+class SignalFindDlg : public QDialog {
+  Q_OBJECT
+
+public:
+  SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent);
 };
