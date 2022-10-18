@@ -22,11 +22,11 @@ from tools.lib.logreader import LogReader
 # Baseline CPU usage by process
 PROCS = {
   "selfdrive.controls.controlsd": 35.0,
-  "./loggerd": 10.0,
-  "./encoderd": 17.0,
+  "./loggerd": 12.5,
+  "./encoderd": 15.,
   "./camerad": 14.5,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 11.7,
+  "selfdrive.controls.plannerd": 14.,
   "./_ui": 19.2,
   "selfdrive.locationd.paramsd": 9.0,
   "./_sensord": 12.0,
@@ -95,11 +95,11 @@ def check_cpu_usage(proclogs):
     if len(x) > 2:
       cpu_time = cputime_total(x[-1]) - cputime_total(x[0])
       cpu_usage = cpu_time / dt * 100.
-      if cpu_usage > max(expected_cpu * 1.15, expected_cpu + 5.0):
+      if cpu_usage > max(expected_cpu * 1.15, expected_cpu + 1.5):
         # cpu usage is high while playing sounds
         if not (proc_name == "./_soundd" and cpu_usage < 65.):
           err = "using more CPU than normal"
-      elif cpu_usage < min(expected_cpu * 0.65, max(expected_cpu - 1.0, 0.0)):
+      elif cpu_usage < min(expected_cpu * 0.8, max(expected_cpu - 1.0, 0.0)):
         err = "using less CPU than normal"
     else:
       err = "NO METRICS FOUND"
