@@ -126,6 +126,9 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     if (index.column() == 4) {
       return QFontDatabase::systemFont(QFontDatabase::FixedFont);
     }
+  } else if (role == Qt::TextAlignmentRole) {
+    if (index.column() == 1 || index.column() == 2 || index.column() == 3)
+      return Qt::AlignRight;
   }
   return {};
 }
