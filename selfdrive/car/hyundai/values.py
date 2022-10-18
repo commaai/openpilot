@@ -300,6 +300,19 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
+    # CAN-FD queries
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdRadar],
+      bus=4,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas],
+      bus=5,
+    ),
   ],
   extra_ecus=[
     (Ecu.adas, 0x730, None),  # ADAS Driving ECU on HDA2 platforms
@@ -1326,15 +1339,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.KIA_EV6: {
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00CV  IEB \x02 101!\x10\x18 58520-CV100',
-      b'\xf1\x00CV  IEB \x03 101!\x10\x18 58520-CV100',
-      b'\xf1\x8758520CV100\xf1\x00CV  IEB \x02 101!\x10\x18 58520-CV100',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00CV1 MDPS R 1.00 1.04 57700-CV000 1B30',
-      b'\xf1\x00CV1 MDPS R 1.00 1.05 57700-CV000 2425',
-    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
       b'\xf1\x8799110CV000\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
@@ -1346,16 +1350,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.IONIQ_5: {
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
-      b'\xf1\x8758520GI010\xf1\x00NE1 IEB \x07 106!\x11) 58520-GI010',
-      b'\xf1\x00NE1 IEB \x08 104!\x04\x05 58520-GI000',
-      b'\xf1\x8758520GI000\xf1\x00NE1 IEB \x08 104!\x04\x05 58520-GI000',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
-      b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
-    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
       b'\xf1\x8799110GI000\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
@@ -1368,16 +1362,6 @@ FW_VERSIONS = {
   CAR.TUCSON_HYBRID_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00NX4 MDPS C 1.00 1.01 56300-P0100 2228',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x87391312MND0',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00PSBG2441  G19_Rev\x00\x00\x00SNX4T16XXHS01NS2lS\xdfa',
-      b'\xf1\x8795441-3D220\x00\xf1\x81G19_Rev\x00\x00\x00\xf1\x00PSBG2441  G19_Rev\x00\x00\x00SNX4T16XXHS01NS2lS\xdfa',
     ],
   },
 }
