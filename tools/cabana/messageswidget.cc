@@ -57,10 +57,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   table_widget->setSortingEnabled(true);
-  // table_widget->setColumnWidth(0, 220);
-  // table_widget->setColumnWidth(1, 80);
-  // table_widget->setColumnWidth(2, 60);
-  // table_widget->setColumnWidth(3, 60);
+  table_widget->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
   table_widget->sortByColumn(0, Qt::AscendingOrder);
@@ -101,8 +98,8 @@ void MessagesWidget::loadFromPaste() {
 // MessageListModel
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {qWarning() << section;
-    return (QString[]){"Name", "ID", "Freq", "Count" "Bytes"}[section];}
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
+    return (QString[]){"Name", "ID", "Freq", "Count", "Bytes"}[section];
   return {};
 }
 
@@ -126,7 +123,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   } else if (role == Qt::UserRole) {
     return std::next(can->can_msgs.begin(), index.row()).key();
   } else if (role == Qt::FontRole) {
-    if (index.column() == 3) {
+    if (index.column() == 4) {
       return QFontDatabase::systemFont(QFontDatabase::FixedFont);
     }
   }
@@ -146,7 +143,7 @@ void MessageListModel::updateState() {
   }
 
   if (row_count > 0) {
-    emit dataChanged(index(0, 0), index(row_count - 1, 3), {Qt::DisplayRole});
+    emit dataChanged(index(0, 0), index(row_count - 1, 4), {Qt::DisplayRole});
   }
 }
 
