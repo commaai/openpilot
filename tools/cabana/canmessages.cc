@@ -133,6 +133,7 @@ void CANMessages::settingChanged() {
 // Settings
 
 Settings::Settings() {
+  // TODO: restore last session on startup.(e.g. route, dbc file, msg, charts, spliter sizes, video position, zoom range)
   qRegisterMetaTypeStreamOperators<QList<int> >("QList<int>");
   load();
 }
