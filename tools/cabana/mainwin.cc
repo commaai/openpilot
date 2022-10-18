@@ -68,7 +68,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
-  // save settings
+  // save session
+  settings.selected_msg_id = messages_widget->selectedMessageId();
+  settings.charts = charts_widget->chartIDS();
   settings.splitter_sizes = splitter->sizes();
   settings.save();
   QWidget::closeEvent(event);

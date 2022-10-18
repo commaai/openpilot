@@ -36,6 +36,7 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
+  QString selectedMessageId() const;
 
 public slots:
   void dbcSelectionChanged(const QString &dbc_file);

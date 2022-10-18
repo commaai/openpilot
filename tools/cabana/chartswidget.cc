@@ -101,6 +101,14 @@ void ChartsWidget::updateTitleBar() {
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
+QStringList ChartsWidget::chartIDS() const {
+  QStringList ret;
+  for (auto chart : charts) {
+    ret.append(chart->id + ":" + chart->signal->name.c_str());
+  }
+  return ret;
+}
+
 void ChartsWidget::addChart(const QString &id, const Signal *sig) {
   if (!charts.contains(sig)) {
     auto chart = new ChartWidget(id, sig, this);

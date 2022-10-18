@@ -64,6 +64,7 @@ class ChartsWidget : public QWidget {
 
 public:
   ChartsWidget(QWidget *parent = nullptr);
+  QStringList chartIDS() const;
   void addChart(const QString &id, const Signal *sig);
   void removeChart(const Signal *sig);
 

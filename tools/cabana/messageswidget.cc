@@ -97,6 +97,11 @@ void MessagesWidget::loadFromPaste() {
   }
 }
 
+QString MessagesWidget::selectedMessageId() const {
+  auto index = table_widget->selectionModel()->currentIndex();
+  return index.isValid() ? index.data(Qt::UserRole).toString() : "";
+}
+
 // MessageListModel
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
