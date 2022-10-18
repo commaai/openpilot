@@ -48,7 +48,6 @@ MainWindow::MainWindow() : QWidget() {
 }
 
 void MainWindow::dockCharts(bool dock) {
-  charts_widget->setUpdatesEnabled(false);
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
     r_layout->addWidget(charts_widget);
@@ -62,7 +61,6 @@ void MainWindow::dockCharts(bool dock) {
     floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
   }
-  charts_widget->setUpdatesEnabled(true);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
