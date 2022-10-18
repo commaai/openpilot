@@ -60,9 +60,13 @@ def hello_world():
   return index
 
 last_send_time = time.monotonic()
+ws_print_every_xth_message = 8
+ws_print_counter = 0
 async def handle_message(ws):
   async for message in ws:
     global last_send_time
+    global ws_print_counter
+    global ws_print_every_xth_message
     if not len(message) == 8:
       pass
     else:
@@ -73,7 +77,19 @@ async def handle_message(ws):
       dat.testJoystick.axes = [y,x]
       dat.testJoystick.buttons = [False]
       pm.send('testJoystick', dat)
+      last_lst = last_send_time
       last_send_time = time.monotonic()
+      ws_delta_time_ms = (last_send_time - last_lst) * 1000.
+      if (ws_print_counter % ws_print_every_xth_message) == 0:
+        print((
+          "[testJoystick] "
+          "Δt: " f"{ws_delta_time_ms:1.0f}" ", "
+          "axes: {"
+            "x: " + f"{x:.2f}" + ", "
+            "y: " + f"{y:.2f}"
+          "}"
+        ))
+      ws_print_counter += 1
 
 async def maine():
   async with serve(handle_message, "0.0.0.0", 5001):
