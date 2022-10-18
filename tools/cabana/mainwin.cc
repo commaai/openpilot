@@ -34,6 +34,7 @@ MainWindow::MainWindow() : QWidget() {
   QLabel *fingerprint_label = new QLabel(this);
   right_hlayout->addWidget(fingerprint_label);
 
+  // TODO: click to select another route.
   right_hlayout->addWidget(new QLabel(can->route()));
   QPushButton *settings_btn = new QPushButton("Settings");
   right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
