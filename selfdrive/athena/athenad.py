@@ -20,7 +20,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
 from queue import Queue
-from typing import Any, Callable, Dict, List, Optional, Set, Union, cast
+from typing import BinaryIO, Callable, Dict, List, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -69,7 +69,7 @@ class UploadFile:
   allow_cellular: bool
 
   @classmethod
-  def from_dict(cls, d: Dict[str, Any]) -> UploadFile:
+  def from_dict(cls, d: Dict) -> UploadFile:
     return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False))
 
 
@@ -86,7 +86,7 @@ class UploadItem:
   allow_cellular: bool = False
 
   @classmethod
-  def from_dict(cls, d: Dict[str, Any]) -> UploadItem:
+  def from_dict(cls, d: Dict) -> UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"], d["progress"], d["allow_cellular"])
 
   def to_dict(self) -> UploadItemDict:
@@ -284,7 +284,7 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
     compress = True
 
   with open(path, "rb") as f:
-    data: Any
+    data: BinaryIO
     if compress:
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
       compressed = bz2.compress(f.read())
@@ -294,18 +294,15 @@ def _do_upload(upload_item: UploadItem, callback: Optional[Callable] = None) -> 
       size = os.fstat(f.fileno()).st_size
       data = f
 
-    if callback:
-      data = CallbackReader(data, callback, size)
-
     return requests.put(upload_item.url,
-                        data=data,
+                        data=CallbackReader(data, callback, size) if callback else data,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
                         timeout=30)
 
 
 # security: user should be able to request any message from their car
 @dispatcher.add_method
-def getMessage(service: str, timeout: int = 1000) -> Dict[str, Any]:
+def getMessage(service: str, timeout: int = 1000) -> Dict:
   if service is None or service not in service_list:
     raise Exception("invalid service")
 
@@ -316,7 +313,7 @@ def getMessage(service: str, timeout: int = 1000) -> Dict[str, Any]:
     raise TimeoutError
 
   # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(Dict[str, Any], ret.to_dict())
+  return cast(Dict, ret.to_dict())
 
 
 @dispatcher.add_method
@@ -446,7 +443,7 @@ def listUploadQueue() -> List[UploadItemDict]:
 
 
 @dispatcher.add_method
-def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Any]:
+def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]:
   if not isinstance(upload_id, list):
     upload_id = [upload_id]
 
@@ -465,7 +462,7 @@ def primeActivated(activated: bool) -> Dict[str, int]:
 
 
 @dispatcher.add_method
-def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Any]:
+def setBandwithLimit(upload_speed_kbps: int, download_speed_kbps: int) -> Dict[str, Union[int, str]]:
   if not AGNOS:
     return {"success": 0, "error": "only supported on AGNOS"}
 
@@ -524,12 +521,12 @@ def getSshAuthorizedKeys() -> str:
 
 
 @dispatcher.add_method
-def getSimInfo() -> Any:
+def getSimInfo():
   return HARDWARE.get_sim_info()
 
 
 @dispatcher.add_method
-def getNetworkType() -> Any:
+def getNetworkType():
   return HARDWARE.get_network_type()
 
 
@@ -540,7 +537,7 @@ def getNetworkMetered() -> bool:
 
 
 @dispatcher.add_method
-def getNetworks() -> Any:
+def getNetworks():
   return HARDWARE.get_networks()
 
 
