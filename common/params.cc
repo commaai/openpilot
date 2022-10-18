@@ -124,6 +124,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"HasAcceptedTerms", PERSISTENT},
     {"IMEI", PERSISTENT},
     {"InstallDate", PERSISTENT},
+    {"IsDeviceAwake", CLEAR_ON_MANAGER_START},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
     {"IsEngaged", PERSISTENT},
     {"IsLdwEnabled", PERSISTENT},

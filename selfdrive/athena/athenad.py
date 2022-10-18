@@ -706,24 +706,30 @@ def ws_send(ws, end_event):
 
 
 def ws_manage(ws, end_event):
-  # params = Params()
-  # awake_prev = False
+  params = Params()
+  awake_prev = False
 
   while not end_event.is_set():
-    # awake = params.get_bool("IsDeviceAwake")
-    # if awake != awake_prev:
-
     # missing in pysocket
     TCP_USER_TIMEOUT = 18
 
     sock: socket.socket = ws.sock
+
+    awake = params.get_bool("IsDeviceAwake")
+    if awake != awake_prev:
+      awake_prev = awake
+
+      keepidle = 10 if awake else 30
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepidle)
+      print(f"setting TCP_KEEPIDLE to {keepidle}")
+      print()
+
     print("SO_KEEPALIVE:", sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE))
     print("TCP_KEEPIDLE:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE))
     print("TCP_KEEPINTVL:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL))
     print("TCP_KEEPCNT:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT))
     print("TCP_USER_TIMEOUT:", sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT))
     print()
-    # awake_prev = awake
 
     time.sleep(2)
 
