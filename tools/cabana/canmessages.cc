@@ -133,6 +133,7 @@ void CANMessages::settingChanged() {
 // Settings
 
 Settings::Settings() {
+  qRegisterMetaTypeStreamOperators<QList<int> >("QList<int>");
   load();
 }
 
@@ -142,7 +143,7 @@ void Settings::save() {
   s.setValue("log_size", can_msg_log_size);
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
-  emit changed();
+  s.setValue("splitter_sizes", QVariant::fromValue(splitter_sizes));
 }
 
 void Settings::load() {
@@ -151,4 +152,8 @@ void Settings::load() {
   can_msg_log_size = s.value("log_size", 100).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
+  splitter_sizes = s.value("splitter_sizes").value<QList<int>>();
+  if (splitter_sizes.size() != 2) {
+    splitter_sizes = {100, 500};
+  }
 }

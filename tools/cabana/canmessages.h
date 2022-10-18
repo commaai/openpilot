@@ -5,6 +5,7 @@
 #include <map>
 
 #include <QHash>
+#include <QList>
 
 #include "tools/replay/replay.h"
 
@@ -20,6 +21,7 @@ public:
   int can_msg_log_size = 100;
   int cached_segment_limit = 3;
   int chart_height = 200;
+  QList<int> splitter_sizes = {100, 500};
 
 signals:
   void changed();

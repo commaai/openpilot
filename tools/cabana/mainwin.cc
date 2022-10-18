@@ -5,7 +5,6 @@
 #include <QHBoxLayout>
 #include <QFormLayout>
 #include <QScreen>
-#include <QSplitter>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
@@ -14,7 +13,7 @@ MainWindow::MainWindow() : QWidget() {
   QHBoxLayout *h_layout = new QHBoxLayout();
   main_layout->addLayout(h_layout);
 
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  splitter = new QSplitter(Qt::Horizontal, this);
 
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
@@ -22,7 +21,7 @@ MainWindow::MainWindow() : QWidget() {
   detail_widget = new DetailWidget(this);
   splitter->addWidget(detail_widget);
 
-  splitter->setSizes({100, 500});
+  splitter->setSizes(settings.splitter_sizes);
   h_layout->addWidget(splitter);
 
   // right widgets
@@ -68,6 +67,10 @@ void MainWindow::dockCharts(bool dock) {
 void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
+
+  // save settings
+  settings.splitter_sizes = splitter->sizes();
+  settings.save();
   QWidget::closeEvent(event);
 }
 
@@ -123,5 +126,6 @@ void SettingsDlg::save() {
   settings.cached_segment_limit = cached_segment->value();
   settings.chart_height = chart_height->value();
   settings.save();
+  emit settings.changed();
   accept();
 }
