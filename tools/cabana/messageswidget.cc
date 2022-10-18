@@ -72,7 +72,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       for (int i = 0; i < model->rowCount(); ++i) {
         auto index = model->index(i, 0);
         if (index.data(Qt::UserRole).toString() == settings.selected_msg_id) {
-          table_widget->selectionModel()->setCurrentIndex(index, QItemSelectionModel::SelectCurrent);
+          table_widget->selectionModel()->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
         }
       }
     }
@@ -96,7 +96,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
   dbc()->open(dbc_file);
   // TODO: reset model?
-  // table_widget->sortByColumn(0, Qt::AscendingOrder);
+  table_widget->sortByColumn(0, Qt::AscendingOrder);
 }
 
 void MessagesWidget::loadFromPaste() {

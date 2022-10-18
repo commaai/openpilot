@@ -92,7 +92,7 @@ void MainWindow::restoreSession() {
       if (auto msg = dbc()->msg(id)) {
         auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return l[2] == s.name.c_str(); });
         if (it != msg->sigs.end())
-          charts_widget->addChart(l[0] + ":" + l[1], &(*it));
+          charts_widget->addChart(id, &(*it));
       }
     }
   }
