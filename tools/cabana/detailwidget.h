@@ -1,34 +1,10 @@
 #pragma once
 
 #include <QScrollArea>
-#include <QTableWidget>
 
-#include "opendbc/can/common.h"
-#include "opendbc/can/common_dbc.h"
-#include "tools/cabana/canmessages.h"
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
-
-class BinarySelectionModel : public QItemSelectionModel {
-public:
-  BinarySelectionModel(QAbstractItemModel *model = nullptr) : QItemSelectionModel(model) {}
-  void select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) override;
-};
-
-class BinaryView : public QTableWidget {
-  Q_OBJECT
-public:
-  BinaryView(QWidget *parent = nullptr);
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void setMessage(const QString &message_id);
-  void updateState();
-signals:
-  void cellsSelected(int start_bit, int size);
-
-private:
-  QString msg_id;
-};
 
 class EditMessageDialog : public QDialog {
   Q_OBJECT

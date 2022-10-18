@@ -23,6 +23,9 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : start_bit(sig.start
   endianness->setCurrentIndex(sig.is_little_endian ? 0 : 1);
   form_layout->addRow(tr("Endianness"), endianness);
 
+  form_layout->addRow(tr("lsb"), new QLabel(QString::number(sig.lsb)));
+  form_layout->addRow(tr("msb"), new QLabel(QString::number(sig.msb)));
+
   sign = new QComboBox();
   sign->addItems({"Signed", "Unsigned"});
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
