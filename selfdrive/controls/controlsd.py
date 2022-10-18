@@ -83,10 +83,9 @@ class Controls:
     self.log_sock = messaging.sub_sock('androidLog')
 
     params = Params()
-
     self.sm = sm
     if self.sm is None:
-      ignore = []
+      ignore = ['testJoystick']
       if SIMULATION:
         ignore += ['driverCameraState', 'managerState']
       if params.get_bool('WideCameraOnly'):
@@ -94,7 +93,7 @@ class Controls:
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
-                                    ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
+                                    ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan', 'testJoystick'])
 
     if CI is None:
       # wait for one pandaState and one CAN packet
@@ -107,9 +106,6 @@ class Controls:
       self.CI, self.CP = CI, CI.CP
 
     self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
-    if not self.joystick_mode:
-      self.sm.ignore_alive.append('testJoystick')
-      self.sm.ignore_average_freq.append('testJoystick')
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
