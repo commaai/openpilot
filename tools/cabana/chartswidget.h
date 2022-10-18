@@ -27,6 +27,7 @@ private:
   void mouseMoveEvent(QMouseEvent *ev) override;
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void adjustChartMargins();
 
   void rangeChanged(qreal min, qreal max);
   void updateAxisY();
@@ -46,6 +47,7 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
   void updateTitle();
+  void setHeight(int height);
 
 signals:
   void remove();

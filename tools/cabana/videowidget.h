@@ -32,7 +32,7 @@ protected:
   void updateState();
   void pause(bool pause);
 
-  CameraViewWidget *cam_widget;
+  CameraWidget *cam_widget;
   QLabel *end_time_label;
   QPushButton *play_btn;
   Slider *slider;

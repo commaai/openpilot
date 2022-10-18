@@ -12,6 +12,7 @@ public:
   ~DBCManager();
 
   void open(const QString &dbc_file_name);
+  void open(const QString &name, const QString &content);
   void save(const QString &dbc_file_name);
 
   void addSignal(const QString &id, const Signal &sig);

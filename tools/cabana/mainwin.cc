@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QFormLayout>
 #include <QScreen>
+#include <QSplitter>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
@@ -13,12 +14,16 @@ MainWindow::MainWindow() : QWidget() {
   QHBoxLayout *h_layout = new QHBoxLayout();
   main_layout->addLayout(h_layout);
 
+  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+
   messages_widget = new MessagesWidget(this);
-  h_layout->addWidget(messages_widget);
+  splitter->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
-  detail_widget->setFixedWidth(600);
-  h_layout->addWidget(detail_widget);
+  splitter->addWidget(detail_widget);
+
+  splitter->setSizes({100, 500});
+  h_layout->addWidget(splitter);
 
   // right widgets
   QWidget *right_container = new QWidget(this);
@@ -96,6 +101,12 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   cached_segment->setValue(settings.cached_segment_limit);
   form_layout->addRow(tr("Cached segments limit"), cached_segment);
 
+  chart_height = new QSpinBox(this);
+  chart_height->setRange(100, 500);
+  chart_height->setSingleStep(10);
+  chart_height->setValue(settings.chart_height);
+  form_layout->addRow(tr("Chart height"), chart_height);
+
   main_layout->addLayout(form_layout);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -110,6 +121,7 @@ void SettingsDlg::save() {
   settings.fps = fps->value();
   settings.can_msg_log_size = log_size->value();
   settings.cached_segment_limit = cached_segment->value();
+  settings.chart_height = chart_height->value();
   settings.save();
   accept();
 }
