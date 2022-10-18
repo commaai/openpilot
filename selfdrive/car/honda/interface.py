@@ -147,7 +147,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
       ret.wheelSpeedFactor = 1.025
-      ret.minSteerSpeed = 12. * CV.MPH_TO_MS
 
     elif candidate == CAR.CRV_5G:
       ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
