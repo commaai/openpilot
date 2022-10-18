@@ -121,6 +121,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.33  # 11.82 is spec end-to-end
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.8467
+      ret.minSteerSpeed = 3. * CV.MPH_TO_MS
 
       if eps_modified:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.09]]
@@ -135,6 +136,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.72
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      ret.minSteerSpeed = 25. * CV.MPH_TO_MS
 
     elif candidate in (CAR.CRV, CAR.CRV_EU):
       ret.mass = 3572. * CV.LB_TO_KG + STD_CARGO_KG
@@ -219,6 +221,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.06]]
       tire_stiffness_factor = 0.677
+      ret.minSteerSpeed = 3. * CV.MPH_TO_MS
 
     elif candidate == CAR.ODYSSEY:
       ret.mass = 4471. * CV.LB_TO_KG + STD_CARGO_KG
@@ -228,6 +231,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
+      ret.minSteerSpeed = 0.
 
     elif candidate == CAR.ODYSSEY_CHN:
       ret.mass = 1849.2 + STD_CARGO_KG  # mean of 4 models in kg
@@ -264,6 +268,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.minSteerSpeed = 3. * CV.MPH_TO_MS
 
     elif candidate == CAR.HONDA_E:
       ret.mass = 3338.8 * CV.LB_TO_KG + STD_CARGO_KG
@@ -273,6 +278,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
+      ret.minSteerSpeed = 3. * CV.MPH_TO_MS
 
     else:
       raise ValueError(f"unsupported car {candidate}")
