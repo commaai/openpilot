@@ -148,7 +148,7 @@ void Settings::save() {
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
 
-  s.setValue("dbc_name", dbc()->name());
+  s.setValue("dbc_name", dbc_name);
   s.setValue("selected_msg_id", selected_msg_id);
   s.setValue("charts", charts);
   s.setValue("splitter_sizes", QVariant::fromValue(splitter_sizes));

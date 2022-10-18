@@ -69,6 +69,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     floating_window->deleteLater();
 
   // save session
+  settings.dbc_name = dbc()->name();
   settings.selected_msg_id = messages_widget->selectedMessageId();
   settings.charts = charts_widget->chartIDS();
   settings.splitter_sizes = splitter->sizes();
