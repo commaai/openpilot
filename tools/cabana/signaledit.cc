@@ -85,18 +85,17 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   // title bar
   QHBoxLayout *title_layout = new QHBoxLayout();
   icon = new QLabel(">");
-  icon->setFixedSize(15, 30);
   icon->setStyleSheet("font-weight:bold");
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
   title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   title->setText(QString("%1. %2").arg(index + 1).arg(sig_name));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(getColor(index)));
-  title_layout->addWidget(title);
+  title_layout->addWidget(title, 1);
 
   QPushButton *plot_btn = new QPushButton("📈");
   plot_btn->setToolTip(tr("Show Plot"));
-  plot_btn->setFixedSize(30, 30);
+  plot_btn->setFixedSize(20, 20);
   QObject::connect(plot_btn, &QPushButton::clicked, this, &SignalEdit::showChart);
   title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
