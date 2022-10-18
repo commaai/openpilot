@@ -13,7 +13,7 @@ VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
-  def test_auxiliary_requests_ecu_whitelist(self):
+  def test_auxiliary_request_ecu_whitelist(self):
     # Asserts only auxiliary Ecus can exist in database for CAN-FD cars
     config = FW_QUERY_CONFIGS['hyundai']
     whitelisted_ecus = set([ecu for r in config.requests for ecu in r.whitelist_ecus if r.bus > 3])
