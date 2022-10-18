@@ -21,11 +21,9 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
+    self.gear_msg_canfd = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
     if CP.carFingerprint in CANFD_CAR:
-      if CP.flags & HyundaiFlags.CANFD_ALT_GEARS:
-        self.shifter_values = can_define.dv["GEAR_ALT"]["GEAR"]
-      else:
-        self.shifter_values = can_define.dv["GEAR_SHIFTER"]["GEAR"]
+      self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -157,15 +155,14 @@ class CarState(CarStateBase):
   def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in EV_CAR:
-      ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    elif self.CP.carFingerprint in HYBRID_CAR:
-      ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
-
-    if self.CP.carFingerprint not in (EV_CAR | HYBRID_CAR):
-      ret.gasPressed = bool(cp.vl["ACCELERATOR_BRAKE_ALT"]["ACCELERATOR_PEDAL_PRESSED"])
-    else:
+    if self.CP.carFingerprint in (HYBRID_CAR | HYBRID_CAR):
+      if self.CP.carFingerprint in EV_CAR:
+        ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+      else:
+        ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
       ret.gasPressed = ret.gas > 1e-5
+    else:
+      ret.gasPressed = bool(cp.vl["ACCELERATOR_BRAKE_ALT"]["ACCELERATOR_PEDAL_PRESSED"])
 
     brake_msg = "ACCELERATOR_BRAKE_ALT" if self.CP.carFingerprint not in (EV_CAR | HYBRID_CAR) else "BRAKE"
     ret.brakePressed = cp.vl[brake_msg]["BRAKE_PRESSED"] == 1
@@ -173,8 +170,7 @@ class CarState(CarStateBase):
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear_msg = "GEAR_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
-    gear = cp.vl[gear_msg]["GEAR"]
+    gear = cp.vl[self.gear_msg_canfd]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
