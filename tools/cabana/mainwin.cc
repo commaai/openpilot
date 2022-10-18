@@ -44,7 +44,6 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::updated, this, &MainWindow::restoreSession);
 }
 
 void MainWindow::dockCharts(bool dock) {
@@ -87,9 +86,17 @@ void MainWindow::saveSession() {
 }
 
 void MainWindow::restoreSession() {
-  // restore last session from settings
+  for (const auto &chart_id : settings.charts) {
+    if (auto l = chart_id.split(":"); l.size() == 3) {
+      auto id = l[0] + ":" + l[1];
+      if (auto msg = dbc()->msg(id)) {
+        auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return l[2] == s.name.c_str(); });
+        if (it != msg->sigs.end())
+          charts_widget->addChart(l[0] + ":" + l[1], &(*it));
+      }
+    }
+  }
 }
-
 
 // SettingsDlg
 

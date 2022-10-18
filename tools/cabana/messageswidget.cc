@@ -62,12 +62,21 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setColumnWidth(2, 80);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
-  table_widget->sortByColumn(0, Qt::AscendingOrder);
   main_layout->addWidget(table_widget);
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
+  auto connect_ret = QObject::connect(can, &CANMessages::updated, [=]() {
+    if (selectedMessageId().isEmpty() && !settings.selected_msg_id.isEmpty()) {
+      for (int i = 0; i < model->rowCount(); ++i) {
+        auto index = model->index(i, 0);
+        if (index.data(Qt::UserRole).toString() == settings.selected_msg_id) {
+          table_widget->selectionModel()->setCurrentIndex(index, QItemSelectionModel::SelectCurrent);
+        }
+      }
+    }
+  });
   QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
   QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadFromPaste);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
@@ -79,14 +88,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     }
   });
 
-  // For test purpose
-  dbc_combo->setCurrentText("toyota_nodsu_pt_generated");
+  if (!settings.dbc_name.isEmpty()) {
+    dbc_combo->setCurrentText(settings.dbc_name);
+  }
 }
 
 void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
   dbc()->open(dbc_file);
   // TODO: reset model?
-  table_widget->sortByColumn(0, Qt::AscendingOrder);
+  // table_widget->sortByColumn(0, Qt::AscendingOrder);
 }
 
 void MessagesWidget::loadFromPaste() {
