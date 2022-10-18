@@ -1,4 +1,4 @@
-from enum import IntFlag
+from enum import Enum, IntFlag
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
@@ -6,7 +6,7 @@ from cereal import car
 from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -101,6 +101,13 @@ class CAR:
   GENESIS_G90 = "GENESIS G90 2017"
 
 
+class Footnote(Enum):
+  RED_PANDA = CarFootnote(
+    'Requires a <a href="https://comma.ai/shop/products/panda">red panda</a> and additional ' +
+    '<a href="https://comma.ai/shop/products/harness-box">harness box.</a>',
+    Column.MODEL)
+
+
 @dataclass
 class HyundaiCarInfo(CarInfo):
   package: str = "Smart Cruise Control (SCC)"
@@ -142,10 +149,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
   CAR.IONIQ_5: [
-    HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022" , "Highway Driving Assist", harness=Harness.hyundai_k),
-    HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022", "Highway Driving Assist II", harness=Harness.hyundai_q),
+    HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022", "Highway Driving Assist", footnotes=[Footnote.RED_PANDA], harness=Harness.hyundai_k),
+    HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022", "Highway Driving Assist II", footnotes=[Footnote.RED_PANDA], harness=Harness.hyundai_q),
   ],
-  CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
+  CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", footnotes=[Footnote.RED_PANDA], harness=Harness.hyundai_n),
 
   # Kia
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
@@ -175,8 +182,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
   CAR.KIA_EV6: [
-    HyundaiCarInfo("Kia EV6 (without HDA II) 2022", "Highway Driving Assist", harness=Harness.hyundai_l),
-    HyundaiCarInfo("Kia EV6 (with HDA II) 2022", "Highway Driving Assist II", harness=Harness.hyundai_p)
+    HyundaiCarInfo("Kia EV6 (without HDA II) 2022", "Highway Driving Assist", footnotes=[Footnote.RED_PANDA], harness=Harness.hyundai_l),
+    HyundaiCarInfo("Kia EV6 (with HDA II) 2022", "Highway Driving Assist II", footnotes=[Footnote.RED_PANDA], harness=Harness.hyundai_p)
   ],
 
   # Genesis
