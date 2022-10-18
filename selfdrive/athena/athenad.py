@@ -42,6 +42,10 @@ from selfdrive.statsd import STATS_DIR
 from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 
+
+# missing in pysocket
+TCP_USER_TIMEOUT = 18
+
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {8022}
@@ -143,6 +147,7 @@ def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> No
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
+    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
     threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
@@ -754,6 +759,38 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
     except Exception:
       cloudlog.exception("athenad.ws_send.exception")
       end_event.set()
+
+
+# Default socket options:
+# SO_KEEPALIVE: 1
+# TCP_KEEPIDLE: 30
+# TCP_KEEPINTVL: 10
+# TCP_KEEPCNT: 3
+# TCP_USER_TIMEOUT: 0
+def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
+  # params = Params()
+  # onroad_prev = False
+
+  while not end_event.is_set():
+    sock = ws.sock
+
+    print(f"SO_KEEPALIVE: {sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)}")
+    print(f"TCP_KEEPIDLE: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE)}")
+    print(f"TCP_KEEPINTVL: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL)}")
+    print(f"TCP_KEEPCNT: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
+    print(f"TCP_USER_TIMEOUT: {sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT)}")
+
+    # onroad = params.get_bool("IsOnroad")
+    # if onroad != onroad_prev:
+    #   onroad_prev = onroad
+
+    #   keepidle = 5 if onroad else 30  # seconds
+    #   sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepidle)
+
+    #   user_timeout = 40*1000 if onroad else 60*1000  # milliseconds
+    #   sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, user_timeout)
+
+    end_event.wait(5)
 
 
 def backoff(retries: int) -> int:
