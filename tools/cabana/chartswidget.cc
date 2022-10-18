@@ -184,6 +184,7 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   font.setBold(true);
   chart->setTitleFont(font);
   chart->setMargins({0, 0, 0, 0});
+  chart->layout()->setContentsMargins(0, 0, 0, 0);
 
   track_line = new QGraphicsLineItem(chart);
   track_line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
