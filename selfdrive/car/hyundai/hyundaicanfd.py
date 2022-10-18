@@ -46,12 +46,8 @@ def create_buttons(packer, CP, cnt, btn):
     "CRUISE_BUTTONS": btn,
   }
   
-  if CP.flags & HyundaiFlags.CANFD_HDA2:
-    ret.append(packer.make_can_msg("CRUISE_BUTTONS", 5, values))
-  else:
-    ret.append(packer.make_can_msg("CRUISE_BUTTONS", 6, values))
-  
-  return ret 
+  bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 6
+  return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
 def create_acc_cancel(packer, CP, cruise_info_copy):
   values = cruise_info_copy
