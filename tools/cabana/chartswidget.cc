@@ -2,6 +2,7 @@
 
 #include <QGraphicsLayout>
 #include <QRubberBand>
+#include <QTimer>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
@@ -202,12 +203,30 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     rubber->setPalette(pal);
   }
 
+  QTimer *timer = new QTimer(this);
+  timer->setInterval(100);
+  timer->setSingleShot(true);
+  timer->callOnTimeout(this, &ChartView::adjustChartMargins);
+
   QObject::connect(can, &CANMessages::updated, this, &ChartView::updateState);
   QObject::connect(can, &CANMessages::rangeChanged, this, &ChartView::rangeChanged);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartView::updateSeries);
   QObject::connect(dynamic_cast<QValueAxis *>(chart->axisX()), &QValueAxis::rangeChanged, can, &CANMessages::setRange);
+  QObject::connect(chart, &QChart::plotAreaChanged, [=](const QRectF &plotArea) {
+    // use a singleshot timer to avoid recursion call.
+    timer->start();
+  });
 
   updateSeries();
+}
+
+void ChartView::adjustChartMargins() {
+  // TODO: Remove hardcoded aligned_pos
+  const int aligned_pos = 60;
+  if (chart()->plotArea().left() != aligned_pos) {
+    const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
+    chart()->setMargins(QMargins(left_margin, 0, 0, 0));
+  }
 }
 
 void ChartWidget::setHeight(int height) {

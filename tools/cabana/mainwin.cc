@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QFormLayout>
 #include <QScreen>
+#include <QSplitter>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
@@ -13,12 +14,16 @@ MainWindow::MainWindow() : QWidget() {
   QHBoxLayout *h_layout = new QHBoxLayout();
   main_layout->addLayout(h_layout);
 
+  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+
   messages_widget = new MessagesWidget(this);
-  h_layout->addWidget(messages_widget);
+  splitter->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
-  detail_widget->setFixedWidth(600);
-  h_layout->addWidget(detail_widget);
+  splitter->addWidget(detail_widget);
+
+  splitter->setSizes({100, 500});
+  h_layout->addWidget(splitter);
 
   // right widgets
   QWidget *right_container = new QWidget(this);

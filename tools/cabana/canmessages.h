@@ -91,6 +91,7 @@ inline char toHex(uint value) {
 }
 
 inline const QString &getColor(int i) {
+  // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
 }
