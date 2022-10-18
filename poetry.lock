@@ -1292,17 +1292,6 @@ python-versions = "*"
 cp2110 = ["hidapi"]
 
 [[package]]
-name = "pyside2"
-version = "5.13.2"
-description = "Python bindings for the Qt cross-platform application and UI framework"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-shiboken2 = "5.13.2"
-
-[[package]]
 name = "pytest"
 version = "7.1.3"
 description = "pytest: simple powerful testing with Python"
@@ -1536,14 +1525,6 @@ typing-extensions = "*"
 [package.extras]
 test = ["pytest (>=6.2)", "virtualenv (>20)"]
 toml = ["setuptools (>=42)"]
-
-[[package]]
-name = "shiboken2"
-version = "5.13.2"
-description = "Python / C++ bindings helper module"
-category = "main"
-optional = false
-python-versions = "*"
 
 [[package]]
 name = "six"
@@ -1956,7 +1937,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "4f448878a76bac3c1af708ad37c0ae707ca6593cc2dfc5874d6113cb15048d6f"
+content-hash = "2e03a722f13d0445626d5d3b56e24c26533c8913bd453d3d06b24808362d190f"
 
 [metadata.files]
 alabaster = [
@@ -3492,14 +3473,6 @@ pyserial = [
     {file = "pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
     {file = "pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"},
 ]
-pyside2 = [
-    {file = "PySide2-5.13.2-5.13.2-cp27-cp27m-macosx_10_12_intel.whl", hash = "sha256:ede8ed6e7021232184829d16614eb153f188ea250862304eac35e04b2bd0120c"},
-    {file = "PySide2-5.13.2-5.13.2-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:63cc845434388b398b79b65f7b5312b9b5348fbc772d84092c9245efbf341197"},
-    {file = "PySide2-5.13.2-5.13.2-cp35.cp36.cp37-abi3-macosx_10_12_intel.whl", hash = "sha256:ed6d22c7a3a99f480d4c9348bcced97ef7bc0c9d353ad3665ae705e8eb61feb5"},
-    {file = "PySide2-5.13.2-5.13.2-cp35.cp36.cp37-abi3-manylinux1_x86_64.whl", hash = "sha256:7c57fe60ed57a3a8b95d9163abca9caa803a1470f29b40bff8ef4103b97a96c8"},
-    {file = "PySide2-5.13.2-5.13.2-cp35.cp36.cp37-none-win32.whl", hash = "sha256:7c61a6883f3474939097b9dabc80f028887046be003ce416da1b3565a08d1f92"},
-    {file = "PySide2-5.13.2-5.13.2-cp35.cp36.cp37-none-win_amd64.whl", hash = "sha256:589b90944c24046d31bf76694590a600d59d20130015086491b793a81753629a"},
-]
 pytest = [
     {file = "pytest-7.1.3-py3-none-any.whl", hash = "sha256:1377bda3466d70b55e3f5cecfa55bb7cfcf219c7964629b967c37cf0bda818b7"},
     {file = "pytest-7.1.3.tar.gz", hash = "sha256:4f365fec2dff9c1162f834d9f18af1ba13062db0c708bf7b946f8a5c76180c39"},
@@ -3748,14 +3721,6 @@ setuptools = [
 setuptools-scm = [
     {file = "setuptools_scm-7.0.5-py3-none-any.whl", hash = "sha256:7930f720905e03ccd1e1d821db521bff7ec2ac9cf0ceb6552dd73d24a45d3b02"},
     {file = "setuptools_scm-7.0.5.tar.gz", hash = "sha256:031e13af771d6f892b941adb6ea04545bbf91ebc5ce68c78aaf3fff6e1fb4844"},
-]
-shiboken2 = [
-    {file = "shiboken2-5.13.2-5.13.2-cp27-cp27m-macosx_10_12_intel.whl", hash = "sha256:7c766c4160636a238e0e4430e2f40b504b13bcc4951902eb78cd5c971f26c898"},
-    {file = "shiboken2-5.13.2-5.13.2-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:e6543506cb353d417961b9ec3c6fc726ec2f72eeab609dc88943c2e5cb6d6408"},
-    {file = "shiboken2-5.13.2-5.13.2-cp35.cp36.cp37-abi3-macosx_10_12_intel.whl", hash = "sha256:ca08a3c95b1b20ac2b243b7b06379609bd73929dbc27b28c01415feffe3bcea1"},
-    {file = "shiboken2-5.13.2-5.13.2-cp35.cp36.cp37-abi3-manylinux1_x86_64.whl", hash = "sha256:81fa9b288c6c4b4c91220fcca2002eadb48fc5c3238e8bd88e982e00ffa77c53"},
-    {file = "shiboken2-5.13.2-5.13.2-cp35.cp36.cp37-none-win32.whl", hash = "sha256:e2f72b5cfdb8b48bdb55bda4b42ec7d36d1bce0be73d6d7d4a358225d6fb5f25"},
-    {file = "shiboken2-5.13.2-5.13.2-cp35.cp36.cp37-none-win_amd64.whl", hash = "sha256:5e84a4b4e7ab08bb5db0a8168e5d0316fbf3c25b788012701a82079faadfb19b"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
