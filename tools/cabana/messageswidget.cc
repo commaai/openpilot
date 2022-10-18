@@ -22,6 +22,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   for (const auto &name : dbc_names) {
     dbc_combo->addItem(QString::fromStdString(name));
   }
+  dbc_combo->model()->sort(0);
   dbc_combo->setEditable(true);
   dbc_combo->setCurrentText(QString());
   dbc_combo->setInsertPolicy(QComboBox::NoInsert);

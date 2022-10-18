@@ -22,8 +22,8 @@ pre-commit uninstall || true
 
 echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 cd $TARGET_DIR
-git fetch origin master-ci
-git fetch origin devel
+git fetch --depth 1 origin master-ci
+git fetch --depth 1 origin devel
 
 git checkout -f --track origin/master-ci
 git reset --hard master-ci
