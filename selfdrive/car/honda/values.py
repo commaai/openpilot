@@ -113,10 +113,10 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
     HondaCarInfo("Honda Inspire 2018", "All", harness=Harness.bosch_a),
   ],
   CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", harness=Harness.bosch_a),
-  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec, video_link="https://youtu.be/-IkImTe1NYE"),
+  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
     HondaCarInfo("Honda Civic 2019-21", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", [Footnote.CIVIC_DIESEL], 2. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-    HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch_a),
+    HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.bosch_a),
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
   CAR.CIVIC_2022: [
@@ -124,7 +124,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
     HondaCarInfo("Honda Civic Hatchback 2022", "All", harness=Harness.bosch_b),
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", harness=Harness.nidec),
-  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", harness=Harness.nidec),
+  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS, harness=Harness.nidec),
   CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", harness=Harness.bosch_a),
   CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
   CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch_a),
