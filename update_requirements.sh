@@ -41,24 +41,19 @@ eval "$(pyenv init --path)"
 
 echo "update pip"
 pip install pip==22.3
+pip install poetry==1.2.2
 
+poetry config virtualenvs.prefer-active-python true --local
+
+POETRY_INSTALL_ARGS=""
 if [ -d "./xx" ]; then
-  echo "WARNING: using xx Pipfile ******"
-  export PIPENV_SYSTEM=1
-  export PIPENV_PIPFILE=./xx/Pipfile
-  pip install pipenv==2022.10.12
-
-  echo "pip packages install..."
-  pipenv sync --dev
-  pipenv --clear
-else
-  echo "PYTHONPATH=${PWD}" > .env
-  pip install poetry==1.2.2
-  poetry config virtualenvs.prefer-active-python true --local
-
-  echo "pip packages install..."
-  poetry install --no-root
+  echo "WARNING: using xx dependency group, installing globally"
+  export POETRY_VIRTUALENVS_CREATE=false
+  POETRY_INSTALL_ARGS="--with xx --sync"
 fi
+
+echo "pip packages install..."
+poetry install --no-root $POETRY_INSTALL_ARGS
 
 if [ -z "$PIPENV_SYSTEM" ] && [ -z "$POETRY_VIRTUALENVS_CREATE" ]; then
   echo "PYTHONPATH=${PWD}" > .env
