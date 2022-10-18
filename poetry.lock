@@ -108,6 +108,7 @@ python-versions = "*"
 [package.source]
 type = "url"
 url = "https://github.com/commaai/apex/releases/download/pytorch1.10.0%2Bcu11.1/apex-0.1-cp38-cp38-linux_x86_64.whl"
+
 [[package]]
 name = "appdirs"
 version = "1.4.4"
@@ -2472,6 +2473,7 @@ numpy = [
 [package.source]
 type = "url"
 url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu113/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl"
+
 [[package]]
 name = "osmium"
 version = "3.4.1"
@@ -2602,6 +2604,24 @@ description = "A pillow plugin that adds avif support via libavif"
 category = "dev"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "pipenv"
+version = "2022.10.12"
+description = "Python Development Workflow for Humans."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+certifi = "*"
+setuptools = ">=36.2.1"
+virtualenv = "*"
+virtualenv-clone = ">=0.2.5"
+
+[package.extras]
+dev = ["black", "bs4", "flake8 (>=3.3.0,<4.0)", "invoke", "parver", "sphinx", "towncrier"]
+tests = ["flaky", "mock", "pytest (>=5.0)", "pytest-timeout", "pytest-xdist"]
 
 [[package]]
 name = "pkginfo"
@@ -4012,6 +4032,7 @@ typing-extensions = "*"
 [package.source]
 type = "url"
 url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp38-cp38-linux_x86_64.whl"
+
 [[package]]
 name = "torchsummary"
 version = "1.5.1"
@@ -4041,6 +4062,7 @@ scipy = ["scipy"]
 [package.source]
 type = "url"
 url = "https://download.pytorch.org/whl/cu113/torchvision-0.12.0%2Bcu113-cp38-cp38-linux_x86_64.whl"
+
 [[package]]
 name = "tornado"
 version = "6.2"
@@ -4195,6 +4217,14 @@ docs = ["proselint (>=0.13)", "sphinx (>=5.1.1)", "sphinx-argparse (>=0.3.1)", "
 testing = ["coverage (>=6.2)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=21.3)", "pytest (>=7.0.1)", "pytest-env (>=0.6.2)", "pytest-freezegun (>=0.4.2)", "pytest-mock (>=3.6.1)", "pytest-randomly (>=3.10.3)", "pytest-timeout (>=2.1)"]
 
 [[package]]
+name = "virtualenv-clone"
+version = "0.5.7"
+description = "script to clone virtualenvs."
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+
+[[package]]
 name = "wcwidth"
 version = "0.2.5"
 description = "Measures the displayed width of unicode strings in a terminal"
@@ -4344,7 +4374,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "845de2546495d32f964ee13d3f14b731a22e269dd710bafdcf305ddd42199dca"
+content-hash = "745226388e33cd6ed755ae4eb248b6041b0b875356c24eec7507ea597c5f6f82"
 
 [metadata.files]
 adal = [
@@ -6556,6 +6586,10 @@ pillow-avif-plugin = [
     {file = "pillow_avif_plugin-1.2.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:0d54543ed9fbb6c18b61c93a2296e2a9bfc85ef559cb6a50b92fe80cc4711db5"},
     {file = "pillow_avif_plugin-1.2.2-cp39-cp39-win_amd64.whl", hash = "sha256:86c62edb830a83a97c2a2f9a262968f12ce32adbf1069fd5fae47a0fae706e16"},
 ]
+pipenv = [
+    {file = "pipenv-2022.10.12-py2.py3-none-any.whl", hash = "sha256:f43972a42411107ade86b6f17dd698dfcd843bd84eb7264163ebb363f6b0ede4"},
+    {file = "pipenv-2022.10.12.tar.gz", hash = "sha256:a4d88f6667cbcd9ea432d626a8b373cd3101886b9fb964ea7e7f9650a83fc307"},
+]
 pkginfo = [
     {file = "pkginfo-1.8.3-py2.py3-none-any.whl", hash = "sha256:848865108ec99d4901b2f7e84058b6e7660aae8ae10164e015a6dcf5b242a594"},
     {file = "pkginfo-1.8.3.tar.gz", hash = "sha256:a84da4318dd86f870a9447a8c98340aa06216bfc6f2b7bdc4b8766984ae1867c"},
@@ -7678,6 +7712,10 @@ utm = [
 virtualenv = [
     {file = "virtualenv-20.16.5-py3-none-any.whl", hash = "sha256:d07dfc5df5e4e0dbc92862350ad87a36ed505b978f6c39609dc489eadd5b0d27"},
     {file = "virtualenv-20.16.5.tar.gz", hash = "sha256:227ea1b9994fdc5ea31977ba3383ef296d7472ea85be9d6732e42a91c04e80da"},
+]
+virtualenv-clone = [
+    {file = "virtualenv-clone-0.5.7.tar.gz", hash = "sha256:418ee935c36152f8f153c79824bb93eaf6f0f7984bae31d3f48f350b9183501a"},
+    {file = "virtualenv_clone-0.5.7-py3-none-any.whl", hash = "sha256:44d5263bceed0bac3e1424d64f798095233b64def1c5689afa43dc3223caf5b0"},
 ]
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},

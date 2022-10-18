@@ -151,6 +151,7 @@ opencv-python-headless = { url = "https://github.com/commaai/opencv-python-build
 osmium = "*"
 pandas = "*"
 pillow-avif-plugin = "*"
+pipenv = "2022.10.12"
 plotly = "5.7.0"
 pycuda = "*"
 Pygments = "*"
