@@ -8,7 +8,7 @@
 
 // BinaryView
 
-const int CELL_HEIGHT = 35;
+const int CELL_HEIGHT = 30;
 
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
@@ -156,7 +156,7 @@ void BinarySelectionModel::select(const QItemSelection &selection, QItemSelectio
 
 BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   // cache fonts and color
-  small_font.setPointSize(7);
+  small_font.setPointSize(6);
   bold_font.setBold(true);
   highlight_color = QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Highlight);
 }
