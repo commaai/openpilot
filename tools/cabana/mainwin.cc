@@ -30,8 +30,16 @@ MainWindow::MainWindow() : QWidget() {
   right_container->setFixedWidth(640);
   r_layout = new QVBoxLayout(right_container);
 
+  QHBoxLayout *right_hlayout = new QHBoxLayout();
+  QLabel *fingerprint_label = new QLabel(this);
+  right_hlayout->addWidget(fingerprint_label);
+
+  // TODO: click to select another route.
+  right_hlayout->addWidget(new QLabel(can->route()));
   QPushButton *settings_btn = new QPushButton("Settings");
-  r_layout->addWidget(settings_btn, 0, Qt::AlignRight);
+  right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
+
+  r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
@@ -45,6 +53,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
+  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
 }
 
 void MainWindow::dockCharts(bool dock) {
