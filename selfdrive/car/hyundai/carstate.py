@@ -155,7 +155,7 @@ class CarState(CarStateBase):
   def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in (HYBRID_CAR | HYBRID_CAR):
+    if self.CP.carFingerprint in (EV_CAR | HYBRID_CAR):
       if self.CP.carFingerprint in EV_CAR:
         ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
       else:
