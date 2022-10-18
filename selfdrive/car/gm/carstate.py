@@ -9,6 +9,7 @@ from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
+STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
 
 
 class CarState(CarStateBase):
@@ -16,7 +17,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
-    self.lka_steering_cmd_counter = 0
+    self.loopback_lka_steering_cmd_updated = False
+    self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
@@ -26,6 +28,11 @@ class CarState(CarStateBase):
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
     self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
 
+    # Variables used for avoiding LKAS faults
+    self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]) > 0
+    if self.CP.networkLocation == NetworkLocation.fwdCamera:
+      self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
       pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"],
@@ -34,7 +41,8 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
+    ret.standstill = ret.wheelSpeeds.rl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr <= STANDSTILL_THRESHOLD
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
@@ -45,8 +53,13 @@ class CarState(CarStateBase):
     # that the brake is being intermittently pressed without user interaction.
     # To avoid a cruise fault we need to match the ECM's brake pressed signal and threshold
     # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
-    ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] / 0xd0
-    ret.brakePressed = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"] >= 8
+    ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
+    if self.CP.networkLocation != NetworkLocation.fwdCamera:
+      ret.brakePressed = ret.brake >= 8
+    else:
+      # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
+      # Match ECM threshold at a standstill to allow the camera to cancel earlier
+      ret.brakePressed = ret.brake >= 20
 
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
@@ -60,7 +73,6 @@ class CarState(CarStateBase):
     ret.steeringTorque = pt_cp.vl["PSCMStatus"]["LKADriverAppldTrq"]
     ret.steeringTorqueEps = pt_cp.vl["PSCMStatus"]["LKATorqueDelivered"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    self.lka_steering_cmd_counter = loopback_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     # 0 inactive, 1 active, 2 temporarily limited, 3 failed
     self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
@@ -88,6 +100,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
+      ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
 
     return ret
 
@@ -96,8 +109,16 @@ class CarState(CarStateBase):
     signals = []
     checks = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      signals.append(("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"))
-      checks.append(("ASCMActiveCruiseControlStatus", 25))
+      signals += [
+        ("AEBCmdActive", "AEBCmd"),
+        ("RollingCounter", "ASCMLKASteeringCmd"),
+        ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
+      ]
+      checks += [
+        ("AEBCmd", 10),
+        ("ASCMLKASteeringCmd", 10),
+        ("ASCMActiveCruiseControlStatus", 25),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.CAMERA)
 
@@ -167,9 +188,7 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 10), # 10 Hz is the stock inactive rate (every 100ms).
-      #                             While active 50 Hz (every 20 ms) is normal
-      #                             EPS will tolerate around 200ms when active before faulting
+      ("ASCMLKASteeringCmd", 0),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK, enforce_checks=False)

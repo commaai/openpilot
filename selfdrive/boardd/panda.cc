@@ -360,6 +360,10 @@ void Panda::set_data_speed_kbps(uint16_t bus, uint16_t speed) {
   usb_write(0xf9, bus, (speed * 10));
 }
 
+void Panda::set_canfd_non_iso(uint16_t bus, bool non_iso) {
+  usb_write(0xfc, bus, non_iso);
+}
+
 static uint8_t len_to_dlc(uint8_t len) {
   if (len <= 8) {
     return len;
