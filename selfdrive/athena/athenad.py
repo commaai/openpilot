@@ -104,6 +104,7 @@ def handle_long_poll(ws):
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
+    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
     threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
@@ -702,6 +703,29 @@ def ws_send(ws, end_event):
     except Exception:
       cloudlog.exception("athenad.ws_send.exception")
       end_event.set()
+
+
+def ws_manage(ws, end_event):
+  # params = Params()
+  # awake_prev = False
+
+  while not end_event.is_set():
+    # awake = params.get_bool("IsDeviceAwake")
+    # if awake != awake_prev:
+
+    # missing in pysocket
+    TCP_USER_TIMEOUT = 18
+
+    sock: socket.socket = ws.sock
+    print("SO_KEEPALIVE:", sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE))
+    print("TCP_KEEPIDLE:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE))
+    print("TCP_KEEPINTVL:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL))
+    print("TCP_KEEPCNT:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT))
+    print("TCP_USER_TIMEOUT:", sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT))
+    print()
+    # awake_prev = awake
+
+    time.sleep(2)
 
 
 def backoff(retries):
