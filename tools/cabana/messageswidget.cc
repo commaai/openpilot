@@ -61,6 +61,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
   table_widget->sortByColumn(0, Qt::AscendingOrder);
+  table_widget->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
   main_layout->addWidget(table_widget);
 
   // signals/slots
