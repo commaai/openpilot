@@ -17,6 +17,7 @@ public:
 protected:
   void closeEvent(QCloseEvent *event) override;
   void setOption();
+  void restoreSession();
 
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;

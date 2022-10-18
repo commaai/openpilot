@@ -44,6 +44,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
+  QObject::connect(can, &CANMessages::update, this, MainWindow::restoreSession);
 }
 
 void MainWindow::dockCharts(bool dock) {
@@ -81,6 +82,11 @@ void MainWindow::setOption() {
   SettingsDlg dlg(this);
   dlg.exec();
 }
+
+void MainWindow::restoreSession() {
+  // restore last session from settings
+}
+
 
 // SettingsDlg
 
