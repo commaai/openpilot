@@ -44,6 +44,8 @@ public:
   bool eventFilter(const Event *event);
 
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
+  inline QString route() const { return routeName; }
+  inline QString carFingerprint() const { return replay->carFingerprint().c_str(); }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return current_sec; }
@@ -80,6 +82,7 @@ protected:
   double event_begin_sec = 0;
   double event_end_sec = 0;
   bool is_zoomed = false;
+  QString routeName;
   Replay *replay = nullptr;
 };
 
@@ -91,6 +94,7 @@ inline char toHex(uint value) {
 }
 
 inline const QString &getColor(int i) {
+  // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
 }
