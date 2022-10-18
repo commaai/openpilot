@@ -7,12 +7,12 @@ def create_buttons(packer, bus, idx, button):
   }
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
-def create_pscm_status(packer, pscm_status):
+def create_pscm_status(packer, idx):
   values = {
     "HandsOffSWDetectionMode": 1,
     "HandsOffSWlDetectionStatus": 1,
     "LKATorqueDeliveredStatus": 0,
-    "RollingCounter": int(pscm_status["RollingCounter"] + 1) & 0xf,
+    "RollingCounter": int(idx + 1) & 0xf,
   }
   values["PSCMStatusChecksum"] = (0x30 + (values['HandsOffSWlDetectionStatus'] << 5) +
                                   (values['LKATorqueDeliveredStatus'] << 3) +
