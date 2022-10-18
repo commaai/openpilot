@@ -2,8 +2,8 @@
 
 #include <QApplication>
 #include <QDialogButtonBox>
-#include <QHBoxLayout>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QScreen>
 #include <QVBoxLayout>
 
@@ -43,7 +43,9 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
-  QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
+  QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::openSettingsDlg);
+
+  restoreSession();
 }
 
 void MainWindow::dockCharts(bool dock) {
@@ -72,20 +74,23 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   QWidget::closeEvent(event);
 }
 
-void MainWindow::setOption() {
+void MainWindow::openSettingsDlg() {
   SettingsDlg dlg(this);
   dlg.exec();
 }
 
 void MainWindow::saveSession() {
   settings.dbc_name = dbc()->name();
-  settings.selected_msg_id = messages_widget->selectedMessageId();
+  settings.selected_msg_id = messages_widget->currentMessageId();
   settings.charts = charts_widget->chartIDS();
   settings.splitter_sizes = splitter->sizes();
   settings.save();
 }
 
 void MainWindow::restoreSession() {
+  messages_widget->openDBC(settings.dbc_name);
+  messages_widget->setCurrentMessageId(settings.selected_msg_id);
+
   for (const auto &chart_id : settings.charts) {
     if (auto l = chart_id.split(":"); l.size() == 3) {
       auto id = l[0] + ":" + l[1];
@@ -96,55 +101,4 @@ void MainWindow::restoreSession() {
       }
     }
   }
-}
-
-// SettingsDlg
-
-SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Settings"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QFormLayout *form_layout = new QFormLayout();
-
-  fps = new QSpinBox(this);
-  fps->setRange(10, 100);
-  fps->setSingleStep(10);
-  fps->setValue(settings.fps);
-  form_layout->addRow("FPS", fps);
-
-  log_size = new QSpinBox(this);
-  log_size->setRange(50, 500);
-  log_size->setSingleStep(10);
-  log_size->setValue(settings.can_msg_log_size);
-  form_layout->addRow(tr("Log size"), log_size);
-
-  cached_segment = new QSpinBox(this);
-  cached_segment->setRange(3, 60);
-  cached_segment->setSingleStep(1);
-  cached_segment->setValue(settings.cached_segment_limit);
-  form_layout->addRow(tr("Cached segments limit"), cached_segment);
-
-  chart_height = new QSpinBox(this);
-  chart_height->setRange(100, 500);
-  chart_height->setSingleStep(10);
-  chart_height->setValue(settings.chart_height);
-  form_layout->addRow(tr("Chart height"), chart_height);
-
-  main_layout->addLayout(form_layout);
-
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
-
-  setFixedWidth(360);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-}
-
-void SettingsDlg::save() {
-  settings.fps = fps->value();
-  settings.can_msg_log_size = log_size->value();
-  settings.cached_segment_limit = cached_segment->value();
-  settings.chart_height = chart_height->value();
-  settings.save();
-  emit settings.changed();
-  accept();
 }

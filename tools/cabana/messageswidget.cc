@@ -52,7 +52,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   proxy_model->setSourceModel(model);
   proxy_model->setFilterCaseSensitivity(Qt::CaseInsensitive);
   proxy_model->setDynamicSortFilter(false);
-  table_widget->setModel(proxy_model);
+  table_widget->setModel(model);//proxy_model);
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -67,33 +67,35 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
-  auto connect_ret = QObject::connect(can, &CANMessages::updated, [=]() {
-    if (selectedMessageId().isEmpty() && !settings.selected_msg_id.isEmpty()) {
+
+  QMetaObject::Connection *conn_delete = new QMetaObject::Connection();
+  *conn_delete = QObject::connect(can, &CANMessages::updated, [this]() {
+    auto selection_model = table_widget->selectionModel();
+    if (!selection_model->hasSelection() && !current_msg_id.isEmpty()) {
       for (int i = 0; i < model->rowCount(); ++i) {
         auto index = model->index(i, 0);
-        if (index.data(Qt::UserRole).toString() == settings.selected_msg_id) {
-          table_widget->selectionModel()->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+        if (index.data(Qt::UserRole).toString() == current_msg_id) {
+          selection_model->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+          // QObject::disconnect(*conn_delete);
+          // delete conn_delete;
         }
       }
     }
   });
-  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
+  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(openDBC(const QString &)));
   QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadFromPaste);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     // TODO: save DBC to file
   });
-  QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
-    if (current.isValid()) {
-      emit msgSelectionChanged(current.data(Qt::UserRole).toString());
+  QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::selectionChanged, [=](const QItemSelection &current, const QItemSelection &previous) {
+    if (current.size() > 0) {
+      current_msg_id = current.indexes()[0].data(Qt::UserRole).toString();
+      emit msgSelectionChanged(current_msg_id);
     }
   });
-
-  if (!settings.dbc_name.isEmpty()) {
-    dbc_combo->setCurrentText(settings.dbc_name);
-  }
 }
 
-void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
+void MessagesWidget::openDBC(const QString &dbc_file) {
   dbc()->open(dbc_file);
   // TODO: reset model?
   table_widget->sortByColumn(0, Qt::AscendingOrder);
@@ -105,11 +107,6 @@ void MessagesWidget::loadFromPaste() {
     dbc()->open("from paste", dlg.dbc_edit->toPlainText());
     dbc_combo->setCurrentText("loaded from paste");
   }
-}
-
-QString MessagesWidget::selectedMessageId() const {
-  auto index = table_widget->selectionModel()->currentIndex();
-  return index.isValid() ? index.data(Qt::UserRole).toString() : "";
 }
 
 // MessageListModel
@@ -146,7 +143,12 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 }
 
 void MessageListModel::updateState() {
+  auto prev_persistent_indexes = persistentIndexList();
+  QString msg_id = prev_persistent_indexes.isEmpty() ? "" : prev_persistent_indexes[0].data(Qt::UserRole).toString();
+  if (!msg_id.isEmpty())
+  qWarning() << "persistent id" << msg_id;
   int prev_row_count = row_count;
+
   row_count = can->can_msgs.size();
   int delta = row_count - prev_row_count;
   if (delta > 0) {
@@ -155,6 +157,23 @@ void MessageListModel::updateState() {
   } else if (delta < 0) {
     beginRemoveRows({}, row_count, prev_row_count - 1);
     endRemoveRows();
+  }
+
+  if (!prev_persistent_indexes.isEmpty()) {
+    int i = 0;
+    for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+      if (it.key() == msg_id) {
+        QModelIndexList new_persistent_indexes;
+        new_persistent_indexes.reserve(prev_persistent_indexes.size());
+        for (auto &idx : prev_persistent_indexes) {
+          new_persistent_indexes.push_back(index(i, idx.column()));
+          qWarning() << "set new index" << i;
+        }
+        changePersistentIndexList(prev_persistent_indexes, new_persistent_indexes);
+        break;
+      }
+      ++i;
+    }
   }
 
   if (row_count > 0) {

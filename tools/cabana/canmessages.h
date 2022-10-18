@@ -5,33 +5,9 @@
 #include <map>
 
 #include <QHash>
-#include <QList>
 
 #include "tools/replay/replay.h"
-
-class Settings : public QObject {
-  Q_OBJECT
-
-public:
-  Settings();
-  void save();
-  void load();
-
-  int fps = 10;
-  int can_msg_log_size = 100;
-  int cached_segment_limit = 3;
-  int chart_height = 200;
-
-  // session data
-  QString dbc_name;
-  QString selected_msg_id;
-  QStringList charts;
-  QString zoom_range;
-  QList<int> splitter_sizes = {100, 500};
-
-signals:
-  void changed();
-};
+#include "tools/cabana/settings.h"
 
 struct CanData {
   double ts;
@@ -106,4 +82,3 @@ inline const QString &getColor(int i) {
 
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;
-extern Settings settings;

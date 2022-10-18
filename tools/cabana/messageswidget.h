@@ -36,16 +36,18 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
-  QString selectedMessageId() const;
+  inline QString currentMessageId() const { return current_msg_id; }
+  inline void setCurrentMessageId(const QString &msg_id) { current_msg_id = msg_id; }
 
 public slots:
-  void dbcSelectionChanged(const QString &dbc_file);
+  void openDBC(const QString &dbc_file);
   void loadFromPaste();
 
 signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
+  QString current_msg_id;
   QTableView *table_widget;
   QComboBox *dbc_combo;
   MessageListModel *model;

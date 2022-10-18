@@ -1,13 +1,11 @@
 #include "tools/cabana/canmessages.h"
 
 #include <QDebug>
-#include <QSettings>
 
 #include "tools/cabana/dbcmanager.h"
 
 Q_DECLARE_METATYPE(std::vector<CanData>);
 
-Settings settings;
 CANMessages *can = nullptr;
 
 CANMessages::CANMessages(QObject *parent) : QObject(parent) {
@@ -130,42 +128,4 @@ void CANMessages::resetRange() {
 
 void CANMessages::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
-}
-
-// Settings
-
-Settings::Settings() {
-  qRegisterMetaTypeStreamOperators<QList<int> >("QList<int>");
-  load();
-}
-
-void Settings::save() {
-  QSettings s("settings", QSettings::IniFormat);
-
-  s.setValue("fps", fps);
-  s.setValue("log_size", can_msg_log_size);
-  s.setValue("cached_segment", cached_segment_limit);
-  s.setValue("chart_height", chart_height);
-
-  s.setValue("dbc_name", dbc_name);
-  s.setValue("selected_msg_id", selected_msg_id);
-  s.setValue("charts", charts);
-  s.setValue("splitter_sizes", QVariant::fromValue(splitter_sizes));
-}
-
-void Settings::load() {
-  QSettings s("settings", QSettings::IniFormat);
-
-  fps = s.value("fps", 10).toInt();
-  can_msg_log_size = s.value("log_size", 100).toInt();
-  cached_segment_limit = s.value("cached_segment", 3).toInt();
-  chart_height = s.value("chart_height", 200).toInt();
-
-  dbc_name = s.value("dbc_name").toString();
-  selected_msg_id = s.value("selected_msg_id").toString();
-  charts = s.value("charts").toStringList();
-  splitter_sizes = s.value("splitter_sizes").value<QList<int>>();
-  if (splitter_sizes.size() != 2) {
-    splitter_sizes = {100, 500};
-  }
 }
