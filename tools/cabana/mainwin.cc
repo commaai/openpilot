@@ -44,7 +44,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::update, this, MainWindow::restoreSession);
+  QObject::connect(can, &CANMessages::updated, this, &MainWindow::restoreSession);
 }
 
 void MainWindow::dockCharts(bool dock) {
@@ -69,18 +69,21 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
-  // save session
-  settings.dbc_name = dbc()->name();
-  settings.selected_msg_id = messages_widget->selectedMessageId();
-  settings.charts = charts_widget->chartIDS();
-  settings.splitter_sizes = splitter->sizes();
-  settings.save();
+  saveSession();
   QWidget::closeEvent(event);
 }
 
 void MainWindow::setOption() {
   SettingsDlg dlg(this);
   dlg.exec();
+}
+
+void MainWindow::saveSession() {
+  settings.dbc_name = dbc()->name();
+  settings.selected_msg_id = messages_widget->selectedMessageId();
+  settings.charts = charts_widget->chartIDS();
+  settings.splitter_sizes = splitter->sizes();
+  settings.save();
 }
 
 void MainWindow::restoreSession() {
