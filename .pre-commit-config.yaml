@@ -53,6 +53,7 @@ repos:
         types: [python]
         exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
         args:
+        - -j0
         - -rn
         - -sn
         - --rcfile=.pylintrc

@@ -1,11 +1,13 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <QComboBox>
 #include <QCompleter>
+#include <QDialogButtonBox>
+#include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSortFilterProxyModel>
+#include <QTextEdit>
 #include <QVBoxLayout>
 
 #include "tools/cabana/dbcmanager.h"
@@ -15,19 +17,23 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // DBC file selector
   QHBoxLayout *dbc_file_layout = new QHBoxLayout();
-  QComboBox *combo = new QComboBox(this);
+  dbc_combo = new QComboBox(this);
   auto dbc_names = dbc()->allDBCNames();
   for (const auto &name : dbc_names) {
-    combo->addItem(QString::fromStdString(name));
+    dbc_combo->addItem(QString::fromStdString(name));
   }
-  combo->setEditable(true);
-  combo->setCurrentText(QString());
-  combo->setInsertPolicy(QComboBox::NoInsert);
-  combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  dbc_combo->model()->sort(0);
+  dbc_combo->setEditable(true);
+  dbc_combo->setCurrentText(QString());
+  dbc_combo->setInsertPolicy(QComboBox::NoInsert);
+  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   QFont font;
   font.setBold(true);
-  combo->lineEdit()->setFont(font);
-  dbc_file_layout->addWidget(combo);
+  dbc_combo->lineEdit()->setFont(font);
+  dbc_file_layout->addWidget(dbc_combo);
+
+  QPushButton *load_from_paste = new QPushButton(tr("Load from paste"), this);
+  dbc_file_layout->addWidget(load_from_paste);
 
   dbc_file_layout->addStretch();
   QPushButton *save_btn = new QPushButton(tr("Save DBC"), this);
@@ -62,26 +68,32 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
-  QObject::connect(combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
+  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
+  QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadFromPaste);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     // TODO: save DBC to file
   });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid()) {
-      emit msgSelectionChanged(table_widget->model()->data(current, Qt::UserRole).toString());
+      emit msgSelectionChanged(current.data(Qt::UserRole).toString());
     }
   });
 
   // For test purpose
-  combo->setCurrentText("toyota_nodsu_pt_generated");
+  dbc_combo->setCurrentText("toyota_nodsu_pt_generated");
 }
 
 void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
   dbc()->open(dbc_file);
-  // update detailwidget
-  auto current = table_widget->selectionModel()->currentIndex();
-  if (current.isValid()) {
-    emit msgSelectionChanged(table_widget->model()->data(current, Qt::UserRole).toString());
+  // TODO: reset model?
+  table_widget->sortByColumn(0, Qt::AscendingOrder);
+}
+
+void MessagesWidget::loadFromPaste() {
+  LoadDBCDialog dlg(this);
+  if (dlg.exec()) {
+    dbc()->open("from paste", dlg.dbc_edit->toPlainText());
+    dbc_combo->setCurrentText("loaded from paste");
   }
 }
 
@@ -90,9 +102,6 @@ void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
     return (QString[]){"Name", "ID", "Count", "Bytes"}[section];
-  else if (orientation == Qt::Vertical && role == Qt::DisplayRole) {
-    // return QString::number(section);
-  }
   return {};
 }
 
@@ -100,21 +109,23 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     auto it = std::next(can->can_msgs.begin(), index.row());
     if (it != can->can_msgs.end() && !it.value().empty()) {
-      const auto &d = it.value().front();
       const QString &msg_id = it.key();
       switch (index.column()) {
         case 0: {
           auto msg = dbc()->msg(msg_id);
-          QString name = msg ? msg->name.c_str() : "untitled";
-          return name;
+          return msg ? msg->name.c_str() : "untitled";
         }
         case 1: return msg_id;
         case 2: return can->counters[msg_id];
-        case 3: return toHex(d.dat);
+        case 3: return toHex(it.value().front().dat);
       }
     }
   } else if (role == Qt::UserRole) {
     return std::next(can->can_msgs.begin(), index.row()).key();
+  } else if (role == Qt::FontRole) {
+    if (index.column() == 3) {
+      return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    }
   }
   return {};
 }
@@ -132,6 +143,20 @@ void MessageListModel::updateState() {
   }
 
   if (row_count > 0) {
-    emit dataChanged(index(0, 0), index(row_count - 1, 3));
+    emit dataChanged(index(0, 0), index(row_count - 1, 3), {Qt::DisplayRole});
   }
+}
+
+LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  dbc_edit = new QTextEdit(this);
+  dbc_edit->setAcceptRichText(false);
+  dbc_edit->setPlaceholderText(tr("paste DBC file here"));
+  main_layout->addWidget(dbc_edit);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  main_layout->addWidget(buttonBox);
+
+  setFixedWidth(640);
+  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
