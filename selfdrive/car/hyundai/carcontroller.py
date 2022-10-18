@@ -15,7 +15,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 MAX_ANGLE = 85
 MAX_ANGLE_FRAMES = 89
 MAX_ANGLE_CONSECUTIVE_FRAMES = 2
-CANFD_MAX_ANGLE_FRAMES = 33
+CANFD_MAX_ANGLE_FRAMES = 32
 CANFD_MAX_ANGLE_CONSECUTIVE_FRAMES = 1
 
 
@@ -120,7 +120,7 @@ class CarController:
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, CC.enabled, CC.latActive, apply_steer))
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, CC.enabled, lat_active, apply_steer))
 
       # disable LFA on HDA2
       if self.frame % 5 == 0 and hda2:
