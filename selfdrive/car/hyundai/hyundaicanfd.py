@@ -40,9 +40,6 @@ def create_cam_0x2a4(packer, camera_values):
   return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
 
 def create_buttons(packer, CP, cnt, btn):
-
-  ret = []
-
   values = {
     "COUNTER": cnt,
     "SET_ME_1": 1,
