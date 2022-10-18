@@ -39,6 +39,10 @@ from selfdrive.statsd import STATS_DIR
 from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 
+
+# missing in pysocket
+TCP_USER_TIMEOUT = 18
+
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {8022}
@@ -710,26 +714,23 @@ def ws_manage(ws, end_event):
   awake_prev = False
 
   while not end_event.is_set():
-    # missing in pysocket
-    TCP_USER_TIMEOUT = 18
-
+    # Default socket options:
+    # SO_KEEPALIVE: 1
+    # TCP_KEEPIDLE: 30
+    # TCP_KEEPINTVL: 10
+    # TCP_KEEPCNT: 3
+    # TCP_USER_TIMEOUT: 0
     sock: socket.socket = ws.sock
 
     awake = params.get_bool("IsDeviceAwake")
     if awake != awake_prev:
       awake_prev = awake
 
-      keepidle = 10 if awake else 30
+      keepidle = 5 if awake else 30  # seconds
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepidle)
-      print(f"setting TCP_KEEPIDLE to {keepidle}")
-      print()
 
-    print("SO_KEEPALIVE:", sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE))
-    print("TCP_KEEPIDLE:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE))
-    print("TCP_KEEPINTVL:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL))
-    print("TCP_KEEPCNT:", sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT))
-    print("TCP_USER_TIMEOUT:", sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT))
-    print()
+      user_timeout = 40*1000 if awake else 60*1000  # milliseconds
+      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, user_timeout)
 
     time.sleep(2)
 
