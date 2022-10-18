@@ -1,5 +1,18 @@
 Import('env')
 
+def build_websockets():
+  import os
+  websockets_dir = "/data/openpilot/third_party/websockets"
+  build_dir = os.path.join(websockets_dir, "build")
+  if os.path.exists(build_dir):
+    print("\nWebsockets: already built\n")
+  else:
+    print("\nWebsockets: building\n\n")
+    os.system("cd " + websockets_dir + "; python3 setup.py build")
+    print()
+
+build_websockets()
+
 env.Library('json11', ['json11/json11.cpp'], CCFLAGS=env['CCFLAGS'] + ['-Wno-unqualified-std-cast-call'])
 env.Append(CPPPATH=[Dir('json11')])
 
