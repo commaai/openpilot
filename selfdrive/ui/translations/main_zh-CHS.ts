@@ -68,6 +68,29 @@
     </message>
 </context>
 <context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>最高定速</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>SPEED</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>LIMIT</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -402,29 +425,6 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>密码错误</translation>
-    </message>
-</context>
-<context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>最高定速</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
     </message>
 </context>
 <context>

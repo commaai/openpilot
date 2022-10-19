@@ -26,7 +26,8 @@ static bool event_filter(const Event *e, void *opaque) {
 }
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
-  replay = new Replay(route, {"can", "roadEncodeIdx"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
+  routeName = route;
+  replay = new Replay(route, {"can", "roadEncodeIdx", "carParams"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::segmentsMerged);
@@ -141,11 +142,14 @@ void Settings::save() {
   s.setValue("fps", fps);
   s.setValue("log_size", can_msg_log_size);
   s.setValue("cached_segment", cached_segment_limit);
+  s.setValue("chart_height", chart_height);
+  emit changed();
 }
 
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
   can_msg_log_size = s.value("log_size", 100).toInt();
-  cached_segment_limit = s.value("cached_segment", 3.).toInt();
+  cached_segment_limit = s.value("cached_segment", 3).toInt();
+  chart_height = s.value("chart_height", 200).toInt();
 }

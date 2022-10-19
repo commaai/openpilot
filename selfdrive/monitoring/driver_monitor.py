@@ -29,10 +29,10 @@ class DRIVER_MONITOR_SETTINGS():
     self._FACE_THRESHOLD = 0.7
     self._EYE_THRESHOLD = 0.65
     self._SG_THRESHOLD = 0.9
-    self._BLINK_THRESHOLD = 0.87
+    self._BLINK_THRESHOLD = 0.895
 
-    self._EE_THRESH11 = 0.75
-    self._EE_THRESH12 = 3.25
+    self._EE_THRESH11 = 0.275
+    self._EE_THRESH12 = 3.0
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 
@@ -207,11 +207,11 @@ class DriverStatus():
       ee1_dist = self.eev1 > self.ee1_offseter.filtered_stat.M * self.settings._EE_THRESH12
     else:
       ee1_dist = self.eev1 > self.settings._EE_THRESH11
-    if self.ee2_calibrated:
-      ee2_dist = self.eev2 < self.ee2_offseter.filtered_stat.M * self.settings._EE_THRESH22
-    else:
-      ee2_dist = self.eev2 < self.settings._EE_THRESH21
-    if ee1_dist or ee2_dist:
+    # if self.ee2_calibrated:
+    #   ee2_dist = self.eev2 < self.ee2_offseter.filtered_stat.M * self.settings._EE_THRESH22
+    # else:
+    #   ee2_dist = self.eev2 < self.settings._EE_THRESH21
+    if ee1_dist:
       distracted_types.append(DistractedType.DISTRACTED_E2E)
 
     return distracted_types
@@ -257,12 +257,11 @@ class DriverStatus():
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
     self.blink.left_blink = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.eev1 = driver_data.notReadyProb[1]
+    self.eev1 = driver_data.notReadyProb[0]
     self.eev2 = driver_data.readyProb[0]
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or
-                                            DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
+    self.driver_distracted = (DistractedType.DISTRACTED_E2E in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types or DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
                                           driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
