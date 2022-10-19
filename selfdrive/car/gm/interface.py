@@ -204,7 +204,8 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
-    if ret.vEgo < self.CP.minEnableSpeed and not (ret.vEgoRaw < 0.1 and self.CS.brake_pressed):
+    # Enabling at a standstill with brake under minEnableSpeed is allowed
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and self.CS.brake_pressed):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
