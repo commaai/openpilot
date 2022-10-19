@@ -19,6 +19,7 @@ class CarState(CarStateBase):
     self.loopback_lka_steering_cmd_updated = False
     self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
+    self.brake_pressed = False
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -54,7 +55,8 @@ class CarState(CarStateBase):
     # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
     ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
     if self.CP.networkLocation != NetworkLocation.fwdCamera:
-      ret.brakePressed = self.brake_pressed = ret.brake >= 8
+      # TODO: verify 17 Volt can enable for the first time at a stop and set brake_pressed
+      ret.brakePressed = ret.brake >= 8
     else:
       # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
       # Match ECM threshold at a standstill to allow the camera to cancel earlier
