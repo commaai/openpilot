@@ -1,6 +1,7 @@
 #include "tools/cabana/binaryview.h"
 
 #include <QApplication>
+#include <QFontDatabase>
 #include <QHeaderView>
 #include <QPainter>
 
@@ -157,7 +158,8 @@ void BinarySelectionModel::select(const QItemSelection &selection, QItemSelectio
 BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   // cache fonts and color
   small_font.setPointSize(6);
-  bold_font.setBold(true);
+  hex_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  hex_font.setBold(true);
   highlight_color = QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Highlight);
 }
 
@@ -172,7 +174,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   // TODO: highlight signal cells on mouse over
   painter->fillRect(option.rect, option.state & QStyle::State_Selected ? highlight_color : item->bg_color);
   if (index.column() == 8) {
-    painter->setFont(bold_font);
+    painter->setFont(hex_font);
   }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
