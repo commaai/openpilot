@@ -214,21 +214,13 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
+    # Enabling at a standstill with brake is allowed
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and self.CS.brake_pressed):
+      events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
-
-    if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      if self.CP.pcmCruise:
-        # The ECM has a higher brake pressed threshold than the camera, causing an
-        # ACC fault when you engage at a stop with your foot partially on the brake
-        if ret.vEgoRaw < 0.1 and ret.brake < 20:
-          events.add(EventName.gmAccFaultedTemp)
-      else:
-        # TODO: (generically?) allow engaging with brake pressed (not regen paddle)
-        if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and self.CS.brake_pressed):
-          events.add(EventName.belowEngageSpeed)
 
     ret.events = events.to_msg()
 
