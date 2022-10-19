@@ -4,6 +4,7 @@
 #include <deque>
 #include <map>
 
+#include <QColor>
 #include <QHash>
 #include <QList>
 
@@ -101,6 +102,12 @@ inline const QString &getColor(int i) {
   // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
+}
+
+inline QColor hoverColor(const QColor &color) {
+  QColor c = color.convertTo(QColor::Hsv);
+  c.setHsv(color.hue(), 180, 180);
+  return c;
 }
 
 // A global pointer referring to the unique CANMessages object

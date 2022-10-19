@@ -3,7 +3,9 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QHeaderView>
+#include <QMouseEvent>
 #include <QPainter>
+#include <QToolTip>
 
 #include "tools/cabana/canmessages.h"
 
@@ -19,6 +21,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   horizontalHeader()->hide();
   verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setMouseTracking(true);
 
   // replace selection model
   auto old_model = selectionModel();
@@ -30,6 +33,24 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   });
 }
 
+void BinaryView::highlight(const Signal *sig) {
+  if (sig != hovered_sig) {
+    hovered_sig = sig;
+    model->dataChanged(model->index(0, 0), model->index(model->rowCount() - 1, model->columnCount() - 1));
+    emit signalHovered(hovered_sig);
+  }
+}
+
+void BinaryView::mouseMoveEvent(QMouseEvent *event) {
+  if (auto index = indexAt(event->pos()); index.isValid()) {
+    auto item = (BinaryViewModel::Item *)index.internalPointer();
+    highlight(item->sig);
+    if (item->sig)
+      QToolTip::showText(event->globalPos(), item->sig->name.c_str(), this, rect());
+  }
+  QTableView::mouseMoveEvent(event);
+}
+
 void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   QTableView::mouseReleaseEvent(event);
 
@@ -38,6 +59,11 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
     int size = indexes.back().row() * 8 + indexes.back().column() - start_bit + 1;
     emit cellsSelected(start_bit, size);
   }
+}
+
+void BinaryView::leaveEvent(QEvent *event) {
+  highlight(nullptr);
+  QTableView::leaveEvent(event);
 }
 
 void BinaryView::setMessage(const QString &message_id) {
@@ -80,7 +106,8 @@ void BinaryViewModel::setMessage(const QString &message_id) {
         } else if (j == end) {
           sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         }
-        items[idx].bg_color = QColor(getColor(i));
+        items[idx].bg_color = getColor(i);
+        items[idx].sig = &dbc_msg->sigs[i];
       }
     }
   }
@@ -170,9 +197,17 @@ QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
-  // TODO: highlight signal cells on mouse over
-  painter->fillRect(option.rect, option.state & QStyle::State_Selected ? highlight_color : item->bg_color);
+
+  // background
+  QColor bg_color = item->sig && bin_view->hoveredSignal() == item->sig ? hoverColor(item->bg_color) : item->bg_color;
+  if (option.state & QStyle::State_Selected) {
+    bg_color = highlight_color;
+  }
+  painter->fillRect(option.rect, bg_color);
+
+  // text
   if (index.column() == 8) {
     painter->setFont(hex_font);
   }
