@@ -3,6 +3,7 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QMessageBox>
+#include <QSplitter>
 #include <QTimer>
 
 #include "tools/cabana/canmessages.h"
@@ -13,6 +14,10 @@
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
+  QSplitter *splitter = new QSplitter(Qt::Vertical, this);
+
+  QWidget *top_container = new QWidget(this);
+  QVBoxLayout *binary_main_layout = new QVBoxLayout(top_container);
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
   title_layout->addWidget(new QLabel("time:"));
@@ -27,7 +32,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   edit_btn = new QPushButton(tr("Edit"), this);
   edit_btn->setVisible(false);
   title_layout->addWidget(edit_btn);
-  main_layout->addLayout(title_layout);
+  binary_main_layout->addLayout(title_layout);
 
   // warning
   warning_widget = new QWidget(this);
@@ -38,12 +43,14 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   warning_label = new QLabel(this);
   warning_hlayout->addWidget(warning_label,1, Qt::AlignLeft);
   warning_widget->hide();
-  main_layout->addWidget(warning_widget);
+  binary_main_layout->addWidget(warning_widget);
 
   // binary view
   binary_view = new BinaryView(this);
-  main_layout->addWidget(binary_view, 0, Qt::AlignTop);
+  binary_main_layout->addWidget(binary_view, 0, Qt::AlignTop);
 
+  QWidget *bottom_container = new QWidget(this);
+  QVBoxLayout *bottom_layout = new QVBoxLayout(bottom_container);
   // signals
   signals_container = new QWidget(this);
   signals_container->setLayout(new QVBoxLayout);
@@ -53,16 +60,20 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidget(signals_container);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
+  bottom_layout->addWidget(scroll);
 
   // history log
   history_log = new HistoryLog(this);
-  main_layout->addWidget(history_log);
+  bottom_layout->addWidget(history_log);
 
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::cellsSelected, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::dbcMsgChanged);
+
+  splitter->addWidget(top_container);
+  splitter->addWidget(bottom_container);
+  main_layout->addWidget(splitter);
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
