@@ -315,8 +315,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
-    (Ecu.cornerRadar, 0x7B7, None),
+    (Ecu.adas, 0x730, None),  # ADAS Driving ECU on HDA2 platforms
   ],
 )
 
