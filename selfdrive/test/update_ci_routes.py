@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import functools
 import sys
 import subprocess
 from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
@@ -15,6 +16,7 @@ SOURCES = [
 ]
 
 
+@functools.lru_cache
 def get_azure_keys():
   dest_key = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
   source_keys = [azureutil.get_user_token(account, bucket) for account, bucket in SOURCES]
