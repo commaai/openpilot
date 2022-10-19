@@ -37,6 +37,7 @@ public:
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "0";
+    const Signal *sig = nullptr;
   };
 
 private:
@@ -59,14 +60,21 @@ class BinaryView : public QTableView {
 
 public:
   BinaryView(QWidget *parent = nullptr);
-  void mouseReleaseEvent(QMouseEvent *event) override;
   void setMessage(const QString &message_id);
   void updateState();
+  void highlight(const Signal *sig);
+  const Signal *hoveredSignal() const { return hovered_sig; }
 
 signals:
   void cellsSelected(int start_bit, int size);
+  void signalHovered(const Signal *sig);
 
 private:
+  void mouseMoveEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void leaveEvent(QEvent *event) override;
+
   QString msg_id;
   BinaryViewModel *model;
+  const Signal *hovered_sig = nullptr;
 };

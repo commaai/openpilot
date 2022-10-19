@@ -86,6 +86,8 @@ void DetailWidget::dbcMsgChanged() {
       QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
       QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
       QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
+      QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
+      QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
     }
     msg_name = msg->name.c_str();
     if (msg->size != can->lastMessage(msg_id).dat.size()) {
