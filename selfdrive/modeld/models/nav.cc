@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <cstring>
 
 #include "cereal/visionipc/visionipc_client.h"
@@ -12,7 +13,7 @@
 
 void navmodel_init(NavModelState* s) {
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, false); // TODO: Set _use_tf8=true for quantized models?
 #else
   s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #endif
@@ -26,7 +27,7 @@ NavModelResult navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
   }
 
   double t1 = millis_since_boot();
-  s->m->addImage((float*)s->net_input_buf, INPUT_SIZE);
+  s->m->addImage(s->net_input_buf, INPUT_SIZE);
   s->m->execute();
   double t2 = millis_since_boot();
 
