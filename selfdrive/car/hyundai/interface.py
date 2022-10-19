@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -19,7 +19,36 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
+    return CP.carControlParams.accelMin, CP.carControlParams.accelMax
+
+  @staticmethod
+  def set_car_control_params(candidate, params):
+    params.accelMin = -3.5  # m/s
+    params.accelMax = 2.0  # m/s
+
+    params.steerDeltaUp = 3
+    params.steerDeltaDown = 7
+    params.steerDriverAllowance = 50
+    params.steerDriverMultiplier = 2
+    params.steerDriverFactor = 1
+
+    if candidate in CANFD_CAR:
+      params.steerMax = 270
+      params.steerDriverAllowance = 250
+      params.steerDriverMultiplier = 2
+      params.steerDeltaUp = 2
+      params.steerDeltaDown = 3
+
+    # To determine the limit for your car, find the maximum value that the stock LKAS will request.
+    # If the max stock LKAS request is <384, add your car to this list.
+    elif candidate in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.ELANTRA_GT_I30, CAR.IONIQ,
+                       CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
+                       CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
+      params.steerMax = 250
+
+    # Default for most HKG
+    else:
+      params.steerMax = 380
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
@@ -310,7 +339,7 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = True
     ret.vEgoStarting = 0.1
     ret.startAccel = 2.0
-    ret.carControlParams.steerMax = CarControllerParams(ret).STEER_MAX
+    CarInterface.set_car_control_params(candidate, ret.carControlParams)
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:

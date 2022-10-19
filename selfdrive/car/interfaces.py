@@ -170,6 +170,10 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
+  @staticmethod
+  def set_car_control_params(candidate, CP):
+    pass
+
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
