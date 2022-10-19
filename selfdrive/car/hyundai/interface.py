@@ -304,7 +304,7 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = True
     ret.vEgoStarting = 0.1
     ret.startAccel = 2.0
-    ret.carControlParams.steerMax = CarControllerParams(ret.carFingerprint).STEER_MAX
+    ret.carControlParams.steerMax = CarControllerParams(ret).STEER_MAX
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:
@@ -334,7 +334,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
-    ret.safetyConfigs[-1].safetyParam |= int(ret.steerMax / 10)
+    ret.safetyConfigs[-1].safetyParam |= int(ret.carControlParams.steerMax / 10)
 
     ret.centerToFront = ret.wheelbase * 0.4
 
