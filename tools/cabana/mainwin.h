@@ -33,4 +33,5 @@ public:
   QSpinBox *fps;
   QSpinBox *log_size ;
   QSpinBox *cached_segment;
+  QSpinBox *chart_height;
 };
