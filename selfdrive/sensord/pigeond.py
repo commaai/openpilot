@@ -5,7 +5,6 @@ import signal
 import serial
 import struct
 import requests
-import json
 import urllib.parse
 from datetime import datetime
 from typing import List, Optional, Tuple
@@ -51,16 +50,8 @@ def get_assistnow_messages(token: bytes) -> List[bytes]:
     'datatype': 'eph,alm,aux',
   }, safe=':,'), timeout=5)
   assert r.status_code == 200, "Got invalid status code"
-  dat = r.content
 
-  # split up messages
-  msgs = []
-  while len(dat) > 0:
-    assert dat[:2] == b"\xB5\x62"
-    msg_len = 6 + (dat[5] << 8 | dat[4]) + 2
-    msgs.append(dat[:msg_len])
-    dat = dat[msg_len:]
-  return msgs
+  return list(map(lambda x: b'\xb5\x62' + x,  r.content.split(b'\xb5\x62')))[1:]
 
 
 class TTYPigeon():
@@ -216,22 +207,6 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
           0,
           30,
           0
-        ))
-        pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
-
-      last_pos = Params().get('LastGPSPosition')
-      if last_pos is not None:
-        cloudlog.warning("Sending LastGPSPosition to ublox")
-        last_pos = json.loads(last_pos)
-
-        # UBX-MGA-INI-POS_LLH
-        msg = add_ubx_checksum(b"\xB5\x62\x13\x40\x14\x00" + struct.pack("<BBxxiiiI",
-          0x01,
-          0x00,
-          int(last_pos["latitude"]*1e7),
-          int(last_pos["longitude"]*1e7),
-          int(last_pos["altitude"]*100),
-          500*100 # 500meters accuracy
         ))
         pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
 
