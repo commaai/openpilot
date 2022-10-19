@@ -62,11 +62,14 @@ class CarInterface(CarInterfaceBase):
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
       ret.radarOffCan = False
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
+      # supports stop and go, but initial engage must (conservatively) be above 18mph
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -89,9 +92,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
-
-    # supports stop and go, but initial engage must (conservatively) be above 18mph
-    ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     if candidate == CAR.VOLT:
       ret.mass = 1607. + STD_CARGO_KG
@@ -153,7 +153,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
-      ret.minEnableSpeed = -1
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
@@ -163,7 +162,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SILVERADO:
-      ret.minEnableSpeed = -1
       ret.mass = 2200. + STD_CARGO_KG
       ret.wheelbase = 3.75
       ret.steerRatio = 16.3
@@ -172,7 +170,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.EQUINOX:
-      ret.minEnableSpeed = -1
       ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
@@ -207,18 +204,15 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
-    if ret.vEgo < self.CP.minEnableSpeed:
+    # Enabling at a standstill with brake is allowed
+    # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and ret.brake >= 20 and
+                                                  self.CP.networkLocation == NetworkLocation.fwdCamera):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
-
-    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.pcmCruise:
-      # The ECM has a higher brake pressed threshold than the camera, causing an
-      # ACC fault when you engage at a stop with your foot partially on the brake
-      if ret.vEgoRaw < 0.1 and ret.brake < 20:
-        events.add(EventName.gmAccFaultedTemp)
 
     ret.events = events.to_msg()
 
