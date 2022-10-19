@@ -82,7 +82,7 @@ Signal SignalForm::getSignal() {
 // SignalEdit
 
 SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent)
-    : msg_id(msg_id), sig_name(sig.name.c_str()), sig(&sig), QWidget(parent) {
+    : sig_name(sig.name.c_str()), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -133,15 +133,18 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
-  QObject::connect(seek_btn, &QPushButton::clicked, this, &SignalEdit::signalSeek);
   QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
+  QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     QString new_name = form->getSignal().name.c_str();
     title->setText(QString("%1. %2").arg(index + 1).arg(new_name));
     emit save();
     sig_name = new_name;
   });
-  QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
+  QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id, s = &sig]() {
+    SignalFindDlg dlg(msg_id, s, this);
+    dlg.exec();
+  });
 }
 
 void SignalEdit::setFormVisible(bool visible) {
@@ -169,11 +172,6 @@ AddSignalDialog::AddSignalDialog(const QString &id, int start_bit, int size, QWi
 
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-}
-
-void SignalEdit::signalSeek() {
-  SignalFindDlg dlg(msg_id, sig, this);
-  dlg.exec();
 }
 
 SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent) : QDialog(parent) {

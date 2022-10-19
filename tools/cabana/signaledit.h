@@ -31,11 +31,8 @@ public:
   SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent = nullptr);
   void setFormVisible(bool show);
   inline bool isFormVisible() const { return form_container->isVisible(); }
-  void signalSeek();
   QString sig_name;
-  QString msg_id;
   SignalForm *form;
-  const Signal *sig;
 
 signals:
   void showChart();
