@@ -460,8 +460,17 @@ class CarState(CarStateBase):
 
     if CP.flags & (HyundaiFlags.CANFD_HDA2 | ~HyundaiFlags.CANFD_CAMERA_SCC) and not CP.openpilotLongitudinalControl:
       signals += [
-        ("SET_SPEED", "CRUISE_INFO"),
+        ("COUNTER", "CRUISE_INFO"),
+        ("NEW_SIGNAL_1", "CRUISE_INFO"),
+        ("CRUISE_MAIN", "CRUISE_INFO"),
+        ("CRUISE_STATUS", "CRUISE_INFO"),
+        ("CRUISE_INACTIVE", "CRUISE_INFO"),
+        ("ZEROS_9", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+        ("ZEROS_5", "CRUISE_INFO"),
+        ("DISTANCE_SETTING", "CRUISE_INFO"),
+        ("SET_SPEED", "CRUISE_INFO"),
+        ("NEW_SIGNAL_4", "CRUISE_INFO"),
       ]
       checks += [
         ("CRUISE_INFO", 50),
