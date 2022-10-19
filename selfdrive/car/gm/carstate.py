@@ -55,8 +55,7 @@ class CarState(CarStateBase):
     # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
     ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
     if self.CP.networkLocation != NetworkLocation.fwdCamera:
-      # TODO: verify 17 Volt can enable for the first time at a stop and set brake_pressed
-      ret.brakePressed = ret.brake >= 8
+      ret.brakePressed = self.brake_pressed = ret.brake >= 8
     else:
       # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
       # Match ECM threshold at a standstill to allow the camera to cancel earlier
