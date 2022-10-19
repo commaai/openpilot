@@ -80,10 +80,11 @@ class TestFwFingerprint(unittest.TestCase):
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
-        whitelisted_ecus = set([ecu for r in config.requests for ecu in r.whitelist_ecus])
-        brand_ecus = set([fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw])
+        whitelisted_ecus = {ecu for r in config.requests for ecu in r.whitelist_ecus}
+        brand_ecus = {fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw}
+        brand_ecus |= {ecu[0] for ecu in config.extra_ecus}
 
-        # each ecu in brand's fw versions needs to be whitelisted at least once
+        # each ecu in brand's fw versions + extra ecus needs to be whitelisted at least once
         ecus_not_whitelisted = brand_ecus - whitelisted_ecus
 
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
