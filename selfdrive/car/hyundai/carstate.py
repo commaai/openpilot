@@ -199,7 +199,7 @@ class CarState(CarStateBase):
     self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-      cp_cruise_info = cp if self.CP.flags & (HyundaiFlags.CANFD_HDA2 | ~HyundaiFlags.CANFD_CAMERA_SCC) else cp_cam
+      cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
       ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
       self.cruise_info = copy.copy(cp_cruise_info.vl["CRUISE_INFO"])
@@ -458,7 +458,7 @@ class CarState(CarStateBase):
       ("DOORS_SEATBELTS", 4),
     ]
 
-    if CP.flags & (HyundaiFlags.CANFD_HDA2 | ~HyundaiFlags.CANFD_CAMERA_SCC) and not CP.openpilotLongitudinalControl:
+    if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC) and not CP.openpilotLongitudinalControl:
       signals += [
         ("COUNTER", "CRUISE_INFO"),
         ("NEW_SIGNAL_1", "CRUISE_INFO"),
