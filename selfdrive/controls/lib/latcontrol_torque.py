@@ -2,6 +2,7 @@ import math
 
 from cereal import log
 from common.numpy_fast import interp
+from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -62,7 +63,7 @@ class LatControlTorque(LatControl):
       error = setpoint - measurement
       
       gravity_lateral_accel = -params.roll * ACCELERATION_DUE_TO_GRAVITY
-      pid_log.error = self.torque_from_lateral_accel(error, self.torque_params, error, lateral_accel_deadzone, friction_compensation=False, v_ego=CS.vEgo, g_lat_accel=0.)
+      pid_log.error = CarInterfaceBase.torque_from_lateral_accel_linear(error, self.torque_params, error, lateral_accel_deadzone, friction_compensation=False, v_ego=CS.vEgo, g_lat_accel=0.)
       ff = self.torque_from_lateral_accel(desired_lateral_accel, self.torque_params, error, lateral_accel_deadzone, friction_compensation=True, v_ego=CS.vEgo, g_lat_accel=gravity_lateral_accel) 
 
       freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
