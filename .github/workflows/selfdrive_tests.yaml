@@ -18,15 +18,12 @@ env:
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
-      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
   RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
   BUILD_CL: |
-      docker pull $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
+      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
   RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
@@ -41,13 +38,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0
         submodules: true
     - name: Build devel
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup
-      with:
-        save-cache: true
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: release/check-submodules.sh
@@ -72,18 +66,20 @@ jobs:
   build_all:
     name: build all
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 30
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+      with:
+        save-cache: true
     - name: Build openpilot with all flags
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --extras --cache-populate"
+                          scons -j$(nproc) --cache-populate"
 
   #build_mac:
   #  name: build macos
@@ -145,7 +141,7 @@ jobs:
   docker_push:
     name: docker push
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 22
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
@@ -154,12 +150,14 @@ jobs:
         submodules: true
     - name: Build Docker image
       run: eval "$BUILD"
+      timeout-minutes: 13
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
     - name: Build CL Docker image
       run: eval "$BUILD_CL"
+      timeout-minutes: 4
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
@@ -168,7 +166,7 @@ jobs:
   static_analysis:
     name: static analysis
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
@@ -176,21 +174,23 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
+      timeout-minutes: 5
       run: ${{ env.RUN }} "pre-commit run --all"
 
   valgrind:
     name: valgrind
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        python selfdrive/test/test_valgrind_replay.py"
+        ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
       run: cat selfdrive/test/valgrind_logs.txt
@@ -198,16 +198,18 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 30
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
-                        scons -j$(nproc) && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
                         $UNIT_TEST selfdrive/boardd && \
@@ -220,7 +222,6 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \
-                        $UNIT_TEST selfdrive/modeld && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
@@ -239,7 +240,7 @@ jobs:
   process_replay:
     name: process replay
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 25
     steps:
     - uses: actions/checkout@v3
       with:
@@ -251,10 +252,12 @@ jobs:
       with:
         path: /tmp/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"
     - name: Print diff
       if: always()
@@ -268,15 +271,14 @@ jobs:
     - name: Upload reference logs
       if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
-  model_replay_onnx:
-    name: model replay onnx
+  test_modeld:
+    name: model tests
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
@@ -285,29 +287,41 @@ jobs:
     - name: Build Docker image
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
-    - name: Run replay
+    - name: Build openpilot
       run: |
-        ${{ env.RUN_CL }} "scons -j$(nproc) && \
-                           ONNXCPU=1 CI=1 coverage run \
-                           selfdrive/test/process_replay/model_replay.py -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run model replay with ONNX
+      timeout-minutes: 2
+      run: |
+        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
+    - name: Run unit tests
+      timeout-minutes: 5
+      run: |
+        ${{ env.RUN_CL }} "$UNIT_TEST selfdrive/modeld && \
+                           coverage xml"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
 
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test longitudinal
       run: |
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
-                        scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
                         coverage run ./test_longitudinal.py && \
                         coverage xml"
+      timeout-minutes: 2
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
     - uses: actions/upload-artifact@v2
@@ -320,7 +334,7 @@ jobs:
   test_cars:
     name: cars
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -336,10 +350,12 @@ jobs:
       with:
         path: /tmp/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
+      timeout-minutes: 12
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        coverage run -m pytest selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
                         coverage xml && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
@@ -348,29 +364,10 @@ jobs:
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
-  docs:
-    name: build docs
-    runs-on: ubuntu-20.04
-    timeout-minutes: 50
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Build docker container
-      run: |
-        docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-        docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
-        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
-    - name: Push docker container
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-      run: |
-        $DOCKER_LOGIN
-        docker push $DOCKER_REGISTRY/openpilot-docs:latest
-
   car_docs_diff:
-    name: comment on PR with car docs diff
+    name: PR comments
     runs-on: ubuntu-20.04
-    timeout-minutes: 50
+    timeout-minutes: 20
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3
