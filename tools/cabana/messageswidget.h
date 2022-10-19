@@ -1,9 +1,21 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QComboBox>
+#include <QDialog>
+#include <QJsonDocument>
 #include <QTableView>
+#include <QTextEdit>
 
 #include "tools/cabana/canmessages.h"
+
+class LoadDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  LoadDBCDialog(QWidget *parent);
+  QTextEdit *dbc_edit;
+};
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -27,12 +39,16 @@ public:
   MessagesWidget(QWidget *parent);
 
 public slots:
-  void dbcSelectionChanged(const QString &dbc_file);
+  void loadDBCFromName(const QString &name);
+  void loadDBCFromFingerprint();
+  void loadDBCFromPaste();
 
 signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
   QTableView *table_widget;
+  QComboBox *dbc_combo;
   MessageListModel *model;
+  QJsonDocument fingerprint_to_dbc;
 };

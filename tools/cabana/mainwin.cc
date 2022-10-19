@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QFormLayout>
 #include <QScreen>
+#include <QSplitter>
 #include <QVBoxLayout>
 
 MainWindow::MainWindow() : QWidget() {
@@ -13,20 +14,32 @@ MainWindow::MainWindow() : QWidget() {
   QHBoxLayout *h_layout = new QHBoxLayout();
   main_layout->addLayout(h_layout);
 
+  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+
   messages_widget = new MessagesWidget(this);
-  h_layout->addWidget(messages_widget);
+  splitter->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
-  detail_widget->setFixedWidth(600);
-  h_layout->addWidget(detail_widget);
+  splitter->addWidget(detail_widget);
+
+  splitter->setSizes({100, 500});
+  h_layout->addWidget(splitter);
 
   // right widgets
   QWidget *right_container = new QWidget(this);
   right_container->setFixedWidth(640);
   r_layout = new QVBoxLayout(right_container);
 
+  QHBoxLayout *right_hlayout = new QHBoxLayout();
+  QLabel *fingerprint_label = new QLabel(this);
+  right_hlayout->addWidget(fingerprint_label);
+
+  // TODO: click to select another route.
+  right_hlayout->addWidget(new QLabel(can->route()));
   QPushButton *settings_btn = new QPushButton("Settings");
-  r_layout->addWidget(settings_btn, 0, Qt::AlignRight);
+  right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
+
+  r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
@@ -40,10 +53,10 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
+  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
 }
 
 void MainWindow::dockCharts(bool dock) {
-  charts_widget->setUpdatesEnabled(false);
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
     r_layout->addWidget(charts_widget);
@@ -57,7 +70,6 @@ void MainWindow::dockCharts(bool dock) {
     floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
   }
-  charts_widget->setUpdatesEnabled(true);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -96,6 +108,12 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   cached_segment->setValue(settings.cached_segment_limit);
   form_layout->addRow(tr("Cached segments limit"), cached_segment);
 
+  chart_height = new QSpinBox(this);
+  chart_height->setRange(100, 500);
+  chart_height->setSingleStep(10);
+  chart_height->setValue(settings.chart_height);
+  form_layout->addRow(tr("Chart height"), chart_height);
+
   main_layout->addLayout(form_layout);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -110,6 +128,7 @@ void SettingsDlg::save() {
   settings.fps = fps->value();
   settings.can_msg_log_size = log_size->value();
   settings.cached_segment_limit = cached_segment->value();
+  settings.chart_height = chart_height->value();
   settings.save();
   accept();
 }
