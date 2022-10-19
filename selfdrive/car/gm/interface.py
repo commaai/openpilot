@@ -62,7 +62,7 @@ class CarInterface(CarInterfaceBase):
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
-      ret.minEnableSpeed = 5 * CV.KPH_TO_MS  # TODO: mph or kph?
+      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
@@ -204,14 +204,12 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.vEgoRaw < 0.1 and self.CS.brake_pressed):
+      events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
-
-    # TODO: (generically?) allow engaging with brake pressed (not regen paddle)
-    if ret.vEgo < self.CP.minEnableSpeed and not (ret.vEgoRaw < 0.1 and self.CS.brake_pressed):
-      events.add(EventName.belowEngageSpeed)
 
     ret.events = events.to_msg()
 
