@@ -12,6 +12,7 @@
 
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // title
   QHBoxLayout *title_layout = new QHBoxLayout();
