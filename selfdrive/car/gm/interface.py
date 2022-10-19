@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def torque_from_lateral_accel_bolteuv(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation, v_ego, g_lat_accel):
     ANGLE_COEF = 0.16179233
-    ANGLE_COEF2 = 0.20691964
+    ANGLE_COEF2 = 0.23
     SPEED_OFFSET = -7.94958973
     SIGMOID_COEF_RIGHT = 0.34906506
     SIGMOID_COEF_LEFT = 0.20000000
