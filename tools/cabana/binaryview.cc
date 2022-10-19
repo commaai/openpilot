@@ -25,7 +25,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   delete old_model;
 
   QObject::connect(model, &QAbstractItemModel::modelReset, [this]() {
-    setFixedHeight((CELL_HEIGHT + 1) * std::min(model->rowCount(), 64) + 2);
+    setFixedHeight((CELL_HEIGHT + 1) * std::min(model->rowCount(), 8) + 2);
   });
 }
 
