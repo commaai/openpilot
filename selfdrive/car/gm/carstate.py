@@ -19,7 +19,6 @@ class CarState(CarStateBase):
     self.loopback_lka_steering_cmd_updated = False
     self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
-    self.brake_pressed = False
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
