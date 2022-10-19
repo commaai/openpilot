@@ -40,7 +40,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   return false;
 }
 
-QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *signal, double value, FindFlags flag, int size) {
+QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *signal, double value, FindFlags flag, int max_count) {
   auto evts = events();
   if (!evts) return {};
 
@@ -50,21 +50,16 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
 
   QList<QPointF> ret;
   ret.reserve(size);
-  uint64_t route_start_time = can->routeStartTime();
   for (auto &evt : *evts) {
     if (evt->which != cereal::Event::Which::CAN) continue;
 
     for (auto c : evt->event.getCan()) {
       if (bus == c.getSrc() && address == c.getAddress()) {
-        auto dat = c.getDat();
-        double val = get_raw_value((uint8_t *)dat.begin(), dat.size(), *signal);
-        if ((flag == EQ && val == value) ||
-            (flag == LT && val < value) ||
-            (flag == GT && val > value)) {
-          double ts = (evt->mono_time / (double)1e9) - route_start_time;  // seconds
-          ret.push_back({ts, val});
+        double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
+        if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
+          ret.push_back({(evt->mono_time / (double)1e9) - can->routeStartTime(), val});
         }
-        if (ret.size() >= size)
+        if (ret.size() >= max_count)
           return ret;
       }
     }

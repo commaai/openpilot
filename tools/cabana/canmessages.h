@@ -37,18 +37,14 @@ class CANMessages : public QObject {
   Q_OBJECT
 
 public:
-  enum FindFlags{
-    EQ,
-    LT,
-    GT,
-  };
+  enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void seekTo(double ts);
   void resetRange();
   void setRange(double min, double max);
-  QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int size);
+  QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }

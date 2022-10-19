@@ -156,10 +156,10 @@ AddSignalDialog::AddSignalDialog(const QString &id, int start_bit, int size, QWi
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   Signal sig = {
-      .name = "untitled",
-      .start_bit = bigEndianBitIndex(start_bit),
-      .is_little_endian = false,
-      .size = size,
+    .name = "untitled",
+    .start_bit = bigEndianBitIndex(start_bit),
+    .is_little_endian = false,
+    .size = size,
   };
   form = new SignalForm(sig, this);
   main_layout->addWidget(form);
@@ -213,15 +213,13 @@ SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *p
     const int limit_results = 50;
     auto values = can->findSignalValues(id, signal, value, comp, limit_results);
     for (auto &v : values) {
-      QPushButton *goto_btn = new QPushButton(tr("Goto"), this);
-      QObject::connect(goto_btn, &QPushButton::clicked, [&]() {
-        accept();
-        can->seekTo(v.x());
-      });
       QHBoxLayout *item_layout = new QHBoxLayout();
       item_layout->addWidget(new QLabel(QString::number(v.x(), 'f', 2)));
       item_layout->addWidget(new QLabel(QString::number(v.y())));
       item_layout->addStretch(1);
+
+      QPushButton *goto_btn = new QPushButton(tr("Goto"), this);
+      QObject::connect(goto_btn, &QPushButton::clicked, [sec = v.x()]() { can->seekTo(sec); });
       item_layout->addWidget(goto_btn);
       signals_layout->addLayout(item_layout);
     }
