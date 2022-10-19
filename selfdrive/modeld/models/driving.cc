@@ -363,14 +363,19 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   const auto &v_mean = net_outputs.pose.velocity_mean;
   const auto &r_mean = net_outputs.pose.rotation_mean;
+  const auto &t_mean = net_outputs.wide_from_device_euler.mean;
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
+  const auto &t_std = net_outputs.wide_from_device_euler.std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+  posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
   posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+  posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

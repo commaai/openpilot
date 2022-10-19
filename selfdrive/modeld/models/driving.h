@@ -160,8 +160,8 @@ struct ModelOutputPose {
 static_assert(sizeof(ModelOutputPose) == sizeof(ModelOutputXYZ)*4);
 
 struct ModelOutputWideFromDeviceEuler {
-  ModelOutputXYZ wide_from_device_euler_mean;
-  ModelOutputXYZ wide_from_device_euler_std;
+  ModelOutputXYZ mean;
+  ModelOutputXYZ std;
 };
 static_assert(sizeof(ModelOutputWideFromDeviceEuler) == sizeof(ModelOutputXYZ)*2);
 
