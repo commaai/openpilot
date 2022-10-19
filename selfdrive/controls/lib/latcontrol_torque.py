@@ -17,7 +17,7 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 # friction in the steering wheel that needs to be overcome to
 # move it at all, this is compensated for too.
 
-LOW_SPEED_FACTOR = 100
+LOW_SPEED_FACTOR = 200
 
 
 class LatControlTorque(LatControl):
