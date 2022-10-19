@@ -306,7 +306,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdRadar],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar],
       bus=4,
     ),
     Request(
