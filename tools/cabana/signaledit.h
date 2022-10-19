@@ -51,3 +51,10 @@ public:
   AddSignalDialog(const QString &id, int start_bit, int size, QWidget *parent);
   SignalForm *form;
 };
+
+class SignalFindDlg : public QDialog {
+  Q_OBJECT
+
+public:
+  SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent);
+};

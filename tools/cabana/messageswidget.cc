@@ -41,6 +41,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // message filter
   QLineEdit *filter = new QLineEdit(this);
+  filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
 

@@ -14,7 +14,7 @@ public:
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
 private:
-  QFont small_font, bold_font;
+  QFont small_font, hex_font;
   QColor highlight_color;
 };
 
