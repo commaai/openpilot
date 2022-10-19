@@ -45,7 +45,7 @@ class TestFwFingerprint(unittest.TestCase):
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
 
   def test_data_collection_ecus(self):
-    # Assert no ECUs in extra_ecus are in the fingerprinting database
+    # Asserts no extra ECUs are in the fingerprinting database
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
         bad_ecus = set(ecus).intersection(config.extra_ecus)
