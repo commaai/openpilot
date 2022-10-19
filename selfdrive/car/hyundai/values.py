@@ -1424,6 +1424,9 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x82JKBWD5TMA3XXXH0E'
     ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00JK1_ SCC FHCUP      1.00 1.02 99110-AR000         ',
+    ],
   },
 }
 
