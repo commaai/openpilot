@@ -248,6 +248,11 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.
       tire_stiffness_factor = 0.65
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
+      ret.mass = 1767. + STD_CARGO_KG  # SX Prestige trim support only
+      ret.wheelbase = 2.756
+      ret.steerRatio = 13.6
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Genesis
     elif candidate == CAR.GENESIS_G70:
