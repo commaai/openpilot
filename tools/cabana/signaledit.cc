@@ -185,7 +185,8 @@ SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *p
   QComboBox *comp_box = new QComboBox();
   comp_box->addItems({">", "=", "<"});
   h->addWidget(comp_box);
-  QLineEdit *value_edit = new QLineEdit(this);
+  QLineEdit *value_edit = new QLineEdit("0", this);
+  value_edit->setValidator( new QDoubleValidator(-500000, 500000, 6, this) );
   h->addWidget(value_edit, 1);
   QPushButton *search_btn = new QPushButton(tr("Find"), this);
   h->addWidget(search_btn);

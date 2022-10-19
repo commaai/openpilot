@@ -49,7 +49,7 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
   uint32_t address = l[1].toUInt(nullptr, 16);
 
   QList<QPointF> ret;
-  ret.reserve(size);
+  ret.reserve(max_count);
   for (auto &evt : *evts) {
     if (evt->which != cereal::Event::Which::CAN) continue;
 
