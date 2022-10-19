@@ -3,6 +3,7 @@
 #include <QAbstractTableModel>
 #include <QComboBox>
 #include <QDialog>
+#include <QJsonDocument>
 #include <QTableView>
 #include <QTextEdit>
 
@@ -38,8 +39,9 @@ public:
   MessagesWidget(QWidget *parent);
 
 public slots:
-  void dbcSelectionChanged(const QString &dbc_file);
-  void loadFromPaste();
+  void loadDBCFromName(const QString &name);
+  void loadDBCFromFingerprint();
+  void loadDBCFromPaste();
 
 signals:
   void msgSelectionChanged(const QString &message_id);
@@ -48,4 +50,5 @@ protected:
   QTableView *table_widget;
   QComboBox *dbc_combo;
   MessageListModel *model;
+  QJsonDocument fingerprint_to_dbc;
 };
