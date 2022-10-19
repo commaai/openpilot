@@ -66,21 +66,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
+  QObject::connect(can, &CANMessages::updated, this, &MessagesWidget::restoreLastSelected);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
 
-  static QMetaObject::Connection conn_for_restore;
-  conn_for_restore = QObject::connect(can, &CANMessages::updated, [&]() {
-    auto selection_model = table_widget->selectionModel();
-    if (!selection_model->hasSelection() && !current_msg_id.isEmpty()) {
-      for (int i = 0; i < model->rowCount(); ++i) {
-        auto index = model->index(i, 0);
-        if (index.data(Qt::UserRole).toString() == current_msg_id) {
-          selection_model->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
-          QObject::disconnect(conn_for_restore);
-        }
-      }
-    }
-  });
   QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(openDBC(const QString &)));
   QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadFromPaste);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
@@ -95,9 +83,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void MessagesWidget::openDBC(const QString &dbc_file) {
+  dbc_combo->setCurrentText(dbc_file);
   dbc()->open(dbc_file);
-  // TODO: reset model?
-  table_widget->sortByColumn(0, Qt::AscendingOrder);
+  // refresh model
+  model->updateState();
 }
 
 void MessagesWidget::loadFromPaste() {
@@ -105,6 +94,20 @@ void MessagesWidget::loadFromPaste() {
   if (dlg.exec()) {
     dbc()->open("from paste", dlg.dbc_edit->toPlainText());
     dbc_combo->setCurrentText("loaded from paste");
+  }
+}
+
+void MessagesWidget::restoreLastSelected() {
+  auto selection_model = table_widget->selectionModel();
+  if (!selection_model->hasSelection() && !current_msg_id.isEmpty()) {
+    for (int i = 0; i < model->rowCount(); ++i) {
+      auto index = model->index(i, 0);
+      if (index.data(Qt::UserRole).toString() == current_msg_id) {
+        selection_model->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+        QObject::disconnect(can, &CANMessages::updated, this, &MessagesWidget::restoreLastSelected);
+        break;
+      }
+    }
   }
 }
 

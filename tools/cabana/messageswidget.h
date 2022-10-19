@@ -47,6 +47,7 @@ signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
+  void restoreLastSelected();
   QString current_msg_id;
   QTableView *table_widget;
   QComboBox *dbc_combo;
