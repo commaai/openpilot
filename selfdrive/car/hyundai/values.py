@@ -1381,15 +1381,6 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
     ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00NQ5 MDPS C 1.00 1.04 56300-CH000 2322',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x87391312MAD0',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00PSBG2441  G19\x00\x00\x00\x00\x00\x00\x00SNQ5T16XXHS01NS04\xdc_\xfb',
-    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
     ],
