@@ -95,9 +95,14 @@ void MainWindow::saveSession() {
 }
 
 void MainWindow::restoreSession() {
-  messages_widget->openDBC(settings.dbc_name);
-  messages_widget->setCurrentMessageId(settings.selected_msg_id);
+  if (!settings.dbc_name.isEmpty()) {
+    messages_widget->openDBC(settings.dbc_name);
+  }
+  if (!settings.selected_msg_id.isEmpty()) {
+    messages_widget->setCurrentMessageId(settings.selected_msg_id);
+  }
 
+  // TODO: move to chart
   for (const auto &chart_id : settings.charts) {
     if (auto l = chart_id.split(":"); l.size() == 3) {
       auto id = l[0] + ":" + l[1];
