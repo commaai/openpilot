@@ -29,6 +29,17 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   title_layout->addWidget(edit_btn);
   main_layout->addLayout(title_layout);
 
+  // warning
+  warning_widget = new QWidget(this);
+  QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
+  QLabel *warning_icon =  new QLabel(this);
+  warning_icon->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap({16, 16}));
+  warning_hlayout->addWidget(warning_icon);
+  warning_label = new QLabel(this);
+  warning_hlayout->addWidget(warning_label,1, Qt::AlignLeft);
+  warning_widget->hide();
+  main_layout->addWidget(warning_widget);
+
   // binary view
   binary_view = new BinaryView(this);
   main_layout->addWidget(binary_view, 0, Qt::AlignTop);
@@ -64,6 +75,7 @@ void DetailWidget::setMessage(const QString &message_id) {
 void DetailWidget::dbcMsgChanged() {
   if (msg_id.isEmpty()) return;
 
+  warning_widget->hide();
   qDeleteAll(signals_container->findChildren<SignalEdit *>());
   QString msg_name = tr("untitled");
   if (auto msg = dbc()->msg(msg_id)) {
@@ -76,6 +88,10 @@ void DetailWidget::dbcMsgChanged() {
       QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
     }
     msg_name = msg->name.c_str();
+    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+      warning_label->setText(tr("Message size (%1) is incorrect!").arg(msg->size));
+      warning_widget->show();
+    }
   }
   edit_btn->setVisible(true);
   name_label->setText(msg_name);
