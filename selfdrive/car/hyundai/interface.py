@@ -304,7 +304,7 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = True
     ret.vEgoStarting = 0.1
     ret.startAccel = 2.0
-    ret.steerMax = CarControllerParams(ret.carFingerprint).STEER_MAX
+    ret.carControlParams.steerMax = CarControllerParams(ret.carFingerprint).STEER_MAX
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:
