@@ -43,8 +43,6 @@ class CarInterface(CarInterfaceBase):
         # 2021 Santa Cruz does not have 0x130; GEARS message on 0x40
         if 0x130 not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
-      if 0x1a0 in fingerprint[6]:
-        ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
@@ -334,6 +332,9 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_HDA2
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
+      # check which bus of 0x1a0 is broadcasting after safety config is set
+      if 0x1a0 in fingerprint[6]:
+        ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
