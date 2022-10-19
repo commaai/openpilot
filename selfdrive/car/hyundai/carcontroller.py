@@ -140,7 +140,10 @@ class CarController:
 
           # cruise standstill resume
           elif CC.cruiseControl.resume:
-            if not (self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
+            if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+              # TODO: resume for alt button cars
+              pass
+            else:
               for _ in range(20):
                 can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.buttons_counter+1, Buttons.RES_ACCEL))
               self.last_button_frame = self.frame
