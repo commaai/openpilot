@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+from functools import lru_cache
 import sys
 import subprocess
+from tqdm import tqdm
 from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
 from selfdrive.car.tests.routes import routes as test_car_models_routes
@@ -15,6 +17,7 @@ SOURCES = [
 ]
 
 
+@lru_cache
 def get_azure_keys():
   dest_key = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
   source_keys = [azureutil.get_user_token(account, bucket) for account, bucket in SOURCES]
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 
-  for r in to_sync:
+  for r in tqdm(to_sync):
     if not sync_to_ci_public(r):
       failed_routes.append(r)
 

@@ -68,9 +68,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, proxy_model, &QSortFilterProxyModel::setFilterFixedString);
+  QObject::connect(can, &CANMessages::eventsMerged, this, &MessagesWidget::loadDBCFromFingerprint);
   QObject::connect(can, &CANMessages::updated, model, &MessageListModel::updateState);
-  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(dbcSelectionChanged(const QString &)));
-  QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadFromPaste);
+  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
+  QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadDBCFromPaste);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     // TODO: save DBC to file
   });
@@ -80,21 +81,34 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     }
   });
 
-  // For test purpose
-  dbc_combo->setCurrentText("toyota_nodsu_pt_generated");
+  QFile json_file("./car_fingerprint_to_dbc.json");
+  if(json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+  }
 }
 
-void MessagesWidget::dbcSelectionChanged(const QString &dbc_file) {
-  dbc()->open(dbc_file);
-  // TODO: reset model?
-  table_widget->sortByColumn(0, Qt::AscendingOrder);
+void MessagesWidget::loadDBCFromName(const QString &name) {
+  dbc()->open(name);
+  dbc_combo->setCurrentText(name);
+  // refresh model
+  model->updateState();
 }
 
-void MessagesWidget::loadFromPaste() {
+void MessagesWidget::loadDBCFromPaste() {
   LoadDBCDialog dlg(this);
   if (dlg.exec()) {
     dbc()->open("from paste", dlg.dbc_edit->toPlainText());
     dbc_combo->setCurrentText("loaded from paste");
+  }
+}
+
+void MessagesWidget::loadDBCFromFingerprint() {
+  auto fingerprint = can->carFingerprint();
+  if (!fingerprint.isEmpty() && dbc()->name().isEmpty())  {
+    auto dbc_name = fingerprint_to_dbc[fingerprint];
+    if (dbc_name !=  QJsonValue::Undefined) {
+      loadDBCFromName(dbc_name.toString());
+    }
   }
 }
 
