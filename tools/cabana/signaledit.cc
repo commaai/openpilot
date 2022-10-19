@@ -82,7 +82,7 @@ Signal SignalForm::getSignal() {
 // SignalEdit
 
 SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent)
-    : sig_name(sig.name.c_str()), QWidget(parent) {
+    : sig(&sig), form_idx(index), sig_name(sig.name.c_str()), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -150,6 +150,21 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
 void SignalEdit::setFormVisible(bool visible) {
   form_container->setVisible(visible);
   icon->setText(visible ? "▼" : ">");
+}
+
+void SignalEdit::signalHovered(const Signal *s) {
+  auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
+  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
+}
+
+void SignalEdit::enterEvent(QEvent *event) {
+  emit highlight(sig);
+  QWidget::enterEvent(event);
+}
+
+void SignalEdit::leaveEvent(QEvent *event) {
+  emit highlight(nullptr);
+  QWidget::leaveEvent(event);
 }
 
 // AddSignalDialog
