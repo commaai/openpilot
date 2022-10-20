@@ -44,10 +44,8 @@ void BinaryView::highlight(const Signal *sig) {
 }
 
 void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) {
-  QModelIndex tl = indexAt(QPoint(isRightToLeft() ? qMax(rect.left(), rect.right())
-                                : qMin(rect.left(), rect.right()), qMin(rect.top(), rect.bottom())));
-  QModelIndex br = indexAt(QPoint(isRightToLeft() ? qMin(rect.left(), rect.right()) :
-                                qMax(rect.left(), rect.right()), qMax(rect.top(), rect.bottom())));
+  QModelIndex tl = indexAt(QPoint(qMin(rect.left(), rect.right()), qMin(rect.top(), rect.bottom())));
+  QModelIndex br = indexAt(QPoint(qMax(rect.left(), rect.right()), qMax(rect.top(), rect.bottom())));
   if (!tl.isValid() || !br.isValid())
     return;
 
@@ -79,11 +77,8 @@ void BinaryView::mouseMoveEvent(QMouseEvent *event) {
   if (auto index = indexAt(event->pos()); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     highlight(item->sig);
-    if (item->sig) {
-      QToolTip::showText(event->globalPos(), item->sig->name.c_str(), this, rect());
-    } else {
-      QToolTip::hideText();
-    }
+    item->sig ? QToolTip::showText(event->globalPos(), item->sig->name.c_str(), this, rect())
+              : QToolTip::hideText();
   }
   QTableView::mouseMoveEvent(event);
 }
@@ -101,10 +96,9 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
       } else {  // increase size
         emit resizeSignal(sig, std::min(from, sig_from), std::max(to, sig_to));
       }
-      clearSelection();
-      return;
+    } else {
+      emit addSignal(from, to);
     }
-    emit addSignal(from, to);
     clearSelection();
   }
   anchor_index = QModelIndex();
