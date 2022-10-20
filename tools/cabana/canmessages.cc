@@ -13,7 +13,6 @@ CANMessages *can = nullptr;
 CANMessages::CANMessages(QObject *parent) : QObject(parent) {
   can = this;
 
-  qRegisterMetaType<std::vector<CanData>>();
   QObject::connect(this, &CANMessages::received, this, &CANMessages::process, Qt::QueuedConnection);
   QObject::connect(&settings, &Settings::changed, this, &CANMessages::settingChanged);
 }
