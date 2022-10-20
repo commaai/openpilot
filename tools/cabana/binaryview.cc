@@ -79,8 +79,11 @@ void BinaryView::mouseMoveEvent(QMouseEvent *event) {
   if (auto index = indexAt(event->pos()); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     highlight(item->sig);
-    if (item->sig)
+    if (item->sig) {
       QToolTip::showText(event->globalPos(), item->sig->name.c_str(), this, rect());
+    } else {
+      QToolTip::hideText();
+    }
   }
   QTableView::mouseMoveEvent(event);
 }
