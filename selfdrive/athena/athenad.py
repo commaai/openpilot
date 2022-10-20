@@ -87,10 +87,8 @@ class UploadItem:
 
   @classmethod
   def from_dict(cls, d: Dict) -> UploadItem:
-    return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"], d["progress"], d["allow_cellular"])
-
-  def to_dict(self) -> UploadItemDict:
-    return asdict(self)
+    return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
+               d["progress"], d["allow_cellular"])
 
 
 dispatcher["echo"] = lambda s: s
