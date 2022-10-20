@@ -49,7 +49,7 @@ POETRY_INSTALL_ARGS=""
 if [ -d "./xx" ]; then
   echo "WARNING: using xx dependency group, installing globally"
   export POETRY_VIRTUALENVS_CREATE=false
-  POETRY_INSTALL_ARGS="--with xx --sync"
+  POETRY_INSTALL_ARGS="--with xx --sync "
 fi
 
 echo "pip packages install..."
