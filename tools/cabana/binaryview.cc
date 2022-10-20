@@ -44,8 +44,8 @@ void BinaryView::highlight(const Signal *sig) {
 }
 
 void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) {
-  QModelIndex tl = indexAt(QPoint(qMin(rect.left(), rect.right()), qMin(rect.top(), rect.bottom())));
-  QModelIndex br = indexAt(QPoint(qMax(rect.left(), rect.right()), qMax(rect.top(), rect.bottom())));
+  QModelIndex tl = indexAt({qMin(rect.left(), rect.right()), qMin(rect.top(), rect.bottom())});
+  QModelIndex br = indexAt({qMax(rect.left(), rect.right()), qMax(rect.top(), rect.bottom())});
   if (!tl.isValid() || !br.isValid())
     return;
 
