@@ -12,13 +12,26 @@
 
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setSpacing(0);
 
-  // title
+  // tabbar
+  tabbar = new QTabBar(this);
+  tabbar->setTabsClosable(true);
+  tabbar->setDrawBase(false);
+  tabbar->setUsesScrollButtons(true);
+  tabbar->setAutoHide(true);
+  main_layout->addWidget(tabbar);
+
+  // message title
+  QFrame *title_frame = new QFrame();
+  main_layout->addWidget(title_frame);
+  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
+  title_frame->setFrameShape(QFrame::StyledPanel);
   QHBoxLayout *title_layout = new QHBoxLayout();
   title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
-  title_layout->addWidget(time_label);
   time_label->setStyleSheet("font-weight:bold");
+  title_layout->addWidget(time_label);
   title_layout->addStretch();
   name_label = new QLabel(this);
   name_label->setStyleSheet("font-weight:bold;");
@@ -27,18 +40,18 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   edit_btn = new QPushButton(tr("Edit"), this);
   edit_btn->setVisible(false);
   title_layout->addWidget(edit_btn);
-  main_layout->addLayout(title_layout);
+  frame_layout->addLayout(title_layout);
 
   // warning
   warning_widget = new QWidget(this);
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
-  QLabel *warning_icon =  new QLabel(this);
+  QLabel *warning_icon = new QLabel(this);
   warning_icon->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap({16, 16}));
   warning_hlayout->addWidget(warning_icon);
   warning_label = new QLabel(this);
-  warning_hlayout->addWidget(warning_label,1, Qt::AlignLeft);
+  warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
   warning_widget->hide();
-  main_layout->addWidget(warning_widget);
+  frame_layout->addWidget(warning_widget);
 
   // binary view
   binary_view = new BinaryView(this);
@@ -63,13 +76,28 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(binary_view, &BinaryView::cellsSelected, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::dbcMsgChanged);
+  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) { setMessage(messages[index]); });
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
+    messages.removeAt(index);
+    tabbar->removeTab(index);
+    setMessage(messages.isEmpty() ? "" : messages[0]);
+  });
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
-  if (msg_id != message_id) {
-    msg_id = message_id;
-    dbcMsgChanged();
+  if (message_id.isEmpty()) return;
+
+  int index = messages.indexOf(message_id);
+  if (index == -1) {
+    messages.push_back(message_id);
+    tabbar->addTab(message_id);
+    index = tabbar->count() - 1;
+    auto msg = dbc()->msg(message_id);
+    tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
   }
+  tabbar->setCurrentIndex(index);
+  msg_id = message_id;
+  dbcMsgChanged();
 }
 
 void DetailWidget::dbcMsgChanged() {
