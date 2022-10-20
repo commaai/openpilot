@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QScrollArea>
+#include <QTabBar>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
@@ -50,6 +51,8 @@ private:
   QWidget *warning_widget;
   QPushButton *edit_btn;
   QWidget *signals_container;
+  QTabBar *tabbar;
+  QStringList messages;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
