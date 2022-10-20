@@ -68,15 +68,10 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
   anchor_index = indexAt(event->pos());
-  auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-  if (item && item->sig) {
-    int archor_pos = anchor_index.row() * 8 + anchor_index.column();
-    auto [sig_from, sig_to] = getSignalRange(item->sig);
-    if (archor_pos == sig_from || archor_pos == sig_to) {
-      delegate->setSelectionColor(item->bg_color);
-    }
+  if (getResizingSignal() != nullptr) {
+    auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
+    delegate->setSelectionColor(item->bg_color);
   }
-
   QTableView::mousePressEvent(event);
 }
 
@@ -96,19 +91,15 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   if (auto indexes = selectedIndexes(); !indexes.isEmpty()) {
     int from = indexes.first().row() * 8 + indexes.first().column();
     int to = indexes.back().row() * 8 + indexes.back().column();
-    auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    if (item && item->sig) {
-      int archor_pos = anchor_index.row() * 8 + anchor_index.column();
-      auto [sig_from, sig_to] = getSignalRange(item->sig);
-      if (archor_pos == sig_from || archor_pos == sig_to) {
-        if (from >= sig_from && to <= sig_to) {  // reduce size
-          emit(from == sig_from ? resizeSignal(item->sig, to, sig_to) : resizeSignal(item->sig, sig_from, from));
-        } else {  // increase size
-          emit resizeSignal(item->sig, std::min(from, sig_from), std::max(to, sig_to));
-        }
-        clearSelection();
-        return;
+    if (auto sig = getResizingSignal()) {
+      auto [sig_from, sig_to] = getSignalRange(sig);
+      if (from >= sig_from && to <= sig_to) {  // reduce size
+        emit(from == sig_from ? resizeSignal(sig, to, sig_to) : resizeSignal(sig, sig_from, from));
+      } else {  // increase size
+        emit resizeSignal(sig, std::min(from, sig_from), std::max(to, sig_to));
       }
+      clearSelection();
+      return;
     }
     emit addSignal(from, to);
     clearSelection();
@@ -131,6 +122,19 @@ void BinaryView::setMessage(const QString &message_id) {
 
 void BinaryView::updateState() {
   model->updateState();
+}
+
+const Signal *BinaryView::getResizingSignal() const {
+  if (anchor_index.isValid()) {
+    auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
+    if (item && item->sig) {
+      int archor_pos = anchor_index.row() * 8 + anchor_index.column();
+      auto [sig_from, sig_to] = getSignalRange(item->sig);
+      if (archor_pos == sig_from || archor_pos == sig_to)
+        return item->sig;
+    }
+  }
+  return nullptr;
 }
 
 // BinaryViewModel

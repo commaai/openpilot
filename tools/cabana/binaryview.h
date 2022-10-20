@@ -70,6 +70,7 @@ private:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  const Signal *getResizingSignal() const;
 
   QString msg_id;
   QModelIndex anchor_index;
