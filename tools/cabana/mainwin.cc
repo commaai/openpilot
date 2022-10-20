@@ -1,9 +1,7 @@
 #include "tools/cabana/mainwin.h"
 
 #include <QApplication>
-#include <QDialogButtonBox>
 #include <QHBoxLayout>
-#include <QFormLayout>
 #include <QScreen>
 #include <QSplitter>
 #include <QVBoxLayout>
@@ -81,54 +79,4 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 void MainWindow::setOption() {
   SettingsDlg dlg(this);
   dlg.exec();
-}
-
-// SettingsDlg
-
-SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Settings"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QFormLayout *form_layout = new QFormLayout();
-
-  fps = new QSpinBox(this);
-  fps->setRange(10, 100);
-  fps->setSingleStep(10);
-  fps->setValue(settings.fps);
-  form_layout->addRow("FPS", fps);
-
-  log_size = new QSpinBox(this);
-  log_size->setRange(50, 500);
-  log_size->setSingleStep(10);
-  log_size->setValue(settings.can_msg_log_size);
-  form_layout->addRow(tr("Log size"), log_size);
-
-  cached_segment = new QSpinBox(this);
-  cached_segment->setRange(3, 60);
-  cached_segment->setSingleStep(1);
-  cached_segment->setValue(settings.cached_segment_limit);
-  form_layout->addRow(tr("Cached segments limit"), cached_segment);
-
-  chart_height = new QSpinBox(this);
-  chart_height->setRange(100, 500);
-  chart_height->setSingleStep(10);
-  chart_height->setValue(settings.chart_height);
-  form_layout->addRow(tr("Chart height"), chart_height);
-
-  main_layout->addLayout(form_layout);
-
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
-
-  setFixedWidth(360);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-}
-
-void SettingsDlg::save() {
-  settings.fps = fps->value();
-  settings.can_msg_log_size = log_size->value();
-  settings.cached_segment_limit = cached_segment->value();
-  settings.chart_height = chart_height->value();
-  settings.save();
-  accept();
 }
