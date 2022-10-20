@@ -200,16 +200,19 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
+  bool hover = item->sig && bin_view->hoveredSignal() == item->sig;
   // background
-  QColor bg_color = item->sig && bin_view->hoveredSignal() == item->sig ? hoverColor(item->bg_color) : item->bg_color;
+  QColor bg_color = hover ? hoverColor(item->bg_color) : item->bg_color;
   if (option.state & QStyle::State_Selected) {
     bg_color = highlight_color;
   }
   painter->fillRect(option.rect, bg_color);
 
   // text
-  if (index.column() == 8) {
+  if (index.column() == 8) { // hex column
     painter->setFont(hex_font);
+  } else if (hover) {
+    painter->setPen(Qt::white);
   }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
