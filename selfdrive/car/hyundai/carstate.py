@@ -422,7 +422,7 @@ class CarState(CarStateBase):
       ("STEERING_OUT_TORQUE", "MDPS"),
       ("LKA_FAULT", "MDPS"),
 
-      ("CRUISE_ACTIVE", "TCS"),
+      ("ACC_REQ", "TCS"),
       ("DriverBraking", "TCS"),
 
       ("COUNTER", cruise_btn_msg),
