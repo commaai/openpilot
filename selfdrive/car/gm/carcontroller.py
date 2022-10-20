@@ -119,7 +119,7 @@ class CarController:
 
       # Silence "Take Steering" alert sent by camera, forward PSCMStatus with HandsOffSWlDetectionStatus=1
       if self.frame % 10 == 0:
-        can_sends.append(gmcan.create_pscm_status(self.packer_pt, CanBus.Camera, CS.pscm_status))
+        can_sends.append(gmcan.create_pscm_status(self.packer_pt, CanBus.CAMERA, CS.pscm_status))
 
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.
