@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - 'testing-closet*'
   pull_request:
+    types: [opened, reopened]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
