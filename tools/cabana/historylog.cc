@@ -70,7 +70,7 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   table = new QTableView(this);
   table->setModel(model);
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+  table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   table->setColumnWidth(0, 60);
   table->verticalHeader()->setVisible(false);
   table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
