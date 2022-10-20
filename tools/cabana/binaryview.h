@@ -66,8 +66,9 @@ public:
   const Signal *hoveredSignal() const { return hovered_sig; }
 
 signals:
-  void cellsSelected(int start_bit, int size);
   void signalHovered(const Signal *sig);
+  void addSignal(int from, int size);
+  void resizeSignal(const Signal *sig, int from, int size);
 
 private:
   void mouseMoveEvent(QMouseEvent *event) override;
