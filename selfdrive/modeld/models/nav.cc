@@ -1,3 +1,5 @@
+#include "selfdrive/modeld/models/nav.h"
+
 #include <cstdio>
 #include <cstring>
 
@@ -8,18 +10,21 @@
 #include "common/timing.h"
 #include "system/hardware/hw.h"
 
-#include "selfdrive/modeld/models/nav.h"
 
+template<class T, size_t size>
+constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
+  return kj::ArrayPtr(arr.data(), arr.size());
+}
 
 void navmodel_init(NavModelState* s) {
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, false); // TODO: Set _use_tf8=true for quantized models?
+  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, false); // TODO: Set _use_tf8=true for quantized models?
 #else
-  s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #endif
 }
 
-NavModelResult navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
+NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
   // convert from uint8 to float32
   // memcpy(s->net_input_buf, buf->addr, INPUT_SIZE);
   for (int i=0; i<INPUT_SIZE; i++) {
@@ -31,11 +36,27 @@ NavModelResult navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
   s->m->execute();
   double t2 = millis_since_boot();
 
-  NavModelResult model_res = {0};
-  model_res.dsp_execution_time = (t2 - t1) / 1000.;
-  // TODO: Fill in features
-
+  NavModelResult *model_res = (NavModelResult*)&s->output;
+  model_res->dsp_execution_time = (t2 - t1) / 1000.;
   return model_res;
+}
+
+void fill_plan(cereal::NavModelData::Builder &framed, const NavModelOutputPlan &plan) {
+  std::array<float, TRAJECTORY_SIZE> pos_x, pos_y;
+  std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std;
+
+  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+    pos_x[i] = plan.mean[i].x;
+    pos_y[i] = plan.mean[i].y;
+    pos_x_std[i] = exp(plan.std[i].x);
+    pos_y_std[i] = exp(plan.std[i].y);
+  }
+
+  auto position = framed.initPosition();
+  position.setX(to_kj_array_ptr(pos_x));
+  position.setY(to_kj_array_ptr(pos_y));
+  position.setXStd(to_kj_array_ptr(pos_x_std));
+  position.setYStd(to_kj_array_ptr(pos_y_std));
 }
 
 void navmodel_publish(PubMaster &pm, uint32_t frame_id, const NavModelResult &model_res, float execution_time) {
@@ -45,8 +66,9 @@ void navmodel_publish(PubMaster &pm, uint32_t frame_id, const NavModelResult &mo
   framed.setFrameId(frame_id);
   framed.setModelExecutionTime(execution_time);
   framed.setDspExecutionTime(model_res.dsp_execution_time);
-
-  // TODO: Fill in features
+  framed.setFeatures(to_kj_array_ptr(model_res.features.values));
+  framed.setDesirePrediction(to_kj_array_ptr(model_res.desire_pred.values));
+  fill_plan(framed, model_res.plans.get_best_prediction());
 
   pm.send("navModel", msg);
 }
