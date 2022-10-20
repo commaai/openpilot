@@ -12,10 +12,11 @@ public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void setSelectionColor(const QColor &color) { selection_color = color; }
 
 private:
   QFont small_font, hex_font;
-  QColor highlight_color;
+  QColor selection_color;
 };
 
 class BinaryViewModel : public QAbstractTableModel {
@@ -48,13 +49,6 @@ private:
   std::vector<Item> items;
 };
 
-// the default QItemSelectionModel does not support our selection mode.
-class BinarySelectionModel : public QItemSelectionModel {
- public:
-  BinarySelectionModel(QAbstractItemModel *model = nullptr) : QItemSelectionModel(model) {}
-  void select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) override;
-};
-
 class BinaryView : public QTableView {
   Q_OBJECT
 
@@ -66,15 +60,21 @@ public:
   const Signal *hoveredSignal() const { return hovered_sig; }
 
 signals:
-  void cellsSelected(int start_bit, int size);
   void signalHovered(const Signal *sig);
+  void addSignal(int from, int size);
+  void resizeSignal(const Signal *sig, int from, int size);
 
 private:
+  void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
+  void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  const Signal *getResizingSignal() const;
 
   QString msg_id;
+  QModelIndex anchor_index;
   BinaryViewModel *model;
+  BinaryItemDelegate *delegate;
   const Signal *hovered_sig = nullptr;
 };

@@ -73,7 +73,8 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(history_log);
 
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
-  QObject::connect(binary_view, &BinaryView::cellsSelected, this, &DetailWidget::addSignal);
+  QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
+  QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::dbcMsgChanged);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) { setMessage(messages[index]); });
@@ -159,14 +160,30 @@ void DetailWidget::editMsg() {
   }
 }
 
-void DetailWidget::addSignal(int start_bit, int size) {
+void DetailWidget::addSignal(int start_bit, int to) {
   if (dbc()->msg(msg_id)) {
-    AddSignalDialog dlg(msg_id, start_bit, size, this);
+    AddSignalDialog dlg(msg_id, start_bit, to - start_bit + 1, this);
     if (dlg.exec()) {
       dbc()->addSignal(msg_id, dlg.form->getSignal());
       dbcMsgChanged();
     }
   }
+}
+
+void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
+  assert(sig != nullptr);
+  Signal s = *sig;
+  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);;
+  s.size = to - from + 1;
+  if (s.is_little_endian) {
+    s.lsb = s.start_bit;
+    s.msb = s.start_bit + s.size - 1;
+  } else {
+    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
+    s.msb = s.start_bit;
+  }
+  dbc()->updateSignal(msg_id, s.name.c_str(), s);
+  dbcMsgChanged();
 }
 
 void DetailWidget::saveSignal() {
