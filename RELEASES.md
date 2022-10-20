@@ -2,9 +2,10 @@ Version 0.8.17 (2022-XX-XX)
 ========================
 * New driving model
   * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
+* New driver monitoring model
+  * New end-to-end distracted trigger
 * Self-tuning torque lateral controller parameters
   * Parameters learned live for each car
-  * Enabled only on Toyota Corolla for now
 * UI updates
   * Multi-language in navigation
   * Matched speeds shown on car's dash
@@ -12,6 +13,7 @@ Version 0.8.17 (2022-XX-XX)
   * Border turns grey while overriding steering
   * Added button to bookmark events while driving; view them later in comma connect
 * AGNOS 6
+* tools: new and improved cabana thanks to deanlee!
 * Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
 
 Version 0.8.16 (2022-08-26)
