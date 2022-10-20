@@ -23,15 +23,3 @@ protected:
   QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
 };
-
-class SettingsDlg : public QDialog {
-  Q_OBJECT
-
-public:
-  SettingsDlg(QWidget *parent);
-  void save();
-  QSpinBox *fps;
-  QSpinBox *log_size ;
-  QSpinBox *cached_segment;
-  QSpinBox *chart_height;
-};
