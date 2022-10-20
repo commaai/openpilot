@@ -23,11 +23,6 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setMouseTracking(true);
 
-  // replace selection model
-  auto old_model = selectionModel();
-  setSelectionModel(new BinarySelectionModel(model));
-  delete old_model;
-
   QObject::connect(model, &QAbstractItemModel::modelReset, [this]() {
     setFixedHeight((CELL_HEIGHT + 1) * std::min(model->rowCount(), 8) + 2);
   });
@@ -39,6 +34,33 @@ void BinaryView::highlight(const Signal *sig) {
     model->dataChanged(model->index(0, 0), model->index(model->rowCount() - 1, model->columnCount() - 1));
     emit signalHovered(hovered_sig);
   }
+}
+
+void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) {
+  QModelIndex tl = indexAt(QPoint(isRightToLeft() ? qMax(rect.left(), rect.right())
+                                : qMin(rect.left(), rect.right()), qMin(rect.top(), rect.bottom())));
+  QModelIndex br = indexAt(QPoint(isRightToLeft() ? qMin(rect.left(), rect.right()) :
+                                qMax(rect.left(), rect.right()), qMax(rect.top(), rect.bottom())));
+  if (!tl.isValid() || !br.isValid())
+    return;
+
+  if (tl < anchor_index) {
+    br = anchor_index;
+  } else if (anchor_index < br) {
+    tl = anchor_index;
+  }
+  QItemSelection selection;
+  for (int row = tl.row(); row <= br.row(); ++row) {
+    int left_col = (row == tl.row()) ? tl.column() : 0;
+    int right_col = (row == br.row()) ? br.column() : 7;
+    selection.merge({model->index(row, left_col), model->index(row, right_col)}, flags);
+  }
+  selectionModel()->select(selection, flags);
+}
+
+void BinaryView::mousePressEvent(QMouseEvent *event) {
+  anchor_index = indexAt(event->pos());
+  QTableView::mousePressEvent(event);
 }
 
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
@@ -57,25 +79,25 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   if (auto indexes = selectedIndexes(); !indexes.isEmpty()) {
     int from = indexes.first().row() * 8 + indexes.first().column();
     int to = indexes.back().row() * 8 + indexes.back().column();
-    if (auto msg = dbc()->msg(msg_id)) {
-      for (const auto &sig : msg->sigs) {
-        const int sig_from = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
-        const int sig_to = sig_from + sig.size - 1;
-
-        if ((from == sig_from || from == sig_to || to == sig_from || to == sig_to)) {
-          if (from >= sig_from && to <= sig_to) {  // reduce size
-            emit(from == sig_from ? resizeSignal(&sig, to, sig_to) : resizeSignal(&sig, sig_from, from));
-          } else {  // increase size
-            emit resizeSignal(&sig, std::min(from, sig_from), std::max(to, sig_to));
-          }
-          clearSelection();
-          return;
+    auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
+    if (item && item->sig) {
+      int archor_pos = anchor_index.row() * 8 + anchor_index.column();
+      int sig_from = item->sig->is_little_endian ? item->sig->start_bit : bigEndianBitIndex(item->sig->start_bit);
+      int sig_to = sig_from + item->sig->size - 1;
+      if (archor_pos == sig_from || archor_pos == sig_to) {
+        if (from >= sig_from && to <= sig_to) {  // reduce size
+          emit(from == sig_from ? resizeSignal(item->sig, to, sig_to) : resizeSignal(item->sig, sig_from, from));
+        } else {  // increase size
+          emit resizeSignal(item->sig, std::min(from, sig_from), std::max(to, sig_to));
         }
+        clearSelection();
+        return;
       }
     }
     emit addSignal(from, to);
     clearSelection();
   }
+  anchor_index = QModelIndex();
 }
 
 void BinaryView::leaveEvent(QEvent *event) {
@@ -180,21 +202,6 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
     }
   }
   return {};
-}
-
-// BinarySelectionModel
-
-void BinarySelectionModel::select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) {
-  QItemSelection new_selection = selection;
-  if (auto indexes = selection.indexes(); !indexes.isEmpty()) {
-    auto [begin_idx, end_idx] = (QModelIndex[]){indexes.first(), indexes.back()};
-    for (int row = begin_idx.row(); row <= end_idx.row(); ++row) {
-      int left_col = (row == begin_idx.row()) ? begin_idx.column() : 0;
-      int right_col = (row == end_idx.row()) ? end_idx.column() : 7;
-      new_selection.merge({model()->index(row, left_col), model()->index(row, right_col)}, command);
-    }
-  }
-  QItemSelectionModel::select(new_selection, command);
 }
 
 // BinaryItemDelegate

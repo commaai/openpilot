@@ -48,13 +48,6 @@ private:
   std::vector<Item> items;
 };
 
-// the default QItemSelectionModel does not support our selection mode.
-class BinarySelectionModel : public QItemSelectionModel {
- public:
-  BinarySelectionModel(QAbstractItemModel *model = nullptr) : QItemSelectionModel(model) {}
-  void select(const QItemSelection &selection, QItemSelectionModel::SelectionFlags command) override;
-};
-
 class BinaryView : public QTableView {
   Q_OBJECT
 
@@ -71,11 +64,14 @@ signals:
   void resizeSignal(const Signal *sig, int from, int size);
 
 private:
+  void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
+  void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
 
   QString msg_id;
+  QModelIndex anchor_index;
   BinaryViewModel *model;
   const Signal *hovered_sig = nullptr;
 };
