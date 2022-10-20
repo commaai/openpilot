@@ -39,7 +39,8 @@ signals:
   void removeChart(const Signal *sig);
 
 private:
-  void addSignal(int start_bit, int size);
+  void addSignal(int start_bit, int to);
+  void resizeSignal(const Signal *sig, int from, int to);
   void saveSignal();
   void removeSignal();
   void editMsg();
