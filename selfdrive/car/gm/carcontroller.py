@@ -112,8 +112,8 @@ class CarController:
 
     else:
       # Silence "Take Steering" alert sent by camera, send PSCMStatus with HandsOffSWlDetectionStatus=1
-      if self.frame % 500 == 0:
-        can_sends.append(gmcan.create_pscm_status(self.packer_pt, CS.pscm_status_counter))
+      if self.frame % 100 == 0:
+        can_sends.append(gmcan.create_pscm_status(self.packer_pt, CS.pscm_status, CS.pscm_status_counter))
 
       # Stock longitudinal, integrated at camera
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
