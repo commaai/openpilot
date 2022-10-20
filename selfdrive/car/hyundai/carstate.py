@@ -189,7 +189,7 @@ class CarState(CarStateBase):
                                                                       cp.vl["BLINKERS"]["RIGHT_LAMP"])
 
     ret.cruiseState.available = True
-    ret.cruiseState.enabled = cp.vl["SCC1"]["CRUISE_ACTIVE"] == 1
+    ret.cruiseState.enabled = cp.vl["CRUISE_INFO"]["CRUISE_STATUS"] != 0
     self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
@@ -452,6 +452,7 @@ class CarState(CarStateBase):
 
     if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
       signals += [
+        ("CRUISE_STATUS", "CRUISE_INFO"),
         ("SET_SPEED", "CRUISE_INFO"),
         ("CRUISE_STANDSTILL", "CRUISE_INFO"),
       ]
