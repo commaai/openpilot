@@ -167,27 +167,7 @@ void SignalEdit::leaveEvent(QEvent *event) {
   QWidget::leaveEvent(event);
 }
 
-// AddSignalDialog
-
-AddSignalDialog::AddSignalDialog(const QString &id, int start_bit, int size, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Add signal to %1").arg(dbc()->msg(id)->name.c_str()));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-  Signal sig = {
-    .name = "untitled",
-    .start_bit = bigEndianBitIndex(start_bit),
-    .is_little_endian = false,
-    .size = size,
-  };
-  form = new SignalForm(sig, this);
-  main_layout->addWidget(form);
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
-  setFixedWidth(parent->width() * 0.9);
-
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-}
+// SignalFindDlg
 
 SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Find signal values"));

@@ -62,7 +62,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::cellsSelected, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::dbcMsgChanged);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
@@ -72,7 +72,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   }
 }
 
-void DetailWidget::dbcMsgChanged() {
+void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (msg_id.isEmpty()) return;
 
   warning_widget->hide();
@@ -83,11 +83,14 @@ void DetailWidget::dbcMsgChanged() {
       auto form = new SignalEdit(i, msg_id, msg->sigs[i]);
       signals_container->layout()->addWidget(form);
       QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]]() { emit showChart(msg_id, sig); });
-      QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
+      QObject::connect(form, &SignalEdit::showFormClicked, [this]() {showForm();});
       QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
       QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
       QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
       QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
+      if (i == show_form_idx) {
+        QTimer::singleShot(0, [=]() { emit form->showFormClicked(); });
+      }
     }
     msg_name = msg->name.c_str();
     if (msg->size != can->lastMessage(msg_id).dat.size()) {
@@ -132,12 +135,15 @@ void DetailWidget::editMsg() {
 }
 
 void DetailWidget::addSignal(int start_bit, int size) {
-  if (dbc()->msg(msg_id)) {
-    AddSignalDialog dlg(msg_id, start_bit, size, this);
-    if (dlg.exec()) {
-      dbc()->addSignal(msg_id, dlg.form->getSignal());
-      dbcMsgChanged();
-    }
+  if (auto msg = dbc()->msg(msg_id)) {
+    Signal sig = {
+      .name = "untitled",
+      .start_bit = bigEndianBitIndex(start_bit),
+      .is_little_endian = false,
+      .size = size,
+    };
+    dbc()->addSignal(msg_id, sig);
+    dbcMsgChanged(msg->sigs.size() - 1);
   }
 }
 

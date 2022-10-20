@@ -31,7 +31,7 @@ class DetailWidget : public QWidget {
 public:
   DetailWidget(QWidget *parent);
   void setMessage(const QString &message_id);
-  void dbcMsgChanged();
+  void dbcMsgChanged(int show_form_idx = -1);
 
 signals:
   void showChart(const QString &msg_id, const Signal *sig);
