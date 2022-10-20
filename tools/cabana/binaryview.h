@@ -12,10 +12,11 @@ public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void setSelectionColor(const QColor &color) { selection_color = color; }
 
 private:
   QFont small_font, hex_font;
-  QColor highlight_color;
+  QColor selection_color;
 };
 
 class BinaryViewModel : public QAbstractTableModel {
@@ -73,5 +74,6 @@ private:
   QString msg_id;
   QModelIndex anchor_index;
   BinaryViewModel *model;
+  BinaryItemDelegate *delegate;
   const Signal *hovered_sig = nullptr;
 };

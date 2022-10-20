@@ -13,10 +13,17 @@
 
 const int CELL_HEIGHT = 30;
 
+static std::pair<int, int> getSignalRange(const Signal *s) {
+  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
+  int to = from + s->size - 1;
+  return {from, to};
+}
+
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
   setModel(model);
-  setItemDelegate(new BinaryItemDelegate(this));
+  delegate = new BinaryItemDelegate(this);
+  setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->hide();
   verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -59,7 +66,17 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 }
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
+  delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
   anchor_index = indexAt(event->pos());
+  auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
+  if (item && item->sig) {
+    int archor_pos = anchor_index.row() * 8 + anchor_index.column();
+    auto [sig_from, sig_to] = getSignalRange(item->sig);
+    if (archor_pos == sig_from || archor_pos == sig_to) {
+      delegate->setSelectionColor(item->bg_color);
+    }
+  }
+
   QTableView::mousePressEvent(event);
 }
 
@@ -82,8 +99,7 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     if (item && item->sig) {
       int archor_pos = anchor_index.row() * 8 + anchor_index.column();
-      int sig_from = item->sig->is_little_endian ? item->sig->start_bit : bigEndianBitIndex(item->sig->start_bit);
-      int sig_to = sig_from + item->sig->size - 1;
+      auto [sig_from, sig_to] = getSignalRange(item->sig);
       if (archor_pos == sig_from || archor_pos == sig_to) {
         if (from >= sig_from && to <= sig_to) {  // reduce size
           emit(from == sig_from ? resizeSignal(item->sig, to, sig_to) : resizeSignal(item->sig, sig_from, from));
@@ -132,8 +148,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     items.resize(row_count * column_count);
     for (int i = 0; i < dbc_msg->sigs.size(); ++i) {
       const auto &sig = dbc_msg->sigs[i];
-      const int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
-      const int end = start + sig.size - 1;
+      auto [start, end] = getSignalRange(&sig);
       for (int j = start; j <= end; ++j) {
         int idx = column_count * (j / 8) + j % 8;
         if (idx >= items.size()) {
@@ -211,7 +226,7 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   small_font.setPointSize(6);
   hex_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   hex_font.setBold(true);
-  highlight_color = QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Highlight);
+  selection_color = QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Highlight);
 }
 
 QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -227,7 +242,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   // background
   QColor bg_color = item->sig && bin_view->hoveredSignal() == item->sig ? hoverColor(item->bg_color) : item->bg_color;
   if (option.state & QStyle::State_Selected) {
-    bg_color = highlight_color;
+    bg_color = selection_color;
   }
   painter->fillRect(option.rect, bg_color);
 
