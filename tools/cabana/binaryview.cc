@@ -57,17 +57,16 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   if (auto indexes = selectedIndexes(); !indexes.isEmpty()) {
     int from = indexes.first().row() * 8 + indexes.first().column();
     int to = indexes.back().row() * 8 + indexes.back().column();
-
     if (auto msg = dbc()->msg(msg_id)) {
       for (const auto &sig : msg->sigs) {
-        const int start = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
-        const int end = start + sig.size - 1;
+        const int sig_from = sig.is_little_endian ? sig.start_bit : bigEndianBitIndex(sig.start_bit);
+        const int sig_to = sig_from + sig.size - 1;
 
-        if ((from == start || from == end || to == start || to == end)) {
-          if (from >= start && to <= end) {  // reduce size
-            emit(from == start ? resizeSignal(&sig, to, end) : resizeSignal(&sig, start, from));
+        if ((from == sig_from || from == sig_to || to == sig_from || to == sig_to)) {
+          if (from >= sig_from && to <= sig_to) {  // reduce size
+            emit(from == sig_from ? resizeSignal(&sig, to, sig_to) : resizeSignal(&sig, sig_from, from));
           } else {  // increase size
-            emit resizeSignal(&sig, std::min(from, start), std::max(to, end));
+            emit resizeSignal(&sig, std::min(from, sig_from), std::max(to, sig_to));
           }
           clearSelection();
           return;
