@@ -28,7 +28,7 @@ class CarState(CarStateBase):
     self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
 
     # Variables used for avoiding LKAS faults
-    self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]) > 0
+    self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
