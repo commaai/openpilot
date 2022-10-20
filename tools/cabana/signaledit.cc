@@ -81,8 +81,7 @@ Signal SignalForm::getSignal() {
 
 // SignalEdit
 
-SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent)
-    : sig(&sig), form_idx(index), sig_name(sig.name.c_str()), QWidget(parent) {
+SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent) : sig(sig), form_idx(index), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -93,7 +92,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
   title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-  title->setText(QString("%1. %2").arg(index + 1).arg(sig_name));
+  title->setText(QString("%1. %2").arg(index + 1).arg(sig->name.c_str()));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(getColor(index)));
   title_layout->addWidget(title, 1);
 
@@ -113,7 +112,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   // signal form
   form_container = new QWidget(this);
   QVBoxLayout *v_layout = new QVBoxLayout(form_container);
-  form = new SignalForm(sig, this);
+  form = new SignalForm(*sig, this);
   v_layout->addWidget(form);
 
   QHBoxLayout *h = new QHBoxLayout();
@@ -133,16 +132,15 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
-  QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
+  QObject::connect(remove_btn, &QPushButton::clicked, [this]() { emit remove(this->sig); });
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
   QObject::connect(save_btn, &QPushButton::clicked, [=]() {
     QString new_name = form->getSignal().name.c_str();
     title->setText(QString("%1. %2").arg(index + 1).arg(new_name));
-    emit save();
-    sig_name = new_name;
+    emit save(this->sig, form->getSignal());
   });
-  QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id, s = &sig]() {
-    SignalFindDlg dlg(msg_id, s, this);
+  QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id]() {
+    SignalFindDlg dlg(msg_id, this->sig, this);
     dlg.exec();
   });
 }

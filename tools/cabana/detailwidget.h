@@ -39,8 +39,8 @@ signals:
 
 private:
   void addSignal(int start_bit, int size);
-  void saveSignal();
-  void removeSignal();
+  void saveSignal(const Signal *sig, const Signal &new_sig);
+  void removeSignal(const Signal *sig);
   void editMsg();
   void showForm();
   void updateState();

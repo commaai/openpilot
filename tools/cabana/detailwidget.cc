@@ -80,10 +80,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   QString msg_name = tr("untitled");
   if (auto msg = dbc()->msg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      auto form = new SignalEdit(i, msg_id, msg->sigs[i]);
+      auto form = new SignalEdit(i, msg_id, &(msg->sigs[i]));
       signals_container->layout()->addWidget(form);
       QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]]() { emit showChart(msg_id, sig); });
-      QObject::connect(form, &SignalEdit::showFormClicked, [this]() {showForm();});
+      QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
       QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
       QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
       QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
@@ -136,31 +136,31 @@ void DetailWidget::editMsg() {
 
 void DetailWidget::addSignal(int start_bit, int size) {
   if (auto msg = dbc()->msg(msg_id)) {
-    Signal sig = {
-      .name = "untitled",
-      .start_bit = bigEndianBitIndex(start_bit),
-      .is_little_endian = false,
-      .size = size,
-    };
+    Signal sig = {};
+    for (int i = 1; /**/; ++i) {
+      sig.name ="NEW_SIGNAL_" + std::to_string(i);
+      auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
+      if (it == msg->sigs.end()) break;
+    }
+    sig.start_bit = bigEndianBitIndex(start_bit),
+    sig.is_little_endian = false,
+    sig.size = size,
     dbc()->addSignal(msg_id, sig);
     dbcMsgChanged(msg->sigs.size() - 1);
   }
 }
 
-void DetailWidget::saveSignal() {
-  SignalEdit *sig_form = qobject_cast<SignalEdit *>(QObject::sender());
-  auto s = sig_form->form->getSignal();
-  dbc()->updateSignal(msg_id, sig_form->sig_name, s);
+void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
+  dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
   // update binary view and history log
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
 }
 
-void DetailWidget::removeSignal() {
-  SignalEdit *sig_form = qobject_cast<SignalEdit *>(QObject::sender());
-  QString text = tr("Are you sure you want to remove signal '%1'").arg(sig_form->sig_name);
+void DetailWidget::removeSignal(const Signal *sig) {
+  QString text = tr("Are you sure you want to remove signal '%1'").arg(sig->name.c_str());
   if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove signal"), text)) {
-    dbc()->removeSignal(msg_id, sig_form->sig_name);
+    dbc()->removeSignal(msg_id, sig->name.c_str());
     dbcMsgChanged();
   }
 }

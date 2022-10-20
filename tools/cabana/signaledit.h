@@ -28,29 +28,28 @@ class SignalEdit : public QWidget {
   Q_OBJECT
 
 public:
-  SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent = nullptr);
+  SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent = nullptr);
   void setFormVisible(bool show);
   void signalHovered(const Signal *sig);
   inline bool isFormVisible() const { return form_container->isVisible(); }
-  QString sig_name;
-  SignalForm *form;
-  int form_idx = 0;
-  const Signal *sig = nullptr;
 
 signals:
   void highlight(const Signal *sig);
   void showChart();
   void showFormClicked();
-  void remove();
-  void save();
+  void remove(const Signal *sig);
+  void save(const Signal *sig, const Signal &new_sig);
 
 protected:
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
 
+  SignalForm *form;
   ElidedLabel *title;
   QWidget *form_container;
   QLabel *icon;
+  int form_idx = 0;
+  const Signal *sig = nullptr;
 };
 
 class SignalFindDlg : public QDialog {
