@@ -710,8 +710,8 @@ def ws_send(ws, end_event):
 
 
 def ws_manage(ws, end_event):
-  params = Params()
-  awake_prev = False
+  # params = Params()
+  # awake_prev = False
 
   while not end_event.is_set():
     # Default socket options:
@@ -722,15 +722,21 @@ def ws_manage(ws, end_event):
     # TCP_USER_TIMEOUT: 0
     sock: socket.socket = ws.sock
 
-    awake = params.get_bool("IsDeviceAwake")
-    if awake != awake_prev:
-      awake_prev = awake
+    print(f"SO_KEEPALIVE: {sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)}")
+    print(f"TCP_KEEPIDLE: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE)}")
+    print(f"TCP_KEEPINTVL: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL)}")
+    print(f"TCP_KEEPCNT: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
+    print(f"TCP_USER_TIMEOUT: {sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT)}")
 
-      keepidle = 5 if awake else 30  # seconds
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepidle)
+    # awake = params.get_bool("IsDeviceAwake")
+    # if awake != awake_prev:
+    #   awake_prev = awake
 
-      user_timeout = 40*1000 if awake else 60*1000  # milliseconds
-      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, user_timeout)
+    #   keepidle = 5 if awake else 30  # seconds
+    #   sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepidle)
+
+    #   user_timeout = 40*1000 if awake else 60*1000  # milliseconds
+    #   sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, user_timeout)
 
     time.sleep(2)
 
