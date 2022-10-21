@@ -53,7 +53,7 @@ if [ -d "./xx" ]; then
 fi
 
 echo "pip packages install..."
-poetry install --no-root $POETRY_INSTALL_ARGS
+poetry install --no-cache --no-root $POETRY_INSTALL_ARGS
 
 if [ -z "$PIPENV_SYSTEM" ] && [ -z "$POETRY_VIRTUALENVS_CREATE" ]; then
   echo "PYTHONPATH=${PWD}" > .env
