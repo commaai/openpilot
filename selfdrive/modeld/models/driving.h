@@ -232,7 +232,7 @@ constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN;
+constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + 2;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
