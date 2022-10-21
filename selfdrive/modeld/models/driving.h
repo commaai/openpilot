@@ -28,7 +28,6 @@ constexpr int BLINKER_LEN = 6;
 constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
-constexpr int STOP_LINE_MHP_N = 3;
 
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
@@ -151,36 +150,6 @@ struct ModelOutputLeads {
 };
 static_assert(sizeof(ModelOutputLeads) == (sizeof(ModelOutputLeadPrediction)*LEAD_MHP_N) + (sizeof(float)*LEAD_MHP_SELECTION));
 
-struct ModelOutputStopLineElement {
-  ModelOutputXYZ position;
-  ModelOutputXYZ rotation;
-  float speed;
-  float time;
-};
-static_assert(sizeof(ModelOutputStopLineElement) == (sizeof(ModelOutputXYZ)*2 + sizeof(float)*2));
-
-struct ModelOutputStopLinePrediction {
-  ModelOutputStopLineElement mean;
-  ModelOutputStopLineElement std;
-  float prob;
-};
-static_assert(sizeof(ModelOutputStopLinePrediction) == (sizeof(ModelOutputStopLineElement)*2 + sizeof(float)));
-
-struct ModelOutputStopLines {
-  std::array<ModelOutputStopLinePrediction, STOP_LINE_MHP_N> prediction;
-  float prob;
-
-  constexpr const ModelOutputStopLinePrediction &get_best_prediction(int t_idx) const {
-    int max_idx = 0;
-    for (int i = 1; i < prediction.size(); i++) {
-      if (prediction[i].prob > prediction[max_idx].prob) {
-        max_idx = i;
-      }
-    }
-    return prediction[max_idx];
-  }
-};
-static_assert(sizeof(ModelOutputStopLines) == (sizeof(ModelOutputStopLinePrediction)*STOP_LINE_MHP_N) + sizeof(float));
 
 struct ModelOutputPose {
   ModelOutputXYZ velocity_mean;
@@ -189,6 +158,12 @@ struct ModelOutputPose {
   ModelOutputXYZ rotation_std;
 };
 static_assert(sizeof(ModelOutputPose) == sizeof(ModelOutputXYZ)*4);
+
+struct ModelOutputWideFromDeviceEuler {
+  ModelOutputXYZ mean;
+  ModelOutputXYZ std;
+};
+static_assert(sizeof(ModelOutputWideFromDeviceEuler) == sizeof(ModelOutputXYZ)*2);
 
 struct ModelOutputDisengageProb {
   float gas_disengage;
@@ -245,9 +220,9 @@ struct ModelOutput {
   const ModelOutputLaneLines lane_lines;
   const ModelOutputRoadEdges road_edges;
   const ModelOutputLeads leads;
-  const ModelOutputStopLines stop_lines;
   const ModelOutputMeta meta;
   const ModelOutputPose pose;
+  const ModelOutputWideFromDeviceEuler wide_from_device_euler;
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
@@ -257,7 +232,7 @@ constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN;
+constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + 2;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
