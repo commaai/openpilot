@@ -95,7 +95,6 @@ utm = "*"
 websocket_client = "*"
 hatanaka = "==2.4"
 PySide2 = "*"
-networkx = "~=2.3"
 
 [requires]
 python_version = "3.8"
