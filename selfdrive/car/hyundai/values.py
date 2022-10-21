@@ -292,6 +292,7 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
