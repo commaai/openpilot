@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QScrollArea>
+#include <QTabBar>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
@@ -38,7 +39,8 @@ signals:
   void removeChart(const Signal *sig);
 
 private:
-  void addSignal(int start_bit, int size);
+  void addSignal(int start_bit, int to);
+  void resizeSignal(const Signal *sig, int from, int to);
   void saveSignal();
   void removeSignal();
   void editMsg();
@@ -46,9 +48,12 @@ private:
   void updateState();
 
   QString msg_id;
-  QLabel *name_label, *time_label;
+  QLabel *name_label, *time_label, *warning_label;
+  QWidget *warning_widget;
   QPushButton *edit_btn;
   QWidget *signals_container;
+  QTabBar *tabbar;
+  QStringList messages;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;

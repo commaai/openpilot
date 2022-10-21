@@ -4,26 +4,13 @@
 #include <deque>
 #include <map>
 
+#include <QColor>
 #include <QHash>
+#include <QList>
 
+#include "opendbc/can/common_dbc.h"
+#include "tools/cabana/settings.h"
 #include "tools/replay/replay.h"
-
-class Settings : public QObject {
-  Q_OBJECT
-
-public:
-  Settings();
-  void save();
-  void load();
-
-  int fps = 10;
-  int can_msg_log_size = 100;
-  int cached_segment_limit = 3;
-  int chart_height = 200;
-
-signals:
-  void changed();
-};
 
 struct CanData {
   double ts;
@@ -35,12 +22,14 @@ class CANMessages : public QObject {
   Q_OBJECT
 
 public:
+  enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void seekTo(double ts);
   void resetRange();
   void setRange(double min, double max);
+  QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
   inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
@@ -99,6 +88,12 @@ inline const QString &getColor(int i) {
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
 }
 
+inline QColor hoverColor(const QColor &color) {
+  QColor c = color.convertTo(QColor::Hsv);
+  c.setHsv(color.hue(), 180, 180);
+  return c;
+}
+
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;
-extern Settings settings;
+
