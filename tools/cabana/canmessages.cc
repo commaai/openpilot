@@ -5,8 +5,6 @@
 
 #include "tools/cabana/dbcmanager.h"
 
-Q_DECLARE_METATYPE(std::vector<CanData>);
-
 CANMessages *can = nullptr;
 
 CANMessages::CANMessages(QObject *parent) : QObject(parent) {
