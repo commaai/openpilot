@@ -48,13 +48,17 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->m->addDesire(s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
 
+#ifdef NAV
+  s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
+#endif
+
 #ifdef TRAFFIC_CONVENTION
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, float *nav_features, bool is_rhd, bool prepare_only) {
 #ifdef DESIRE
   std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
@@ -70,6 +74,10 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
     }
   }
 LOGT("Desire enqueued");
+#endif
+
+#ifdef NAV
+  std::memcpy(s->nav_features, nav_features, sizeof(float)*NAV_FEATURE_LEN);
 #endif
 
   int rhd_idx = is_rhd;

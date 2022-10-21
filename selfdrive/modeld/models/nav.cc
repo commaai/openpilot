@@ -17,21 +17,21 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
 
 void navmodel_init(NavModelState* s) {
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, false); // TODO: Set _use_tf8=true for quantized models?
+  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, false); // TODO: Set _use_tf8=true for quantized models?
 #else
-  s->m = new SNPEModel("models/navmodel.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  s->m = new SNPEModel("models/navmodel.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #endif
 }
 
 NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
   // convert from uint8 to float32
   // memcpy(s->net_input_buf, buf->addr, INPUT_SIZE);
-  for (int i=0; i<INPUT_SIZE; i++) {
+  for (int i=0; i<NAV_INPUT_SIZE; i++) {
     s->net_input_buf[i] = ((uint8_t*)buf->addr)[i];
   }
 
   double t1 = millis_since_boot();
-  s->m->addImage(s->net_input_buf, INPUT_SIZE);
+  s->m->addImage(s->net_input_buf, NAV_INPUT_SIZE);
   s->m->execute();
   double t2 = millis_since_boot();
 

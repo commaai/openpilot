@@ -24,6 +24,10 @@ void ThneedModel::addDesire(float *state, int state_size) {
   desire = state;
 }
 
+void ThneedModel::addNavFeatures(float *state, int state_size) {
+  navFeatures = state;
+}
+
 void ThneedModel::addImage(float *image_input_buf, int buf_size) {
   input = image_input_buf;
 }
@@ -47,10 +51,10 @@ void ThneedModel::execute() {
   if (!recorded) {
     thneed->record = true;
     if (use_extra) {
-      float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+      float *inputs[6] = {recurrent, trafficConvention, navFeatures, desire, extra, input};
       thneed->copy_inputs(inputs);
     } else {
-      float *inputs[4] = {recurrent, trafficConvention, desire, input};
+      float *inputs[5] = {recurrent, trafficConvention, navFeatures, desire, input};
       thneed->copy_inputs(inputs);
     }
     thneed->clexec();
@@ -60,10 +64,10 @@ void ThneedModel::execute() {
     recorded = true;
   } else {
     if (use_extra) {
-      float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+      float *inputs[6] = {recurrent, trafficConvention, navFeatures, desire, extra, input};
       thneed->execute(inputs, output);
     } else {
-      float *inputs[4] = {recurrent, trafficConvention, desire, input};
+      float *inputs[5] = {recurrent, trafficConvention, navFeatures, desire, input};
       thneed->execute(inputs, output);
     }
   }

@@ -97,6 +97,11 @@ void ONNXModel::addDesire(float *state, int state_size) {
   desire_state_size = state_size;
 }
 
+void ONNXModel::addNavFeatures(float *state, int state_size) {
+  nav_features_input_buf = state;
+  nav_features_size = state_size;
+}
+
 void ONNXModel::addTrafficConvention(float *state, int state_size) {
   traffic_convention_input_buf = state;
   traffic_convention_size = state_size;
@@ -127,6 +132,9 @@ void ONNXModel::execute() {
   }
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
+  }
+  if (nav_features_input_buf != NULL) {
+    pwrite(nav_features_input_buf, nav_features_size);
   }
   if (traffic_convention_input_buf != NULL) {
     pwrite(traffic_convention_input_buf, traffic_convention_size);

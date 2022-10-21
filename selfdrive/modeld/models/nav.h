@@ -7,10 +7,12 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
-constexpr int INPUT_SIZE = 256*256;
-constexpr int FEATURE_LEN = 64;
-constexpr int DESIRE_LEN = 32;
-constexpr int PLAN_MHP_N = 5;
+#define NAV // TODO: This should probably be defined in the sconscript or something
+
+constexpr int NAV_INPUT_SIZE = 256*256;
+constexpr int NAV_FEATURE_LEN = 64;
+constexpr int NAV_DESIRE_LEN = 32;
+constexpr int NAV_PLAN_MHP_N = 5;
 
 struct NavModelOutputXY {
   float x;
@@ -26,7 +28,7 @@ struct NavModelOutputPlan {
 static_assert(sizeof(NavModelOutputPlan) == sizeof(NavModelOutputXY)*TRAJECTORY_SIZE*2 + sizeof(float));
 
 struct NavModelOutputPlans {
-  std::array<NavModelOutputPlan, PLAN_MHP_N> predictions;
+  std::array<NavModelOutputPlan, NAV_PLAN_MHP_N> predictions;
 
   constexpr const NavModelOutputPlan &get_best_prediction() const {
     int max_idx = 0;
@@ -38,17 +40,17 @@ struct NavModelOutputPlans {
     return predictions[max_idx];
   }
 };
-static_assert(sizeof(NavModelOutputPlans) == sizeof(NavModelOutputPlan)*PLAN_MHP_N);
+static_assert(sizeof(NavModelOutputPlans) == sizeof(NavModelOutputPlan)*NAV_PLAN_MHP_N);
 
 struct NavModelOutputDesirePrediction {
-  std::array<float, DESIRE_LEN> values;
+  std::array<float, NAV_DESIRE_LEN> values;
 };
-static_assert(sizeof(NavModelOutputDesirePrediction) == sizeof(float)*DESIRE_LEN);
+static_assert(sizeof(NavModelOutputDesirePrediction) == sizeof(float)*NAV_DESIRE_LEN);
 
 struct NavModelOutputFeatures {
-  std::array<float, FEATURE_LEN> values;
+  std::array<float, NAV_FEATURE_LEN> values;
 };
-static_assert(sizeof(NavModelOutputFeatures) == sizeof(float)*FEATURE_LEN);
+static_assert(sizeof(NavModelOutputFeatures) == sizeof(float)*NAV_FEATURE_LEN);
 
 struct NavModelResult {
   const NavModelOutputPlans plans;
@@ -58,13 +60,13 @@ struct NavModelResult {
 };
 static_assert(sizeof(NavModelResult) == sizeof(NavModelOutputPlans) + sizeof(NavModelOutputDesirePrediction) + sizeof(NavModelOutputFeatures) + sizeof(float));
 
-constexpr int OUTPUT_SIZE = sizeof(NavModelResult) / sizeof(float);
-constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE - 1;
+constexpr int NAV_OUTPUT_SIZE = sizeof(NavModelResult) / sizeof(float);
+constexpr int NAV_NET_OUTPUT_SIZE = NAV_OUTPUT_SIZE - 1;
 
 struct NavModelState {
   RunModel *m;
-  float net_input_buf[INPUT_SIZE];  // TODO: make this uint8_t
-  float output[OUTPUT_SIZE];
+  float net_input_buf[NAV_INPUT_SIZE];  // TODO: make this uint8_t
+  float output[NAV_OUTPUT_SIZE];
 };
 
 void navmodel_init(NavModelState* s);
