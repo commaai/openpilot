@@ -55,11 +55,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(charts_scroll);
 
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeChart);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { removeAll(nullptr); });
+  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeAll);
   QObject::connect(dbc(), &DBCManager::signalUpdated, [this](const Signal *sig) {
-    if (auto it = charts.find(sig); it != charts.end()) {
-      it.value()->chart_view->updateSeries();
+    for (auto chart : charts) {
+      if (chart->signal == sig) {
+        chart->chart_view->updateSeries();
+      }
     }
   });
   QObject::connect(dbc(), &DBCManager::msgUpdated, [this](const QString &id) {
@@ -71,7 +73,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   QObject::connect(can, &CANMessages::rangeChanged, [this]() { updateTitleBar(); });
   QObject::connect(reset_zoom_btn, &QPushButton::clicked, can, &CANMessages::resetRange);
-  QObject::connect(remove_all_btn, &QPushButton::clicked, this, &ChartsWidget::removeAll);
+  QObject::connect(remove_all_btn, &QPushButton::clicked, [this]() { removeAll(); });
   QObject::connect(dock_btn, &QPushButton::clicked, [this]() {
     emit dock(!docking);
     docking = !docking;
@@ -102,28 +104,38 @@ void ChartsWidget::updateTitleBar() {
 }
 
 void ChartsWidget::addChart(const QString &id, const Signal *sig) {
-  if (!charts.contains(sig)) {
+  auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
+  if (it == charts.end()) {
     auto chart = new ChartWidget(id, sig, this);
-    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(sig); });
+    QObject::connect(chart, &ChartWidget::remove, this, &ChartsWidget::removeChart);
     charts_layout->insertWidget(0, chart);
-    charts.insert(sig, chart);
+    charts.push_back(chart);
   }
   updateTitleBar();
 }
 
-void ChartsWidget::removeChart(const Signal *sig) {
-  auto it = charts.find(sig);
-  if (it != charts.end()) {
-    it.value()->deleteLater();
-    charts.remove(sig);
+void ChartsWidget::removeChart(const QString &msg_id, const Signal *sig) {
+  QMutableListIterator<ChartWidget *> it(charts);
+  while (it.hasNext()) {
+    auto c = it.next();
+    if (c->id == msg_id && c->signal == sig) {
+      c->deleteLater();
+      it.remove();
+      break;
+    }
   }
   updateTitleBar();
 }
 
-void ChartsWidget::removeAll() {
-  for (auto chart : charts)
-    chart->deleteLater();
-  charts.clear();
+void ChartsWidget::removeAll(const Signal *sig) {
+  QMutableListIterator<ChartWidget *> it(charts);
+  while (it.hasNext()) {
+    auto c = it.next();
+    if (sig == nullptr || c->signal == sig) {
+      c->deleteLater();
+      it.remove();
+    }
+  }
   updateTitleBar();
 }
 
@@ -153,7 +165,7 @@ ChartWidget::ChartWidget(const QString &id, const Signal *sig, QWidget *parent) 
   QPushButton *remove_btn = new QPushButton("✖", this);
   remove_btn->setFixedSize(30, 30);
   remove_btn->setToolTip(tr("Remove chart"));
-  QObject::connect(remove_btn, &QPushButton::clicked, this, &ChartWidget::remove);
+  QObject::connect(remove_btn, &QPushButton::clicked, [=]() { emit remove(id, sig); });
   header_layout->addWidget(remove_btn);
   main_layout->addWidget(header);
 

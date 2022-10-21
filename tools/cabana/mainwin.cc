@@ -8,7 +8,15 @@
 
 #include "tools/replay/util.h"
 
+static MainWindow *main_win = nullptr;
+void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  if (main_win) main_win->showStatusMessage(msg);
+}
+
 MainWindow::MainWindow() : QWidget() {
+  main_win = this;
+  qInstallMessageHandler(qLogMessageHandler);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, 11, 11, 5);
   main_layout->setSpacing(0);
@@ -110,6 +118,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  main_win = nullptr;
   if (floating_window)
     floating_window->deleteLater();
   QWidget::closeEvent(event);
