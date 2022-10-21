@@ -51,7 +51,7 @@ class CarController:
       # TODO: ENSURE this logic works if we lag right as we switch from 50hz to 10hz, will they be too far apart?
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
-    elif (self.frame - self.last_steer_frame) >= steer_step or self.last_steer_frame == 0:
+    elif (self.frame - self.last_steer_frame) >= steer_step:
       # Initialize ASCMLKASteeringCmd counter using the camera
       if not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera:
         self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
