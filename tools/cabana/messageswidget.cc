@@ -112,23 +112,25 @@ void MessagesWidget::loadDBCFromFingerprint() {
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-    return (QString[]){"Name", "ID", "Count", "Bytes"}[section];
+    return (QString[]){"Name", "ID", "Freq", "Count", "Bytes"}[section];
   return {};
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &m = msgs[index.row()];
+    auto &can_data = can->lastMessage(m->id);
     switch (index.column()) {
       case 0: return m->name;
       case 1: return m->id;
-      case 2: return can->counters[m->id];
-      case 3: return toHex(can->lastMessage(m->id).dat);
+      case 2: return can_data.freq;
+      case 3: return can_data.count;
+      case 4: return toHex(can_data.dat);
     }
   } else if (role == Qt::UserRole) {
     return msgs[index.row()]->id;
   } else if (role == Qt::FontRole) {
-    if (index.column() == 3) {
+    if (index.column() == columnCount() - 1) {
       return QFontDatabase::systemFont(QFontDatabase::FixedFont);
     }
   }
@@ -164,8 +166,18 @@ bool MessageListModel::updateMessages(bool sort) {
       return sort_order == Qt::AscendingOrder ? l->id < r->id : l->id > r->id;
     });
   } else if (sort_column == 2) {
+    // sort by frequency
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      uint32_t lcount = can->counters[l->id], rcount = can->counters[r->id];
+      uint32_t lfreq = can->lastMessage(l->id).freq;
+      uint32_t rfreq = can->lastMessage(r->id).freq;
+      bool ret = lfreq < rfreq || (lfreq == rfreq && l->id < r->id);
+      return sort_order == Qt::AscendingOrder ? ret : !ret;
+    });
+  } else if (sort_column == 3) {
+    // sort by count
+    std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
+      uint32_t lcount = can->lastMessage(l->id).count;
+      uint32_t rcount = can->lastMessage(r->id).count;
       bool ret = lcount < rcount || (lcount == rcount && l->id < r->id);
       return sort_order == Qt::AscendingOrder ? ret : !ret;
     });
