@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QScreen>
-#include <QSplitter>
 #include <QVBoxLayout>
 
 #include "tools/replay/util.h"
@@ -17,14 +16,14 @@ MainWindow::MainWindow() : QWidget() {
   h_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addLayout(h_layout);
 
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  splitter = new QSplitter(Qt::Horizontal, this);
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
   splitter->addWidget(detail_widget);
 
-  splitter->setSizes({100, 500});
+  splitter->setSizes(settings.h_splitter_sizes);
   h_layout->addWidget(splitter);
 
   // right widgets
@@ -33,7 +32,7 @@ MainWindow::MainWindow() : QWidget() {
   r_layout = new QVBoxLayout(right_container);
   r_layout->setContentsMargins(11, 0, 0, 0);
   QHBoxLayout *right_hlayout = new QHBoxLayout();
-  QLabel *fingerprint_label = new QLabel(this);
+  fingerprint_label = new QLabel(this);
   right_hlayout->addWidget(fingerprint_label);
 
   // TODO: click to select another route.
@@ -78,8 +77,14 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
-  QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+  QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::openSettingsDlg);
+  QObject::connect(can, &CANMessages::eventsMerged, this , &MainWindow::replayStarted);
+}
+
+void MainWindow::replayStarted() {
+  fingerprint_label->setText(can->carFingerprint());
+  restoreSession();
+  QObject::disconnect(can, &CANMessages::eventsMerged, this , &MainWindow::replayStarted);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
@@ -91,7 +96,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
     progress_bar->hide();
   }
 }
-
 
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
@@ -112,10 +116,35 @@ void MainWindow::dockCharts(bool dock) {
 void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
+
+  saveSession();
   QWidget::closeEvent(event);
 }
 
-void MainWindow::setOption() {
+void MainWindow::openSettingsDlg() {
   SettingsDlg dlg(this);
   dlg.exec();
+}
+
+void MainWindow::saveSession() {
+  settings.selected_msgs = detail_widget->selectedMessages();
+  settings.charts = charts_widget->allChartIds();
+  settings.h_splitter_sizes = splitter->sizes();
+  settings.save();
+}
+
+void MainWindow::restoreSession() {
+  if (!settings.selected_msgs.isEmpty())
+    detail_widget->setSelectedMessages(settings.selected_msgs);
+
+  for (const auto &chart_id : settings.charts) {
+    if (auto l = chart_id.split(":"); l.size() == 3) {
+      auto id = l[0] + ":" + l[1];
+      if (auto msg = dbc()->msg(id)) {
+        auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return l[2] == s.name.c_str(); });
+        if (it != msg->sigs.end())
+          charts_widget->addChart(id, &(*it));
+      }
+    }
+  }
 }

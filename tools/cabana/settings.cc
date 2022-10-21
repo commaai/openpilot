@@ -8,6 +8,7 @@
 Settings settings;
 
 Settings::Settings() {
+  qRegisterMetaTypeStreamOperators<QList<int>>("QList<int>");
   load();
 }
 
@@ -17,7 +18,11 @@ void Settings::save() {
   s.setValue("log_size", can_msg_log_size);
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
-  emit changed();
+
+  s.setValue("selected_msgs", selected_msgs);
+  s.setValue("charts", charts);
+  s.setValue("h_splitter_sizes", QVariant::fromValue(h_splitter_sizes));
+  // TODO: save the pasted dbc
 }
 
 void Settings::load() {
@@ -26,6 +31,13 @@ void Settings::load() {
   can_msg_log_size = s.value("log_size", 100).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
+
+  selected_msgs = s.value("selected_msgs").toStringList();
+  charts = s.value("charts").toStringList();
+  h_splitter_sizes = s.value("h_splitter_sizes").value<QList<int>>();
+  if (h_splitter_sizes.size() != 2) {
+    h_splitter_sizes = {100, 500};
+  }
 }
 
 // SettingsDlg
@@ -75,5 +87,6 @@ void SettingsDlg::save() {
   settings.cached_segment_limit = cached_segment->value();
   settings.chart_height = chart_height->value();
   settings.save();
+  emit settings.changed();
   accept();
 }

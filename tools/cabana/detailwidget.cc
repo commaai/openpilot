@@ -86,7 +86,17 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   });
 }
 
+void DetailWidget::setSelectedMessages(const QStringList &msgs) {
+  for (int i = 0; i < msgs.size(); ++i) {
+    addTab(msgs[i], i == 0);
+  }
+}
+
 void DetailWidget::setMessage(const QString &message_id) {
+  addTab(message_id, true);
+}
+
+void DetailWidget::addTab(const QString &message_id, bool activate) {
   if (message_id.isEmpty()) return;
 
   int index = messages.indexOf(message_id);
@@ -97,9 +107,11 @@ void DetailWidget::setMessage(const QString &message_id) {
     auto msg = dbc()->msg(message_id);
     tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
   }
-  tabbar->setCurrentIndex(index);
-  msg_id = message_id;
-  dbcMsgChanged();
+  if (activate) {
+    tabbar->setCurrentIndex(index);
+    msg_id = message_id;
+    dbcMsgChanged();
+  }
 }
 
 void DetailWidget::dbcMsgChanged() {

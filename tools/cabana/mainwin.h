@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QProgressBar>
+#include <QSplitter>
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
@@ -22,13 +23,18 @@ signals:
 protected:
   void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
-  void setOption();
+  void openSettingsDlg();
+  void saveSession();
+  void restoreSession();
+  void replayStarted();
 
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
+  QSplitter *splitter;
+  QLabel *fingerprint_label;
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
   QStatusBar *status_bar;

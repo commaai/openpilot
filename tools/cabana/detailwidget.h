@@ -33,6 +33,8 @@ public:
   DetailWidget(QWidget *parent);
   void setMessage(const QString &message_id);
   void dbcMsgChanged();
+  QStringList selectedMessages() const { return messages; }
+  void setSelectedMessages(const QStringList &msgs);
 
 signals:
   void showChart(const QString &msg_id, const Signal *sig);
@@ -46,6 +48,7 @@ private:
   void editMsg();
   void showForm();
   void updateState();
+  void addTab(const QString &message_id, bool activate);
 
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;

@@ -16,6 +16,11 @@ public:
   int cached_segment_limit = 3;
   int chart_height = 200;
 
+  // session data
+  QStringList selected_msgs;
+  QStringList charts;
+  QList<int> h_splitter_sizes;
+
 signals:
   void changed();
 };

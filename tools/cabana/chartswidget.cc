@@ -127,6 +127,13 @@ void ChartsWidget::removeAll() {
   updateTitleBar();
 }
 
+QStringList ChartsWidget::allChartIds() const {
+  QStringList ret;
+  for (auto chart : charts)
+    ret.append(chart->id + ":" + chart->signal->name.c_str());
+  return ret;
+}
+
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
   if (obj != this && event->type() == QEvent::Close) {
     emit dock_btn->clicked();

@@ -66,6 +66,7 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void addChart(const QString &id, const Signal *sig);
   void removeChart(const Signal *sig);
+  QStringList allChartIds() const;
 
 signals:
   void dock(bool floating);
