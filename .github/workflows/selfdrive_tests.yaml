@@ -106,7 +106,7 @@ jobs:
   #        /usr/local/Cellar
   #        ~/github_brew_cache_entries.txt
   #        /tmp/scons_cache
-  #      key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'Pipfile*') }}
+  #      key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
   #      restore-keys: macos-
   #  - name: Brew link restored dependencies
   #    run: |
@@ -122,11 +122,11 @@ jobs:
   #  - name: Build openpilot
   #    run: |
   #      source tools/openpilot_env.sh
-  #      pipenv run selfdrive/manager/build.py
+  #      poetry run selfdrive/manager/build.py
   #
   #      # cleanup scons cache
   #      rm -rf /tmp/scons_cache/
-  #      pipenv run scons -j$(nproc) --cache-populate
+  #      poetry run scons -j$(nproc) --cache-populate
   #  - name: Remove pre-existing Homebrew packages for caching
   #    if: steps.dependency-cache.outputs.cache-hit != 'true'
   #    run: |

@@ -40,26 +40,28 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==21.3.1
-pip install pipenv==2021.11.23
+pip install pip==22.3
+pip install poetry==1.2.2
 
+poetry config virtualenvs.prefer-active-python true --local
+
+POETRY_INSTALL_ARGS=""
 if [ -d "./xx" ]; then
-  echo "WARNING: using xx Pipfile ******"
-  export PIPENV_SYSTEM=1
-  export PIPENV_PIPFILE=./xx/Pipfile
-fi
-
-if [ -z "$PIPENV_SYSTEM" ]; then
-  echo "PYTHONPATH=${PWD}" > .env
-  RUN="pipenv run"
-else
-  RUN=""
+  echo "WARNING: using xx dependency group, installing globally"
+  poetry config virtualenvs.create false --local
+  POETRY_INSTALL_ARGS="--with xx --sync"
 fi
 
 echo "pip packages install..."
-pipenv sync --dev
-pipenv --clear
+poetry install --no-cache --no-root $POETRY_INSTALL_ARGS
 pyenv rehash
+
+if [ -d "./xx" ] || [ -n "$POETRY_VIRTUALENVS_CREATE" ]; then
+  RUN=""
+else
+  echo "PYTHONPATH=${PWD}" > .env
+  RUN="poetry run"
+fi
 
 echo "pre-commit hooks install..."
 shopt -s nullglob
