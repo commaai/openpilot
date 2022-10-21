@@ -67,8 +67,8 @@ class CarController:
       # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
         if not CC.longActive:
-          # Stock ECU sends max regen when not enabled
-          self.apply_gas = self.params.MAX_ACC_REGEN
+          # ASCM sends max regen when not enabled
+          self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
           if self.CP.carFingerprint in EV_CAR:
