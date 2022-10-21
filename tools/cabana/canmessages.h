@@ -9,24 +9,8 @@
 #include <QList>
 
 #include "opendbc/can/common_dbc.h"
+#include "tools/cabana/settings.h"
 #include "tools/replay/replay.h"
-
-class Settings : public QObject {
-  Q_OBJECT
-
-public:
-  Settings();
-  void save();
-  void load();
-
-  int fps = 10;
-  int can_msg_log_size = 100;
-  int cached_segment_limit = 3;
-  int chart_height = 200;
-
-signals:
-  void changed();
-};
 
 struct CanData {
   double ts;
@@ -112,4 +96,4 @@ inline QColor hoverColor(const QColor &color) {
 
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;
-extern Settings settings;
+

@@ -62,9 +62,9 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
       if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN-1)+i] = desire_in[i];
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = desire_in[i];
       } else {
-        s->pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN-1)+i] = 0.0;
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = 0.0;
       }
       s->prev_desire[i] = desire_in[i];
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QScrollArea>
+#include <QTabBar>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
@@ -39,6 +40,7 @@ signals:
 
 private:
   void addSignal(int start_bit, int size);
+  void resizeSignal(const Signal *sig, int from, int to);
   void saveSignal(const Signal *sig, const Signal &new_sig);
   void removeSignal(const Signal *sig);
   void editMsg();
@@ -50,6 +52,8 @@ private:
   QWidget *warning_widget;
   QPushButton *edit_btn;
   QWidget *signals_container;
+  QTabBar *tabbar;
+  QStringList messages;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
