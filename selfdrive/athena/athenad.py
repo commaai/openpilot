@@ -60,6 +60,8 @@ NetworkType = log.DeviceState.NetworkType
 UploadFileDict = Dict[str, Union[str, int, float, bool]]
 UploadItemDict = Dict[str, Union[str, bool, int, float, Dict[str, str]]]
 
+UploadFilesToUrlResponse = Dict[str, Union[int, List[UploadItemDict], List[str]]]
+
 
 @dataclass
 class UploadFile:
@@ -375,9 +377,6 @@ def reboot() -> Dict[str, int]:
   threading.Thread(target=do_reboot).start()
 
   return {"success": 1}
-
-
-UploadFilesToUrlResponse = Dict[str, Union[int, List[UploadItemDict], List[str]]]
 
 
 @dispatcher.add_method
