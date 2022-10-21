@@ -19,6 +19,7 @@ class CarController:
     self.apply_gas = 0
     self.apply_brake = 0
     self.frame = 0
+    self.last_steer_frame = 0
     self.last_button_frame = 0
 
     self.lka_steering_cmd_counter = 0
@@ -49,7 +50,7 @@ class CarController:
     if CS.loopback_lka_steering_cmd_updated:
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
-    elif (self.frame % steer_step) == 0:
+    elif (self.frame - self.last_steer_frame) > steer_step:
       # Initialize ASCMLKASteeringCmd counter using the camera
       if not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera:
         self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
@@ -60,6 +61,7 @@ class CarController:
       else:
         apply_steer = 0
 
+      self.last_steer_frame = self.frame
       self.apply_steer_last = apply_steer
       idx = self.lka_steering_cmd_counter % 4
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
