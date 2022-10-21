@@ -27,7 +27,7 @@ public:
   enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
-  bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  bool loadRoute(const QString &route, const QString &data_dir = {}, bool use_qcam = false);
   void seekTo(double ts);
   void resetRange();
   void setRange(double min, double max);

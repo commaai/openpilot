@@ -1,7 +1,10 @@
 #include "tools/cabana/mainwin.h"
 
 #include <QApplication>
+#include <QFileDialog>
 #include <QHBoxLayout>
+#include <QInputDialog>
+#include <QMenu>
 #include <QScreen>
 #include <QSplitter>
 #include <QVBoxLayout>
@@ -44,7 +47,7 @@ MainWindow::MainWindow() : QWidget() {
   QLabel *fingerprint_label = new QLabel(this);
   right_hlayout->addWidget(fingerprint_label);
 
-  // TODO: click to select another route.
+  right_hlayout->addWidget(createLoadRouteButton());
   right_hlayout->addWidget(new QLabel(can->route()));
   QPushButton *settings_btn = new QPushButton("Settings");
   right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
@@ -87,11 +90,45 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint()); });
+}
+
+QToolButton *MainWindow::createLoadRouteButton() {
+  QMenu *menu = new QMenu(this);
+  QAction *load_remote_act = new QAction(tr("Remote route"), this);
+  QAction *load_local_act = new QAction(tr("Local route"), this);
+  menu->addAction(load_remote_act);
+  menu->addAction(load_local_act);
+
+  QToolButton *btn = new QToolButton(this);
+  btn->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+  btn->setPopupMode(QToolButton::InstantPopup);
+  btn->setMenu(menu);
+
+  QObject::connect(menu, &QMenu::triggered, [=](QAction *action) {
+    if (action == load_remote_act) {
+      QString text = QInputDialog::getText(this, tr("Open Remote Route"), tr("Remote route:"));
+      if (!text.isEmpty()) {
+        if (can->loadRoute(text, {})) {
+        } else {
+        }
+      }
+    } else {
+      QString local_route = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), "/home");
+      if (!local_route.isEmpty()) {
+        if (int idx = local_route.lastIndexOf('/'); idx != -1) {
+          if (can->loadRoute(local_route.mid(idx + 1), local_route.mid(0, idx))) {
+          } else {
+          }
+        }
+      }
+    }
+  });
+  return btn;
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
-   if (success && cur < total) {
+  if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
     progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
     progress_bar->show();
@@ -99,7 +136,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
     progress_bar->hide();
   }
 }
-
 
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {

@@ -2,6 +2,7 @@
 
 #include <QProgressBar>
 #include <QStatusBar>
+#include <QToolButton>
 
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
@@ -21,6 +22,7 @@ signals:
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
+  QToolButton *createLoadRouteButton();
   void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
