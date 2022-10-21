@@ -16,6 +16,12 @@ struct CanData {
   double ts;
   uint16_t bus_time;
   QByteArray dat;
+
+  CanData() = default;
+  CanData(const CanData &other) { *this = other; }
+  CanData(CanData &&other) { *this = std::move(other); }
+  CanData &operator=(const CanData &other);
+  CanData &operator=(CanData &&other);
 };
 
 class CANMessages : public QObject {

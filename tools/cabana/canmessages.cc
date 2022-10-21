@@ -157,3 +157,19 @@ void CANMessages::resetRange() {
 void CANMessages::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
 }
+
+// CanData
+
+CanData &CanData::operator=(const CanData &other) {
+  ts = other.ts;
+  bus_time = other.bus_time;
+  dat = other.dat;
+  return *this;
+}
+
+CanData &CanData::operator=(CanData &&other) {
+  ts = other.ts;
+  bus_time = other.bus_time;
+  dat = std::move(other.dat);
+  return *this;
+}
