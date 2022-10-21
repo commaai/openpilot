@@ -168,7 +168,7 @@ void DetailWidget::addSignal(int from, int to) {
   if (auto msg = dbc()->msg(msg_id)) {
     Signal sig = {};
     for (int i = 1; /**/; ++i) {
-      sig.name ="NEW_SIGNAL_" + std::to_string(i);
+      sig.name = "NEW_SIGNAL_" + std::to_string(i);
       auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
       if (it == msg->sigs.end()) break;
     }
@@ -186,6 +186,16 @@ void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
 }
 
 void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
+  if (new_sig.name != sig->name) {
+    auto msg = dbc()->msg(msg_id);
+    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return s.name == new_sig.name; });
+    if (it != msg->sigs.end()) {
+      QString warning_str = tr("There is already a signal with the same name in this Msg '%1'").arg(new_sig.name.c_str());
+      QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
+      return;
+    }
+  }
+
   dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
   // update binary view and history log
   dbcMsgChanged();

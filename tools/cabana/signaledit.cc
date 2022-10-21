@@ -123,19 +123,8 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
 }
 
 void SignalEdit::saveSignal() {
-  QString new_name = form->name->text();
-  if (new_name != sig->name.c_str()) {
-    auto msg = dbc()->msg(msg_id);
-    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return new_name == s.name.c_str(); });
-    if (it != msg->sigs.end()) {
-      QString warning_str = tr("There is already a signal with the same name in this Msg '%1'").arg(new_name);
-      QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
-      return;
-    }
-  }
-
   Signal s = *sig;
-  s.name = new_name.toStdString();
+  s.name = form->name->text().toStdString();
   // TODO: Check if the size is valid
   s.size = form->size->text().toInt();
   s.offset = form->offset->text().toDouble();
@@ -149,7 +138,7 @@ void SignalEdit::saveSignal() {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-  title->setText(QString("%1. %2").arg(form_idx + 1).arg(new_name));
+  title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
   emit save(this->sig, s);
 }
 
