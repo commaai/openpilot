@@ -9,7 +9,7 @@
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  main_win->showStatusMessage(msg);
+  if (main_win) main_win->showStatusMessage(msg);
 }
 
 MainWindow::MainWindow() : QWidget() {
@@ -117,6 +117,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  main_win = nullptr;
   if (floating_window)
     floating_window->deleteLater();
 
