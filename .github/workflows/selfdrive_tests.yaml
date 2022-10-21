@@ -287,9 +287,12 @@ jobs:
     - name: Build Docker image
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
+    - name: Build openpilot with PC thneed
+      run: |
+        ${{ env.RUN_CL }} "scons -j$(nproc) --pc-thneed"
     - name: Build openpilot
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+        ${{ env.RUN_CL }} "scons -j$(nproc)"
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
