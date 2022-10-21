@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
 
@@ -106,7 +107,7 @@ void DetailWidget::dbcMsgChanged() {
   if (msg_id.isEmpty()) return;
 
   warning_widget->hide();
-  qDeleteAll(signals_container->findChildren<SignalEdit *>());
+  clearLayout(signals_container->layout());
   QString msg_name = tr("untitled");
   if (auto msg = dbc()->msg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
