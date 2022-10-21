@@ -61,16 +61,15 @@ class CarInterface(CarInterfaceBase):
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarOffCan = True  # no radar
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+
       if experimental_long:
         ret.pcmCruise = False
         # Also can enable behind lead while stopped
-        # TODO: See if the PCM cares about lead, or only foot on brake and stopped
-        ret.minEnableSpeed = 5 * CV.KPH_TO_MS
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
       else:
         ret.pcmCruise = True
-        ret.minEnableSpeed = -1.  # engage speed is decided by pcm
 
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
@@ -179,7 +178,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.EQUINOX:
-      ret.minEnableSpeed = -1
       ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
@@ -215,7 +213,9 @@ class CarInterface(CarInterfaceBase):
                                        pcm_enable=self.CP.pcmCruise)
 
     # Enabling at a standstill with brake is allowed
-    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and self.CS.brake_pressed):
+    # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and ret.brake >= 20 and
+                                                  self.CP.networkLocation == NetworkLocation.fwdCamera):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
