@@ -181,7 +181,6 @@ void DetailWidget::addSignal(int start_bit, int size) {
 }
 
 void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
-  assert(sig != nullptr);
   Signal s = *sig;
   s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);;
   s.size = to - from + 1;
@@ -192,15 +191,13 @@ void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-  dbc()->updateSignal(msg_id, s.name.c_str(), s);
-  dbcMsgChanged();
+  saveSignal(sig, s);
 }
 
 void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
   dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
   // update binary view and history log
-  binary_view->setMessage(msg_id);
-  history_log->setMessage(msg_id);
+  dbcMsgChanged();
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {
