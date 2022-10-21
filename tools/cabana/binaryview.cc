@@ -179,6 +179,7 @@ Qt::ItemFlags BinaryViewModel::flags(const QModelIndex &index) const {
 }
 
 void BinaryViewModel::updateState() {
+  if (!can->can_msgs.contains(msg_id)) return;
   auto prev_items = items;
 
   const auto &binary = can->lastMessage(msg_id).dat;

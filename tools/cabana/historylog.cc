@@ -46,7 +46,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 }
 
 void HistoryLogModel::updateState() {
-  if (msg_id.isEmpty()) return;
+  if (msg_id.isEmpty() || !can->can_msgs.contains(msg_id)) return;
 
   int prev_row_count = row_count;
   row_count = can->messages(msg_id).size();

@@ -78,7 +78,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::dbcMsgChanged);
-  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) { setMessage(messages[index]); });
+  QObject::connect(tabbar, &QTabBar::currentChanged, this, &DetailWidget::currentChanged);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
     messages.removeAt(index);
     tabbar->removeTab(index);
@@ -107,11 +107,13 @@ void DetailWidget::addTab(const QString &message_id, bool activate) {
     auto msg = dbc()->msg(message_id);
     tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
   }
-  if (activate) {
+  if (activate)
     tabbar->setCurrentIndex(index);
-    msg_id = message_id;
-    dbcMsgChanged();
-  }
+}
+
+void DetailWidget::currentChanged(int index) {
+  msg_id = messages[index];
+  dbcMsgChanged();
 }
 
 void DetailWidget::dbcMsgChanged() {
@@ -132,7 +134,7 @@ void DetailWidget::dbcMsgChanged() {
       QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
     }
     msg_name = msg->name.c_str();
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+    if (can->can_msgs.contains(msg_id) && msg->size != can->lastMessage(msg_id).dat.size()) {
       warning_label->setText(tr("Message size (%1) is incorrect!").arg(msg->size));
       warning_widget->show();
     }
@@ -146,7 +148,7 @@ void DetailWidget::dbcMsgChanged() {
 
 void DetailWidget::updateState() {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if (msg_id.isEmpty()) return;
+  if (msg_id.isEmpty() || !can->can_msgs.contains(msg_id)) return;
 
   binary_view->updateState();
   history_log->updateState();

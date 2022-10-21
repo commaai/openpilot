@@ -49,6 +49,7 @@ private:
   void showForm();
   void updateState();
   void addTab(const QString &message_id, bool activate);
+  void currentChanged(int index);
 
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;
