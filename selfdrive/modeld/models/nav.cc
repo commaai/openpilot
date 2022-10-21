@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include "cereal/visionipc/visionipc_client.h"
 #include "common/mat.h"
 #include "common/modeldata.h"
 #include "common/params.h"
@@ -20,7 +19,7 @@ void navmodel_init(NavModelState* s) {
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, false); // TODO: Set _use_tf8=true for quantized models?
 #else
-  s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  s->m = new SNPEModel("models/navmodel.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
 #endif
 }
 

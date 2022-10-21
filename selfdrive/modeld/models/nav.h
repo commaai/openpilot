@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc_client.h"
 #include "common/util.h"
 #include "common/modeldata.h"
 #include "selfdrive/modeld/models/commonmodel.h"
@@ -25,16 +26,16 @@ struct NavModelOutputPlan {
 static_assert(sizeof(NavModelOutputPlan) == sizeof(NavModelOutputXY)*TRAJECTORY_SIZE*2 + sizeof(float));
 
 struct NavModelOutputPlans {
-  std::array<NavModelOutputPlan, PLAN_MHP_N> prediction;
+  std::array<NavModelOutputPlan, PLAN_MHP_N> predictions;
 
   constexpr const NavModelOutputPlan &get_best_prediction() const {
     int max_idx = 0;
-    for (int i = 1; i < prediction.size(); i++) {
-      if (prediction[i].prob > prediction[max_idx].prob) {
+    for (int i = 1; i < predictions.size(); i++) {
+      if (predictions[i].prob > predictions[max_idx].prob) {
         max_idx = i;
       }
     }
-    return prediction[max_idx];
+    return predictions[max_idx];
   }
 };
 static_assert(sizeof(NavModelOutputPlans) == sizeof(NavModelOutputPlan)*PLAN_MHP_N);
