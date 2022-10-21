@@ -20,6 +20,7 @@ class CarController:
     self.apply_brake = 0
     self.frame = 0
     self.last_button_frame = 0
+    self.cancel_counter = 0
 
     self.lka_steering_cmd_counter = 0
     self.sent_lka_steering_cmd = False
@@ -111,9 +112,12 @@ class CarController:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
     else:
+      self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
+
       # Stock longitudinal, integrated at camera
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
-        if CC.cruiseControl.cancel:
+        # TODO: find the max time the ECM allows before it faults using OP long (camera will always cancel before it faults)
+        if self.cancel_counter > 50:
           self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
 
