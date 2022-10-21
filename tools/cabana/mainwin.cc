@@ -78,13 +78,8 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::openSettingsDlg);
-  QObject::connect(can, &CANMessages::eventsMerged, this , &MainWindow::replayStarted);
-}
-
-void MainWindow::replayStarted() {
-  fingerprint_label->setText(can->carFingerprint());
-  restoreSession();
-  QObject::disconnect(can, &CANMessages::eventsMerged, this , &MainWindow::replayStarted);
+  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::restoreSession);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
@@ -147,4 +142,5 @@ void MainWindow::restoreSession() {
       }
     }
   }
+  QObject::disconnect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::restoreSession);
 }

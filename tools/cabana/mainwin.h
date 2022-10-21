@@ -26,7 +26,6 @@ protected:
   void openSettingsDlg();
   void saveSession();
   void restoreSession();
-  void replayStarted();
 
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;
