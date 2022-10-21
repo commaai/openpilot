@@ -30,6 +30,7 @@ class CarControllerParams:
   ZERO_GAS = 2048  # Coasting
   MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
   MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
+  INACTIVE_REGEN = 1404
 
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
