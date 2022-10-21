@@ -8,7 +8,15 @@
 
 #include "tools/replay/util.h"
 
+static MainWindow *main_win = nullptr;
+void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  main_win->showStatusMessage(msg);
+}
+
 MainWindow::MainWindow() : QWidget() {
+  main_win = this;
+  qInstallMessageHandler(qLogMessageHandler);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, 11, 11, 5);
   main_layout->setSpacing(0);
