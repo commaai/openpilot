@@ -15,6 +15,7 @@ class MainWindow : public QWidget {
 public:
   MainWindow();
   void dockCharts(bool dock);
+  void showStatusMessage(const QString &msg, int timeout = 0) { status_bar->showMessage(msg, timeout); }
 
 signals:
   void logMessageFromReplay(const QString &msg, int timeout);
