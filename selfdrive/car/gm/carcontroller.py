@@ -67,7 +67,7 @@ class CarController:
       # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
         if not CC.longActive:
-          # ASCM sends max regen, camera ACC sends slightly different value
+          # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
