@@ -68,6 +68,7 @@ class Calibrator:
     calibration_params = params.get("CalibrationParams")
     self.wide_camera = params.get_bool('WideCameraOnly')
     rpy_init = RPY_INIT
+    wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     valid_blocks = 0
 
     if param_put and calibration_params:
