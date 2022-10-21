@@ -4,10 +4,8 @@ import os
 import time
 import tempfile
 import unittest
-import shutil
 import signal
 import subprocess
-import random
 
 from common.basedir import BASEDIR
 from common.params import Params
@@ -23,30 +21,22 @@ class TestUpdated(unittest.TestCase):
     os.environ["GIT_LFS_SKIP_SMUDGE"] = "1"
 
     self.tmp_dir = tempfile.TemporaryDirectory(dir=os.path.abspath(os.path.join(BASEDIR, "..")) if AGNOS else None)
-    org_dir = os.path.join(self.tmp_dir.name, "commaai")
 
-    self.basedir = os.path.join(org_dir, "openpilot")
+    self.basedir = os.path.join(self.tmp_dir.name, "openpilot")
     self.params_path = os.path.join(self.basedir, "persist/params")
-    self.git_remote_dir = os.path.join(org_dir, "openpilot_remote")
-    self.staging_root = os.path.join(org_dir, "safe_staging")
-    for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_root]:
+    self.staging_root = os.path.join(self.tmp_dir.name, "safe_staging")
+    for d in [self.basedir, self.staging_root]:
       os.mkdir(d)
 
     self.upper_dir = os.path.join(self.staging_root, "upper")
     self.merged_dir = os.path.join(self.staging_root, "merged")
     self.finalized_dir = os.path.join(self.staging_root, "finalized")
 
-    # setup local submodule remotes
-    submodules = subprocess.check_output("git submodule --quiet foreach 'echo $path'",
-                                         shell=True, cwd=BASEDIR, encoding='utf8').split()
-    for s in submodules:
-      sub_path = os.path.join(org_dir, s.split("_repo")[0])
-      self._run(f"git clone {s} {sub_path}.git", cwd=BASEDIR)
-
-    # setup two git repos, a remote and one we'll run updated in
+    # setup git repo we'll run updated in
     self._run([
-      f"git clone {BASEDIR} {self.git_remote_dir}",
-      f"git clone --recursive {self.git_remote_dir} {self.basedir}",
+      f"git clone {BASEDIR} {self.basedir}",
+      f"cd {self.basedir} && git remote set-url origin https://github.com/commaai/openpilot.git",
+      f"cd {self.basedir} && git submodule sync && git submodule update --init",
       f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
     ])
 
@@ -123,46 +113,6 @@ class TestUpdated(unittest.TestCase):
 
     self._update_now()
     self._wait_for_idle(timeout)
-
-  def _make_commit(self):
-    all_dirs, all_files = [], []
-    for root, dirs, files in os.walk(self.git_remote_dir):
-      if ".git" in root:
-        continue
-      for d in dirs:
-        all_dirs.append(os.path.join(root, d))
-      for f in files:
-        all_files.append(os.path.join(root, f))
-
-    # make a new dir and some new files
-    new_dir = os.path.join(self.git_remote_dir, "this_is_a_new_dir")
-    os.mkdir(new_dir)
-    for _ in range(random.randrange(5, 30)):
-      for d in (new_dir, random.choice(all_dirs)):
-        with tempfile.NamedTemporaryFile(dir=d, delete=False) as f:
-          f.write(os.urandom(random.randrange(1, 1000000)))
-
-    # modify some files
-    for f in random.sample(all_files, random.randrange(5, 50)):
-      with open(f, "w+") as ff:
-        txt = ff.readlines()
-        ff.seek(0)
-        for line in txt:
-          ff.write(line[::-1])
-
-    # remove some files
-    for f in random.sample(all_files, random.randrange(5, 50)):
-      os.remove(f)
-
-    # remove some dirs
-    for d in random.sample(all_dirs, random.randrange(1, 10)):
-      shutil.rmtree(d)
-
-    # commit the changes
-    self._run([
-      "git add -A",
-      "git commit -m 'an update'",
-    ], cwd=self.git_remote_dir)
 
   def _check_update_state(self, update_available: bool):
     # make sure LastUpdateTime is recent
