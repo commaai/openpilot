@@ -97,6 +97,12 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
+    if (counters_begin_sec > current_sec) {
+      // clear counters
+      counters.clear();
+      counters_begin_sec = current_sec;
+    }
+
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
@@ -108,6 +114,12 @@ bool CANMessages::eventFilter(const Event *event) {
       data.ts = current_sec;
       data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
+
+      auto &count = counters[id];
+      data.count = ++count;
+      if (double delta = (current_sec - counters_begin_sec); delta > 0) {
+        data.freq = count / delta;
+      }
     }
 
     if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / settings.fps) {
