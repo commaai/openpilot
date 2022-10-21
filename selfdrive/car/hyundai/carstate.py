@@ -159,7 +159,7 @@ class CarState(CarStateBase):
     elif self.CP.carFingerprint in HYBRID_CAR:
       ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
     ret.gasPressed = ret.gas > 1e-5
-    ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSED"] == 1
+    ret.brakePressed = cp.vl["TCS"]["DriverBraking"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
@@ -415,7 +415,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
       ("GEAR", "GEAR_SHIFTER"),
-      ("BRAKE_PRESSED", "BRAKE"),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
@@ -423,7 +422,8 @@ class CarState(CarStateBase):
       ("STEERING_OUT_TORQUE", "MDPS"),
       ("LKA_FAULT", "MDPS"),
 
-      ("CRUISE_ACTIVE", "SCC1"),
+      ("DriverBraking", "TCS"),
+
       ("COUNTER", cruise_btn_msg),
       ("CRUISE_BUTTONS", cruise_btn_msg),
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
@@ -443,7 +443,7 @@ class CarState(CarStateBase):
       ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
-      ("SCC1", 50),
+      ("TCS", 50),
       (cruise_btn_msg, 50),
       ("CLUSTER_INFO", 4),
       ("BLINKERS", 4),
