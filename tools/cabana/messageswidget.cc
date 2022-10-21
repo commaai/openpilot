@@ -166,6 +166,7 @@ bool MessageListModel::updateMessages(bool sort) {
       return sort_order == Qt::AscendingOrder ? l->id < r->id : l->id > r->id;
     });
   } else if (sort_column == 2) {
+    // sort by frequency
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       uint32_t lfreq = can->lastMessage(l->id).freq;
       uint32_t rfreq = can->lastMessage(r->id).freq;
@@ -173,6 +174,7 @@ bool MessageListModel::updateMessages(bool sort) {
       return sort_order == Qt::AscendingOrder ? ret : !ret;
     });
   } else if (sort_column == 3) {
+    // sort by count
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       uint32_t lcount = can->lastMessage(l->id).count;
       uint32_t rcount = can->lastMessage(r->id).count;
