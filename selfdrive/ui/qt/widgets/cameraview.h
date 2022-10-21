@@ -49,6 +49,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
+  void updateWideCalibration(const mat3 &calib);
   void vipcThread();
   void clearFrames();
 
@@ -75,7 +76,10 @@ protected:
   float x_offset = 0;
   float y_offset = 0;
   float zoom = 1.0;
+  float y_pos = 0.0;
   mat3 calibration = DEFAULT_CALIBRATION;
+  mat3 wide_calibration = DEFAULT_CALIBRATION;
+  mat3 current_calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
   std::mutex frame_lock;
