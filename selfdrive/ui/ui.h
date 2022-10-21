@@ -100,8 +100,8 @@ typedef struct UIScene {
   // lead
   QPointF lead_vertices[2];
 
-  float light_sensor, accel_sensor, gyro_sensor;
-  bool started, ignition, is_metric, map_on_left, longitudinal_control;
+  float light_sensor;
+  bool started, ignition, is_metric, map_on_left, longitudinal_control, end_to_end_long;
   uint64_t started_frame;
 } UIScene;
 
@@ -126,7 +126,8 @@ public:
   UIScene scene = {};
 
   bool awake;
-  int prime_type = 0;
+  int prime_type;
+  QString language;
 
   QTransform car_space_transform;
   bool wide_camera;
@@ -134,6 +135,7 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
+  void primeTypeChanged(int prime_type);
 
 private slots:
   void update();
@@ -141,6 +143,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
+  int prime_type_prev = -1;
 };
 
 UIState *uiState();
@@ -154,9 +157,6 @@ public:
   Device(QObject *parent = 0);
 
 private:
-  // auto brightness
-  const float accel_samples = 5*UI_FREQ;
-
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;

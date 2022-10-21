@@ -23,13 +23,13 @@
 const int FRAME_BUFFER_SIZE = 5;
 static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
 
-class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
+class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
-  ~CameraViewWidget();
+  explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
+  ~CameraWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
@@ -78,7 +78,7 @@ protected:
 
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;
-  int prev_frame_id = 0;
+  uint32_t prev_frame_id = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

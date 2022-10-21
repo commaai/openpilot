@@ -23,11 +23,11 @@ def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pres
   return packer.make_can_msg("LDW_Status", bus, values)
 
 
-def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False, resume=False):
+def create_acc_buttons_control(packer, bus, gra_stock_values, counter, cancel=False, resume=False):
   values = gra_stock_values.copy()
 
   values.update({
-    "COUNTER": idx,
+    "COUNTER": counter,
     "GRA_Abbrechen": cancel,
     "GRA_Recall": resume,
   })
@@ -35,15 +35,15 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, idx, cancel=False,
   return packer.make_can_msg("GRA_Neu", bus, values)
 
 
-def tsk_status_value(main_switch_on, acc_faulted, long_active):
+def acc_control_value(main_switch_on, acc_faulted, long_active):
   if long_active:
-    tsk_status = 1
+    acc_control = 1
   elif main_switch_on:
-    tsk_status = 2
+    acc_control = 2
   else:
-    tsk_status = 0
+    acc_control = 0
 
-  return tsk_status
+  return acc_control
 
 
 def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
@@ -59,26 +59,32 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, adr_status, accel):
+def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control, stopping, starting, esp_hold):
+  commands = []
+
   values = {
-    "ACS_Sta_ADR": adr_status,
-    "ACS_StSt_Info": adr_status != 1,
-    "ACS_Typ_ACC": 0,  # TODO: this is ACC "basic", find a way to detect FtS support (1)
-    "ACS_Sollbeschl": accel if adr_status == 1 else 3.01,
-    "ACS_zul_Regelabw": 0.2 if adr_status == 1 else 1.27,
-    "ACS_max_AendGrad": 3.0 if adr_status == 1 else 5.08,
+    "ACS_Sta_ADR": acc_control,
+    "ACS_StSt_Info": acc_control != 1,
+    "ACS_Typ_ACC": acc_type,
+    "ACS_Sollbeschl": accel if acc_control == 1 else 3.01,
+    "ACS_zul_Regelabw": 0.2 if acc_control == 1 else 1.27,
+    "ACS_max_AendGrad": 3.0 if acc_control == 1 else 5.08,
   }
 
-  return packer.make_can_msg("ACC_System", bus, values)
+  commands.append(packer.make_can_msg("ACC_System", bus, values))
+
+  return commands
 
 
-def create_acc_hud_control(packer, bus, acc_status, set_speed, lead_visible):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
   values = {
-    "ACA_StaACC": acc_status,
+    "ACA_StaACC": acc_hud_status,
     "ACA_Zeitluecke": 2,
     "ACA_V_Wunsch": set_speed,
     "ACA_gemZeitl": 8 if lead_visible else 0,
+    # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
+    # display/display-prio handling probably needed to stop confusing the instrument cluster
+    # kmh_mph handling probably needed to resolve rounding errors in displayed setpoint
   }
-  # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
 
   return packer.make_can_msg("ACC_GRA_Anziege", bus, values)

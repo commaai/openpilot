@@ -4,7 +4,7 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
-from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_enable_events, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 
@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
       return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], disable_radar=False):  # pylint: disable=dangerous-default-value
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
 
@@ -40,7 +40,8 @@ class CarInterface(CarInterfaceBase):
       if candidate not in HONDA_BOSCH_RADARLESS:
         # Disable the radar and let openpilot control longitudinal
         # WARNING: THIS DISABLES AEB!
-        ret.openpilotLongitudinalControl = disable_radar
+        ret.experimentalLongitudinalAvailable = True
+        ret.openpilotLongitudinalControl = experimental_long
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
@@ -351,9 +352,6 @@ class CarInterface(CarInterfaceBase):
           events.add(EventName.cruiseDisabled)
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
-
-    # handle button presses
-    events.events.extend(create_button_enable_events(ret.buttonEvents, self.CP.pcmCruise))
 
     ret.events = events.to_msg()
 

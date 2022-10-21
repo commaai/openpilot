@@ -20,6 +20,11 @@ const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
 const double SANE_GPS_UNCERTAINTY = 1500.0; // m
 
+// TODO: GPS sensor time offsets are empirically calculated
+// They should be replaced with synced time from a real clock
+const double GPS_LOCATION_SENSOR_TIME_OFFSET = 0.630; // s
+const double GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET = 0.095; // s
+
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
@@ -195,51 +200,48 @@ VectorXd Localizer::get_stdev() {
   return this->kf->get_P().diagonal().array().sqrt();
 }
 
-void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
+void Localizer::handle_sensor(double current_time, const cereal::SensorEventData::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
-  for (int i = 0; i < log.size(); i++) {
-    const cereal::SensorEventData::Reader& sensor_reading = log[i];
 
-    // Ignore empty readings (e.g. in case the magnetometer had no data ready)
-    if (sensor_reading.getTimestamp() == 0) {
-      continue;
+  // Ignore empty readings (e.g. in case the magnetometer had no data ready)
+  if (log.getTimestamp() == 0) {
+    return;
+  }
+
+  double sensor_time = 1e-9 * log.getTimestamp();
+
+  // sensor time and log time should be close
+  if (std::abs(current_time - sensor_time) > 0.1) {
+    LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
+    return;
+  }
+
+  // TODO: handle messages from two IMUs at the same time
+  if (log.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
+    return;
+  }
+
+  // Gyro Uncalibrated
+  if (log.getSensor() == SENSOR_GYRO_UNCALIBRATED && log.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
+    auto v = log.getGyroUncalibrated().getV();
+    auto meas = Vector3d(-v[2], -v[1], -v[0]);
+    if (meas.norm() < ROTATION_SANITY_CHECK) {
+      this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
     }
+  }
 
-    double sensor_time = 1e-9 * sensor_reading.getTimestamp();
+  // Accelerometer
+  if (log.getSensor() == SENSOR_ACCELEROMETER && log.getType() == SENSOR_TYPE_ACCELEROMETER) {
+    auto v = log.getAcceleration().getV();
 
-    // sensor time and log time should be close
-    if (std::abs(current_time - sensor_time) > 0.1) {
-      LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
-      return;
-    }
+    // TODO: reduce false positives and re-enable this check
+    // check if device fell, estimate 10 for g
+    // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
+    // this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
-      // TODO: handle messages from two IMUs at the same time
-    if (sensor_reading.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
-      continue;
-    }
-
-    // Gyro Uncalibrated
-    if (sensor_reading.getSensor() == SENSOR_GYRO_UNCALIBRATED && sensor_reading.getType() == SENSOR_TYPE_GYROSCOPE_UNCALIBRATED) {
-      auto v = sensor_reading.getGyroUncalibrated().getV();
-      auto meas = Vector3d(-v[2], -v[1], -v[0]);
-      if (meas.norm() < ROTATION_SANITY_CHECK) {
-        this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
-      }
-    }
-
-    // Accelerometer
-    if (sensor_reading.getSensor() == SENSOR_ACCELEROMETER && sensor_reading.getType() == SENSOR_TYPE_ACCELEROMETER) {
-      auto v = sensor_reading.getAcceleration().getV();
-
-      // TODO: reduce false positives and re-enable this check
-      // check if device fell, estimate 10 for g
-      // 40m/s**2 is a good filter for falling detection, no false positives in 20k minutes of driving
-      //this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
-
-      auto meas = Vector3d(-v[2], -v[1], -v[0]);
-      if (meas.norm() < ACCEL_SANITY_CHECK) {
-        this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
-      }
+    auto meas = Vector3d(-v[2], -v[1], -v[0]);
+    if (meas.norm() < ACCEL_SANITY_CHECK) {
+      this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
     }
   }
 }
@@ -260,7 +262,7 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
-void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
+void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset) {
   // ignore the message if the fix is invalid
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
   bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
@@ -268,13 +270,15 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane){
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane) {
     this->determine_gps_mode(current_time);
     return;
   }
+  
+  double sensor_time = current_time - sensor_time_offset;
 
   // Process message
-  this->last_gps_fix = current_time;
+  this->last_gps_fix = sensor_time;
   this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
@@ -303,14 +307,14 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-    this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
@@ -441,12 +445,14 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
   this->time_check(t);
-  if (log.isSensorEvents()) {
-    this->handle_sensors(t, log.getSensorEvents());
+  if (log.isAccelerometer()) {
+    this->handle_sensor(t, log.getAccelerometer());
+  } else if (log.isGyroscope()) {
+    this->handle_sensor(t, log.getGyroscope());
   } else if (log.isGpsLocation()) {
-    this->handle_gps(t, log.getGpsLocation());
+    this->handle_gps(t, log.getGpsLocation(), GPS_LOCATION_SENSOR_TIME_OFFSET);
   } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal());
+    this->handle_gps(t, log.getGpsLocationExternal(), GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET);
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -476,9 +482,9 @@ bool Localizer::isGpsOK() {
 }
 
 void Localizer::determine_gps_mode(double current_time) {
-  // 1. If the pos_std is greater than what's not acceptible and localizer is in gps-mode, reset to no-gps-mode
-  // 2. If the pos_std is greater than what's not acceptible and localizer is in no-gps-mode, fake obs
-  // 3. If the pos_std is smaller than what's not acceptible, let gps-mode be whatever it is
+  // 1. If the pos_std is greater than what's not acceptable and localizer is in gps-mode, reset to no-gps-mode
+  // 2. If the pos_std is greater than what's not acceptable and localizer is in no-gps-mode, fake obs
+  // 3. If the pos_std is smaller than what's not acceptable, let gps-mode be whatever it is
   VectorXd current_pos_std = this->kf->get_P().block<STATE_ECEF_POS_ERR_LEN, STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START, STATE_ECEF_POS_ERR_START).diagonal().array().sqrt();
   if (current_pos_std.norm() > SANE_GPS_UNCERTAINTY){
     if (this->gps_mode){
@@ -493,12 +499,13 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   const char* gps_location_socket;
-  if (util::file_exists("/persist/comma/use-quectel-rawgps")) {
-    gps_location_socket = "gpsLocation";
-  } else {
+  if (Params().getBool("UbloxAvailable", true)) {
     gps_location_socket = "gpsLocationExternal";
+  } else {
+    gps_location_socket = "gpsLocation";
   }
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "sensorEvents", "cameraOdometry", "liveCalibration", "carState", "carParams"};
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration", 
+                                                          "carState", "carParams", "accelerometer", "gyroscope"};
   PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
@@ -521,11 +528,11 @@ int Localizer::locationd_thread() {
     }
 
     // 100Hz publish for notcars, 20Hz for cars
-    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "sensorEvents" : "cameraOdometry";
+    const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
       bool inputsOK = sm.allAliveAndValid();
-      bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
       bool gpsOK = this->isGpsOK();
+      bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);

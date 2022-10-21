@@ -4,9 +4,11 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -17,9 +19,7 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 class CarControllerParams:
   HCA_STEP = 2                            # HCA_01/HCA_1 message frequency 50Hz
-  GRA_ACC_STEP = 3                        # GRA_ACC_01/GRA_Neu message frequency 33Hz
   ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
-  ACC_HUD_STEP = 4                        # ACC_GRA_Anziege frequency 25Hz
 
   ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
   ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
@@ -36,6 +36,7 @@ class CarControllerParams:
 
     if CP.carFingerprint in PQ_CARS:
       self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
+      self.ACC_HUD_STEP = 4               # ACC_GRA_Anziege frequency 25Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 6             # Max HCA reached in 1.00s (STEER_MAX / (50Hz * 1.00))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
@@ -64,6 +65,7 @@ class CarControllerParams:
 
     else:
       self.LDW_STEP = 10                  # LDW_02 message frequency 10Hz
+      self.ACC_HUD_STEP = 6               # ACC_02 message frequency 16Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
@@ -114,6 +116,7 @@ class CAR:
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
   PASSAT_NMS = "VOLKSWAGEN PASSAT NMS"              # Chassis A3, North America/China/Mideast NMS Passat, incl. facelift
   POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
+  SHARAN_MK2 = "VOLKSWAGEN SHARAN 2ND GEN"          # Chassis 7N, Mk2 Volkswagen Sharan and SEAT Alhambra
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
@@ -133,7 +136,7 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
-PQ_CARS = {CAR.PASSAT_NMS}
+PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
@@ -162,7 +165,7 @@ class Footnote(Enum):
 
 @dataclass
 class VWCarInfo(CarInfo):
-  package: str = "Driver Assistance"
+  package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
   harness: Enum = Harness.vw
 
 
@@ -174,7 +177,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
-    VWCarInfo("Volkswagen Atlas 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Atlas 2018-23", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Atlas Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Teramont 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Teramont Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -204,6 +207,10 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
     VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   ],
+  CAR.SHARAN_MK2: [
+    VWCarInfo("Volkswagen Sharan 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("SEAT Alhambra 2018-20", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  ],
   CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
@@ -214,13 +221,13 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
   CAR.AUDI_A3_MK3: [
-    VWCarInfo("Audi A3 2014-19", "ACC + Lane Assist"),
-    VWCarInfo("Audi A3 Sportback e-tron 2017-18", "ACC + Lane Assist"),
-    VWCarInfo("Audi RS3 2018", "ACC + Lane Assist"),
-    VWCarInfo("Audi S3 2015-17", "ACC + Lane Assist"),
+    VWCarInfo("Audi A3 2014-19"),
+    VWCarInfo("Audi A3 Sportback e-tron 2017-18"),
+    VWCarInfo("Audi RS3 2018"),
+    VWCarInfo("Audi S3 2015-17"),
   ],
-  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018", "ACC + Lane Assist"),
-  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21", "ACC + Lane Assist"),
+  CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
@@ -234,6 +241,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
 }
 
+
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
 #
@@ -242,6 +250,30 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
 # tuners sometimes tamper with that field (e.g. 8V0 9C0 BB0 1 from COBB/EQT). Tampered
 # ECU SW part numbers are invalid for vehicle ID and compatibility checks. Try to have
 # them repaired by the tuner before including them in openpilot.
+
+VOLKSWAGEN_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
+VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+VOLKSWAGEN_RX_OFFSET = 0x6a
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [VOLKSWAGEN_VERSION_REQUEST_MULTI],
+      [VOLKSWAGEN_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
+      rx_offset=VOLKSWAGEN_RX_OFFSET,
+    ),
+    Request(
+      [VOLKSWAGEN_VERSION_REQUEST_MULTI],
+      [VOLKSWAGEN_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ARTEON_MK1: {
@@ -274,7 +306,9 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
       b'\xf1\x8703H906026AJ\xf1\x890638',
+      b'\xf1\x8703H906026AJ\xf1\x891017',
       b'\xf1\x8703H906026AT\xf1\x891922',
+      b'\xf1\x8703H906026BC\xf1\x892664',
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
       b'\xf1\x8703H906026J \xf1\x896026',
@@ -287,12 +321,14 @@ FW_VERSIONS = {
       b'\xf1\x8709G927158DR\xf1\x893536',
       b'\xf1\x8709G927158DR\xf1\x893742',
       b'\xf1\x8709G927158FT\xf1\x893835',
+      b'\xf1\x8709G927158GL\xf1\x893939',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655BC\xf1\x890503\xf1\x82\0161914151912001103111122031200',
       b'\xf1\x873Q0959655BN\xf1\x890713\xf1\x82\0162214152212001105141122052900',
       b'\xf1\x873Q0959655DB\xf1\x890720\xf1\x82\0162214152212001105141122052900',
       b'\xf1\x873Q0959655DM\xf1\x890732\xf1\x82\x0e1114151112001105161122052J00',
+      b'\xf1\x873Q0959655DM\xf1\x890732\xf1\x82\x0e1115151112001105171122052J00',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873QF909144B \xf1\x891582\xf1\x82\00571B60924A1',
@@ -300,6 +336,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820528B6090105',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572R \xf1\x890372',
       b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x875Q0907572H \xf1\x890620',
@@ -369,6 +406,8 @@ FW_VERSIONS = {
       b'\xf1\x870D9300012  \xf1\x894937',
       b'\xf1\x870D9300012  \xf1\x895045',
       b'\xf1\x870D9300014M \xf1\x895004',
+      b'\xf1\x870D9300014Q \xf1\x895006',
+      b'\xf1\x870D9300020Q \xf1\x895201',
       b'\xf1\x870D9300020S \xf1\x895201',
       b'\xf1\x870D9300040A \xf1\x893613',
       b'\xf1\x870D9300040S \xf1\x894311',
@@ -420,6 +459,7 @@ FW_VERSIONS = {
       b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571A0JA15A1',
       b'\xf1\x873Q0909144M \xf1\x895082\xf1\x82\x0571A01A18A1',
       b'\xf1\x873Q0909144M \xf1\x895082\xf1\x82\x0571A0JA16A1',
+      b'\xf1\x873QM909144  \xf1\x895072\xf1\x82\x0571A01714A1',
       b'\xf1\x875Q0909143K \xf1\x892033\xf1\x820519A9040203',
       b'\xf1\x875Q0909144AA\xf1\x891081\xf1\x82\x0521A00441A1',
       b'\xf1\x875Q0909144AA\xf1\x891081\xf1\x82\x0521A00608A1',
@@ -591,6 +631,18 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
+  CAR.SHARAN_MK2: {
+    # TODO: Sharan Mk2 EPS and DQ250 auto trans both require KWP2000 support for fingerprinting
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906016HE\xf1\x894635',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x877N0959655D \xf1\x890016\xf1\x82\x0801100705----10--',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0153',
+    ],
+  },
   CAR.TAOS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027NJ\xf1\x891445',
@@ -737,9 +789,11 @@ FW_VERSIONS = {
       b'\xf1\x8704E906023BL\xf1\x895190',
       b'\xf1\x8704E906027CJ\xf1\x897798',
       b'\xf1\x8704L997022N \xf1\x899459',
+      b'\xf1\x875G0906259A \xf1\x890004',
       b'\xf1\x875G0906259L \xf1\x890002',
       b'\xf1\x875G0906259Q \xf1\x890002',
       b'\xf1\x878V0906259F \xf1\x890002',
+      b'\xf1\x878V0906259J \xf1\x890002',
       b'\xf1\x878V0906259K \xf1\x890001',
       b'\xf1\x878V0906264B \xf1\x890003',
       b'\xf1\x878V0907115B \xf1\x890007',
@@ -749,6 +803,7 @@ FW_VERSIONS = {
       b'\xf1\x870CW300044T \xf1\x895245',
       b'\xf1\x870CW300048  \xf1\x895201',
       b'\xf1\x870D9300012  \xf1\x894912',
+      b'\xf1\x870D9300012K \xf1\x894513',
       b'\xf1\x870D9300013B \xf1\x894931',
       b'\xf1\x870D9300041N \xf1\x894512',
       b'\xf1\x870D9300043T \xf1\x899699',
@@ -757,6 +812,7 @@ FW_VERSIONS = {
       b'\xf1\x870DD300046F \xf1\x891602',
       b'\xf1\x870DD300046G \xf1\x891601',
       b'\xf1\x870DL300012E \xf1\x892012',
+      b'\xf1\x870GC300011  \xf1\x890403',
       b'\xf1\x870GC300013M \xf1\x892402',
       b'\xf1\x870GC300042J \xf1\x891402',
     ],
@@ -764,7 +820,9 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655AB\xf1\x890388\xf1\x82\0211111001111111206110412111321139114',
       b'\xf1\x875Q0959655AM\xf1\x890315\xf1\x82\x1311111111111111311411011231129321212100',
       b'\xf1\x875Q0959655AM\xf1\x890318\xf1\x82\x1311111111111112311411011531159321212100',
+      b'\xf1\x875Q0959655AR\xf1\x890315\xf1\x82\x1311110011131115311211012331239321212100',
       b'\xf1\x875Q0959655BJ\xf1\x890339\xf1\x82\x1311110011131100311111011731179321342100',
+      b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\x13111112111111--241115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13121111111111--341117141212231291163221',
@@ -773,11 +831,13 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873Q0909144H \xf1\x895061\xf1\x82\00566G0HA14A1',
+      b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571G01A16A1',
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571G0HA16A1',
       b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571G0JA14A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521G0G809A1',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00303A0',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00803A0',
+      b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\x0503G0G803A0',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\00516G00804A1',
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',
     ],

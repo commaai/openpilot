@@ -182,7 +182,7 @@ int logger_next(LoggerState *s, const char* root_path,
 
   pthread_mutex_unlock(&s->lock);
 
-  // write beggining of log metadata
+  // write beginning of log metadata
   log_init_data(s);
   lh_log_sentinel(s->cur_handle, is_start_of_route ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT);
   return 0;

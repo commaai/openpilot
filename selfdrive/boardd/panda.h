@@ -16,6 +16,7 @@
 #include "panda/board/health.h"
 
 #define TIMEOUT 0
+#define PANDA_CAN_CNT 3
 #define PANDA_BUS_CNT 4
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
@@ -81,15 +82,16 @@ class Panda {
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
   std::optional<health_t> get_state();
+  std::optional<can_health_t> get_can_state(uint16_t can_number);
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void enable_deepsleep();
-  void set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode);
   void send_heartbeat(bool engaged);
   void set_can_speed_kbps(uint16_t bus, uint16_t speed);
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);
+  void set_canfd_non_iso(uint16_t bus, bool non_iso);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
 
