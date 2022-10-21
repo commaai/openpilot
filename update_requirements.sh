@@ -54,6 +54,7 @@ fi
 
 echo "pip packages install..."
 poetry install --no-cache --no-root $POETRY_INSTALL_ARGS
+pyenv rehash
 
 if [ -z "$PIPENV_SYSTEM" ] && [ -z "$POETRY_VIRTUALENVS_CREATE" ]; then
   echo "PYTHONPATH=${PWD}" > .env
@@ -61,8 +62,6 @@ if [ -z "$PIPENV_SYSTEM" ] && [ -z "$POETRY_VIRTUALENVS_CREATE" ]; then
 else
   RUN=""
 fi
-
-pyenv rehash
 
 echo "pre-commit hooks install..."
 shopt -s nullglob
