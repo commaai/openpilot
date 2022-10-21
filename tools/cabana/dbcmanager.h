@@ -47,5 +47,6 @@ private:
 double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
+void updateSignalSizeParameters(Signal &s, int from, int to);
 
 DBCManager *dbc();

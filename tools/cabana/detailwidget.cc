@@ -164,7 +164,7 @@ void DetailWidget::editMsg() {
   }
 }
 
-void DetailWidget::addSignal(int start_bit, int size) {
+void DetailWidget::addSignal(int from, int to) {
   if (auto msg = dbc()->msg(msg_id)) {
     Signal sig = {};
     for (int i = 1; /**/; ++i) {
@@ -172,9 +172,8 @@ void DetailWidget::addSignal(int start_bit, int size) {
       auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
       if (it == msg->sigs.end()) break;
     }
-    sig.start_bit = bigEndianBitIndex(start_bit),
     sig.is_little_endian = false,
-    sig.size = size,
+    updateSignalSizeParameters(sig, from, to);
     dbc()->addSignal(msg_id, sig);
     dbcMsgChanged(msg->sigs.size() - 1);
   }
@@ -182,15 +181,7 @@ void DetailWidget::addSignal(int start_bit, int size) {
 
 void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
   Signal s = *sig;
-  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);;
-  s.size = to - from + 1;
-  if (s.is_little_endian) {
-    s.lsb = s.start_bit;
-    s.msb = s.start_bit + s.size - 1;
-  } else {
-    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
-    s.msb = s.start_bit;
-  }
+  updateSignalSizeParameters(s, from, to);
   saveSignal(sig, s);
 }
 

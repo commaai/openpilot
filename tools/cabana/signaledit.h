@@ -15,13 +15,11 @@
 class SignalForm : public QWidget {
 public:
   SignalForm(const Signal &sig, QWidget *parent);
-  Signal getSignal();
 
   QLineEdit *name, *unit, *comment, *val_desc;
   QSpinBox *size, *offset;
   QDoubleSpinBox *factor, *min_val, *max_val;
   QComboBox *sign, *endianness;
-  int start_bit = 0;
 };
 
 class SignalEdit : public QWidget {
@@ -43,12 +41,14 @@ signals:
 protected:
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void saveSignal();
 
   SignalForm *form;
   ElidedLabel *title;
   QWidget *form_container;
   QLabel *icon;
   int form_idx = 0;
+  QString msg_id;
   const Signal *sig = nullptr;
 };
 
