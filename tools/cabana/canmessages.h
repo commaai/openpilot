@@ -13,8 +13,10 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  double ts;
-  uint16_t bus_time;
+  double ts = 0.;
+  uint32_t count = 0;
+  uint32_t freq = 0;
+  uint16_t bus_time = 0;
   QByteArray dat;
 };
 
@@ -57,7 +59,6 @@ signals:
 public:
   QMap<QString, std::deque<CanData>> can_msgs;
   std::unique_ptr<QHash<QString, std::deque<CanData>>> received_msgs = nullptr;
-  QHash<QString, uint32_t> counters;
 
 protected:
   void process(QHash<QString, std::deque<CanData>> *);
@@ -66,6 +67,7 @@ protected:
 
   std::atomic<double> current_sec = 0.;
   std::atomic<bool> seeking = false;
+
   double begin_sec = 0;
   double end_sec = 0;
   double event_begin_sec = 0;
@@ -73,6 +75,9 @@ protected:
   bool is_zoomed = false;
   QString routeName;
   Replay *replay = nullptr;
+
+  double counters_begin_sec = std::numeric_limits<double>::max();
+  QHash<QString, uint32_t> counters;
 };
 
 inline QString toHex(const QByteArray &dat) {
