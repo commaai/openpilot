@@ -306,19 +306,19 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar],
       bus=4,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar],
       bus=5,
     ),
   ],
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
-    (Ecu.cornerRadar, 0x7B7, None),
+    (Ecu.cornerRadar, 0x7b7, None),
   ],
 )
 
