@@ -60,7 +60,7 @@ class CarState(CarStateBase):
     else:
       # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
       # Match ECM threshold at a standstill to allow the camera to cancel earlier
-      ret.brakePressed = ret.brake >= 20
+      ret.brakePressed = ret.brake >= (20 if self.CP.pcmCruise else 8)
 
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
