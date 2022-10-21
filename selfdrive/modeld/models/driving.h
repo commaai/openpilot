@@ -33,6 +33,8 @@ constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
 constexpr int LEAD_PRED_DIM = 4;
 constexpr int LEAD_MHP_SELECTION = 3;
+// Padding to get output shape as multiple of 4
+constexpr int PAD_SIZE = 2;
 
 struct ModelOutputXYZ {
   float x;
@@ -232,7 +234,7 @@ constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + 2;
+constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + FEATURE_LEN + PAD_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
