@@ -112,6 +112,8 @@ class CarController:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
     else:
+      # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
+      # A delayed cancellation allows camera to cancel and avoids a fault when user depresses brake
       self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
 
       # Stock longitudinal, integrated at camera
