@@ -1,3 +1,4 @@
+import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib',
        'cereal', 'transformations', 'widgets', 'opendbc')
 
@@ -12,6 +13,10 @@ else:
 
 qt_libs = ['qt_util', 'Qt5Charts'] + base_libs
 cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
-qt_env.Execute('./generate_dbc_json.py --out car_fingerprint_to_dbc.json')
-qt_env.Program('_cabana', ['cabana.cc', 'mainwin.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
-                            'canmessages.cc', 'messageswidget.cc', 'detailwidget.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_env = qt_env.Clone()
+
+prev_moc_path = cabana_env['QT_MOCHPREFIX']
+cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
+cabana_env.Execute('./generate_dbc_json.py --out car_fingerprint_to_dbc.json')
+cabana_env.Program('_cabana', ['cabana.cc', 'mainwin.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
+                            'canmessages.cc', 'messageswidget.cc', 'settings.cc', 'detailwidget.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
