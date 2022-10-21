@@ -50,7 +50,7 @@ class CarController:
     if CS.loopback_lka_steering_cmd_updated:
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
-    elif (self.frame - self.last_steer_frame) > steer_step:
+    elif (self.frame - self.last_steer_frame) >= steer_step or self.last_steer_frame == 0:
       # Initialize ASCMLKASteeringCmd counter using the camera
       if not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera:
         self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
