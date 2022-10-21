@@ -96,4 +96,3 @@ inline QColor hoverColor(const QColor &color) {
 
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;
-
