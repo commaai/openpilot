@@ -97,6 +97,11 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
 
+    ret.vEgoStarting = 0.3
+    ret.vEgoStopping = 0.3
+    ret.stopAccel = -2.0
+    ret.stoppingDecelRate = 2  # reach brake quickly after enabling
+
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
