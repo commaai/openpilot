@@ -340,6 +340,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
+    # Pass in max allowed LKAS torque to safety model
     ret.safetyConfigs[-1].safetyParam |= int(ret.carControlParams.steerMax / 10)
 
     ret.centerToFront = ret.wheelbase * 0.4
