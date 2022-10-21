@@ -474,7 +474,7 @@ def main() -> None:
 
     # infrequent attempts if we successfully updated recently
     wait_helper.only_check_for_update = False
-    wait_helper.sleep(5*60 if update_failed_count > 0 else 1.5*60*60)
+    wait_helper.sleep(10 if CI else 5*60 if update_failed_count > 0 else 1.5*60*60)
 
 
 if __name__ == "__main__":

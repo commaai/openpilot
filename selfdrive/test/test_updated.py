@@ -69,6 +69,7 @@ class TestUpdated(unittest.TestCase):
       subprocess.check_output(c, cwd=cwd, shell=True)
 
   def _get_updated_proc(self):
+    os.environ["CI"] = "1"
     os.environ["PYTHONPATH"] = self.basedir
     os.environ["GIT_AUTHOR_NAME"] = "testy tester"
     os.environ["GIT_COMMITTER_NAME"] = "testy tester"
@@ -99,7 +100,7 @@ class TestUpdated(unittest.TestCase):
       time.sleep(0.01)
     return ret
 
-  def _wait_for_idle(self, timeout=120):
+  def _wait_for_idle(self, timeout=180):
     with Timeout(timeout, "timed out waiting for updated to be idle"):
       while True:
         state = self._read_param("UpdaterState")
@@ -107,12 +108,12 @@ class TestUpdated(unittest.TestCase):
           break
         time.sleep(0.1)
 
-  def _wait_for_update(self, timeout=360, clear_param=False):
+  def _wait_for_update(self, clear_param=False):
     if clear_param:
       self.params.remove("UpdaterState")
 
     self._update_now()
-    self._wait_for_idle(timeout)
+    self._wait_for_idle()
 
   def _check_update_state(self, update_available: bool):
     # make sure LastUpdateTime is recent
@@ -139,10 +140,10 @@ class TestUpdated(unittest.TestCase):
   # *** test cases ***
 
 
-  # Run updated for 10 cycles with no update
+  # Run updated for 5 cycles with no update
   def test_no_update(self):
     self._start_updater()
-    for i in range(10):
+    for i in range(5):
       print(f"test_no_update {i}")
       self._wait_for_update(clear_param=True)
       self._check_update_state(False)
