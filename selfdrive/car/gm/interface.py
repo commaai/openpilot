@@ -65,7 +65,6 @@ class CarInterface(CarInterfaceBase):
 
       if experimental_long:
         ret.pcmCruise = False
-        # Also can enable behind lead while stopped
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
       else:
