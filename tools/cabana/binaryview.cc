@@ -212,7 +212,7 @@ void BinaryViewModel::updateState() {
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Vertical) {
     switch (role) {
-      case Qt::DisplayRole: return section + 1;
+      case Qt::DisplayRole: return section;
       case Qt::SizeHintRole: return QSize(30, CELL_HEIGHT);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
     }
