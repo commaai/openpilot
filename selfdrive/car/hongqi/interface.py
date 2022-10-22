@@ -49,15 +49,6 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
-
-    # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
-      self.low_speed_alert = True
-    elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
-      self.low_speed_alert = False
-    if self.low_speed_alert:
-      events.add(EventName.belowSteerSpeed)
-
     ret.events = events.to_msg()
 
     return ret
