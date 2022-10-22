@@ -1,43 +1,18 @@
 #pragma once
 
-#include <QDialog>
-#include <QLabel>
-#include <QPushButton>
 #include <QScrollArea>
-#include <QTableWidget>
-#include <QVBoxLayout>
-#include <QWidget>
+#include <QTabBar>
 
-#include "opendbc/can/common.h"
-#include "opendbc/can/common_dbc.h"
-#include "tools/cabana/canmessages.h"
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
-
-class BinaryView : public QWidget {
-  Q_OBJECT
-
-public:
-  BinaryView(QWidget *parent);
-  void setMessage(const QString &message_id);
-  void updateState();
-
-private:
-  QString msg_id;
-  QTableWidget *table;
-};
 
 class EditMessageDialog : public QDialog {
   Q_OBJECT
 
 public:
-  EditMessageDialog(const QString &msg_id, QWidget *parent);
+  EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
 
-protected:
-  void save();
-
-  QString msg_id;
   QLineEdit *name_edit;
   QSpinBox *size_spin;
 };
@@ -57,24 +32,28 @@ class DetailWidget : public QWidget {
 public:
   DetailWidget(QWidget *parent);
   void setMessage(const QString &message_id);
+  void dbcMsgChanged();
 
 signals:
-  void showChart(const QString &msg_id, const QString &sig_name);
-
-private slots:
-  void showForm();
+  void showChart(const QString &msg_id, const Signal *sig);
+  void removeChart(const Signal *sig);
 
 private:
-  void addSignal();
+  void addSignal(int start_bit, int to);
+  void resizeSignal(const Signal *sig, int from, int to);
+  void saveSignal();
+  void removeSignal();
   void editMsg();
+  void showForm();
   void updateState();
 
   QString msg_id;
-  QLabel *name_label, *time_label;
+  QLabel *name_label, *time_label, *warning_label;
+  QWidget *warning_widget;
   QPushButton *edit_btn;
-  QVBoxLayout *signal_edit_layout;
-  QWidget *signals_header;
-  QList<SignalEdit *> signal_forms;
+  QWidget *signals_container;
+  QTabBar *tabbar;
+  QStringList messages;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
