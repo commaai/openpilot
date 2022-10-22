@@ -61,7 +61,7 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
 
     # TODO: this is to have GM bringing the car to complete stop,
     # but currently it conflicts with OP controls, so turned off.
-    # elif near_stop:
+    #elif near_stop:
     #  mode = 0xb
 
   brake = (0x1000 - apply_brake) & 0xfff
@@ -114,7 +114,7 @@ def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   spd = int(speed_ms * 16) & 0xfff
   accel = 0 & 0xfff
   # 0 if in park/neutral, 0x10 if in reverse, 0x08 for D/L
-  # stick = 0x08
+  #stick = 0x08
   near_range_cutoff = 0x27
   near_range_mode = 1 if spd <= near_range_cutoff else 0
   far_range_mode = 1 - near_range_mode
