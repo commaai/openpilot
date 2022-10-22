@@ -207,6 +207,7 @@ class Calibrator:
     liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     liveCalibration.rpyCalib = smooth_rpy.tolist()
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
+    liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED
