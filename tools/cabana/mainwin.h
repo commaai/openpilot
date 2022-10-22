@@ -22,7 +22,7 @@ signals:
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
-  QToolButton *createLoadRouteButton();
+  QToolButton *initRouteControl();
   void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();

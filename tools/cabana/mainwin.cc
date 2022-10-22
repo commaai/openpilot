@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QMenu>
+#include <QMessageBox>
 #include <QScreen>
 #include <QSplitter>
 #include <QVBoxLayout>
@@ -47,8 +48,7 @@ MainWindow::MainWindow() : QWidget() {
   QLabel *fingerprint_label = new QLabel(this);
   right_hlayout->addWidget(fingerprint_label);
 
-  right_hlayout->addWidget(createLoadRouteButton());
-  right_hlayout->addWidget(new QLabel(can->route()));
+  right_hlayout->addWidget(initRouteControl());
   QPushButton *settings_btn = new QPushButton("Settings");
   right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
 
@@ -93,38 +93,50 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint()); });
 }
 
-QToolButton *MainWindow::createLoadRouteButton() {
+QToolButton *MainWindow::initRouteControl() {
   QMenu *menu = new QMenu(this);
-  QAction *load_remote_act = new QAction(tr("Remote route"), this);
-  QAction *load_local_act = new QAction(tr("Local route"), this);
+  QAction *load_remote_act = new QAction(tr("Open Foute From Remote"), this);
+  QAction *load_local_act = new QAction(tr("Open Route From Local"), this);
   menu->addAction(load_remote_act);
+  menu->addSeparator();
   menu->addAction(load_local_act);
 
-  QToolButton *btn = new QToolButton(this);
-  btn->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
-  btn->setPopupMode(QToolButton::InstantPopup);
-  btn->setMenu(menu);
+  QToolButton *route_btn = new QToolButton(this);
+  route_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  route_btn->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+  route_btn->setText(can->route());
+  route_btn->setPopupMode(QToolButton::InstantPopup);
+  route_btn->setMenu(menu);
 
   QObject::connect(menu, &QMenu::triggered, [=](QAction *action) {
+    QString route, data_dir;
     if (action == load_remote_act) {
-      QString text = QInputDialog::getText(this, tr("Open Remote Route"), tr("Remote route:"));
-      if (!text.isEmpty()) {
-        if (can->loadRoute(text, {})) {
-        } else {
-        }
-      }
+      bool ok = false;
+      route = QInputDialog::getText(this, tr("Open Remote Route"), tr("Remote route:"), QLineEdit::Normal, "", &ok);
+      if (ok == false)
+        return;
     } else {
-      QString local_route = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), "/home");
-      if (!local_route.isEmpty()) {
-        if (int idx = local_route.lastIndexOf('/'); idx != -1) {
-          if (can->loadRoute(local_route.mid(idx + 1), local_route.mid(0, idx))) {
-          } else {
-          }
-        }
+      QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), "/home");
+      if (dir.isEmpty())
+        return;
+
+      if (int idx = dir.lastIndexOf('/'); idx != -1) {
+        data_dir = dir.mid(0, idx);
+        QString basename = dir.mid(idx + 1);
+        if (int pos = basename.lastIndexOf("--"); pos != -1)
+          route = "000000000000000|" + basename.mid(0, pos);
       }
     }
+
+    if (can->loadRoute(route, data_dir)) {
+      qInfo() << "loading route" << route << (data_dir.isEmpty() ? "from " + data_dir : "");
+      route_btn->setText(route);
+    } else {
+      qInfo() << "failed to load route" << route;
+      QMessageBox::warning(this, tr("Warning"), tr("Failed to load route %1\n make sure the route name is correct").arg(route));
+    }
   });
-  return btn;
+  return route_btn;
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
