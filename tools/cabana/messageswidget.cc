@@ -1,12 +1,8 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <QCompleter>
-#include <QDialogButtonBox>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
-#include <QPushButton>
-#include <QTextEdit>
 #include <QVBoxLayout>
 
 #include "tools/cabana/dbcmanager.h"
@@ -14,31 +10,6 @@
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-
-  // DBC file selector
-  QHBoxLayout *dbc_file_layout = new QHBoxLayout();
-  dbc_combo = new QComboBox(this);
-  auto dbc_names = dbc()->allDBCNames();
-  for (const auto &name : dbc_names) {
-    dbc_combo->addItem(QString::fromStdString(name));
-  }
-  dbc_combo->model()->sort(0);
-  dbc_combo->setEditable(true);
-  dbc_combo->setCurrentText(QString());
-  dbc_combo->setInsertPolicy(QComboBox::NoInsert);
-  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
-  QFont font;
-  font.setBold(true);
-  dbc_combo->lineEdit()->setFont(font);
-  dbc_file_layout->addWidget(dbc_combo);
-
-  QPushButton *load_from_paste = new QPushButton(tr("Load from paste"), this);
-  dbc_file_layout->addWidget(load_from_paste);
-
-  dbc_file_layout->addStretch();
-  QPushButton *save_btn = new QPushButton(tr("Save DBC"), this);
-  dbc_file_layout->addWidget(save_btn);
-  main_layout->addLayout(dbc_file_layout);
 
   // message filter
   QLineEdit *filter = new QLineEdit(this);
@@ -64,48 +35,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
-  QObject::connect(can, &CANMessages::eventsMerged, this, &MessagesWidget::loadDBCFromFingerprint);
   QObject::connect(can, &CANMessages::updated, [this]() { model->updateState(); });
-  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
-  QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadDBCFromPaste);
-  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
-    // TODO: save DBC to file
-  });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid()) {
       emit msgSelectionChanged(current.data(Qt::UserRole).toString());
     }
   });
-
-  QFile json_file("./car_fingerprint_to_dbc.json");
-  if(json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-  }
-}
-
-void MessagesWidget::loadDBCFromName(const QString &name) {
-  dbc()->open(name);
-  dbc_combo->setCurrentText(name);
-  // refresh model
-  model->updateState();
-}
-
-void MessagesWidget::loadDBCFromPaste() {
-  LoadDBCDialog dlg(this);
-  if (dlg.exec()) {
-    dbc()->open("from paste", dlg.dbc_edit->toPlainText());
-    dbc_combo->setCurrentText("loaded from paste");
-  }
-}
-
-void MessagesWidget::loadDBCFromFingerprint() {
-  auto fingerprint = can->carFingerprint();
-  if (!fingerprint.isEmpty() && dbc()->name().isEmpty())  {
-    auto dbc_name = fingerprint_to_dbc[fingerprint];
-    if (dbc_name !=  QJsonValue::Undefined) {
-      loadDBCFromName(dbc_name.toString());
-    }
-  }
 }
 
 // MessageListModel
@@ -219,18 +154,4 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_order = order;
     updateState(true);
   }
-}
-
-LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  dbc_edit = new QTextEdit(this);
-  dbc_edit->setAcceptRichText(false);
-  dbc_edit->setPlaceholderText(tr("paste DBC file here"));
-  main_layout->addWidget(dbc_edit);
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
-
-  setFixedWidth(640);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }

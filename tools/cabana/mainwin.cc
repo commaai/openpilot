@@ -1,11 +1,14 @@
 #include "tools/cabana/mainwin.h"
 
 #include <QApplication>
+#include <QCompleter>
+#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QScreen>
 #include <QSplitter>
 #include <QVBoxLayout>
@@ -17,9 +20,9 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
   if (main_win) main_win->showStatusMessage(msg);
 }
 
-MainWindow::MainWindow() : QWidget() {
+MainWindow::MainWindow() : can_message(this), QWidget() {
   main_win = this;
-  qInstallMessageHandler(qLogMessageHandler);
+  // qInstallMessageHandler(qLogMessageHandler);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, 11, 11, 5);
@@ -29,9 +32,39 @@ MainWindow::MainWindow() : QWidget() {
   h_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addLayout(h_layout);
 
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  QWidget *left_panel = new QWidget(this);
+  QVBoxLayout *left_panel_layout = new QVBoxLayout(left_panel);
+
+  // DBC file selector
+  QHBoxLayout *dbc_file_layout = new QHBoxLayout();
+  dbc_combo = new QComboBox(this);
+  auto dbc_names = dbc()->allDBCNames();
+  for (const auto &name : dbc_names) {
+    dbc_combo->addItem(QString::fromStdString(name));
+  }
+  dbc_combo->model()->sort(0);
+  dbc_combo->setEditable(true);
+  dbc_combo->setCurrentText(QString());
+  dbc_combo->setInsertPolicy(QComboBox::NoInsert);
+  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  QFont font;
+  font.setBold(true);
+  dbc_combo->lineEdit()->setFont(font);
+  dbc_file_layout->addWidget(dbc_combo);
+
+  QPushButton *load_from_paste = new QPushButton(tr("Load from paste"), this);
+  dbc_file_layout->addWidget(load_from_paste);
+
+  dbc_file_layout->addStretch();
+  QPushButton *save_btn = new QPushButton(tr("Save DBC"), this);
+  dbc_file_layout->addWidget(save_btn);
+  left_panel_layout->addLayout(dbc_file_layout);
+
   messages_widget = new MessagesWidget(this);
-  splitter->addWidget(messages_widget);
+  left_panel_layout->addWidget(messages_widget);
+
+  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  splitter->addWidget(left_panel);
 
   detail_widget = new DetailWidget(this);
   splitter->addWidget(detail_widget);
@@ -45,7 +78,7 @@ MainWindow::MainWindow() : QWidget() {
   r_layout = new QVBoxLayout(right_container);
   r_layout->setContentsMargins(11, 0, 0, 0);
   QHBoxLayout *right_hlayout = new QHBoxLayout();
-  QLabel *fingerprint_label = new QLabel(this);
+  fingerprint_label = new QLabel(this);
   right_hlayout->addWidget(fingerprint_label);
 
   right_hlayout->addWidget(initRouteControl());
@@ -90,55 +123,60 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint()); });
+  QObject::connect(load_from_paste, &QPushButton::clicked, this, &MainWindow::loadDBCFromPaste);
+  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
+    // TODO: save DBC to file
+  });
+  QObject::connect(can, &CANMessages::eventsMerged, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
+
+  QFile json_file("./car_fingerprint_to_dbc.json");
+  if (json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+  }
+}
+
+void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+  can->loadRoute(route, data_dir, use_qcam);
+}
+
+void MainWindow::loadDBCFromName(const QString &name) {
+  dbc()->open(name);
+  dbc_combo->setCurrentText(name);
+}
+
+void MainWindow::loadDBCFromPaste() {
+  LoadDBCDialog dlg(this);
+  if (dlg.exec()) {
+    dbc()->open("from paste", dlg.dbc_edit->toPlainText());
+    dbc_combo->setCurrentText("loaded from paste");
+  }
+}
+
+void MainWindow::loadDBCFromFingerprint() {
+  fingerprint_label->setText(can->carFingerprint());
+  auto fingerprint = can->carFingerprint();
+  if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
+    auto dbc_name = fingerprint_to_dbc[fingerprint];
+    if (dbc_name != QJsonValue::Undefined) {
+      loadDBCFromName(dbc_name.toString());
+    }
+  }
 }
 
 QToolButton *MainWindow::initRouteControl() {
-  QMenu *menu = new QMenu(this);
-  QAction *load_remote_act = new QAction(tr("Open Foute From Remote"), this);
-  QAction *load_local_act = new QAction(tr("Open Route From Local"), this);
-  menu->addAction(load_remote_act);
-  menu->addSeparator();
-  menu->addAction(load_local_act);
-
-  QToolButton *route_btn = new QToolButton(this);
+  route_btn = new QToolButton(this);
   route_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   route_btn->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
   route_btn->setText(can->route());
-  route_btn->setPopupMode(QToolButton::InstantPopup);
-  route_btn->setMenu(menu);
-
-  QObject::connect(menu, &QMenu::triggered, [=](QAction *action) {
-    QString route, data_dir;
-    if (action == load_remote_act) {
-      bool ok = false;
-      route = QInputDialog::getText(this, tr("Open Remote Route"), tr("Remote route:"), QLineEdit::Normal, "", &ok);
-      if (ok == false)
-        return;
-    } else {
-      QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), "/home");
-      if (dir.isEmpty())
-        return;
-
-      if (int idx = dir.lastIndexOf('/'); idx != -1) {
-        data_dir = dir.mid(0, idx);
-        QString basename = dir.mid(idx + 1);
-        if (int pos = basename.lastIndexOf("--"); pos != -1)
-          route = "0000000000000000|" + basename.mid(0, pos);
-      }
-    }
-
-    if (can->loadRoute(route, data_dir)) {
-      qInfo() << "loading route" << route << (data_dir.isEmpty() ? "from " + data_dir : "");
-      route_btn->setText(route);
-    } else {
-      qInfo() << "failed to load route" << route;
-      QMessageBox::warning(this, tr("Warning"), tr("Failed to load route %1\n make sure the route name is correct").arg(route));
-    }
+  QObject::connect(route_btn, &QToolButton::clicked, [=]() {
+    LoadRouteDialog dlg(this);
+    dlg.exec();
   });
   return route_btn;
 }
 
+// void MainWindow::
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
   if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
@@ -175,4 +213,68 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 void MainWindow::setOption() {
   SettingsDlg dlg(this);
   dlg.exec();
+}
+
+// LoadDBCDialog
+
+LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  dbc_edit = new QTextEdit(this);
+  dbc_edit->setAcceptRichText(false);
+  dbc_edit->setPlaceholderText(tr("paste DBC file here"));
+  main_layout->addWidget(dbc_edit);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  main_layout->addWidget(buttonBox);
+
+  setFixedWidth(640);
+  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+// LoadRouteDialog
+
+LoadRouteDialog::LoadRouteDialog(QWidget *parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+
+  main_layout->addWidget(new QLabel("selec route"));
+  QHBoxLayout *h_layout = new QHBoxLayout();
+  h_layout->addWidget(new QLabel("Route:"));
+  QLineEdit *route_edit = new QLineEdit(this);
+  route_edit->setPlaceholderText(tr("Enter remote route name or select local route"));
+  h_layout->addWidget(route_edit);
+  QPushButton *file_btn = new QPushButton("Broser", this);
+  h_layout->addWidget(file_btn);
+  main_layout->addLayout(h_layout);
+
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  main_layout->addWidget(buttonBox);
+
+  // setFixedWidth(640);
+
+  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(file_btn, &QPushButton::clicked, [=]() {
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), "/home");
+    route_edit->setText(dir);
+  });
+  QObject::connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
+    QString route_string = route_edit->text();
+    QString route = route_string;
+    QString data_dir;
+    if (route_string.indexOf('/') >= 0) {
+      if (int idx = route_string.lastIndexOf('/'); idx != -1) {
+        data_dir = route_string.mid(0, idx);
+        QString basename = route_string.mid(idx + 1);
+        if (int pos = basename.lastIndexOf("--"); pos != -1)
+          route = "0000000000000000|" + basename.mid(0, pos);
+      }
+    }
+
+    if (can->loadRoute(route, data_dir)) {
+      qInfo() << "loading route" << route << (data_dir.isEmpty() ? "from " + data_dir : "");
+      QDialog::accept();
+    } else {
+      qInfo() << "failed to load route" << route;
+      // QMessageBox::warning(this, tr("Warning"), tr("Failed to load route %1\n make sure the route name is correct").arg(route));
+    }
+  });
 }

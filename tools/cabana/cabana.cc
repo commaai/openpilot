@@ -22,12 +22,17 @@ int main(int argc, char *argv[]) {
     cmd_parser.showHelp();
   }
 
-  const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  CANMessages p(&app);
-  if (!p.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"))) {
-    return 0;
+  QString route;
+  if (cmd_parser.isSet("demo")) {
+    route = DEMO_ROUTE;
+  } else if (!args.isEmpty()) {
+    route = args.first();
   }
+
   MainWindow w;
   w.showMaximized();
+  if (!route.isEmpty()) {
+    w.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"));
+  }
   return app.exec();
 }
