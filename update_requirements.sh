@@ -46,7 +46,7 @@ pip install poetry==1.2.2
 poetry config virtualenvs.prefer-active-python true --local
 
 POETRY_INSTALL_ARGS=""
-if [ -d "./xx" ]; then
+if [ -d "./xx" ] || [ -n "$XX" ]; then
   echo "WARNING: using xx dependency group, installing globally"
   poetry config virtualenvs.create false --local
   POETRY_INSTALL_ARGS="--with xx --sync"
