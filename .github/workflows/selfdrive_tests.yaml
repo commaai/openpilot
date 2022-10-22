@@ -33,6 +33,7 @@ jobs:
     name: build release
     runs-on: ubuntu-20.04
     timeout-minutes: 30
+    if: github.event_name == 'push'
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
@@ -67,6 +68,7 @@ jobs:
     name: build all
     runs-on: ubuntu-20.04
     timeout-minutes: 30
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -85,6 +87,7 @@ jobs:
   #  name: build macos
   #  runs-on: macos-latest
   #  timeout-minutes: 60
+  #  if: github.event_name == 'push'
   #  steps:
   #  - uses: actions/checkout@v3
   #    with:
@@ -142,7 +145,7 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     timeout-minutes: 22
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v3
@@ -167,6 +170,7 @@ jobs:
     name: static analysis
     runs-on: ubuntu-20.04
     timeout-minutes: 20
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -181,6 +185,7 @@ jobs:
     name: valgrind
     runs-on: ubuntu-20.04
     timeout-minutes: 20
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -199,6 +204,7 @@ jobs:
     name: unit tests
     runs-on: ubuntu-20.04
     timeout-minutes: 30
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -279,6 +285,7 @@ jobs:
     name: model tests
     runs-on: ubuntu-20.04
     timeout-minutes: 20
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -307,6 +314,7 @@ jobs:
     name: longitudinal
     runs-on: ubuntu-20.04
     timeout-minutes: 20
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -335,6 +343,7 @@ jobs:
     name: cars
     runs-on: ubuntu-20.04
     timeout-minutes: 20
+    if: github.event_name == 'push'
     strategy:
       fail-fast: false
       matrix:
