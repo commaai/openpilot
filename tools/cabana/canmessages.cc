@@ -38,6 +38,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::segmentsMerged);
   if (replay->load()) {
     replay->start();
+    emit routeLoaded();
     return true;
   }
   return false;

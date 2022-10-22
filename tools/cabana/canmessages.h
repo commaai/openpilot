@@ -51,6 +51,7 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void routeLoaded();
   void eventsMerged();
   void rangeChanged(double min, double max);
   void updated();

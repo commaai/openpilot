@@ -124,7 +124,7 @@ QToolButton *MainWindow::initRouteControl() {
         data_dir = dir.mid(0, idx);
         QString basename = dir.mid(idx + 1);
         if (int pos = basename.lastIndexOf("--"); pos != -1)
-          route = "000000000000000|" + basename.mid(0, pos);
+          route = "0000000000000000|" + basename.mid(0, pos);
       }
     }
 

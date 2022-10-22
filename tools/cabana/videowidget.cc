@@ -29,11 +29,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   slider = new Slider(this);
   slider->setSingleStep(0);
-  slider->setMinimum(0);
-  slider->setMaximum(can->totalSeconds() * 1000);
   slider_layout->addWidget(slider);
 
-  end_time_label = new QLabel(formatTime(can->totalSeconds()));
+  end_time_label = new QLabel(this);
   slider_layout->addWidget(end_time_label);
   main_layout->addLayout(slider_layout);
 
@@ -57,12 +55,17 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  QObject::connect(can, &CANMessages::rangeChanged, this, &VideoWidget::rangeChanged);
-  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
+  QObject::connect(can, &CANMessages::rangeChanged, this, &VideoWidget::rangeChanged);
+  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
+  QObject::connect(can, &CANMessages::routeLoaded, [this]() {
+    slider->setMinimum(0);
+    slider->setMaximum(can->totalSeconds() * 1000);
+    end_time_label->setText(formatTime(can->totalSeconds()));
+  });
 }
 
 void VideoWidget::pause(bool pause) {
