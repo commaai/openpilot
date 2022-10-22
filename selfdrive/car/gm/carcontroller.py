@@ -10,6 +10,9 @@ from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButt
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
 
+# Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
+CAMERA_CANCEL_DELAY_FRAMES = 10
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -113,13 +116,12 @@ class CarController:
 
     else:
       # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
-      # A delayed cancellation allows camera to cancel and avoids a fault when user depresses brake
+      # A delayed cancellation allows camera to cancel and avoids a fault when user depresses brake quickly
       self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
 
       # Stock longitudinal, integrated at camera
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
-        # TODO: find the max time the ECM allows before it faults using OP long (camera will always cancel before it faults)
-        if self.cancel_counter > 50:
+        if self.cancel_counter > CAMERA_CANCEL_DELAY_FRAMES:
           self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
 
