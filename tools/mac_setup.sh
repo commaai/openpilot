@@ -88,7 +88,7 @@ eval "$(pyenv init --path)"
 echo "[ ] installed python dependencies t=$SECONDS"
 
 # install casadi
-VENV=`pipenv --venv`
+VENV=`poetry env info --path`
 PYTHON_VER=3.8
 PYTHON_VERSION=$(cat $ROOT/.python-version)
 if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then

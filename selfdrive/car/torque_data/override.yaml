@@ -32,6 +32,7 @@ CHEVROLET EQUINOX 2019: [2.0, 2.0, 0.05]
 VOLKSWAGEN PASSAT NMS: [2.5, 2.5, 0.1]
 VOLKSWAGEN SHARAN 2ND GEN: [2.5, 2.5, 0.1]
 HYUNDAI TUCSON HYBRID 4TH GEN: [2.5, 2.5, 0.0]
+KIA SPORTAGE HYBRID 5TH GEN: [2.5, 2.5, 0.0]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

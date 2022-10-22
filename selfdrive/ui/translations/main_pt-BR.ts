@@ -60,11 +60,34 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>Plano de Dados Limitado</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Evite grandes uploads de dados quando estiver em uma conexão limitada</translation>
+    </message>
+</context>
+<context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>LIMITE</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>MAX</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>VELO</translation>
     </message>
 </context>
 <context>
@@ -408,29 +431,6 @@ trabalho definido</translation>
     </message>
 </context>
 <context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>LIMITE</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>VELO</translation>
-    </message>
-</context>
-<context>
     <name>OffroadHome</name>
     <message>
         <source>UPDATE</source>
@@ -476,7 +476,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>APRIMORAMENTOS PRIME:</translation>
+        <translation>BENEFÍCIOS PRIME:</translation>
     </message>
     <message>
         <source>Remote access</source>
