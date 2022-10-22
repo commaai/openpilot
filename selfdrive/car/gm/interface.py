@@ -63,6 +63,11 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
 
+      ret.vEgoStarting = 0.3
+      ret.vEgoStopping = 0.3
+      ret.stopAccel = -2.0
+      ret.stoppingDecelRate = 2  # reach brake quickly after enabling
+
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
@@ -96,11 +101,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
-
-    ret.vEgoStarting = 0.3
-    ret.vEgoStopping = 0.3
-    ret.stopAccel = -2.0
-    ret.stoppingDecelRate = 2  # reach brake quickly after enabling
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
