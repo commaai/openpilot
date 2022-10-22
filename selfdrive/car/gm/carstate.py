@@ -55,12 +55,7 @@ class CarState(CarStateBase):
     # To avoid a cruise fault we need to match the ECM's brake pressed signal and threshold
     # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
     ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
-    if self.CP.networkLocation != NetworkLocation.fwdCamera:
-      ret.brakePressed = ret.brake >= 8
-    else:
-      # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
-      # Match ECM threshold at a standstill to allow the camera to cancel earlier
-      ret.brakePressed = ret.brake >= 20
+    ret.brakePressed = ret.brake >= 8
 
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
