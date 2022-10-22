@@ -4316,7 +4316,7 @@ pyzmq = ">=13.1.0"
 
 [package.source]
 type = "git"
-url = "git@github.com:commaai/zerorpc-python.git"
+url = "https://github.com/commaai/zerorpc-python.git"
 reference = "master"
 resolved_reference = "0e27fd795bb9a7ec9cab81a771a2e35a91e397c9"
 
