@@ -42,9 +42,10 @@ class CarControllerParams:
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
     if CP.carFingerprint in CAMERA_ACC_CAR:
+      # Camera ACC vehicles have no regen while enabled.
+      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
-      # Camera ACC vehicles have no regen while enabled
       max_regen_acceleration = 0.
 
     else:
