@@ -37,8 +37,13 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::segmentsMerged);
   if (replay->load()) {
-    replay->start();
+    // clear old can messages
+    can_msgs.clear();
+    emit updated();
+
+    // start replay
     emit routeLoaded();
+    replay->start();
     return true;
   }
   return false;
