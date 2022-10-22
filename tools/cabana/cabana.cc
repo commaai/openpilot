@@ -32,7 +32,9 @@ int main(int argc, char *argv[]) {
   MainWindow w;
   w.showMaximized();
   if (!route.isEmpty()) {
+    app.processEvents();
     w.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"));
+    app.processEvents();
   }
   return app.exec();
 }

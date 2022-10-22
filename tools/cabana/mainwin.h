@@ -66,5 +66,10 @@ class LoadRouteDialog : public QDialog {
   Q_OBJECT
 
 public:
-  LoadRouteDialog(QWidget *parent);
+  LoadRouteDialog(QWidget *parent, const QString &route = {}, const QString &data_dir = {}, bool use_qcam = false);
+
+protected:
+  void loadClicked();
+  void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  QLineEdit *route_edit;
 };

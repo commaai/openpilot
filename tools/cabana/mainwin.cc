@@ -137,7 +137,8 @@ MainWindow::MainWindow() : can_message(this), QWidget() {
 }
 
 void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
-  can->loadRoute(route, data_dir, use_qcam);
+  LoadRouteDialog dlg(this, route, data_dir, use_qcam);
+  dlg.exec();
 }
 
 void MainWindow::loadDBCFromName(const QString &name) {
@@ -233,48 +234,62 @@ LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
 
 // LoadRouteDialog
 
-LoadRouteDialog::LoadRouteDialog(QWidget *parent) {
+LoadRouteDialog::LoadRouteDialog(QWidget *parent, const QString &route, const QString &data_dir, bool use_qcam) : QDialog(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   main_layout->addWidget(new QLabel("selec route"));
   QHBoxLayout *h_layout = new QHBoxLayout();
   h_layout->addWidget(new QLabel("Route:"));
-  QLineEdit *route_edit = new QLineEdit(this);
+  route_edit = new QLineEdit(route, this);
   route_edit->setPlaceholderText(tr("Enter remote route name or select local route"));
   h_layout->addWidget(route_edit);
   QPushButton *file_btn = new QPushButton("Broser", this);
   h_layout->addWidget(file_btn);
   main_layout->addLayout(h_layout);
+  main_layout->addStretch();
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
 
-  // setFixedWidth(640);
+  setFixedWidth(640);
 
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &LoadRouteDialog::loadClicked);
   QObject::connect(file_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), "/home");
     route_edit->setText(dir);
   });
-  QObject::connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
-    QString route_string = route_edit->text();
-    QString route = route_string;
-    QString data_dir;
-    if (route_string.indexOf('/') >= 0) {
-      if (int idx = route_string.lastIndexOf('/'); idx != -1) {
-        data_dir = route_string.mid(0, idx);
-        QString basename = route_string.mid(idx + 1);
-        if (int pos = basename.lastIndexOf("--"); pos != -1)
-          route = "0000000000000000|" + basename.mid(0, pos);
-      }
-    }
 
-    if (can->loadRoute(route, data_dir)) {
-      qInfo() << "loading route" << route << (data_dir.isEmpty() ? "from " + data_dir : "");
-      QDialog::accept();
-    } else {
-      qInfo() << "failed to load route" << route;
-      // QMessageBox::warning(this, tr("Warning"), tr("Failed to load route %1\n make sure the route name is correct").arg(route));
+  show();
+  if (!route.isEmpty()) {
+    route_edit->setEnabled(false);
+    file_btn->setEnabled(false);
+    buttonBox->setEnabled(false);
+    loadRoute(route, data_dir, use_qcam);
+  }
+}
+
+void LoadRouteDialog::loadClicked() {
+  QString route_string = route_edit->text();
+  QString route = route_string;
+  QString data_dir;
+  if (route_string.indexOf('/') >= 0) {
+    if (int idx = route_string.lastIndexOf('/'); idx != -1) {
+      data_dir = route_string.mid(0, idx);
+      QString basename = route_string.mid(idx + 1);
+      if (int pos = basename.lastIndexOf("--"); pos != -1)
+        route = "0000000000000000|" + basename.mid(0, pos);
     }
-  });
+  }
+  loadRoute(route, data_dir, false);
+}
+
+void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+  if (can->loadRoute(route, data_dir)) {
+    qInfo() << "loading route" << route << (data_dir.isEmpty() ? "from " + data_dir : "");
+    accept();
+  } else {
+    qInfo() << "failed to load route" << route;
+    // QMessageBox::warning(this, tr("Warning"), tr("Failed to load route %1\n make sure the route name is correct").arg(route));
+  }
 }
