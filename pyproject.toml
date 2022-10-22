@@ -145,7 +145,7 @@ mpld3 = "^0.5.8"
 msgpack-python = "^0.5.6"
 networkx = "~2.3"
 nvidia-ml-py3 = "^7.352.0"
-onnxoptimizer = "^0.2.6"
+onnxoptimizer = "^0.3.1"
 opencv-python-headless = { url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu113/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl" }
 osmium = "^3.3.0"
 pandas = "^1.4.3"
