@@ -78,3 +78,7 @@ repos:
         entry: selfdrive/ui/tests/test_translations.py
         language: script
         pass_filenames: false
+-   repo: https://github.com/python-poetry/poetry
+    rev: '1.2.2'
+    hooks:
+    -   id: poetry-check
