@@ -44,22 +44,18 @@ class CarControllerParams:
     if CP.carFingerprint in CAMERA_ACC_CAR:
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
-
       # Camera ACC vehicles have no regen while enabled
-      self.GAS_LOOKUP_BP = [0., 0., self.ACCEL_MAX]
-      self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, 0.]
+      max_regen_acceleration = 0.
+
     else:
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
       self.INACTIVE_REGEN = 1404
-
       # ICE has much less engine braking force compared to regen in EVs,
       # lower threshold removes some braking deadzone
-      if CP.carFingerprint in EV_CAR:
-        self.GAS_LOOKUP_BP = [-1., 0., self.ACCEL_MAX]
-        self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.]
-      else:
-        self.GAS_LOOKUP_BP = [-0.1, 0., self.ACCEL_MAX]
-        self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -0.1]
+      max_regen_acceleration = -1. if CP.carFingerprint in EV_CAR else -0.1
+
+    self.GAS_LOOKUP_BP = [max_regen_acceleration, 0., self.ACCEL_MAX]
+    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, max_regen_acceleration]
 
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
