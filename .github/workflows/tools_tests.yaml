@@ -4,6 +4,7 @@ on:
   push:
     branches-ignore:
       - 'testing-closet*'
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
@@ -82,7 +83,9 @@ jobs:
       run: |
         DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     - name: Push docker container
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
+
+
