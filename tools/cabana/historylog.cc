@@ -7,12 +7,14 @@
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
   if (role == Qt::DisplayRole) {
-    const auto &m = can->messages(msg_id)[index.row()];
-    if (index.column() == 0) {
-      return QString::number(m.ts, 'f', 2);
+    if (can->can_msgs.contains(msg_id)) {
+      const auto &m = can->messages(msg_id)[index.row()];
+      if (index.column() == 0) {
+        return QString::number(m.ts, 'f', 2);
+      }
+      return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), dbc_msg->sigs[index.column() - 1]))
+                        : toHex(m.dat);
     }
-    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), dbc_msg->sigs[index.column() - 1]))
-                      : toHex(m.dat);
   } else if (role == Qt::FontRole && index.column() == 1 && !has_signal) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
@@ -46,7 +48,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 }
 
 void HistoryLogModel::updateState() {
-  if (msg_id.isEmpty()) return;
+  if (msg_id.isEmpty() || !can->can_msgs.contains(msg_id)) return;
 
   int prev_row_count = row_count;
   row_count = can->messages(msg_id).size();
