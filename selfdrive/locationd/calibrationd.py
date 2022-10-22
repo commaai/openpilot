@@ -162,7 +162,7 @@ class Calibrator:
 
   def handle_cam_odom(self, trans: List[float],
                             rot: List[float],
-                            new_wide_from_device_euler: List[float],
+                            wide_from_device_euler: List[float],
                             trans_std: List[float]) -> Optional[np.ndarray]:
     self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
@@ -182,10 +182,15 @@ class Calibrator:
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
+    if len(wide_from_device_euler):
+      new_wide_from_device_euler = np.array(wide_from_device_euler)
+    else:
+      new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
+
     self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] +
                                  (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
     self.wide_from_device_eulers[self.block_idx] = (self.idx*self.wide_from_device_eulers[self.block_idx] +
-                                                    (BLOCK_SIZE - self.idx) * np.array(new_wide_from_device_euler)) / float(BLOCK_SIZE)
+                                                    (BLOCK_SIZE - self.idx) * new_wide_from_device_euler) / float(BLOCK_SIZE)
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0:
       self.block_idx += 1
