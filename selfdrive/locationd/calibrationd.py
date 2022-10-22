@@ -185,7 +185,7 @@ class Calibrator:
     self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] +
                                  (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
     self.wide_from_device_eulers[self.block_idx] = (self.idx*self.wide_from_device_eulers[self.block_idx] +
-                                                    (BLOCK_SIZE - self.idx) * new_wide_from_device_euler) / float(BLOCK_SIZE)
+                                                    (BLOCK_SIZE - self.idx) * np.array(new_wide_from_device_euler)) / float(BLOCK_SIZE)
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0:
       self.block_idx += 1
