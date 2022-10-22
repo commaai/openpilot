@@ -32,16 +32,12 @@ class CarControllerParams:
   ACCEL_MIN = -4.  # m/s^2
 
   def __init__(self, CP):
-    # Volt gas/brake lookups
-    # TODO: These values should be confirmed on non-Volt vehicles.
-    # MAX_GAS should achieve 2 m/s^2 and MAX_BRAKE with regen should achieve -4.0 m/s^2
-    # 3072 is reportedly slow on ICE
-    # TODO: need to find what is 2 m/s/s on Bolt/other cars
-    self.MAX_GAS = 3400  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
-    self.ZERO_GAS = 2048  # Coasting  # TODO: this roughly looks correct. might actually be 2100 tho
+    # Gas/brake lookups
+    self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
     if CP.carFingerprint in CAMERA_ACC_CAR:
+      self.MAX_GAS = 3400  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
       # Camera ACC vehicles have no regen while enabled.
       # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       self.MAX_ACC_REGEN = 1514
@@ -49,6 +45,7 @@ class CarControllerParams:
       max_regen_acceleration = 0.
 
     else:
+      self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
       self.INACTIVE_REGEN = 1404
       # ICE has much less engine braking force compared to regen in EVs,
