@@ -65,7 +65,6 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
 
 void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
-    ++counters[it.key()];
     auto &msgs = can_msgs[it.key()];
     const auto &new_msgs = it.value();
     if (new_msgs.size() == settings.can_msg_log_size || msgs.empty()) {
