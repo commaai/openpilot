@@ -92,7 +92,7 @@ class Calibrator:
     else:
       self.rpy = rpy_init.copy()
 
-    if not np.isfinite(wide_from_device_euler).all():
+    if not np.isfinite(wide_from_device_euler).all() or len(wide_from_device_euler) != 3:
       self.wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT.copy()
     else:
       self.wide_from_device_euler = wide_from_device_euler.copy()
@@ -182,7 +182,7 @@ class Calibrator:
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
-    if len(wide_from_device_euler):
+    if len(wide_from_device_euler) == 3:
       new_wide_from_device_euler = np.array(wide_from_device_euler)
     else:
       new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
