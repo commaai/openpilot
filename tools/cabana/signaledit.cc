@@ -125,7 +125,6 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
 void SignalEdit::saveSignal() {
   Signal s = *sig;
   s.name = form->name->text().toStdString();
-  // TODO: Check if the size is valid
   s.size = form->size->text().toInt();
   s.offset = form->offset->text().toDouble();
   s.factor = form->factor->text().toDouble();
