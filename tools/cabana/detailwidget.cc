@@ -198,7 +198,8 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
   }
 
   auto [start, end] = getSignalRange(&new_sig);
-  if (start < 0 || end >= msg->size) {
+  qWarning() << start << end;
+  if (start < 0 || end >= msg->size * 8) {
     QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
     QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
     return;
