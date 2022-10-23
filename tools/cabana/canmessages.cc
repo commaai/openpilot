@@ -71,8 +71,8 @@ void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
       msgs = std::move(new_msgs);
     } else {
       msgs.insert(msgs.begin(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
-      while (msgs.size() >= settings.can_msg_log_size) {
-        msgs.pop_back();
+      if (msgs.size() > settings.can_msg_log_size) {
+        msgs.resize(settings.can_msg_log_size);
       }
     }
   }
