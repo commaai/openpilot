@@ -191,14 +191,13 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
   if (new_sig.name != sig->name) {
     auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return s.name == new_sig.name; });
     if (it != msg->sigs.end()) {
-      QString warning_str = tr("There is already a signal with the same name in this Msg '%1'").arg(new_sig.name.c_str());
+      QString warning_str = tr("There is already a signal with the same name '%1'").arg(new_sig.name.c_str());
       QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
       return;
     }
   }
 
   auto [start, end] = getSignalRange(&new_sig);
-  qWarning() << start << end;
   if (start < 0 || end >= msg->size * 8) {
     QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
     QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
