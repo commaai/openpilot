@@ -14,9 +14,6 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
 }
 
 MainWindow::MainWindow() : QWidget() {
-  main_win = this;
-  qInstallMessageHandler(qLogMessageHandler);
-
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, 11, 11, 5);
   main_layout->setSpacing(0);
@@ -88,6 +85,9 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
   QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+
+  main_win = this;
+  qInstallMessageHandler(qLogMessageHandler);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {

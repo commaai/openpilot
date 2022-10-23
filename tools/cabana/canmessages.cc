@@ -54,9 +54,9 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
         double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
         if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
           ret.push_back({(evt->mono_time / (double)1e9) - can->routeStartTime(), val});
+          if (ret.size() >= max_count)
+            return ret;
         }
-        if (ret.size() >= max_count)
-          return ret;
       }
     }
   }

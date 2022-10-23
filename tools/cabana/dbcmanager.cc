@@ -121,3 +121,21 @@ double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   double value = val * sig.factor + sig.offset;
   return value;
 }
+
+void updateSigSizeParamsFromRange(Signal &s, int from, int to) {
+  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);
+  s.size = to - from + 1;
+  if (s.is_little_endian) {
+    s.lsb = s.start_bit;
+    s.msb = s.start_bit + s.size - 1;
+  } else {
+    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
+    s.msb = s.start_bit;
+  }
+}
+
+std::pair<int, int> getSignalRange(const Signal *s) {
+  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
+  int to = from + s->size - 1;
+  return {from, to};
+}

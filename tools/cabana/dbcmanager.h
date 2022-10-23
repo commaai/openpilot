@@ -47,5 +47,7 @@ private:
 double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
+void updateSigSizeParamsFromRange(Signal &s, int from, int to);
+std::pair<int, int> getSignalRange(const Signal *s);
 
 DBCManager *dbc();
