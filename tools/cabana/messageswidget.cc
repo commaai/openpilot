@@ -2,13 +2,13 @@
 
 #include <QCompleter>
 #include <QDialogButtonBox>
+#include <QFile>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <QFile>
 
 #include "tools/cabana/dbcmanager.h"
 
