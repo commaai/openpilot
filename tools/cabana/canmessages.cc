@@ -5,15 +5,11 @@
 
 #include "tools/cabana/dbcmanager.h"
 
-Q_DECLARE_METATYPE(std::vector<CanData>);
-
-Settings settings;
 CANMessages *can = nullptr;
 
 CANMessages::CANMessages(QObject *parent) : QObject(parent) {
   can = this;
 
-  qRegisterMetaType<std::vector<CanData>>();
   QObject::connect(this, &CANMessages::received, this, &CANMessages::process, Qt::QueuedConnection);
   QObject::connect(&settings, &Settings::changed, this, &CANMessages::settingChanged);
 }
@@ -69,7 +65,6 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
 
 void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
-    ++counters[it.key()];
     auto &msgs = can_msgs[it.key()];
     const auto &new_msgs = it.value();
     if (new_msgs.size() == settings.can_msg_log_size || msgs.empty()) {
@@ -101,6 +96,12 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
+    if (counters_begin_sec > current_sec) {
+      // clear counters
+      counters.clear();
+      counters_begin_sec = current_sec;
+    }
+
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
@@ -112,6 +113,12 @@ bool CANMessages::eventFilter(const Event *event) {
       data.ts = current_sec;
       data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
+
+      auto &count = counters[id];
+      data.count = ++count;
+      if (double delta = (current_sec - counters_begin_sec); delta > 0) {
+        data.freq = count / delta;
+      }
     }
 
     if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / settings.fps) {
@@ -158,27 +165,4 @@ void CANMessages::resetRange() {
 
 void CANMessages::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
-}
-
-// Settings
-
-Settings::Settings() {
-  load();
-}
-
-void Settings::save() {
-  QSettings s("settings", QSettings::IniFormat);
-  s.setValue("fps", fps);
-  s.setValue("log_size", can_msg_log_size);
-  s.setValue("cached_segment", cached_segment_limit);
-  s.setValue("chart_height", chart_height);
-  emit changed();
-}
-
-void Settings::load() {
-  QSettings s("settings", QSettings::IniFormat);
-  fps = s.value("fps", 10).toInt();
-  can_msg_log_size = s.value("log_size", 100).toInt();
-  cached_segment_limit = s.value("cached_segment", 3).toInt();
-  chart_height = s.value("chart_height", 200).toInt();
 }
