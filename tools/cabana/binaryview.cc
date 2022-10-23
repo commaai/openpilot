@@ -86,7 +86,8 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
     if (auto sig = getResizingSignal()) {
       auto [sig_from, sig_to] = getSignalRange(sig);
       if (from >= sig_from && to <= sig_to) {  // reduce size
-        emit(from == sig_from ? resizeSignal(sig, to, sig_to) : resizeSignal(sig, sig_from, from));
+        emit(from == sig_from ? resizeSignal(sig, std::min(to + 1, sig_to), sig_to)
+                              : resizeSignal(sig, sig_from, std::max(from - 1, sig_from)));
       } else {  // increase size
         emit resizeSignal(sig, std::min(from, sig_from), std::max(to, sig_to));
       }
