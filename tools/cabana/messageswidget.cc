@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <QFile>
 
 #include "tools/cabana/dbcmanager.h"
 
