@@ -70,9 +70,10 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
   if (auto index = indexAt(event->pos()); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
-    highlight(item->sig);
-    item->sig ? QToolTip::showText(event->globalPos(), item->sig->name.c_str(), this, rect())
-              : QToolTip::hideText();
+    const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
+    highlight(sig);
+    sig ? QToolTip::showText(event->globalPos(), sig->name.c_str(), this, rect())
+        : QToolTip::hideText();
   }
   QTableView::mouseMoveEvent(event);
 }
@@ -119,11 +120,13 @@ void BinaryView::updateState() {
 const Signal *BinaryView::getResizingSignal() const {
   if (anchor_index.isValid()) {
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    if (item && item->sig) {
+    if (item && item->sigs.size() > 0) {
       int archor_pos = anchor_index.row() * 8 + anchor_index.column();
-      auto [sig_from, sig_to] = getSignalRange(item->sig);
-      if (archor_pos == sig_from || archor_pos == sig_to)
-        return item->sig;
+      for (auto s : item->sigs) {
+        auto [sig_from, sig_to] = getSignalRange(s);
+        if (archor_pos == sig_from || archor_pos == sig_to)
+          return s;
+      }
     }
   }
   return nullptr;
@@ -157,7 +160,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
           sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         }
         items[idx].bg_color = getColor(i);
-        items[idx].sig = &dbc_msg->sigs[i];
+        items[idx].sigs.push_back(&dbc_msg->sigs[i]);
       }
     }
   }
@@ -235,7 +238,8 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
-  bool hover = item->sig && bin_view->hoveredSignal() == item->sig;
+  bool hover = std::find_if(item->sigs.begin(), item->sigs.end(), [=](auto s) { return s == bin_view->hoveredSignal(); }) !=
+               item->sigs.end();
   // background
   QColor bg_color = hover ? hoverColor(item->bg_color) : item->bg_color;
   if (option.state & QStyle::State_Selected) {
