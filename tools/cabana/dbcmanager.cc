@@ -122,7 +122,7 @@ double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   return value;
 }
 
-void updateSignalSizeParameters(Signal &s, int from, int to) {
+void updateSigSizeParamsFromRange(Signal &s, int from, int to) {
   s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);
   s.size = to - from + 1;
   if (s.is_little_endian) {
@@ -134,3 +134,8 @@ void updateSignalSizeParameters(Signal &s, int from, int to) {
   }
 }
 
+std::pair<int, int> getSignalRange(const Signal *s) {
+  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
+  int to = from + s->size - 1;
+  return {from, to};
+}

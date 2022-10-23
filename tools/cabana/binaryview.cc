@@ -13,12 +13,6 @@
 
 const int CELL_HEIGHT = 30;
 
-static std::pair<int, int> getSignalRange(const Signal *s) {
-  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
-  int to = from + s->size - 1;
-  return {from, to};
-}
-
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
   setModel(model);

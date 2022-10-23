@@ -48,7 +48,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   warning_widget = new QWidget(this);
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
   QLabel *warning_icon = new QLabel(this);
-  warning_icon->setPixmap(style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap({16, 16}));
+  warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning));
   warning_hlayout->addWidget(warning_icon);
   warning_label = new QLabel(this);
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
@@ -174,7 +174,7 @@ void DetailWidget::addSignal(int from, int to) {
       if (it == msg->sigs.end()) break;
     }
     sig.is_little_endian = false,
-    updateSignalSizeParameters(sig, from, to);
+    updateSigSizeParamsFromRange(sig, from, to);
     dbc()->addSignal(msg_id, sig);
     dbcMsgChanged(msg->sigs.size() - 1);
   }
@@ -182,19 +182,26 @@ void DetailWidget::addSignal(int from, int to) {
 
 void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
   Signal s = *sig;
-  updateSignalSizeParameters(s, from, to);
+  updateSigSizeParamsFromRange(s, from, to);
   saveSignal(sig, s);
 }
 
 void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
+  auto msg = dbc()->msg(msg_id);
   if (new_sig.name != sig->name) {
-    auto msg = dbc()->msg(msg_id);
     auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return s.name == new_sig.name; });
     if (it != msg->sigs.end()) {
       QString warning_str = tr("There is already a signal with the same name in this Msg '%1'").arg(new_sig.name.c_str());
       QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
       return;
     }
+  }
+
+  auto [start, end] = getSignalRange(&new_sig);
+  if (start < 0 || end >= msg->size) {
+    QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
+    QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
+    return;
   }
 
   dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
