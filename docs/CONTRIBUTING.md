@@ -15,6 +15,29 @@ Most open source development activity is coordinated through our [GitHub Discuss
 Try out some of these first pull requests ideas to dive into the codebase:
 
 * Increase our [mypy](http://mypy-lang.org/) coverage
+   * From Python...
+     ```
+     def fib(n):
+      a, b = 0, 1
+      while a < n:
+          yield a
+          a, b = b, a+b
+
+     ```
+   * ...to statically typed Python (What we want)
+     ```
+     def fib(n: int) -> Iterator[int]:
+      a, b = 0, 1
+      while a < n:
+          yield a
+          a, b = b, a+b
+
+     ```
+     
+    
+     **Examples of the above code was retrieved from [mypy](http://mypy-lang.org/)
+     
+   
 * Write some documentation
 * Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
