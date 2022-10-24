@@ -63,22 +63,13 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
   return ret;
 }
 
-void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
+void CANMessages::process(QHash<QString, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
-    auto &msgs = can_msgs[it.key()];
-    const auto &new_msgs = it.value();
-    if (new_msgs.size() == settings.can_msg_log_size || msgs.empty()) {
-      msgs = std::move(new_msgs);
-    } else {
-      msgs.insert(msgs.begin(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
-      if (msgs.size() > settings.can_msg_log_size) {
-        msgs.resize(settings.can_msg_log_size);
-      }
-    }
+    can_msgs[it.key()] = it.value();
   }
   delete messages;
 
-  if (current_sec < begin_sec || current_sec > end_sec) {
+  if (currentSec() < begin_sec || currentSec() > end_sec) {
     // loop replay in selected range.
     seekTo(begin_sec);
   } else {
@@ -87,17 +78,16 @@ void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
 }
 
 bool CANMessages::eventFilter(const Event *event) {
+  static std::unique_ptr<QHash<QString, CanData>> new_msgs;
   static double prev_update_sec = 0;
-  // drop packets when the GUI thread is calling seekTo. to make sure the current_sec is accurate.
-  if (!seeking && event->which == cereal::Event::Which::CAN) {
-    if (!received_msgs) {
-      received_msgs.reset(new QHash<QString, std::deque<CanData>>);
-      received_msgs->reserve(1000);
+  if (event->which == cereal::Event::Which::CAN) {
+    if (!new_msgs) {
+      new_msgs.reset(new QHash<QString, CanData>);
+      new_msgs->reserve(1000);
     }
 
-    current_sec = (event->mono_time - replay->routeStartTime()) / (double)1e9;
-    if (counters_begin_sec > current_sec) {
-      // clear counters
+    double current_sec = replay->currentSeconds();
+    if (counters_begin_sec == 0) {
       counters.clear();
       counters_begin_sec = current_sec;
     }
@@ -105,8 +95,10 @@ bool CANMessages::eventFilter(const Event *event) {
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
-      auto &list = (*received_msgs)[id];
-      while (list.size() >= settings.can_msg_log_size) {
+
+      std::lock_guard lk(lock);
+      auto &list = received_msgs[id];
+      while (list.size() > settings.can_msg_log_size) {
         list.pop_back();
       }
       CanData &data = list.emplace_front();
@@ -119,21 +111,26 @@ bool CANMessages::eventFilter(const Event *event) {
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
         data.freq = count / delta;
       }
+      (*new_msgs)[id] = data;
     }
 
     if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / settings.fps) {
       prev_update_sec = current_sec;
       // use pointer to avoid data copy in queued connection.
-      emit received(received_msgs.release());
+      emit received(new_msgs.release());
     }
   }
   return true;
 }
 
+const std::deque<CanData> CANMessages::messages(const QString &id) {
+  std::lock_guard lk(lock);
+  return received_msgs[id];
+}
+
 void CANMessages::seekTo(double ts) {
-  seeking = true;
   replay->seekTo(ts, false);
-  seeking = false;
+  counters_begin_sec = 0;
 }
 
 void CANMessages::setRange(double min, double max) {
@@ -141,8 +138,15 @@ void CANMessages::setRange(double min, double max) {
     begin_sec = min;
     end_sec = max;
     is_zoomed = begin_sec != event_begin_sec || end_sec != event_end_sec;
-    emit rangeChanged(min, max);
+    auto [begin, end] = range();
+    emit rangeChanged(begin, end);
   }
+}
+
+std::pair<double, double> CANMessages::range() const {
+  double min = begin_sec;
+  double max = std::min(min + settings.max_chart_x_range, end_sec);
+  return {min, max};
 }
 
 void CANMessages::segmentsMerged() {

@@ -17,6 +17,7 @@ void Settings::save() {
   s.setValue("log_size", can_msg_log_size);
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
+  s.setValue("max_chart_x_range", max_chart_x_range);
   emit changed();
 }
 
@@ -26,6 +27,7 @@ void Settings::load() {
   can_msg_log_size = s.value("log_size", 100).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
+  max_chart_x_range = s.value("max_chart_x_range", 3 * 60).toInt();
 }
 
 // SettingsDlg
@@ -45,19 +47,25 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   log_size->setRange(50, 500);
   log_size->setSingleStep(10);
   log_size->setValue(settings.can_msg_log_size);
-  form_layout->addRow(tr("Log size"), log_size);
+  form_layout->addRow(tr("Signal history log size"), log_size);
 
   cached_segment = new QSpinBox(this);
   cached_segment->setRange(3, 60);
   cached_segment->setSingleStep(1);
   cached_segment->setValue(settings.cached_segment_limit);
-  form_layout->addRow(tr("Cached segments limit"), cached_segment);
+  form_layout->addRow(tr("Cached segments limit(minute)"), cached_segment);
+
+  max_chart_x_range = new QSpinBox(this);
+  max_chart_x_range->setRange(1, 60);
+  max_chart_x_range->setSingleStep(1);
+  max_chart_x_range->setValue(settings.max_chart_x_range / 60);
+  form_layout->addRow(tr("Chart's max X-axis range(minute)"), max_chart_x_range);
 
   chart_height = new QSpinBox(this);
   chart_height->setRange(100, 500);
   chart_height->setSingleStep(10);
   chart_height->setValue(settings.chart_height);
-  form_layout->addRow(tr("Chart height"), chart_height);
+  form_layout->addRow(tr("Chart's height"), chart_height);
 
   main_layout->addLayout(form_layout);
 
@@ -74,6 +82,7 @@ void SettingsDlg::save() {
   settings.can_msg_log_size = log_size->value();
   settings.cached_segment_limit = cached_segment->value();
   settings.chart_height = chart_height->value();
+  settings.max_chart_x_range = max_chart_x_range->value() * 60;
   settings.save();
   accept();
 }

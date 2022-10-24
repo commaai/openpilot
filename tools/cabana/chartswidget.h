@@ -21,6 +21,7 @@ class ChartView : public QChartView {
 public:
   ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
   void updateSeries();
+  void setRange(double min, double max);
 
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
@@ -29,7 +30,6 @@ private:
   void leaveEvent(QEvent *event) override;
   void adjustChartMargins();
 
-  void rangeChanged(qreal min, qreal max);
   void updateAxisY();
   void updateState();
 
@@ -47,7 +47,6 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
   void updateTitle();
-  void setHeight(int height);
 
 signals:
   void remove(const QString &msg_id, const Signal *sig);
@@ -55,7 +54,8 @@ signals:
 public:
   QString id;
   const Signal *signal;
-  QLabel *title;
+  QLabel *msg_name_label;
+  QLabel *sig_name_label;
   ChartView *chart_view = nullptr;
 };
 
