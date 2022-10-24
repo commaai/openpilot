@@ -81,3 +81,11 @@ All PRs and commits are automatically checked by GitHub Actions. Check out `.git
 ### Code Style and Linting
 
 Code is automatically checked for style by GitHub Actions as part of the automated tests. You can also run these tests yourself by running `pre-commit run --all`.
+
+## Important Documentation
+
+* Take a look at some of the important [documentation](https://docs.comma.ai/index.html) for this project. There are valuable information that cover a wide range of subject that can be benifitial once you become more familiar with the openpilot architecture. 
+  * Read through the Python API
+  * Read through the C/C++ API
+  * Read through the Overview section
+
