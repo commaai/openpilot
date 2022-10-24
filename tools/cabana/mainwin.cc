@@ -8,6 +8,11 @@
 
 #include "tools/replay/util.h"
 
+static MainWindow *main_win = nullptr;
+void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  if (main_win) main_win->showStatusMessage(msg);
+}
+
 MainWindow::MainWindow() : QWidget() {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, 11, 11, 5);
@@ -80,6 +85,9 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
   QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+
+  main_win = this;
+  qInstallMessageHandler(qLogMessageHandler);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
@@ -110,6 +118,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  main_win = nullptr;
   if (floating_window)
     floating_window->deleteLater();
   QWidget::closeEvent(event);

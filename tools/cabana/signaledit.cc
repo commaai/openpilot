@@ -3,6 +3,7 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QMessageBox>
 #include <QRadioButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -11,7 +12,7 @@
 
 // SignalForm
 
-SignalForm::SignalForm(const Signal &sig, QWidget *parent) : start_bit(sig.start_bit), QWidget(parent) {
+SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   QFormLayout *form_layout = new QFormLayout(this);
 
   name = new QLineEdit(sig.name.c_str());
@@ -59,30 +60,9 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : start_bit(sig.start
   form_layout->addRow(tr("Value descriptions"), val_desc);
 }
 
-Signal SignalForm::getSignal() {
-  // TODO: Check if the size is valid, and no duplicate name
-  Signal sig = {};
-  sig.start_bit = start_bit;
-  sig.name = name->text().toStdString();
-  sig.size = size->text().toInt();
-  sig.offset = offset->text().toDouble();
-  sig.factor = factor->text().toDouble();
-  sig.is_signed = sign->currentIndex() == 0;
-  sig.is_little_endian = endianness->currentIndex() == 0;
-  if (sig.is_little_endian) {
-    sig.lsb = sig.start_bit;
-    sig.msb = sig.start_bit + sig.size - 1;
-  } else {
-    sig.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(sig.start_bit) + sig.size - 1);
-    sig.msb = sig.start_bit;
-  }
-  return sig;
-}
-
 // SignalEdit
 
-SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent)
-    : sig(&sig), form_idx(index), sig_name(sig.name.c_str()), QWidget(parent) {
+SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent) : msg_id(msg_id), sig(sig), form_idx(index), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -93,7 +73,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   title_layout->addWidget(icon);
   title = new ElidedLabel(this);
   title->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-  title->setText(QString("%1. %2").arg(index + 1).arg(sig_name));
+  title->setText(QString("%1. %2").arg(index + 1).arg(sig->name.c_str()));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(getColor(index)));
   title_layout->addWidget(title, 1);
 
@@ -113,7 +93,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   // signal form
   form_container = new QWidget(this);
   QVBoxLayout *v_layout = new QVBoxLayout(form_container);
-  form = new SignalForm(sig, this);
+  form = new SignalForm(*sig, this);
   v_layout->addWidget(form);
 
   QHBoxLayout *h = new QHBoxLayout();
@@ -133,18 +113,32 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal &sig, QWid
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
-  QObject::connect(remove_btn, &QPushButton::clicked, this, &SignalEdit::remove);
+  QObject::connect(remove_btn, &QPushButton::clicked, [this]() { emit remove(this->sig); });
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
-  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
-    QString new_name = form->getSignal().name.c_str();
-    title->setText(QString("%1. %2").arg(index + 1).arg(new_name));
-    emit save();
-    sig_name = new_name;
-  });
-  QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id, s = &sig]() {
-    SignalFindDlg dlg(msg_id, s, this);
+  QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::saveSignal);
+  QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id]() {
+    SignalFindDlg dlg(msg_id, this->sig, this);
     dlg.exec();
   });
+}
+
+void SignalEdit::saveSignal() {
+  Signal s = *sig;
+  s.name = form->name->text().toStdString();
+  s.size = form->size->text().toInt();
+  s.offset = form->offset->text().toDouble();
+  s.factor = form->factor->text().toDouble();
+  s.is_signed = form->sign->currentIndex() == 0;
+  s.is_little_endian = form->endianness->currentIndex() == 0;
+  if (s.is_little_endian) {
+    s.lsb = s.start_bit;
+    s.msb = s.start_bit + s.size - 1;
+  } else {
+    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
+    s.msb = s.start_bit;
+  }
+  title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
+  emit save(this->sig, s);
 }
 
 void SignalEdit::setFormVisible(bool visible) {
@@ -167,27 +161,7 @@ void SignalEdit::leaveEvent(QEvent *event) {
   QWidget::leaveEvent(event);
 }
 
-// AddSignalDialog
-
-AddSignalDialog::AddSignalDialog(const QString &id, int start_bit, int size, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Add signal to %1").arg(dbc()->msg(id)->name.c_str()));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-  Signal sig = {
-    .name = "untitled",
-    .start_bit = bigEndianBitIndex(start_bit),
-    .is_little_endian = false,
-    .size = size,
-  };
-  form = new SignalForm(sig, this);
-  main_layout->addWidget(form);
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
-  setFixedWidth(parent->width() * 0.9);
-
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-}
+// SignalFindDlg
 
 SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Find signal values"));
