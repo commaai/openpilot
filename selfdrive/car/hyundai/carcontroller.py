@@ -58,7 +58,7 @@ class CarController:
     hud_control = CC.hudControl
 
     # steering torque
-    new_steer = int(round(actuators.steer * self.CP.carControlParams.steerMax))
+    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     if not CC.latActive:
@@ -181,7 +181,7 @@ class CarController:
         can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / self.CP.carControlParams.steerMax
+    new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.accel = accel
 
     self.frame += 1
