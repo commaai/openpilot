@@ -15,39 +15,46 @@
 class SignalForm : public QWidget {
 public:
   SignalForm(const Signal &sig, QWidget *parent);
-  Signal getSignal();
 
   QLineEdit *name, *unit, *comment, *val_desc;
   QSpinBox *size, *offset;
   QDoubleSpinBox *factor, *min_val, *max_val;
   QComboBox *sign, *endianness;
-  int start_bit = 0;
 };
 
 class SignalEdit : public QWidget {
   Q_OBJECT
 
 public:
-  SignalEdit(int index, const QString &msg_id, const Signal &sig, QWidget *parent = nullptr);
+  SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent = nullptr);
   void setFormVisible(bool show);
+  void signalHovered(const Signal *sig);
   inline bool isFormVisible() const { return form_container->isVisible(); }
-  QString sig_name;
-  SignalForm *form;
 
 signals:
+  void highlight(const Signal *sig);
   void showChart();
   void showFormClicked();
-  void remove();
-  void save();
+  void remove(const Signal *sig);
+  void save(const Signal *sig, const Signal &new_sig);
 
 protected:
+  void enterEvent(QEvent *event) override;
+  void leaveEvent(QEvent *event) override;
+  void saveSignal();
+
+  SignalForm *form;
   ElidedLabel *title;
   QWidget *form_container;
   QLabel *icon;
+  int form_idx = 0;
+  QString msg_id;
+  const Signal *sig = nullptr;
 };
 
-class AddSignalDialog : public QDialog {
+class SignalFindDlg : public QDialog {
+  Q_OBJECT
+
 public:
-  AddSignalDialog(const QString &id, int start_bit, int size, QWidget *parent);
-  SignalForm *form;
+  SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent);
 };

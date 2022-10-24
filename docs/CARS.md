@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 208 Supported Cars
+# 209 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -18,8 +18,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Cadillac|Escalade ESV 2016[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
-|Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
-|Chevrolet|Silverado 1500 2020-21|Safety Package II|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
+|Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|Stock|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
+|Chevrolet|Silverado 1500 2020-21|Safety Package II|Stock|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Chevrolet|Volt 2017-18[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
@@ -32,7 +32,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Genesis|G80 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Genesis|G90 2017-18|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |GMC|Acadia 2018[<sup>1</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
-|GMC|Sierra 1500 2020-21|Driver Alert Package II|Stock|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
+|GMC|Sierra 1500 2020-21|Driver Alert Package II|Stock|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Honda|Accord 2018-22|All|openpilot|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Accord Hybrid 2018-22|All|openpilot|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Civic 2016-18|Honda Sensing|openpilot|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
@@ -100,6 +100,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Seltos 2021|Smart Cruise Control (SCC)|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Kia|Sorento 2018|Advanced Smart Cruise Control|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Sorento 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Kia|Sportage Hybrid 2023|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Kia|Stinger 2018-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Telluride 2020|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Lexus|CT Hybrid 2017-18|Lexus Safety System+|Stock[<sup>3</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
