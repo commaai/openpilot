@@ -13,6 +13,14 @@ Most open source development activity is coordinated through our [GitHub Discuss
  * Vist our [development](https://github.com/commaai/openpilot/wiki/Development) wiki page. 
  * Read the [Development](https://github.com/commaai/openpilot/wiki/FAQ#development) and [Discord](https://github.com/commaai/openpilot/wiki/FAQ#discord-help) sections of our FAQ wiki page.
 
+### Why contribute?
+  * Get experience with working with an open source project
+  * We offer [internships](https://comma.ai/jobs#work_at_comma_dot_ai) to applicants who submit good PRs to our GitHub. 
+    * We also offer internships to those who complete our [CalibrationChallenge](https://github.com/commaai/calib_challenge) with under 25% error. 
+  * Can prepare for the growing field of ai. Also prepares you for software engineering workflow. 
+  * Good experience that can be showcase when applying to other jobs. 
+  * We are hiring. Look at our [Open Positions](https://comma.ai/jobs#work_at_comma_dot_ai)
+
 ### First contribution
 Try out some of these first pull requests ideas to dive into the codebase:
 
@@ -41,6 +49,7 @@ Try out some of these first pull requests ideas to dive into the codebase:
      
    
 * Write some documentation
+  * Here are [documentation](https://github.com/commaai/openpilot/issues?q=documentation+label%3Adocs) related issues that are open
 * Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ## Pull Requests
