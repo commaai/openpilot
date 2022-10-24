@@ -340,7 +340,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
     # Pass in scaled down max allowed LKAS torque to safety model
-    ret.safetyConfigs[-1].safetyParam |= int(CarControllerParams(ret).STEER_MAX / 10)
+    ret.safetyConfigs[-1].safetyParam |= int(CarControllerParams(ret).STEER_MAX / 10) << 8
 
     ret.centerToFront = ret.wheelbase * 0.4
 
