@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QList>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
@@ -38,7 +39,7 @@ public:
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "0";
-    const Signal *sig = nullptr;
+    QList<const Signal *> sigs;
   };
 
 private:

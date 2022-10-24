@@ -54,9 +54,9 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
         double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
         if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
           ret.push_back({(evt->mono_time / (double)1e9) - can->routeStartTime(), val});
+          if (ret.size() >= max_count)
+            return ret;
         }
-        if (ret.size() >= max_count)
-          return ret;
       }
     }
   }
@@ -65,15 +65,14 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
 
 void CANMessages::process(QHash<QString, std::deque<CanData>> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
-    ++counters[it.key()];
     auto &msgs = can_msgs[it.key()];
     const auto &new_msgs = it.value();
     if (new_msgs.size() == settings.can_msg_log_size || msgs.empty()) {
       msgs = std::move(new_msgs);
     } else {
       msgs.insert(msgs.begin(), std::make_move_iterator(new_msgs.begin()), std::make_move_iterator(new_msgs.end()));
-      while (msgs.size() >= settings.can_msg_log_size) {
-        msgs.pop_back();
+      if (msgs.size() > settings.can_msg_log_size) {
+        msgs.resize(settings.can_msg_log_size);
       }
     }
   }

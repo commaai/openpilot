@@ -1,5 +1,6 @@
 from selfdrive.car import make_can_msg
 
+
 def create_buttons(packer, bus, idx, button):
   values = {
     "ACCButtons": button,
@@ -7,14 +8,15 @@ def create_buttons(packer, bus, idx, button):
   }
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
+
 def create_pscm_status(packer, bus, pscm_status):
   checksum_mod = int(1 - pscm_status["HandsOffSWlDetectionStatus"]) << 5
   pscm_status["HandsOffSWlDetectionStatus"] = 1
   pscm_status["PSCMStatusChecksum"] += checksum_mod
   return packer.make_can_msg("PSCMStatus", bus, pscm_status)
 
-def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
+def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
   values = {
     "LKASteeringCmdActive": lkas_active,
     "LKASteeringCmd": apply_steer,
@@ -24,15 +26,17 @@ def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
   return packer.make_can_msg("ASCMLKASteeringCmd", bus, values)
 
+
 def create_adas_keepalive(bus):
   dat = b"\x00\x00\x00\x00\x00\x00\x00"
   return [make_can_msg(0x409, dat, bus), make_can_msg(0x40a, dat, bus)]
 
-def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_stop):
+
+def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
   values = {
-    "GasRegenCmdActive": acc_engaged,
+    "GasRegenCmdActive": enabled,
     "RollingCounter": idx,
-    "GasRegenCmdActiveInv": 1 - acc_engaged,
+    "GasRegenCmdActiveInv": 1 - enabled,
     "GasRegenCmd": throttle,
     "GasRegenFullStopActive": at_full_stop,
     "GasRegenAlwaysOne": 1,
@@ -46,6 +50,7 @@ def create_gas_regen_command(packer, bus, throttle, idx, acc_engaged, at_full_st
                                ((0x100 - dat[3] - idx) & 0xff)
 
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
+
 
 def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_full_stop):
   mode = 0x1
@@ -63,43 +68,47 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, near_stop, at_f
   checksum = (0x10000 - (mode << 12) - brake - idx) & 0xffff
 
   values = {
-    "RollingCounter" : idx,
-    "FrictionBrakeMode" : mode,
+    "RollingCounter": idx,
+    "FrictionBrakeMode": mode,
     "FrictionBrakeChecksum": checksum,
-    "FrictionBrakeCmd" : -apply_brake
+    "FrictionBrakeCmd": -apply_brake
   }
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
 
-def create_acc_dashboard_command(packer, bus, acc_engaged, target_speed_kph, lead_car_in_sight, fcw):
+
+def create_acc_dashboard_command(packer, bus, enabled, target_speed_kph, lead_car_in_sight, fcw):
   target_speed = min(target_speed_kph, 255)
 
   values = {
-    "ACCAlwaysOne" : 1,
-    "ACCResumeButton" : 0,
-    "ACCSpeedSetpoint" : target_speed,
-    "ACCGapLevel" : 3 * acc_engaged,  # 3 "far", 0 "inactive"
-    "ACCCmdActive" : acc_engaged,
-    "ACCAlwaysOne2" : 1,
-    "ACCLeadCar" : lead_car_in_sight,
+    "ACCAlwaysOne": 1,
+    "ACCResumeButton": 0,
+    "ACCSpeedSetpoint": target_speed,
+    "ACCGapLevel": 3 * enabled,  # 3 "far", 0 "inactive"
+    "ACCCmdActive": enabled,
+    "ACCAlwaysOne2": 1,
+    "ACCLeadCar": lead_car_in_sight,
     "FCWAlert": 0x3 if fcw else 0
   }
 
   return packer.make_can_msg("ASCMActiveCruiseControlStatus", bus, values)
 
+
 def create_adas_time_status(bus, tt, idx):
   dat = [(tt >> 20) & 0xff, (tt >> 12) & 0xff, (tt >> 4) & 0xff,
-    ((tt & 0xf) << 4) + (idx << 2)]
+         ((tt & 0xf) << 4) + (idx << 2)]
   chksum = 0x1000 - dat[0] - dat[1] - dat[2] - dat[3]
   chksum = chksum & 0xfff
   dat += [0x40 + (chksum >> 8), chksum & 0xff, 0x12]
   return make_can_msg(0xa1, bytes(dat), bus)
+
 
 def create_adas_steering_status(bus, idx):
   dat = [idx << 6, 0xf0, 0x20, 0, 0, 0]
   chksum = 0x60 + sum(dat)
   dat += [chksum >> 8, chksum & 0xff]
   return make_can_msg(0x306, bytes(dat), bus)
+
 
 def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   spd = int(speed_ms * 16) & 0xfff
@@ -114,12 +123,14 @@ def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   dat += [(idx << 5) + (far_range_mode << 4) + (near_range_mode << 3) + (chksum >> 8), chksum & 0xff]
   return make_can_msg(0x308, bytes(dat), bus)
 
+
 def create_adas_headlights_status(packer, bus):
   values = {
     "Always42": 0x42,
     "Always4": 0x4,
   }
   return packer.make_can_msg("ASCMHeadlight", bus, values)
+
 
 def create_lka_icon_command(bus, active, critical, steer):
   if active and steer == 1:
