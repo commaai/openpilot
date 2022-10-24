@@ -188,6 +188,7 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   QLineSeries *series = new QLineSeries();
   series->setUseOpenGL(true);
   QChart *chart = new QChart();
+  chart->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
   chart->setTitle(sig->name.c_str());
   chart->addSeries(series);
   chart->createDefaultAxes();
