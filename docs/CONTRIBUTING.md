@@ -51,6 +51,7 @@ Try out some of these first pull requests ideas to dive into the codebase:
 * Write some documentation
   * Here are [documentation](https://github.com/commaai/openpilot/issues?q=documentation+label%3Adocs) related issues that are open
 * Tackle an open [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+  * See if there are any issues you can tackle. Sort by label and select 'good first issue'. 
 
 ## Pull Requests
 
