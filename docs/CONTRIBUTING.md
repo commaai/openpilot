@@ -10,6 +10,8 @@ Most open source development activity is coordinated through our [GitHub Discuss
  * Join our [Discord](https://discord.comma.ai)
  * Make sure you have a [GitHub account](https://github.com/signup/free)
  * Fork [our repositories](https://github.com/commaai) on GitHub
+ * Vist our [development](https://github.com/commaai/openpilot/wiki/Development) wiki page. 
+ * Read the [Development](https://github.com/commaai/openpilot/wiki/FAQ#development) and [Discord](https://github.com/commaai/openpilot/wiki/FAQ#discord-help) sections of our FAQ wiki page.
 
 ### First contribution
 Try out some of these first pull requests ideas to dive into the codebase:
