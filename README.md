@@ -10,6 +10,7 @@ Table of Contents
 * [User Data and comma Account](#user-data-and-comma-account)
 * [Safety and Testing](#safety-and-testing)
 * [Directory Structure](#directory-structure)
+* [FAQ](#faq)
 * [Licensing](#licensing)
 
 ---
@@ -126,6 +127,13 @@ Directory Structure
         ├── sensord         # IMU interface code
         ├── test            # Unit tests, system tests, and a car simulator
         └── ui              # The UI
+
+FAQ
+------
+
+Find answers to the most commonly asked question on our [FAQ](https://github.com/commaai/openpilot/wiki/FAQ) page. 
+
+For openpilot product related common asked questions, visit our [FAQ](https://commasupport.zendesk.com/hc/en-us/sections/360005802534-openpilot) page on our main website. 
 
 Licensing
 ------
