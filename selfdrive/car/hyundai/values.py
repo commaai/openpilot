@@ -791,6 +791,7 @@ FW_VERSIONS = {
   },
   CAR.PALISADE: {
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LX2_ SCC F-CUP      1.00 1.04 99110-S8100         ',
       b'\xf1\x00LX2_ SCC F-CUP      1.00 1.05 99110-S8100         ',
       b'\xf1\x00LX2 SCC FHCUP      1.00 1.04 99110-S8100         ',
       b'\xf1\x00LX2_ SCC FHCU-      1.00 1.05 99110-S8100         ',
@@ -804,6 +805,7 @@ FW_VERSIONS = {
       b'\xf1\x00LX ESC \x01 1031\t\x10 58910-S8360',
       b'\xf1\x00LX ESC \x0b 101\x19\x03\x17 58910-S8330',
       b'\xf1\x00LX ESC \x0b 102\x19\x05\x07 58910-S8330',
+      b'\xf1\x00LX ESC \x0b 103\x19\t\t 58910-S8350',
       b'\xf1\x00LX ESC \x0b 103\x19\t\x07 58910-S8330',
       b'\xf1\x00LX ESC \x0b 103\x19\t\x10 58910-S8360',
       b'\xf1\x00LX ESC \x0b 104 \x10\x16 58910-S8360',
@@ -818,6 +820,7 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00LX2 MDPS C 1,00 1,03 56310-S8020 4LXDC103',
+      b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8000 4LXDC103',
       b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',
       b'\xf1\x00LX2 MDPS C 1.00 1.04 56310-S8020 4LXDC104',
       b'\xf1\x00ON  MDPS C 1.00 1.00 56340-S9000 8B13',
@@ -834,6 +837,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00bcsh8p54  U872\x00\x00\x00\x00\x00\x00TON4G38NB1\x96z28',
+      b'\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX4G38NB3X\xa8\xc08',
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00TON4G38NB2[v\\\xb6',
       b'\xf1\x87LBLUFN591307KF25vgvw\x97wwwy\x99\xa7\x99\x99\xaa\xa9\x9af\x88\x96h\x95o\xf7\xff\x99f/\xff\xe4c\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX2G38NB2\xd7\xc1/\xd1',
       b'\xf1\x87LBLUFN650868KF36\xa9\x98\x89\x88\xa8\x88\x88\x88h\x99\xa6\x89fw\x86gw\x88\x97x\xaa\x7f\xf6\xff\xbb\xbb\x8f\xff+\x82\xf1\x81U891\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U891\x00\x00\x00\x00\x00\x00SLX2G38NB3\xd1\xc3\xf8\xa8',
