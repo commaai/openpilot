@@ -5,7 +5,7 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fw_versions import FW_QUERY_CONFIGS
-from selfdrive.car.hyundai.values import CANFD_CAR, FW_VERSIONS, FINGERPRINTS
+from selfdrive.car.hyundai.values import CarControllerParams, CANFD_CAR, FW_VERSIONS, FINGERPRINTS
 
 Ecu = car.CarParams.Ecu
 
@@ -29,12 +29,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
 class TestHyundaiInterface(unittest.TestCase):
   @parameterized.expand([(car,) for car in ALL_HYUNDAI_CARS])
-  def test_car_control_params(self, car_model):
-    CP = interfaces[car_model][0].get_params(car_model)
-    self.assertGreater(CP.carControlParams.steerMax, 0, f"{car_model}: steerMax not set")
+  def test_car_controller_params(self, car_model):
+    _CP = interfaces[car_model][0].get_params(car_model)
+    ccp = CarControllerParams(_CP)
 
-    divisible = int(CP.carControlParams.steerMax / 10) * 10
-    self.assertEqual(CP.carControlParams.steerMax, divisible, f"{car_model}: steerMax not divisible by 10")
+    divisible = int(ccp.STEER_MAX / 10) * 10
+    self.assertEqual(ccp.STEER_MAX, divisible, f"{car_model}: steerMax not divisible by 10")
 
 
 if __name__ == "__main__":

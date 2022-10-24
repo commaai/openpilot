@@ -310,7 +310,6 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = True
     ret.vEgoStarting = 0.1
     ret.startAccel = 2.0
-    ret.carControlParams.steerMax = CarControllerParams(ret).STEER_MAX
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:
@@ -340,8 +339,8 @@ class CarInterface(CarInterfaceBase):
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
-    # Pass in max allowed LKAS torque to safety model
-    ret.safetyConfigs[-1].safetyParam |= int(ret.carControlParams.steerMax / 10)
+    # Pass in scaled down max allowed LKAS torque to safety model
+    ret.safetyConfigs[-1].safetyParam |= int(CarControllerParams(ret).STEER_MAX / 10)
 
     ret.centerToFront = ret.wheelbase * 0.4
 
