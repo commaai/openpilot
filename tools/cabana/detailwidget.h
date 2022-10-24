@@ -32,7 +32,7 @@ class DetailWidget : public QWidget {
 public:
   DetailWidget(QWidget *parent);
   void setMessage(const QString &message_id);
-  void dbcMsgChanged();
+  void dbcMsgChanged(int show_form_idx = -1);
 
 signals:
   void showChart(const QString &msg_id, const Signal *sig);
@@ -41,8 +41,8 @@ signals:
 private:
   void addSignal(int start_bit, int to);
   void resizeSignal(const Signal *sig, int from, int to);
-  void saveSignal();
-  void removeSignal();
+  void saveSignal(const Signal *sig, const Signal &new_sig);
+  void removeSignal(const Signal *sig);
   void editMsg();
   void showForm();
   void updateState();

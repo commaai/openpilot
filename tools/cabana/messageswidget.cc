@@ -2,6 +2,7 @@
 
 #include <QCompleter>
 #include <QDialogButtonBox>
+#include <QFile>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
