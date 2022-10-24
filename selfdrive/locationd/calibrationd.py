@@ -85,17 +85,17 @@ class Calibrator:
 
   def reset(self, rpy_init: np.ndarray = RPY_INIT,
                   valid_blocks: int = 0,
-                  wide_from_device_euler: np.ndarray = WIDE_FROM_DEVICE_EULER_INIT,
+                  wide_from_device_euler_init: np.ndarray = WIDE_FROM_DEVICE_EULER_INIT,
                   smooth_from: Optional[np.ndarray] = None) -> None:
     if not np.isfinite(rpy_init).all():
       self.rpy = RPY_INIT.copy()
     else:
       self.rpy = rpy_init.copy()
 
-    if not np.isfinite(wide_from_device_euler).all() or len(wide_from_device_euler) != 3:
+    if not np.isfinite(wide_from_device_euler_init).all() or len(wide_from_device_euler_init) != 3:
       self.wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT.copy()
     else:
-      self.wide_from_device_euler = wide_from_device_euler.copy()
+      self.wide_from_device_euler = wide_from_device_euler_init.copy()
 
     if not np.isfinite(valid_blocks) or valid_blocks < 0:
       self.valid_blocks = 0
@@ -103,7 +103,7 @@ class Calibrator:
       self.valid_blocks = valid_blocks
 
     self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
-    self.wide_from_device_eulers = np.tile(wide_from_device_euler, (INPUTS_WANTED, 1))
+    self.wide_from_device_eulers = np.tile(self.wide_from_device_euler, (INPUTS_WANTED, 1))
 
     self.idx = 0
     self.block_idx = 0
@@ -125,10 +125,9 @@ class Calibrator:
   def update_status(self) -> None:
     valid_idxs = self.get_valid_idxs()
     if valid_idxs:
+      self.wide_from_device_euler = np.mean(self.wide_from_device_eulers[valid_idxs], axis=0)
       rpys = self.rpys[valid_idxs]
       self.rpy = np.mean(rpys, axis=0)
-      wide_from_device_eulers = self.wide_from_device_eulers[valid_idxs]
-      self.wide_from_device_euler = np.mean(wide_from_device_eulers, axis=0)
       max_rpy_calib = np.array(np.max(rpys, axis=0))
       min_rpy_calib = np.array(np.min(rpys, axis=0))
       self.calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
