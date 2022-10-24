@@ -85,7 +85,7 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     double ts = millis_since_boot();
-    if ((ts - prev_update_ts) > (1.0 / settings.fps)) {
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(received_msgs.release());
