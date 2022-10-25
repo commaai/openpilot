@@ -29,9 +29,6 @@ public:
   ~CANMessages();
   bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
   void seekTo(double ts);
-  void resetRange();
-  void setRange(double min, double max);
-  std::pair<double, double> range() const;
   QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
@@ -40,7 +37,6 @@ public:
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
-  inline bool isZoomed() const { return is_zoomed; }
   const std::deque<CanData> messages(const QString &id);
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
@@ -52,7 +48,6 @@ public:
 
 signals:
   void eventsMerged();
-  void rangeChanged(double min, double max);
   void updated();
   void received(QHash<QString, CanData> *);
 
@@ -61,14 +56,8 @@ public:
 
 protected:
   void process(QHash<QString, CanData> *);
-  void segmentsMerged();
   void settingChanged();
 
-  double begin_sec = 0;
-  double end_sec = 0;
-  double event_begin_sec = 0;
-  double event_end_sec = 0;
-  bool is_zoomed = false;
   QString routeName;
   Replay *replay = nullptr;
 

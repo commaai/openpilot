@@ -22,6 +22,11 @@ public:
   ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
   void updateSeries();
   void setRange(double min, double max);
+  void updateLineMarker(double current_sec);
+
+signals:
+  void zoom(double min, double max);
+  void resetZoom();
 
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
@@ -31,7 +36,6 @@ private:
   void adjustChartMargins();
 
   void updateAxisY();
-  void updateState();
 
   QGraphicsLineItem *track_line;
   QGraphicsSimpleTextItem *value_text;
@@ -69,9 +73,13 @@ public:
 
 signals:
   void dock(bool floating);
+  void rangeChanged(double min, double max, bool is_zommed);
 
 private:
+  void eventsMerged();
   void updateState();
+  void setRange(double min, double max);
+  void resetZoom();
   void updateTitleBar();
   void removeAll(const Signal *sig = nullptr);
   bool eventFilter(QObject *obj, QEvent *event);
@@ -85,4 +93,8 @@ private:
   QPushButton *remove_all_btn;
   QVBoxLayout *charts_layout;
   QList<ChartWidget *> charts;
+
+  bool is_zoomed = false;
+  std::pair<double, double> event_range;
+  std::pair<double, double> display_range;
 };

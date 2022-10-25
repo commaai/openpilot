@@ -28,7 +28,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   replay = new Replay(route, {"can", "roadEncodeIdx", "carParams"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
-  QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::segmentsMerged);
+  QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   if (replay->load()) {
     replay->start();
     return true;
@@ -68,13 +68,7 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
     can_msgs[it.key()] = it.value();
   }
   delete messages;
-
-  if (currentSec() < begin_sec || currentSec() > end_sec) {
-    // loop replay in selected range.
-    seekTo(begin_sec);
-  } else {
-    emit updated();
-  }
+  emit updated();
 }
 
 bool CANMessages::eventFilter(const Event *event) {
@@ -131,40 +125,6 @@ const std::deque<CanData> CANMessages::messages(const QString &id) {
 void CANMessages::seekTo(double ts) {
   replay->seekTo(ts, false);
   counters_begin_sec = 0;
-}
-
-void CANMessages::setRange(double min, double max) {
-  if (begin_sec != min || end_sec != max) {
-    begin_sec = min;
-    end_sec = max;
-    is_zoomed = begin_sec != event_begin_sec || end_sec != event_end_sec;
-    auto [begin, end] = range();
-    emit rangeChanged(begin, end);
-  }
-}
-
-std::pair<double, double> CANMessages::range() const {
-  double min = begin_sec;
-  double max = std::min(min + settings.max_chart_x_range, end_sec);
-  return {min, max};
-}
-
-void CANMessages::segmentsMerged() {
-  auto events = replay->events();
-  if (!events || events->empty()) return;
-
-  auto it = std::find_if(events->begin(), events->end(), [=](const Event *e) { return e->which == cereal::Event::Which::CAN; });
-  event_begin_sec = it == events->end() ? 0 : ((*it)->mono_time - replay->routeStartTime()) / (double)1e9;
-  event_end_sec = double(events->back()->mono_time - replay->routeStartTime()) / 1e9;
-  if (!is_zoomed) {
-    begin_sec = event_begin_sec;
-    end_sec = event_end_sec;
-  }
-  emit eventsMerged();
-}
-
-void CANMessages::resetRange() {
-  setRange(event_begin_sec, event_end_sec);
 }
 
 void CANMessages::settingChanged() {
