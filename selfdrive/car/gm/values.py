@@ -13,6 +13,7 @@ class CarControllerParams:
   STEER_MAX = 300  # GM limit is 3Nm. Used by carcontroller to generate LKA output
   ACTIVE_STEER_STEP = 2  # Control frames per command (50hz)
   INACTIVE_STEER_STEP = 10  # Control frames per command (10hz)
+  STARTUP_STEER_STEP = 4  # Control frames per command (25hz)
   STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness
   STEER_DELTA_DOWN = 17
   STEER_DRIVER_ALLOWANCE = 50
