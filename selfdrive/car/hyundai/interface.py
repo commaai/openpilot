@@ -84,7 +84,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.9
       tire_stiffness_factor = 0.65
     elif candidate == CAR.HYUNDAI_GENESIS:
-      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
@@ -223,25 +222,17 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
       ret.steerRatio = 13.56
     elif candidate == CAR.GENESIS_G70_2020:
-      ret.lateralTuning.pid.kf = 0.
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.112], [0.004]]
       ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 12.9
     elif candidate == CAR.GENESIS_G80:
-      ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.GENESIS_G90:
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
