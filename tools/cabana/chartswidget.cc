@@ -375,3 +375,24 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   line_marker->setVisible(show);
   QChartView::mouseMoveEvent(ev);
 }
+
+MultipleSignalSelector::MultipleSignalSelector(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  signal_layout = new QVBoxLayout();
+  main_layout->addLayout(signal_layout);
+
+  QHBoxLayout *btn_layout = new QHBoxLayout();
+  QPushButton *ok_btn = new QPushButton(tr("Ok"));
+  QPushButton *cancel_btn = new QPushButton(tr("Cancel"));
+  btn_layout->addWidget(ok_btn);
+  btn_layout->addWidget(cancel_btn);
+  main_layout->addLayout(btn_layout);
+}
+
+void MultipleSignalSelector::addSignal(const QString &msd_id, const Signal *signal) {
+
+}
+
+void MultipleSignalSelector::removeSignal(const QString &msd_id, const Signal *signal) {
+
+}

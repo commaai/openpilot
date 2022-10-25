@@ -86,3 +86,13 @@ private:
   QVBoxLayout *charts_layout;
   QList<ChartWidget *> charts;
 };
+
+class MultipleSignalSelector : public QWidget {
+  Q_OBJECT
+public:
+  MultipleSignalSelector(QWidget *parent);
+  void addSignal(const QString &msd_id, const Signal *signal);
+  void removeSignal(const QString &msd_id, const Signal *signal);
+
+  QVBoxLayout *signal_layout;
+};
