@@ -56,7 +56,6 @@ class CarController:
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
     if CS.loopback_lka_steering_cmd_updated:
-      # TODO: ENSURE this logic works if we lag right as we switch from 50hz to 10hz, will they be too far apart?
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
     elif (self.frame - self.last_steer_frame) >= steer_step:
