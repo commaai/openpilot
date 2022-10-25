@@ -60,11 +60,11 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>ลดการส่งข้อมูลผ่านเซลลูล่าร์</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>ปิดการอัพโหลดข้อมูลขนาดใหญ่เมื่อเชื่อมต่อผ่านเซลลูล่าร์</translation>
     </message>
 </context>
 <context>
@@ -803,54 +803,6 @@ location set</source>
 <context>
     <name>SoftwarePanel</name>
     <message>
-        <source>Git Branch</source>
-        <translation type="vanished">Git Branch</translation>
-    </message>
-    <message>
-        <source>Git Commit</source>
-        <translation type="vanished">Git Commit</translation>
-    </message>
-    <message>
-        <source>OS Version</source>
-        <translation type="vanished">เวอร์ชันระบบปฏิบัติการ</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="vanished">เวอร์ชั่น</translation>
-    </message>
-    <message>
-        <source>Last Update Check</source>
-        <translation type="vanished">ตรวจสอบการอัปเดตล่าสุด</translation>
-    </message>
-    <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">ครั้งสุดท้ายที่ openpilot ตรวจสอบการอัปเดตสำเร็จ ตัวอัปเดตจะทำงานในขณะที่รถดับเครื่องอยู่เท่านั้น</translation>
-    </message>
-    <message>
-        <source>Check for Update</source>
-        <translation type="vanished">ตรวจสอบการอัปเดต</translation>
-    </message>
-    <message>
-        <source>CHECKING</source>
-        <translation type="vanished">กำลังตรวจสอบ</translation>
-    </message>
-    <message>
-        <source>Switch Branch</source>
-        <translation type="vanished">เปลี่ยน Branch</translation>
-    </message>
-    <message>
-        <source>ENTER</source>
-        <translation type="vanished">เปลี่ยน</translation>
-    </message>
-    <message>
-        <source>The new branch will be pulled the next time the updater runs.</source>
-        <translation type="vanished">Branch ใหม่จะถูกติดตั้งในครั้งต่อไปที่ตัวอัปเดตทำงาน</translation>
-    </message>
-    <message>
-        <source>Enter branch name</source>
-        <translation type="vanished">ใส่ชื่อ Branch</translation>
-    </message>
-    <message>
         <source>Uninstall %1</source>
         <translation>ถอนการติดตั้ง %1</translation>
     </message>
@@ -863,44 +815,40 @@ location set</source>
         <translation>คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง?</translation>
     </message>
     <message>
-        <source>failed to fetch update</source>
-        <translation type="vanished">โหลดข้อมูลอัปเดตไม่สำเร็จ</translation>
-    </message>
-    <message>
         <source>CHECK</source>
         <translation>ตรวจสอบ</translation>
     </message>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>ตัวอัปเดตจะดำเนินการดาวน์โหลดเมื่อรถดับเครื่องยนต์อยู่เท่านั้น</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>เวอร์ชั่นปัจจุบัน</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>ดาวน์โหลด</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>ติดตั้งตัวอัปเดต</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>ติดตั้ง</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Branch ที่เลือก</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>เลือก</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>เลือก Branch</translation>
     </message>
 </context>
 <context>
@@ -1027,36 +975,28 @@ location set</source>
         <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="vanished">openpilot การควบคุมการเร่งและลดความเร็ว</translation>
-    </message>
-    <message>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation type="vanished">openpilot จะปิดการใช้งานเรดาร์ของรถ และจะเข้าควบคุมการเร่งและเบรก คำเตือน: สิ่งนี้จะปิดระบบ AEB!</translation>
-    </message>
-    <message>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 ควบคุมเร่ง/เบรคแบบ End-to-end (อยู่ขั้นพัฒนา) 🌮</translation>
     </message>
     <message>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>ทดลองใช้ระบบควบคุมการเร่ง/เบรคโดย openpilot</translation>
     </message>
     <message>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในขั้นทดลอง และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>ให้ openpilot ควบคุมการเร่ง/เบรคแบบ end-to-end โดย openpilot จะขับอย่างที่มนุษย์คิด ระบบยังอยู่ในขั้นทดลอง</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>ขณะนี้ยังไม่มีระบบควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>เปิดใช้งานระบบควบคุมการเร่ง/เบรคขั้นทดลอง เพื่อเปิดใช้งานสิ่งนี้</translation>
     </message>
 </context>
 <context>
