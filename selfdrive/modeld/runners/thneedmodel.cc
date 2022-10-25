@@ -37,13 +37,13 @@ void ThneedModel::addExtra(float *extra_input_buf, int buf_size) {
 }
 
 void* ThneedModel::getInputBuf() {
-  if (use_extra && thneed->input_clmem.size() > 4) return &(thneed->input_clmem[4]);
-  else if (!use_extra && thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  if (use_extra && thneed->input_clmem.size() > 5) return &(thneed->input_clmem[5]);
+  else if (!use_extra && thneed->input_clmem.size() > 4) return &(thneed->input_clmem[4]);
   else return nullptr;
 }
 
 void* ThneedModel::getExtraBuf() {
-  if (thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  if (thneed->input_clmem.size() > 4) return &(thneed->input_clmem[4]);
   else return nullptr;
 }
 
