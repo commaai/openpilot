@@ -180,6 +180,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      # TODO: put in accel units
       ret.lateralTuning.torque.kf = 1.0 # use with custom torque ff
 
     elif candidate == CAR.SILVERADO:
