@@ -187,6 +187,9 @@ class CarState(CarStateBase):
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
                                                                       cp.vl["BLINKERS"]["RIGHT_LAMP"])
+    if self.CP.enableBsm:
+      ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FL_INDICATOR"] != 0
+      ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FR_INDICATOR"] != 0
 
     ret.cruiseState.available = True
     self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
@@ -449,6 +452,15 @@ class CarState(CarStateBase):
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
+
+    if CP.enableBsm:
+      signals += [
+        ("FL_INDICATOR", "BLINDSPOTS_REAR_CORNERS"),
+        ("FR_INDICATOR", "BLINDSPOTS_REAR_CORNERS"),
+      ]
+      checks += [
+        ("BLINDSPOTS_REAR_CORNERS", 20),
+      ]
 
     if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
       signals += [
