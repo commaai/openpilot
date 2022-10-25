@@ -125,7 +125,6 @@ def setup_quectel(diag: ModemDiag):
   mmcli("--command='AT+QGPSCFG=\"outport\",\"usbnmea\"'")
   if not gps_enabled():
     mmcli("--command='AT+QGPS=1'")
-  mmcli("--command='AT+QGPSXTRA=1'")
 
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
