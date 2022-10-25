@@ -27,6 +27,7 @@ private:
   void mouseMoveEvent(QMouseEvent *ev) override;
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void adjustChartMargins();
 
   void rangeChanged(qreal min, qreal max);
   void updateAxisY();
@@ -46,9 +47,10 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
   void updateTitle();
+  void setHeight(int height);
 
 signals:
-  void remove();
+  void remove(const QString &msg_id, const Signal *sig);
 
 public:
   QString id;
@@ -63,7 +65,7 @@ class ChartsWidget : public QWidget {
 public:
   ChartsWidget(QWidget *parent = nullptr);
   void addChart(const QString &id, const Signal *sig);
-  void removeChart(const Signal *sig);
+  void removeChart(const QString &id, const Signal *sig);
 
 signals:
   void dock(bool floating);
@@ -71,7 +73,7 @@ signals:
 private:
   void updateState();
   void updateTitleBar();
-  void removeAll();
+  void removeAll(const Signal *sig = nullptr);
   bool eventFilter(QObject *obj, QEvent *event);
 
   QWidget *title_bar;
@@ -82,5 +84,5 @@ private:
   QPushButton *reset_zoom_btn;
   QPushButton *remove_all_btn;
   QVBoxLayout *charts_layout;
-  QHash<const Signal *, ChartWidget *> charts;
+  QList<ChartWidget *> charts;
 };
