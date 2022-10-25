@@ -1,25 +1,24 @@
 #pragma once
 
-#include <optional>
-
 #include <QComboBox>
 #include <QDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSpinBox>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/cabana/parser.h"
+
+#include "tools/cabana/canmessages.h"
+#include "tools/cabana/dbcmanager.h"
 
 class SignalForm : public QWidget {
-  Q_OBJECT
-
 public:
   SignalForm(const Signal &sig, QWidget *parent);
-  std::optional<Signal> getSignal();
 
   QLineEdit *name, *unit, *comment, *val_desc;
-  QSpinBox *size, *msb, *lsb, *factor, *offset, *min_val, *max_val;
+  QSpinBox *size, *offset;
+  QDoubleSpinBox *factor, *min_val, *max_val;
   QComboBox *sign, *endianness;
 };
 
@@ -27,24 +26,35 @@ class SignalEdit : public QWidget {
   Q_OBJECT
 
 public:
-  SignalEdit(const QString &id, const Signal &sig, const QString &color, QWidget *parent = nullptr);
-  void save();
+  SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent = nullptr);
+  void setFormVisible(bool show);
+  void signalHovered(const Signal *sig);
+  inline bool isFormVisible() const { return form_container->isVisible(); }
+
+signals:
+  void highlight(const Signal *sig);
+  void showChart();
+  void showFormClicked();
+  void remove(const Signal *sig);
+  void save(const Signal *sig, const Signal &new_sig);
 
 protected:
-  void remove();
+  void enterEvent(QEvent *event) override;
+  void leaveEvent(QEvent *event) override;
+  void saveSignal();
 
-  QString id;
-  QString name_;
-  QPushButton *plot_btn;
-  ElidedLabel *title;
   SignalForm *form;
-  QWidget *edit_container;
-  QPushButton *remove_btn;
+  ElidedLabel *title;
+  QWidget *form_container;
+  QLabel *icon;
+  int form_idx = 0;
+  QString msg_id;
+  const Signal *sig = nullptr;
 };
 
-class AddSignalDialog : public QDialog {
+class SignalFindDlg : public QDialog {
   Q_OBJECT
 
 public:
-  AddSignalDialog(const QString &id, QWidget *parent);
+  SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent);
 };
