@@ -5,7 +5,7 @@ import signal
 import itertools
 import math
 import time
-import subprocess
+import subprocess as sp
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
@@ -90,12 +90,20 @@ def try_setup_logs(diag, log_types):
 def mmcli(cmd: str) -> None:
   for _ in range(5):
     try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 {cmd}", shell=True)
+      sp.check_call(f"mmcli -m any --timeout 30 {cmd}", shell=True)
       break
-    except subprocess.CalledProcessError:
+    except sp.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
   else:
     raise Exception(f"failed to execute mmcli command {cmd=}")
+
+
+def gps_enabled() -> bool:
+  try:
+    p = sp.run("mmcli -m any --command=\"AT+QGPS?\"", stdout=sp.PIPE, check=True, shell=True)
+    return b"QGPS: 1" in p.stdout
+  except sp.CalledProcessError as exc:
+    raise Exception("failed to execute QGPS mmcli command") from exc
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
@@ -112,7 +120,12 @@ def setup_quectel(diag: ModemDiag):
   mmcli("--command='AT+QGPSCFG=\"dpoenable\",0'")
   # don't automatically turn on GNSS on powerup
   mmcli("--command='AT+QGPSCFG=\"autogps\",0'")
-  mmcli("--location-enable-gps-raw --location-enable-gps-nmea")
+  mmcli("--command='AT+QGPSSUPLURL=\"supl.google.com:7275\"'")
+
+  mmcli("--command='AT+QGPSCFG=\"outport\",\"usbnmea\"'")
+  if not gps_enabled():
+    mmcli("--command='AT+QGPS=1'")
+  mmcli("--command='AT+QGPSXTRA=1'")
 
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
@@ -134,7 +147,9 @@ def setup_quectel(diag: ModemDiag):
   ))
 
 def teardown_quectel(diag):
-  mmcli("--location-disable-gps-raw --location-disable-gps-nmea")
+  mmcli("--command='AT+QGPSCFG=\"outport\",\"none\"'")
+  if gps_enabled():
+    mmcli("--command='AT+QGPSEND'")
   try_setup_logs(diag, [])
 
 
@@ -156,7 +171,7 @@ def main() -> NoReturn:
   # wait for ModemManager to come up
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call("mmcli -m any --timeout 10 --location-status", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    ret = sp.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=sp.DEVNULL, stderr=sp.DEVNULL, shell=True)
     if ret == 0:
       break
     time.sleep(0.1)
