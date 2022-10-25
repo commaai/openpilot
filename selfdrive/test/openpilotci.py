@@ -3,7 +3,8 @@ import os
 import sys
 import subprocess
 
-BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+# BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+BASE_URL = "http://data-raw.comma.internal/"
 TOKEN_PATH = "/data/azure_token"
 
 
