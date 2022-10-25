@@ -172,17 +172,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate == CAR.BOLT_EV:
-      ret.mass = 1669. + STD_CARGO_KG
-      ret.wheelbase = 2.63779
-      ret.steerRatio = 16.8
-      ret.centerToFront = 2.15  # measured
-      tire_stiffness_factor = 1.0
-      ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    elif candidate == CAR.BOLT_EUV:
-      ret.minEnableSpeed = -1
+    elif candidate == (CAR.BOLT_EV, CAR.BOLT_EUV):
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
