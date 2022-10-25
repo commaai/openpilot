@@ -49,7 +49,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
   QLabel *warning_icon = new QLabel(this);
   warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning));
-  warning_hlayout->addWidget(warning_icon);
+  warning_hlayout->addWidget(warning_icon, 0, Qt::AlignTop);
   warning_label = new QLabel(this);
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
   warning_widget->hide();
@@ -107,6 +107,8 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (msg_id.isEmpty()) return;
 
   warning_widget->hide();
+  QStringList warnings;
+
   clearLayout(signals_container->layout());
   QString msg_name = tr("untitled");
   if (auto msg = dbc()->msg(msg_id)) {
@@ -124,16 +126,25 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
       }
     }
     msg_name = msg->name.c_str();
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
-      warning_label->setText(tr("Message size (%1) is incorrect!").arg(msg->size));
-      warning_widget->show();
-    }
+    if (msg->size != can->lastMessage(msg_id).dat.size())
+      warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
   }
   edit_btn->setVisible(true);
   name_label->setText(msg_name);
 
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
+
+  // Check overlapping bits
+  if (auto overlapping = binary_view->getOverlappingSignals(); !overlapping.isEmpty()) {
+    for (auto s : overlapping)
+      warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
+  }
+
+  if (!warnings.isEmpty()) {
+    warning_label->setText(warnings.join('\n'));
+    warning_widget->show();
+  }
 }
 
 void DetailWidget::updateState() {
