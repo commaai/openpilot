@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
   // init the models
   NavModelState model;
   navmodel_init(&model);
+  LOGW("models loaded, navmodeld starting");
 
   VisionIpcClient vipc_client = VisionIpcClient("navd", VISION_STREAM_MAP, true);
   while (!do_exit && !vipc_client.connect(false)) {
