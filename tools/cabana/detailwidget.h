@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QScrollArea>
+#include <QTabBar>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
@@ -31,24 +32,28 @@ class DetailWidget : public QWidget {
 public:
   DetailWidget(QWidget *parent);
   void setMessage(const QString &message_id);
-  void dbcMsgChanged();
+  void dbcMsgChanged(int show_form_idx = -1);
 
 signals:
   void showChart(const QString &msg_id, const Signal *sig);
   void removeChart(const Signal *sig);
 
 private:
-  void addSignal(int start_bit, int size);
-  void saveSignal();
-  void removeSignal();
+  void addSignal(int start_bit, int to);
+  void resizeSignal(const Signal *sig, int from, int to);
+  void saveSignal(const Signal *sig, const Signal &new_sig);
+  void removeSignal(const Signal *sig);
   void editMsg();
   void showForm();
   void updateState();
 
   QString msg_id;
-  QLabel *name_label, *time_label;
+  QLabel *name_label, *time_label, *warning_label;
+  QWidget *warning_widget;
   QPushButton *edit_btn;
   QWidget *signals_container;
+  QTabBar *tabbar;
+  QStringList messages;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
