@@ -50,7 +50,8 @@ class CarController:
     # Steering (Active: 50Hz, inactive: 10Hz)
     # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
     steer_step = self.params.INACTIVE_STEER_STEP
-    if CC.latActive or (not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera):
+    init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
+    if CC.latActive or init_lka_counter:
       steer_step = self.params.ACTIVE_STEER_STEP
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
@@ -59,8 +60,8 @@ class CarController:
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
     elif (self.frame - self.last_steer_frame) >= steer_step:
-      # Initialize ASCMLKASteeringCmd counter using the camera
-      if not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera:
+      # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
+      if init_lka_counter:
         self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
 
       if CC.latActive:
