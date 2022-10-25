@@ -73,7 +73,8 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
 
 bool CANMessages::eventFilter(const Event *event) {
   static std::unique_ptr<QHash<QString, CanData>> new_msgs;
-  static double prev_update_sec = 0;
+  static double prev_update_ts = 0;
+
   if (event->which == cereal::Event::Which::CAN) {
     if (!new_msgs) {
       new_msgs.reset(new QHash<QString, CanData>);
@@ -108,8 +109,9 @@ bool CANMessages::eventFilter(const Event *event) {
       (*new_msgs)[id] = data;
     }
 
-    if (current_sec < prev_update_sec || (current_sec - prev_update_sec) > 1.0 / settings.fps) {
-      prev_update_sec = current_sec;
+    double ts = millis_since_boot();
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+      prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
     }
