@@ -311,6 +311,13 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStarting = 0.1
     ret.startAccel = 2.0
 
+    # *** feature detection ***
+    if candidate in CANFD_CAR:
+      bus = 5 if ret.flags & HyundaiFlags.CANFD_HDA2 else 4
+      ret.enableBsm = 0x1e5 in fingerprint[bus]
+    else:
+      ret.enableBsm = 0x58b in fingerprint[0]
+
     # *** panda safety config ***
     if candidate in CANFD_CAR:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
@@ -321,8 +328,6 @@ class CarInterface(CarInterfaceBase):
       if ret.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
     else:
-      ret.enableBsm = 0x58b in fingerprint[0]
-
       if candidate in LEGACY_SAFETY_MODE_CAR:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
