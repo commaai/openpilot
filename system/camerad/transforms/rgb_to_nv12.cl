@@ -35,12 +35,10 @@ inline void convert_uv(__global uchar * out_yuv, int uvi,
   const short ab = AVERAGE(rgbs1.s0, rgbs1.s3, rgbs2.s0, rgbs2.s3);
   const short ag = AVERAGE(rgbs1.s1, rgbs1.s4, rgbs2.s1, rgbs2.s4);
   const short ar = AVERAGE(rgbs1.s2, rgbs1.s5, rgbs2.s2, rgbs2.s5);
-//#ifdef CL_DEBUG
-//  if(ui >= RGB_SIZE  + RGB_SIZE / 4)
-//    printf("U overflow, %d >= %d\n", ui, RGB_SIZE  + RGB_SIZE / 4);
-//  if(vi >= RGB_SIZE  + RGB_SIZE / 2)
-//    printf("V overflow, %d >= %d\n", vi, RGB_SIZE  + RGB_SIZE / 2);
-//#endif
+#ifdef CL_DEBUG
+  if(uvi >= RGB_SIZE  + RGB_SIZE / 2)
+    printf("UV overflow, %d >= %d\n", uvi, RGB_SIZE  + RGB_SIZE / 2);
+#endif
   out_yuv[uvi] = RGB_TO_U(ar, ag, ab);
   out_yuv[uvi+1] = RGB_TO_V(ar, ag, ab);
 }
@@ -60,12 +58,10 @@ inline void convert_2_uvs(__global uchar * out_yuv, int uvi,
     RGB_TO_U(ar2, ag2, ab2),
     RGB_TO_V(ar2, ag2, ab2)
   );
-//#ifdef CL_DEBUG1
-//  if(ui > RGB_SIZE  + RGB_SIZE / 4 - 2)
-//    printf("U 2 overflow, %d >= %d\n", ui, RGB_SIZE  + RGB_SIZE / 4 - 2);
-//  if(vi > RGB_SIZE  + RGB_SIZE / 2 - 2)
-//    printf("V 2 overflow, %d >= %d\n", vi, RGB_SIZE  + RGB_SIZE / 2 - 2);
-//#endif
+#ifdef CL_DEBUG1
+  if(uvi > RGB_SIZE  + RGB_SIZE / 2 - 4)
+    printf("UV2 overflow, %d >= %d\n", uvi, RGB_SIZE  + RGB_SIZE / 2 - 2);
+#endif
   vstore4(uv, 0, out_yuv + uvi);
 }
 
