@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, CAR.ELANTRA_GT_I30}
+    ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
     if candidate in CANFD_CAR:
       # detect HDA2 with ADAS Driving ECU
@@ -75,7 +75,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.6 * 1.15
       tire_stiffness_factor = 0.63
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-    elif candidate in (CAR.ELANTRA, CAR.ELANTRA_GT_I30):
+    elif candidate == CAR.ELANTRA:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
