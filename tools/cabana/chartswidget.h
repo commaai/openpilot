@@ -3,8 +3,9 @@
 #include <map>
 
 #include <QLabel>
+#include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
-#include <QGraphicsSimpleTextItem>
+#include <QGraphicsTextItem>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -34,7 +35,8 @@ private:
   void updateState();
 
   QGraphicsLineItem *track_line;
-  QGraphicsSimpleTextItem *value_text;
+  QGraphicsEllipseItem *track_ellipse;
+  QGraphicsTextItem *value_text;
   QGraphicsLineItem *line_marker;
   QList<QPointF> vals;
   QString id;

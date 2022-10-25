@@ -186,7 +186,6 @@ void ChartWidget::updateTitle() {
 ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     : id(id), signal(sig), QChartView(nullptr, parent) {
   QLineSeries *series = new QLineSeries();
-  series->setUseOpenGL(true);
   QChart *chart = new QChart();
   chart->setTitle(sig->name.c_str());
   chart->addSeries(series);
@@ -199,9 +198,13 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
   track_line = new QGraphicsLineItem(chart);
-  track_line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
-  value_text = new QGraphicsSimpleTextItem(chart);
-  value_text->setBrush(Qt::gray);
+  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+  track_line->setZValue(chart->zValue() + 10);
+  track_ellipse = new QGraphicsEllipseItem(chart);
+  track_ellipse->setBrush(Qt::darkGray);
+  track_ellipse->setZValue(chart->zValue() + 10);
+  value_text = new QGraphicsTextItem(chart);
+  value_text->setZValue(chart->zValue() + 10);
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setPen(QPen(Qt::black, 2));
 
@@ -316,12 +319,14 @@ void ChartView::updateAxisY() {
 void ChartView::enterEvent(QEvent *event) {
   track_line->setVisible(true);
   value_text->setVisible(true);
+  track_ellipse->setVisible(true);
   QChartView::enterEvent(event);
 }
 
 void ChartView::leaveEvent(QEvent *event) {
   track_line->setVisible(false);
   value_text->setVisible(false);
+  track_ellipse->setVisible(false);
   QChartView::leaveEvent(event);
 }
 
@@ -362,11 +367,20 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     auto [begin, end] = can->range();
     double sec = begin + ((x - plot_area.x()) / plot_area.width()) * (end - begin);
     auto value = std::lower_bound(vals.begin(), vals.end(), sec, [](auto &p, double x) { return p.x() < x; });
-    value_text->setPos(x + 6, plot_area.bottom() - 25);
+
     if (value != vals.end()) {
-      value_text->setText(QString("(%1, %2)").arg(value->x(), 0, 'f', 3).arg(value->y()));
+      auto axis_y = dynamic_cast<QValueAxis *>(chart()->axisY());
+      int y = plot_area.bottom() - plot_area.height() * ((value->y() - axis_y->min()) / (axis_y->max() - axis_y->min()));
+      value_text->setPos(x + 10, y);
+      track_ellipse->setRect(x - 5, y, 10, 10);
+      QString html = tr("<div style='background-color:darkGray'><font color='white'>(%1, %2)</font></div>")
+                         .arg(value->x(), 0, 'f', 3)
+                         .arg(value->y());
+      value_text->setHtml(html);
+      value_text->show();
     } else {
-      value_text->setText("(--, --)");
+      track_ellipse->hide();
+      value_text->hide();
     }
   }
 
