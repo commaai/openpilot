@@ -132,6 +132,20 @@ const Signal *BinaryView::getResizingSignal() const {
   return nullptr;
 }
 
+QSet<const Signal *> BinaryView::getOverlappingSignals() const {
+  QSet<const Signal *> overlapping;
+  for (int i = 0; i < model->rowCount(); ++i) {
+    for (int j = 0; j < model->columnCount() - 1; ++j) {
+      auto item = (const BinaryViewModel::Item *)model->index(i, j).internalPointer();
+      if (item && item->sigs.size() > 1) {
+        for (auto s : item->sigs)
+          overlapping.insert(s);
+      }
+    }
+  }
+  return overlapping;
+}
+
 // BinaryViewModel
 
 void BinaryViewModel::setMessage(const QString &message_id) {
