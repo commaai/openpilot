@@ -35,21 +35,20 @@ ignore_addr_checks_valid = [
   HYUNDAI.GENESIS_G70_2020,
 ]
 
+# build list of test cases
+test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
 if INTERNAL:
-  with open(SEG_LIST_PATH, "r") as f:
+  with open(os.path.join(BASEDIR, "selfdrive/car/tests/test_models_segs.txt"), "r") as f:
     seg_list = f.read().splitlines()
   platforms, segs = seg_list[0::2], seg_list[1::2]
 
-  car_test_routes = []
   for platform, seg in list(zip(platforms, segs)):
-    car_test_routes.append(CarTestRoute(seg[:37], platform[2:], segment=int(seg[39:])))
+    test_cases.append((platform[2:], CarTestRoute(seg[:37], platform[2:], segment=int(seg[39:]))))
 else:
-  # build list of test cases
   routes_by_car = defaultdict(set)
   for r in routes:
     routes_by_car[r.car_model].add(r)
 
-  test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
   for i, c in enumerate(sorted(all_known_cars())):
     if i % NUM_JOBS == JOB_ID:
       test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
@@ -85,7 +84,9 @@ class TestCarModelBase(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if cls.ci:
+        if INTERNAL:
+          lr = LogReader(f"cd:/{cls.test_route.route[:16]}/{cls.test_route.route[17:37]}/{seg}/rlog.bz2")
+        elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
