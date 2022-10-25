@@ -296,7 +296,6 @@ class Updater:
         commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
         dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
         commit_date = dt.strftime("%b %d")
-        print("ts", commit_unix_ts, str(dt), commit_date)
       except Exception:
         cloudlog.exception("updater.get_description")
       return f"{version} / {branch} / {commit} / {commit_date}"
