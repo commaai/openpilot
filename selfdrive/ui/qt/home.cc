@@ -1,6 +1,5 @@
 #include "selfdrive/ui/qt/home.h"
 
-#include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QVBoxLayout>
@@ -120,7 +119,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QObject::connect(alert_notif, &QPushButton::clicked, [=] { center_layout->setCurrentIndex(2); });
   header_layout->addWidget(alert_notif, 0, Qt::AlignHCenter | Qt::AlignLeft);
 
-  version = new QLabel();
+  version = new ElidedLabel();
   header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);

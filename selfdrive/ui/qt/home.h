@@ -12,6 +12,7 @@
 #include "selfdrive/ui/qt/body.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/qt/sidebar.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 #include "selfdrive/ui/ui.h"
 
@@ -29,7 +30,7 @@ private:
   Params params;
 
   QTimer* timer;
-  QLabel* version;
+  ElidedLabel* version;
   QStackedLayout* center_layout;
   UpdateAlert *update_widget;
   OffroadAlert* alerts_widget;

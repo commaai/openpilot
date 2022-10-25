@@ -283,14 +283,15 @@ class Updater:
       version = ""
       branch = ""
       commit = ""
+      commit_date = "Oct 25"
       try:
         branch = self.get_branch(basedir)
-        commit = self.get_commit_hash(basedir)
+        commit = self.get_commit_hash(basedir)[:7]
         with open(os.path.join(basedir, "common", "version.h")) as f:
           version = f.read().split('"')[1]
       except Exception:
         pass
-      return f"{version} / {branch} / {commit[:7]}"
+      return f"{version} / {branch} / {commit} / {commit_date}"
     self.params.put("UpdaterCurrentDescription", get_description(BASEDIR))
     self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
     self.params.put("UpdaterNewDescription", get_description(FINALIZED))
