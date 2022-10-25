@@ -47,10 +47,14 @@ class CarController:
     # Send CAN commands.
     can_sends = []
 
-    # Steering (50Hz)
+    # Steering (Active: 50Hz, inactive: 10Hz)
+    # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
+    steer_step = self.params.INACTIVE_STEER_STEP
+    if CC.latActive or not self.sent_lka_steering_cmd:
+      steer_step = self.params.ACTIVE_STEER_STEP
+
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
-    steer_step = self.params.ACTIVE_STEER_STEP if CC.latActive else self.params.INACTIVE_STEER_STEP
     if CS.loopback_lka_steering_cmd_updated:
       # TODO: ENSURE this logic works if we lag right as we switch from 50hz to 10hz, will they be too far apart?
       self.lka_steering_cmd_counter += 1
