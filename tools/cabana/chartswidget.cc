@@ -71,6 +71,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
 void ChartsWidget::eventsMerged() {
   auto events = can->events();
+  if (!events || events->empty()) return;
+
   auto it = std::find_if(events->begin(), events->end(), [=](const Event *e) { return e->which == cereal::Event::Which::CAN; });
   event_range.first = it == events->end() ? 0 : (*it)->mono_time / (double)1e9 - can->routeStartTime();
   event_range.second = it == events->end() ? 0 : events->back()->mono_time / (double)1e9 - can->routeStartTime();
@@ -112,9 +114,10 @@ void ChartsWidget::updateState() {
   } else if (!is_zoomed) {
     if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
       // line marker reached the end, or seeked to a timestamp out of range.
-      display_range.first = std::max(current_sec - 5, event_range.first);
-      display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
+      display_range.first = current_sec - 5;
     }
+    display_range.first = std::max(display_range.first, event_range.first);
+    display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
   }
   for (auto c : charts) {
     c->chart_view->setRange(display_range.first, display_range.second);
@@ -209,6 +212,7 @@ ChartWidget::ChartWidget(const QString &id, const Signal *sig, QWidget *parent) 
   main_layout->addWidget(header);
 
   chart_view = new ChartView(id, sig, this);
+  chart_view->setFixedHeight(settings.chart_height);
   main_layout->addWidget(chart_view);
   main_layout->addStretch();
 
@@ -238,7 +242,6 @@ void ChartWidget::updateTitle() {
 ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     : id(id), signal(sig), QChartView(nullptr, parent) {
   QLineSeries *series = new QLineSeries();
-  series->setUseOpenGL(true);
   QChart *chart = new QChart();
   chart->addSeries(series);
   chart->createDefaultAxes();
@@ -254,7 +257,6 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   line_marker->setPen(QPen(Qt::black, 2));
 
   setChart(chart);
-  setFixedHeight(settings.chart_height);
 
   setRenderHint(QPainter::Antialiasing);
   setRubberBand(QChartView::HorizontalRubberBand);
