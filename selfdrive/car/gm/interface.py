@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
 
     # Accel factor changes with speed
     torque = 0
-    curve_drop_off = interp(speed, [10, 30], [0.75, 1.0])
+    curve_drop_off = interp(speed, [10, 25], [0.75, 1.0])
     curve_steepness = 1.75 - curve_drop_off  # higher steepness with less drop off
     if lateral_accel_value != 0:
       torque = (torque_params.latAccelFactor * curve_steepness * lateral_accel_value) / (1 + abs(lateral_accel_value) ** curve_drop_off)
