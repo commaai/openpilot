@@ -126,7 +126,6 @@ def setup_quectel(diag: ModemDiag):
 
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")
-  at_cmd("AT+QGPSXTRA=1")
 
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
