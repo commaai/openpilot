@@ -16,14 +16,12 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
 }
 
 void navmodel_init(NavModelState* s) {
-  #ifdef USE_THNEED
-    s->m = new ThneedModel("models/navmodel.thneed",
-  #elif USE_ONNX_MODEL
-    s->m = new ONNXModel("models/navmodel.onnx",
+  #ifdef USE_ONNX_MODEL
+    s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, false);
   #else
-    s->m = new SNPEModel("models/navmodel.dlc",
+    s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
   #endif
-    &s->output[0], NAV_NET_OUTPUT_SIZE, USE_GPU_RUNTIME, false, false); // TODO: Use dsp runtime and set _use_tf8=true for quantized models (I think)
+
 }
 
 NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {

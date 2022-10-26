@@ -19,8 +19,7 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
     VisionIpcBufExtra extra = {};
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
-    // if (extra.frame_id % 10 != 0) continue;  // Run at 2Hz
-    // printf("FRAME ID: %d\n", extra.frame_id);
+    if (extra.frame_id % 10 != 0) continue;  // Run at 2Hz
 
     double t1 = millis_since_boot();
     NavModelResult *model_res = navmodel_eval_frame(&model, buf);
