@@ -29,7 +29,7 @@ class FordCAN:
     return self.packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, values)
 
   def create_tja_msg(self, lca_rq: int, ramp_type: int, precision: int, path_offset: float,
-                     path_angle: float, curvature_rate: float, curvature: float):
+                     path_angle: float, curvature: float, curvature_rate: float):
     """
     Creates a CAN message for the Ford TJA/LCA Command.
 

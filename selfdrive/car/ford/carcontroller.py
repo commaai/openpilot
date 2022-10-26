@@ -18,6 +18,7 @@ def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.VM = VM
     self.frame = 0
     self.packer = CANPacker(dbc_name)
     self.ford_can = FordCAN(self.packer)
@@ -50,22 +51,21 @@ class CarController:
 
 
     ### lateral control ###
-    if CC.latActive:
-      lca_rq = 1
-      apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
-    else:
-      lca_rq = 0
-      apply_angle = 0.
-
-
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
-      apply_steer = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
+      if CC.latActive:
+        lca_rq = 1
+        apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
+      else:
+        lca_rq = 0
+        apply_angle = 0.
 
-      # use LatCtlPath_An_Actl to actuate steering
-      path_angle = clip(apply_steer, -0.5, 0.5235)
+      curvature = self.VM.calc_curvature(math.radians(apply_angle), CS.out.vEgo, 0.0)
 
-      self.apply_angle_last = math.degrees(path_angle) * CarControllerParams.LKAS_STEER_RATIO
+      # use LatCtlCurv_No_Actl to actuate steering
+      curvature = clip(curvature, -0.02, 0.02094)
+
+      self.apply_angle_last = math.degrees(self.VM.get_steer_from_curvature(curvature, CS.out.vEgo, 0.0))
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
@@ -82,7 +82,7 @@ class CarController:
 
       can_sends.append(self.ford_can.create_lka_msg(0., 0.))
       can_sends.append(self.ford_can.create_tja_msg(lca_rq, ramp_type, precision,
-                                                    0., path_angle, 0., 0.))
+                                                    0., 0., curvature, 0.))
 
 
     ### ui ###
