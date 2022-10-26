@@ -147,7 +147,7 @@ void ChartsWidget::addChart(const QString &id, const Signal *sig) {
   if (it == charts.end()) {
     auto chart = new ChartWidget(id, sig, this);
     chart->chart_view->updateSeries(display_range);
-    QObject::connect(chart, &ChartWidget::remove, this, &ChartsWidget::removeChart);
+    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });;
     QObject::connect(chart->chart_view, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
     QObject::connect(chart->chart_view, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
     charts_layout->insertWidget(0, chart);
@@ -156,16 +156,9 @@ void ChartsWidget::addChart(const QString &id, const Signal *sig) {
   updateTitleBar();
 }
 
-void ChartsWidget::removeChart(const QString &msg_id, const Signal *sig) {
-  QMutableListIterator<ChartWidget *> it(charts);
-  while (it.hasNext()) {
-    auto c = it.next();
-    if (c->id == msg_id && c->signal == sig) {
-      c->deleteLater();
-      it.remove();
-      break;
-    }
-  }
+void ChartsWidget::removeChart(ChartWidget *chart) {
+  charts.removeOne(chart);
+  chart->deleteLater();
   updateTitleBar();
 }
 

@@ -69,7 +69,7 @@ class ChartsWidget : public QWidget {
 public:
   ChartsWidget(QWidget *parent = nullptr);
   void addChart(const QString &id, const Signal *sig);
-  void removeChart(const QString &id, const Signal *sig);
+  void removeChart(ChartWidget *chart);
 
 signals:
   void dock(bool floating);
