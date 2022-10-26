@@ -2,8 +2,8 @@
 import time
 import unittest
 import struct
-import numpy as np
 
+from common.params import Params
 import cereal.messaging as messaging
 import selfdrive.sensord.pigeond as pd
 from system.hardware import TICI
@@ -22,7 +22,20 @@ def read_events(service, duration_sec):
   return events
 
 
-def verify_ubloxgnss_data(socket: messaging.SubSocket):
+def create_backup(pigeon):
+  # controlled GNSS stop
+  pigeon.send(b"\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74")
+
+  # store almanac in flash
+  pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
+  try:
+    if not pigeon.wait_for_ack(ack=pd.UBLOX_SOS_ACK, nack=pd.UBLOX_SOS_NACK):
+      assert False, "Could not store almanac"
+  except TimeoutError:
+    pass
+
+
+def verify_ubloxgnss_data(socket: messaging.SubSocket, max_time: int):
   start_time = 0
   end_time = 0
   events = messaging.drain_sock(socket)
@@ -42,7 +55,7 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket):
   assert end_time != 0, "no ublox measurements received!"
 
   ttfm = (end_time - start_time)/1e9
-  assert ttfm < 35, f"Time to first measurement > 35s, {ttfm}"
+  assert ttfm < max_time, f"Time to first measurement > {max_time}s, {ttfm}"
 
   # check for satellite count in measurements
   sat_count = []
@@ -52,42 +65,31 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket):
       sat_count.append(event.ubloxGnss.measurementReport.numMeas)
 
   num_sat = int(sum(sat_count)/len(sat_count))
-  assert num_sat > 8, f"Not enough satellites {num_sat} (TestBox setup!)"
+  assert num_sat > 5, f"Not enough satellites {num_sat} (TestBox setup!)"
 
 
-def verify_gps_location(socket: messaging.SubSocket):
-  buf_lon = [0]*10
-  buf_lat = [0]*10
-  buf_i = 0
+def verify_gps_location(socket: messaging.SubSocket, max_time: int):
   events = messaging.drain_sock(socket)
   assert len(events) != 0, "no gpsLocationExternal measurements"
 
   start_time = events[0].logMonoTime
   end_time = 0
   for event in events:
-    buf_lon[buf_i % 10] = event.gpsLocationExternal.longitude
-    buf_lat[buf_i % 10] = event.gpsLocationExternal.latitude
-    buf_i += 1
+    gps_valid = event.gpsLocationExternal.flags % 2
 
-    if buf_i < 9:
-      continue
-
-    if any([lat == 0 or lon == 0 for lat,lon in zip(buf_lat, buf_lon)]):
-      continue
-
-    if np.std(buf_lon) < 1e-5 and np.std(buf_lat) < 1e-5:
+    if gps_valid:
       end_time = event.logMonoTime
       break
 
   assert end_time != 0, "GPS location never converged!"
 
   ttfl = (end_time - start_time)/1e9
-  assert ttfl < 40, f"Time to first location > 40s, {ttfl}"
+  assert ttfl < max_time, f"Time to first location > {max_time}s, {ttfl}"
 
   hacc = events[-1].gpsLocationExternal.accuracy
   vacc = events[-1].gpsLocationExternal.verticalAccuracy
-  assert hacc < 15, f"Horizontal accuracy too high, {hacc}"
-  assert vacc < 43,  f"Vertical accuracy too high, {vacc}"
+  assert hacc < 20, f"Horizontal accuracy too high, {hacc}"
+  assert vacc < 45,  f"Vertical accuracy too high, {vacc}"
 
 
 def verify_time_to_first_fix(pigeon):
@@ -111,11 +113,16 @@ class TestGPS(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
+    ublox_available = Params().get_bool("UbloxAvailable")
+    if not ublox_available:
+      raise unittest.SkipTest
+
+
   def tearDown(self):
     pd.set_power(False)
 
   @with_processes(['ubloxd'])
-  def test_ublox_reset(self):
+  def test_a_ublox_reset(self):
 
     pigeon, pm = pd.create_pigeon()
     pd.init_baudrate(pigeon)
@@ -127,13 +134,57 @@ class TestGPS(unittest.TestCase):
     gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
 
     # receive some messages (restart after cold start takes up to 30seconds)
-    pd.run_receiving(pigeon, pm, 40)
+    pd.run_receiving(pigeon, pm, 60)
 
-    verify_ubloxgnss_data(ugs)
-    verify_gps_location(gle)
+    # store almanac for next test
+    create_backup(pigeon)
+
+    verify_ubloxgnss_data(ugs, 60)
+    verify_gps_location(gle, 60)
 
     # skip for now, this might hang for a while
     #verify_time_to_first_fix(pigeon)
+
+
+  @with_processes(['ubloxd'])
+  def test_b_ublox_almanac(self):
+    pigeon, pm = pd.create_pigeon()
+    pd.init_baudrate(pigeon)
+
+    # device cold start
+    pigeon.send(b"\xb5\x62\x06\x04\x04\x00\xff\xff\x00\x00\x0c\x5d")
+    time.sleep(1) # wait for cold start
+    pd.init_baudrate(pigeon)
+
+    # clear configuration
+    pigeon.send_with_ack(b"\xb5\x62\x06\x09\x0d\x00\x00\x00\x1f\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x17\x71\x5b")
+
+    # restoring almanac backup
+    pigeon.send(b"\xB5\x62\x09\x14\x00\x00\x1D\x60")
+    status = pigeon.wait_for_backup_restore_status()
+    assert status == 2, "Could not restore almanac backup"
+
+    pd.initialize_pigeon(pigeon)
+
+    ugs = messaging.sub_sock("ubloxGnss", timeout=0.1)
+    gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
+
+    pd.run_receiving(pigeon, pm, 15)
+    verify_ubloxgnss_data(ugs, 15)
+    verify_gps_location(gle, 20)
+
+
+  @with_processes(['ubloxd'])
+  def test_c_ublox_startup(self):
+    pigeon, pm = pd.create_pigeon()
+    pd.init_baudrate(pigeon)
+    pd.initialize_pigeon(pigeon)
+
+    ugs = messaging.sub_sock("ubloxGnss", timeout=0.1)
+    gle = messaging.sub_sock("gpsLocationExternal", timeout=0.1)
+    pd.run_receiving(pigeon, pm, 10)
+    verify_ubloxgnss_data(ugs, 10)
+    verify_gps_location(gle, 10)
 
 
 if __name__ == "__main__":

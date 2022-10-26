@@ -90,13 +90,27 @@ class CarController:
         addr, bus = 0x730, 5
       can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
 
+    # >90 degree steering fault prevention
+    # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
+    if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
+      self.angle_limit_counter += 1
+    else:
+      self.angle_limit_counter = 0
+
+    # Cut steer actuation bit for two frames and hold torque with induced temporary fault
+    torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
+    lat_active = CC.latActive and not torque_fault
+
+    if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
+      self.angle_limit_counter = 0
+
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
-      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, CC.enabled, CC.latActive, apply_steer))
+      can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, CC.enabled, lat_active, apply_steer))
 
       # disable LFA on HDA2
       if self.frame % 5 == 0 and hda2:
@@ -121,29 +135,19 @@ class CarController:
               self.last_button_frame = self.frame
             else:
               for _ in range(20):
-                can_sends.append(hyundaicanfd.create_buttons(self.packer, CS.buttons_counter+1, Buttons.CANCEL))
+                can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.buttons_counter+1, Buttons.CANCEL))
               self.last_button_frame = self.frame
 
           # cruise standstill resume
           elif CC.cruiseControl.resume:
-            if not (self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
+            if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
+              # TODO: resume for alt button cars
+              pass
+            else:
               for _ in range(20):
-                can_sends.append(hyundaicanfd.create_buttons(self.packer, CS.buttons_counter+1, Buttons.RES_ACCEL))
+                can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.buttons_counter+1, Buttons.RES_ACCEL))
               self.last_button_frame = self.frame
     else:
-      # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
-      if CC.latActive and abs(CS.out.steeringAngleDeg) >= MAX_ANGLE:
-        self.angle_limit_counter += 1
-      else:
-        self.angle_limit_counter = 0
-
-      # Cut steer actuation bit for two frames and hold torque with induced temporary fault
-      torque_fault = CC.latActive and self.angle_limit_counter > MAX_ANGLE_FRAMES
-      lat_active = CC.latActive and not torque_fault
-
-      if self.angle_limit_counter >= MAX_ANGLE_FRAMES + MAX_ANGLE_CONSECUTIVE_FRAMES:
-        self.angle_limit_counter = 0
-
       can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,

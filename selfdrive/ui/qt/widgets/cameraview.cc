@@ -93,14 +93,14 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
+CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
-  connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
+  connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
+  connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived);
 }
 
-CameraViewWidget::~CameraViewWidget() {
+CameraWidget::~CameraWidget() {
   makeCurrent();
   if (isValid()) {
     glDeleteVertexArrays(1, &frame_vao);
@@ -111,7 +111,7 @@ CameraViewWidget::~CameraViewWidget() {
   doneCurrent();
 }
 
-void CameraViewWidget::initializeGL() {
+void CameraWidget::initializeGL() {
   initializeOpenGLFunctions();
 
   program = std::make_unique<QOpenGLShaderProgram>(context());
@@ -161,7 +161,7 @@ void CameraViewWidget::initializeGL() {
 #endif
 }
 
-void CameraViewWidget::showEvent(QShowEvent *event) {
+void CameraWidget::showEvent(QShowEvent *event) {
   frames.clear();
   if (!vipc_thread) {
     vipc_thread = new QThread();
@@ -171,7 +171,7 @@ void CameraViewWidget::showEvent(QShowEvent *event) {
   }
 }
 
-void CameraViewWidget::hideEvent(QHideEvent *event) {
+void CameraWidget::hideEvent(QHideEvent *event) {
   if (vipc_thread) {
     vipc_thread->requestInterruption();
     vipc_thread->quit();
@@ -180,7 +180,7 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
   }
 }
 
-void CameraViewWidget::updateFrameMat() {
+void CameraWidget::updateFrameMat() {
   int w = width(), h = height();
 
   if (zoomed_view) {
@@ -224,12 +224,12 @@ void CameraViewWidget::updateFrameMat() {
   }
 }
 
-void CameraViewWidget::updateCalibration(const mat3 &calib) {
+void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
   updateFrameMat();
 }
 
-void CameraViewWidget::paintGL() {
+void CameraWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -286,7 +286,7 @@ void CameraViewWidget::paintGL() {
   glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 }
 
-void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
+void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
   frames.clear();
   stream_width = vipc_client->buffers[0].width;
@@ -339,7 +339,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat();
 }
 
-void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
+void CameraWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
   frames.push_back(std::make_pair(frame_id, buf));
   while (frames.size() > FRAME_BUFFER_SIZE) {
     frames.pop_front();
@@ -347,7 +347,7 @@ void CameraViewWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
   update();
 }
 
-void CameraViewWidget::vipcThread() {
+void CameraWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra meta_main = {0};
