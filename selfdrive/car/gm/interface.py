@@ -47,18 +47,21 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
+  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, speed, friction_compensation):
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction_interp = interp(
       apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
       [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
       [-torque_params.friction, torque_params.friction]
     )
-
     friction = friction_interp if friction_compensation else 0.0
+
+    # Accel factor changes with speed
     torque = 0
+    curve_drop_off = interp(speed, [10, 30], [0.75, 1.0])
+    curve_steepness = 1.75 - curve_drop_off  # higher steepness with less drop off
     if lateral_accel_value != 0:
-      torque = (torque_params.latAccelFactor * 0.75 * lateral_accel_value) / (1 + abs(lateral_accel_value) ** 0.75)
+      torque = (torque_params.latAccelFactor * curve_steepness * lateral_accel_value) / (1 + abs(lateral_accel_value) ** curve_drop_off)
     return torque + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
