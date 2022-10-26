@@ -82,13 +82,13 @@ class Controls:
 
     self.log_sock = messaging.sub_sock('androidLog')
 
-    params = Params()
+    self.params = Params()
     self.sm = sm
     if self.sm is None:
       ignore = ['testJoystick']
       if SIMULATION:
         ignore += ['driverCameraState', 'managerState']
-      if params.get_bool('WideCameraOnly'):
+      if self.params.get_bool('WideCameraOnly'):
         ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
@@ -105,22 +105,22 @@ class Controls:
     else:
       self.CI, self.CP = CI, CI.CP
 
-    self.joystick_mode = params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
+    self.joystick_mode = self.params.get_bool("JoystickDebugMode") or (self.CP.notCar and sm is None)
 
     # set alternative experiences from parameters
-    self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
+    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-    if self.CP.dashcamOnly and params.get_bool("DashcamOverride"):
+    if self.CP.dashcamOnly and self.params.get_bool("DashcamOverride"):
       self.CP.dashcamOnly = False
 
     # read params
-    self.is_metric = params.get_bool("IsMetric")
-    self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
-    openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
-    passive = params.get_bool("Passive") or not openpilot_enabled_toggle
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
+    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
+    passive = self.params.get_bool("Passive") or not openpilot_enabled_toggle
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -139,15 +139,15 @@ class Controls:
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
-    params.put("CarParams", cp_bytes)
+    self.params.put("CarParams", cp_bytes)
     put_nonblocking("CarParamsCache", cp_bytes)
     put_nonblocking("CarParamsPersistent", cp_bytes)
 
     # cleanup old params
     if not self.CP.experimentalLongitudinalAvailable:
-      params.remove("ExperimentalLongitudinalEnabled")
+      self.params.remove("ExperimentalLongitudinalEnabled")
     if not self.CP.openpilotLongitudinalControl:
-      params.remove("EndToEndLong")
+      self.params.remove("EndToEndLong")
 
     self.CC = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
@@ -583,9 +583,9 @@ class Controls:
     """Given the state, this function returns a CarControl packet"""
 
     # Update VehicleModel
-    params = self.sm['liveParameters']
-    x = max(params.stiffnessFactor, 0.1)
-    sr = max(params.steerRatio, 0.1)
+    lp = self.sm['liveParameters']
+    x = max(lp.stiffnessFactor, 0.1)
+    sr = max(lp.steerRatio, 0.1)
     self.VM.update_params(x, sr)
 
     # Update Torque Params
@@ -628,7 +628,7 @@ class Controls:
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
                                                                                        lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, params,
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
     else:
@@ -768,10 +768,10 @@ class Controls:
                   (self.state == State.softDisabling)
 
     # Curvature & Steering angle
-    params = self.sm['liveParameters']
+    lp = self.sm['liveParameters']
 
-    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetDeg)
-    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, params.roll)
+    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg)
+    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, lp.roll)
 
     # controlsState
     dat = messaging.new_message('controlsState')
@@ -855,6 +855,8 @@ class Controls:
   def step(self):
     start_time = sec_since_boot()
     self.prof.checkpoint("Ratekeeper", ignore=True)
+
+    self.is_metric = self.params.get_bool("IsMetric")
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
