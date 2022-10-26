@@ -13,7 +13,7 @@ Ecu = CarParams.Ecu
 TransmissionType = CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
-AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
+AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'angle_rate_points'])
 
 
 class CarControllerParams:
@@ -30,8 +30,8 @@ class CarControllerParams:
                                 # TODO: remove this once we understand how the EPS calculates the steering angle better
   STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold in Nm
 
-  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
-  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], angle_rate_points=[500., 80., 15.])
+  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], angle_rate_points=[500., 350., 40.])
 
 
 class CANBUS:

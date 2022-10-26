@@ -12,7 +12,7 @@ def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
   # rate limit
   steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
   rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
-  max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
+  max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.angle_rate_points) / CarControllerParams.LKAS_STEER_STEP
   apply_angle = clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
 
   # absolute limit (LatCtlPath_An_Actl)
