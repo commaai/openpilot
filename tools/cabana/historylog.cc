@@ -7,7 +7,7 @@
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
   if (role == Qt::DisplayRole) {
-    const auto &m = can->messages(msg_id)[index.row()];
+    const auto &m = messages[index.row()];
     if (index.column() == 0) {
       return QString::number(m.ts, 'f', 2);
     }
@@ -49,7 +49,8 @@ void HistoryLogModel::updateState() {
   if (msg_id.isEmpty()) return;
 
   int prev_row_count = row_count;
-  row_count = can->messages(msg_id).size();
+  messages = can->messages(msg_id);
+  row_count = messages.size();
   int delta = row_count - prev_row_count;
   if (delta > 0) {
     beginInsertRows({}, prev_row_count, row_count - 1);
