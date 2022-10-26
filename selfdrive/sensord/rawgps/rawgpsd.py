@@ -5,7 +5,7 @@ import signal
 import itertools
 import math
 import time
-import subprocess as sp
+import subprocess
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
@@ -87,12 +87,12 @@ def try_setup_logs(diag, log_types):
   else:
     raise Exception(f"setup logs failed, {log_types=}")
 
-def mmcli(cmd: str) -> None:
+def at_cmd(cmd: str) -> None:
   for _ in range(5):
     try:
-      sp.check_call(f"mmcli -m any --timeout 30 {cmd}", shell=True)
+      subprocess.check_call(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True)
       break
-    except sp.CalledProcessError:
+    except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
   else:
     raise Exception(f"failed to execute mmcli command {cmd=}")
@@ -100,9 +100,9 @@ def mmcli(cmd: str) -> None:
 
 def gps_enabled() -> bool:
   try:
-    p = sp.run("mmcli -m any --command=\"AT+QGPS?\"", stdout=sp.PIPE, check=True, shell=True)
-    return b"QGPS: 1" in p.stdout
-  except sp.CalledProcessError as exc:
+    p = subprocess.check_output("mmcli -m any --command=\"AT+QGPS?\"", shell=True)
+    return b"QGPS: 1" in p
+  except subprocess.CalledProcessError as exc:
     raise Exception("failed to execute QGPS mmcli command") from exc
 
 def setup_quectel(diag: ModemDiag):
@@ -116,15 +116,17 @@ def setup_quectel(diag: ModemDiag):
 
   setup_logs(diag, LOG_TYPES)
 
-  # disable DPO power savings for more accuracy
-  mmcli("--command='AT+QGPSCFG=\"dpoenable\",0'")
-  # don't automatically turn on GNSS on powerup
-  mmcli("--command='AT+QGPSCFG=\"autogps\",0'")
-  mmcli("--command='AT+QGPSSUPLURL=\"supl.google.com:7275\"'")
+  if gps_enabled():
+    at_cmd("AT+QGPSEND")
 
-  mmcli("--command='AT+QGPSCFG=\"outport\",\"usbnmea\"'")
-  if not gps_enabled():
-    mmcli("--command='AT+QGPS=1'")
+  # disable DPO power savings for more accuracy
+  at_cmd("AT+QGPSCFG=\"dpoenable\",0")
+  # don't automatically turn on GNSS on powerup
+  at_cmd("AT+QGPSCFG=\"autogps\",0")
+
+  at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
+  at_cmd("AT+QGPS=1")
+  at_cmd("AT+QGPSXTRA=1")
 
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
@@ -146,9 +148,9 @@ def setup_quectel(diag: ModemDiag):
   ))
 
 def teardown_quectel(diag):
-  mmcli("--command='AT+QGPSCFG=\"outport\",\"none\"'")
+  at_cmd("AT+QGPSCFG=\"outport\",\"none\"")
   if gps_enabled():
-    mmcli("--command='AT+QGPSEND'")
+    at_cmd("AT+QGPSEND")
   try_setup_logs(diag, [])
 
 
@@ -170,7 +172,7 @@ def main() -> NoReturn:
   # wait for ModemManager to come up
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = sp.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=sp.DEVNULL, stderr=sp.DEVNULL, shell=True)
+    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     if ret == 0:
       break
     time.sleep(0.1)
