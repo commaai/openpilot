@@ -20,13 +20,13 @@ class ChartView : public QChartView {
 
 public:
   ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
-  void updateSeries();
-  void setRange(double min, double max);
+  void updateSeries(const std::pair<double, double> &range);
+  void setRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
 
 signals:
-  void zoom(double min, double max);
-  void resetZoom();
+  void zoomIn(double min, double max);
+  void zoomReset();
 
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
@@ -78,11 +78,12 @@ signals:
 private:
   void eventsMerged();
   void updateState();
-  void setRange(double min, double max);
-  void resetZoom();
+  void zoomIn(double min, double max);
+  void zoomReset();
+  void signalUpdated(const Signal *sig);
   void updateTitleBar();
   void removeAll(const Signal *sig = nullptr);
-  bool eventFilter(QObject *obj, QEvent *event);
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
   QWidget *title_bar;
   QLabel *title_label;
@@ -97,4 +98,5 @@ private:
   bool is_zoomed = false;
   std::pair<double, double> event_range;
   std::pair<double, double> display_range;
+  std::pair<double, double> zoomed_range;
 };
