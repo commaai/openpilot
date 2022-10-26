@@ -137,7 +137,6 @@ pipeline {
           }
         }
 
-        /*
         stage('camerad') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
@@ -148,7 +147,6 @@ pipeline {
             ])
           }
         }
-        */
 
         stage('replay') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
