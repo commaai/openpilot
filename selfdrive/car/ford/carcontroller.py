@@ -8,10 +8,14 @@ from selfdrive.car.ford.values import CANBUS, CarControllerParams
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
+def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, CS):
   steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
+  if steer_up:
+    max_angle_diff = 5.
+    clip(apply_angle, (CS.out.steeringAngleDeg - max_angle_diff), (CS.out.steeringAngleDeg + max_angle_diff))
+
   rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
-  max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.angle_rate_points) / CarControllerParams.LKAS_STEER_STEP
+  max_angle_diff = interp(CS.out.vEgo, rate_limit.speed_points, rate_limit.angle_rate_points) / CarControllerParams.LKAS_STEER_STEP
   return clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
 
 
@@ -55,7 +59,7 @@ class CarController:
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       if CC.latActive:
         lca_rq = 1
-        apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
+        apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS)
       else:
         lca_rq = 0
         apply_angle = 0.
