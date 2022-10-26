@@ -57,7 +57,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  QObject::connect(can, &CANMessages::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
@@ -70,8 +69,8 @@ void VideoWidget::pause(bool pause) {
   can->pause(pause);
 }
 
-void VideoWidget::rangeChanged(double min, double max) {
-  if (!can->isZoomed()) {
+void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+  if (!is_zoomed) {
     min = 0;
     max = can->totalSeconds();
   }
