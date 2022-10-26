@@ -133,7 +133,7 @@ class LongitudinalPlanner:
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     # TODO write fcw in e2e_long mode
-    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5
+    self.fcw = self.mpc.mode == 'acc' and self.mpc.crash_cnt > 5 and not sm['carState'].standstill
     if self.fcw:
       cloudlog.info("FCW triggered")
 
