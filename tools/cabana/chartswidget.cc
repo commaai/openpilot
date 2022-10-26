@@ -376,9 +376,11 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   QChartView::mouseMoveEvent(ev);
 }
 
+// MultipleSignalSelector
+
 MultipleSignalSelector::MultipleSignalSelector(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  signal_layout = new QVBoxLayout();
+  signal_layout = new QFormLayout();
   main_layout->addLayout(signal_layout);
 
   QHBoxLayout *btn_layout = new QHBoxLayout();
@@ -387,12 +389,21 @@ MultipleSignalSelector::MultipleSignalSelector(QWidget *parent) : QWidget(parent
   btn_layout->addWidget(ok_btn);
   btn_layout->addWidget(cancel_btn);
   main_layout->addLayout(btn_layout);
+
+  QObject::connect(ok_btn, &QPushButton::clicked, this, &MultipleSignalSelector::accept);
+  QObject::connect(cancel_btn, &QPushButton::clicked, this, &MultipleSignalSelector::reject);
 }
 
 void MultipleSignalSelector::addSignal(const QString &msd_id, const Signal *signal) {
-
+  QPushButton *remove_btn = new QPushButton("✖", this);
+  remove_btn->setFixedSize(20, 20);
+  remove_btn->setToolTip(tr("Remove signal"));
+  QObject::connect(remove_btn, &QPushButton::clicked, [this]() { removeSignal(sigs.size()); });
+  signal_layout->addRow(signal->name.c_str(), remove_btn);
+  sigs.push_back(signal);
 }
 
-void MultipleSignalSelector::removeSignal(const QString &msd_id, const Signal *signal) {
-
+void MultipleSignalSelector::removeSignal(int index) {
+  signal_layout->removeRow(index);
+  sigs.removeAt(index);
 }

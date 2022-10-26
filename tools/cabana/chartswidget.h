@@ -2,6 +2,7 @@
 
 #include <map>
 
+#include <QFormLayout>
 #include <QLabel>
 #include <QGraphicsLineItem>
 #include <QGraphicsSimpleTextItem>
@@ -89,10 +90,16 @@ private:
 
 class MultipleSignalSelector : public QWidget {
   Q_OBJECT
+
 public:
   MultipleSignalSelector(QWidget *parent);
   void addSignal(const QString &msd_id, const Signal *signal);
-  void removeSignal(const QString &msd_id, const Signal *signal);
+  void removeSignal(int index);
 
-  QVBoxLayout *signal_layout;
+  QFormLayout *signal_layout;
+  QList<const Signal *> sigs;
+
+signals:
+  void accept();
+  void reject();
 };
