@@ -396,16 +396,19 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
     double sec = axis_x->min() + ((x - plot_area.x()) / plot_area.width()) * (axis_x->max() - axis_x->min());
     auto value = std::lower_bound(vals.begin(), vals.end(), sec, [](auto &p, double x) { return p.x() < x; });
-
     if (value != vals.end()) {
       auto axis_y = dynamic_cast<QValueAxis *>(chart()->axisY());
       int y = plot_area.bottom() - plot_area.height() * ((value->y() - axis_y->min()) / (axis_y->max() - axis_y->min()));
-      value_text->setPos(x + 10, y);
-      track_ellipse->setRect(x - 5, y, 10, 10);
-      QString html = tr("<div style='background-color:darkGray'><font color='white'>(%1, %2)</font></div>")
-                         .arg(value->x(), 0, 'f', 3)
-                         .arg(value->y());
-      value_text->setHtml(html);
+      track_ellipse->setRect(x - 5, y - 5, 10, 10);
+      track_ellipse->show();
+
+      value_text->setHtml(tr("<div style='background-color:darkGray'><font color='white'>(%1, %2)</font></div>")
+                              .arg(value->x(), 0, 'f', 3).arg(value->y()));
+      int value_x = x + 8;
+      if ((value_x + value_text->boundingRect().width()) > plot_area.right()) {
+        value_x = x - value_text->boundingRect().width() - 8;
+      }
+      value_text->setPos(value_x, y - 10);
       value_text->show();
     } else {
       track_ellipse->hide();
