@@ -243,14 +243,8 @@ void CameraWidget::paintGL() {
   // }
 
   // Log duplicate/dropped frames
-  const auto current_frame = frames.front();
+  VisionBuf *frame = frames.front().second;
   frames.pop_front();
-  if (current_frame.first == prev_frame_id) {
-    qDebug() << "Drawing same frame twice" << current_frame.first;
-  }
-  prev_frame_id = current_frame.first;
-  VisionBuf *frame = current_frame.second;
-  assert(frame != nullptr);
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
