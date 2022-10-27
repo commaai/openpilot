@@ -237,21 +237,19 @@ void CameraWidget::paintGL() {
   std::lock_guard lk(frame_lock);
   if (frames.empty()) return;
 
-  int frame_idx = frames.size() - 1;
-
   // Always draw latest frame until sync logic is more stable
   // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
   //   if (frames[frame_idx].first == draw_frame_id) break;
   // }
 
   // Log duplicate/dropped frames
-  if (frames[frame_idx].first == prev_frame_id) {
-    qDebug() << "Drawing same frame twice" << frames[frame_idx].first;
-  } else if (frames[frame_idx].first != prev_frame_id + 1) {
-    qDebug() << "Skipped frame" << frames[frame_idx].first;
+  const auto current_frame = frames.front();
+  frames.pop_front();
+  if (current_frame.first == prev_frame_id) {
+    qDebug() << "Drawing same frame twice" << current_frame.first;
   }
-  prev_frame_id = frames[frame_idx].first;
-  VisionBuf *frame = frames[frame_idx].second;
+  prev_frame_id = current_frame.first;
+  VisionBuf *frame = current_frame.second;
   assert(frame != nullptr);
 
   glViewport(0, 0, width(), height());
@@ -370,6 +368,7 @@ void CameraWidget::vipcThread() {
         std::lock_guard lk(frame_lock);
         frames.push_back(std::make_pair(meta_main.frame_id, buf));
         while (frames.size() > FRAME_BUFFER_SIZE) {
+          qDebug() << "Skipped frame" << frames.front().first;
           frames.pop_front();
         }
       }
