@@ -65,7 +65,7 @@ def verify_ubloxgnss_data(socket: messaging.SubSocket, max_time: int):
       sat_count.append(event.ubloxGnss.measurementReport.numMeas)
 
   num_sat = int(sum(sat_count)/len(sat_count))
-  assert num_sat > 5, f"Not enough satellites {num_sat} (TestBox setup!)"
+  assert num_sat >= 5, f"Not enough satellites {num_sat} (TestBox setup!)"
 
 
 def verify_gps_location(socket: messaging.SubSocket, max_time: int):
