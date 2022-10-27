@@ -21,7 +21,13 @@ class ChartView : public QChartView {
 
 public:
   ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
-  void updateSeries();
+  void updateSeries(const std::pair<double, double> &range);
+  void setRange(double min, double max, bool force_update = false);
+  void updateLineMarker(double current_sec);
+
+signals:
+  void zoomIn(double min, double max);
+  void zoomReset();
 
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
@@ -30,9 +36,7 @@ private:
   void leaveEvent(QEvent *event) override;
   void adjustChartMargins();
 
-  void rangeChanged(qreal min, qreal max);
   void updateAxisY();
-  void updateState();
 
   QGraphicsLineItem *track_line;
   QGraphicsEllipseItem *track_ellipse;
@@ -49,7 +53,6 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
   void updateTitle();
-  void setHeight(int height);
 
 signals:
   void remove(const QString &msg_id, const Signal *sig);
@@ -57,7 +60,8 @@ signals:
 public:
   QString id;
   const Signal *signal;
-  QLabel *title;
+  QLabel *msg_name_label;
+  QLabel *sig_name_label;
   ChartView *chart_view = nullptr;
 };
 
@@ -67,16 +71,21 @@ class ChartsWidget : public QWidget {
 public:
   ChartsWidget(QWidget *parent = nullptr);
   void addChart(const QString &id, const Signal *sig);
-  void removeChart(const QString &id, const Signal *sig);
+  void removeChart(ChartWidget *chart);
 
 signals:
   void dock(bool floating);
+  void rangeChanged(double min, double max, bool is_zommed);
 
 private:
+  void eventsMerged();
   void updateState();
+  void zoomIn(double min, double max);
+  void zoomReset();
+  void signalUpdated(const Signal *sig);
   void updateTitleBar();
   void removeAll(const Signal *sig = nullptr);
-  bool eventFilter(QObject *obj, QEvent *event);
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
   QWidget *title_bar;
   QLabel *title_label;
@@ -87,4 +96,9 @@ private:
   QPushButton *remove_all_btn;
   QVBoxLayout *charts_layout;
   QList<ChartWidget *> charts;
+
+  bool is_zoomed = false;
+  std::pair<double, double> event_range;
+  std::pair<double, double> display_range;
+  std::pair<double, double> zoomed_range;
 };
