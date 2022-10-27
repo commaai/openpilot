@@ -83,7 +83,7 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in RAM_CARS:
       self.auto_high_beam = cp_cam.vl["DAS_6"]['AUTO_HIGH_BEAM_ON']  # Auto High Beam isn't Located in this message on chrysler or jeep currently located in 729 message
-      ret.steerFaultTemporary = cp.vl["EPS_3"]["DASM_FAULT"] == 1
+      ret.steerFaultTemporary  = cp.vl["EPS_3"]["DASM_FAULT"] == 1
     else:
       ret.steerFaultPermanent = cp.vl["EPS_2"]["LKAS_STATE"] == 4
 
@@ -99,7 +99,7 @@ class CarState(CarStateBase):
     # If we're above the threshold on the first frame, raise the minimum steering speed
     if self.min_steer_speed is None:
       if ram_steer_to_zero(self.CP.carFw):
-        self.min_steer_speed = 14.5 if ret.vEgo > 14.5 else 0
+        self.min_steer_speed = 14.5 if ret.vEgo > 14. else 0
       else:
         self.min_steer_speed = self.CP.minSteerSpeed
 
