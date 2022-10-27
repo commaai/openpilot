@@ -242,7 +242,6 @@ void CameraWidget::paintGL() {
   //   if (frames[frame_idx].first == draw_frame_id) break;
   // }
 
-  // Log duplicate/dropped frames
   VisionBuf *frame = frames.front().second;
   frames.pop_front();
 
