@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QComboBox>
 #include <QDialog>
 #include <QSpinBox>
 
@@ -15,6 +16,7 @@ public:
   int can_msg_log_size = 100;
   int cached_segment_limit = 3;
   int chart_height = 200;
+  int chart_theme = 0;
   int max_chart_x_range = 3 * 60; // 3 minutes
 
 signals:
@@ -31,6 +33,7 @@ public:
   QSpinBox *log_size ;
   QSpinBox *cached_segment;
   QSpinBox *chart_height;
+  QComboBox *chart_theme;
   QSpinBox *max_chart_x_range;
 };
 
