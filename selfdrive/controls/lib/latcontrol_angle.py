@@ -20,28 +20,21 @@ class LatControlAngle(LatControl):
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
+    angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
+    angle_log.steeringAngleDesiredDeg = desired_curvature
+
+    actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
+    error = desired_curvature - actual_curvature
 
     if CS.vEgo < MIN_STEER_SPEED or not active:
+      output = 0.0
       angle_log.active = False
-      #angle_steers_des = float(CS.steeringAngleDeg)
     else:
+      freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
+      output = -self.pid.update(error,
+                                feedforward=desired_curvature,
+                                speed=CS.vEgo,
+                                freeze_integrator=freeze_integrator)
       angle_log.active = True
-      #angle_steers_des = cur
-      #angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
-      #angle_steers_des += params.angleOffsetDeg
 
-    #angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
-    #angle_log.steeringAngleDesiredDeg = desired_curvature
-
-    actual_curvature = VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
-    error = desired_curvature - actual_curvature
-    freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
-    out = self.pid.update(error,
-                          feedforward=desired_curvature,
-                          speed=CS.vEgo,
-                          freeze_integrator=freeze_integrator)
-
-    if not angle_log.active:
-      out = 0
-
-    return 0, out, angle_log
+    return 0, output, angle_log
