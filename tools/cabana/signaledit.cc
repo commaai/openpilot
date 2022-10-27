@@ -1,6 +1,7 @@
 #include "tools/cabana/signaledit.h"
 
 #include <QDialogButtonBox>
+#include <QDoubleValidator>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -36,13 +37,16 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
   form_layout->addRow(tr("sign"), sign);
 
-  factor = new QDoubleSpinBox();
-  factor->setDecimals(3);
-  factor->setValue(sig.factor);
+  auto double_validator = new QDoubleValidator(this);
+
+  factor = new QLineEdit();
+  factor->setValidator(double_validator);
+  factor->setText(QString::number(sig.factor));
   form_layout->addRow(tr("Factor"), factor);
 
-  offset = new QSpinBox();
-  offset->setValue(sig.offset);
+  offset = new QLineEdit();
+  offset->setValidator(double_validator);
+  offset->setText(QString::number(sig.offset));
   form_layout->addRow(tr("Offset"), offset);
 
   // TODO: parse the following parameters in opendbc
@@ -50,11 +54,11 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   form_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
   form_layout->addRow(tr("Comment"), comment);
-  min_val = new QDoubleSpinBox();
-  factor->setDecimals(3);
+  min_val = new QLineEdit();
+  min_val->setValidator(double_validator);
   form_layout->addRow(tr("Minimum value"), min_val);
-  max_val = new QDoubleSpinBox();
-  factor->setDecimals(3);
+  max_val = new QLineEdit();
+  max_val->setValidator(double_validator);
   form_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
   form_layout->addRow(tr("Value descriptions"), val_desc);
