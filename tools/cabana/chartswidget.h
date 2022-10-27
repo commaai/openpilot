@@ -23,6 +23,7 @@ public:
   void updateSeries(const std::pair<double, double> &range);
   void setRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
+  void updateFromSettings();
 
 signals:
   void zoomIn(double min, double max);
@@ -34,7 +35,6 @@ private:
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void adjustChartMargins();
-
   void updateAxisY();
 
   QGraphicsLineItem *track_line;
@@ -51,6 +51,7 @@ Q_OBJECT
 public:
   ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
   void updateTitle();
+  void updateFromSettings();
 
 signals:
   void remove(const QString &msg_id, const Signal *sig);
@@ -58,8 +59,10 @@ signals:
 public:
   QString id;
   const Signal *signal;
+  QWidget *header;
   QLabel *msg_name_label;
   QLabel *sig_name_label;
+  QPushButton *remove_btn;
   ChartView *chart_view = nullptr;
 };
 

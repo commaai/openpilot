@@ -200,38 +200,45 @@ ChartWidget::ChartWidget(const QString &id, const Signal *sig, QWidget *parent) 
   main_layout->setSpacing(0);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
-  QWidget *header = new QWidget(this);
-  header->setStyleSheet("background-color:white");
+  header = new QWidget(this);
   QGridLayout *header_layout = new QGridLayout(header);
   header_layout->setContentsMargins(11, 11, 11, 0);
   msg_name_label = new QLabel(this);
   msg_name_label->setTextFormat(Qt::RichText);
   header_layout->addWidget(msg_name_label, 0, 0, Qt::AlignLeft);
   sig_name_label = new QLabel(this);
-  sig_name_label->setStyleSheet("font-weight:bold");
   header_layout->addWidget(sig_name_label, 0, 1, Qt::AlignCenter);  //, 0, Qt::AlignCenter);
 
-  QPushButton *remove_btn = new QPushButton("✖", this);
+  remove_btn = new QPushButton("✖", this);
   remove_btn->setFixedSize(20, 20);
   remove_btn->setToolTip(tr("Remove chart"));
   header_layout->addWidget(remove_btn, 0, 2, Qt::AlignRight);
   main_layout->addWidget(header);
 
   chart_view = new ChartView(id, sig, this);
-  chart_view->setFixedHeight(settings.chart_height);
   main_layout->addWidget(chart_view);
   main_layout->addStretch();
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   updateTitle();
+  updateFromSettings();
 
   QObject::connect(remove_btn, &QPushButton::clicked, [=]() { emit remove(id, sig); });
-  QObject::connect(&settings, &Settings::changed, [this]() { chart_view->setFixedHeight(settings.chart_height); });
+  QObject::connect(&settings, &Settings::changed, this, &ChartWidget::updateFromSettings);
 }
 
 void ChartWidget::updateTitle() {
   msg_name_label->setText(tr("%1 <font color=\"gray\">%2</font>").arg(dbc()->msg(id)->name.c_str()).arg(id));
   sig_name_label->setText(signal->name.c_str());
+}
+
+void ChartWidget::updateFromSettings() {
+  header->setStyleSheet(settings.chart_theme == 0 ? "background-color:white" : "background-color:#23242c");
+  QString color_style = settings.chart_theme == 0 ? "color:black" : "color:white";
+  sig_name_label->setStyleSheet("font-weight:bold;" + color_style);
+  msg_name_label->setStyleSheet(color_style);
+  remove_btn->setStyleSheet(color_style);
+  chart_view->updateFromSettings();
 }
 
 // ChartView
@@ -240,6 +247,7 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     : id(id), signal(sig), QChartView(nullptr, parent) {
   QLineSeries *series = new QLineSeries();
   QChart *chart = new QChart();
+  chart->setBackgroundRoundness(0);
   chart->addSeries(series);
   chart->createDefaultAxes();
   chart->legend()->hide();
@@ -254,7 +262,6 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   value_text->setBrush(Qt::gray);
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
-  line_marker->setPen(QPen(Qt::black, 2));
 
   setChart(chart);
 
@@ -275,6 +282,12 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     // use a singleshot timer to avoid recursion call.
     timer->start();
   });
+}
+
+void ChartView::updateFromSettings() {
+  setFixedHeight(settings.chart_height);
+  chart()->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
+  line_marker->setPen(QPen(settings.chart_theme == 0 ? Qt::black : Qt::white, 2));
 }
 
 void ChartView::setRange(double min, double max, bool force_update) {
