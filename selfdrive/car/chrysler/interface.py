@@ -7,6 +7,14 @@ from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
+def ram_steer_to_zero(car_fw):
+  if car_fw is not None:
+    for fw in car_fw:
+      if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
+        return True
+  return False
+
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
@@ -59,11 +67,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.minSteerSpeed = 14.5
-      if car_fw is not None:
-        for fw in car_fw:
-          if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
-            # This firmware allows steering to 10 kph only once car has gone below 14.5 m/s
-            ret.minSteerSpeed = 0
+      if ram_steer_to_zero(car_fw):
+        ret.minSteerSpeed = 0
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2
@@ -95,13 +100,10 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
 
-    min_steer_speed = self.CP.minSteerSpeed
-
-
     # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):
+    if self.CS.min_steer_speed > 0. and ret.vEgo < (self.CS.min_steer_speed + 0.5):
       self.low_speed_alert = True
-    elif ret.vEgo > (self.CP.minSteerSpeed + 1.):
+    elif ret.vEgo > (self.CS.min_steer_speed + 1.):
       self.low_speed_alert = False
     if self.low_speed_alert:
       events.add(car.CarEvent.EventName.belowSteerSpeed)

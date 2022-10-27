@@ -4,6 +4,7 @@ from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
+from selfdrive.car.chrysler.interface import ram_steer_to_zero
 
 
 class CarState(CarStateBase):
@@ -94,8 +95,13 @@ class CarState(CarStateBase):
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
+    # OP needs to start while Ram 1500 with FW exception to steer to zero is under 32 mph
+    # If we're above the threshold on the first frame, raise the minimum steering speed
     if self.min_steer_speed is None:
-      if ret.vEgo
+      if ram_steer_to_zero(self.CP.carFw):
+        self.min_steer_speed = 14.5 if ret.vEgo > 14.5 else 0
+      else:
+        self.min_steer_speed = self.CP.minSteerSpeed
 
     return ret
 
