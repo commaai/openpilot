@@ -15,6 +15,7 @@ class CarState(CarStateBase):
     self.auto_high_beam = 0
     self.button_counter = 0
     self.lkas_car_model = -1
+    self.min_steer_speed = None
 
     if CP.carFingerprint in RAM_CARS:
       self.shifter_values = can_define.dv["Transmission_Status"]["Gear_State"]
@@ -92,6 +93,9 @@ class CarState(CarStateBase):
 
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
+
+    if self.min_steer_speed is None:
+      if ret.vEgo
 
     return ret
 

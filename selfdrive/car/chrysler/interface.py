@@ -58,12 +58,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-      ret.minSteerSpeed = 50.0 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 14.5
       if car_fw is not None:
         for fw in car_fw:
           if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
-            # This firmware allows steering to 10 kph only once car has ever gone below 10 kph TODO: zero?
-            ret.minSteerSpeed = 10.0 * CV.KPH_TO_MS
+            # This firmware allows steering to 10 kph only once car has gone below 14.5 m/s
+            ret.minSteerSpeed = 0
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2
@@ -94,6 +94,9 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
+
+    min_steer_speed = self.CP.minSteerSpeed
+
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):
