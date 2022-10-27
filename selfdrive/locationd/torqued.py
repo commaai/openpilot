@@ -28,8 +28,7 @@ MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
-MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
-MIN_BUCKET_POINTS_QLOG = [10, 30, 50, 50, 50, 50, 30, 10]
+MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MAX_RESETS = 5.0
 MAX_INVALID_THRESHOLD = 10
 MIN_ENGAGE_BUFFER = 2  # secs
@@ -99,7 +98,7 @@ class TorqueEstimator:
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
     self.decimated = decimated
     if self.decimated:
-      self.min_bucket_points = MIN_BUCKET_POINTS_QLOG
+      self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
       self.fit_points = FIT_POINTS_TOTAL_QLOG
     else:
