@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QList>
+#include <QSet>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
@@ -38,7 +40,7 @@ public:
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "0";
-    const Signal *sig = nullptr;
+    QList<const Signal *> sigs;
   };
 
 private:
@@ -58,6 +60,7 @@ public:
   void updateState();
   void highlight(const Signal *sig);
   const Signal *hoveredSignal() const { return hovered_sig; }
+  QSet<const Signal*> getOverlappingSignals() const;
 
 signals:
   void signalHovered(const Signal *sig);

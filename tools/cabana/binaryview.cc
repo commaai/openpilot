@@ -13,12 +13,6 @@
 
 const int CELL_HEIGHT = 30;
 
-static std::pair<int, int> getSignalRange(const Signal *s) {
-  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
-  int to = from + s->size - 1;
-  return {from, to};
-}
-
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
   setModel(model);
@@ -76,9 +70,10 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
   if (auto index = indexAt(event->pos()); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
-    highlight(item->sig);
-    item->sig ? QToolTip::showText(event->globalPos(), item->sig->name.c_str(), this, rect())
-              : QToolTip::hideText();
+    const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
+    highlight(sig);
+    sig ? QToolTip::showText(event->globalPos(), sig->name.c_str(), this, rect())
+        : QToolTip::hideText();
   }
   QTableView::mouseMoveEvent(event);
 }
@@ -92,7 +87,8 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
     if (auto sig = getResizingSignal()) {
       auto [sig_from, sig_to] = getSignalRange(sig);
       if (from >= sig_from && to <= sig_to) {  // reduce size
-        emit(from == sig_from ? resizeSignal(sig, to, sig_to) : resizeSignal(sig, sig_from, from));
+        emit(from == sig_from ? resizeSignal(sig, std::min(to + 1, sig_to), sig_to)
+                              : resizeSignal(sig, sig_from, std::max(from - 1, sig_from)));
       } else {  // increase size
         emit resizeSignal(sig, std::min(from, sig_from), std::max(to, sig_to));
       }
@@ -124,14 +120,30 @@ void BinaryView::updateState() {
 const Signal *BinaryView::getResizingSignal() const {
   if (anchor_index.isValid()) {
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    if (item && item->sig) {
+    if (item && item->sigs.size() > 0) {
       int archor_pos = anchor_index.row() * 8 + anchor_index.column();
-      auto [sig_from, sig_to] = getSignalRange(item->sig);
-      if (archor_pos == sig_from || archor_pos == sig_to)
-        return item->sig;
+      for (auto s : item->sigs) {
+        auto [sig_from, sig_to] = getSignalRange(s);
+        if (archor_pos == sig_from || archor_pos == sig_to)
+          return s;
+      }
     }
   }
   return nullptr;
+}
+
+QSet<const Signal *> BinaryView::getOverlappingSignals() const {
+  QSet<const Signal *> overlapping;
+  for (int i = 0; i < model->rowCount(); ++i) {
+    for (int j = 0; j < model->columnCount() - 1; ++j) {
+      auto item = (const BinaryViewModel::Item *)model->index(i, j).internalPointer();
+      if (item && item->sigs.size() > 1) {
+        for (auto s : item->sigs)
+          overlapping.insert(s);
+      }
+    }
+  }
+  return overlapping;
 }
 
 // BinaryViewModel
@@ -162,7 +174,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
           sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         }
         items[idx].bg_color = getColor(i);
-        items[idx].sig = &dbc_msg->sigs[i];
+        items[idx].sigs.push_back(&dbc_msg->sigs[i]);
       }
     }
   }
@@ -212,7 +224,7 @@ void BinaryViewModel::updateState() {
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Vertical) {
     switch (role) {
-      case Qt::DisplayRole: return section + 1;
+      case Qt::DisplayRole: return section;
       case Qt::SizeHintRole: return QSize(30, CELL_HEIGHT);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
     }
@@ -240,7 +252,8 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
-  bool hover = item->sig && bin_view->hoveredSignal() == item->sig;
+  bool hover = std::find_if(item->sigs.begin(), item->sigs.end(), [=](auto s) { return s == bin_view->hoveredSignal(); }) !=
+               item->sigs.end();
   // background
   QColor bg_color = hover ? hoverColor(item->bg_color) : item->bg_color;
   if (option.state & QStyle::State_Selected) {
