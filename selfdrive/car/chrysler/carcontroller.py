@@ -51,12 +51,15 @@ class CarController:
       lkas_control_bit = self.lkas_control_bit_prev
       if CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
-      elif self.CP.carFingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
-          lkas_control_bit = False
-      elif self.CP.carFingerprint in RAM_CARS:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
-          lkas_control_bit = False
+      if CS.out.steerFaultTemporary or CS.out.steerFaultPermanent:
+        lkas_control_bit = False
+      # TODO: is it necessary to set the bit low if it's set above the min speed?
+      # elif self.CP.carFingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
+      #   if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
+      #     lkas_control_bit = False
+      # elif self.CP.carFingerprint in RAM_CARS:
+      #   if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
+      #     lkas_control_bit = False
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
