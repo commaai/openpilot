@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from common.conversions import Conversions as CV
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT
@@ -61,7 +62,7 @@ class CarInterface(CarInterfaceBase):
       if car_fw is not None:
         for fw in car_fw:
           if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
-            ret.minSteerSpeed = 0.
+            ret.minSteerSpeed = 10.0 * CV.KPH_TO_MS
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2
