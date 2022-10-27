@@ -17,7 +17,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
-  // TODO: figure out why the CameraWidget crashed occasionally.
   cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false, this);
   cam_widget->setFixedSize(parent->width(), parent->width() / 1.596);
   main_layout->addWidget(cam_widget);
