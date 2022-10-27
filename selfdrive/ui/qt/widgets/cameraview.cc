@@ -190,21 +190,17 @@ void CameraWidget::updateFrameMat() {
     } else {
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
-      // for narrow come and  a little lower for wide cam 
+      // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
       if (stream_type == VISION_STREAM_WIDE_ROAD) {
         intrinsic_matrix = ecam_intrinsic_matrix;
         zoom = 2.0;
-        y_pos = 0;
-        current_calibration = wide_calibration;
       } else {
         intrinsic_matrix = fcam_intrinsic_matrix;
         zoom = 1.1;
-        y_pos = 0;
-        current_calibration = calibration;
       }
-      const vec3 inf = {{1000., 0., y_pos}};
-      const vec3 Ep = matvecmul3(current_calibration, inf);
+      const vec3 inf = {{1000., 0., 0.}};
+      const vec3 Ep = matvecmul3(calibration, inf);
       const vec3 Kep = matvecmul3(intrinsic_matrix, Ep);
 
       float x_offset_ = (Kep.v[0] / Kep.v[2] - intrinsic_matrix.v[2]) * zoom;
@@ -232,10 +228,6 @@ void CameraWidget::updateFrameMat() {
     float frame_aspect_ratio = (float)stream_width  / stream_height;
     frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio);
   }
-}
-
-void CameraWidget::updateWideCalibration(const mat3 &calib) {
-  wide_calibration = calib;
 }
 
 void CameraWidget::updateCalibration(const mat3 &calib) {

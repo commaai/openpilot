@@ -124,8 +124,8 @@ static void update_state(UIState *s) {
     auto wfde_list = sm["liveCalibration"].getLiveCalibration().getWideFromDeviceEuler();
     Eigen::Vector3d rpy;
     Eigen::Vector3d wfde;
-    rpy << rpy_list[0], rpy_list[1], rpy_list[2];
-    wfde << wfde_list[0], wfde_list[1], wfde_list[2];
+    if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    if (wfde_list.size() == 3) wfde << wfde_list[0], wfde_list[1], wfde_list[2];
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
     Eigen::Matrix3d wide_from_device = euler2rot(wfde);
     Eigen::Matrix3d view_from_device;
@@ -176,8 +176,9 @@ static void update_state(UIState *s) {
 
   if (sm.updated("carState")) {
     float v_ego = sm["carState"].getCarState().getVEgo();
+    // TODO: support replays without ecam by using fcam
     // Wide or narrow cam dependent on speed
-    if ((!scene.wide_cam and v_ego < 10)  or (s->wide_cam_only)){
+    if ((!scene.wide_cam && v_ego < 10) || s->wide_cam_only) {
       scene.wide_cam = true;
     } else if (scene.wide_cam and v_ego > 15) {
       scene.wide_cam = false;

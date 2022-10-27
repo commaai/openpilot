@@ -228,14 +228,12 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
 
-  this->setStreamType(s.scene.wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-
+  setStreamType(s.scene.wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
   if (s.scene.calibration_valid) {
-    CameraWidget::updateCalibration(s.scene.view_from_calib);
-    CameraWidget::updateWideCalibration(s.scene.view_from_wide_calib);
+    auto calib = s.scene.wide_cam ? s.scene.view_from_wide_calib : s.scene.view_from_calib;
+    CameraWidget::updateCalibration(calib);
   } else {
     CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-    CameraWidget::updateWideCalibration(DEFAULT_CALIBRATION);
   }
 }
 
