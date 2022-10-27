@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
@@ -37,7 +38,7 @@ public:
 signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
-  void vipcThreadFrameReceived(VisionBuf *, quint32);
+  void vipcThreadFrameReceived();
 
 protected:
   void paintGL() override;
@@ -49,6 +50,7 @@ protected:
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
   void vipcThread();
+  void clearFrames();
 
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
@@ -76,11 +78,12 @@ protected:
   mat3 calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
+  std::mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;
   uint32_t prev_frame_id = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived(VisionBuf *vipc_client, uint32_t frame_id);
+  void vipcFrameReceived();
 };

@@ -23,6 +23,7 @@ MainWindow::MainWindow() : QWidget() {
   main_layout->addLayout(h_layout);
 
   QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  splitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
@@ -58,6 +59,7 @@ MainWindow::MainWindow() : QWidget() {
 
   // status bar
   status_bar = new QStatusBar(this);
+  status_bar->setFixedHeight(20);
   status_bar->setContentsMargins(0, 0, 0, 0);
   status_bar->setSizeGripEnabled(true);
   progress_bar = new QProgressBar();
