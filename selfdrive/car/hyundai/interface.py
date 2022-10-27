@@ -217,6 +217,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.vEgoStarting = 0.1
+    ret.vEgoStopping = 0.1
     ret.startAccel = 2.0
 
     # *** feature detection ***
