@@ -277,7 +277,12 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(uiState()->prime_type ? (QWidget*)primeUser : (QWidget*)primeAd);
+  device_paired = Params().getBool("DevicePaired");
+  if (device_paired) {
+    mainLayout->setCurrentWidget(uiState()->prime_type ? (QWidget*)primeUser : (QWidget*)primeAd);
+  } else {
+    mainLayout->setCurrentWidget(finishRegistration);
+  }
 
   setFixedWidth(750);
   setStyleSheet(R"(
@@ -314,7 +319,12 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   int prime_type = json["prime_type"].toInt();
   uiState()->prime_type = prime_type;
 
-  if (!json["is_paired"].toBool()) {
+  bool is_paired = json["is_paired"].toBool();
+  if (is_paired != device_paired) {
+    device_paired = is_paired;
+    Params().putBool("DevicePaired", device_paired);
+  }
+  if (!is_paired) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
