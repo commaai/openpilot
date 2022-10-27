@@ -1,5 +1,6 @@
 from opendbc.can.packer import CANPacker
 from common.realtime import DT_CTRL
+from common.conversions import Conversions as CV
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
 from selfdrive.car.chrysler.values import CAR, RAM_CARS, CarControllerParams
@@ -15,6 +16,7 @@ class CarController:
     self.last_lkas_falling_edge = 0
     self.lkas_control_bit_prev = False
     self.last_button_frame = 0
+    self.lkas_bit_enabled_under_32 = False
 
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
@@ -49,17 +51,25 @@ class CarController:
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
-      if CS.out.vEgo > self.CP.minSteerSpeed:
-        lkas_control_bit = True
-      if CS.out.steerFaultTemporary or CS.out.steerFaultPermanent:
-        lkas_control_bit = False
-      # TODO: is it necessary to set the bit low if it's set above the min speed?
+      # if CS.out.vEgo > self.CP.minSteerSpeed:
+      #   lkas_control_bit = True
       # elif self.CP.carFingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
       #   if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
       #     lkas_control_bit = False
       # elif self.CP.carFingerprint in RAM_CARS:
       #   if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
       #     lkas_control_bit = False
+
+      if CS.out.vEgo < 50.0 * CV.KPH_TO_MS and not CC.latActive:
+        # only when traveling under
+        self.lkas_bit_enabled_under_32 = True
+        lkas_control_bit = True
+
+      if not self.lkas_bit_enabled_under_32:
+        if CS.out.vEgo > 50.0 * CV.KPH_TO_MS:
+          lkas_control_bit = True
+        else:
+          lkas_control_bit = False
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)

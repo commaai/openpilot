@@ -59,11 +59,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.minSteerSpeed = 50.0 * CV.KPH_TO_MS
-      # if car_fw is not None:
-      #   for fw in car_fw:
-      #     if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
-      #       # This firmware allows steering to 10 kph only once car has ever gone below 10 kph TODO: zero?
-      #       ret.minSteerSpeed = 10.0 * CV.KPH_TO_MS
+      if car_fw is not None:
+        for fw in car_fw:
+          if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
+            # This firmware allows steering to 10 kph only once car has ever gone below 10 kph TODO: zero?
+            ret.minSteerSpeed = 10.0 * CV.KPH_TO_MS
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2
