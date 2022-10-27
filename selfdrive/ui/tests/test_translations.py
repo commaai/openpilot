@@ -29,10 +29,7 @@ class TestTranslations(unittest.TestCase):
   def _read_translation_file(path, file):
     tr_file = os.path.join(path, f"{file}.ts")
     with open(tr_file, "r") as f:
-      # ignore locations when checking if translations are updated
-      lines = [line for line in f.read().splitlines() if
-               not line.strip().startswith(LOCATION_TAG)]
-      return "\n".join(lines)
+      return f.read()
 
   def test_missing_translation_files(self):
     for name, file in self.translation_files.items():
@@ -92,6 +89,13 @@ class TestTranslations(unittest.TestCase):
               self.assertNotIn(None, numerusform, "Ensure all plural translation forms are completed.")
               self.assertTrue(all([re.search("%[0-9]+", t) is None for t in numerusform]),
                               "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
+
+  def test_no_locations(self):
+    for name, file in self.translation_files.items():
+      with self.subTest(name=name, file=file):
+        for line in self._read_translation_file(TRANSLATIONS_DIR, file).splitlines():
+          self.assertFalse(line.strip().startswith(LOCATION_TAG),
+                           f"Line contains location tag: {line.strip()}, remove all line numbers.")
 
 
 if __name__ == "__main__":

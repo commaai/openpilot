@@ -8,8 +8,7 @@ def create_lka_command(packer, angle_deg: float, curvature: float):
   """
   Creates a CAN message for the Ford LKAS Command.
 
-  This command can apply "Lane Keeping Aid" manoeuvres, which are subject to the
-  PSCM lockout.
+  This command can apply "Lane Keeping Aid" manoeuvres, which are subject to the PSCM lockout.
 
   Frequency is 20Hz.
   """
@@ -30,12 +29,20 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
   """
   Creates a CAN message for the Ford TJA/LCA Command.
 
-  This command can apply "Lane Centering" manoeuvres: continuous lane centering
-  for traffic jam assist and highway driving. It is not subject to the PSCM
-  lockout.
+  This command can apply "Lane Centering" manoeuvres: continuous lane centering for traffic jam
+  assist and highway driving. It is not subject to the PSCM lockout.
 
-  The PSCM should be configured to accept TJA/LCA commands before these
-  commands will be processed. This can be done using tools such as Forscan.
+  Ford lane centering command uses a third order polynomial to describe the road centerline. The
+  polynomial is defined by the following coefficients:
+    c0: lateral offset between the vehicle and the centerline
+    c1: heading angle between the vehicle and the centerline
+    c2: curvature of the centerline
+    c3: rate of change of curvature of the centerline
+  As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and
+  speed, the steering angle cannot be easily controlled.
+
+  The PSCM should be configured to accept TJA/LCA commands before these commands will be processed.
+  This can be done using tools such as Forscan.
 
   Frequency is 20Hz.
   """
@@ -47,7 +54,7 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
     "LatCtlRampType_D_Rq": ramp_type,                       # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
     "LatCtlPrecision_D_Rq": precision,                      # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
     "LatCtlPathOffst_L_Actl": path_offset,                  # Path offset [-5.12|5.11] meter
-    "LatCtlPath_An_Actl": path_angle,                       # Path angle [-0.4995|0.5240] radians
+    "LatCtlPath_An_Actl": path_angle,                       # Path angle [-0.5|0.5235] radians
     "LatCtlCurv_NoRate_Actl": curvature_rate,               # Curvature rate [-0.001024|0.00102375] 1/meter^2
     "LatCtlCurv_No_Actl": curvature,                        # Curvature [-0.02|0.02094] 1/meter
   }
@@ -108,8 +115,8 @@ def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bo
 
 def create_acc_ui_command(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
   """
-  Creates a CAN message for the Ford IPC adaptive cruise, forward collision
-  warning and traffic jam assist status.
+  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
+  assist status.
 
   Stock functionality is maintained by passing through unmodified signals.
 
@@ -141,7 +148,7 @@ def create_acc_ui_command(packer, main_on: bool, enabled: bool, hud_control, sto
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
-def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False, bus = CANBUS.camera):
+def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False, bus: int = CANBUS.camera):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
