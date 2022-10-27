@@ -1,6 +1,5 @@
 from opendbc.can.packer import CANPacker
 from common.realtime import DT_CTRL
-from common.conversions import Conversions as CV
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
 from selfdrive.car.chrysler.values import CAR, RAM_CARS, CarControllerParams
@@ -16,7 +15,6 @@ class CarController:
     self.last_lkas_falling_edge = 0
     self.lkas_control_bit_prev = False
     self.last_button_frame = 0
-    self.lkas_bit_enabled_under_32 = False
 
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
