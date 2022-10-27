@@ -157,6 +157,16 @@ pipeline {
             ])
           }
         }
+
+        stage('gps_test') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-limeSDR", [
+              ["build", "cd tools/gpstest && ./setup.sh"],
+              ["test gps lime", "./tools/gpstest/run_unittest.sh"],
+            ])
+          }
+        }
       }
 
     }
