@@ -157,6 +157,16 @@ pipeline {
             ])
           }
         }
+
+        stage('gps_test') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-gps", [
+              ["build", "cd tools/gpstest && ./setup.sh"],
+              ["test gps", "cd tools/gpstest && ./run_unittest.sh"],
+            ])
+          }
+        }
       }
 
     }
