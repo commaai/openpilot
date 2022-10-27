@@ -207,7 +207,6 @@ ChartWidget::ChartWidget(const QString &id, const Signal *sig, QWidget *parent) 
   msg_name_label->setTextFormat(Qt::RichText);
   header_layout->addWidget(msg_name_label, 0, 0, Qt::AlignLeft);
   sig_name_label = new QLabel(this);
-  sig_name_label->setStyleSheet("font-weight:bold");
   header_layout->addWidget(sig_name_label, 0, 1, Qt::AlignCenter);  //, 0, Qt::AlignCenter);
 
   remove_btn = new QPushButton("✖", this);
