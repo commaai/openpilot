@@ -247,10 +247,13 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
   track_line = new QGraphicsLineItem(chart);
+  track_line->setZValue(chart->zValue() + 10);
   track_line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
   value_text = new QGraphicsSimpleTextItem(chart);
+  value_text->setZValue(chart->zValue() + 10);
   value_text->setBrush(Qt::gray);
   line_marker = new QGraphicsLineItem(chart);
+  line_marker->setZValue(chart->zValue() + 10);
   line_marker->setPen(QPen(Qt::black, 2));
 
   setChart(chart);
