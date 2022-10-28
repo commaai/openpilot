@@ -147,7 +147,7 @@ void ChartsWidget::addChart(const QString &id, const Signal *sig) {
   if (it == charts.end()) {
     auto chart = new ChartWidget(id, sig, this);
     chart->chart_view->updateSeries(display_range);
-    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });;
+    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });
     QObject::connect(chart->chart_view, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
     QObject::connect(chart->chart_view, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
     charts_layout->insertWidget(0, chart);
@@ -183,7 +183,6 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
     }
   }
 }
-
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
   if (obj != this && event->type() == QEvent::Close) {
@@ -256,10 +255,12 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
 
   track_line = new QGraphicsLineItem(chart);
   track_line->setZValue(chart->zValue() + 10);
-  track_line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
-  value_text = new QGraphicsSimpleTextItem(chart);
+  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+  track_ellipse = new QGraphicsEllipseItem(chart);
+  track_ellipse->setZValue(chart->zValue() + 10);
+  track_ellipse->setBrush(Qt::darkGray);
+  value_text = new QGraphicsTextItem(chart);
   value_text->setZValue(chart->zValue() + 10);
-  value_text->setBrush(Qt::gray);
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
 
@@ -364,12 +365,14 @@ void ChartView::updateAxisY() {
 void ChartView::enterEvent(QEvent *event) {
   track_line->setVisible(true);
   value_text->setVisible(true);
+  track_ellipse->setVisible(true);
   QChartView::enterEvent(event);
 }
 
 void ChartView::leaveEvent(QEvent *event) {
   track_line->setVisible(false);
   value_text->setVisible(false);
+  track_ellipse->setVisible(false);
   QChartView::leaveEvent(event);
 }
 
@@ -397,21 +400,28 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
-  bool dragging = rubber && rubber->isVisible();
-  if (!dragging) {
+  bool is_zooming = rubber && rubber->isVisible();
+  if (!is_zooming) {
     const auto plot_area = chart()->plotArea();
-    float x = std::clamp((float)ev->pos().x(), (float)plot_area.left(), (float)plot_area.right());
-    track_line->setLine(x, plot_area.top(), x, plot_area.bottom());
-
     auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
-    double sec = axis_x->min() + ((x - plot_area.x()) / plot_area.width()) * (axis_x->max() - axis_x->min());
-    auto value = std::lower_bound(vals.begin(), vals.end(), sec, [](auto &p, double x) { return p.x() < x; });
-    value_text->setPos(x + 6, plot_area.bottom() - 25);
+    double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right()-1);
+    double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
+    auto value = std::upper_bound(vals.begin(), vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
     if (value != vals.end()) {
-      value_text->setText(QString("(%1, %2)").arg(value->x(), 0, 'f', 3).arg(value->y()));
-    } else {
-      value_text->setText("(--, --)");
+      QPointF pos = chart()->mapToPosition((*value));
+      track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
+      track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
+      value_text->setHtml(tr("<div style='background-color:darkGray'><font color='white'>%1, %2)</font></div>")
+                              .arg(value->x(), 0, 'f', 3).arg(value->y()));
+      int text_x = pos.x() + 8;
+      if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
+        text_x = pos.x() - value_text->boundingRect().width() - 8;
+      }
+      value_text->setPos(text_x, pos.y() - 10);
     }
+    track_line->setVisible(value != vals.end());
+    value_text->setVisible(value != vals.end());
+    track_ellipse->setVisible(value != vals.end());
   }
   QChartView::mouseMoveEvent(ev);
 }
