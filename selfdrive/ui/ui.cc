@@ -23,8 +23,8 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
+  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
@@ -121,17 +121,23 @@ static void update_state(UIState *s) {
 
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+    auto wfde_list = sm["liveCalibration"].getLiveCalibration().getWideFromDeviceEuler();
     Eigen::Vector3d rpy;
-    rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    Eigen::Vector3d wfde;
+    if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    if (wfde_list.size() == 3) wfde << wfde_list[0], wfde_list[1], wfde_list[2];
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
+    Eigen::Matrix3d wide_from_device = euler2rot(wfde);
     Eigen::Matrix3d view_from_device;
     view_from_device << 0,1,0,
                         0,0,1,
                         1,0,0;
     Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
+    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib ;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
+        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
       }
     }
     scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
@@ -167,6 +173,17 @@ static void update_state(UIState *s) {
     scene.light_sensor = std::max(100.0f - scale * sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent(), 0.0f);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+
+  if (sm.updated("carState")) {
+    float v_ego = sm["carState"].getCarState().getVEgo();
+    // TODO: support replays without ecam by using fcam
+    // Wide or narrow cam dependent on speed
+    if ((v_ego < 10) || s->wide_cam_only) {
+      scene.wide_cam = true;
+    } else if (v_ego > 15) {
+      scene.wide_cam = false;
+    }
+  }
 }
 
 void ui_update_params(UIState *s) {
@@ -197,7 +214,7 @@ void UIState::updateStatus() {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      wide_camera = Params().getBool("WideCameraOnly");
+      wide_cam_only = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
@@ -219,7 +236,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   });
 
   Params params;
-  wide_camera = params.getBool("WideCameraOnly");
+  wide_cam_only = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
 
