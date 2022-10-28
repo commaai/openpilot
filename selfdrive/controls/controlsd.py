@@ -253,6 +253,9 @@ class Controls:
       (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
 
+    if CS.brakePressed and CS.standstill:
+      self.events.add(EventName.pedalPressedPreEnable)
+
     if CS.gasPressed:
       self.events.add(EventName.gasPressedOverride)
 
