@@ -147,7 +147,7 @@ void ChartsWidget::addChart(const QString &id, const Signal *sig) {
   if (it == charts.end()) {
     auto chart = new ChartWidget(id, sig, this);
     chart->chart_view->updateSeries(display_range);
-    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });;
+    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });
     QObject::connect(chart->chart_view, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
     QObject::connect(chart->chart_view, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
     charts_layout->insertWidget(0, chart);
@@ -183,7 +183,6 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
     }
   }
 }
-
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
   if (obj != this && event->type() == QEvent::Close) {
@@ -403,26 +402,24 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   if (!is_zooming) {
-    auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
-    auto axis_y = dynamic_cast<QValueAxis *>(chart()->axisY());
     const auto plot_area = chart()->plotArea();
-
-    float line_x = std::clamp((float)ev->pos().x(), (float)plot_area.left(), (float)plot_area.right());
-    track_line->setLine(line_x, plot_area.top(), line_x, plot_area.bottom());
-
-    double sec = axis_x->min() + ((line_x - plot_area.x()) / plot_area.width()) * (axis_x->max() - axis_x->min());
-    auto value = std::lower_bound(vals.begin(), vals.end(), sec, [](auto &p, double x) { return p.x() < x; });
+    auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
+    double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right()-1);
+    double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
+    auto value = std::upper_bound(vals.begin(), vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
     if (value != vals.end()) {
-      float y = plot_area.bottom() - plot_area.height() * ((value->y() - axis_y->min()) / (axis_y->max() - axis_y->min()));
-      track_ellipse->setRect(line_x - 5, y - 5, 10, 10);
+      QPointF pos = chart()->mapToPosition((*value));
+      track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
+      track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
       value_text->setHtml(tr("<div style='background-color:darkGray'><font color='white'>%1, %2)</font></div>")
                               .arg(value->x(), 0, 'f', 3).arg(value->y()));
-      int value_x = line_x + 8;
-      if ((value_x + value_text->boundingRect().width()) > plot_area.right()) {
-        value_x = line_x - value_text->boundingRect().width() - 8;
+      int text_x = pos.x() + 8;
+      if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
+        text_x = pos.x() - value_text->boundingRect().width() - 8;
       }
-      value_text->setPos(value_x, y - 10);
+      value_text->setPos(text_x, pos.y() - 10);
     }
+    track_line->setVisible(value != vals.end());
     value_text->setVisible(value != vals.end());
     track_ellipse->setVisible(value != vals.end());
   }
