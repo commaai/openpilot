@@ -124,6 +124,7 @@ def setup_quectel(diag: ModemDiag):
   # don't automatically turn on GNSS on powerup
   at_cmd("AT+QGPSCFG=\"autogps\",0")
 
+  at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7275\"")
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")
 
