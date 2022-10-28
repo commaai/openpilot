@@ -6,6 +6,7 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
+ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 
@@ -127,6 +128,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1230 + STD_CARGO_KG
       ret.wheelbase = 2.55
 
+    elif candidate == CAR.SHARAN_MK2:
+      ret.mass = 1639 + STD_CARGO_KG
+      ret.wheelbase = 2.92
+      ret.minEnableSpeed = 30 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
+      ret.steerActuatorDelay = 0.2
+
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
       ret.wheelbase = 2.69
@@ -211,7 +219,8 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl)
+                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl,
+                                       enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):

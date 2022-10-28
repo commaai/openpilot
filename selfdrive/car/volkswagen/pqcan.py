@@ -59,7 +59,7 @@ def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
   return hud_status
 
 
-def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control, stopping, starting, standstill):
+def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control, stopping, starting, esp_hold):
   commands = []
 
   values = {
