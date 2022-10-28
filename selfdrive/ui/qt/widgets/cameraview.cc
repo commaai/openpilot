@@ -188,12 +188,17 @@ void CameraWidget::updateFrameMat() {
     if (stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
-      intrinsic_matrix = (stream_type == VISION_STREAM_WIDE_ROAD) ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-      zoom = (stream_type == VISION_STREAM_WIDE_ROAD) ? 2.5 : 1.1;
-
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
+      // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
+      if (stream_type == VISION_STREAM_WIDE_ROAD) {
+        intrinsic_matrix = ecam_intrinsic_matrix;
+        zoom = 2.0;
+      } else {
+        intrinsic_matrix = fcam_intrinsic_matrix;
+        zoom = 1.1;
+      }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
       const vec3 Kep = matvecmul3(intrinsic_matrix, Ep);
