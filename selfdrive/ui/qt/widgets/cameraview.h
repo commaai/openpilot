@@ -49,7 +49,6 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
-  void updateWideCalibration(const mat3 &calib);
   void vipcThread();
   void clearFrames();
 

@@ -23,7 +23,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
+  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
   const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
 
   // Project.
@@ -178,9 +178,9 @@ static void update_state(UIState *s) {
     float v_ego = sm["carState"].getCarState().getVEgo();
     // TODO: support replays without ecam by using fcam
     // Wide or narrow cam dependent on speed
-    if ((!scene.wide_cam && v_ego < 10) || s->wide_cam_only) {
+    if ((v_ego < 10) || s->wide_cam_only) {
       scene.wide_cam = true;
-    } else if (scene.wide_cam and v_ego > 15) {
+    } else if (v_ego > 15) {
       scene.wide_cam = false;
     }
   }

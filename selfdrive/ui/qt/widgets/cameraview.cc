@@ -232,6 +232,7 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
+  updateFrameMat();
 }
 
 void CameraWidget::paintGL() {
