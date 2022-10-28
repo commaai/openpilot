@@ -1,5 +1,3 @@
-import os
-import time
 import select
 from serial import Serial
 from crcmod import mkCrcFun
@@ -11,18 +9,7 @@ class ModemDiag:
     self.pend = b''
 
   def open_serial(self):
-    def op():
-      return Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True, timeout=0)
-    try:
-      serial = op()
-    except Exception:
-      # TODO: this is a hack to get around modemmanager's exclusive open
-      print("unlocking serial...")
-      os.system('sudo su -c \'echo "1-1.1:1.0" > /sys/bus/usb/drivers/option/unbind\'')
-      os.system('sudo su -c \'echo "1-1.1:1.0" > /sys/bus/usb/drivers/option/bind\'')
-      time.sleep(0.5)
-      os.system("sudo chmod 666 /dev/ttyUSB0")
-      serial = op()
+    serial = Serial("/dev/ttyUSB0", baudrate=115200, rtscts=True, dsrdtr=True, timeout=0, exclusive=True)
     serial.flush()
     serial.reset_input_buffer()
     serial.reset_output_buffer()

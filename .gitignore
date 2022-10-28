@@ -83,3 +83,5 @@ selfdrive/modeld/models/*.thneed
 build/
 
 !**/.gitkeep
+
+poetry.toml

@@ -62,19 +62,23 @@ class CarInterface(CarInterfaceBase):
       ret.radarOffCan = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
       ret.radarOffCan = False
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
+      # supports stop and go, but initial engage must (conservatively) be above 18mph
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
-    ret.minSteerSpeed = 10 * CV.KPH_TO_MS
+    # Some GMs need some tolerance above 10 kph to avoid a fault
+    ret.minSteerSpeed = 10.1 * CV.KPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
@@ -88,9 +92,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
-
-    # supports stop and go, but initial engage must (conservatively) be above 18mph
-    ret.minEnableSpeed = 18 * CV.MPH_TO_MS
 
     if candidate == CAR.VOLT:
       ret.mass = 1607. + STD_CARGO_KG
@@ -138,36 +139,41 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1601. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3
-      ret.centerToFront = ret.wheelbase * 0.49
+      ret.centerToFront = ret.wheelbase * 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate == CAR.BOLT_EUV:
-      ret.minEnableSpeed = -1
+    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
       ret.mass = 1669. + STD_CARGO_KG
-      ret.wheelbase = 2.675
+      ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
-      ret.centerToFront = ret.wheelbase * 0.4
+      ret.centerToFront = 2.15  # measured
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SILVERADO:
-      ret.minEnableSpeed = -1
       ret.mass = 2200. + STD_CARGO_KG
       ret.wheelbase = 3.75
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * 0.5
       tire_stiffness_factor = 1.0
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.EQUINOX:
+      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.72
+      ret.steerRatio = 14.4
+      ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # TODO: get actual value, for now starting with reasonable value for
@@ -198,12 +204,15 @@ class CarInterface(CarInterfaceBase):
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise)
 
-    if ret.vEgo < self.CP.minEnableSpeed:
+    # Enabling at a standstill with brake is allowed
+    # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
+    if ret.vEgo < self.CP.minEnableSpeed and not (ret.standstill and ret.brake >= 20 and
+                                                  self.CP.networkLocation == NetworkLocation.fwdCamera):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
-      events.add(car.CarEvent.EventName.belowSteerSpeed)
+      events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
 

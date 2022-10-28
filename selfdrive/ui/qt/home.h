@@ -7,10 +7,12 @@
 #include <QTimer>
 #include <QWidget>
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/body.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/qt/sidebar.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 #include "selfdrive/ui/ui.h"
 
@@ -25,8 +27,10 @@ private:
   void hideEvent(QHideEvent *event) override;
   void refresh();
 
+  Params params;
+
   QTimer* timer;
-  QLabel* date;
+  ElidedLabel* version;
   QStackedLayout* center_layout;
   UpdateAlert *update_widget;
   OffroadAlert* alerts_widget;
