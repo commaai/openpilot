@@ -460,7 +460,6 @@ class CarState(CarStateBase):
         ("NEW_SIGNAL_3", "CRUISE_INFO"),
         ("BYTE11", "CRUISE_INFO"),
         ("SET_SPEED", "CRUISE_INFO"),
-        ("NEW_SIGNAL_4", "CRUISE_INFO"),
       ]
 
       signals += [(f"BYTE{i}", "CRUISE_INFO") for i in range(3, 7)]
