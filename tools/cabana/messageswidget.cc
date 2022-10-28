@@ -85,10 +85,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void MessagesWidget::loadDBCFromName(const QString &name) {
-  dbc()->open(name);
-  dbc_combo->setCurrentText(name);
-  // refresh model
-  model->updateState();
+  if (name != dbc()->name()) {
+    dbc()->open(name);
+    dbc_combo->setCurrentText(name);
+    // re-sort model to refresh column 'Name'
+    model->updateState(true);
+  }
 }
 
 void MessagesWidget::loadDBCFromPaste() {

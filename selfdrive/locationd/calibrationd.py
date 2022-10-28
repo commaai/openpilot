@@ -66,7 +66,6 @@ class Calibrator:
     # Read saved calibration
     params = Params()
     calibration_params = params.get("CalibrationParams")
-    self.wide_camera = params.get_bool('WideCameraOnly')
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     valid_blocks = 0
@@ -166,10 +165,7 @@ class Calibrator:
     self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
-    if self.wide_camera:
-      angle_std_threshold = 4*MAX_VEL_ANGLE_STD
-    else:
-      angle_std_threshold = MAX_VEL_ANGLE_STD
+    angle_std_threshold = MAX_VEL_ANGLE_STD
     certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                         (self.valid_blocks < INPUTS_NEEDED))
     if not (straight_and_fast and certain_if_calib):
@@ -185,7 +181,6 @@ class Calibrator:
       new_wide_from_device_euler = np.array(wide_from_device_euler)
     else:
       new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
-
     self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] +
                                  (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
     self.wide_from_device_eulers[self.block_idx] = (self.idx*self.wide_from_device_eulers[self.block_idx] +
