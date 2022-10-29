@@ -13,16 +13,11 @@
 // DetailWidget
 
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
-
-  tow_columns_layout = new QHBoxLayout();
-  tow_columns_layout->setSpacing(11);
-  main_layout->addLayout(tow_columns_layout);
 
   right_column = new QVBoxLayout();
-  tow_columns_layout->addLayout(right_column);
+  main_layout->addLayout(right_column);
 
   binary_view_container = new QWidget(this);
   binary_view_container->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
@@ -207,7 +202,7 @@ void DetailWidget::moveBinaryView() {
     right_column->insertWidget(0, binary_view_container);
     emit binaryViewMoved(true);
   } else {
-    tow_columns_layout->insertWidget(0, binary_view_container);
+    main_layout->insertWidget(0, binary_view_container);
     emit binaryViewMoved(false);
   }
   split_btn->setText(binview_in_left_col ? "⬅" : "➡");

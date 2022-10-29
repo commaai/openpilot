@@ -68,7 +68,7 @@ private:
   QPushButton *edit_btn;
   QWidget *signals_container;
   QTabBar *tabbar;
-  QHBoxLayout *tow_columns_layout;
+  QHBoxLayout *main_layout;
   QVBoxLayout *right_column;
   bool binview_in_left_col = false;
   QWidget *binary_view_container;
