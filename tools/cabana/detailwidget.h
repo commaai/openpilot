@@ -50,6 +50,7 @@ public:
 signals:
   void showChart(const QString &msg_id, const Signal *sig);
   void removeChart(const Signal *sig);
+  void moveBinaryView1(bool out);
 
 private:
   void addSignal(int start_bit, int to);

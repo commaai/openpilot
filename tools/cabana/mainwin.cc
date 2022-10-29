@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QScreen>
-#include <QSplitter>
 #include <QVBoxLayout>
 
 #include "tools/replay/util.h"
@@ -22,8 +21,10 @@ MainWindow::MainWindow() : QWidget() {
   h_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addLayout(h_layout);
 
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  splitter = new QSplitter(Qt::Horizontal, this);
   splitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+  splitter->setStretchFactor(0, 0);
+  splitter->setStretchFactor(1, 1);
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
@@ -84,6 +85,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
+  QObject::connect(detail_widget, &DetailWidget::moveBinaryView1, this, &MainWindow::showLeftPanel);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
@@ -103,6 +105,15 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   }
 }
 
+void MainWindow::showLeftPanel(bool show) {
+  // show ? splitter->setSizes(100, 500) : 
+  // qWarning() << "here";
+  if (show) {
+    splitter->setSizes({0, 500});
+  } else {
+    splitter->setSizes({100, 500});
+  }
+}
 
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
