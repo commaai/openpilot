@@ -22,6 +22,7 @@ MainWindow::MainWindow() : QWidget() {
   main_layout->addLayout(h_layout);
 
   splitter = new QSplitter(Qt::Horizontal, this);
+  splitter->setHandleWidth(11);
   splitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
