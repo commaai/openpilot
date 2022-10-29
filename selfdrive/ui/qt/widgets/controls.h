@@ -65,7 +65,7 @@ protected:
   QPushButton *title_label;
 
 private:
-  QLabel *value;
+  ElidedLabel *value;
   QLabel *description = nullptr;
 };
 

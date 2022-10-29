@@ -26,9 +26,9 @@ class VideoWidget : public QWidget {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
+  void rangeChanged(double min, double max, bool is_zommed);
 
 protected:
-  void rangeChanged(double min, double max);
   void updateState();
   void pause(bool pause);
 

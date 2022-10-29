@@ -22,6 +22,7 @@ private:
   int row_count = 0;
   int column_count = 2;
   const Msg *dbc_msg = nullptr;
+  std::deque<CanData> messages;
 };
 
 class HistoryLog : public QWidget {
