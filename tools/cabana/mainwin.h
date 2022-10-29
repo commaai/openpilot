@@ -18,7 +18,7 @@ public:
   void showStatusMessage(const QString &msg, int timeout = 0) { status_bar->showMessage(msg, timeout); }
 
 signals:
-  void logMessageFromReplay(const QString &msg, int timeout);
+  void showMessage(const QString &msg, int timeout);
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:

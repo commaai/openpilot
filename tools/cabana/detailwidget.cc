@@ -16,15 +16,18 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
-  tow_columns_layout = new QGridLayout();
+
+  tow_columns_layout = new QHBoxLayout();
+  tow_columns_layout->setSpacing(11);
   main_layout->addLayout(tow_columns_layout);
 
   right_column = new QVBoxLayout();
-  tow_columns_layout->addLayout(right_column, 0, 1);
+  tow_columns_layout->addLayout(right_column);
 
   binary_view_container = new QWidget(this);
   QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
   bin_layout->setContentsMargins(0, 0, 0, 0);
+  bin_layout->setSpacing(0);
   // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
@@ -34,11 +37,14 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
   bin_layout->addWidget(tabbar);
 
-  // message title
   title_frame = new TitleFrame(this);
   title_frame->setToolTip(tr("Double click to move to mew column"));
-  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
   title_frame->setFrameShape(QFrame::StyledPanel);
+  title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
+  // frame_layout->setContentsMargins(0 , 0, 0, 0);
+
+  // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
   title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
@@ -68,7 +74,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   // binary view
   binary_view = new BinaryView(this);
-  bin_layout->addWidget(binary_view);  //, 1, Qt::AlignTop);
+  bin_layout->addWidget(binary_view);
   right_column->addWidget(binary_view_container);
 
   // signals
@@ -123,7 +129,6 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
 void DetailWidget::setMessage(const QString &message_id) {
   if (message_id.isEmpty()) return;
 
-  qWarning() << "setmessage" << message_id;
   int index = -1;
   for (int i = 0; i < tabbar->count(); ++i) {
     if (tabbar->tabText(i) == message_id) {
@@ -194,15 +199,18 @@ void DetailWidget::updateState() {
 }
 
 void DetailWidget::moveBinaryView() {
-  if (tow_columns_layout->itemAtPosition(0, 0)) {
+  if (binview_in_left_col) {
     right_column->insertWidget(0, binary_view_container);
     emit binaryViewMoved(true);
     title_frame->setToolTip(tr("Double click to move to mew column"));
   } else {
-    tow_columns_layout->addWidget(binary_view_container, 0, 0);
+    tow_columns_layout->insertWidget(0, binary_view_container);
     emit binaryViewMoved(false);
     title_frame->setToolTip(tr("Double click To move back to the origin column"));
   }
+  binary_view->resizeRowsToContents();
+  binary_view->updateGeometry();
+  binview_in_left_col = !binview_in_left_col;
 }
 
 void DetailWidget::showForm() {

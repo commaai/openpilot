@@ -1,11 +1,14 @@
 #pragma once
 
+#include <QDebug>
 #include <QList>
 #include <QSet>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
 #include "tools/cabana/dbcmanager.h"
+
+const int CELL_HEIGHT = 30;
 
 class BinaryItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
@@ -61,6 +64,7 @@ public:
   void highlight(const Signal *sig);
   const Signal *hoveredSignal() const { return hovered_sig; }
   QSet<const Signal*> getOverlappingSignals() const;
+  QSize sizeHint() const override;
 
 signals:
   void signalHovered(const Signal *sig);

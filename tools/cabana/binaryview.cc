@@ -11,8 +11,6 @@
 
 // BinaryView
 
-const int CELL_HEIGHT = 30;
-
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
   setModel(model);
@@ -20,13 +18,15 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->hide();
-  // verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setMouseTracking(true);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+}
 
-  // QObject::connect(model, &QAbstractItemModel::modelReset, [this]() {
-  //   // setFixedHeight((CELL_HEIGHT + 1) * std::min(model->rowCount(), 8) + 2);
-  // });
+QSize BinaryView::sizeHint() const {
+  QSize sz = QTableView::sizeHint();
+  return {sz.width(), model->rowCount() <= 8 ? ((CELL_HEIGHT + 1) * model->rowCount() + 2) : sz.height()};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -111,6 +111,7 @@ void BinaryView::setMessage(const QString &message_id) {
   resizeRowsToContents();
   clearSelection();
   updateState();
+  updateGeometry();
 }
 
 void BinaryView::updateState() {
@@ -157,7 +158,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
 
   dbc_msg = dbc()->msg(msg_id);
   if (dbc_msg) {
-    row_count = 64;//dbc_msg->size;
+    row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     for (int i = 0; i < dbc_msg->sigs.size(); ++i) {
       const auto &sig = dbc_msg->sigs[i];
@@ -243,8 +244,9 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 }
 
 QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QSize sz = QStyledItemDelegate::sizeHint(option, index);
-  return {sz.width(), CELL_HEIGHT};
+  // QSize sz = QStyledItemDelegate::sizeHint(option, index);
+  // return {sz.width(), CELL_HEIGHT};
+  return {CELL_HEIGHT, CELL_HEIGHT};
 }
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {

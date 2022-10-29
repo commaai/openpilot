@@ -9,7 +9,7 @@
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  if (main_win) main_win->showStatusMessage(msg);
+  if (main_win) emit main_win->showMessage(msg, 300);
 }
 
 MainWindow::MainWindow() : QWidget() {
@@ -23,8 +23,6 @@ MainWindow::MainWindow() : QWidget() {
 
   splitter = new QSplitter(Qt::Horizontal, this);
   splitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  splitter->setStretchFactor(0, 0);
-  splitter->setStretchFactor(1, 1);
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
@@ -75,13 +73,13 @@ MainWindow::MainWindow() : QWidget() {
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit logMessageFromReplay(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 3000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
   });
 
-  QObject::connect(this, &MainWindow::logMessageFromReplay, status_bar, &QStatusBar::showMessage);
+  QObject::connect(this, &MainWindow::showMessage, status_bar, &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
