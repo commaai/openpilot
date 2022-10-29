@@ -90,7 +90,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
 
   main_win = this;
-  qInstallMessageHandler(qLogMessageHandler);
+  // qInstallMessageHandler(qLogMessageHandler);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {

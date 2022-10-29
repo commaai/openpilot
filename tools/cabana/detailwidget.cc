@@ -2,7 +2,6 @@
 
 #include <QDialogButtonBox>
 #include <QFormLayout>
-#include <QMenu>
 #include <QMessageBox>
 #include <QTimer>
 
@@ -31,7 +30,6 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   tabbar->setDrawBase(false);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
-  tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
   bin_layout->addWidget(tabbar);
 
   // message title
@@ -67,8 +65,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   // binary view
   binary_view = new BinaryView(this);
-  bin_layout->addWidget(binary_view, 0, Qt::AlignTop);
-  bin_layout->addStretch(0);
+  bin_layout->addWidget(binary_view);//, 1, Qt::AlignTop);
   right_column->addWidget(binary_view_container);
 
   // signals
@@ -91,51 +88,22 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
-  QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
-  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
-    if (index != -1 && tabbar->tabText(index) != msg_id) {
-      setMessage(tabbar->tabText(index));
-    }
-  });
+  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) { setMessage(messages[index]); });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
-    if (tabbar->currentIndex() == index) {
-      tabbar->setCurrentIndex(index == tabbar->count() - 1 ? index - 1 : index + 1);
-    }
+    messages.removeAt(index);
     tabbar->removeTab(index);
+    setMessage(messages.isEmpty() ? "" : messages[0]);
   });
-}
-
-void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
-  int index = tabbar->tabAt(pt);
-  if (index >= 0) {
-    QMenu menu(this);
-    // TODO: add action to split binary view into a seperate column to display data from can fd.
-    auto close_action = menu.addAction(tr("Close Other Tabs"));
-    auto move_action = menu.addAction(tr("Move To Seperate Column"));
-    auto action = menu.exec(tabbar->mapToGlobal(pt));
-    if (action == close_action) {
-      for (int i = tabbar->count() - 1; i >= 0; --i) {
-        if (i != index)
-          tabbar->removeTab(i);
-      }
-    } else if (action == move_action) {
-      tow_columns_layout->addWidget(binary_view_container, 0, 0);
-    }
-  }
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
   if (message_id.isEmpty()) return;
 
-  int index = -1;
-  for (int i = 0; i < tabbar->count(); ++i) {
-    if (tabbar->tabText(i) == message_id) {
-      index = i;
-      break;
-    }
-  }
+  int index = messages.indexOf(message_id);
   if (index == -1) {
-    index = tabbar->addTab(message_id);
+    messages.push_back(message_id);
+    tabbar->addTab(message_id);
+    index = tabbar->count() - 1;
     auto msg = dbc()->msg(message_id);
     tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
   }
