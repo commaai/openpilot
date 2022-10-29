@@ -18,11 +18,11 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   tow_columns_layout = new QGridLayout();
   main_layout->addLayout(tow_columns_layout);
 
-  QVBoxLayout *right_column = new QVBoxLayout();
+  right_column = new QVBoxLayout();
   tow_columns_layout->addLayout(right_column, 0, 1);
 
   binary_view_container = new QWidget(this);
-  QVBoxLayout *bin_layout= new QVBoxLayout(binary_view_container);
+  QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
   bin_layout->setContentsMargins(0, 0, 0, 0);
   // tabbar
   tabbar = new QTabBar(this);
@@ -33,7 +33,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   bin_layout->addWidget(tabbar);
 
   // message title
-  QFrame *title_frame = new QFrame();
+  TitleFrame *title_frame = new TitleFrame(this);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
   title_frame->setFrameShape(QFrame::StyledPanel);
   QHBoxLayout *title_layout = new QHBoxLayout();
@@ -65,7 +65,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
 
   // binary view
   binary_view = new BinaryView(this);
-  bin_layout->addWidget(binary_view);//, 1, Qt::AlignTop);
+  bin_layout->addWidget(binary_view);  //, 1, Qt::AlignTop);
   right_column->addWidget(binary_view_container);
 
   // signals
@@ -83,6 +83,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   history_log = new HistoryLog(this);
   right_column->addWidget(history_log);
 
+  QObject::connect(title_frame, &TitleFrame::doubleClicked, this, &DetailWidget::moveBinaryView);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
@@ -162,6 +163,14 @@ void DetailWidget::updateState() {
 
   binary_view->updateState();
   history_log->updateState();
+}
+
+void DetailWidget::moveBinaryView() {
+  if (tow_columns_layout->itemAtPosition(0, 0)) {
+    right_column->insertWidget(0, binary_view_container);
+  } else {
+    tow_columns_layout->addWidget(binary_view_container, 0, 0);
+  }
 }
 
 void DetailWidget::showForm() {

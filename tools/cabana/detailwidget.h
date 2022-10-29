@@ -3,10 +3,22 @@
 #include <QGridLayout>
 #include <QScrollArea>
 #include <QTabBar>
+#include <QVBoxLayout>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
+
+class TitleFrame : public QFrame {
+  Q_OBJECT
+
+public:
+  TitleFrame(QWidget *parent) : QFrame(parent) {}
+  void mouseDoubleClickEvent(QMouseEvent *e) { emit doubleClicked(); }
+
+signals:
+  void doubleClicked();
+};
 
 class EditMessageDialog : public QDialog {
   Q_OBJECT
@@ -47,6 +59,7 @@ private:
   void editMsg();
   void showForm();
   void updateState();
+  void moveBinaryView();
 
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;
@@ -56,6 +69,7 @@ private:
   QTabBar *tabbar;
   QStringList messages;
   QGridLayout *tow_columns_layout;
+  QVBoxLayout *right_column;
   QWidget *binary_view_container;
   HistoryLog *history_log;
   BinaryView *binary_view;
