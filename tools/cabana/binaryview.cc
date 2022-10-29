@@ -26,7 +26,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
 
 QSize BinaryView::sizeHint() const {
   QSize sz = QTableView::sizeHint();
-  return {sz.width(), model->rowCount() <= 8 ? ((CELL_HEIGHT + 1) * model->rowCount() + 2) : sz.height()};
+  return {sz.width(), model->rowCount() <= 8 ? ((CELL_HEIGHT + 1) * model->rowCount() + 1) : sz.height()};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -244,9 +244,8 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 }
 
 QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  // QSize sz = QStyledItemDelegate::sizeHint(option, index);
-  // return {sz.width(), CELL_HEIGHT};
-  return {CELL_HEIGHT, CELL_HEIGHT};
+  QSize sz = QStyledItemDelegate::sizeHint(option, index);
+  return {sz.width(), CELL_HEIGHT};
 }
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
