@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QGridLayout>
 #include <QScrollArea>
 #include <QTabBar>
 
@@ -39,6 +40,7 @@ signals:
   void removeChart(const Signal *sig);
 
 private:
+  void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int to);
   void resizeSignal(const Signal *sig, int from, int to);
   void saveSignal(const Signal *sig, const Signal &new_sig);
@@ -53,7 +55,8 @@ private:
   QPushButton *edit_btn;
   QWidget *signals_container;
   QTabBar *tabbar;
-  QStringList messages;
+  QGridLayout *tow_columns_layout;
+  QWidget *binary_view_container;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;

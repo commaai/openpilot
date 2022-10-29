@@ -2,6 +2,7 @@
 
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QMenu>
 #include <QMessageBox>
 #include <QTimer>
 
@@ -15,18 +16,26 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
+  tow_columns_layout = new QGridLayout();
+  main_layout->addLayout(tow_columns_layout);
 
+  QVBoxLayout *right_column = new QVBoxLayout();
+  tow_columns_layout->addLayout(right_column, 0, 1);
+
+  binary_view_container = new QWidget(this);
+  QVBoxLayout *bin_layout= new QVBoxLayout(binary_view_container);
+  bin_layout->setContentsMargins(0, 0, 0, 0);
   // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
   tabbar->setDrawBase(false);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
-  main_layout->addWidget(tabbar);
+  tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
+  bin_layout->addWidget(tabbar);
 
   // message title
   QFrame *title_frame = new QFrame();
-  main_layout->addWidget(title_frame);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
   title_frame->setFrameShape(QFrame::StyledPanel);
   QHBoxLayout *title_layout = new QHBoxLayout();
@@ -54,10 +63,13 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
   warning_widget->hide();
   frame_layout->addWidget(warning_widget);
+  bin_layout->addWidget(title_frame);
 
   // binary view
   binary_view = new BinaryView(this);
-  main_layout->addWidget(binary_view, 0, Qt::AlignTop);
+  bin_layout->addWidget(binary_view, 0, Qt::AlignTop);
+  bin_layout->addStretch(0);
+  right_column->addWidget(binary_view_container);
 
   // signals
   signals_container = new QWidget(this);
@@ -68,33 +80,62 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidget(signals_container);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
+  right_column->addWidget(scroll);
 
   // history log
   history_log = new HistoryLog(this);
-  main_layout->addWidget(history_log);
+  right_column->addWidget(history_log);
 
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
-  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) { setMessage(messages[index]); });
-  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
-    messages.removeAt(index);
-    tabbar->removeTab(index);
-    setMessage(messages.isEmpty() ? "" : messages[0]);
+  QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
+  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
+    if (index != -1 && tabbar->tabText(index) != msg_id) {
+      setMessage(tabbar->tabText(index));
+    }
   });
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
+    if (tabbar->currentIndex() == index) {
+      tabbar->setCurrentIndex(index == tabbar->count() - 1 ? index - 1 : index + 1);
+    }
+    tabbar->removeTab(index);
+  });
+}
+
+void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
+  int index = tabbar->tabAt(pt);
+  if (index >= 0) {
+    QMenu menu(this);
+    // TODO: add action to split binary view into a seperate column to display data from can fd.
+    auto close_action = menu.addAction(tr("Close Other Tabs"));
+    auto move_action = menu.addAction(tr("Move To Seperate Column"));
+    auto action = menu.exec(tabbar->mapToGlobal(pt));
+    if (action == close_action) {
+      for (int i = tabbar->count() - 1; i >= 0; --i) {
+        if (i != index)
+          tabbar->removeTab(i);
+      }
+    } else if (action == move_action) {
+      tow_columns_layout->addWidget(binary_view_container, 0, 0);
+    }
+  }
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
   if (message_id.isEmpty()) return;
 
-  int index = messages.indexOf(message_id);
+  int index = -1;
+  for (int i = 0; i < tabbar->count(); ++i) {
+    if (tabbar->tabText(i) == message_id) {
+      index = i;
+      break;
+    }
+  }
   if (index == -1) {
-    messages.push_back(message_id);
-    tabbar->addTab(message_id);
-    index = tabbar->count() - 1;
+    index = tabbar->addTab(message_id);
     auto msg = dbc()->msg(message_id);
     tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
   }
