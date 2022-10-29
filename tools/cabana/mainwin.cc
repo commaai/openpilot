@@ -3,14 +3,13 @@
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QScreen>
-#include <QSplitter>
 #include <QVBoxLayout>
 
 #include "tools/replay/util.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  if (main_win) main_win->showStatusMessage(msg);
+  if (main_win) emit main_win->showMessage(msg, 0);
 }
 
 MainWindow::MainWindow() : QWidget() {
@@ -22,15 +21,14 @@ MainWindow::MainWindow() : QWidget() {
   h_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addLayout(h_layout);
 
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
-  splitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+  splitter = new QSplitter(Qt::Horizontal, this);
+  splitter->setHandleWidth(11);
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
   detail_widget = new DetailWidget(this);
   splitter->addWidget(detail_widget);
 
-  splitter->setSizes({100, 500});
   h_layout->addWidget(splitter);
 
   // right widgets
@@ -74,16 +72,17 @@ MainWindow::MainWindow() : QWidget() {
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit logMessageFromReplay(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 3000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
   });
 
-  QObject::connect(this, &MainWindow::logMessageFromReplay, status_bar, &QStatusBar::showMessage);
+  QObject::connect(this, &MainWindow::showMessage, status_bar, &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
+  QObject::connect(detail_widget, &DetailWidget::binaryViewMoved, [this](bool in) { splitter->setSizes({in ? 100 : 0, 500}); });
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
@@ -102,7 +101,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
     progress_bar->hide();
   }
 }
-
 
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {

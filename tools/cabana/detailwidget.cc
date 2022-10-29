@@ -13,10 +13,18 @@
 // DetailWidget
 
 DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
 
+  right_column = new QVBoxLayout();
+  main_layout->addLayout(right_column);
+
+  binary_view_container = new QWidget(this);
+  binary_view_container->setMinimumWidth(500);
+  binary_view_container->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+  QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
+  bin_layout->setContentsMargins(0, 0, 0, 0);
+  bin_layout->setSpacing(0);
   // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
@@ -24,14 +32,19 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
-  main_layout->addWidget(tabbar);
+  bin_layout->addWidget(tabbar);
+
+  TitleFrame *title_frame = new TitleFrame(this);
+  title_frame->setFrameShape(QFrame::StyledPanel);
+  title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
 
   // message title
-  QFrame *title_frame = new QFrame();
-  main_layout->addWidget(title_frame);
-  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
-  title_frame->setFrameShape(QFrame::StyledPanel);
   QHBoxLayout *title_layout = new QHBoxLayout();
+  split_btn = new QPushButton("⬅", this);
+  split_btn->setFixedSize(20, 20);
+  split_btn->setToolTip(tr("Split to two columns"));
+  title_layout->addWidget(split_btn);
   title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -56,10 +69,12 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
   warning_widget->hide();
   frame_layout->addWidget(warning_widget);
+  bin_layout->addWidget(title_frame);
 
   // binary view
   binary_view = new BinaryView(this);
-  main_layout->addWidget(binary_view, 0, Qt::AlignTop);
+  bin_layout->addWidget(binary_view);
+  right_column->addWidget(binary_view_container);
 
   // signals
   signals_container = new QWidget(this);
@@ -70,12 +85,14 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidget(signals_container);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
+  right_column->addWidget(scroll);
 
   // history log
   history_log = new HistoryLog(this);
-  main_layout->addWidget(history_log);
+  right_column->addWidget(history_log);
 
+  QObject::connect(split_btn, &QPushButton::clicked, this, &DetailWidget::moveBinaryView);
+  QObject::connect(title_frame, &TitleFrame::doubleClicked, this, &DetailWidget::moveBinaryView);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
@@ -112,7 +129,6 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
 void DetailWidget::setMessage(const QString &message_id) {
   if (message_id.isEmpty()) return;
 
-  qWarning() << "setmessage" << message_id;
   int index = -1;
   for (int i = 0; i < tabbar->count(); ++i) {
     if (tabbar->tabText(i) == message_id) {
@@ -180,6 +196,20 @@ void DetailWidget::updateState() {
 
   binary_view->updateState();
   history_log->updateState();
+}
+
+void DetailWidget::moveBinaryView() {
+  if (binview_in_left_col) {
+    right_column->insertWidget(0, binary_view_container);
+    emit binaryViewMoved(true);
+  } else {
+    main_layout->insertWidget(0, binary_view_container);
+    emit binaryViewMoved(false);
+  }
+  split_btn->setText(binview_in_left_col ? "⬅" : "➡");
+  split_btn->setToolTip(binview_in_left_col ? tr("Split to two columns") : tr("Move back"));
+  binary_view->updateGeometry();
+  binview_in_left_col = !binview_in_left_col;
 }
 
 void DetailWidget::showForm() {
