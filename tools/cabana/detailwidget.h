@@ -72,7 +72,7 @@ private:
   QVBoxLayout *right_column;
   bool binview_in_left_col = false;
   QWidget *binary_view_container;
-  TitleFrame *title_frame;
+  QPushButton *split_btn;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;

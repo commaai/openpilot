@@ -38,14 +38,17 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
   bin_layout->addWidget(tabbar);
 
-  title_frame = new TitleFrame(this);
-  title_frame->setToolTip(tr("Double click to move to mew column"));
+  TitleFrame *title_frame = new TitleFrame(this);
   title_frame->setFrameShape(QFrame::StyledPanel);
   title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
+  split_btn = new QPushButton("⬅", this);
+  split_btn->setFixedSize(20, 20);
+  split_btn->setToolTip(tr("Split to two columns"));
+  title_layout->addWidget(split_btn);
   title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -92,6 +95,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   history_log = new HistoryLog(this);
   right_column->addWidget(history_log);
 
+  QObject::connect(split_btn, &QPushButton::clicked, this, &DetailWidget::moveBinaryView);
   QObject::connect(title_frame, &TitleFrame::doubleClicked, this, &DetailWidget::moveBinaryView);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
@@ -202,12 +206,12 @@ void DetailWidget::moveBinaryView() {
   if (binview_in_left_col) {
     right_column->insertWidget(0, binary_view_container);
     emit binaryViewMoved(true);
-    title_frame->setToolTip(tr("Double click to move to mew column"));
   } else {
     tow_columns_layout->insertWidget(0, binary_view_container);
     emit binaryViewMoved(false);
-    title_frame->setToolTip(tr("Double click To move back to the origin column"));
   }
+  split_btn->setText(binview_in_left_col ? "⬅" : "➡");
+  split_btn->setToolTip(binview_in_left_col ? tr("Split to two columns") : tr("Move back"));
   binary_view->updateGeometry();
   binview_in_left_col = !binview_in_left_col;
 }
