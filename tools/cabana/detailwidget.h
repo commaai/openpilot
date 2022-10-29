@@ -10,11 +10,9 @@
 
 class TitleFrame : public QFrame {
   Q_OBJECT
-
 public:
   TitleFrame(QWidget *parent) : QFrame(parent) {}
   void mouseDoubleClickEvent(QMouseEvent *e) { emit doubleClicked(); }
-
 signals:
   void doubleClicked();
 };
