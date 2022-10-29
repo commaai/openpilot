@@ -73,7 +73,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
-    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
+    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, VIPC_WIDTH, VIPC_HEIGHT);
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail"}));
@@ -95,7 +95,7 @@ void MapRenderer::msgUpdate() {
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
     if (localizer_valid) {
-      float scale_lat80 = get_meters_per_pixel(80, 12);
+      float scale_lat80 = get_meters_per_pixel(80, 13);
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
       updateZoom(get_zoom_level_for_scale(pos.getValue()[0], scale_lat80));
     }
