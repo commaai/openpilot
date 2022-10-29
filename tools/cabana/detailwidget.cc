@@ -20,6 +20,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(right_column);
 
   binary_view_container = new QWidget(this);
+  binary_view_container->setMinimumWidth(500);
   binary_view_container->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
   bin_layout->setContentsMargins(0, 0, 0, 0);
