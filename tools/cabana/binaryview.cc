@@ -20,7 +20,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->hide();
-  verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setMouseTracking(true);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
@@ -28,7 +28,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
 
 QSize BinaryView::sizeHint() const {
   QSize sz = QTableView::sizeHint();
-  return {sz.width(), model->rowCount() <= 8 ? ((CELL_HEIGHT + 1) * model->rowCount() + 1) : sz.height()};
+  return {sz.width(), model->rowCount() <= 8 ? ((CELL_HEIGHT + 1) * model->rowCount() + 2) : sz.height()};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -110,7 +110,6 @@ void BinaryView::leaveEvent(QEvent *event) {
 void BinaryView::setMessage(const QString &message_id) {
   msg_id = message_id;
   model->setMessage(message_id);
-  resizeRowsToContents();
   clearSelection();
   updateState();
   updateGeometry();

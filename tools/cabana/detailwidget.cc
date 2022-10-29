@@ -25,6 +25,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   tow_columns_layout->addLayout(right_column);
 
   binary_view_container = new QWidget(this);
+  binary_view_container->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
   bin_layout->setContentsMargins(0, 0, 0, 0);
   bin_layout->setSpacing(0);
@@ -207,7 +208,6 @@ void DetailWidget::moveBinaryView() {
     emit binaryViewMoved(false);
     title_frame->setToolTip(tr("Double click To move back to the origin column"));
   }
-  binary_view->resizeRowsToContents();
   binary_view->updateGeometry();
   binview_in_left_col = !binview_in_left_col;
 }
