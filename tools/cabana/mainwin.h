@@ -25,7 +25,6 @@ protected:
   void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
-  void showLeftPanel(bool show);
 
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;

@@ -168,10 +168,10 @@ void DetailWidget::updateState() {
 void DetailWidget::moveBinaryView() {
   if (tow_columns_layout->itemAtPosition(0, 0)) {
     right_column->insertWidget(0, binary_view_container);
-    emit moveBinaryView1(false);
+    emit binaryViewMoved(true);
   } else {
     tow_columns_layout->addWidget(binary_view_container, 0, 0);
-    emit moveBinaryView1(true);
+    emit binaryViewMoved(false);
   }
 }
 

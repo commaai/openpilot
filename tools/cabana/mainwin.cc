@@ -85,14 +85,14 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
-  QObject::connect(detail_widget, &DetailWidget::moveBinaryView1, this, &MainWindow::showLeftPanel);
+  QObject::connect(detail_widget, &DetailWidget::binaryViewMoved, [this](bool in) { splitter->setSizes({in ? 100 : 0, 500}); });
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
   QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
 
   main_win = this;
-  // qInstallMessageHandler(qLogMessageHandler);
+  qInstallMessageHandler(qLogMessageHandler);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
@@ -102,16 +102,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
     progress_bar->show();
   } else {
     progress_bar->hide();
-  }
-}
-
-void MainWindow::showLeftPanel(bool show) {
-  // show ? splitter->setSizes(100, 500) : 
-  // qWarning() << "here";
-  if (show) {
-    splitter->setSizes({0, 500});
-  } else {
-    splitter->setSizes({100, 500});
   }
 }
 
