@@ -35,7 +35,8 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   bin_layout->addWidget(tabbar);
 
   // message title
-  TitleFrame *title_frame = new TitleFrame(this);
+  title_frame = new TitleFrame(this);
+  title_frame->setToolTip(tr("Double click to move to mew column"));
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
   title_frame->setFrameShape(QFrame::StyledPanel);
   QHBoxLayout *title_layout = new QHBoxLayout();
@@ -196,9 +197,11 @@ void DetailWidget::moveBinaryView() {
   if (tow_columns_layout->itemAtPosition(0, 0)) {
     right_column->insertWidget(0, binary_view_container);
     emit binaryViewMoved(true);
+    title_frame->setToolTip(tr("Double click to move to mew column"));
   } else {
     tow_columns_layout->addWidget(binary_view_container, 0, 0);
     emit binaryViewMoved(false);
+    title_frame->setToolTip(tr("Double click To move back to the origin column"));
   }
 }
 

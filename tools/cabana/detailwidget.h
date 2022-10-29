@@ -72,6 +72,7 @@ private:
   QGridLayout *tow_columns_layout;
   QVBoxLayout *right_column;
   QWidget *binary_view_container;
+  TitleFrame *title_frame;
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
