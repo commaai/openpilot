@@ -104,12 +104,7 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
       setMessage(tabbar->tabText(index));
     }
   });
-  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
-    if (tabbar->currentIndex() == index) {
-      tabbar->setCurrentIndex(index == tabbar->count() - 1 ? index - 1 : index + 1);
-    }
-    tabbar->removeTab(index);
-  });
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -118,9 +113,14 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
     QMenu menu(this);
     menu.addAction(tr("Close Other Tabs"));
     if (menu.exec(tabbar->mapToGlobal(pt))) {
-      for (int i = tabbar->count() - 1; i >= 0; --i) {
-        if (i != index)
-          tabbar->removeTab(i);
+      tabbar->setCurrentIndex(index);
+      // remove all tabs before the one to keep
+      for (int i = 0; i < index; ++i) {
+        tabbar->removeTab(0);
+      }
+      // remove all tabs after the one to keep
+      while (tabbar->count() > 1) {
+        tabbar->removeTab(1);
       }
     }
   }
