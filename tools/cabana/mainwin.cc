@@ -9,7 +9,7 @@
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  if (main_win) emit main_win->showMessage(msg, 300);
+  if (main_win) emit main_win->showMessage(msg, 0);
 }
 
 MainWindow::MainWindow() : QWidget() {

@@ -11,6 +11,8 @@
 
 // BinaryView
 
+const int CELL_HEIGHT = 30;
+
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
   setModel(model);

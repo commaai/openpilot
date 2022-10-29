@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QGridLayout>
 #include <QScrollArea>
 #include <QTabBar>
 #include <QVBoxLayout>

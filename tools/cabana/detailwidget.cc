@@ -42,7 +42,6 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   title_frame->setFrameShape(QFrame::StyledPanel);
   title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
-  // frame_layout->setContentsMargins(0 , 0, 0, 0);
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();

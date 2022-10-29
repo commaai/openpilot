@@ -1,14 +1,11 @@
 #pragma once
 
-#include <QDebug>
 #include <QList>
 #include <QSet>
 #include <QStyledItemDelegate>
 #include <QTableView>
 
 #include "tools/cabana/dbcmanager.h"
-
-const int CELL_HEIGHT = 30;
 
 class BinaryItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
