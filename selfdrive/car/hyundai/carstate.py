@@ -196,7 +196,7 @@ class CarState(CarStateBase):
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
       cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
-      ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["SET_SPEED"] * speed_factor
+      ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["VSetDis"] * speed_factor
       ret.cruiseState.standstill = cp_cruise_info.vl["SCC_CONTROL"]["CRUISE_STANDSTILL"] == 1
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
       self.cruise_info = copy.copy(cp_cruise_info.vl["SCC_CONTROL"])
@@ -465,7 +465,7 @@ class CarState(CarStateBase):
     if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
       signals += [
         ("ACCMode", "SCC_CONTROL"),
-        ("SET_SPEED", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
         ("CRUISE_STANDSTILL", "SCC_CONTROL"),
       ]
       checks += [
@@ -499,14 +499,14 @@ class CarState(CarStateBase):
       signals = [
         ("COUNTER", "SCC_CONTROL"),
         ("NEW_SIGNAL_1", "SCC_CONTROL"),
-        ("CRUISE_MAIN", "SCC_CONTROL"),
+        ("MainMode_ACC", "SCC_CONTROL"),
         ("ACCMode", "SCC_CONTROL"),
         ("CRUISE_INACTIVE", "SCC_CONTROL"),
         ("ZEROS_9", "SCC_CONTROL"),
         ("CRUISE_STANDSTILL", "SCC_CONTROL"),
         ("ZEROS_5", "SCC_CONTROL"),
         ("DISTANCE_SETTING", "SCC_CONTROL"),
-        ("SET_SPEED", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
       ]
 
       checks = [
