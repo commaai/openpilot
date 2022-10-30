@@ -94,8 +94,10 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
 
-    "NEW_SIGNAL_9": 2,
     "NEW_SIGNAL_10": 4,
+
+    # TODO: can both jerk limits be simultaneously high? stock doesn't seem to do this
+    "JerkLowerLimit": 5 if enabled else 1,
   }
 
   return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
