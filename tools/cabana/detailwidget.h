@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/binaryview.h"
+#include "tools/cabana/chartswidget.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
 
@@ -40,16 +41,15 @@ class DetailWidget : public QWidget {
   Q_OBJECT
 
 public:
-  DetailWidget(QWidget *parent);
+  DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const QString &message_id);
   void dbcMsgChanged(int show_form_idx = -1);
 
 signals:
-  void showChart(const QString &msg_id, const Signal *sig);
-  void removeChart(const Signal *sig);
   void binaryViewMoved(bool in);
 
 private:
+  void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int to);
   void resizeSignal(const Signal *sig, int from, int to);
@@ -74,4 +74,5 @@ private:
   HistoryLog *history_log;
   BinaryView *binary_view;
   ScrollArea *scroll;
+  ChartsWidget *charts;
 };

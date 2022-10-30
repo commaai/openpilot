@@ -26,7 +26,8 @@ MainWindow::MainWindow() : QWidget() {
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
-  detail_widget = new DetailWidget(this);
+  charts_widget = new ChartsWidget(this);
+  detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
 
   h_layout->addWidget(splitter);
@@ -50,7 +51,6 @@ MainWindow::MainWindow() : QWidget() {
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
 
-  charts_widget = new ChartsWidget(this);
   r_layout->addWidget(charts_widget);
 
   h_layout->addWidget(right_container);
@@ -81,7 +81,6 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(this, &MainWindow::showMessage, status_bar, &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
-  QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
   QObject::connect(detail_widget, &DetailWidget::binaryViewMoved, [this](bool in) { splitter->setSizes({in ? 100 : 0, 500}); });
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
