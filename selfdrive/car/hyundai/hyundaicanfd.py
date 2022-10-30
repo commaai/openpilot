@@ -67,12 +67,13 @@ def create_lfahda_cluster(packer, CP, enabled):
 
 def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_override, set_speed):
   # TODO: set and respect jerk limits
-  jerk = 0.5 / 50
+  jerk = 5
+  jn = jerk / 50
   if not enabled or gas_override:
     a_val, a_raw = 0, 0
   else:
     a_raw = accel
-    a_val = clip(accel, accel_last - jerk, accel_last + jerk)
+    a_val = clip(accel, accel_last - jn, accel_last + jn)
     if stopping:
       a_raw = 0
 
@@ -96,7 +97,7 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
     "NEW_SIGNAL_10": 4,
 
     # TODO: can both jerk limits be simultaneously high? stock doesn't seem to do this
-    "JerkLowerLimit": 5 if enabled else 1,
+    "JerkLowerLimit": jerk if enabled else 1,
   }
 
   return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
