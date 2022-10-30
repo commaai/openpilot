@@ -23,6 +23,7 @@ public:
   inline QString name() const { return dbc_name; }
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
+  inline const DBC *getDBC() const { return dbc; }
   inline const Msg *msg(const QString &id) const { return msg(addressFromId(id)); }
   inline const Msg *msg(uint32_t address) const {
     auto it = msg_map.find(address);
