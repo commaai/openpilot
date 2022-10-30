@@ -8,7 +8,6 @@
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QVBoxLayout>
