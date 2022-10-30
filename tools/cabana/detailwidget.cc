@@ -12,7 +12,7 @@
 
 // DetailWidget
 
-DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
+DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -110,6 +110,8 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
     }
     tabbar->removeTab(index);
   });
+  QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
+  QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -157,13 +159,14 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (auto msg = dbc()->msg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
       auto form = new SignalEdit(i, msg_id, &(msg->sigs[i]));
+      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
       signals_container->layout()->addWidget(form);
-      QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]]() { emit showChart(msg_id, sig); });
       QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
       QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
       QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
       QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
       QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
+      QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]](bool show) { charts->showChart(msg_id, sig, show); });
       if (i == show_form_idx) {
         QTimer::singleShot(0, [=]() { emit form->showFormClicked(); });
       }
@@ -219,6 +222,13 @@ void DetailWidget::showForm() {
     if (f == sender) {
       QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
     }
+  }
+}
+
+void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
+  if (id == msg_id) {
+    for (auto f : signals_container->findChildren<SignalEdit *>())
+      if (f->sig == sig) f->setChartOpened(opened);
   }
 }
 

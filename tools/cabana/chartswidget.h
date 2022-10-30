@@ -73,12 +73,15 @@ class ChartsWidget : public QWidget {
 
 public:
   ChartsWidget(QWidget *parent = nullptr);
-  void addChart(const QString &id, const Signal *sig);
+  void showChart(const QString &id, const Signal *sig, bool show);
   void removeChart(ChartWidget *chart);
+  bool isChartOpened(const QString &id, const Signal *sig);
 
 signals:
   void dock(bool floating);
   void rangeChanged(double min, double max, bool is_zommed);
+  void chartOpened(const QString &id, const Signal *sig);
+  void chartClosed(const QString &id, const Signal *sig);
 
 private:
   void eventsMerged();
