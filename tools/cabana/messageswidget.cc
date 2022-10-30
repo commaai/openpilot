@@ -131,16 +131,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     const auto &m = msgs[index.row()];
     auto &can_data = can->lastMessage(m->id);
     switch (index.column()) {
-      case 0:
-        return m->name;
-      case 1:
-        return m->id;
-      case 2:
-        return can_data.freq;
-      case 3:
-        return can_data.count;
-      case 4:
-        return toHex(can_data.dat);
+      case 0: return m->name;
+      case 1: return m->id;
+      case 2: return can_data.freq;
+      case 3: return can_data.count;
+      case 4: return toHex(can_data.dat);
     }
   } else if (role == Qt::UserRole) {
     return msgs[index.row()]->id;

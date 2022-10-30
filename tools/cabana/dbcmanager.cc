@@ -28,10 +28,6 @@ void DBCManager::open(const QString &name, const QString &content) {
   emit DBCFileChanged();
 }
 
-void DBCManager::save(const QString &dbc_file_name) {
-  // TODO: save DBC to file
-}
-
 QString DBCManager::generateDBC() {
   if (!dbc) return {};
 
