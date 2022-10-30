@@ -69,9 +69,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &CANMessages::updated, [this]() { model->updateState(); });
   QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
   QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadDBCFromPaste);
-  QObject::connect(save_btn, &QPushButton::clicked, [=]() {
-    // TODO: save DBC to file
-  });
+  QObject::connect(save_btn, &QPushButton::clicked, this, &MessagesWidget::saveDBC);
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid()) {
       emit msgSelectionChanged(current.data(Qt::UserRole).toString());
@@ -109,6 +107,12 @@ void MessagesWidget::loadDBCFromFingerprint() {
       loadDBCFromName(dbc_name.toString());
     }
   }
+}
+
+void MessagesWidget::saveDBC() {
+  SaveDBCDialog dlg(this);
+  dlg.dbc_edit->setText(dbc()->generateDBC());
+  dlg.exec();
 }
 
 // MessageListModel
@@ -224,6 +228,8 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
   }
 }
 
+// LoadDBCDialog
+
 LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   dbc_edit = new QTextEdit(this);
@@ -233,7 +239,21 @@ LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox);
 
-  setFixedWidth(640);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  setMinimumSize({640, 480});
+  QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+// SaveDBCDialog
+
+SaveDBCDialog::SaveDBCDialog(QWidget *parent) : QDialog(parent) {
+  setWindowTitle(tr("Save DBC"));
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  dbc_edit = new QTextEdit(this);
+  dbc_edit->setAcceptRichText(false);
+  main_layout->addWidget(dbc_edit);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
+  main_layout->addWidget(buttonBox);
+  setMinimumSize({640, 480});
+  QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 }
