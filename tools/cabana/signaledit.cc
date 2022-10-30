@@ -82,15 +82,14 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
   title_layout->addWidget(title, 1);
 
   QPushButton *seek_btn = new QPushButton("⌕");
-  seek_btn->setStyleSheet("font-weight:bold;font-size:20px");
+  seek_btn->setStyleSheet("QPushButton{font-weight:bold;font-size:18px}");
   seek_btn->setToolTip(tr("Find signal values"));
-  seek_btn->setFixedSize(20, 20);
+  seek_btn->setFixedSize(25, 25);
   title_layout->addWidget(seek_btn);
 
-  QPushButton *plot_btn = new QPushButton("📈");
-  plot_btn->setToolTip(tr("Show Plot"));
-  plot_btn->setFixedSize(20, 20);
-  QObject::connect(plot_btn, &QPushButton::clicked, this, &SignalEdit::showChart);
+  plot_btn = new QPushButton(this);
+  plot_btn->setStyleSheet("QPushButton {font-size:18px}");
+  plot_btn->setFixedSize(25, 25);
   title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
 
@@ -120,6 +119,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
   QObject::connect(remove_btn, &QPushButton::clicked, [this]() { emit remove(this->sig); });
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
   QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::saveSignal);
+  QObject::connect(plot_btn, &QPushButton::clicked, [this]() { emit showChart(!chart_opened); });
   QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id]() {
     SignalFindDlg dlg(msg_id, this->sig, this);
     dlg.exec();
@@ -143,6 +143,12 @@ void SignalEdit::saveSignal() {
   }
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
   emit save(this->sig, s);
+}
+
+void SignalEdit::setChartOpened(bool opened) {
+  plot_btn->setText(opened ? "☒" : "📈");
+  plot_btn->setToolTip(opened ? tr("Close Plot") :tr("Show Plot"));
+  chart_opened = opened;
 }
 
 void SignalEdit::setFormVisible(bool visible) {
