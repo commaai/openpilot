@@ -22,6 +22,8 @@ class SaveDBCDialog : public QDialog {
 
 public:
   SaveDBCDialog(QWidget *parent);
+  void copytoClipboard();
+  void saveAs();
   QTextEdit *dbc_edit;
 };
 

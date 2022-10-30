@@ -3,9 +3,12 @@
 #include <QCompleter>
 #include <QDialogButtonBox>
 #include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -77,7 +80,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
 
   QFile json_file("./car_fingerprint_to_dbc.json");
-  if(json_file.open(QIODevice::ReadOnly)) {
+  if (json_file.open(QIODevice::ReadOnly)) {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
 }
@@ -101,9 +104,9 @@ void MessagesWidget::loadDBCFromPaste() {
 
 void MessagesWidget::loadDBCFromFingerprint() {
   auto fingerprint = can->carFingerprint();
-  if (!fingerprint.isEmpty() && dbc()->name().isEmpty())  {
+  if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
-    if (dbc_name !=  QJsonValue::Undefined) {
+    if (dbc_name != QJsonValue::Undefined) {
       loadDBCFromName(dbc_name.toString());
     }
   }
@@ -128,11 +131,16 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     const auto &m = msgs[index.row()];
     auto &can_data = can->lastMessage(m->id);
     switch (index.column()) {
-      case 0: return m->name;
-      case 1: return m->id;
-      case 2: return can_data.freq;
-      case 3: return can_data.count;
-      case 4: return toHex(can_data.dat);
+      case 0:
+        return m->name;
+      case 1:
+        return m->id;
+      case 2:
+        return can_data.freq;
+      case 3:
+        return can_data.count;
+      case 4:
+        return toHex(can_data.dat);
     }
   } else if (role == Qt::UserRole) {
     return msgs[index.row()]->id;
@@ -252,8 +260,35 @@ SaveDBCDialog::SaveDBCDialog(QWidget *parent) : QDialog(parent) {
   dbc_edit = new QTextEdit(this);
   dbc_edit->setAcceptRichText(false);
   main_layout->addWidget(dbc_edit);
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-  main_layout->addWidget(buttonBox);
+
+  QPushButton *copy_to_clipboard = new QPushButton(tr("Copy To Clipboard"), this);
+  QPushButton *save_as = new QPushButton(tr("Save As"), this);
+
+  QHBoxLayout *btn_layout = new QHBoxLayout();
+  btn_layout->addStretch();
+  btn_layout->addWidget(copy_to_clipboard);
+  btn_layout->addWidget(save_as);
+  main_layout->addLayout(btn_layout);
   setMinimumSize({640, 480});
-  QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+
+  QObject::connect(copy_to_clipboard, &QPushButton::clicked, this, &SaveDBCDialog::copytoClipboard);
+  QObject::connect(save_as, &QPushButton::clicked, this, &SaveDBCDialog::saveAs);
+}
+
+void SaveDBCDialog::copytoClipboard() {
+  dbc_edit->selectAll();
+  dbc_edit->copy();
+  QDialog::accept();
+}
+
+void SaveDBCDialog::saveAs() {
+  QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                   QDir::homePath() + "/untitled.dbc", tr("DBC (*.dbc)"));
+  if (!file_name.isEmpty()) {
+    QFile file(file_name);
+    if (file.open(QIODevice::WriteOnly)) {
+      file.write(dbc_edit->toPlainText().toUtf8());
+    }
+    QDialog::accept();
+  }
 }
