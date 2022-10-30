@@ -41,7 +41,7 @@ QString DBCManager::generateDBC() {
                         .arg(sig.size)
                         .arg(sig.is_little_endian ? '1' : '0')
                         .arg(sig.is_signed ? '-' : '+')
-                        .arg(sig.factor)
+                        .arg(sig.factor, 0, 'g', 20)
                         .arg(sig.offset);
     }
     dbc_string += "\n";
