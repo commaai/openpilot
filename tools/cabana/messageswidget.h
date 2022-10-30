@@ -17,6 +17,16 @@ public:
   QTextEdit *dbc_edit;
 };
 
+class SaveDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  SaveDBCDialog(QWidget *parent);
+  void copytoClipboard();
+  void saveAs();
+  QTextEdit *dbc_edit;
+};
+
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
@@ -52,6 +62,7 @@ public slots:
   void loadDBCFromName(const QString &name);
   void loadDBCFromFingerprint();
   void loadDBCFromPaste();
+  void saveDBC();
 
 signals:
   void msgSelectionChanged(const QString &message_id);
