@@ -7,11 +7,11 @@ TEST_CASE("DBCManager::generateDBC") {
   dbc_origin.open("toyota_new_mc_pt_generated");
   QString dbc_string = dbc_origin.generateDBC();
 
-  DBCManager dbc_from_string(nullptr);
-  dbc_from_string.open("", dbc_string);
+  DBCManager dbc_from_generated(nullptr);
+  dbc_from_generated.open("", dbc_string);
 
   auto dbc = dbc_origin.getDBC();
-  auto new_dbc = dbc_from_string.getDBC();
+  auto new_dbc = dbc_from_generated.getDBC();
   REQUIRE(dbc->msgs.size() == new_dbc->msgs.size());
   for (int i = 0; i < dbc->msgs.size(); ++i) {
     REQUIRE(dbc->msgs[i].name == new_dbc->msgs[i].name);
