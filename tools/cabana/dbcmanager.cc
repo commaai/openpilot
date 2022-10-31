@@ -1,5 +1,6 @@
 #include "tools/cabana/dbcmanager.h"
 
+#include <limits>
 #include <sstream>
 #include <QVector>
 
@@ -41,8 +42,8 @@ QString DBCManager::generateDBC() {
                         .arg(sig.size)
                         .arg(sig.is_little_endian ? '1' : '0')
                         .arg(sig.is_signed ? '-' : '+')
-                        .arg(sig.factor, 0, 'g', 20)
-                        .arg(sig.offset);
+                        .arg(sig.factor, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10);
     }
     dbc_string += "\n";
   }
