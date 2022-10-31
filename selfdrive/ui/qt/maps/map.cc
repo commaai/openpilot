@@ -61,7 +61,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 }
 
 MapWindow::~MapWindow() {
-  save_bearing();
+  save_bearing(*last_bearing);
   makeCurrent();
 }
 
@@ -207,7 +207,7 @@ void MapWindow::updateState(const UIState &s) {
       m_map->setBearing(*last_bearing);
 
       if ((cnt_bearing % 1200) == 0) {
-        save_bearing();
+        save_bearing(*last_bearing);
       }
       cnt_bearing ++;
     }
