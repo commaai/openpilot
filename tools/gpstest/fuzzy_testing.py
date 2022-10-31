@@ -66,7 +66,7 @@ def get_continuous_coords(lat, lon) -> Tuple[int, int]:
   return round(lat, 5), round(lon, 5)
 
 rc_p: Any = None
-def exec_remote_checker(lat, lon, duration):
+def exec_remote_checker(lat, lon, duration, ip_addr):
   global rc_p
   # TODO: good enough for testing
   remote_cmd =  "export PYTHONPATH=/data/pythonpath:/data/pythonpath/pyextra && "
@@ -74,8 +74,8 @@ def exec_remote_checker(lat, lon, duration):
   remote_cmd += f"timeout {duration} /usr/local/pyenv/shims/python tools/gpstest/remote_checker.py "
   remote_cmd += f"{lat} {lon}"
 
-  ssh_cmd = ['ssh', '-i', '/home/batman/openpilot/xx/phone/key/id_rsa',
-             'comma@192.168.60.130']
+  ssh_cmd = ["ssh", "-i", "/home/batman/openpilot/xx/phone/key/id_rsa",
+             f"comma@{ip_addr}"]
   ssh_cmd += [remote_cmd]
 
   rc_p = sp.Popen(ssh_cmd, stdout=sp.PIPE)
@@ -84,8 +84,9 @@ def exec_remote_checker(lat, lon, duration):
   print(f"Checker Result: {rc_output.strip().decode('utf-8')}")
 
 
-def run_remote_checker(spoof_proc, lat, lon, duration) -> bool:
-  checker_thread = threading.Thread(target=exec_remote_checker, args=(lat, lon, duration))
+def run_remote_checker(spoof_proc, lat, lon, duration, ip_addr) -> bool:
+  checker_thread = threading.Thread(target=exec_remote_checker,
+                                    args=(lat, lon, duration, ip_addr))
   checker_thread.start()
 
   tcnt = 0
@@ -107,8 +108,12 @@ def run_remote_checker(spoof_proc, lat, lon, duration) -> bool:
 
 
 def main():
+  if len(sys.argv) < 2:
+    print(f"usage: {sys.argv[0]} <ip_addr> [-c]")
+  ip_addr = sys.argv[1]
+
   continuous_mode = False
-  if len(sys.argv) == 2 and sys.argv[1] == '-c':
+  if len(sys.argv) == 3 and sys.argv[2] == '-c':
     print("Continuous Mode!")
     continuous_mode = True
 
@@ -123,7 +128,7 @@ def main():
     start_time = time.monotonic()
 
     # remote checker runs blocking
-    if not run_remote_checker(spoof_proc, lat, lon, duration):
+    if not run_remote_checker(spoof_proc, lat, lon, duration, ip_addr):
       # location could not be matched by ublox module
       pass
 

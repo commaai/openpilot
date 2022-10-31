@@ -1,70 +1,78 @@
 #pragma once
 
-#include <QDialog>
-#include <QLabel>
-#include <QPushButton>
-#include <QTableWidget>
+#include <QScrollArea>
+#include <QTabBar>
 #include <QVBoxLayout>
-#include <QWidget>
 
-#include "opendbc/can/common.h"
-#include "opendbc/can/common_dbc.h"
-#include "tools/cabana/parser.h"
+#include "tools/cabana/binaryview.h"
+#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
 
-class HistoryLog : public QWidget {
+class TitleFrame : public QFrame {
   Q_OBJECT
-
 public:
-  HistoryLog(QWidget *parent);
-  void clear();
-  void updateState();
-
-private:
-  QLabel *labels[LOG_SIZE] = {};
-};
-
-class BinaryView : public QWidget {
-  Q_OBJECT
-
-public:
-  BinaryView(QWidget *parent);
-  void setMsg(const CanData *can_data);
-  void setData(const QByteArray &binary);
-
-  QTableWidget *table;
+  TitleFrame(QWidget *parent) : QFrame(parent) {}
+  void mouseDoubleClickEvent(QMouseEvent *e) { emit doubleClicked(); }
+signals:
+  void doubleClicked();
 };
 
 class EditMessageDialog : public QDialog {
   Q_OBJECT
 
 public:
-  EditMessageDialog(const QString &id, QWidget *parent);
-
-protected:
-  void save();
+  EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
 
   QLineEdit *name_edit;
   QSpinBox *size_spin;
-  QString id;
+};
+
+class ScrollArea : public QScrollArea {
+  Q_OBJECT
+
+public:
+  ScrollArea(QWidget *parent) : QScrollArea(parent) {}
+  bool eventFilter(QObject *obj, QEvent *ev) override;
+  void setWidget(QWidget *w);
 };
 
 class DetailWidget : public QWidget {
   Q_OBJECT
 
 public:
-  DetailWidget(QWidget *parent);
-  void setMsg(const CanData *c);
+  DetailWidget(ChartsWidget *charts, QWidget *parent);
+  void setMessage(const QString &message_id);
+  void dbcMsgChanged(int show_form_idx = -1);
+
+signals:
+  void binaryViewMoved(bool in);
 
 private:
-  void updateState();
-  void addSignal();
+  void updateChartState(const QString &id, const Signal *sig, bool opened);
+  void showTabBarContextMenu(const QPoint &pt);
+  void addSignal(int start_bit, int to);
+  void resizeSignal(const Signal *sig, int from, int to);
+  void saveSignal(const Signal *sig, const Signal &new_sig);
+  void removeSignal(const Signal *sig);
   void editMsg();
+  void showForm();
+  void updateState();
+  void moveBinaryView();
 
-  const CanData *can_data = nullptr;
-  QLabel *name_label, *time_label;
-  QPushButton *edit_btn, *add_sig_btn;
-  QVBoxLayout *signal_edit_layout;
+  QString msg_id;
+  QLabel *name_label, *time_label, *warning_label;
+  QWidget *warning_widget;
+  QPushButton *edit_btn;
+  QWidget *signals_container;
+  QTabBar *tabbar;
+  QHBoxLayout *main_layout;
+  QVBoxLayout *right_column;
+  bool binview_in_left_col = false;
+  QWidget *binary_view_container;
+  QPushButton *split_btn;
   HistoryLog *history_log;
   BinaryView *binary_view;
+  ScrollArea *scroll;
+  ChartsWidget *charts;
 };

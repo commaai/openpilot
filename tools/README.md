@@ -6,13 +6,12 @@ openpilot is developed and tested on **Ubuntu 20.04**, which is the primary deve
 
 ## Setup your PC
 
-
 First, clone openpilot:
 ``` bash
 cd ~
 git clone https://github.com/commaai/openpilot.git
 
-cd openpilot 
+cd openpilot
 git submodule update --init
 ```
 
@@ -26,10 +25,10 @@ tools/ubuntu_setup.sh
 tools/mac_setup.sh
 ```
 
-Activate a shell with the install Python dependencies:
+Activate a shell with the Python dependencies installed:
 
 ``` bash
-cd openpilot && pipenv shell
+cd openpilot && poetry shell
 ```
 
 Build openpilot with this command:
@@ -43,7 +42,7 @@ Neither openpilot nor any of the tools are developed or tested on Windows, but t
 
 Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment.
 
-GUI applications do not work with WSL out of the box. You will have to either [upgrade your system to Windows 11](https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) or [set up an Xorg server](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242).  
+GUI applications do not work with WSL out of the box. You will have to either [upgrade your system to Windows 11](https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) or [set up an Xorg server](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242).
 
 
 ## CTF

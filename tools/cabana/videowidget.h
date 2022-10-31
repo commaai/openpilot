@@ -1,28 +1,24 @@
 #pragma once
 
 #include <QLabel>
+#include <QPushButton>
 #include <QSlider>
 #include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/replay/replay.h"
+#include "tools/cabana/canmessages.h"
 
 class Slider : public QSlider {
   Q_OBJECT
 
 public:
   Slider(QWidget *parent);
-  void mousePressEvent(QMouseEvent* e) override;
+  void mousePressEvent(QMouseEvent *e) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
-
-signals:
-  void setPosition(int value);
-
-private:
-   void paintEvent(QPaintEvent *ev) override;
-   std::vector<std::tuple<int, int, TimelineType>> timeline;
+  void paintEvent(QPaintEvent *ev) override;
 
   int slider_x = -1;
+  std::vector<std::tuple<int, int, TimelineType>> timeline;
 };
 
 class VideoWidget : public QWidget {
@@ -30,13 +26,14 @@ class VideoWidget : public QWidget {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
+  void rangeChanged(double min, double max, bool is_zommed);
 
 protected:
-  void rangeChanged(double min, double max);
   void updateState();
-  void setPosition(int value);
+  void pause(bool pause);
 
-  CameraViewWidget *cam_widget;
-  QLabel *time_label, *total_time_label;
+  CameraWidget *cam_widget;
+  QLabel *end_time_label;
+  QPushButton *play_btn;
   Slider *slider;
 };
