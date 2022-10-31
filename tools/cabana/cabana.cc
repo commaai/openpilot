@@ -2,8 +2,8 @@
 #include <QDir>
 #include <QCommandLineParser>
 #include <QStyleFactory>
-#include <QUuid>
 
+#include "common/qtutil.h"
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     cmd_parser.showHelp();
   }
 
-  QString uuid =  QUuid::createUuid().toString(QUuid::WithoutBraces);
+  QString uuid =  generateUuidString();
   QString msgq_path = "/dev/shm/" + uuid;
 
   QDir dir;

@@ -147,6 +147,7 @@ common/statlog.h
 common/statlog.cc
 common/util.cc
 common/util.h
+common/qtutil.h
 common/queue.h
 common/clutil.cc
 common/clutil.h
