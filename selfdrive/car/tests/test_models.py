@@ -113,9 +113,6 @@ class TestCarModelBase(unittest.TestCase):
   def tearDownClass(cls):
     del cls.can_msgs
 
-  # def tearDown(self):
-  #   del self.safety
-
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
     assert self.CI
