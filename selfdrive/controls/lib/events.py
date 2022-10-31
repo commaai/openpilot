@@ -617,7 +617,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.pedalPressedPreEnable: {
     ET.PRE_ENABLE: Alert(
-      "Release Pedal to Engage",
+      "Release Brake to Engage",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1, creation_delay=1.),
