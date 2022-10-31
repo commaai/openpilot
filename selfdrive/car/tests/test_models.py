@@ -108,6 +108,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+    assert not cls.CP.fuzzyFingerprint
 
   @classmethod
   def tearDownClass(cls):
