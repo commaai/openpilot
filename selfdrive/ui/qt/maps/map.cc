@@ -55,6 +55,9 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   if (last_gps_bearing) {
     last_bearing = *last_gps_bearing;
   }
+  else {
+    last_bearing = {};
+  }
 
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
