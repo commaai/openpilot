@@ -78,7 +78,7 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
       a_raw = 0
 
   values = {
-    "ACCMode": 0 if not enabled else (4 if gas_override else 2),
+    "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1,
     "CRUISE_STANDSTILL": 0,
     "StopReq": 1 if stopping else 0,
