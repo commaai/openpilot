@@ -51,6 +51,11 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
     last_position = *last_gps_position;
   }
 
+  auto last_gps_bearing = get_bearing_from_params();
+  if (last_gps_bearing) {
+    last_bearing = *last_gps_bearing;
+  }
+
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
 }
