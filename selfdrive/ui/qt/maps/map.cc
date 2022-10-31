@@ -276,6 +276,8 @@ void MapWindow::initializeGL() {
       loaded_once = true;
     }
   });
+
+  m_map->setBearing(*last_bearing);
 }
 
 void MapWindow::paintGL() {
@@ -371,7 +373,6 @@ void MapWindow::offroadTransition(bool offroad) {
     auto dest = coordinate_from_param("NavDestination");
     setVisible(dest.has_value());
   }
-  last_bearing = {};
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
