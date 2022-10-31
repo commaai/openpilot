@@ -49,6 +49,7 @@ class CarController:
     self.angle_limit_counter = 0
     self.frame = 0
 
+    self.accel_last = 0
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
@@ -123,8 +124,9 @@ class CarController:
       if self.CP.openpilotLongitudinalControl:
         can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.frame))
         if self.frame % 2 == 0:
-          can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CP, CC.enabled, accel, stopping, CC.cruiseControl.override,
+          can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CP, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
                                                            set_speed_in_units))
+          self.accel_last = accel
       else:
         # button presses
         if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
