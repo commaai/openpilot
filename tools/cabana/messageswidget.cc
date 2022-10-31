@@ -98,6 +98,7 @@ void MessagesWidget::loadDBCFromPaste() {
   if (dlg.exec()) {
     dbc()->open("from paste", dlg.dbc_edit->toPlainText());
     dbc_combo->setCurrentText("loaded from paste");
+    model->updateState(true);
   }
 }
 
