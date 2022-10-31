@@ -1,6 +1,7 @@
 #include "tools/cabana/signaledit.h"
 
 #include <QDialogButtonBox>
+#include <QDoubleValidator>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -36,13 +37,16 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   sign->setCurrentIndex(sig.is_signed ? 0 : 1);
   form_layout->addRow(tr("sign"), sign);
 
-  factor = new QDoubleSpinBox();
-  factor->setDecimals(3);
-  factor->setValue(sig.factor);
+  auto double_validator = new QDoubleValidator(this);
+
+  factor = new QLineEdit();
+  factor->setValidator(double_validator);
+  factor->setText(QString::number(sig.factor));
   form_layout->addRow(tr("Factor"), factor);
 
-  offset = new QSpinBox();
-  offset->setValue(sig.offset);
+  offset = new QLineEdit();
+  offset->setValidator(double_validator);
+  offset->setText(QString::number(sig.offset));
   form_layout->addRow(tr("Offset"), offset);
 
   // TODO: parse the following parameters in opendbc
@@ -50,11 +54,11 @@ SignalForm::SignalForm(const Signal &sig, QWidget *parent) : QWidget(parent) {
   form_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
   form_layout->addRow(tr("Comment"), comment);
-  min_val = new QDoubleSpinBox();
-  factor->setDecimals(3);
+  min_val = new QLineEdit();
+  min_val->setValidator(double_validator);
   form_layout->addRow(tr("Minimum value"), min_val);
-  max_val = new QDoubleSpinBox();
-  factor->setDecimals(3);
+  max_val = new QLineEdit();
+  max_val->setValidator(double_validator);
   form_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
   form_layout->addRow(tr("Value descriptions"), val_desc);
@@ -78,15 +82,14 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
   title_layout->addWidget(title, 1);
 
   QPushButton *seek_btn = new QPushButton("⌕");
-  seek_btn->setStyleSheet("font-weight:bold;font-size:20px");
+  seek_btn->setStyleSheet("QPushButton{font-weight:bold;font-size:18px}");
   seek_btn->setToolTip(tr("Find signal values"));
-  seek_btn->setFixedSize(20, 20);
+  seek_btn->setFixedSize(25, 25);
   title_layout->addWidget(seek_btn);
 
-  QPushButton *plot_btn = new QPushButton("📈");
-  plot_btn->setToolTip(tr("Show Plot"));
-  plot_btn->setFixedSize(20, 20);
-  QObject::connect(plot_btn, &QPushButton::clicked, this, &SignalEdit::showChart);
+  plot_btn = new QPushButton(this);
+  plot_btn->setStyleSheet("QPushButton {font-size:18px}");
+  plot_btn->setFixedSize(25, 25);
   title_layout->addWidget(plot_btn);
   main_layout->addLayout(title_layout);
 
@@ -116,6 +119,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
   QObject::connect(remove_btn, &QPushButton::clicked, [this]() { emit remove(this->sig); });
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
   QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::saveSignal);
+  QObject::connect(plot_btn, &QPushButton::clicked, [this]() { emit showChart(!chart_opened); });
   QObject::connect(seek_btn, &QPushButton::clicked, [this, msg_id]() {
     SignalFindDlg dlg(msg_id, this->sig, this);
     dlg.exec();
@@ -139,6 +143,12 @@ void SignalEdit::saveSignal() {
   }
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
   emit save(this->sig, s);
+}
+
+void SignalEdit::setChartOpened(bool opened) {
+  plot_btn->setText(opened ? "☒" : "📈");
+  plot_btn->setToolTip(opened ? tr("Close Plot") :tr("Show Plot"));
+  chart_opened = opened;
 }
 
 void SignalEdit::setFormVisible(bool visible) {
