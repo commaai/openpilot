@@ -129,6 +129,17 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &para
   }
 }
 
+std::optional<float> get_bearing_from_params() {
+  QString json_str = QString::fromStdString(Params().get("LastGPSBearing"));
+  if (json_str.isEmpty()) return {};
+
+  QJsonDocument doc = QJsonDocument::fromJson(json_str.toUtf8());
+  if (doc.isNull()) return {};
+
+  QJsonObject json = doc.object();
+  return json["bearing"].isDouble() ? json["bearing"].toDouble() : {};
+}
+
 double angle_difference(double angle1, double angle2) {
   double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
   return diff < -180.0 ? diff + 360.0 : diff;

@@ -57,6 +57,11 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
 MapWindow::~MapWindow() {
   makeCurrent();
+
+  std::string last_bearing_JSON = util::string_format("{\"bearing\": %.15f}", *last_bearing);
+  std::thread([] (const std::string bjson) {
+    Params().put("LastGPSBearing", bjson);
+  }, last_bearing_JSON).detach();
 }
 
 void MapWindow::initLayers() {
