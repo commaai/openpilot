@@ -28,5 +28,4 @@ QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString)
 
 std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &param);
 std::optional<float> get_bearing_from_params();
-void save_bearing(double last_bearing);
 double angle_difference(double angle1, double angle2);

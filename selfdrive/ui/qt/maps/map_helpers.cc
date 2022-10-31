@@ -145,13 +145,6 @@ std::optional<float> get_bearing_from_params() {
   }
 }
 
-void save_bearing(double last_bearing) {
-  std::string last_bearing_JSON = util::string_format("{\"bearing\": %.15f}", last_bearing);
-  std::thread([] (const std::string bjson) {
-    Params().put("LastGPSBearing", bjson);
-  }, last_bearing_JSON).detach();
-}
-
 double angle_difference(double angle1, double angle2) {
   double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
   return diff < -180.0 ? diff + 360.0 : diff;

@@ -61,7 +61,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 }
 
 MapWindow::~MapWindow() {
-  save_bearing(*last_bearing);
   makeCurrent();
 }
 
@@ -203,14 +202,7 @@ void MapWindow::updateState(const UIState &s) {
 
   if (pan_counter == 0) {
     if (last_position) m_map->setCoordinate(*last_position);
-    if (last_bearing) {
-      m_map->setBearing(*last_bearing);
-
-      if ((cnt_bearing % 1200) == 0) {
-        save_bearing(*last_bearing);
-      }
-      cnt_bearing ++;
-    }
+    if (last_bearing) m_map->setBearing(*last_bearing);
   } else {
     pan_counter--;
   }
@@ -369,6 +361,11 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
 void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {
     clearRoute();
+
+    std::string last_bearing_JSON = util::string_format("{\"bearing\": %.15f}", *last_bearing);
+    std::thread([] (const std::string bjson) {
+      Params().put("LastGPSBearing", bjson);
+    }, last_bearing_JSON).detach();
   } else {
     auto dest = coordinate_from_param("NavDestination");
     setVisible(dest.has_value());

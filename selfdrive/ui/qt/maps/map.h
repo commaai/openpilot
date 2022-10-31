@@ -103,7 +103,6 @@ private:
   // Position
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
-  uint64_t cnt_bearing = 0;
   FirstOrderFilter velocity_filter;
   bool laikad_valid = false;
   bool locationd_valid = false;
