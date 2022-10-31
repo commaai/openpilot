@@ -137,7 +137,12 @@ std::optional<float> get_bearing_from_params() {
   if (doc.isNull()) return {};
 
   QJsonObject json = doc.object();
-  return json["bearing"].isDouble() ? json["bearing"].toDouble() : {};
+  if (json["bearing"].isDouble()) {
+    return json["bearing"].toDouble();
+  }
+  else {
+    return {};
+  }
 }
 
 double angle_difference(double angle1, double angle2) {
