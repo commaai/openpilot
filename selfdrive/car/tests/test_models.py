@@ -109,6 +109,13 @@ class TestCarModelBase(unittest.TestCase):
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
+  @classmethod
+  def tearDownClass(cls):
+    del cls.can_msgs
+
+  # def tearDown(self):
+  #   del self.safety
+
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
     assert self.CI
