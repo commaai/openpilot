@@ -13,8 +13,7 @@ public:
 
   void open(const QString &dbc_file_name);
   void open(const QString &name, const QString &content);
-  void save(const QString &dbc_file_name);
-
+  QString generateDBC();
   void addSignal(const QString &id, const Signal &sig);
   void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
   void removeSignal(const QString &id, const QString &sig_name);
@@ -24,6 +23,7 @@ public:
   inline QString name() const { return dbc_name; }
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
+  inline const DBC *getDBC() const { return dbc; }
   inline const Msg *msg(const QString &id) const { return msg(addressFromId(id)); }
   inline const Msg *msg(uint32_t address) const {
     auto it = msg_map.find(address);

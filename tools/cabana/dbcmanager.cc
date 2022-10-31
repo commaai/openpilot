@@ -28,8 +28,25 @@ void DBCManager::open(const QString &name, const QString &content) {
   emit DBCFileChanged();
 }
 
-void save(const QString &dbc_file_name) {
-  // TODO: save DBC to file
+QString DBCManager::generateDBC() {
+  if (!dbc) return {};
+
+  QString dbc_string;
+  for (auto &m : dbc->msgs) {
+    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(m.address).arg(m.name.c_str()).arg(m.size);
+    for (auto &sig : m.sigs) {
+      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
+                        .arg(sig.name.c_str())
+                        .arg(sig.start_bit)
+                        .arg(sig.size)
+                        .arg(sig.is_little_endian ? '1' : '0')
+                        .arg(sig.is_signed ? '-' : '+')
+                        .arg(sig.factor, 0, 'g', 20)
+                        .arg(sig.offset);
+    }
+    dbc_string += "\n";
+  }
+  return dbc_string;
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {

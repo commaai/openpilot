@@ -142,9 +142,11 @@ void ChartsWidget::updateTitleBar() {
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
-void ChartsWidget::addChart(const QString &id, const Signal *sig) {
+void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show) {
   auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
-  if (it == charts.end()) {
+  if (it != charts.end()) {
+    if (!show) removeChart((*it));
+  } else if (show) {
     auto chart = new ChartWidget(id, sig, this);
     chart->chart_view->updateSeries(display_range);
     QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });
@@ -152,14 +154,21 @@ void ChartsWidget::addChart(const QString &id, const Signal *sig) {
     QObject::connect(chart->chart_view, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
     charts_layout->insertWidget(0, chart);
     charts.push_back(chart);
+    emit chartOpened(chart->id, chart->signal);
   }
   updateTitleBar();
+}
+
+bool ChartsWidget::isChartOpened(const QString &id, const Signal *sig) {
+  auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
+  return it != charts.end();
 }
 
 void ChartsWidget::removeChart(ChartWidget *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
   updateTitleBar();
+  emit chartClosed(chart->id, chart->signal);
 }
 
 void ChartsWidget::removeAll(const Signal *sig) {
@@ -168,6 +177,7 @@ void ChartsWidget::removeAll(const Signal *sig) {
     auto c = it.next();
     if (sig == nullptr || c->signal == sig) {
       c->deleteLater();
+      emit chartClosed(c->id, c->signal);
       it.remove();
     }
   }
