@@ -147,6 +147,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   return {};
 }
 
+void MessageListModel::setFilterString(const QString &string) { 
+  filter_str = string;
+  updateState(true);
+}
+
 bool MessageListModel::updateMessages(bool sort) {
   if (msgs.size() == can->can_msgs.size() && filter_str.isEmpty() && !sort)
     return false;
