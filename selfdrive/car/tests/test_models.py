@@ -231,7 +231,7 @@ class TestCarModelBase(unittest.TestCase):
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
-      # Skip first frame so that CS_prev is properly initialized
+      # Skip first frame so CS_prev is properly initialized
       if idx == 0:
         CS_prev = CS
         # Button may be left pressed in warm up period
