@@ -9,7 +9,7 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
@@ -214,10 +214,10 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
+      self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
-        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
 
     if not self.CP.pcmCruise:
       self.safety.set_controls_allowed(0)
