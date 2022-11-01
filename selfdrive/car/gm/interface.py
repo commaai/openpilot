@@ -63,11 +63,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
 
-      ret.vEgoStarting = 0.3
-      ret.vEgoStopping = 0.3
-      ret.stopAccel = -2.0
-      ret.stoppingDecelRate = 2  # reach brake quickly after enabling
-
+      # ret.stopAccel = -1.0
+      # ret.stoppingDecelRate = 2  # reach brake quickly after enabling
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
