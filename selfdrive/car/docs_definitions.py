@@ -134,6 +134,7 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+
     op_long = "Stock"
     if CP.openpilotLongitudinalControl:
       op_long = "openpilot"
