@@ -128,11 +128,17 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+    op_long = "Stock"
+    if CP.openpilotLongitudinalControl:
+      op_long = "openpilot"
+    elif CP.experimentalLongitudinalAvailable:
+      op_long = "openpilot available"
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable else "Stock",
+      Column.LONGITUDINAL: op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
