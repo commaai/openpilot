@@ -67,7 +67,7 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_s
 
     # TODO: this is to have GM bringing the car to complete stop,
     # but currently it conflicts with OP controls, so turned off. Not set by all cars
-    # elif near_stop:
+    #elif near_stop:
     #  mode = 0xb
 
   brake = (0x1000 - apply_brake) & 0xfff

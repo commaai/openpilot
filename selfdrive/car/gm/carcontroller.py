@@ -9,7 +9,6 @@ from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButt
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
-LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
 CAMERA_CANCEL_DELAY_FRAMES = 10
