@@ -155,7 +155,7 @@ pipeline {
             phone_steps("tici-sensord", [
               ["prepare", "cp scripts/build.py selfdrive/sensord"],
               ["build", "cd selfdrive/sensord && ./build.py"],
-              ["test sensord", "python selfdrive/sensord/tests/test_sensord.py"],
+              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
             ])
           }
         }
