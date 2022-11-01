@@ -32,14 +32,13 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
-      if 0x440 in fingerprint[0]:  # Getriebe_1
+      if 0x440 in fingerprint[0] or len(fingerprint[0]) == 0:  # Getriebe_1, or empty FP for CI/docs generation
         ret.transmissionType = TransmissionType.automatic
       else:
         ret.transmissionType = TransmissionType.manual
 
       if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
         ret.networkLocation = NetworkLocation.gateway
-        ret.experimentalLongitudinalAvailable = True
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
@@ -56,7 +55,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
-      if 0xAD in fingerprint[0]:  # Getriebe_11
+      if 0xAD in fingerprint[0] or len(fingerprint[0]) == 0:  # Getriebe_11, or empty FP for CI/docs generation
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
@@ -82,7 +81,8 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    if experimental_long and candidate in PQ_CARS:
+    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway and False  # Disabled for now
+    if experimental_long and False:  # Disabled for now
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
@@ -90,7 +90,11 @@ class CarInterface(CarInterfaceBase):
         ret.minEnableSpeed = 4.5
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
-    ret.longitudinalActuatorDelayUpperBound = 0.5  # s
+    ret.stoppingControl = True
+    ret.startingState = True
+    ret.startAccel = 1.0
+    ret.vEgoStarting = 1.0
+    ret.vEgoStopping = 1.0
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 
