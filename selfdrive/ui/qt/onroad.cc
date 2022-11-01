@@ -568,11 +568,8 @@ void AnnotatedCameraWidget::paintGL() {
     }
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
-    if (!s->scene.calibration_wide_valid) {
-      wide_cam_requested = false;
-    }
+    wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-    qWarning() << "wide cam " << wide_cam_requested << ", " << s->scene.wide_cam;
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
     if (s->scene.calibration_valid) {
