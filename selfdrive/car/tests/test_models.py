@@ -234,6 +234,11 @@ class TestCarModelBase(unittest.TestCase):
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
+      # Skip testing while CS_prev is blank CarState
+      if idx == 0:
+        CS_prev = CS
+        continue
+
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
