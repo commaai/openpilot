@@ -16,7 +16,7 @@ from system.version import is_tested_branch, get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_INITIAL, update_v_cruise, initialize_v_cruise, get_lag_adjusted_curvature, CONTROL_N
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, V_CRUISE_INITIAL, update_v_cruise, initialize_v_cruise, get_lag_adjusted_curvature
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
