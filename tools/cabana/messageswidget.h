@@ -17,6 +17,16 @@ public:
   QTextEdit *dbc_edit;
 };
 
+class SaveDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  SaveDBCDialog(QWidget *parent);
+  void copytoClipboard();
+  void saveAs();
+  QTextEdit *dbc_edit;
+};
+
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
@@ -28,7 +38,7 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void updateState(bool sort = false);
-  void setFilterString(const QString &string) { filter_str = string; }
+  void setFilterString(const QString &string);
 
 private:
   bool updateMessages(bool sort);
@@ -52,6 +62,7 @@ public slots:
   void loadDBCFromName(const QString &name);
   void loadDBCFromFingerprint();
   void loadDBCFromPaste();
+  void saveDBC();
 
 signals:
   void msgSelectionChanged(const QString &message_id);

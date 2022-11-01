@@ -16,7 +16,9 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500
 MIN_POINTS_TOTAL = 4000
+MIN_POINTS_TOTAL_QLOG = 800
 FIT_POINTS_TOTAL = 2000
+FIT_POINTS_TOTAL_QLOG = 800
 MIN_VEL = 15  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 FACTOR_SANITY = 0.3
@@ -26,7 +28,7 @@ MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
-MIN_BUCKET_POINTS = [100, 300, 500, 500, 500, 500, 300, 100]
+MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MAX_RESETS = 5.0
 MAX_INVALID_THRESHOLD = 10
 MIN_ENGAGE_BUFFER = 2  # secs
@@ -58,10 +60,11 @@ class NPQueue:
 
 
 class PointBuckets:
-  def __init__(self, x_bounds, min_points):
+  def __init__(self, x_bounds, min_points, min_points_total):
     self.x_bounds = x_bounds
     self.buckets = {bounds: NPQueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
     self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
+    self.min_points_total = min_points_total
 
   def bucket_lengths(self):
     return [len(v) for v in self.buckets.values()]
@@ -70,7 +73,7 @@ class PointBuckets:
     return sum(self.bucket_lengths())
 
   def is_valid(self):
-    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())) and (self.__len__() >= MIN_POINTS_TOTAL)
+    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())) and (self.__len__() >= self.min_points_total)
 
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
@@ -90,9 +93,17 @@ class PointBuckets:
 
 
 class TorqueEstimator:
-  def __init__(self, CP):
+  def __init__(self, CP, decimated=False):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
+    if decimated:
+      self.min_bucket_points = MIN_BUCKET_POINTS / 10
+      self.min_points_total = MIN_POINTS_TOTAL_QLOG
+      self.fit_points = FIT_POINTS_TOTAL_QLOG
+    else:
+      self.min_bucket_points = MIN_BUCKET_POINTS
+      self.min_points_total = MIN_POINTS_TOTAL
+      self.fit_points = FIT_POINTS_TOTAL
 
     self.offline_friction = 0.0
     self.offline_latAccelFactor = 0.0
@@ -157,10 +168,10 @@ class TorqueEstimator:
     self.invalid_values_tracker = 0.0
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=MIN_BUCKET_POINTS)
+    self.filtered_points = PointBuckets(x_bounds=STEER_BUCKET_BOUNDS, min_points=self.min_bucket_points, min_points_total=self.min_points_total)
 
   def estimate_params(self):
-    points = self.filtered_points.get_points(FIT_POINTS_TOTAL)
+    points = self.filtered_points.get_points(self.fit_points)
     # total least square solution as both x and y are noisy observations
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     try:

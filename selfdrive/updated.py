@@ -280,17 +280,25 @@ class Updater:
 
     # Write out current and new version info
     def get_description(basedir: str) -> str:
+      if not os.path.exists(basedir):
+        return ""
+
       version = ""
       branch = ""
       commit = ""
+      commit_date = ""
       try:
         branch = self.get_branch(basedir)
-        commit = self.get_commit_hash(basedir)
+        commit = self.get_commit_hash(basedir)[:7]
         with open(os.path.join(basedir, "common", "version.h")) as f:
           version = f.read().split('"')[1]
+
+        commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
+        dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
+        commit_date = dt.strftime("%b %d")
       except Exception:
-        pass
-      return f"{version} / {branch} / {commit[:7]}"
+        cloudlog.exception("updater.get_description")
+      return f"{version} / {branch} / {commit} / {commit_date}"
     self.params.put("UpdaterCurrentDescription", get_description(BASEDIR))
     self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
     self.params.put("UpdaterNewDescription", get_description(FINALIZED))
