@@ -162,23 +162,13 @@ void CameraWidget::initializeGL() {
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
-  if (!vipc_thread) {
+  if (!vipc_thread || vipc_thread->isFinished()) {
+    clearFrames();
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
     connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
     vipc_thread->start();
   }
-  clearFrames();
-}
-
-void CameraWidget::hideEvent(QHideEvent *event) {
-  if (vipc_thread) {
-    vipc_thread->requestInterruption();
-    vipc_thread->quit();
-    vipc_thread->wait();
-    vipc_thread = nullptr;
-  }
-  clearFrames();
 }
 
 void CameraWidget::updateFrameMat() {
@@ -367,6 +357,10 @@ void CameraWidget::vipcThread() {
     if (!vipc_client->connected) {
       clearFrames();
       if (!vipc_client->connect(false)) {
+        if (!isVisible()) {
+          break;
+        }
+
         QThread::msleep(100);
         continue;
       }
