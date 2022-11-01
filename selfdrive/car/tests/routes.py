@@ -25,6 +25,7 @@ non_tested_cars = [
   GM.BOLT_EV,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
+  HONDA.ODYSSEY_CHN,
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
@@ -61,7 +62,6 @@ routes = [
   CarTestRoute("2c4292a5cd10536c|2021-08-19--21-32-15", HONDA.FREED),
   CarTestRoute("03be5f2fd5c508d1|2020-04-19--18-44-15", HONDA.HRV),
   CarTestRoute("917b074700869333|2021-05-24--20-40-20", HONDA.ACURA_ILX),
-  CarTestRoute("81722949a62ea724|2019-04-06--15-19-25", HONDA.ODYSSEY_CHN),
   CarTestRoute("08a3deb07573f157|2020-03-06--16-11-19", HONDA.ACCORD),  # 1.5T
   CarTestRoute("1da5847ac2488106|2021-05-24--19-31-50", HONDA.ACCORD),  # 2.0T
   CarTestRoute("085ac1d942c35910|2021-03-25--20-11-15", HONDA.ACCORD),  # 2021 with new style HUD msgs
@@ -172,7 +172,8 @@ routes = [
 
   CarTestRoute("202c40641158a6e5|2021-09-21--09-43-24", VOLKSWAGEN.ARTEON_MK1),
   CarTestRoute("2c68dda277d887ac|2021-05-11--15-22-20", VOLKSWAGEN.ATLAS_MK1),
-  CarTestRoute("cae14e88932eb364|2021-03-26--14-43-28", VOLKSWAGEN.GOLF_MK7),
+  CarTestRoute("cae14e88932eb364|2021-03-26--14-43-28", VOLKSWAGEN.GOLF_MK7),  # Stock ACC
+  CarTestRoute("3cfdec54aa035f3f|2022-10-13--14-58-58", VOLKSWAGEN.GOLF_MK7),  # openpilot longitudinal
   CarTestRoute("58a7d3b707987d65|2021-03-25--17-26-37", VOLKSWAGEN.JETTA_MK7),
   CarTestRoute("4d134e099430fba2|2021-03-26--00-26-06", VOLKSWAGEN.PASSAT_MK8),
   CarTestRoute("3cfdec54aa035f3f|2022-07-19--23-45-10", VOLKSWAGEN.PASSAT_NMS),

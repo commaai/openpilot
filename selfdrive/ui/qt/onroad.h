@@ -70,6 +70,9 @@ private:
   int status = STATUS_DISENGAGED;
   std::unique_ptr<PubMaster> pm;
 
+  int skip_frame_count = 0;
+  bool wide_cam_requested = false;
+
 protected:
   void paintGL() override;
   void initializeGL() override;
