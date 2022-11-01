@@ -29,23 +29,21 @@ inline void convert_4_ys(__global uchar * out_yuv, int yi, const uchar8 rgbs1, c
   vstore4(yy, 0, out_yuv + yi);
 }
 
-inline void convert_uv(__global uchar * out_yuv, int ui, int vi,
+inline void convert_uv(__global uchar * out_yuv, int uvi,
                     const uchar8 rgbs1, const uchar8 rgbs2) {
   // U & V: average of 2x2 pixels square
   const short ab = AVERAGE(rgbs1.s0, rgbs1.s3, rgbs2.s0, rgbs2.s3);
   const short ag = AVERAGE(rgbs1.s1, rgbs1.s4, rgbs2.s1, rgbs2.s4);
   const short ar = AVERAGE(rgbs1.s2, rgbs1.s5, rgbs2.s2, rgbs2.s5);
 #ifdef CL_DEBUG
-  if(ui >= RGB_SIZE  + RGB_SIZE / 4)
-    printf("U overflow, %d >= %d\n", ui, RGB_SIZE  + RGB_SIZE / 4);
-  if(vi >= RGB_SIZE  + RGB_SIZE / 2)
-    printf("V overflow, %d >= %d\n", vi, RGB_SIZE  + RGB_SIZE / 2);
+  if(uvi >= RGB_SIZE  + RGB_SIZE / 2)
+    printf("UV overflow, %d >= %d\n", uvi, RGB_SIZE  + RGB_SIZE / 2);
 #endif
-  out_yuv[ui] = RGB_TO_U(ar, ag, ab);
-  out_yuv[vi] = RGB_TO_V(ar, ag, ab);
+  out_yuv[uvi] = RGB_TO_U(ar, ag, ab);
+  out_yuv[uvi+1] = RGB_TO_V(ar, ag, ab);
 }
 
-inline void convert_2_uvs(__global uchar * out_yuv, int ui, int vi,
+inline void convert_2_uvs(__global uchar * out_yuv, int uvi,
                     const uchar8 rgbs1, const uchar8 rgbs2, const uchar8 rgbs3, const uchar8 rgbs4) {
   // U & V: average of 2x2 pixels square
   const short ab1 = AVERAGE(rgbs1.s0, rgbs1.s3, rgbs2.s0, rgbs2.s3);
@@ -54,25 +52,20 @@ inline void convert_2_uvs(__global uchar * out_yuv, int ui, int vi,
   const short ab2 = AVERAGE(rgbs1.s6, rgbs3.s1, rgbs2.s6, rgbs4.s1);
   const short ag2 = AVERAGE(rgbs1.s7, rgbs3.s2, rgbs2.s7, rgbs4.s2);
   const short ar2 = AVERAGE(rgbs3.s0, rgbs3.s3, rgbs4.s0, rgbs4.s3);
-  uchar2 u2 = (uchar2)(
+  uchar4 uv = (uchar4)(
     RGB_TO_U(ar1, ag1, ab1),
-    RGB_TO_U(ar2, ag2, ab2)
-  );
-  uchar2 v2 = (uchar2)(
     RGB_TO_V(ar1, ag1, ab1),
+    RGB_TO_U(ar2, ag2, ab2),
     RGB_TO_V(ar2, ag2, ab2)
   );
 #ifdef CL_DEBUG1
-  if(ui > RGB_SIZE  + RGB_SIZE / 4 - 2)
-    printf("U 2 overflow, %d >= %d\n", ui, RGB_SIZE  + RGB_SIZE / 4 - 2);
-  if(vi > RGB_SIZE  + RGB_SIZE / 2 - 2)
-    printf("V 2 overflow, %d >= %d\n", vi, RGB_SIZE  + RGB_SIZE / 2 - 2);
+  if(uvi > RGB_SIZE  + RGB_SIZE / 2 - 4)
+    printf("UV2 overflow, %d >= %d\n", uvi, RGB_SIZE  + RGB_SIZE / 2 - 2);
 #endif
-  vstore2(u2, 0, out_yuv + ui);
-  vstore2(v2, 0, out_yuv + vi);
+  vstore4(uv, 0, out_yuv + uvi);
 }
 
-__kernel void rgb_to_yuv(__global uchar const * const rgb,
+__kernel void rgb_to_nv12(__global uchar const * const rgb,
                     __global uchar * out_yuv)
 {
   const int dx = get_global_id(0);
@@ -81,8 +74,7 @@ __kernel void rgb_to_yuv(__global uchar const * const rgb,
   const int row = mul24(dy, 4); // Current row in rgb image
   const int bgri_start = mad24(row, RGB_STRIDE, mul24(col, 3)); // Start offset of rgb data being converted
   const int yi_start = mad24(row,  WIDTH, col); // Start offset in the target yuv buffer
-  int ui = mad24(row / 2, UV_WIDTH, RGB_SIZE + col / 2);
-  int vi = mad24(row / 2 , UV_WIDTH, RGB_SIZE + UV_WIDTH * UV_HEIGHT + col / 2);
+  int uvi = mad24(row / 2, WIDTH, RGB_SIZE + col);
   int num_col = min(WIDTH - col, 4);
   int num_row = min(HEIGHT - row, 4);
   if(num_row == 4) {
@@ -99,15 +91,15 @@ __kernel void rgb_to_yuv(__global uchar const * const rgb,
       convert_4_ys(out_yuv, yi_start + WIDTH, rgbs1_0, rgbs1_1);
       convert_4_ys(out_yuv, yi_start + WIDTH * 2, rgbs2_0, rgbs2_1);
       convert_4_ys(out_yuv, yi_start + WIDTH * 3, rgbs3_0, rgbs3_1);
-      convert_2_uvs(out_yuv, ui, vi, rgbs0_0, rgbs1_0, rgbs0_1, rgbs1_1);
-      convert_2_uvs(out_yuv, ui + UV_WIDTH, vi + UV_WIDTH, rgbs2_0, rgbs3_0, rgbs2_1, rgbs3_1);
+      convert_2_uvs(out_yuv, uvi, rgbs0_0, rgbs1_0, rgbs0_1, rgbs1_1);
+      convert_2_uvs(out_yuv, uvi + WIDTH, rgbs2_0, rgbs3_0, rgbs2_1, rgbs3_1);
     } else if(num_col == 2) {
       convert_2_ys(out_yuv, yi_start, rgbs0_0);
       convert_2_ys(out_yuv, yi_start + WIDTH, rgbs1_0);
       convert_2_ys(out_yuv, yi_start + WIDTH * 2, rgbs2_0);
       convert_2_ys(out_yuv, yi_start + WIDTH * 3, rgbs3_0);
-      convert_uv(out_yuv, ui, vi, rgbs0_0, rgbs1_0);
-      convert_uv(out_yuv, ui + UV_WIDTH, vi + UV_WIDTH, rgbs2_0, rgbs3_0);
+      convert_uv(out_yuv, uvi, rgbs0_0, rgbs1_0);
+      convert_uv(out_yuv, uvi + WIDTH, rgbs2_0, rgbs3_0);
     }
   } else {
     const uchar8 rgbs0_0 = vload8(0, rgb + bgri_start);
@@ -117,11 +109,11 @@ __kernel void rgb_to_yuv(__global uchar const * const rgb,
     if(num_col == 4) {
       convert_4_ys(out_yuv, yi_start, rgbs0_0, rgbs0_1);
       convert_4_ys(out_yuv, yi_start + WIDTH, rgbs1_0, rgbs1_1);
-      convert_2_uvs(out_yuv, ui, vi, rgbs0_0, rgbs1_0, rgbs0_1, rgbs1_1);
+      convert_2_uvs(out_yuv, uvi, rgbs0_0, rgbs1_0, rgbs0_1, rgbs1_1);
     } else if(num_col == 2) {
       convert_2_ys(out_yuv, yi_start, rgbs0_0);
       convert_2_ys(out_yuv, yi_start + WIDTH, rgbs1_0);
-      convert_uv(out_yuv, ui, vi, rgbs0_0, rgbs1_0);
+      convert_uv(out_yuv, uvi, rgbs0_0, rgbs1_0);
     }
   }
 }

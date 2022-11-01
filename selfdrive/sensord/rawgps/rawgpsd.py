@@ -5,22 +5,33 @@ import signal
 import itertools
 import math
 import time
+import subprocess
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
-import cereal.messaging as messaging
-from cereal import log
-from system.swaglog import cloudlog
-from laika.gps_time import GPSTime
 
+from cereal import log
+import cereal.messaging as messaging
+from laika.gps_time import GPSTime
+from system.swaglog import cloudlog
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from selfdrive.sensord.rawgps.structs import dict_unpacker
-from selfdrive.sensord.rawgps.structs import gps_measurement_report, gps_measurement_report_sv
-from selfdrive.sensord.rawgps.structs import glonass_measurement_report, glonass_measurement_report_sv
-from selfdrive.sensord.rawgps.structs import oemdre_measurement_report, oemdre_measurement_report_sv
-from selfdrive.sensord.rawgps.structs import LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT
-from selfdrive.sensord.rawgps.structs import position_report, LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT
+from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
+                                              gps_measurement_report, gps_measurement_report_sv,
+                                              glonass_measurement_report, glonass_measurement_report_sv,
+                                              oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
+                                              LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
+                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+                                              LOG_GNSS_OEMDRE_SVPOLY_REPORT)
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
+
+LOG_TYPES = [
+  LOG_GNSS_GPS_MEASUREMENT_REPORT,
+  LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
+  LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+  LOG_GNSS_POSITION_REPORT,
+  LOG_GNSS_OEMDRE_SVPOLY_REPORT,
+]
+
 
 miscStatusFields = {
   "multipathEstimateIsValid": 0,
@@ -65,59 +76,57 @@ measurementStatusGlonassFields = {
   "glonassTimeMarkValid": 17
 }
 
-def main() -> NoReturn:
-  unpack_gps_meas, size_gps_meas = dict_unpacker(gps_measurement_report, True)
-  unpack_gps_meas_sv, size_gps_meas_sv = dict_unpacker(gps_measurement_report_sv, True)
 
-  unpack_glonass_meas, size_glonass_meas = dict_unpacker(glonass_measurement_report, True)
-  unpack_glonass_meas_sv, size_glonass_meas_sv = dict_unpacker(glonass_measurement_report_sv, True)
+def try_setup_logs(diag, log_types):
+  for _ in range(5):
+    try:
+      setup_logs(diag, log_types)
+      break
+    except Exception:
+      cloudlog.exception("setup logs failed, trying again")
+  else:
+    raise Exception(f"setup logs failed, {log_types=}")
 
-  unpack_oemdre_meas, size_oemdre_meas = dict_unpacker(oemdre_measurement_report, True)
-  unpack_oemdre_meas_sv, size_oemdre_meas_sv = dict_unpacker(oemdre_measurement_report_sv, True)
+def at_cmd(cmd: str) -> None:
+  for _ in range(5):
+    try:
+      subprocess.check_call(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True)
+      break
+    except subprocess.CalledProcessError:
+      cloudlog.exception("rawgps.mmcli_command_failed")
+  else:
+    raise Exception(f"failed to execute mmcli command {cmd=}")
 
-  log_types = [
-    LOG_GNSS_GPS_MEASUREMENT_REPORT,
-    LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-    LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
-  ]
-  pub_types = ['qcomGnss']
-  unpack_position, _ = dict_unpacker(position_report)
-  log_types.append(LOG_GNSS_POSITION_REPORT)
-  pub_types.append("gpsLocation")
 
-  # connect to modem
-  diag = ModemDiag()
+def gps_enabled() -> bool:
+  try:
+    p = subprocess.check_output("mmcli -m any --command=\"AT+QGPS?\"", shell=True)
+    return b"QGPS: 1" in p
+  except subprocess.CalledProcessError as exc:
+    raise Exception("failed to execute QGPS mmcli command") from exc
 
-  # NV enable OEMDRE
+def setup_quectel(diag: ModemDiag):
+  # enable OEMDRE in the NV
   # TODO: it has to reboot for this to take effect
   DIAG_NV_READ_F = 38
   DIAG_NV_WRITE_F = 39
   NV_GNSS_OEM_FEATURE_MASK = 7165
+  send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
+  send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
 
-  opcode, payload = send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
-  opcode, payload = send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
+  setup_logs(diag, LOG_TYPES)
 
-  def try_setup_logs(diag, log_types):
-    for _ in range(5):
-      try:
-        setup_logs(diag, log_types)
-        break
-      except Exception:
-        pass
-
-  def disable_logs(sig, frame):
-    os.system("mmcli -m 0 --location-disable-gps-raw --location-disable-gps-nmea")
-    cloudlog.warning("rawgpsd: shutting down")
-    try_setup_logs(diag, [])
-    cloudlog.warning("rawgpsd: logs disabled")
-    sys.exit(0)
-  signal.signal(signal.SIGINT, disable_logs)
-  try_setup_logs(diag, log_types)
-  cloudlog.warning("rawgpsd: setup logs done")
+  if gps_enabled():
+    at_cmd("AT+QGPSEND")
 
   # disable DPO power savings for more accuracy
-  os.system("mmcli -m 0 --command='AT+QGPSCFG=\"dpoenable\",0'")
-  os.system("mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea")
+  at_cmd("AT+QGPSCFG=\"dpoenable\",0")
+  # don't automatically turn on GNSS on powerup
+  at_cmd("AT+QGPSCFG=\"autogps\",0")
+
+  at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7275\"")
+  at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
+  at_cmd("AT+QGPS=1")
 
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
@@ -128,31 +137,82 @@ def main() -> NoReturn:
   GPSDIAG_OEM_DRE_ON = 1
 
   # gpsdiag_OemControlReqType
-  opcode, payload = send_recv(diag, DIAG_SUBSYS_CMD_F, pack('<BHBBIIII',
-      DIAG_SUBSYS_GPS,           # Subsystem Id
-      CGPS_DIAG_PDAPI_CMD,       # Subsystem Command Code
-      CGPS_OEM_CONTROL,          # CGPS Command Code
-      0,                         # Version
-      GPSDIAG_OEMFEATURE_DRE,
-      GPSDIAG_OEM_DRE_ON,
-      0,0
+  send_recv(diag, DIAG_SUBSYS_CMD_F, pack('<BHBBIIII',
+    DIAG_SUBSYS_GPS,           # Subsystem Id
+    CGPS_DIAG_PDAPI_CMD,       # Subsystem Command Code
+    CGPS_OEM_CONTROL,          # CGPS Command Code
+    0,                         # Version
+    GPSDIAG_OEMFEATURE_DRE,
+    GPSDIAG_OEM_DRE_ON,
+    0,0
   ))
 
-  pm = messaging.PubMaster(pub_types)
+def teardown_quectel(diag):
+  at_cmd("AT+QGPSCFG=\"outport\",\"none\"")
+  if gps_enabled():
+    at_cmd("AT+QGPSEND")
+  try_setup_logs(diag, [])
+
+
+def main() -> NoReturn:
+  unpack_gps_meas, size_gps_meas = dict_unpacker(gps_measurement_report, True)
+  unpack_gps_meas_sv, size_gps_meas_sv = dict_unpacker(gps_measurement_report_sv, True)
+
+  unpack_glonass_meas, size_glonass_meas = dict_unpacker(glonass_measurement_report, True)
+  unpack_glonass_meas_sv, size_glonass_meas_sv = dict_unpacker(glonass_measurement_report_sv, True)
+
+  unpack_oemdre_meas, size_oemdre_meas = dict_unpacker(oemdre_measurement_report, True)
+  unpack_oemdre_meas_sv, size_oemdre_meas_sv = dict_unpacker(oemdre_measurement_report_sv, True)
+
+  unpack_svpoly, _ = dict_unpacker(oemdre_svpoly_report, True)
+  unpack_position, _ = dict_unpacker(position_report)
+
+  unpack_position, _ = dict_unpacker(position_report)
+
+  # wait for ModemManager to come up
+  cloudlog.warning("waiting for modem to come up")
+  while True:
+    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    if ret == 0:
+      break
+    time.sleep(0.1)
+
+  # connect to modem
+  diag = ModemDiag()
+
+  def cleanup(sig, frame):
+    cloudlog.warning(f"caught sig {sig}, disabling quectel gps")
+    teardown_quectel(diag)
+    cloudlog.warning("quectel cleanup done")
+    sys.exit(0)
+  signal.signal(signal.SIGINT, cleanup)
+  signal.signal(signal.SIGTERM, cleanup)
+
+  setup_quectel(diag)
+  cloudlog.warning("quectel setup done")
+
+  pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 
   while 1:
     opcode, payload = diag.recv()
-    assert opcode == DIAG_LOG_F
+    if opcode != DIAG_LOG_F:
+      cloudlog.error(f"Unhandled opcode: {opcode}")
+      continue
+
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
     if pending_msgs > 0:
       cloudlog.debug("have %d pending messages" % pending_msgs)
     assert log_outer_length == len(inner_log_packet)
+
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
     assert log_inner_length == len(inner_log_packet)
-    if log_type not in log_types:
+
+    if log_type not in LOG_TYPES:
       continue
+
     if DEBUG:
       print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
+
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
       msg = messaging.new_message('qcomGnss')
 
@@ -221,7 +281,24 @@ def main() -> NoReturn:
 
       pm.send('gpsLocation', msg)
 
-    if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
+    elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
+      msg = messaging.new_message('qcomGnss')
+      dat = unpack_svpoly(log_payload)
+      dat = relist(dat)
+      gnss = msg.qcomGnss
+      gnss.logTs = log_time
+      gnss.init('drSvPoly')
+      poly = gnss.drSvPoly
+      for k,v in dat.items():
+        if k == "version":
+          assert v == 2
+        elif k == "flags":
+          pass
+        else:
+          setattr(poly, k, v)
+      pm.send('qcomGnss', msg)
+
+    elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')
 
       gnss = msg.qcomGnss

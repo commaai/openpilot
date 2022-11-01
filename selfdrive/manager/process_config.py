@@ -43,6 +43,7 @@ procs = [
   PythonProcess("deleter", "selfdrive.loggerd.deleter", offroad=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
   PythonProcess("laikad", "selfdrive.locationd.laikad"),
+  PythonProcess("rawgpsd", "selfdrive.sensord.rawgps.rawgpsd", enabled=TICI),
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
@@ -55,11 +56,9 @@ procs = [
   PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
   PythonProcess("statsd", "selfdrive.statsd", offroad=True),
 
+  # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),
   PythonProcess("webjoystick", "tools.joystick.web", onroad=False, callback=notcar),
-
-  # Experimental
-  PythonProcess("rawgpsd", "selfdrive.sensord.rawgps.rawgpsd", enabled=(TICI and os.path.isfile("/persist/comma/use-quectel-rawgps"))),
 ]
 
 managed_processes = {p.name: p for p in procs}

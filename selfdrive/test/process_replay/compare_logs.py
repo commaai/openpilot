@@ -41,7 +41,7 @@ def remove_ignored_fields(msg, ignore):
       elif isinstance(v, numbers.Number):
         val = 0
       else:
-        raise NotImplementedError
+        raise NotImplementedError('Error ignoring field')
       setattr(attr, keys[-1], val)
   return msg.as_reader()
 

@@ -56,7 +56,6 @@
 using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
-std::atomic<bool> pigeon_active(false);
 
 ExitHandler do_exit;
 
@@ -114,9 +113,9 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   }
 
   // set to ELM327 for fingerprinting
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
-  for (int i = 1; i < pandas.size(); i++) {
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
+  for (int i = 0; i < pandas.size(); i++) {
+    const uint16_t safety_param = (i > 0) ? 1U : 0U;
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
   }
 
   Params p = Params();
@@ -138,7 +137,9 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   }
 
   // set to ELM327 for ECU knockouts
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
+  for (Panda *panda : pandas) {
+    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
+  }
 
   std::string params;
   LOGW("waiting for params to set safety model");
@@ -345,7 +346,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
 
   #ifndef __x86_64__
-    bool power_save_desired = !ignition_local && !pigeon_active;
+    bool power_save_desired = !ignition_local;
     if (health.power_save_enabled_pkt != power_save_desired) {
       panda->set_power_saving(power_save_desired);
     }
@@ -381,6 +382,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
+    ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid));
 
     std::array<cereal::PandaState::PandaCanState::Builder, PANDA_CAN_CNT> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
 
@@ -405,7 +407,8 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       cs[j].setCanSpeed(can_health.can_speed);
       cs[j].setCanDataSpeed(can_health.can_data_speed);
       cs[j].setCanfdEnabled(can_health.canfd_enabled);
-      cs[j].setBrsEnabled(can_health.canfd_enabled);
+      cs[j].setBrsEnabled(can_health.brs_enabled);
+      cs[j].setCanfdNonIso(can_health.canfd_non_iso);
     }
 
     // Convert faults bitset to capnp list

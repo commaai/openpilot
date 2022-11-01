@@ -58,6 +58,37 @@
         <source>leave blank for automatic configuration</source>
         <translation>留空白將自動配置</translation>
     </message>
+    <message>
+        <source>Cellular Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>最高</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>速度</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>速限</translation>
+    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
@@ -396,29 +427,6 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>密碼錯誤</translation>
-    </message>
-</context>
-<context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>最高</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>速度</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>速限</translation>
     </message>
 </context>
 <context>

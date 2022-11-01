@@ -3,6 +3,8 @@
 #include <QScrollBar>
 #include <QScroller>
 
+// TODO: disable horizontal scrolling and resize
+
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setWidget(w);
   setWidgetResizable(true);
