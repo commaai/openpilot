@@ -105,6 +105,7 @@ class CarState(CarStateBase):
     ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
 
     # Update ACC radar status.
+    self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
     if pt_cp.vl["TSK_06"]["TSK_Status"] == 2:
       # ACC okay and enabled, but not currently engaged
       ret.cruiseState.available = True
@@ -480,11 +481,13 @@ class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
     ("ACC_Wunschgeschw_02", "ACC_02"),           # ACC set speed
+    ("ACC_Typ", "ACC_06"),                       # Basic vs F2S vs SNG
     ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10"),     # AEB target braking release
   ]
   fwd_radar_checks = [
+    ("ACC_06", 50),                                 # From J428 ACC radar control module
     ("ACC_10", 50),                                 # From J428 ACC radar control module
     ("ACC_02", 17),                                 # From J428 ACC radar control module
   ]
