@@ -2,6 +2,7 @@
 
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QMenu>
 #include <QMessageBox>
 #include <QTimer>
 
@@ -11,25 +12,39 @@
 
 // DetailWidget
 
-DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+  main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
 
+  right_column = new QVBoxLayout();
+  main_layout->addLayout(right_column);
+
+  binary_view_container = new QWidget(this);
+  binary_view_container->setMinimumWidth(500);
+  binary_view_container->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+  QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
+  bin_layout->setContentsMargins(0, 0, 0, 0);
+  bin_layout->setSpacing(0);
   // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
   tabbar->setDrawBase(false);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
-  main_layout->addWidget(tabbar);
+  tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
+  bin_layout->addWidget(tabbar);
+
+  TitleFrame *title_frame = new TitleFrame(this);
+  title_frame->setFrameShape(QFrame::StyledPanel);
+  title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
 
   // message title
-  QFrame *title_frame = new QFrame();
-  main_layout->addWidget(title_frame);
-  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
-  title_frame->setFrameShape(QFrame::StyledPanel);
   QHBoxLayout *title_layout = new QHBoxLayout();
+  split_btn = new QPushButton("⬅", this);
+  split_btn->setFixedSize(20, 20);
+  split_btn->setToolTip(tr("Split to two columns"));
+  title_layout->addWidget(split_btn);
   title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -54,10 +69,12 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
   warning_widget->hide();
   frame_layout->addWidget(warning_widget);
+  bin_layout->addWidget(title_frame);
 
   // binary view
   binary_view = new BinaryView(this);
-  main_layout->addWidget(binary_view, 0, Qt::AlignTop);
+  bin_layout->addWidget(binary_view);
+  right_column->addWidget(binary_view_container);
 
   // signals
   signals_container = new QWidget(this);
@@ -68,33 +85,61 @@ DetailWidget::DetailWidget(QWidget *parent) : QWidget(parent) {
   scroll->setWidget(signals_container);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
+  right_column->addWidget(scroll);
 
   // history log
   history_log = new HistoryLog(this);
-  main_layout->addWidget(history_log);
+  right_column->addWidget(history_log);
 
+  QObject::connect(split_btn, &QPushButton::clicked, this, &DetailWidget::moveBinaryView);
+  QObject::connect(title_frame, &TitleFrame::doubleClicked, this, &DetailWidget::moveBinaryView);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
-  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) { setMessage(messages[index]); });
-  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [=](int index) {
-    messages.removeAt(index);
-    tabbar->removeTab(index);
-    setMessage(messages.isEmpty() ? "" : messages[0]);
+  QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
+  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
+    if (index != -1 && tabbar->tabText(index) != msg_id) {
+      setMessage(tabbar->tabText(index));
+    }
   });
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
+  QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
+  QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
+}
+
+void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
+  int index = tabbar->tabAt(pt);
+  if (index >= 0) {
+    QMenu menu(this);
+    menu.addAction(tr("Close Other Tabs"));
+    if (menu.exec(tabbar->mapToGlobal(pt))) {
+      tabbar->setCurrentIndex(index);
+      // remove all tabs before the one to keep
+      for (int i = 0; i < index; ++i) {
+        tabbar->removeTab(0);
+      }
+      // remove all tabs after the one to keep
+      while (tabbar->count() > 1) {
+        tabbar->removeTab(1);
+      }
+    }
+  }
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
   if (message_id.isEmpty()) return;
 
-  int index = messages.indexOf(message_id);
+  int index = -1;
+  for (int i = 0; i < tabbar->count(); ++i) {
+    if (tabbar->tabText(i) == message_id) {
+      index = i;
+      break;
+    }
+  }
   if (index == -1) {
-    messages.push_back(message_id);
-    tabbar->addTab(message_id);
-    index = tabbar->count() - 1;
+    index = tabbar->addTab(message_id);
     auto msg = dbc()->msg(message_id);
     tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
   }
@@ -114,13 +159,14 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (auto msg = dbc()->msg(msg_id)) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
       auto form = new SignalEdit(i, msg_id, &(msg->sigs[i]));
+      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
       signals_container->layout()->addWidget(form);
-      QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]]() { emit showChart(msg_id, sig); });
       QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
       QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
       QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
       QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
       QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
+      QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]](bool show) { charts->showChart(msg_id, sig, show); });
       if (i == show_form_idx) {
         QTimer::singleShot(0, [=]() { emit form->showFormClicked(); });
       }
@@ -155,6 +201,20 @@ void DetailWidget::updateState() {
   history_log->updateState();
 }
 
+void DetailWidget::moveBinaryView() {
+  if (binview_in_left_col) {
+    right_column->insertWidget(0, binary_view_container);
+    emit binaryViewMoved(true);
+  } else {
+    main_layout->insertWidget(0, binary_view_container);
+    emit binaryViewMoved(false);
+  }
+  split_btn->setText(binview_in_left_col ? "⬅" : "➡");
+  split_btn->setToolTip(binview_in_left_col ? tr("Split to two columns") : tr("Move back"));
+  binary_view->updateGeometry();
+  binview_in_left_col = !binview_in_left_col;
+}
+
 void DetailWidget::showForm() {
   SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
   for (auto f : signals_container->findChildren<SignalEdit *>()) {
@@ -162,6 +222,13 @@ void DetailWidget::showForm() {
     if (f == sender) {
       QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
     }
+  }
+}
+
+void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
+  if (id == msg_id) {
+    for (auto f : signals_container->findChildren<SignalEdit *>())
+      if (f->sig == sig) f->setChartOpened(opened);
   }
 }
 
