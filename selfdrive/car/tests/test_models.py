@@ -9,7 +9,7 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
