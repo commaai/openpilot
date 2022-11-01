@@ -95,9 +95,7 @@ void MapRenderer::msgUpdate() {
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
     if (localizer_valid) {
-      float scale_lat80 = get_meters_per_pixel(80, 13);
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
-      updateZoom(get_zoom_level_for_scale(pos.getValue()[0], scale_lat80));
     }
   }
 
@@ -111,22 +109,18 @@ void MapRenderer::msgUpdate() {
   }
 }
 
-void MapRenderer::updateZoom(float zoom) {
-  if (m_map.isNull()) {
-    return;
-  }
-
-  m_map->setZoom(zoom);
-  update();
-}
-
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
   }
 
+  // Choose a zoom level that matches the scale of zoom level 13 at latitude 80deg
+  float scale_lat80 = get_meters_per_pixel(80, 13);
+  float zoom = get_zoom_level_for_scale(position.first, scale_lat80);
+
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
+  m_map->setZoom(zoom);
   update();
 }
 
@@ -243,11 +237,6 @@ extern "C" {
     settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
-  }
-
-  void map_renderer_update_zoom(MapRenderer *inst, float zoom) {
-    inst->updateZoom(zoom);
-    QApplication::processEvents();
   }
 
   void map_renderer_update_position(MapRenderer *inst, float lat, float lon, float bearing) {
