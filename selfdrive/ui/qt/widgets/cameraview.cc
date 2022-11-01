@@ -162,7 +162,7 @@ void CameraWidget::initializeGL() {
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
-  if (!vipc_thread || vipc_thread->isFinished()) {
+  if (!vipc_thread) {
     clearFrames();
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -357,10 +357,6 @@ void CameraWidget::vipcThread() {
     if (!vipc_client->connected) {
       clearFrames();
       if (!vipc_client->connect(false)) {
-        if (!isVisible()) {
-          break;
-        }
-
         QThread::msleep(100);
         continue;
       }
