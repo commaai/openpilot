@@ -45,6 +45,10 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
+def interpolate_mpc_to_traj(solution, skip_last=False):
+  return np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1] if skip_last else T_IDXS_MPC, solution)
+
+
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
@@ -127,9 +131,9 @@ class LongitudinalPlanner:
     x, v, a, j = self.parse_model(sm['modelV2'])
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise, x, v, a, j)
 
-    self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
-    self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
-    self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
+    self.v_desired_trajectory = interpolate_mpc_to_traj(self.mpc.v_solution)
+    self.a_desired_trajectory = interpolate_mpc_to_traj(self.mpc.a_solution)
+    self.j_desired_trajectory = interpolate_mpc_to_traj(self.mpc.j_solution, skip_last=True)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     # TODO write fcw in e2e_long mode

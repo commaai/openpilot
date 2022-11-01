@@ -16,6 +16,8 @@ from system.version import is_tested_branch, get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.longitudinal_planner import interpolate_mpc_to_traj
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, V_CRUISE_INITIAL, update_v_cruise, initialize_v_cruise, get_lag_adjusted_curvature
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.longcontrol import LongControl
@@ -617,8 +619,9 @@ class Controls:
     # accel PID loop
     if self.joystick_mode:
       joystick_accel = 4.0 * clip(self.sm['testJoystick'].axes[0], -1, 1) if self.sm.rcv_frame['testJoystick'] > 0 else 0.0
-      long_plan = log.LongitudinalPlan(accels=[joystick_accel] * CONTROL_N,
-                                       speeds=[CS.vEgo + joystick_accel * CS.vEgo * DT_CTRL] * CONTROL_N)
+      long_plan = log.LongitudinalPlan()
+      long_plan.accels = [joystick_accel] * CONTROL_N
+      long_plan.speeds = interpolate_mpc_to_traj(LongitudinalMpc.extrapolate_lead(0, CS.vEgo, joystick_accel, 0).T[1])
     else:
       long_plan = self.sm['longitudinalPlan']
 
