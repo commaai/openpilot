@@ -621,11 +621,12 @@ class Controls:
       joystick_accel = 4.0 * clip(self.sm['testJoystick'].axes[0], -1, 1) if self.sm.rcv_frame['testJoystick'] > 0 else 0.0
       long_plan = log.LongitudinalPlan(accels=[joystick_accel] * CONTROL_N,
                                        speeds=interpolate_mpc_to_traj(LongitudinalMpc.extrapolate_lead(0, CS.vEgo, joystick_accel, 0).T[1]))
+      t_since_plan = 0
     else:
       long_plan = self.sm['longitudinalPlan']
+      t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
 
     pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_kph * CV.KPH_TO_MS)
-    t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
     actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
     if not self.joystick_mode:
