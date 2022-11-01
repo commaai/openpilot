@@ -57,7 +57,7 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_s
   mode = 0x1
 
   # TODO: Understand this better. Volts and ICE Camera ACC cars are 0x1 when enabled with no brake
-  if CP.carFingerprint in (CAR.BOLT_EUV,) and enabled:
+  if enabled and CP.carFingerprint in (CAR.BOLT_EUV,):
     mode = 0x9
 
   if apply_brake > 0:
