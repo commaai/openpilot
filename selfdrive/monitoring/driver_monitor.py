@@ -79,6 +79,14 @@ class DistractedType:
   DISTRACTED_BLINK = 2
   DISTRACTED_E2E = 4
 
+def get_conf(v, bp, sp, gp, ep, ys):
+  bv = min(max(bp-0.0001, 0.0) / max(0.2-0.01*abs(v-16), 0.01), 1.0)
+  sv = min(max(sp-0.02, 0.0) / max(0.85-0.015*abs(v-18), 0.1), 1.0)
+  gv = min(max(gp-0.005, 0.0) / max(0.25-0.008*v, 0.01), 1.0)
+  ev = 0
+  yv = min(max(ys-0.05, 0.0) / max(0.1-0.0005*v, 0.01), 1.0)
+  return 1 - max(bv, sv, gv, ev, yv)
+
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
   # the output of these angles are in device frame
   # so from driver's perspective, pitch is up and yaw is right
@@ -146,6 +154,7 @@ class DriverStatus():
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
     self.step_change = 0.
+    self.step_factor = 1.
     self.active_monitoring_mode = True
     self.is_model_uncertain = False
     self.hi_stds = 0
@@ -157,7 +166,7 @@ class DriverStatus():
   def _set_timers(self, active_monitoring):
     if self.active_monitoring_mode and self.awareness <= self.threshold_prompt:
       if active_monitoring:
-        self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME
+        self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME * self.step_factor
       else:
         self.step_change = 0.
       return  # no exploit after orange alert
@@ -172,7 +181,7 @@ class DriverStatus():
 
       self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
       self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
-      self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME
+      self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME * self.step_factor
       self.active_monitoring_mode = True
     else:
       if self.active_monitoring_mode:
@@ -218,7 +227,10 @@ class DriverStatus():
     return distracted_types
 
   def set_policy(self, model_data, car_speed):
-    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
+    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0]
+    sp = model_data.meta.disengagePredictions.steerOverrideProbs[0]
+    gp = model_data.meta.disengagePredictions.gasDisengageProbs[0]
+    ys = model_data.position.yStd[0]
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
     self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
@@ -227,6 +239,8 @@ class DriverStatus():
     self.pose.cfactor_yaw = interp(bp_normal, [0, 0.5],
                                            [self.settings._POSE_YAW_THRESHOLD_SLACK,
                                             self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
+    conf = get_conf(car_speed, bp, sp, gp, 0, ys)
+    self.step_factor = self.settings._DISTRACTED_TIME / interp(conf, [0, 1], [1, self.settings._DISTRACTED_TIME])
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
     rhd_pred = driver_state.wheelOnRightProb
