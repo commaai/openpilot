@@ -29,7 +29,7 @@ class CarControllerParams:
   # to apply some more braking if we're on a downhill slope.
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
-  ACCEL_MAX = 2.0  # m/s^2
+  ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
   def __init__(self, CP):
@@ -39,10 +39,10 @@ class CarControllerParams:
 
     if CP.carFingerprint in CAMERA_ACC_CAR:
       self.MAX_GAS = 3400
-      # Camera ACC vehicles have no regen while enabled.
-      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
+      # Camera ACC vehicles have no regen while enabled.
+      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       max_regen_acceleration = 0.
 
     else:
