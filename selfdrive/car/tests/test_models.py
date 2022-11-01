@@ -219,9 +219,6 @@ class TestCarModelBase(unittest.TestCase):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
 
-    if not self.CP.pcmCruise:
-      self.safety.set_controls_allowed(0)
-
     controls_allowed_prev = False
     CS_prev = None
     checks = defaultdict(lambda: 0)
@@ -237,6 +234,8 @@ class TestCarModelBase(unittest.TestCase):
       # Skip first frame so that CS_prev is properly initialized
       if CS_prev is None:
         CS_prev = CS
+        if not self.CP.pcmCruise:
+          self.safety.set_controls_allowed(0)
         continue
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
