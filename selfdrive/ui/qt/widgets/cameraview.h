@@ -31,9 +31,10 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
-  void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
+  void setStreamType(VisionStreamType type) { requested_stream_type = type; }
+  VisionStreamType getStreamType() { return active_stream_type; }
 
 signals:
   void clicked();
@@ -45,7 +46,6 @@ protected:
   void initializeGL() override;
   void resizeGL(int w, int h) override { updateFrameMat(); }
   void showEvent(QShowEvent *event) override;
-  void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
@@ -68,7 +68,8 @@ protected:
   int stream_width = 0;
   int stream_height = 0;
   int stream_stride = 0;
-  std::atomic<VisionStreamType> stream_type;
+  std::atomic<VisionStreamType> active_stream_type;
+  std::atomic<VisionStreamType> requested_stream_type;
   QThread *vipc_thread = nullptr;
 
   // Calibration
@@ -78,9 +79,10 @@ protected:
   mat3 calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
-  std::mutex frame_lock;
+  std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;
+  uint32_t prev_frame_id = 0;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
