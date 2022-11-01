@@ -141,9 +141,21 @@ pipeline {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-party", [
+              ["prepare", "cp scripts/build.py selfdrive/manager"],
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
+            ])
+          }
+        }
+
+        stage('sensord') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-sensord", [
+              ["prepare", "cp scripts/build.py selfdrive/sensord"],
+              ["build", "cd selfdrive/sensord && ./build.py"],
+              ["test sensord", "python selfdrive/sensord/tests/test_sensord.py"],
             ])
           }
         }
