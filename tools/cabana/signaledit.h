@@ -26,13 +26,15 @@ class SignalEdit : public QWidget {
 
 public:
   SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent = nullptr);
+  void setChartOpened(bool opened);
   void setFormVisible(bool show);
   void signalHovered(const Signal *sig);
   inline bool isFormVisible() const { return form_container->isVisible(); }
+  const Signal *sig = nullptr;
 
 signals:
   void highlight(const Signal *sig);
-  void showChart();
+  void showChart(bool show);
   void showFormClicked();
   void remove(const Signal *sig);
   void save(const Signal *sig, const Signal &new_sig);
@@ -48,7 +50,8 @@ protected:
   QLabel *icon;
   int form_idx = 0;
   QString msg_id;
-  const Signal *sig = nullptr;
+  bool chart_opened = false;
+  QPushButton *plot_btn;
 };
 
 class SignalFindDlg : public QDialog {

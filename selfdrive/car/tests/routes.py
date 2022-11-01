@@ -25,6 +25,7 @@ non_tested_cars = [
   GM.BOLT_EV,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
+  HONDA.ODYSSEY_CHN,
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
@@ -61,7 +62,6 @@ routes = [
   CarTestRoute("2c4292a5cd10536c|2021-08-19--21-32-15", HONDA.FREED),
   CarTestRoute("03be5f2fd5c508d1|2020-04-19--18-44-15", HONDA.HRV),
   CarTestRoute("917b074700869333|2021-05-24--20-40-20", HONDA.ACURA_ILX),
-  CarTestRoute("81722949a62ea724|2019-04-06--15-19-25", HONDA.ODYSSEY_CHN),
   CarTestRoute("08a3deb07573f157|2020-03-06--16-11-19", HONDA.ACCORD),  # 1.5T
   CarTestRoute("1da5847ac2488106|2021-05-24--19-31-50", HONDA.ACCORD),  # 2.0T
   CarTestRoute("085ac1d942c35910|2021-03-25--20-11-15", HONDA.ACCORD),  # 2021 with new style HUD msgs

@@ -142,24 +142,33 @@ void ChartsWidget::updateTitleBar() {
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
-void ChartsWidget::addChart(const QString &id, const Signal *sig) {
+void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show) {
   auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
-  if (it == charts.end()) {
+  if (it != charts.end()) {
+    if (!show) removeChart((*it));
+  } else if (show) {
     auto chart = new ChartWidget(id, sig, this);
     chart->chart_view->updateSeries(display_range);
-    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });;
+    QObject::connect(chart, &ChartWidget::remove, [=]() { removeChart(chart); });
     QObject::connect(chart->chart_view, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
     QObject::connect(chart->chart_view, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
     charts_layout->insertWidget(0, chart);
     charts.push_back(chart);
+    emit chartOpened(chart->id, chart->signal);
   }
   updateTitleBar();
+}
+
+bool ChartsWidget::isChartOpened(const QString &id, const Signal *sig) {
+  auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
+  return it != charts.end();
 }
 
 void ChartsWidget::removeChart(ChartWidget *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
   updateTitleBar();
+  emit chartClosed(chart->id, chart->signal);
 }
 
 void ChartsWidget::removeAll(const Signal *sig) {
@@ -168,6 +177,7 @@ void ChartsWidget::removeAll(const Signal *sig) {
     auto c = it.next();
     if (sig == nullptr || c->signal == sig) {
       c->deleteLater();
+      emit chartClosed(c->id, c->signal);
       it.remove();
     }
   }
@@ -184,7 +194,6 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
   }
 }
 
-
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
   if (obj != this && event->type() == QEvent::Close) {
     emit dock_btn->clicked();
@@ -200,38 +209,45 @@ ChartWidget::ChartWidget(const QString &id, const Signal *sig, QWidget *parent) 
   main_layout->setSpacing(0);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
-  QWidget *header = new QWidget(this);
-  header->setStyleSheet("background-color:white");
+  header = new QWidget(this);
   QGridLayout *header_layout = new QGridLayout(header);
   header_layout->setContentsMargins(11, 11, 11, 0);
   msg_name_label = new QLabel(this);
   msg_name_label->setTextFormat(Qt::RichText);
   header_layout->addWidget(msg_name_label, 0, 0, Qt::AlignLeft);
   sig_name_label = new QLabel(this);
-  sig_name_label->setStyleSheet("font-weight:bold");
   header_layout->addWidget(sig_name_label, 0, 1, Qt::AlignCenter);  //, 0, Qt::AlignCenter);
 
-  QPushButton *remove_btn = new QPushButton("✖", this);
+  remove_btn = new QPushButton("✖", this);
   remove_btn->setFixedSize(20, 20);
   remove_btn->setToolTip(tr("Remove chart"));
   header_layout->addWidget(remove_btn, 0, 2, Qt::AlignRight);
   main_layout->addWidget(header);
 
   chart_view = new ChartView(id, sig, this);
-  chart_view->setFixedHeight(settings.chart_height);
   main_layout->addWidget(chart_view);
   main_layout->addStretch();
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   updateTitle();
+  updateFromSettings();
 
   QObject::connect(remove_btn, &QPushButton::clicked, [=]() { emit remove(id, sig); });
-  QObject::connect(&settings, &Settings::changed, [this]() { chart_view->setFixedHeight(settings.chart_height); });
+  QObject::connect(&settings, &Settings::changed, this, &ChartWidget::updateFromSettings);
 }
 
 void ChartWidget::updateTitle() {
   msg_name_label->setText(tr("%1 <font color=\"gray\">%2</font>").arg(dbc()->msg(id)->name.c_str()).arg(id));
   sig_name_label->setText(signal->name.c_str());
+}
+
+void ChartWidget::updateFromSettings() {
+  header->setStyleSheet(settings.chart_theme == 0 ? "background-color:white" : "background-color:#23242c");
+  QString color_style = settings.chart_theme == 0 ? "color:black" : "color:white";
+  sig_name_label->setStyleSheet("font-weight:bold;" + color_style);
+  msg_name_label->setStyleSheet(color_style);
+  remove_btn->setStyleSheet(color_style);
+  chart_view->updateFromSettings();
 }
 
 // ChartView
@@ -240,6 +256,7 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     : id(id), signal(sig), QChartView(nullptr, parent) {
   QLineSeries *series = new QLineSeries();
   QChart *chart = new QChart();
+  chart->setBackgroundRoundness(0);
   chart->addSeries(series);
   chart->createDefaultAxes();
   chart->legend()->hide();
@@ -247,11 +264,15 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
   track_line = new QGraphicsLineItem(chart);
-  track_line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
-  value_text = new QGraphicsSimpleTextItem(chart);
-  value_text->setBrush(Qt::gray);
+  track_line->setZValue(chart->zValue() + 10);
+  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+  track_ellipse = new QGraphicsEllipseItem(chart);
+  track_ellipse->setZValue(chart->zValue() + 10);
+  track_ellipse->setBrush(Qt::darkGray);
+  value_text = new QGraphicsTextItem(chart);
+  value_text->setZValue(chart->zValue() + 10);
   line_marker = new QGraphicsLineItem(chart);
-  line_marker->setPen(QPen(Qt::black, 2));
+  line_marker->setZValue(chart->zValue() + 10);
 
   setChart(chart);
 
@@ -272,6 +293,12 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
     // use a singleshot timer to avoid recursion call.
     timer->start();
   });
+}
+
+void ChartView::updateFromSettings() {
+  setFixedHeight(settings.chart_height);
+  chart()->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
+  line_marker->setPen(QPen(settings.chart_theme == 0 ? Qt::black : Qt::white, 2));
 }
 
 void ChartView::setRange(double min, double max, bool force_update) {
@@ -348,12 +375,14 @@ void ChartView::updateAxisY() {
 void ChartView::enterEvent(QEvent *event) {
   track_line->setVisible(true);
   value_text->setVisible(true);
+  track_ellipse->setVisible(true);
   QChartView::enterEvent(event);
 }
 
 void ChartView::leaveEvent(QEvent *event) {
   track_line->setVisible(false);
   value_text->setVisible(false);
+  track_ellipse->setVisible(false);
   QChartView::leaveEvent(event);
 }
 
@@ -373,29 +402,39 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // zoom in if selected range is greater than 0.5s
       emit zoomIn(min, max);
     }
+    event->accept();
   } else if (event->button() == Qt::RightButton) {
     emit zoomReset();
+    event->accept();
+  } else {
+    QGraphicsView::mouseReleaseEvent(event);
   }
-  event->accept();
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
-  bool dragging = rubber && rubber->isVisible();
-  if (!dragging) {
+  bool is_zooming = rubber && rubber->isVisible();
+  if (!is_zooming) {
     const auto plot_area = chart()->plotArea();
-    float x = std::clamp((float)ev->pos().x(), (float)plot_area.left(), (float)plot_area.right());
-    track_line->setLine(x, plot_area.top(), x, plot_area.bottom());
-
     auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
-    double sec = axis_x->min() + ((x - plot_area.x()) / plot_area.width()) * (axis_x->max() - axis_x->min());
-    auto value = std::lower_bound(vals.begin(), vals.end(), sec, [](auto &p, double x) { return p.x() < x; });
-    value_text->setPos(x + 6, plot_area.bottom() - 25);
+    double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right()-1);
+    double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
+    auto value = std::upper_bound(vals.begin(), vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
     if (value != vals.end()) {
-      value_text->setText(QString("(%1, %2)").arg(value->x(), 0, 'f', 3).arg(value->y()));
-    } else {
-      value_text->setText("(--, --)");
+      QPointF pos = chart()->mapToPosition((*value));
+      track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
+      track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
+      value_text->setHtml(tr("<div style='background-color:darkGray'><font color='white'>%1, %2)</font></div>")
+                              .arg(value->x(), 0, 'f', 3).arg(value->y()));
+      int text_x = pos.x() + 8;
+      if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
+        text_x = pos.x() - value_text->boundingRect().width() - 8;
+      }
+      value_text->setPos(text_x, pos.y() - 10);
     }
+    track_line->setVisible(value != vals.end());
+    value_text->setVisible(value != vals.end());
+    track_ellipse->setVisible(value != vals.end());
   }
   QChartView::mouseMoveEvent(ev);
 }

@@ -109,6 +109,10 @@ class TestCarModelBase(unittest.TestCase):
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
+  @classmethod
+  def tearDownClass(cls):
+    del cls.can_msgs
+
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
     assert self.CI
@@ -233,7 +237,6 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
       if self.CP.carName not in ("hyundai", "volkswagen", "body"):
         # TODO: fix standstill mismatches for other makes
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
