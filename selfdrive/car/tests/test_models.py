@@ -8,7 +8,6 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
-from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
@@ -28,7 +27,6 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
-INTERNAL = os.environ.get("INTERNAL", False)
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
@@ -36,22 +34,14 @@ ignore_addr_checks_valid = [
 ]
 
 # build list of test cases
+routes_by_car = defaultdict(set)
+for r in routes:
+  routes_by_car[r.car_model].add(r)
+
 test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
-if INTERNAL:
-  with open(os.path.join(BASEDIR, "selfdrive/car/tests/test_models_segs.txt"), "r") as f:
-    seg_list = f.read().splitlines()
-  platforms, segs = seg_list[0::2], seg_list[1::2]
-
-  for platform, seg in list(zip(platforms, segs)):
-    test_cases.append((platform[2:], CarTestRoute(seg[:37], platform[2:], segment=int(seg[39:]))))
-else:
-  routes_by_car = defaultdict(set)
-  for r in routes:
-    routes_by_car[r.car_model].add(r)
-
-  for i, c in enumerate(sorted(all_known_cars())):
-    if i % NUM_JOBS == JOB_ID:
-      test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+for i, c in enumerate(sorted(all_known_cars())):
+  if i % NUM_JOBS == JOB_ID:
+    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
@@ -84,9 +74,7 @@ class TestCarModelBase(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if INTERNAL:
-          lr = LogReader(f"cd:/{cls.test_route.route[:16]}/{cls.test_route.route[17:37]}/{seg}/rlog.bz2")
-        elif cls.ci:
+        if cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
