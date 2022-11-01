@@ -35,7 +35,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   return false;
 }
 
-static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
+int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
   for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
@@ -44,7 +44,7 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
+void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
@@ -54,7 +54,7 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
   }
 }
 
-static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
                              float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
 
@@ -78,7 +78,7 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   *pvd = left_points + right_points;
 }
 
-static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
+void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
@@ -141,14 +141,7 @@ static void update_state(UIState *s) {
       }
     }
     scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
-  }
-  if (s->worldObjectsVisible()) {
-    if (sm.updated("modelV2")) {
-      update_model(s, sm["modelV2"].getModelV2());
-    }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
-    }
+    scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
     auto pandaStates = sm["pandaStates"].getPandaStates();
@@ -173,17 +166,6 @@ static void update_state(UIState *s) {
     scene.light_sensor = std::max(100.0f - scale * sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent(), 0.0f);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
-
-  if (sm.updated("carState")) {
-    float v_ego = sm["carState"].getCarState().getVEgo();
-    // TODO: support replays without ecam by using fcam
-    // Wide or narrow cam dependent on speed
-    if ((v_ego < 10) || s->wide_cam_only) {
-      scene.wide_cam = true;
-    } else if (v_ego > 15) {
-      scene.wide_cam = false;
-    }
-  }
 }
 
 void ui_update_params(UIState *s) {
