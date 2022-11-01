@@ -232,6 +232,7 @@ jobs:
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
                         ./tools/replay/tests/test_replay && \
+                        ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"

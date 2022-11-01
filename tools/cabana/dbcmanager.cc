@@ -28,8 +28,25 @@ void DBCManager::open(const QString &name, const QString &content) {
   emit DBCFileChanged();
 }
 
-void save(const QString &dbc_file_name) {
-  // TODO: save DBC to file
+QString DBCManager::generateDBC() {
+  if (!dbc) return {};
+
+  QString dbc_string;
+  for (auto &m : dbc->msgs) {
+    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(m.address).arg(m.name.c_str()).arg(m.size);
+    for (auto &sig : m.sigs) {
+      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
+                        .arg(sig.name.c_str())
+                        .arg(sig.start_bit)
+                        .arg(sig.size)
+                        .arg(sig.is_little_endian ? '1' : '0')
+                        .arg(sig.is_signed ? '-' : '+')
+                        .arg(sig.factor, 0, 'g', 20)
+                        .arg(sig.offset);
+    }
+    dbc_string += "\n";
+  }
+  return dbc_string;
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
@@ -120,4 +137,22 @@ double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   }
   double value = val * sig.factor + sig.offset;
   return value;
+}
+
+void updateSigSizeParamsFromRange(Signal &s, int from, int to) {
+  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);
+  s.size = to - from + 1;
+  if (s.is_little_endian) {
+    s.lsb = s.start_bit;
+    s.msb = s.start_bit + s.size - 1;
+  } else {
+    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
+    s.msb = s.start_bit;
+  }
+}
+
+std::pair<int, int> getSignalRange(const Signal *s) {
+  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
+  int to = from + s->size - 1;
+  return {from, to};
 }

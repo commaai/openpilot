@@ -17,7 +17,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
-  // TODO: figure out why the CameraWidget crashed occasionally.
   cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false, this);
   cam_widget->setFixedSize(parent->width(), parent->width() / 1.596);
   main_layout->addWidget(cam_widget);
@@ -57,7 +56,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  QObject::connect(can, &CANMessages::rangeChanged, this, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
@@ -70,8 +68,8 @@ void VideoWidget::pause(bool pause) {
   can->pause(pause);
 }
 
-void VideoWidget::rangeChanged(double min, double max) {
-  if (!can->isZoomed()) {
+void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+  if (!is_zoomed) {
     min = 0;
     max = can->totalSeconds();
   }

@@ -96,8 +96,8 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
-  connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived);
+  QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
+  QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
 }
 
 CameraWidget::~CameraWidget() {
@@ -162,13 +162,13 @@ void CameraWidget::initializeGL() {
 }
 
 void CameraWidget::showEvent(QShowEvent *event) {
-  frames.clear();
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
     connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
     vipc_thread->start();
   }
+  clearFrames();
 }
 
 void CameraWidget::hideEvent(QHideEvent *event) {
@@ -178,6 +178,7 @@ void CameraWidget::hideEvent(QHideEvent *event) {
     vipc_thread->wait();
     vipc_thread = nullptr;
   }
+  clearFrames();
 }
 
 void CameraWidget::updateFrameMat() {
@@ -187,12 +188,17 @@ void CameraWidget::updateFrameMat() {
     if (stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
-      intrinsic_matrix = (stream_type == VISION_STREAM_WIDE_ROAD) ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-      zoom = (stream_type == VISION_STREAM_WIDE_ROAD) ? 2.5 : 1.1;
-
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
+      // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
+      if (stream_type == VISION_STREAM_WIDE_ROAD) {
+        intrinsic_matrix = ecam_intrinsic_matrix;
+        zoom = 2.0;
+      } else {
+        intrinsic_matrix = fcam_intrinsic_matrix;
+        zoom = 1.1;
+      }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
       const vec3 Kep = matvecmul3(intrinsic_matrix, Ep);
@@ -233,45 +239,37 @@ void CameraWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-  if (frames.empty()) return;
+  std::lock_guard lk(frame_lock);
 
-  int frame_idx = frames.size() - 1;
-
-  // Always draw latest frame until sync logic is more stable
-  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
-  //   if (frames[frame_idx].first == draw_frame_id) break;
-  // }
-
-  // Log duplicate/dropped frames
-  if (frames[frame_idx].first == prev_frame_id) {
-    qDebug() << "Drawing same frame twice" << frames[frame_idx].first;
-  } else if (frames[frame_idx].first != prev_frame_id + 1) {
-    qDebug() << "Skipped frame" << frames[frame_idx].first;
+  // use previous texture if update() is called without new frame.
+  VisionBuf *frame = nullptr;
+  if (!frames.empty()) {
+    frame = frames.front().second;
+    frames.pop_front();
   }
-  prev_frame_id = frames[frame_idx].first;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  VisionBuf *frame = frames[frame_idx].second;
-
 #ifdef QCOM2
   glActiveTexture(GL_TEXTURE0);
-  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
-  assert(glGetError() == GL_NO_ERROR);
+  if (frame) {
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
+    assert(glGetError() == GL_NO_ERROR);
+  }
 #else
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+  if (frame) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
   assert(glGetError() == GL_NO_ERROR);
 
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
   glActiveTexture(GL_TEXTURE0 + 1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  if (frame) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
@@ -288,7 +286,6 @@ void CameraWidget::paintGL() {
 
 void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  frames.clear();
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
   stream_stride = vipc_client->buffers[0].stride;
@@ -339,11 +336,7 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat();
 }
 
-void CameraWidget::vipcFrameReceived(VisionBuf *buf, uint32_t frame_id) {
-  frames.push_back(std::make_pair(frame_id, buf));
-  while (frames.size() > FRAME_BUFFER_SIZE) {
-    frames.pop_front();
-  }
+void CameraWidget::vipcFrameReceived() {
   update();
 }
 
@@ -354,11 +347,13 @@ void CameraWidget::vipcThread() {
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
+      clearFrames();
       cur_stream_type = stream_type;
       vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, false));
     }
 
     if (!vipc_client->connected) {
+      clearFrames();
       if (!vipc_client->connect(false)) {
         QThread::msleep(100);
         continue;
@@ -367,7 +362,15 @@ void CameraWidget::vipcThread() {
     }
 
     if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
-      emit vipcThreadFrameReceived(buf, meta_main.frame_id);
+      {
+        std::lock_guard lk(frame_lock);
+        frames.push_back(std::make_pair(meta_main.frame_id, buf));
+        while (frames.size() > FRAME_BUFFER_SIZE) {
+          qDebug() << "Skipped frame" << frames.front().first;
+          frames.pop_front();
+        }
+      }
+      emit vipcThreadFrameReceived();
     }
   }
 
@@ -377,4 +380,9 @@ void CameraWidget::vipcThread() {
   }
   egl_images.clear();
 #endif
+}
+
+void CameraWidget::clearFrames() {
+  std::lock_guard lk(frame_lock);
+  frames.clear();
 }
