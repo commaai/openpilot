@@ -196,10 +196,10 @@ class CarState(CarStateBase):
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
       cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
-      ret.cruiseState.speed = cp_cruise_info.vl["CRUISE_INFO"]["SET_SPEED"] * speed_factor
-      ret.cruiseState.standstill = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STANDSTILL"] == 1
-      ret.cruiseState.enabled = cp_cruise_info.vl["CRUISE_INFO"]["CRUISE_STATUS"] != 0
-      self.cruise_info = copy.copy(cp_cruise_info.vl["CRUISE_INFO"])
+      ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["VSetDis"] * speed_factor
+      ret.cruiseState.standstill = cp_cruise_info.vl["SCC_CONTROL"]["CRUISE_STANDSTILL"] == 1
+      ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
+      self.cruise_info = copy.copy(cp_cruise_info.vl["SCC_CONTROL"])
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     self.prev_cruise_buttons = self.cruise_buttons[-1]
@@ -464,12 +464,12 @@ class CarState(CarStateBase):
 
     if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
       signals += [
-        ("CRUISE_STATUS", "CRUISE_INFO"),
-        ("SET_SPEED", "CRUISE_INFO"),
-        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
+        ("ACCMode", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
+        ("CRUISE_STANDSTILL", "SCC_CONTROL"),
       ]
       checks += [
-        ("CRUISE_INFO", 50),
+        ("SCC_CONTROL", 50),
       ]
 
     if CP.carFingerprint in EV_CAR:
@@ -497,20 +497,20 @@ class CarState(CarStateBase):
       checks = [("CAM_0x2a4", 20)]
     else:
       signals = [
-        ("COUNTER", "CRUISE_INFO"),
-        ("NEW_SIGNAL_1", "CRUISE_INFO"),
-        ("CRUISE_MAIN", "CRUISE_INFO"),
-        ("CRUISE_STATUS", "CRUISE_INFO"),
-        ("CRUISE_INACTIVE", "CRUISE_INFO"),
-        ("ZEROS_9", "CRUISE_INFO"),
-        ("CRUISE_STANDSTILL", "CRUISE_INFO"),
-        ("ZEROS_5", "CRUISE_INFO"),
-        ("DISTANCE_SETTING", "CRUISE_INFO"),
-        ("SET_SPEED", "CRUISE_INFO"),
+        ("COUNTER", "SCC_CONTROL"),
+        ("NEW_SIGNAL_1", "SCC_CONTROL"),
+        ("MainMode_ACC", "SCC_CONTROL"),
+        ("ACCMode", "SCC_CONTROL"),
+        ("CRUISE_INACTIVE", "SCC_CONTROL"),
+        ("ZEROS_9", "SCC_CONTROL"),
+        ("CRUISE_STANDSTILL", "SCC_CONTROL"),
+        ("ZEROS_5", "SCC_CONTROL"),
+        ("DISTANCE_SETTING", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
       ]
 
       checks = [
-        ("CRUISE_INFO", 50),
+        ("SCC_CONTROL", 50),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
