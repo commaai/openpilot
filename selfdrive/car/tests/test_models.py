@@ -222,7 +222,7 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = None
     checks = defaultdict(lambda: 0)
-    for can in self.can_msgs:
+    for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         msg = list(msg)
@@ -232,8 +232,9 @@ class TestCarModelBase(unittest.TestCase):
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
       # Skip first frame so that CS_prev is properly initialized
-      if CS_prev is None:
+      if idx == 0:
         CS_prev = CS
+        # Button may be left pressed in warm up period
         if not self.CP.pcmCruise:
           self.safety.set_controls_allowed(0)
         continue
