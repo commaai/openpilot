@@ -24,6 +24,7 @@ from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
 
 PandaType = log.PandaState.PandaType
+FingerprintSource = car.CarParams.FingerprintSource
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -91,6 +92,9 @@ class TestCarModelBase(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
+          if msg.carParams.fuzzyFingerprint or msg.carParams.fingerprintSource == FingerprintSource.fixed:
+            raise Exception("Route fuzzy fingerprints or source is fixed")
+
           car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
             experimental_long = True
@@ -108,7 +112,6 @@ class TestCarModelBase(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
-    assert not cls.CP.fuzzyFingerprint
 
   @classmethod
   def tearDownClass(cls):
