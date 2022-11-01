@@ -227,14 +227,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
-
-  setStreamType(s.scene.wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-  if (s.scene.calibration_valid) {
-    auto calib = s.scene.wide_cam ? s.scene.view_from_wide_calib : s.scene.view_from_calib;
-    CameraWidget::updateCalibration(calib);
-  } else {
-    CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-  }
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -545,18 +537,62 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV
 }
 
 void AnnotatedCameraWidget::paintGL() {
-  const double start_draw_t = millis_since_boot();
-
   UIState *s = uiState();
-  const cereal::ModelDataV2::Reader &model = (*s->sm)["modelV2"].getModelV2();
-  CameraWidget::setFrameId(model.getFrameId());
-  CameraWidget::paintGL();
+  SubMaster &sm = *(s->sm);
+  const double start_draw_t = millis_since_boot();
+  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
+
+  // draw camera frame
+  {
+    std::lock_guard lk(frame_lock);
+
+    if (frames.empty()) {
+      if (skip_frame_count > 0) {
+        skip_frame_count--;
+        qDebug() << "skipping frame, not ready";
+        return;
+      }
+    } else {
+      // skip drawing up to this many frames if we're
+      // missing camera frames. this smooths out the
+      // transitions from the narrow and wide cameras
+      skip_frame_count = 5;
+    }
+
+    // Wide or narrow cam dependent on speed
+    float v_ego = sm["carState"].getCarState().getVEgo();
+    if ((v_ego < 10) || s->wide_cam_only) {
+      wide_cam_requested = true;
+    } else if (v_ego > 15) {
+      wide_cam_requested = false;
+    }
+    // TODO: also detect when ecam vision stream isn't available
+    // for replay of old routes, never go to widecam
+    wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
+    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+
+    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
+    if (s->scene.calibration_valid) {
+      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
+      CameraWidget::updateCalibration(calib);
+    } else {
+      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
+    }
+    CameraWidget::setFrameId(model.getFrameId());
+    CameraWidget::paintGL();
+  }
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
   if (s->worldObjectsVisible()) {
+    if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
+      update_model(s, sm["modelV2"].getModelV2());
+      if (sm.rcv_frame("radarState") > s->scene.started_frame) {
+        update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
+      }
+    }
 
     drawLaneLines(painter, s);
 
