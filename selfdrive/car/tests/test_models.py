@@ -220,7 +220,7 @@ class TestCarModelBase(unittest.TestCase):
         self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False
-    CS_prev = None
+    CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
