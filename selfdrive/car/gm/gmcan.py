@@ -1,4 +1,5 @@
 from selfdrive.car import make_can_msg
+from selfdrive.car.gm.values import CAR
 
 
 def create_buttons(packer, bus, idx, button):
@@ -52,21 +53,22 @@ def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
   return packer.make_can_msg("ASCMGasRegenCmd", bus, values)
 
 
-def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_stop, at_full_stop):
-  # mode never enters 0xb (11) on Bolt EUV, only the four defined below
-  # TODO: experiment with at_full_stop. could it be LongCtrlState.stopping?
-  mode = 1
-  if enabled:
-    mode = 9
-    if apply_brake > 0:
-      mode = 10
-      if at_full_stop:
-        mode = 13
+def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_stop, at_full_stop, CP):
+  mode = 0x1
 
-      # TODO: this is to have GM bringing the car to complete stop,
-      # but currently it conflicts with OP controls, so turned off.
-      # elif near_stop:
-      #  mode = 0xb
+  # TODO: Understand this better. Volts and ICE Camera ACC cars are 0x1 when enabled with no brake
+  if CP.carFingerprint in (CAR.BOLT_EUV,) and enabled:
+    mode = 0x9
+
+  if apply_brake > 0:
+    mode = 0xa
+    if at_full_stop:
+      mode = 0xd
+
+    # TODO: this is to have GM bringing the car to complete stop,
+    # but currently it conflicts with OP controls, so turned off. Not set by all cars
+    # elif near_stop:
+    #  mode = 0xb
 
   brake = (0x1000 - apply_brake) & 0xfff
   checksum = (0x10000 - (mode << 12) - brake - idx) & 0xffff
