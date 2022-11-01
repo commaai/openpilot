@@ -223,7 +223,7 @@ class TestCarModelBase(unittest.TestCase):
       self.safety.set_controls_allowed(0)
 
     controls_allowed_prev = False
-    CS_prev = car.CarState.new_message()
+    CS_prev = None
     checks = defaultdict(lambda: 0)
     for can in self.can_msgs:
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
@@ -234,8 +234,8 @@ class TestCarModelBase(unittest.TestCase):
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
-      # Skip testing while CS_prev is blank CarState
-      if idx == 0:
+      # Skip first frame so that CS_prev is properly initialized
+      if CS_prev is None:
         CS_prev = CS
         continue
 
