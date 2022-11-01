@@ -238,16 +238,25 @@ void CameraWidget::paintGL() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+  std::lock_guard lk(frame_lock);
   if (frames.empty()) return;
 
-  //std::lock_guard lk(frame_lock);
+  int frame_idx = frames.size() - 1;
 
-  // use previous texture if update() is called without new frame.
-  VisionBuf *frame = nullptr;
-  if (!frames.empty()) {
-    frame = frames.front().second;
-    frames.pop_front();
+  // Always draw latest frame until sync logic is more stable
+  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+  //   if (frames[frame_idx].first == draw_frame_id) break;
+  // }
+
+  // Log duplicate/dropped frames
+  if (frames[frame_idx].first == prev_frame_id) {
+    qDebug() << "Drawing same frame twice" << frames[frame_idx].first;
+  } else if (frames[frame_idx].first != prev_frame_id + 1) {
+    qDebug() << "Skipped frame" << frames[frame_idx].first;
   }
+  prev_frame_id = frames[frame_idx].first;
+  VisionBuf *frame = frames[frame_idx].second;
+  assert(frame != nullptr);
 
   updateFrameMat();
 
@@ -259,22 +268,20 @@ void CameraWidget::paintGL() {
 #ifdef QCOM2
   // no frame copy
   glActiveTexture(GL_TEXTURE0);
-  if (frame) {
-    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
-    assert(glGetError() == GL_NO_ERROR);
-  }
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
+  assert(glGetError() == GL_NO_ERROR);
 #else
   // fallback to copy
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  if (frame) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
   assert(glGetError() == GL_NO_ERROR);
 
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
   glActiveTexture(GL_TEXTURE0 + 1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-  if (frame) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
@@ -371,7 +378,6 @@ void CameraWidget::vipcThread() {
         std::lock_guard lk(frame_lock);
         frames.push_back(std::make_pair(meta_main.frame_id, buf));
         while (frames.size() > FRAME_BUFFER_SIZE) {
-          qDebug() << "Skipped frame" << frames.front().first;
           frames.pop_front();
         }
       }

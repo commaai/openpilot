@@ -541,8 +541,8 @@ void AnnotatedCameraWidget::paintGL() {
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
-  static bool wide_cam_requested = false;
 
+  // draw camera frame
   {
     std::lock_guard lk(frame_lock);
 
@@ -559,25 +559,20 @@ void AnnotatedCameraWidget::paintGL() {
       skip_frame_count = 5;
     }
 
-    //bool wide_cam_requested = s->scene.wide_cam;
-    /*
-    float v_ego = sm["carState"].getCarState().getVEgo();
     // Wide or narrow cam dependent on speed
+    float v_ego = sm["carState"].getCarState().getVEgo();
     if ((v_ego < 10) || s->wide_cam_only) {
-      scene.wide_cam = true;
+      wide_cam_requested = true;
     } else if (v_ego > 15) {
-      scene.wide_cam = false;
+      wide_cam_requested = false;
     }
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
-    if (!scene.calibration_wide_valid) {
-      scene.wide_cam = false;
+    if (!s->scene.calibration_wide_valid) {
+      wide_cam_requested = false;
     }
-    */
-
-    if ((sm.frame % 40) == 0) {
-      wide_cam_requested = !s->scene.wide_cam;
-    }
+    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+    qWarning() << "wide cam " << wide_cam_requested << ", " << s->scene.wide_cam;
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
     if (s->scene.calibration_valid) {
@@ -588,9 +583,6 @@ void AnnotatedCameraWidget::paintGL() {
     }
     CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
-
-    // request for next time
-    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
   }
 
   QPainter painter(this);
