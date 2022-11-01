@@ -94,7 +94,7 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 } // namespace
 
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
-                                   stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
+                          stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
@@ -124,7 +124,7 @@ void CameraWidget::initializeGL() {
   GLint frame_pos_loc = program->attributeLocation("aPosition");
   GLint frame_texcoord_loc = program->attributeLocation("aTexCoord");
 
-  auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_DRIVER ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
+  auto [x1, x2, y1, y2] = requested_stream_type == VISION_STREAM_DRIVER ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
   const float frame_coords[4][4] = {
     {-1.0, -1.0, x2, y1}, // bl
@@ -163,36 +163,26 @@ void CameraWidget::initializeGL() {
 
 void CameraWidget::showEvent(QShowEvent *event) {
   if (!vipc_thread) {
+    clearFrames();
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
     connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
     vipc_thread->start();
   }
-  clearFrames();
-}
-
-void CameraWidget::hideEvent(QHideEvent *event) {
-  if (vipc_thread) {
-    vipc_thread->requestInterruption();
-    vipc_thread->quit();
-    vipc_thread->wait();
-    vipc_thread = nullptr;
-  }
-  clearFrames();
 }
 
 void CameraWidget::updateFrameMat() {
   int w = width(), h = height();
 
   if (zoomed_view) {
-    if (stream_type == VISION_STREAM_DRIVER) {
+    if (active_stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
-      if (stream_type == VISION_STREAM_WIDE_ROAD) {
+      if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         intrinsic_matrix = ecam_intrinsic_matrix;
         zoom = 2.0;
       } else {
@@ -212,11 +202,11 @@ void CameraWidget::updateFrameMat() {
       x_offset = std::clamp(x_offset_, -max_x_offset, max_x_offset);
       y_offset = std::clamp(y_offset_, -max_y_offset, max_y_offset);
 
-      float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-      float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+      float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
+      float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
       const mat4 frame_transform = {{
-        zx, 0.0, 0.0, -x_offset / width() * 2,
-        0.0, zy, 0.0, y_offset / height() * 2,
+        zx, 0.0, 0.0, -x_offset / w * 2,
+        0.0, zy, 0.0, y_offset / h * 2,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
       }};
@@ -224,7 +214,7 @@ void CameraWidget::updateFrameMat() {
     }
   } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
-    float widget_aspect_ratio = (float)width() / height();
+    float widget_aspect_ratio = (float)w / h;
     float frame_aspect_ratio = (float)stream_width  / stream_height;
     frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio);
   }
@@ -232,7 +222,6 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
-  updateFrameMat();
 }
 
 void CameraWidget::paintGL() {
@@ -240,13 +229,26 @@ void CameraWidget::paintGL() {
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   std::lock_guard lk(frame_lock);
+  if (frames.empty()) return;
 
-  // use previous texture if update() is called without new frame.
-  VisionBuf *frame = nullptr;
-  if (!frames.empty()) {
-    frame = frames.front().second;
-    frames.pop_front();
+  int frame_idx = frames.size() - 1;
+
+  // Always draw latest frame until sync logic is more stable
+  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
+  //   if (frames[frame_idx].first == draw_frame_id) break;
+  // }
+
+  // Log duplicate/dropped frames
+  if (frames[frame_idx].first == prev_frame_id) {
+    qDebug() << "Drawing same frame twice" << frames[frame_idx].first;
+  } else if (frames[frame_idx].first != prev_frame_id + 1) {
+    qDebug() << "Skipped frame" << frames[frame_idx].first;
   }
+  prev_frame_id = frames[frame_idx].first;
+  VisionBuf *frame = frames[frame_idx].second;
+  assert(frame != nullptr);
+
+  updateFrameMat();
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
@@ -254,22 +256,22 @@ void CameraWidget::paintGL() {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 #ifdef QCOM2
+  // no frame copy
   glActiveTexture(GL_TEXTURE0);
-  if (frame) {
-    glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
-    assert(glGetError() == GL_NO_ERROR);
-  }
+  glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
+  assert(glGetError() == GL_NO_ERROR);
 #else
+  // fallback to copy
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, textures[0]);
-  if (frame) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width, stream_height, GL_RED, GL_UNSIGNED_BYTE, frame->y);
   assert(glGetError() == GL_NO_ERROR);
 
   glPixelStorei(GL_UNPACK_ROW_LENGTH, stream_stride/2);
   glActiveTexture(GL_TEXTURE0 + 1);
   glBindTexture(GL_TEXTURE_2D, textures[1]);
-  if (frame) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, stream_width/2, stream_height/2, GL_RG, GL_UNSIGNED_BYTE, frame->uv);
   assert(glGetError() == GL_NO_ERROR);
 #endif
 
@@ -332,8 +334,6 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
   assert(glGetError() == GL_NO_ERROR);
 #endif
-
-  updateFrameMat();
 }
 
 void CameraWidget::vipcFrameReceived() {
@@ -341,16 +341,18 @@ void CameraWidget::vipcFrameReceived() {
 }
 
 void CameraWidget::vipcThread() {
-  VisionStreamType cur_stream_type = stream_type;
+  VisionStreamType cur_stream = requested_stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || cur_stream_type != stream_type) {
+    if (!vipc_client || cur_stream != requested_stream_type) {
       clearFrames();
-      cur_stream_type = stream_type;
-      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, false));
+      qDebug() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
+      cur_stream = requested_stream_type;;
+      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
     }
+    active_stream_type = cur_stream;
 
     if (!vipc_client->connected) {
       clearFrames();
@@ -366,7 +368,6 @@ void CameraWidget::vipcThread() {
         std::lock_guard lk(frame_lock);
         frames.push_back(std::make_pair(meta_main.frame_id, buf));
         while (frames.size() > FRAME_BUFFER_SIZE) {
-          qDebug() << "Skipped frame" << frames.front().first;
           frames.pop_front();
         }
       }

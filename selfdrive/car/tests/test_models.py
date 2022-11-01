@@ -9,7 +9,7 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
@@ -108,6 +108,10 @@ class TestCarModelBase(unittest.TestCase):
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+  @classmethod
+  def tearDownClass(cls):
+    del cls.can_msgs
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
@@ -210,18 +214,15 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
+      self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
-        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
-
-    if not self.CP.pcmCruise:
-      self.safety.set_controls_allowed(0)
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
-    for can in self.can_msgs:
+    for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         msg = list(msg)
@@ -230,10 +231,17 @@ class TestCarModelBase(unittest.TestCase):
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
+      # Skip first frame so CS_prev is properly initialized
+      if idx == 0:
+        CS_prev = CS
+        # Button may be left pressed in warm up period
+        if not self.CP.pcmCruise:
+          self.safety.set_controls_allowed(0)
+        continue
+
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
       if self.CP.carName not in ("hyundai", "volkswagen", "body"):
         # TODO: fix standstill mismatches for other makes
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
