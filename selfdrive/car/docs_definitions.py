@@ -73,7 +73,7 @@ CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
 
 class CommonFootnote(Enum):
   EXP_LONG_AVAIL = CarFootnote(
-    "openpilot longitudinal control is available only when explicitly toggled on, and is not available in release. Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
+    "openpilot longitudinal control is available behind an experimental toggle and is not in release. Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
     Column.LONGITUDINAL)
 
 
