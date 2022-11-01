@@ -548,7 +548,8 @@ void AnnotatedCameraWidget::paintGL() {
   const double start_draw_t = millis_since_boot();
 
   UIState *s = uiState();
-  const cereal::ModelDataV2::Reader &model = (*s->sm)["modelV2"].getModelV2();
+  SubMaster &sm = *(s->sm);
+  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
   CameraWidget::setFrameId(model.getFrameId());
   CameraWidget::paintGL();
 
@@ -557,6 +558,8 @@ void AnnotatedCameraWidget::paintGL() {
   painter.setPen(Qt::NoPen);
 
   if (s->worldObjectsVisible()) {
+    update_model(s, sm["modelV2"].getModelV2());
+    update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
 
     drawLaneLines(painter, s);
 

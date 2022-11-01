@@ -232,7 +232,6 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
-  updateFrameMat();
 }
 
 void CameraWidget::paintGL() {
@@ -247,6 +246,8 @@ void CameraWidget::paintGL() {
     frame = frames.front().second;
     frames.pop_front();
   }
+
+  updateFrameMat();
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);
@@ -332,8 +333,6 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, stream_width/2, stream_height/2, 0, GL_RG, GL_UNSIGNED_BYTE, nullptr);
   assert(glGetError() == GL_NO_ERROR);
 #endif
-
-  updateFrameMat();
 }
 
 void CameraWidget::vipcFrameReceived() {
