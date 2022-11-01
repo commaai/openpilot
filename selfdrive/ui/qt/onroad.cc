@@ -173,8 +173,9 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
-  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
+  steer_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  longitudinal_img = loadPixmap("../assets/offroad/icon_disengage_on_accelerator.svg", {img_size, img_size});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -304,8 +305,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   speed_rect.moveTop(set_speed_rect.top() + 77);
   p.drawText(speed_rect, Qt::AlignCenter, setSpeedStr);
 
-
-
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
     const int border_width = 6;
@@ -376,11 +375,19 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // engage-ability icon
-  if (engageable) {
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             engage_img, bg_colors[status], 1.0);
-  }
+  // lateral + longitudinal control icons
+  UIState *s = uiState();
+  SubMaster &sm = *(s->sm);
+  // TODO: handle controls unresponsive
+  auto CC = sm["carControl"].getCarControl();
+  int base_status = sm["controlsState"].getControlsState().getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+  int lat_status = (CC.getEnabled() && !CC.getLatActive()) ? STATUS_OVERRIDE : base_status;
+  drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
+           steer_img, bg_colors[lat_status], 1.0);
+
+  int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
+  drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius*2 + int(bdr_s * 1.5),
+           longitudinal_img, bg_colors[long_status], 1.0);
 
   // dm icon
   if (!hideDM) {
