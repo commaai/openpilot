@@ -71,6 +71,12 @@ class Harness(Enum):
 CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
 
 
+class CommonFootnote(Enum):
+  EXP_LONG_AVAIL = CarFootnote(
+    "openpilot longitudinal control is available only when explicitly toggled on, and is not available in release. Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
+    Column.LONGITUDINAL)
+
+
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
   # Returns applicable footnotes given current column
   return [fn for fn in footnotes if fn.value.column == column]
@@ -133,6 +139,7 @@ class CarInfo:
       op_long = "openpilot"
     elif CP.experimentalLongitudinalAvailable:
       op_long = "openpilot available"
+      self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
     self.row = {
       Column.MAKE: self.make,

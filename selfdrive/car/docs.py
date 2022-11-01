@@ -10,12 +10,12 @@ from typing import Dict, List
 from cereal import car
 from common.basedir import BASEDIR
 from selfdrive.car import gen_empty_fingerprint
-from selfdrive.car.docs_definitions import CarInfo, Column
+from selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 
 
 def get_all_footnotes() -> Dict[Enum, int]:
-  all_footnotes = []
+  all_footnotes = list(CommonFootnote)
   for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
     all_footnotes.extend(footnotes)
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
