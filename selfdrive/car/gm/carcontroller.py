@@ -88,7 +88,7 @@ class CarController:
 
         idx = (self.frame // 4) % 4
 
-        # TODO: understand at_full_stop better
+        # TODO: understand these better
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
 
