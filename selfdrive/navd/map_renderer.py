@@ -9,7 +9,7 @@ from cffi import FFI
 from common.ffi_wrapper import suffix
 from common.basedir import BASEDIR
 
-HEIGHT = WIDTH = 512
+HEIGHT = WIDTH = 256
 
 
 def get_ffi():
