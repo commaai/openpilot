@@ -227,14 +227,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
-
-  setStreamType(s.scene.wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-  if (s.scene.calibration_valid) {
-    auto calib = s.scene.wide_cam ? s.scene.view_from_wide_calib : s.scene.view_from_calib;
-    CameraWidget::updateCalibration(calib);
-  } else {
-    CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-  }
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -545,21 +537,73 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV
 }
 
 void AnnotatedCameraWidget::paintGL() {
-  const double start_draw_t = millis_since_boot();
-
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
+  const double start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
-  CameraWidget::setFrameId(model.getFrameId());
-  CameraWidget::paintGL();
+  static bool wide_cam_requested = false;
+
+  {
+    std::lock_guard lk(frame_lock);
+
+    if (frames.empty()) {
+      if (skip_frame_count > 0) {
+        skip_frame_count--;
+        qDebug() << "skipping frame, not ready";
+        return;
+      }
+    } else {
+      // skip drawing up to this many frames if we're
+      // missing camera frames. this smooths out the
+      // transitions from the narrow and wide cameras
+      skip_frame_count = 5;
+    }
+
+    //bool wide_cam_requested = s->scene.wide_cam;
+    /*
+    float v_ego = sm["carState"].getCarState().getVEgo();
+    // Wide or narrow cam dependent on speed
+    if ((v_ego < 10) || s->wide_cam_only) {
+      scene.wide_cam = true;
+    } else if (v_ego > 15) {
+      scene.wide_cam = false;
+    }
+    // TODO: also detect when ecam vision stream isn't available
+    // for replay of old routes, never go to widecam
+    if (!scene.calibration_wide_valid) {
+      scene.wide_cam = false;
+    }
+    */
+
+    if ((sm.frame % 40) == 0) {
+      wide_cam_requested = !s->scene.wide_cam;
+    }
+
+    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
+    if (s->scene.calibration_valid) {
+      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
+      CameraWidget::updateCalibration(calib);
+    } else {
+      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
+    }
+    CameraWidget::setFrameId(model.getFrameId());
+    CameraWidget::paintGL();
+
+    // request for next time
+    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+  }
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
   if (s->worldObjectsVisible()) {
-    update_model(s, sm["modelV2"].getModelV2());
-    update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
+    if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
+      update_model(s, sm["modelV2"].getModelV2());
+      if (sm.rcv_frame("radarState") > s->scene.started_frame) {
+        update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
+      }
+    }
 
     drawLaneLines(painter, s);
 
