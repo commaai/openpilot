@@ -57,6 +57,7 @@ class Plant():
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
     model = messaging.new_message('modelV2')
+    cam_odom = messaging.new_message('cameraOdometry')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
 
@@ -110,11 +111,13 @@ class Plant():
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
+    cam_odom.cameraOdometry.trans = [float(self.speed), 0.0, 0.0]
 
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
           'controlsState': control.controlsState,
+          'cameraOdometry': cam_odom.cameraOdometry,
           'modelV2': model.modelV2}
     self.planner.update(sm)
     self.speed = self.planner.v_desired_filter.x
