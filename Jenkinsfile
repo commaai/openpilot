@@ -212,8 +212,8 @@ pipeline {
               ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
             ])
           }
-        }
-      }*/
+        }*/
+      }
 
     }
   }
