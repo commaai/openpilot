@@ -458,11 +458,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-
-  // max y of scene.track_vertices
   int max_y = std::max_element(scene.track_vertices.begin(), scene.track_vertices.end(),
                                [](const QPointF &a, const QPointF &b) { return a.y() > b.y(); })->y();
-
   QLinearGradient bg(0, height(), 0, max_y);
   float start_hue, end_hue;
   if (true) {
