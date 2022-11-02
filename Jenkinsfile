@@ -106,7 +106,6 @@ pipeline {
           }
         }
 
-        /*
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           environment {
@@ -158,7 +157,7 @@ pipeline {
               ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
             ])
           }
-        }*/
+        }
       }
 
     }
