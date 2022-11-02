@@ -39,7 +39,7 @@ class CarState(CarStateBase):
       pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"],
       pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"],
       pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"],
-      unit=CV.KPH_TO_MS * (-1 if pt_cp.vl["EBCMWheelSpdFront"]["MovingBackward"] else 1),
+      unit=CV.KPH_TO_MS * (-1 if pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"] else 1),
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
