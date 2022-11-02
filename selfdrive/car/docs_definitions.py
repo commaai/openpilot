@@ -76,6 +76,10 @@ class CommonFootnote(Enum):
     "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. " +
     "Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
     Column.LONGITUDINAL)
+  TOYOTA_DSU_LONG = CarFootnote(
+    "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
+    "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
+    Column.LONGITUDINAL)
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
