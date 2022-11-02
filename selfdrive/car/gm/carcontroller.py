@@ -9,6 +9,7 @@ from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButt
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
 CAMERA_CANCEL_DELAY_FRAMES = 10
@@ -88,14 +89,17 @@ class CarController:
 
         idx = (self.frame // 4) % 4
 
-        # TODO: understand these better
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        friction_brake_bus = CanBus.CHASSIS
+        # GM Camera exceptions
+        # TODO: can we always check the longControlState?
+        if self.CP.networkLocation == NetworkLocation.fwdCamera:
+          at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
+          friction_brake_bus = CanBus.POWERTRAIN
 
         # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
-
-        friction_brake_bus = CanBus.POWERTRAIN if self.CP.carFingerprint in CAMERA_ACC_CAR else CanBus.CHASSIS
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)
