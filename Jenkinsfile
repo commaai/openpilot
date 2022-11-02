@@ -92,7 +92,6 @@ pipeline {
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
-              sleep 4
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
@@ -106,6 +105,62 @@ pipeline {
           }
         }
 
+        stage('simulator2') {
+          agent {
+            dockerfile {
+              filename 'Dockerfile.sim_nvidia'
+              dir 'tools/sim'
+              args '--user=root'
+            }
+          }
+          steps {
+            sh "git config --global --add safe.directory ${WORKSPACE}"
+            sh "git lfs pull"
+            lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
+              sh "${WORKSPACE}/tools/sim/build_container.sh"
+              sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+              sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
+            }
+          }
+
+          post {
+            always {
+              sh "docker kill carla_sim || true"
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
+          }
+        }
+
+        stage('simulator3') {
+          agent {
+            dockerfile {
+              filename 'Dockerfile.sim_nvidia'
+              dir 'tools/sim'
+              args '--user=root'
+            }
+          }
+          steps {
+            sh "git config --global --add safe.directory ${WORKSPACE}"
+            sh "git lfs pull"
+            lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
+              sh "${WORKSPACE}/tools/sim/build_container.sh"
+              sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+              sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
+            }
+          }
+
+          post {
+            always {
+              sh "docker kill carla_sim || true"
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
+          }
+        }
+
+
+        /*
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           environment {
@@ -158,7 +213,7 @@ pipeline {
             ])
           }
         }
-      }
+      }*/
 
     }
   }
