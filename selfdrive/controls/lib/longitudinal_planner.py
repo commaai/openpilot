@@ -113,7 +113,8 @@ class LongitudinalPlanner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-    self.v_model_error.update(sm['cameraOdometry'].trans[0] - v_ego)
+    if len(sm['cameraOdometry'].trans):
+      self.v_model_error.update(sm['cameraOdometry'].trans[0] - v_ego)
 
     if force_slow_decel:
       # if required so, force a smooth deceleration
