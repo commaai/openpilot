@@ -15,6 +15,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
+    self.pcm_cruise_seen = False
 
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
     # the signal is zeroed to where the steering angle is at start.
@@ -42,7 +43,8 @@ class CarState(CarStateBase):
       # TODO: find a new, common signal
       msg = "GAS_PEDAL_HYBRID" if (self.CP.flags & ToyotaFlags.HYBRID) else "GAS_PEDAL"
       ret.gas = cp.vl[msg]["GAS_PEDAL"]
-      ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
+      self.pcm_cruise_seen = self.pcm_cruise_seen or len(cp.vl_all["PCM_CRUISE"]["GAS_RELEASED"])
+      ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0 and self.pcm_cruise_seen
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
