@@ -140,11 +140,22 @@ pipeline {
         stage('camerad') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici-party", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              ["test camerad", "python system/camerad/test/test_camerad.py"],
-              ["test exposure", "python system/camerad/test/test_exposure.py"],
-            ])
+            parallel {
+              cameraAR: {
+                phone_steps("tici-party", [
+                  ["build", "cd selfdrive/manager && ./build.py"],
+                  ["test camerad", "python system/camerad/test/test_camerad.py"],
+                  ["test exposure", "python system/camerad/test/test_exposure.py"],
+                ])
+              },
+              cameraOX: {
+                phone_steps("tici-ox03c10", [
+                  ["build", "cd selfdrive/manager && ./build.py"],
+                  ["test camerad", "python system/camerad/test/test_camerad.py"],
+                  ["test exposure", "python system/camerad/test/test_exposure.py"],
+                ])
+              }
+            }
           }
         }
 
