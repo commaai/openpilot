@@ -462,7 +462,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
                                [](const QPointF &a, const QPointF &b) { return a.y() > b.y(); })->y();
   QLinearGradient bg(0, height(), 0, max_y);
   float start_hue, end_hue;
-  if (true) {
+  if (scene.end_to_end_long) {
     const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
     float acceleration_future = 0;
     if (acceleration.getZ().size() > 16) {
