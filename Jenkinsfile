@@ -92,6 +92,7 @@ pipeline {
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+              sleep 4
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
