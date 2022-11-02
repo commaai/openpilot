@@ -26,10 +26,8 @@ class CarControllerParams:
   # Message: Steering_Data_FD1, but send twice as fast
   BUTTONS_STEP = 10 / 2
 
-  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold in Nm
-
-  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], angle_rate_points=[500., 80., 15.])
-  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], angle_rate_points=[500., 350., 40.])
+  CURVATURE_MAX = 0.02          # Max curvature for steering command, m^-1
+  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold, Nm
 
 
 class CANBUS:

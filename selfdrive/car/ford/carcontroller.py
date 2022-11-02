@@ -1,22 +1,9 @@
-# import math
 from cereal import car
-from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from selfdrive.car.ford.fordcan import FordCAN
 from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-
-
-def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, CS):
-  steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
-  if steer_up:
-    max_angle_diff = 5.
-    clip(apply_angle, (CS.out.steeringAngleDeg - max_angle_diff), (CS.out.steeringAngleDeg + max_angle_diff))
-
-  rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
-  max_angle_diff = interp(CS.out.vEgo, rate_limit.speed_points, rate_limit.angle_rate_points) / CarControllerParams.LKAS_STEER_STEP
-  return clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
 
 
 class CarController:
@@ -30,6 +17,7 @@ class CarController:
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
+    self.apply_curvature_last = 0.
 
   def update(self, CC, CS):
     can_sends = []
@@ -58,22 +46,19 @@ class CarController:
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       if CC.latActive:
         lca_rq = 1
-        curvature = actuators.steeringAngleDeg
-        #apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS)
+
+        # use LatCtlCurv_No_Actl to actuate steering
+        # TODO: apply rate limits
+        apply_curvature = actuators.curvature * CarControllerParams.CURVATURE_MAX
       else:
         lca_rq = 0
-        #apply_angle = 0.
-        curvature = 0.
+        apply_curvature = 0.
 
-      #curvature = self.VM.calc_curvature(math.radians(apply_angle), CS.out.vEgo, 0.0)
-
-      # use LatCtlCurv_No_Actl to actuate steering
-      curvature = clip(curvature, -0.02, 0.02094)
-
+      angle_steer_des = self.VM.get_steer_from_curvature(-apply_curvature, CS.out.vEgo, 0.0)
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      steer_change = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
+      steer_change = abs(CS.out.steeringAngleDeg - angle_steer_des)
       if steer_change < 2.0:
         ramp_type = 0
       elif steer_change < 4.0:
@@ -87,7 +72,9 @@ class CarController:
 
       can_sends.append(self.ford_can.create_lka_msg(0., 0.))
       can_sends.append(self.ford_can.create_tja_msg(lca_rq, ramp_type, precision,
-                                                    0., 0., curvature, 0.))
+                                                    0., 0., apply_curvature, 0.))
+
+      self.apply_curvature_last = apply_curvature
 
 
     ### ui ###
@@ -109,7 +96,7 @@ class CarController:
     self.steer_alert_last = steer_alert
 
     new_actuators = actuators.copy()
-    #new_actuators.steeringAngleDeg = self.apply_angle_last
+    new_actuators.curvature = self.apply_curvature_last
 
     self.frame += 1
     return new_actuators, can_sends
