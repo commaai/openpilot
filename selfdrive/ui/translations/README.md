@@ -1,12 +1,18 @@
 # Multilanguage
 
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHT.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHT.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_zh-CHS.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_zh-CHS.ts)
-[![language](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge_main_ko.svg)](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/main_ko.ts)
+[![languages](https://raw.githubusercontent.com/commaai/openpilot/badges/translation_badge.svg)](#)
 
 ## Contributing
 
 Before getting started, make sure you have set up the openpilot Ubuntu development environment by reading the [tools README.md](/tools/README.md).
+
+### Policy
+
+Most of the languages supported by openpilot come from and are maintained by the community via pull requests. A pull request likely to be merged is one that [fixes a translation or adds missing translations.](https://github.com/commaai/openpilot/blob/master/selfdrive/ui/translations/README.md#improving-an-existing-language)
+
+We also generally merge pull requests adding support for a new language if there are community members willing to maintain it. Maintaining a language is ensuring quality and completion of translations before each openpilot release.
+
+comma may remove or hide language support from releases depending on translation quality and completeness.
 
 ### Adding a New Language
 
@@ -36,7 +42,7 @@ Any time you edit source code in the UI, you need to update the translations to 
 
 ### Testing
 
-openpilot has a few unit tests to make sure all translations are up to date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
+openpilot has a few unit tests to make sure all translations are up-to-date and that all strings are wrapped in a translation marker. They are run in CI, but you can also run them locally.
 
 Tests translation files up to date:
 

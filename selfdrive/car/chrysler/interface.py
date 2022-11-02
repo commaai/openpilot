@@ -2,23 +2,29 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
-from selfdrive.car.chrysler.values import CAR, DBC, RAM_CARS
+from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, disable_radar=False):
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
 
-    ret.radarOffCan = DBC[candidate]['radar'] is None
+    ret.dashcamOnly = candidate in RAM_HD
 
-    param = Panda.FLAG_CHRYSLER_RAM_DT if candidate in RAM_CARS else None
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler, param)]
+    ret.radarOffCan = DBC[candidate]['radar'] is None
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
+
+    # safety config
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+    if candidate in RAM_HD:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
+    elif candidate in RAM_DT:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
     ret.minSteerSpeed = 3.8  # m/s
     if candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
@@ -47,17 +53,23 @@ class CarInterface(CarInterfaceBase):
     # Ram
     elif candidate == CAR.RAM_1500:
       ret.steerActuatorDelay = 0.2
-
       ret.wheelbase = 3.88
       ret.steerRatio = 16.3
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
       ret.minSteerSpeed = 14.5
       if car_fw is not None:
         for fw in car_fw:
-          if fw.ecu == 'eps' and fw.fwVersion in (b"68312176AE", b"68312176AG", b"68273275AG"):
+          if fw.ecu == 'eps' and fw.fwVersion[:8] in (b"68312176", b"68273275"):
             ret.minSteerSpeed = 0.
+
+    elif candidate == CAR.RAM_HD:
+      ret.steerActuatorDelay = 0.2
+      ret.wheelbase = 3.785
+      ret.steerRatio = 15.61
+      ret.mass = 3405. + STD_CARGO_KG
+      ret.minSteerSpeed = 16
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
     else:
       raise ValueError(f"Unsupported car: {candidate}")

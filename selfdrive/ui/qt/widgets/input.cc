@@ -165,7 +165,7 @@ void InputDialog::handleEnter() {
     done(QDialog::Accepted);
     emitText(line->text());
   } else {
-    setMessage(tr("Need at least %1 characters!").arg(minLength), false);
+    setMessage(tr("Need at least %n character(s)!", "", minLength), false);
   }
 }
 

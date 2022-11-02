@@ -18,7 +18,7 @@ segment = int(sys.argv[2])
 frame = int(sys.argv[3])
 
 url = 'https://api.commadotai.com/v1/route/'+sys.argv[1]+"/files"
-r = requests.get(url, headers={"Authorization": "JWT "+jwt})
+r = requests.get(url, headers={"Authorization": "JWT "+jwt}, timeout=10)
 assert r.status_code == 200
 print("got api response")
 

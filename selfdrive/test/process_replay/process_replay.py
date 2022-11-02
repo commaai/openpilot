@@ -229,6 +229,15 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
 
+def torqued_rcv_callback(msg, CP, cfg, fsm):
+  # should_recv always true to increment frame
+  recv_socks = []
+  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
+  if msg.which() == 'liveLocationKalman' and (frame % 5) == 0:
+    recv_socks = ["liveTorqueParameters"]
+  return recv_socks, fsm.frame == 0 or msg.which() == 'liveLocationKalman'
+
+
 def ublox_rcv_callback(msg):
   msg_class, msg_id = msg.ubloxRaw[2:4]
   if (msg_class, msg_id) in {(1, 7 * 16)}:
@@ -251,8 +260,10 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [], "testJoystick": [],
+      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [],
+      "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [],
+      "testJoystick": [], "liveTorqueParameters": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
@@ -280,7 +291,7 @@ CONFIGS = [
     proc_name="plannerd",
     pub_sub={
       "modelV2": ["lateralPlan", "longitudinalPlan"],
-      "carState": [], "controlsState": [], "radarState": [],
+      "carControl": [], "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params,
@@ -317,7 +328,8 @@ CONFIGS = [
     proc_name="locationd",
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
-      "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "accelerometer": [], "gyroscope": [],
+      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -374,6 +386,18 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
+  ProcessConfig(
+    proc_name="torqued",
+    pub_sub={
+      "liveLocationKalman": ["liveTorqueParameters"],
+      "carState": [], "controlsState": [],
+    },
+    ignore=["logMonoTime"],
+    init_callback=get_car_params,
+    should_recv_callback=torqued_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=True,
+  ),
 ]
 
 
@@ -385,7 +409,7 @@ def replay_process(cfg, lr, fingerprint=None):
       return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def setup_env(simulation=False, CP=None, cfg=None):
+def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -393,6 +417,7 @@ def setup_env(simulation=False, CP=None, cfg=None):
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
+  params.put_bool("UbloxAvailable", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
@@ -414,6 +439,12 @@ def setup_env(simulation=False, CP=None, cfg=None):
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
 
+  # Initialize controlsd with a controlsState packet
+  if controlsState is not None:
+    params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
+  else:
+    params.remove("ReplayControlsState")
+
   # Regen or python process
   if CP is not None:
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
@@ -424,6 +455,9 @@ def setup_env(simulation=False, CP=None, cfg=None):
     else:
       os.environ['SKIP_FW_QUERY'] = "1"
       os.environ['FINGERPRINT'] = CP.carFingerprint
+
+    if CP.openpilotLongitudinalControl:
+      params.put_bool("ExperimentalLongitudinalEnabled", True)
 
 
 def python_replay_process(cfg, lr, fingerprint=None):
@@ -440,13 +474,25 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
+  controlsState = None
+  initialized = False
+  for msg in lr:
+    if msg.which() == 'controlsState':
+      controlsState = msg.controlsState
+      if initialized:
+        break
+    elif msg.which() == 'carEvents':
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+  assert controlsState is not None and initialized, "controlsState never initialized"
+
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
-    setup_env(cfg=cfg)
+    setup_env(cfg=cfg, controlsState=controlsState)
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-    setup_env(CP=CP, cfg=cfg)
+    setup_env(CP=CP, cfg=cfg, controlsState=controlsState)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()

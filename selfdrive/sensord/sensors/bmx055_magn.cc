@@ -155,6 +155,16 @@ int BMX055_Magn::init() {
   return ret;
 }
 
+int BMX055_Magn::shutdown() {
+  // move to suspend mode
+  int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0);
+  if (ret < 0) {
+    LOGE("Could not move BMX055 MAGN in suspend mode!")
+  }
+
+  return ret;
+}
+
 bool BMX055_Magn::perform_self_test() {
   uint8_t buffer[8];
   int16_t x, y;
@@ -213,7 +223,7 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
 }
 
 
-void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
@@ -221,7 +231,10 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   int len = read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  if (parse_xyz(buffer, &_x, &_y, &z)) {
+  bool parsed = parse_xyz(buffer, &_x, &_y, &z);
+  if (parsed) {
+
+    auto event = msg.initEvent().initMagnetometer();
     event.setSource(cereal::SensorEventData::SensorSource::BMX055);
     event.setVersion(2);
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);
@@ -247,4 +260,6 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   // at a 100 Hz. When reading the registers we have to check the ready bit
   // To verify the measurement was completed this cycle.
   set_register(BMX055_MAGN_I2C_REG_MAG, BMX055_MAGN_FORCED);
+
+  return parsed;
 }

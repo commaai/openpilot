@@ -10,7 +10,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.spinner import Spinner
 from common.timeout import Timeout
-from common.transformations.camera import get_view_frame_from_road_frame, tici_f_frame_size, tici_d_frame_size
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
@@ -22,7 +22,7 @@ from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 SEGMENT = 0
-MAX_FRAMES = 20 if PC else 1300
+MAX_FRAMES = 100 if PC else 600
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
@@ -35,7 +35,7 @@ def get_log_fn(ref_commit, test_route):
 def replace_calib(msg, calib):
   msg = msg.as_builder()
   if calib is not None:
-    msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
+    msg.liveCalibration.rpyCalib = calib.tolist()
   return msg
 
 
@@ -149,9 +149,9 @@ if __name__ == "__main__":
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT)))
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="fcamera")),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="dcamera")),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"))
+    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="fcamera"), readahead=True),
+    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="dcamera"), readahead=True),
+    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"), readahead=True)
   }
 
   # run replay
@@ -173,10 +173,10 @@ if __name__ == "__main__":
         'driverStateV2.modelExecutionTime',
         'driverStateV2.dspExecutionTime'
       ]
-      # TODO this tolerence is absurdly large
-      tolerance = 5e-1 if PC else None
+      # TODO this tolerance is absurdly large
+      tolerance = 2.0 if PC else None
       results: Any = {TEST_ROUTE: {}}
-      log_paths: Any = {TEST_ROUTE: {'ref': BASE_URL + log_fn, 'new': log_fn}}
+      log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
 

@@ -29,10 +29,11 @@ class DRIVER_MONITOR_SETTINGS():
     self._FACE_THRESHOLD = 0.7
     self._EYE_THRESHOLD = 0.65
     self._SG_THRESHOLD = 0.9
-    self._BLINK_THRESHOLD = 0.87
+    self._BLINK_THRESHOLD = 0.895
 
-    self._EE_THRESH11 = 0.75
-    self._EE_THRESH12 = 3.25
+    self._EE_THRESH11 = 0.275
+    self._EE_THRESH12 = 5.5
+    self._EE_MAX_OFFSET1 = 0.06
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 
@@ -57,8 +58,9 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
     self._POSE_OFFSET_MAX_COUNT = int(360 / self._DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
 
+    self._WHEELPOS_CALIB_MIN_SPEED = 11
     self._WHEELPOS_THRESHOLD = 0.5
-    self._WHEELPOS_FILTER_MIN_COUNT = int(5 / self._DT_DMON)
+    self._WHEELPOS_FILTER_MIN_COUNT = int(15 / self._DT_DMON) # allow 15 seconds to converge wheel side
 
     self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
     self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
@@ -115,7 +117,7 @@ class DriverBlink():
     self.right_blink = 0.
 
 class DriverStatus():
-  def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS()):
+  def __init__(self, rhd_saved=False, settings=DRIVER_MONITOR_SETTINGS()):
     # init policy settings
     self.settings = settings
 
@@ -138,7 +140,8 @@ class DriverStatus():
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
     self.wheel_on_right = False
-    self.rhd_toggled = rhd
+    self.wheel_on_right_last = None
+    self.wheel_on_right_default = rhd_saved
     self.face_detected = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
@@ -202,14 +205,14 @@ class DriverStatus():
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.ee1_calibrated:
-      ee1_dist = self.eev1 > self.ee1_offseter.filtered_stat.M * self.settings._EE_THRESH12
+      ee1_dist = self.eev1 > min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1) * self.settings._EE_THRESH12
     else:
       ee1_dist = self.eev1 > self.settings._EE_THRESH11
-    if self.ee2_calibrated:
-      ee2_dist = self.eev2 < self.ee2_offseter.filtered_stat.M * self.settings._EE_THRESH22
-    else:
-      ee2_dist = self.eev2 < self.settings._EE_THRESH21
-    if ee1_dist or ee2_dist:
+    # if self.ee2_calibrated:
+    #   ee2_dist = self.eev2 < self.ee2_offseter.filtered_stat.M * self.settings._EE_THRESH22
+    # else:
+    #   ee2_dist = self.eev2 < self.settings._EE_THRESH21
+    if ee1_dist:
       distracted_types.append(DistractedType.DISTRACTED_E2E)
 
     return distracted_types
@@ -227,13 +230,18 @@ class DriverStatus():
 
   def update_states(self, driver_state, cal_rpy, car_speed, op_engaged):
     rhd_pred = driver_state.wheelOnRightProb
-    if car_speed > 0.01:
+    # calibrates only when there's movement and either face detected
+    if car_speed > self.settings._WHEELPOS_CALIB_MIN_SPEED and (driver_state.leftDriverData.faceProb > self.settings._FACE_THRESHOLD or
+                                          driver_state.rightDriverData.faceProb > self.settings._FACE_THRESHOLD):
       self.wheelpos_learner.push_and_update(rhd_pred)
     if self.wheelpos_learner.filtered_stat.n > self.settings._WHEELPOS_FILTER_MIN_COUNT:
       self.wheel_on_right = self.wheelpos_learner.filtered_stat.M > self.settings._WHEELPOS_THRESHOLD
     else:
-      self.wheel_on_right = rhd_pred > self.settings._WHEELPOS_THRESHOLD
-    driver_data = driver_state.rightDriverData if self.rhd_toggled else driver_state.leftDriverData
+      self.wheel_on_right = self.wheel_on_right_default # use default/saved if calibration is unfinished
+    # make sure no switching when engaged
+    if op_engaged and self.wheel_on_right_last is not None and self.wheel_on_right_last != self.wheel_on_right:
+      self.wheel_on_right = self.wheel_on_right_last
+    driver_data = driver_state.rightDriverData if self.wheel_on_right else driver_state.leftDriverData
     if not all(len(x) > 0 for x in (driver_data.faceOrientation, driver_data.facePosition,
                                     driver_data.faceOrientationStd, driver_data.facePositionStd,
                                     driver_data.readyProb, driver_data.notReadyProb)):
@@ -243,18 +251,18 @@ class DriverStatus():
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_data.faceOrientation, driver_data.facePosition, cal_rpy)
     if self.wheel_on_right:
       self.pose.yaw *= -1
+    self.wheel_on_right_last = self.wheel_on_right
     self.pose.pitch_std = driver_data.faceOrientationStd[0]
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
     self.blink.left_blink = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.eev1 = driver_data.notReadyProb[1]
+    self.eev1 = driver_data.notReadyProb[0]
     self.eev2 = driver_data.readyProb[0]
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_POSE in self.distracted_types or
-                                            DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
+    self.driver_distracted = (DistractedType.DISTRACTED_E2E in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types or DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
                                           driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 

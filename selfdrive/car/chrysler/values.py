@@ -3,8 +3,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -22,27 +25,34 @@ class CAR:
 
   # Ram
   RAM_1500 = "RAM 1500 5TH GEN"
+  RAM_HD = "RAM HD 5TH GEN"
 
 
 class CarControllerParams:
   def __init__(self, CP):
-    self.STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
     self.STEER_ERROR_MAX = 80
-
-    if CP.carFingerprint in RAM_CARS:
+    if CP.carFingerprint in RAM_HD:
+      self.STEER_DELTA_UP = 14
+      self.STEER_DELTA_DOWN = 14
+      self.STEER_MAX = 361  # higher than this faults the EPS
+    elif CP.carFingerprint in RAM_DT:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
+      self.STEER_MAX = 261  # EPS allows more, up to 350?
     else:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
+      self.STEER_MAX = 261  # higher than this faults the EPS
 
 STEER_THRESHOLD = 120
 
-RAM_CARS = {CAR.RAM_1500, }
+RAM_DT = {CAR.RAM_1500, }
+RAM_HD = {CAR.RAM_HD, }
+RAM_CARS = RAM_DT | RAM_HD
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise"
+  package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.fca
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -56,7 +66,11 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.none),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.ram),
+  CAR.RAM_HD: [
+    ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 3500 2020-22", harness=Harness.ram),
+  ],
 }
 
 # Unique CAN messages:
@@ -107,12 +121,56 @@ FINGERPRINTS = {
   }],
   CAR.JEEP_CHEROKEE: [{
     55: 8, 168: 8, 181: 8, 256: 4, 257: 5, 258: 8, 264: 8, 268: 8, 272: 6, 273: 6, 274: 2, 280: 8, 284: 8, 288: 7, 290: 6, 292: 8, 300: 8, 308: 8, 320: 8, 324: 8, 331: 8, 332: 8, 344: 8, 352: 8, 362: 8, 368: 8, 376: 3, 384: 8, 388: 4, 416: 7, 448: 6, 456: 4, 464: 8, 500: 8, 501: 8, 512: 8, 514: 8, 520: 8, 532: 8, 544: 8, 557: 8, 559: 8, 560: 4, 564: 4, 571: 3, 579: 8, 584: 8, 608: 8, 618: 8, 624: 8, 625: 8, 632: 8, 639: 8, 656: 4, 658: 6, 660: 8, 671: 8, 672: 8, 676: 8, 678: 8, 680: 8, 683: 8, 684: 8, 703: 8, 705: 8, 706: 8, 709: 8, 710: 8, 719: 8, 720: 6, 729: 5, 736: 8, 737: 8, 738: 8, 746: 5, 752: 2, 754: 8, 760: 8, 761: 8, 764: 8, 766: 8, 773: 8, 776: 8, 779: 8, 782: 8, 783: 8, 784: 8, 785: 8, 788: 3, 792: 8, 799: 8, 800: 8, 804: 8, 806: 2, 808: 8, 810: 8, 816: 8, 817: 8, 820: 8, 825: 2, 826: 8, 831: 6, 832: 8, 838: 2, 840: 8, 844: 5, 847: 1, 848: 8, 853: 8, 856: 4, 860: 6, 863: 8, 874: 2, 882: 8, 897: 8, 906: 8, 924: 8, 937: 8, 938: 8, 939: 8, 940: 8, 941: 8, 942: 8, 943: 8, 947: 8, 948: 8, 956: 8, 968: 8, 969: 4, 970: 8, 973: 8, 974: 5, 975: 8, 976: 8, 977: 4, 979: 8, 980: 8, 981: 8, 982: 8, 983: 8, 984: 8, 992: 8, 993: 7, 995: 8, 996: 8, 1000: 8, 1001: 8, 1002: 8, 1003: 8, 1008: 8, 1009: 8, 1010: 8, 1011: 8, 1012: 8, 1013: 8, 1014: 8, 1015: 8, 1024: 8, 1025: 8, 1026: 8, 1031: 8, 1033: 8, 1050: 8, 1059: 8, 1062: 8, 1098: 8, 1100: 8, 1543: 8, 1562: 8, 2015: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
+  },
+    # Based on c88f65eeaee4003a|2022-08-04--15-37-16
+  {
+    257: 5, 258: 8, 264: 8, 268: 8, 274: 2, 280: 8, 284: 8, 288: 7, 290: 6, 292: 8, 300: 8, 308: 8, 320: 8, 324: 8, 331: 8, 332: 8, 344: 8, 352: 8, 362: 8, 368: 8, 376: 3, 384: 8, 388: 4, 416: 7, 448: 6, 456: 4, 464: 8, 500: 8, 501: 8, 512: 8, 514: 8, 520: 8, 532: 8, 544: 8, 557: 8, 559: 8, 560: 4, 564: 4, 571: 3, 584: 8, 608: 8, 624: 8, 625: 8, 632: 8, 639: 8, 658: 6, 660: 8, 671: 8, 672: 8, 678: 8, 680: 8, 684: 8, 703: 8, 705: 8, 706: 8, 709: 8, 710: 8, 719: 8, 720: 6, 729: 5, 736: 8, 737: 8, 746: 5, 752: 2, 760: 8, 761: 8, 764: 8, 766: 8, 773: 8, 776: 8, 779: 8, 783: 8, 784: 8, 792: 8, 799: 8, 800: 8, 804: 8, 806: 2, 810: 8, 816: 8, 817: 8, 820: 8, 825: 2, 826: 8, 831: 6, 832: 8, 838: 2, 844: 5, 848: 8, 853: 8, 856: 4, 860: 6, 863: 8, 882: 8, 897: 8, 924: 3, 937: 8, 947: 8, 948: 8, 969: 4, 974: 5, 977: 4, 979: 8, 980: 8, 981: 8, 982: 8, 983: 8, 984: 8, 992: 8, 993: 7, 995: 8, 996: 8, 1000: 8, 1001: 8, 1002: 8, 1003: 8, 1008: 8, 1009: 8, 1010: 8, 1011: 8, 1012: 8, 1013: 8, 1014: 8, 1015: 8, 1024: 8, 1025: 8, 1026: 8, 1031: 8, 1033: 8, 1050: 8, 1059: 8, 1062: 8, 1098: 8, 1100: 8, 1216: 8, 1218: 8, 1220: 8, 1223: 8, 1235: 8, 1242: 8, 1252: 8, 1792: 8, 1798: 8, 1799: 8, 1810: 8, 1813: 8, 1824: 8, 1825: 8, 1840: 8, 1856: 8, 1858: 8, 1859: 8, 1860: 8, 1862: 8, 1863: 8, 1872: 8, 1875: 8, 1879: 8, 1882: 8, 1888: 8, 1892: 8, 1927: 8, 1937: 8, 1953: 8, 1968: 8, 1988: 8, 2000: 8, 2001: 8, 2004: 8, 2015: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   }],
   CAR.JEEP_CHEROKEE_2019: [{
     # Jeep Grand Cherokee 2019, including most 2020 models
     55: 8, 168: 8, 179: 8, 181: 8, 256: 4, 257: 5, 258: 8, 264: 8, 268: 8, 272: 6, 273: 6, 274: 2, 280: 8, 284: 8, 288: 7, 290: 6, 292: 8, 300: 8, 308: 8, 320: 8, 324: 8, 331: 8, 332: 8, 341: 8, 344: 8, 352: 8, 362: 8, 368: 8, 376: 3, 384: 8, 388: 4, 416: 7, 448: 6, 456: 4, 464: 8, 500: 8, 501: 8, 512: 8, 514: 8, 520: 8, 530: 8, 532: 8, 544: 8, 557: 8, 559: 8, 560: 8, 564: 8, 571: 3, 579: 8, 584: 8, 608: 8, 618: 8, 624: 8, 625: 8, 632: 8, 639: 8, 640: 1, 656: 4, 658: 6, 660: 8, 671: 8, 672: 8, 676: 8, 678: 8, 680: 8, 683: 8, 684: 8, 703: 8, 705: 8, 706: 8, 709: 8, 710: 8, 719: 8, 720: 6, 729: 5, 736: 8, 737: 8, 738: 8, 746: 5, 752: 2, 754: 8, 760: 8, 761: 8, 764: 8, 766: 8, 773: 8, 776: 8, 779: 8, 782: 8, 783: 8, 784: 8, 785: 8, 792: 8, 799: 8, 800: 8, 804: 8, 806: 2, 808: 8, 810: 8, 816: 8, 817: 8, 820: 8, 825: 2, 826: 8, 831: 6, 832: 8, 838: 2, 840: 8, 844: 5, 847: 1, 848: 8, 853: 8, 856: 4, 860: 6, 863: 8, 882: 8, 897: 8, 906: 8, 924: 8, 937: 8, 938: 8, 939: 8, 940: 8, 941: 8, 942: 8, 943: 8, 947: 8, 948: 8, 960: 4, 968: 8, 969: 4, 970: 8, 973: 8, 974: 5, 976: 8, 977: 4, 979: 8, 980: 8, 981: 8, 982: 8, 983: 8, 984: 8, 992: 8, 993: 7, 995: 8, 996: 8, 1000: 8, 1001: 8, 1002: 8, 1003: 8, 1008: 8, 1009: 8, 1010: 8, 1011: 8, 1012: 8, 1013: 8, 1014: 8, 1015: 8, 1024: 8, 1025: 8, 1026: 8, 1031: 8, 1033: 8, 1050: 8, 1059: 8, 1062: 8, 1098: 8, 1100: 8, 1216: 8, 1218: 8, 1220: 8, 1223: 8, 1225: 8, 1227: 8, 1235: 8, 1242: 8, 1250: 8, 1251: 8, 1252: 8, 1254: 8, 1264: 8, 1284: 8, 1536: 8, 1537: 8, 1543: 8, 1545: 8, 1562: 8, 1568: 8, 1570: 8, 1572: 8, 1593: 8, 1856: 8, 1858: 8, 1860: 8, 1863: 8, 1865: 8, 1867: 8, 1875: 8, 1882: 8, 1890: 8, 1891: 8, 1892: 8, 1894: 8, 1896: 8, 1904: 8, 2015: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   }],
 }
+
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+
+CHRYSLER_RX_OFFSET = -0x280
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      rx_offset=CHRYSLER_RX_OFFSET,
+      bus=0,
+    ),
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      bus=0,
+    ),
+    Request(
+      [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+      [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      bus=0,
+    ),
+  ],
+  extra_ecus=[
+    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+  ],
+)
 
 FW_VERSIONS = {
   CAR.RAM_1500: {
@@ -129,7 +187,7 @@ FW_VERSIONS = {
       b'68428609AB',
       b'68500728AA',
     ],
-    (Ecu.esp, 0x747, None): [
+    (Ecu.abs, 0x747, None): [
       b'68432418AD',
       b'68432418AB',
       b'68436004AE',
@@ -138,7 +196,7 @@ FW_VERSIONS = {
       b'68535469AB',
       b'68438454AC',
     ],
-    (Ecu.fwdCamera, 0x753, None): [
+    (Ecu.fwdRadar, 0x753, None): [
       b'68320950AL',
       b'68320950AJ',
       b'68454268AB',
@@ -155,6 +213,7 @@ FW_VERSIONS = {
       b'68448163AJ',
       b'68500630AD',
       b'68539650AD',
+      b'68378758AM ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
@@ -166,11 +225,37 @@ FW_VERSIONS = {
       b'68540431AB',
       b'68484467AC',
     ],
-    (Ecu.gateway, 0x18DACBF1, None): [
-      b'68402660AB',
-      b'68445283AB',
-      b'68533631AB',
-      b'68500483AB',
+  },
+
+  CAR.RAM_HD: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68361606AH',
+      b'68492693AD',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68399794AC',
+      b'68428503AA',
+      b'68428505AA',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68334977AH',
+      b'68504022AB',
+      b'68530686AB',
+      b'68504022AC',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'04672895AB',
+      b'56029827AG',
+      b'68484694AE',
+    ],
+    (Ecu.eps, 0x761, None): [
+      b'68421036AC',
+      b'68507906AB',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'52421132AF',
+      b'M2370131MB',
+      b'M2421132MB',
     ],
   },
 }
@@ -184,4 +269,5 @@ DBC = {
   CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
+  CAR.RAM_HD: dbc_dict('chrysler_ram_hd_generated', None),
 }
