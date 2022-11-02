@@ -175,7 +175,7 @@ def finalize_update() -> None:
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
   run(["git", "reset", "--hard"], FINALIZED)
-  run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
+  run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
 
   cloudlog.info("Starting git cleanup in finalized update")
   t = time.monotonic()
