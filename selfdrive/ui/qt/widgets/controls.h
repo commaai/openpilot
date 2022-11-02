@@ -143,8 +143,7 @@ public:
     key = param.toStdString();
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       QString content("<body><h2>" + title + "</h2>"
-                      "<p>" + getDescription() + "</p><br/>"
-                      "<p><strong>" + tr("Are you sure you want to enable this toggle?") + "</strong></p></body>");
+                      "<p>" + getDescription() + "</p></body>");
       if (!confirm || !state || RichTextDialog::confirm(content, this)) {
         params.putBool(key, state);
       } else {

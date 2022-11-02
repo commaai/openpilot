@@ -462,13 +462,6 @@ location set</source>
     </message>
 </context>
 <context>
-    <name>ParamControl</name>
-    <message>
-        <source>Are you sure you want to enable this toggle?</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
