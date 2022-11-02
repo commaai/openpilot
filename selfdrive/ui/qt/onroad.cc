@@ -458,24 +458,23 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  QLinearGradient bg(0, height(), 0, height() / 4);
+  QLinearGradient bg(0, height(), 0, scene.track_vertices[16].y());
   float start_hue, end_hue;
-  if (scene.end_to_end_long) {
+  if (true) {
     const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
     float acceleration_future = 0;
     if (acceleration.getZ().size() > 16) {
       acceleration_future = acceleration.getX()[16];  // 2.5 seconds
     }
-    start_hue = 60;
-    // speed up: 120, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 30, 120), 0);
+    start_hue = 208;
+    end_hue = fmax(fmin(start_hue - (acceleration_future * 56), 330), 122);
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.65, 0.5, 0.4));
+    bg.setColorAt(0.95, QColor::fromHslF(end_hue / 360., 0.65, 0.5, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 0.65, 0.5, 0.0));
   } else {
     const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
     float orientation_future = 0;
