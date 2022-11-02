@@ -325,7 +325,6 @@ void ChartView::updateLineMarker(double current_sec) {
           chart()->plotArea().width() * (current_sec - axis_x->min()) / (axis_x->max() - axis_x->min());
   if (int(line_marker->line().x1()) != x) {
     line_marker->setLine(x, 0, x, height());
-    chart()->update();
   }
 }
 
@@ -410,6 +409,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   } else {
     QGraphicsView::mouseReleaseEvent(event);
   }
+  setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
@@ -436,6 +436,8 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     track_line->setVisible(value != vals.end());
     value_text->setVisible(value != vals.end());
     track_ellipse->setVisible(value != vals.end());
+  } else {
+    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   }
   QChartView::mouseMoveEvent(ev);
 }
