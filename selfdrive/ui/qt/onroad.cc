@@ -458,9 +458,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  int min_y = std::max_element(scene.track_vertices.begin(), scene.track_vertices.end(),
-                               [](const QPointF &a, const QPointF &b) { return a.y() > b.y(); })->y();
-  QLinearGradient bg(0, height(), 0, min_y);
+  QLinearGradient bg(0, height(), 0, height() / 4);
   float start_hue, end_hue;
   if (scene.end_to_end_long) {
     const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
@@ -469,14 +467,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       acceleration_future = acceleration.getX()[16];  // 2.5 seconds
     }
     start_hue = 208;
-    end_hue = fmax(fmin(start_hue - (acceleration_future * 40), 290), 122);
+    end_hue = fmax(fmin(start_hue - (acceleration_future * 55), 290), 122);
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.65, 0.5, 0.4));
-    bg.setColorAt(0.98, QColor::fromHslF(end_hue / 360., 0.65, 0.5, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 0.65, 0.5, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.65, 0.6, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 0.65, 0.6, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 0.65, 0.6, 0.0));
   } else {
     const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
     float orientation_future = 0;
@@ -491,7 +489,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
     bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.98, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
     bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   }
 
