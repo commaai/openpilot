@@ -148,7 +148,7 @@ pipeline {
           }
         }
 
-        stage('sensord') {
+        stage('sensord (LSM-C)') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-lsmc", [
