@@ -64,13 +64,6 @@ class CarInterface(CarInterfaceBase):
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
 
       if experimental_long:
-        # Longitudinal tuning
-        ret.stopAccel = -2.0
-        ret.stoppingDecelRate = 2  # reach brake quickly after enabling
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
-        ret.longitudinalActuatorDelayUpperBound = 0.5
-
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
@@ -100,9 +93,20 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 0.444  # not optimized yet
 
     ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.36]
+
+    if candidate in CAMERA_ACC_CAR:
+      # Longitudinal tuning
+      ret.longitudinalTuning.kpV = [2.0, 1.5]
+      ret.longitudinalTuning.kiV = [0.72]
+      ret.stopAccel = -2.0
+      ret.stoppingDecelRate = 2  # reach brake quickly after enabling
+      ret.vEgoStopping = 0.25
+      ret.vEgoStarting = 0.25
+      ret.longitudinalActuatorDelayUpperBound = 0.5
+    else:
+      ret.longitudinalTuning.kpV = [2.4, 1.5]
+      ret.longitudinalTuning.kiV = [0.36]
 
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.15]
