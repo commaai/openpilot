@@ -137,7 +137,7 @@ class ParamControl : public ToggleControl {
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool confirm, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
-    QString content("<body><h2>" + title + "</h2><p>" + desc + "</p><br/><p><strong>" + tr("Are you sure?") + "</strong></p></body>");
+    QString content("<body><h2>" + title + "</h2><p>" + desc + "</p><br/><p><strong>" + tr("Are you sure you want to enable this toggle?") + "</strong></p></body>");
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       if (!confirm || !state || RichTextDialog::confirm(content, this)) {
         params.putBool(key, state);

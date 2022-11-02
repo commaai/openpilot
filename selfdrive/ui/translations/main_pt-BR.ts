@@ -467,7 +467,7 @@ trabalho definido</translation>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Are you sure?</source>
+        <source>Are you sure you want to enable this toggle?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
