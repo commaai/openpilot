@@ -155,6 +155,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show) {
     charts_layout->insertWidget(0, chart);
     charts.push_back(chart);
     emit chartOpened(chart->id, chart->signal);
+    updateState();
   }
   updateTitleBar();
 }

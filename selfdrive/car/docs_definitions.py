@@ -71,6 +71,13 @@ class Harness(Enum):
 CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
 
 
+class CommonFootnote(Enum):
+  EXP_LONG_AVAIL = CarFootnote(
+    "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. " +
+    "Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
+    Column.LONGITUDINAL)
+
+
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
   # Returns applicable footnotes given current column
   return [fn for fn in footnotes if fn.value.column == column]
@@ -128,11 +135,19 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+
+    op_long = "Stock"
+    if CP.openpilotLongitudinalControl:
+      op_long = "openpilot"
+    elif CP.experimentalLongitudinalAvailable:
+      op_long = "openpilot available"
+      self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable else "Stock",
+      Column.LONGITUDINAL: op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
