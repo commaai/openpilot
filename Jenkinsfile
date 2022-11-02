@@ -147,7 +147,7 @@ pipeline {
                   ["test camerad", "python system/camerad/test/test_camerad.py"],
                   ["test exposure", "python system/camerad/test/test_exposure.py"],
                 ])
-              },
+              }
               cameraOX: {
                 phone_steps("tici-ox03c10", [
                   ["build", "cd selfdrive/manager && ./build.py"],
