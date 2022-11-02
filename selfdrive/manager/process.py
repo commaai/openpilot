@@ -91,7 +91,7 @@ class ManagerProcess(ABC):
     pass
 
   def restart(self) -> None:
-    self.stop()
+    self.stop(block=False)
     self.start()
 
   def check_watchdog(self, started: bool) -> None:
