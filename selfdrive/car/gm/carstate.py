@@ -44,7 +44,11 @@ class CarState(CarStateBase):
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
-    ret.standstill = abs(ret.wheelSpeeds.rl) <= STANDSTILL_THRESHOLD and abs(ret.wheelSpeeds.rr) <= STANDSTILL_THRESHOLD
+    # ret.standstill = abs(ret.wheelSpeeds.rl) <= STANDSTILL_THRESHOLD and abs(ret.wheelSpeeds.rr) <= STANDSTILL_THRESHOLD
+    ret.standstill = not any((pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"],
+                              pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward2"],
+                              pt_cp.vl["EBCMWheelSpdRear"]["MovingForward"],
+                              pt_cp.vl["EBCMWheelSpdRear"]["MovingForward2"]))
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
@@ -140,7 +144,10 @@ class CarState(CarStateBase):
       ("FRWheelSpd", "EBCMWheelSpdFront"),
       ("RLWheelSpd", "EBCMWheelSpdRear"),
       ("RRWheelSpd", "EBCMWheelSpdRear"),
+      ("MovingForward", "EBCMWheelSpdRear"),
+      ("MovingForward2", "EBCMWheelSpdRear"),
       ("MovingBackward", "EBCMWheelSpdRear"),
+      ("MovingBackward2", "EBCMWheelSpdRear"),
       ("PRNDL2", "ECMPRDNL2"),
       ("ManualMode", "ECMPRDNL2"),
       ("LKADriverAppldTrq", "PSCMStatus"),
