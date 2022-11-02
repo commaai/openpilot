@@ -292,6 +292,7 @@ CONFIGS = [
     pub_sub={
       "modelV2": ["lateralPlan", "longitudinalPlan"],
       "carControl": [], "carState": [], "controlsState": [], "radarState": [],
+      "cameraOdometry": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params,
