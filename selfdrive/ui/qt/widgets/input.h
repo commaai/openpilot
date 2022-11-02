@@ -65,8 +65,10 @@ class RichTextDialog : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit RichTextDialog(const QString &prompt_text, const QString &btn_text, QWidget* parent);
+  explicit RichTextDialog(const QString &prompt_text, const QString &confirm_text,
+                          const QString &cancel_text, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
+  static bool confirm(const QString &prompt_text, QWidget *parent);
 };
 
 class MultiOptionDialog : public QDialogBase {

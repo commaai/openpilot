@@ -7,6 +7,7 @@
 #include <QPushButton>
 
 #include "common/params.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
@@ -134,10 +135,15 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool confirm, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
+    QString content("<body><h2>" + title + "</h2><p>" + desc + "</p><br/><p><strong>" + tr("Are you sure?") + "</strong></p></body>");
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
-      params.putBool(key, state);
+      if (!confirm || !state || RichTextDialog::confirm(content, this)) {
+        params.putBool(key, state);
+      } else {
+        toggle.togglePosition();
+      }
     });
   }
 
