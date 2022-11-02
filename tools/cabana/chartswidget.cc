@@ -368,8 +368,13 @@ void ChartView::updateAxisY() {
 
   auto end = std::upper_bound(vals.begin(), vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
   const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
-  (min->y() == max->y()) ? axis_y->setRange(min->y() - 1, max->y() + 1)
-                         : axis_y->setRange(min->y(), max->y());
+  if (max->y() == min->y()) {
+    axis_y->setRange(min->y() - 1, max->y() + 1);
+  } else {
+    double range = max->y() - min->y();
+    axis_y->setRange(min->y() - range * 0.05, max->y() + range * 0.05);
+    axis_y->applyNiceNumbers();
+  }
 }
 
 void ChartView::enterEvent(QEvent *event) {
