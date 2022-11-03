@@ -13,7 +13,7 @@ public:
   void load();
 
   int fps = 10;
-  int can_msg_log_size = 100;
+  int can_msg_log_size = 50;
   int cached_segment_limit = 3;
   int chart_height = 200;
   int chart_theme = 0;
