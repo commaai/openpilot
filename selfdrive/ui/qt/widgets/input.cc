@@ -192,8 +192,8 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   QLabel *prompt = new QLabel(prompt_text, this);
   prompt->setWordWrap(true);
   prompt->setAlignment(rich ? Qt::AlignLeft : Qt::AlignHCenter);
-  prompt->setStyleSheet(rich ? "font-size: 42px; font-weight: light;" : "font-size: 70px; font-weight: bold;");
-  main_layout->addWidget(new ScrollView(prompt, this), 1, Qt::AlignTop);
+  prompt->setStyleSheet((rich ? "font-size: 42px; font-weight: light;" : "font-size: 70px; font-weight: bold;") + QString(" margin: 45px;"));
+  main_layout->addWidget(rich ? (QWidget*)new ScrollView(prompt, this) : (QWidget*)prompt, 1, Qt::AlignTop);
 
   // cancel + confirm buttons
   QHBoxLayout *btn_layout = new QHBoxLayout();
@@ -213,7 +213,7 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   }
 
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  int margin = rich ? 100 : 190;
+  int margin = rich ? 100 : 200;
   outer_layout->setContentsMargins(margin, margin, margin, margin);
   outer_layout->addWidget(container);
 }
