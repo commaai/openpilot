@@ -467,7 +467,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       acceleration_future = acceleration.getX()[10];  // 1.0 second
     }
     start_hue = 210;
-    end_hue = fmax(fmin(195 - (accel_filter.update(acceleration_future) * 100), 360), 90);
+    end_hue = fmax(fmin(195 - (accel_filter.update(acceleration_future) * 80), 360), 90);
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
