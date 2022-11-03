@@ -63,10 +63,6 @@ class TestCarDocs(unittest.TestCase):
         elif car.car_name in ("toyota", "hyundai"):
           self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
 
-  # def test_auto_resume(self):
-  #   for car in self.all_cars:
-
-
   def test_year_format(self):
     for car in self.all_cars:
       with self.subTest(car=car):
