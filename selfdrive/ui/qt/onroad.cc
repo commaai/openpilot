@@ -170,7 +170,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), accel_filter(UI_FREQ, .2, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), accel_filter(UI_FREQ, .5, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
@@ -466,15 +466,23 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     if (acceleration.getZ().size() > 10) {
       acceleration_future = acceleration.getX()[10];  // 1.0 second
     }
-    start_hue = 215;
-    end_hue = fmax(fmin(200 - (accel_filter.update(acceleration_future) * 100), 360), 90);
+    int decel_hue = 15;
+    int accel_hue = 112;
+    float acceleration_filtered = pow(accel_filter.update(acceleration_future), 3);
+//    acceleration_filtered = fabs(acceleration_filtered) < 0.25 ? 0 : acceleration_filtered;
+    start_hue = fmax(fmin(215 - (acceleration_filtered * 0), 360), 90);
+    end_hue = fmax(fmin(200 - (acceleration_filtered * 100), 360), 90);
+    int hue = acceleration_filtered > 0 ? accel_hue : decel_hue;
+    float saturation = fmax(fmin(fabs(acceleration_filtered), 1), 0);
+    qDebug() << saturation;
+//    fabs(acceleration_filtered) / 1.5
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.94, 0.51, 0.6));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.45));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(hue / 360., saturation, 0.40, 0.55));
+    bg.setColorAt(0.5, QColor::fromHslF((hue - 15) / 360., saturation, 0.57, 0.45));
+    bg.setColorAt(1.0, QColor::fromHslF((hue - 15) / 360., saturation, 0.57, 0.0));
   } else {
     const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
     float orientation_future = 0;
