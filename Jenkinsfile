@@ -93,7 +93,7 @@ pipeline {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
               sleep 5
-              sh "ps -aux | grep carla"
+              sh "ps -aux"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
@@ -122,7 +122,7 @@ pipeline {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
               sleep 5
-              sh "ps -aux | grep carla"
+              sh "ps -aux"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
@@ -151,7 +151,7 @@ pipeline {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
               sleep 5
-              sh "ps -aux | grep carla"
+              sh "ps -aux"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
