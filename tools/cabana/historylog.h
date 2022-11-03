@@ -6,9 +6,9 @@
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
 
-class MyHeaderView : public QHeaderView {
+class HeaderView : public QHeaderView {
 public:
-  MyHeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
+  HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
   QSize sectionSizeFromContents(int logicalIndex) const;
 };
 
