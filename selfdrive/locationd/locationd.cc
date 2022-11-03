@@ -267,7 +267,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
   bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
   bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
-  bool gps_accuracy_insane_quectel = (log.getAccuracy() == 0) && (log.getVerticalAccuracy() == 500);
+  bool gps_accuracy_insane_quectel = log.getVerticalAccuracy() >= 500;
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
