@@ -21,7 +21,7 @@ class ChartView : public QChartView {
 
 public:
   ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
-  void updateSeries(const std::pair<double, double> &range);
+  void updateSeries(const std::pair<double, double> range);
   void setRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
   void updateFromSettings();
@@ -42,7 +42,7 @@ private:
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;
   QGraphicsLineItem *line_marker;
-  QList<QPointF> vals;
+  QVector<QPointF> vals;
   QString id;
   const Signal *signal;
 };

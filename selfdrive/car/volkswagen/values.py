@@ -227,7 +227,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Audi S3 2015-17"),
   ],
   CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018"),
-  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2019-23"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
@@ -872,20 +872,24 @@ FW_VERSIONS = {
   CAR.AUDI_Q3_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018N \xf1\x899970',
+      b'\xf1\x8705L906022M \xf1\x890901',
       b'\xf1\x8783A906259  \xf1\x890001',
       b'\xf1\x8783A906259  \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158CN\xf1\x893608',
+      b'\xf1\x870GC300045D \xf1\x892802',
       b'\xf1\x870GC300046F \xf1\x892701',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655BF\xf1\x890403\xf1\x82\x1321211111211200311121232152219321422111',
+      b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111224118A119321532111',
       b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111237116A119321532111',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000300',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000800',
+      b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\x0571G60533A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',

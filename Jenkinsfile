@@ -148,6 +148,16 @@ pipeline {
           }
         }
 
+        stage('sensord (LSM-C)') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-lsmc", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+            ])
+          }
+        }
+
         stage('replay') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
