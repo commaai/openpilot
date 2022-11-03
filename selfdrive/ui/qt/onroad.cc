@@ -170,7 +170,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), accel_filter(UI_FREQ, .2, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
@@ -467,7 +467,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       acceleration_future = acceleration.getX()[10];  // 1.0 second
     }
     start_hue = 210;
-    end_hue = fmax(fmin(195 - (acceleration_future * 75), 360), 90);
+    end_hue = fmax(fmin(195 - (accel_filter.update(acceleration_future) * 100), 360), 90);
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
