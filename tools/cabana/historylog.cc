@@ -1,7 +1,6 @@
 #include "tools/cabana/historylog.h"
 
 #include <QFontDatabase>
-#include <QHeaderView>
 #include <QVBoxLayout>
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
@@ -37,9 +36,11 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return has_signal ? QString::fromStdString(dbc_msg->sigs[section - 1].name).replace('_', '\n') : "Data";
+      return has_signal ? QString::fromStdString(dbc_msg->sigs[section - 1].name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
+    } else if (role == Qt::SizeHintRole) {
+
     }
   }
   return {};
@@ -64,17 +65,27 @@ void HistoryLogModel::updateState() {
   }
 }
 
-HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
+QSize MyHeaderView::sectionSizeFromContents(int logicalIndex) const {
+  const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+  const QRect rect = fontMetrics().boundingRect(QRect(0, 0, sectionSize(logicalIndex), 1000), defaultAlignment(), text);
+
+  // const QSize textMarginBuffer(5, 5);  // buffer space around text preventing clipping
+  return rect.size() + QSize{11, 11};
+}
+
+HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   model = new HistoryLogModel(this);
-  table = new QTableView(this);
-  table->setModel(model);
-  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-  table->setColumnWidth(0, 60);
-  table->verticalHeader()->setVisible(false);
-  table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
-  table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
-  main_layout->addWidget(table);
+  setModel(model);
+  MyHeaderView *header = new MyHeaderView(Qt::Horizontal, this);
+  setHorizontalHeader(header);
+  horizontalHeader()->setStretchLastSection(true);
+  // horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
+  horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  verticalHeader()->setVisible(false);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+  setFrameShape(QFrame::NoFrame);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
 }
