@@ -380,13 +380,15 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   SubMaster &sm = *(s->sm);
   // TODO: handle controls unresponsive
   auto CC = sm["carControl"].getCarControl();
+  auto CS = sm["carState"].getCarState();
+
   int base_status = sm["controlsState"].getControlsState().getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-  int lat_status = (CC.getEnabled() && !CC.getLatActive()) ? STATUS_OVERRIDE : base_status;
+  int lat_status = (CC.getEnabled() && (!CC.getLatActive() || CS.getSteeringPressed())) ? STATUS_OVERRIDE : base_status;
+  int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
+
   drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
            steer_img, bg_colors[lat_status], 1.0);
-
-  int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
-  drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius*2 + int(bdr_s * 1.5),
+  drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius * 2 + int(bdr_s * 1.5),
            longitudinal_img, bg_colors[long_status], 1.0);
 
   // dm icon
