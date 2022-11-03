@@ -76,6 +76,10 @@ class CommonFootnote(Enum):
     "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. " +
     "Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
     Column.LONGITUDINAL, docs_only=True)
+  EXP_LONG_DSU = CarFootnote(
+    "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
+    "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
+    Column.LONGITUDINAL)
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
@@ -137,11 +141,14 @@ class CarInfo:
     self.make, self.model, self.years = split_name(self.name)
 
     op_long = "Stock"
-    if CP.openpilotLongitudinalControl:
+    if CP.openpilotLongitudinalControl and not CP.enableDsu:
       op_long = "openpilot"
-    elif CP.experimentalLongitudinalAvailable:
+    elif CP.experimentalLongitudinalAvailable or CP.enableDsu:
       op_long = "openpilot available"
-      self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+      if CP.enableDsu:
+        self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
+      else:
+        self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
     self.row = {
       Column.MAKE: self.make,
