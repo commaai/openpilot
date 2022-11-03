@@ -10,8 +10,8 @@ from selfdrive.manager.process_config import managed_processes
 from system.hardware import TICI
 
 TEST_TIMESPAN = 30
-LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0321: 0.5, # ms
-                                              log.FrameData.ImageSensor.ox03c10: 1.0} # more tolerance due to passive sync
+LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0321: 0.5, # ARs use synced pulses for frame starts
+                                              log.FrameData.ImageSensor.ox03c10: 1.0} # OXs react to out-of-sync at next frame
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
