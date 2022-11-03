@@ -25,15 +25,13 @@ private:
   std::deque<CanData> messages;
 };
 
-class HistoryLog : public QWidget {
+class HistoryLog : public QTableView {
   Q_OBJECT
 
 public:
   HistoryLog(QWidget *parent);
   void setMessage(const QString &message_id) { model->setMessage(message_id); }
   void updateState() { model->updateState(); }
-
 private:
-  QTableView *table;
   HistoryLogModel *model;
 };
