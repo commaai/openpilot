@@ -272,7 +272,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   // quectel gps verticalAccuracy is clipped to 500
   bool gps_accuracy_insane_quectel = false;
-  if (!Params().getBool("UbloxAvailable", true)) {
+  if (!ublox_available) {
     gps_accuracy_insane_quectel = log.getVerticalAccuracy() == 500;
   }
 
@@ -502,8 +502,10 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
+
+  ublox_available = Params().getBool("UbloxAvailable", true);
   const char* gps_location_socket;
-  if (Params().getBool("UbloxAvailable", true)) {
+  if (ublox_available) {
     gps_location_socket = "gpsLocationExternal";
   } else {
     gps_location_socket = "gpsLocation";

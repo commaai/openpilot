@@ -71,4 +71,5 @@ private:
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
+  bool ublox_available = true;
 };
