@@ -463,8 +463,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   if (scene.end_to_end_long) {
     const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
     float acceleration_future = 0;
-    if (acceleration.getZ().size() > 16) {
-      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+    if (acceleration.getZ().size() > 10) {
+      acceleration_future = acceleration.getX()[10];  // 1.0 second
     }
     start_hue = 210;
     end_hue = fmax(fmin(195 - (acceleration_future * 65), 360), 90);
