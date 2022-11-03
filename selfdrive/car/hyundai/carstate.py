@@ -21,8 +21,9 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
+    self.gear_msg_canfd = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
     if CP.carFingerprint in CANFD_CAR:
-      self.shifter_values = can_define.dv["GEAR_SHIFTER"]["GEAR"]
+      self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
@@ -154,17 +155,22 @@ class CarState(CarStateBase):
   def update_canfd(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    if self.CP.carFingerprint in EV_CAR:
-      ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
-    elif self.CP.carFingerprint in HYBRID_CAR:
-      ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
-    ret.gasPressed = ret.gas > 1e-5
-    ret.brakePressed = cp.vl["TCS"]["DriverBraking"] == 1
+    if self.CP.carFingerprint in (EV_CAR | HYBRID_CAR):
+      if self.CP.carFingerprint in EV_CAR:
+        ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
+      else:
+        ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
+      ret.gasPressed = ret.gas > 1e-5
+    else:
+      ret.gasPressed = bool(cp.vl["ACCELERATOR_BRAKE_ALT"]["ACCELERATOR_PEDAL_PRESSED"])
+
+    brake_msg = "ACCELERATOR_BRAKE_ALT" if self.CP.carFingerprint not in (EV_CAR | HYBRID_CAR) else "BRAKE"
+    ret.brakePressed = cp.vl[brake_msg]["BRAKE_PRESSED"] == 1
 
     ret.doorOpen = cp.vl["DOORS_SEATBELTS"]["DRIVER_DOOR_OPEN"] == 1
     ret.seatbeltUnlatched = cp.vl["DOORS_SEATBELTS"]["DRIVER_SEATBELT_LATCHED"] == 0
 
-    gear = cp.vl["GEAR_SHIFTER"]["GEAR"]
+    gear = cp.vl[self.gear_msg_canfd]["GEAR"]
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     # TODO: figure out positions
@@ -411,13 +417,16 @@ class CarState(CarStateBase):
   def get_can_parser_canfd(CP):
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
+    gear_msg = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
+    brake_msg = "ACCELERATOR_BRAKE_ALT" if CP.carFingerprint not in (EV_CAR | HYBRID_CAR) else "BRAKE"
     signals = [
       ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-      ("GEAR", "GEAR_SHIFTER"),
+      ("GEAR", gear_msg),
+      ("BRAKE_PRESSED", brake_msg),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
@@ -442,8 +451,8 @@ class CarState(CarStateBase):
 
     checks = [
       ("WHEEL_SPEEDS", 100),
-      ("GEAR_SHIFTER", 100),
-      ("BRAKE", 100),
+      (gear_msg, 100),
+      (brake_msg, 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("TCS", 50),
@@ -486,12 +495,21 @@ class CarState(CarStateBase):
       checks += [
         ("ACCELERATOR_ALT", 100),
       ]
+    else:
+      signals += [
+        ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_BRAKE_ALT"),
+      ]
+      checks += [
+        ("ACCELERATOR_BRAKE_ALT", 100),
+      ]
 
     bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
+    signals = []
+    checks = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
       signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks = [("CAM_0x2a4", 20)]

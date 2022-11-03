@@ -41,6 +41,11 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
+        # 2021 Santa Cruz does not have 0x130; GEARS message on 0x40
+        if 0x130 not in fingerprint[4]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
+      if candidate in CAMERA_SCC_CAR:
+        ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
@@ -120,6 +125,12 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
       tire_stiffness_factor = 0.385
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif candidate == CAR.SANTA_CRUZ_1ST_GEN:
+      ret.mass = 1870. + STD_CARGO_KG  # weight from Limited trim - the only supported trim
+      ret.wheelbase = 3.000
+      ret.steerRatio = 14.2 # steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Kia
     elif candidate == CAR.KIA_SORENTO:
@@ -138,6 +149,20 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.63
       ret.steerRatio = 14.56
       tire_stiffness_factor = 1
+      ret.lateralTuning.init('indi')
+      ret.lateralTuning.indi.innerLoopGainBP = [0.]
+      ret.lateralTuning.indi.innerLoopGainV = [4.]
+      ret.lateralTuning.indi.outerLoopGainBP = [0.]
+      ret.lateralTuning.indi.outerLoopGainV = [3.]
+      ret.lateralTuning.indi.timeConstantBP = [0.]
+      ret.lateralTuning.indi.timeConstantV = [1.4]
+      ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
+      ret.lateralTuning.indi.actuatorEffectivenessV = [1.8]
+    elif candidate == CAR.KIA_SPORTAGE_5TH_GEN:
+      ret.mass = 1700. + STD_CARGO_KG  # weight from SX and above trims, average of FWD and AWD versions
+      ret.wheelbase = 2.756
+      ret.steerRatio = 13.6 # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H):
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -189,6 +214,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 12.9
+    elif candidate == CAR.GENESIS_GV70_1ST_GEN:
+      ret.mass = 1950. + STD_CARGO_KG
+      ret.wheelbase = 2.87
+      ret.steerRatio = 14.6
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif candidate == CAR.GENESIS_G80:
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
@@ -202,7 +232,9 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = bool(ret.flags & HyundaiFlags.CANFD_HDA2)
+      ret.longitudinalActuatorDelayLowerBound = 0.15
+      ret.longitudinalActuatorDelayUpperBound = 0.5
+      ret.experimentalLongitudinalAvailable = bool(ret.flags & (HyundaiFlags.CANFD_HDA2 | HyundaiFlags.CANFD_CAMERA_SCC))
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
