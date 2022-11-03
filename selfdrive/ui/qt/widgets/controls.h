@@ -144,7 +144,8 @@ public:
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       QString content("<body><h2>" + title + "</h2>"
                       "<p>" + getDescription() + "</p></body>");
-      if (!confirm || !state || RichTextDialog::confirm(content, this)) {
+      ConfirmationDialog dialog(content, tr("Ok"), tr("Cancel"), true, this);
+      if (!confirm || !state || dialog.exec()) {
         params.putBool(key, state);
       } else {
         toggle.togglePosition();
