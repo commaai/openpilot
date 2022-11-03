@@ -37,7 +37,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return has_signal ? dbc_msg->sigs[section - 1].name.c_str() : "Data";
+      return has_signal ? QString::fromStdString(dbc_msg->sigs[section - 1].name).replace('_', '\n') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
     }
@@ -75,5 +75,6 @@ HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
   table->setColumnWidth(0, 60);
   table->verticalHeader()->setVisible(false);
   table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
+  table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
   main_layout->addWidget(table);
 }
