@@ -28,7 +28,6 @@ class CarState(CarStateBase):
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
     self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
     self.pscm_status = copy.copy(pt_cp.vl["PSCMStatus"])
-    self.moving_backward = pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"] != 0
 
     # Variables used for avoiding LKAS faults
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
@@ -45,6 +44,7 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
     ret.standstill = ret.wheelSpeeds.rl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr <= STANDSTILL_THRESHOLD
+    self.moving_backward = pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"] != 0
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
