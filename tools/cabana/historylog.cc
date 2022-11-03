@@ -64,16 +64,15 @@ void HistoryLogModel::updateState() {
   }
 }
 
-HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
+HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   model = new HistoryLogModel(this);
-  table = new QTableView(this);
-  table->setModel(model);
-  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-  table->setColumnWidth(0, 60);
-  table->verticalHeader()->setVisible(false);
-  table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
-  main_layout->addWidget(table);
+  setModel(model);
+  horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  verticalHeader()->setVisible(false);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+  setFrameShape(QFrame::NoFrame);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
 }

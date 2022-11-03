@@ -61,7 +61,6 @@ public:
   void highlight(const Signal *sig);
   const Signal *hoveredSignal() const { return hovered_sig; }
   QSet<const Signal*> getOverlappingSignals() const;
-  QSize sizeHint() const override;
 
 signals:
   void signalHovered(const Signal *sig);
