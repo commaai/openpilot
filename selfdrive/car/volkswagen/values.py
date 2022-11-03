@@ -155,9 +155,6 @@ class Footnote(Enum):
     "Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot " +
     "in software, but doesn't yet have a harness available from the comma store.",
     Column.HARNESS)
-  VW_VARIANT = CarFootnote(
-    "Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.)",
-    Column.MODEL)
 
 
 @dataclass
@@ -168,10 +165,10 @@ class VWCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_VARIANT], video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_VARIANT], video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_VARIANT], video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_VARIANT], video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen CC 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
     VWCarInfo("Volkswagen Atlas 2018-23"),
@@ -182,12 +179,12 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014-20"),
-    VWCarInfo("Volkswagen Golf 2015-20", footnotes=[Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Golf 2015-20"),
     VWCarInfo("Volkswagen Golf Alltrack 2015-19"),
     VWCarInfo("Volkswagen Golf GTD 2015-20"),
     VWCarInfo("Volkswagen Golf GTE 2015-20"),
     VWCarInfo("Volkswagen Golf GTI 2015-21"),
-    VWCarInfo("Volkswagen Golf R 2015-19", footnotes=[Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Golf R 2015-19"),
     VWCarInfo("Volkswagen Golf SportsVan 2015-20"),
   ],
   CAR.JETTA_MK7: [
@@ -195,7 +192,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Jetta GLI 2021-22"),
   ],
   CAR.PASSAT_MK8: [
-    VWCarInfo("Volkswagen Passat 2015-22", footnotes=[Footnote.PASSAT, Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Passat 2015-22", footnotes=[Footnote.PASSAT]),
     VWCarInfo("Volkswagen Passat Alltrack 2015-22"),
     VWCarInfo("Volkswagen Passat GTE 2015-22"),
   ],
