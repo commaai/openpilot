@@ -1,11 +1,13 @@
 #include "tools/cabana/chartswidget.h"
 
+#include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QGridLayout>
 #include <QRubberBand>
 #include <QTimer>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
+#include <QtConcurrent>
 
 // ChartsWidget
 
@@ -116,8 +118,9 @@ void ChartsWidget::updateState() {
     display_range.first = std::max(display_range.first, event_range.first);
     display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
     if (prev_range != display_range) {
+      QFutureSynchronizer<void> future_synchronizer;
       for (auto c : charts)
-        c->chart_view->updateSeries(display_range);
+        future_synchronizer.addFuture(QtConcurrent::run(c->chart_view, &ChartView::updateSeries, display_range));
     }
   }
 
@@ -328,7 +331,7 @@ void ChartView::updateLineMarker(double current_sec) {
   }
 }
 
-void ChartView::updateSeries(const std::pair<double, double> &range) {
+void ChartView::updateSeries(const std::pair<double, double> range) {
   auto events = can->events();
   if (!events) return;
 
@@ -337,7 +340,7 @@ void ChartView::updateSeries(const std::pair<double, double> &range) {
   uint32_t address = l[1].toUInt(nullptr, 16);
 
   vals.clear();
-  vals.reserve((range.second - range.first) * 100);  // [n]minutes * 100hz
+  vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
   double route_start_time = can->routeStartTime();
   Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
   auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
