@@ -92,6 +92,8 @@ pipeline {
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+              sleep 5
+              ps -aux | grep carla
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
@@ -119,6 +121,8 @@ pipeline {
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+              sleep 5
+              sh "ps -aux | grep carla"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
@@ -146,6 +150,8 @@ pipeline {
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
+              sleep 5
+              sh "ps -aux | grep carla"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
           }
