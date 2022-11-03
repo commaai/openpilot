@@ -1,8 +1,9 @@
 #include "tools/cabana/historylog.h"
 
 #include <QFontDatabase>
-#include <QHeaderView>
 #include <QVBoxLayout>
+
+// HistoryLogModel
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
@@ -37,7 +38,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return has_signal ? dbc_msg->sigs[section - 1].name.c_str() : "Data";
+      return has_signal ? QString::fromStdString(dbc_msg->sigs[section - 1].name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
     }
@@ -64,10 +65,22 @@ void HistoryLogModel::updateState() {
   }
 }
 
+// HeaderView
+
+QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
+  const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+  const QRect rect = fontMetrics().boundingRect(QRect(0, 0, sectionSize(logicalIndex), 1000), defaultAlignment(), text);
+  return rect.size() + QSize{10, 5};
+}
+
+// HistoryLog
+
 HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   model = new HistoryLogModel(this);
   setModel(model);
+  setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
   horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   verticalHeader()->setVisible(false);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
