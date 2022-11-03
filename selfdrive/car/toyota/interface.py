@@ -189,7 +189,8 @@ class CarInterface(CarInterfaceBase):
     smartDsu = 0x2FF in fingerprint[0]
     # In TSS2 cars the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    if (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR) and (not smartDsu):
+    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in NO_DSU_CAR and not smartDsu
+    if len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in NO_DSU_CAR and not smartDsu:
       ret.experimentalLongitudinalAvailable = True
       if experimental_long:
         ret.enableDsu = True

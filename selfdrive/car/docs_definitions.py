@@ -141,11 +141,17 @@ class CarInfo:
     self.make, self.model, self.years = split_name(self.name)
 
     op_long = "Stock"
-    if CP.openpilotLongitudinalControl:
+    # if CP.enableDsu:
+    #   op_long = "openpilot available"
+    #   self.footnotes.append(CommonFootnote.TOYOTA_DSU_LONG)
+    if CP.openpilotLongitudinalControl and not CP.enableDsu:
       op_long = "openpilot"
-    elif CP.experimentalLongitudinalAvailable:
+    elif CP.experimentalLongitudinalAvailable or CP.enableDsu:
       op_long = "openpilot available"
-      self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+      if CP.enableDsu:
+        self.footnotes.append(CommonFootnote.TOYOTA_DSU_LONG)
+      else:
+        self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
     self.row = {
       Column.MAKE: self.make,
