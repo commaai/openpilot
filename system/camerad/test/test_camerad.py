@@ -64,7 +64,7 @@ class TestCamerad(unittest.TestCase):
     assert len(skips) == 0, f"Found frame skips, missing cameras for the following frames: {skips}"
 
   def test_frame_sync(self):
-    sensor_type = [getattr(msgs[0], msgs[0].which()).sensor for frame_id, msgs in self.log_by_frame_id.items()][0]
+    sensor_type = [getattr(msgs[0], msgs[0].which()).sensor for frame_id, msgs in self.log_by_frame_id.items()][0].raw
     frame_times = {frame_id: [getattr(m, m.which()).timestampSof for m in msgs] for frame_id, msgs in self.log_by_frame_id.items()}
     diffs = {frame_id: (max(ts) - min(ts))/1e6 for frame_id, ts in frame_times.items()}
 
