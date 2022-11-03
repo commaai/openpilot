@@ -10,8 +10,9 @@ from selfdrive.car.honda.values import CAR as HONDA
 
 
 class TestCarDocs(unittest.TestCase):
-  def setUp(self):
-    self.all_cars = get_all_car_info()
+  @classmethod
+  def setUpClass(cls):
+    cls.all_cars = get_all_car_info()
 
   def test_generator(self):
     generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)
@@ -61,6 +62,10 @@ class TestCarDocs(unittest.TestCase):
           self.assertEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has full torque star")
         elif car.car_name in ("toyota", "hyundai"):
           self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
+
+  # def test_auto_resume(self):
+  #   for car in self.all_cars:
+
 
   def test_year_format(self):
     for car in self.all_cars:
