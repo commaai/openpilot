@@ -68,14 +68,14 @@ class Harness(Enum):
   none = "None"
 
 
-CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
+CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only"], defaults=(None, False))
 
 
 class CommonFootnote(Enum):
   EXP_LONG_AVAIL = CarFootnote(
     "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. " +
     "Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
-    Column.LONGITUDINAL)
+    Column.LONGITUDINAL, docs_only=True)
   TOYOTA_DSU_LONG = CarFootnote(
     "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
     "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
