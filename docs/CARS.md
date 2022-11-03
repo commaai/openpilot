@@ -17,10 +17,10 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Audi|Q3 2020-21|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
-|Cadillac|Escalade ESV 2016[<sup>2</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
+|Cadillac|Escalade ESV 2016[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
-|Chevrolet|Volt 2017-18[<sup>2</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
+|Chevrolet|Volt 2017-18[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Chrysler|Pacifica 2021|All|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
@@ -31,12 +31,12 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Genesis|G70 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai F|
 |Genesis|G80 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Genesis|G90 2017-18|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
-|GMC|Acadia 2018[<sup>2</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
+|GMC|Acadia 2018[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |GMC|Sierra 1500 2020-21|Driver Alert Package II|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Honda|Accord 2018-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Accord Hybrid 2018-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Civic 2016-18|Honda Sensing|openpilot|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
-|Honda|Civic 2019-21|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|2 mph[<sup>3</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
+|Honda|Civic 2019-21|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|2 mph[<sup>4</sup>](#footnotes)|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Civic 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch B|
 |Honda|Civic Hatchback 2017-21|Honda Sensing|openpilot available[<sup>1</sup>](#footnotes)|0 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
 |Honda|Civic Hatchback 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch B|
@@ -105,21 +105,21 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Sportage Hybrid 2023|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Kia|Stinger 2018-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
 |Kia|Telluride 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
-|Lexus|CT Hybrid 2017-18|Lexus Safety System+|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|CT Hybrid 2017-18|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Lexus|ES Hybrid 2017-18|Lexus Safety System+|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|ES Hybrid 2017-18|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Lexus|ES Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Lexus|IS 2017-19|All|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Lexus|NX 2018-19|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|NX 2018-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|NX 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Lexus|NX Hybrid 2018-19|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|NX Hybrid 2018-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|NX Hybrid 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Lexus|RC 2017-20|All|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Lexus|RX 2016|Lexus Safety System+|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Lexus|RX 2017-19|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|RX 2016|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|RX 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|RX 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Lexus|RX Hybrid 2016|Lexus Safety System+|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Lexus|RX Hybrid 2017-19|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|RX Hybrid 2016|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Lexus|RX Hybrid 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Lexus|UX Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Mazda|CX-5 2022-23|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Mazda|
@@ -150,11 +150,11 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Škoda|Superb 2015-18|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|VW|
 |Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Avalon 2016|Toyota Safety Sense P|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|Avalon 2017-18|All|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|Avalon 2019-21|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Avalon 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Avalon 2017-18|All|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Avalon 2019-21|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Avalon 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Avalon Hybrid 2019-21|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Avalon Hybrid 2019-21|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Avalon Hybrid 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|C-HR 2017-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
@@ -162,32 +162,32 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>5</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Camry Hybrid 2018-20|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Camry Hybrid 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Corolla 2017-19|All|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Corolla 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Corolla 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Cross (Non-US only) 2020-21|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Hatchback 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Highlander 2017-19|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Highlander 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Highlander 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Highlander Hybrid 2017-19|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Highlander Hybrid 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Highlander Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Mirai 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Prius 2016|Toyota Safety Sense P|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|Prius 2017-20|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Prius 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Prius 2017-20|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Prius 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Prius Prime 2017-20|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Prius Prime 2017-20|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Prius Prime 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Prius v 2017|Toyota Safety Sense P|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|RAV4 2016|Toyota Safety Sense P|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|RAV4 2017-18|All|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Prius v 2017|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|RAV4 2017-18|All|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|RAV4 2019-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|RAV4 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|RAV4 Hybrid 2017-18|All|Stock[<sup>4</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|RAV4 Hybrid 2017-18|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|RAV4 Hybrid 2019-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|RAV4 Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
-|Toyota|Sienna 2018-20|All|Stock[<sup>4</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Sienna 2018-20|All|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Volkswagen|Arteon 2018-22[<sup>8,9</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|Arteon eHybrid 2020-22[<sup>8,9</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Volkswagen|Arteon R 2020-22[<sup>8,9</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
@@ -222,9 +222,9 @@ A supported vehicle is one that just works when you install a comma three. All s
 
 <a id="footnotes"></a>
 <sup>1</sup>Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. Using openpilot longitudinal may disable Automatic Emergency Braking (AEB). <br />
-<sup>2</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
-<sup>3</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
-<sup>4</sup>When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
+<sup>2</sup>When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
+<sup>3</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
+<sup>4</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
 <sup>5</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>6</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>7</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
