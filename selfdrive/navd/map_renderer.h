@@ -47,7 +47,6 @@ private:
   QTimer* timer;
 
 public slots:
-  void updateZoom(float zoom);
   void updatePosition(QMapbox::Coordinate position, float bearing);
   void updateRoute(QList<QGeoCoordinate> coordinates);
   void msgUpdate();
