@@ -67,7 +67,7 @@ static std::string get_time_str(const struct tm &time) {
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
-    if (!panda->connected) {
+    if (!panda->connected()) {
       do_exit = true;
       return false;
     }
@@ -357,7 +357,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
   #endif
 
-    if (!panda->comms_healthy) {
+    if (!panda->comms_healthy()) {
       evt.setValid(false);
     }
 
@@ -433,7 +433,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
-  evt.setValid(panda->comms_healthy);
+  evt.setValid(panda->comms_healthy());
 
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
@@ -526,7 +526,7 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 

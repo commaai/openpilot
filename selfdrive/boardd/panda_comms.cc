@@ -1,13 +1,9 @@
 #include "selfdrive/boardd/panda.h"
 
-#include <unistd.h>
-
 #include <cassert>
 #include <stdexcept>
-#include <vector>
 
 #include "common/swaglog.h"
-#include "common/util.h"
 
 static int init_usb_ctx(libusb_context **context) {
   assert(context != nullptr);

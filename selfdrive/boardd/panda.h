@@ -15,6 +15,36 @@
 #include "selfdrive/boardd/panda_comms.h"
 
 
+#define PANDA_CAN_CNT 3
+#define PANDA_BUS_CNT 4
+
+#define USB_TX_SOFT_LIMIT   (0x100U)
+#define USBPACKET_MAX_SIZE  (0x40)
+
+#define RECV_SIZE (0x4000U)
+#define CANPACKET_HEAD_SIZE 5U
+#define CANPACKET_MAX_SIZE  72U
+#define CANPACKET_REJECTED  (0xC0U)
+#define CANPACKET_RETURNED  (0x80U)
+
+struct __attribute__((packed)) can_header {
+  uint8_t reserved : 1;
+  uint8_t bus : 3;
+  uint8_t data_len_code : 4;
+  uint8_t rejected : 1;
+  uint8_t returned : 1;
+  uint8_t extended : 1;
+  uint32_t addr : 29;
+};
+
+struct can_frame {
+  long address;
+  std::string dat;
+  long busTime;
+  long src;
+};
+
+
 class Panda {
 private:
   PandaCommsHandle *handle = NULL;
@@ -25,11 +55,12 @@ public:
   ~Panda();
 
   std::string hw_serial;
-  std::atomic<bool> connected = true;
-  std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
   const uint32_t bus_offset;
+
+  bool connected();
+  bool comms_healthy();
 
   // Static functions
   static std::vector<std::string> list();

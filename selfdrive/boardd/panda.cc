@@ -4,16 +4,14 @@
 
 #include <cassert>
 #include <stdexcept>
-#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
-#include "common/gpio.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // TODO: support SPI here one day
+  // TODO: support SPI here one day...
   handle = new PandaUsbHandle(serial);
   if (!handle) {
     goto fail;
@@ -40,7 +38,14 @@ Panda::~Panda() {
   std::lock_guard lk(hw_lock);
   cleanup();
   */
-  connected = false;
+}
+
+bool Panda::connected() {
+  return handle->connected;
+}
+
+bool Panda::comms_healthy() {
+  return handle->comms_healthy;
 }
 
 std::vector<std::string> Panda::list() {
@@ -229,7 +234,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t data[RECV_SIZE];
   int recv = handle->bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
-  if (!comms_healthy) {
+  if (!comms_healthy()) {
     return false;
   }
   if (recv == RECV_SIZE) {
@@ -244,7 +249,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
   for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
     if (data[i] != i / USBPACKET_MAX_SIZE) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
-      comms_healthy = false;
+      handle->comms_healthy = false;
       return false;
     }
     int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));

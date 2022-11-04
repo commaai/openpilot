@@ -3,49 +3,16 @@
 #include <mutex>
 #include <atomic>
 #include <cstdint>
-#include <ctime>
-#include <functional>
-#include <list>
-#include <optional>
 #include <vector>
 
 #include <libusb-1.0/libusb.h>
 
-#include "cereal/gen/cpp/car.capnp.h"
-#include "cereal/gen/cpp/log.capnp.h"
-
 #define TIMEOUT 0
-#define PANDA_CAN_CNT 3
-#define PANDA_BUS_CNT 4
-#define RECV_SIZE (0x4000U)
-#define USB_TX_SOFT_LIMIT   (0x100U)
-#define USBPACKET_MAX_SIZE  (0x40)
-#define CANPACKET_HEAD_SIZE 5U
-#define CANPACKET_MAX_SIZE  72U
-#define CANPACKET_REJECTED  (0xC0U)
-#define CANPACKET_RETURNED  (0x80U)
 
-struct __attribute__((packed)) can_header {
-  uint8_t reserved : 1;
-  uint8_t bus : 3;
-  uint8_t data_len_code : 4;
-  uint8_t rejected : 1;
-  uint8_t returned : 1;
-  uint8_t extended : 1;
-  uint32_t addr : 29;
-};
-
-struct can_frame {
-	long address;
-	std::string dat;
-	long busTime;
-	long src;
-};
 
 // comms base class
 class PandaCommsHandle {
 public:
-
   PandaCommsHandle(std::string serial) {};
   virtual void cleanup() = 0;
 
