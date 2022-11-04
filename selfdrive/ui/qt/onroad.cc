@@ -173,9 +173,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
+  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
-  steer_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
-  longitudinal_img = loadPixmap("../assets/offroad/icon_disengage_on_accelerator.svg", {img_size, img_size});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -305,6 +304,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   speed_rect.moveTop(set_speed_rect.top() + 77);
   p.drawText(speed_rect, Qt::AlignCenter, setSpeedStr);
 
+
+
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
     const int border_width = 6;
@@ -375,22 +376,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // lateral + longitudinal control icons
-  // TODO: handle controls unresponsive
+  // engage-ability icon
   if (engageable) {
-    UIState *s = uiState();
-    SubMaster &sm = *(s->sm);
-    auto CC = sm["carControl"].getCarControl();
-    auto CS = sm["carState"].getCarState();
-
-    int base_status = sm["controlsState"].getControlsState().getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-    int lat_status = (CC.getEnabled() && (!CC.getLatActive() || CS.getSteeringPressed())) ? STATUS_OVERRIDE : base_status;
-    int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
-
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             steer_img, bg_colors[lat_status], 1.0);
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius * 2 + int(bdr_s * 1.5),
-             longitudinal_img, bg_colors[long_status], 1.0);
+             engage_img, bg_colors[status], 1.0);
   }
 
   // dm icon
@@ -469,7 +458,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  qDebug() << std::size(scene.track_vertices);
   QLinearGradient bg(0, height(), 0, height() / 4);
   float start_hue, end_hue;
   if (scene.end_to_end_long) {
@@ -581,7 +569,6 @@ void AnnotatedCameraWidget::paintGL() {
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
-//    qDebug() << wide_cam_requested;
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
@@ -598,8 +585,6 @@ void AnnotatedCameraWidget::paintGL() {
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
-
-//  qDebug() << s->worldObjectsVisible();
 
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {

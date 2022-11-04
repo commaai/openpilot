@@ -151,17 +151,11 @@ QWidget* topWidget (QWidget* widget) {
 }
 
 QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMode aspectRatioMode) {
-  QPixmap p;
-  if (fileName.endsWith(".svg")) {
-    p = QIcon(fileName).pixmap(size);
+  if (size.isEmpty()) {
+    return QPixmap(fileName);
   } else {
-    p = QPixmap(fileName);
+    return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
   }
-
-  if (!size.isEmpty()) {
-    p = p.scaled(size, aspectRatioMode, Qt::SmoothTransformation);
-  }
-  return p;
 }
 
 QRect getTextRect(QPainter &p, int flags, const QString &text) {
