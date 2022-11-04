@@ -487,13 +487,6 @@ class CarState(CarStateBase):
       checks += [
         ("ACCELERATOR_ALT", 100),
       ]
-    else:
-      signals += [
-        ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_BRAKE_ALT"),
-      ]
-      checks += [
-        ("ACCELERATOR_BRAKE_ALT", 100),
-      ]
 
     bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
