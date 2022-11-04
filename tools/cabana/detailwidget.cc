@@ -31,7 +31,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QFrame *title_frame = new QFrame(this);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
   title_frame->setFrameShape(QFrame::StyledPanel);
-  title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
@@ -80,7 +79,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // signals
   signals_container = new QWidget(this);
   signals_container->setLayout(new QVBoxLayout);
-  signals_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   container_layout->addWidget(signals_container);
 
   // history log
@@ -147,32 +145,35 @@ void DetailWidget::setMessage(const QString &message_id) {
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (msg_id.isEmpty()) return;
 
-  warning_widget->hide();
+  setUpdatesEnabled(false);
   QStringList warnings;
+  for (auto f : signal_list) f->hide();
 
-  clearLayout(signals_container->layout());
-  QString msg_name = tr("untitled");
-  if (auto msg = dbc()->msg(msg_id)) {
+  const Msg *msg = dbc()->msg(msg_id);
+  if (msg) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      auto form = new SignalEdit(i, msg_id, &(msg->sigs[i]));
-      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
-      signals_container->layout()->addWidget(form);
-      QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
-      QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
-      QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
-      QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
-      QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
-      QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]](bool show) { charts->showChart(msg_id, sig, show); });
-      if (i == show_form_idx) {
-        QTimer::singleShot(0, [=]() { emit form->showFormClicked(); });
+      SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
+      if (!form) {
+        form = new SignalEdit(i);
+        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
+        QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
+        QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
+        QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
+        QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
+        QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
+        signals_container->layout()->addWidget(form);
+        signal_list.push_back(form);
       }
+      form->setSignal(msg_id, &(msg->sigs[i]), i == show_form_idx);
+      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
+      form->show();
     }
-    msg_name = msg->name.c_str();
     if (msg->size != can->lastMessage(msg_id).dat.size())
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
   }
+
   edit_btn->setVisible(true);
-  name_label->setText(msg_name);
+  name_label->setText(msg ? msg->name.c_str() : "untitled");
 
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
@@ -183,10 +184,9 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
       warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
   }
 
-  if (!warnings.isEmpty()) {
-    warning_label->setText(warnings.join('\n'));
-    warning_widget->show();
-  }
+  warning_label->setText(warnings.join('\n'));
+  warning_widget->setVisible(!warnings.isEmpty());
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState() {
@@ -199,18 +199,15 @@ void DetailWidget::updateState() {
 
 void DetailWidget::showForm() {
   SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
-  for (auto f : signals_container->findChildren<SignalEdit *>()) {
+  setUpdatesEnabled(false);
+  for (auto f : signal_list)
     f->setFormVisible(f == sender && !f->isFormVisible());
-    if (f == sender)
-      QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
-  }
+  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
-  if (id == msg_id) {
-    for (auto f : signals_container->findChildren<SignalEdit *>())
-      if (f->sig == sig) f->setChartOpened(opened);
-  }
+  for (auto f : signal_list)
+    if (f->msg_id == id && f->sig == sig) f->setChartOpened(opened);
 }
 
 void DetailWidget::editMsg() {
@@ -265,7 +262,7 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
 
   dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
   // update binary view and history log
-  dbcMsgChanged();
+  updateState();
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {
