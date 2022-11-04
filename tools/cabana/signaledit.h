@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include <QComboBox>
 #include <QDialog>
 #include <QLabel>
@@ -15,48 +13,50 @@
 #include "tools/cabana/dbcmanager.h"
 
 class SignalForm : public QWidget {
-  Q_OBJECT
-
 public:
   SignalForm(const Signal &sig, QWidget *parent);
-  std::optional<Signal> getSignal();
 
-  QLineEdit *name, *unit, *comment, *val_desc;
-  QSpinBox *size, *msb, *lsb, *offset;
-  QDoubleSpinBox *factor, *min_val, *max_val;
+  QLineEdit *name, *unit, *comment, *val_desc, *offset, *factor, *min_val, *max_val;
+  QSpinBox *size;
   QComboBox *sign, *endianness;
-  int start_bit = 0;
 };
 
 class SignalEdit : public QWidget {
   Q_OBJECT
 
 public:
-  SignalEdit(int index, const QString &id, const Signal &sig, const QString &color, QWidget *parent = nullptr);
+  SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent = nullptr);
+  void setChartOpened(bool opened);
   void setFormVisible(bool show);
+  void signalHovered(const Signal *sig);
   inline bool isFormVisible() const { return form_container->isVisible(); }
-  void save();
+  const Signal *sig = nullptr;
 
 signals:
-  void showChart(const QString &msg_id, const QString &sig_name);
+  void highlight(const Signal *sig);
+  void showChart(bool show);
   void showFormClicked();
+  void remove(const Signal *sig);
+  void save(const Signal *sig, const Signal &new_sig);
 
 protected:
-  void remove();
+  void enterEvent(QEvent *event) override;
+  void leaveEvent(QEvent *event) override;
+  void saveSignal();
 
-  QString id;
-  QString name_;
-  QPushButton *plot_btn;
-  ElidedLabel *title;
   SignalForm *form;
+  ElidedLabel *title;
   QWidget *form_container;
-  QPushButton *remove_btn;
   QLabel *icon;
+  int form_idx = 0;
+  QString msg_id;
+  bool chart_opened = false;
+  QPushButton *plot_btn;
 };
 
-class AddSignalDialog : public QDialog {
+class SignalFindDlg : public QDialog {
   Q_OBJECT
 
 public:
-  AddSignalDialog(const QString &id, QWidget *parent);
+  SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent);
 };
