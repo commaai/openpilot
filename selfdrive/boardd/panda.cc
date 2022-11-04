@@ -12,7 +12,7 @@
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // TODO: support SPI here one day...
-  handle = new PandaUsbHandle(serial);
+  handle = std::make_unique<PandaUsbHandle>(serial);
 
   hw_type = get_hw_type();
 
@@ -23,14 +23,6 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
             (hw_type == cereal::PandaState::PandaType::DOS);
 
   return;
-}
-
-Panda::~Panda() {
-  // TODO: handle cleanup
-  /*
-  std::lock_guard lk(hw_lock);
-  cleanup();
-  */
 }
 
 bool Panda::connected() {

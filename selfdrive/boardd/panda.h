@@ -1,11 +1,10 @@
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <ctime>
 #include <functional>
 #include <list>
-#include <mutex>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -47,12 +46,11 @@ struct can_frame {
 
 class Panda {
 private:
-  PandaCommsHandle *handle = NULL;
+  std::unique_ptr<PandaCommsHandle> handle;
   std::vector<uint8_t> recv_buf;
 
 public:
   Panda(std::string serial="", uint32_t bus_offset=0);
-  ~Panda();
 
   std::string hw_serial;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
