@@ -47,7 +47,7 @@ protected:
   void leaveEvent(QEvent *event) override;
   void saveSignal();
 
-  SignalForm *form;
+  SignalForm *form = nullptr;
   ElidedLabel *title;
   QWidget *form_container;
   QLabel *icon;

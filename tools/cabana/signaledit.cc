@@ -89,9 +89,6 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   // signal form
   form_container = new QWidget(this);
   QVBoxLayout *v_layout = new QVBoxLayout(form_container);
-  form = new SignalForm(this);
-  v_layout->addWidget(form);
-
   QHBoxLayout *h = new QHBoxLayout();
   QPushButton *remove_btn = new QPushButton(tr("Remove Signal"));
   h->addWidget(remove_btn);
@@ -122,15 +119,6 @@ void SignalEdit::setSignal(const QString &message_id, const Signal *signal, bool
   msg_id = message_id;
   sig = signal;
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(sig->name.c_str()));
-
-  form->name->setText(sig->name.c_str());
-  form->size->setValue(sig->size);
-  form->endianness->setCurrentIndex(sig->is_little_endian ? 0 : 1);
-  form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
-  form->factor->setText(QString::number(sig->factor));
-  form->offset->setText(QString::number(sig->offset));
-  form->msb->setText(QString::number(sig->msb));
-  form->lsb->setText(QString::number(sig->lsb));
   setFormVisible(show_form);
 }
 
@@ -160,6 +148,20 @@ void SignalEdit::setChartOpened(bool opened) {
 }
 
 void SignalEdit::setFormVisible(bool visible) {
+  if (visible) {
+    if (!form) {
+      form = new SignalForm(this);
+      ((QVBoxLayout *)form_container->layout())->insertWidget(0, form);
+    }
+    form->name->setText(sig->name.c_str());
+    form->size->setValue(sig->size);
+    form->endianness->setCurrentIndex(sig->is_little_endian ? 0 : 1);
+    form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
+    form->factor->setText(QString::number(sig->factor));
+    form->offset->setText(QString::number(sig->offset));
+    form->msb->setText(QString::number(sig->msb));
+    form->lsb->setText(QString::number(sig->lsb));
+  }
   form_container->setVisible(visible);
   icon->setText(visible ? "▼" : ">");
 }

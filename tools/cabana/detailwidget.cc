@@ -192,7 +192,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
-  setUpdatesEnabled(true);
+  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
 }
 
 void DetailWidget::updateState() {
@@ -208,7 +208,7 @@ void DetailWidget::showForm() {
   setUpdatesEnabled(false);
   for (auto f : signal_list)
     f->setFormVisible(f == sender && !f->isFormVisible());
-  setUpdatesEnabled(true);
+  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
