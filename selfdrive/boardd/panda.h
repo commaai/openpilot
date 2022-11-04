@@ -9,51 +9,18 @@
 #include <optional>
 #include <vector>
 
-#include <libusb-1.0/libusb.h>
-
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
-
-#define TIMEOUT 0
-#define PANDA_CAN_CNT 3
-#define PANDA_BUS_CNT 4
-#define RECV_SIZE (0x4000U)
-#define USB_TX_SOFT_LIMIT   (0x100U)
-#define USBPACKET_MAX_SIZE  (0x40)
-#define CANPACKET_HEAD_SIZE 5U
-#define CANPACKET_MAX_SIZE  72U
-#define CANPACKET_REJECTED  (0xC0U)
-#define CANPACKET_RETURNED  (0x80U)
-
-struct __attribute__((packed)) can_header {
-  uint8_t reserved : 1;
-  uint8_t bus : 3;
-  uint8_t data_len_code : 4;
-  uint8_t rejected : 1;
-  uint8_t returned : 1;
-  uint8_t extended : 1;
-  uint32_t addr : 29;
-};
-
-struct can_frame {
-	long address;
-	std::string dat;
-	long busTime;
-	long src;
-};
+#include "selfdrive/boardd/panda_comms.h"
 
 
 class Panda {
- private:
-  libusb_context *ctx = NULL;
-  libusb_device_handle *dev_handle = NULL;
-  std::mutex hw_lock;
+private:
+  PandaCommsHandle *handle = NULL;
   std::vector<uint8_t> recv_buf;
-  void handle_usb_issue(int err, const char func[]);
-  void cleanup();
 
- public:
+public:
   Panda(std::string serial="", uint32_t bus_offset=0);
   ~Panda();
 
@@ -66,12 +33,6 @@ class Panda {
 
   // Static functions
   static std::vector<std::string> list();
-
-  // HW communication
-  int hw_control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout=TIMEOUT);
-  int hw_control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout=TIMEOUT);
-  int hw_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
-  int hw_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
