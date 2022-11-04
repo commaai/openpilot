@@ -48,6 +48,7 @@ class HyundaiFlags(IntFlag):
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
 
+
 class CAR:
   # Hyundai
   ELANTRA = "HYUNDAI ELANTRA 2017"
