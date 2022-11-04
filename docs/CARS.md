@@ -11,12 +11,12 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Nidec|
 |Acura|RDX 2019-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Honda Bosch A|
-|Audi|A3 2014-19|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Audi|A3 Sportback e-tron 2017-18|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Audi|Q2 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Audi|Q3 2019-23|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Audi|A3 2014-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Audi|A3 Sportback e-tron 2017-18|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Audi|Q2 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Audi|Q3 2019-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Cadillac|Escalade ESV 2016[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|OBD-II|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|GM|
@@ -129,8 +129,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Nissan|Rogue 2018-20|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
 |Nissan|X-Trail 2017|ProPILOT Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Nissan A|
 |Ram|1500 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Ram|
-|SEAT|Ateca 2018|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|SEAT|Leon 2014-20|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|SEAT|Ateca 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|SEAT|Leon 2014-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
@@ -141,13 +141,13 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru B|
 |Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Škoda|Kamiq 2021[<sup>6</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>8</sup>](#footnotes)|
-|Škoda|Karoq 2019-21|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Škoda|Kodiaq 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Škoda|Octavia 2015, 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Škoda|Octavia RS 2016|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Škoda|Scala 2020|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>8</sup>](#footnotes)|
-|Škoda|Superb 2015-18|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Škoda|Kamiq 2021[<sup>6</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
+|Škoda|Karoq 2019-21|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Škoda|Kodiaq 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Škoda|Octavia 2015, 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Škoda|Octavia RS 2016|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Škoda|Scala 2020|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
+|Škoda|Superb 2015-18|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Avalon 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
@@ -188,37 +188,37 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|RAV4 Hybrid 2019-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|RAV4 Hybrid 2022|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Sienna 2018-20|All|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Volkswagen|Arteon 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Arteon eHybrid 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Arteon R 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Atlas 2018-23|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Atlas Cross Sport 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|California 2021|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Caravelle 2020|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|CC 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|e-Golf 2014-20|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf Alltrack 2015-19|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf GTD 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf GTE 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf GTI 2015-21|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf R 2015-19|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Golf SportsVan 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Jetta 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Jetta GLI 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Passat 2015-22[<sup>7</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Passat Alltrack 2015-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Passat GTE 2015-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Polo 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>8</sup>](#footnotes)|
-|Volkswagen|Polo GTI 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>8</sup>](#footnotes)|
-|Volkswagen|T-Cross 2021|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>8</sup>](#footnotes)|
-|Volkswagen|T-Roc 2021|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>8</sup>](#footnotes)|
-|Volkswagen|Taos 2022|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Teramont 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Teramont Cross Sport 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Teramont X 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Tiguan 2019-22|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
-|Volkswagen|Touran 2017|Adaptive Cruise Control (ACC) & Lane Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Arteon 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Arteon eHybrid 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Arteon R 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Atlas 2018-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Atlas Cross Sport 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|California 2021|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Caravelle 2020|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|CC 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|e-Golf 2014-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf Alltrack 2015-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf GTD 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf GTE 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf GTI 2015-21|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf R 2015-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Golf SportsVan 2015-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Jetta 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Jetta GLI 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Passat 2015-22[<sup>7</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Passat Alltrack 2015-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Passat GTE 2015-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Polo 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
+|Volkswagen|Polo GTI 2020-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
+|Volkswagen|T-Cross 2021|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
+|Volkswagen|T-Roc 2021|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
+|Volkswagen|Taos 2022|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Teramont 2018-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Teramont Cross Sport 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Teramont X 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Tiguan 2019-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Volkswagen|Touran 2017|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 
 <a id="footnotes"></a>
 <sup>1</sup>Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. Using openpilot longitudinal may disable Automatic Emergency Braking (AEB). <br />
@@ -228,7 +228,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 <sup>5</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>6</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>7</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
-<sup>8</sup>Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot in software, but doesn't yet have a harness available from the comma store. <br />
+<sup>8</sup>Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness are limited to using stock ACC. <br />
+<sup>9</sup>Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot in software, but doesn't yet have a harness available from the comma store. <br />
 
 ## Community Maintained Cars
 Although they're not upstream, the community has openpilot running on other makes and models. See the 'Community Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
