@@ -43,35 +43,13 @@ struct can_frame {
 	long src;
 };
 
-#define SPI_SYNC 0x5AU
-#define SPI_HACK 0x79U
-#define SPI_DACK 0x85U
-#define SPI_NACK 0x1FU
-#define SPI_BUF_SIZE 1024
-#define SPI_CHECKSUM_START 0xABU
-
-struct __attribute__((packed)) spi_header {
-  uint8_t sync;
-  uint8_t endpoint;
-  uint16_t tx_len;
-  uint16_t max_rx_len;
-};
-
-struct __attribute__((packed)) spi_control_packet {
-  uint16_t request;
-  uint16_t param1;
-  uint16_t param2;
-  uint16_t length;
-};
 
 class Panda {
  private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
-  int spi_fd = -1;
   std::mutex hw_lock;
   std::vector<uint8_t> recv_buf;
-  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -79,7 +57,6 @@ class Panda {
   Panda(std::string serial="", uint32_t bus_offset=0);
   ~Panda();
 
-  bool spi_comms = false;
   std::string hw_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;

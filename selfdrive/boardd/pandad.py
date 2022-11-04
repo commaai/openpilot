@@ -10,7 +10,7 @@ from functools import cmp_to_key
 from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
-from system.hardware import HARDWARE, TICI
+from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
 
@@ -133,10 +133,6 @@ def main() -> NoReturn:
       continue
 
     first_run = False
-
-    # TODO: remove SPI hack
-    if TICI and len(panda_serials) > 0:
-      panda_serials[0] = '/dev/spidev0.0'
 
     # run boardd with all connected serials as arguments
     os.environ['MANAGER_DAEMON'] = 'boardd'

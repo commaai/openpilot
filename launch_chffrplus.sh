@@ -16,7 +16,6 @@ function agnos_init {
 
   # TODO: move this to agnos
   sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
-  sudo chmod 666 /dev/spidev0.0
 
   # set success flag for current boot slot
   sudo abctl --set_success
