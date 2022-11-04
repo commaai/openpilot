@@ -270,15 +270,22 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane) {
+  // quectel gps verticalAccuracy is clipped to 500
+  bool gps_accuracy_insane_quectel = false;
+  if (!ublox_available) {
+    gps_accuracy_insane_quectel = log.getVerticalAccuracy() == 500;
+  }
+
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
+    this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
   }
-  
+
   double sensor_time = current_time - sensor_time_offset;
 
   // Process message
-  this->last_gps_fix = sensor_time;
+  this->gps_valid = true;
   this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
@@ -476,9 +483,8 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
   return msg_builder.toBytes();
 }
 
-
 bool Localizer::isGpsOK() {
-  return this->kf->get_filter_time() - this->last_gps_fix < 1.0;
+  return this->gps_valid;
 }
 
 void Localizer::determine_gps_mode(double current_time) {
@@ -498,8 +504,10 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
+  ublox_available = Params().getBool("UbloxAvailable", true);
+
   const char* gps_location_socket;
-  if (Params().getBool("UbloxAvailable", true)) {
+  if (ublox_available) {
     gps_location_socket = "gpsLocationExternal";
   } else {
     gps_location_socket = "gpsLocation";

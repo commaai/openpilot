@@ -24,15 +24,6 @@ class CarControllerParams:
   ADAS_KEEPALIVE_STEP = 100
   CAMERA_KEEPALIVE_STEP = 100
 
-  # Volt gas/brake lookups
-  # TODO: These values should be confirmed on non-Volt vehicles.
-  # MAX_GAS should achieve 2 m/s^2 and MAX_BRAKE with regen should achieve -4.0 m/s^2
-  MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
-  ZERO_GAS = 2048  # Coasting
-  MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
-  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
-  INACTIVE_REGEN = 1404
-
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
@@ -41,15 +32,32 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  # ICE has much less engine braking force compared to regen in EVs,
-  # lower threshold removes some braking deadzone
-  GAS_LOOKUP_BP = [-0.1, 0., ACCEL_MAX]
-  EV_GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
-  GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+  def __init__(self, CP):
+    # Gas/brake lookups
+    self.ZERO_GAS = 2048  # Coasting
+    self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-  BRAKE_LOOKUP_BP = [ACCEL_MIN, -0.1]
-  EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
-  BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
+    if CP.carFingerprint in CAMERA_ACC_CAR:
+      self.MAX_GAS = 3400
+      self.MAX_ACC_REGEN = 1514
+      self.INACTIVE_REGEN = 1554
+      # Camera ACC vehicles have no regen while enabled.
+      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
+      max_regen_acceleration = 0.
+
+    else:
+      self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
+      self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
+      self.INACTIVE_REGEN = 1404
+      # ICE has much less engine braking force compared to regen in EVs,
+      # lower threshold removes some braking deadzone
+      max_regen_acceleration = -1. if CP.carFingerprint in EV_CAR else -0.1
+
+    self.GAS_LOOKUP_BP = [max_regen_acceleration, 0., self.ACCEL_MAX]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
+
+    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, max_regen_acceleration]
+    self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
 
 class CAR:
