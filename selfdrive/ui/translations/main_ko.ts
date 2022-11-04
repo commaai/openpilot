@@ -464,6 +464,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">확인</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">취소</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -583,13 +594,6 @@ location set</source>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>데이터 파티션을 마운트할 수 없습니다. 확인 버튼을 눌러 장치를 리셋합니다.</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>확인</translation>
     </message>
 </context>
 <context>
