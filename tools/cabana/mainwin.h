@@ -1,5 +1,9 @@
 #pragma once
 
+#include <QProgressBar>
+#include <QSplitter>
+#include <QStatusBar>
+
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
@@ -11,26 +15,24 @@ class MainWindow : public QWidget {
 public:
   MainWindow();
   void dockCharts(bool dock);
+  void showStatusMessage(const QString &msg, int timeout = 0) { status_bar->showMessage(msg, timeout); }
+
+signals:
+  void showMessage(const QString &msg, int timeout);
+  void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
   void closeEvent(QCloseEvent *event) override;
+  void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
 
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
+  QSplitter *splitter;
   QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
-};
-
-class SettingsDlg : public QDialog {
-  Q_OBJECT
-
-public:
-  SettingsDlg(QWidget *parent);
-  void save();
-  QSpinBox *fps;
-  QSpinBox *log_size ;
-  QSpinBox *cached_segment;
+  QProgressBar *progress_bar;
+  QStatusBar *status_bar;
 };

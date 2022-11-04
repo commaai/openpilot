@@ -36,21 +36,6 @@ def get_random_coords(lat, lon) -> Tuple[int, int]:
   # jump around the world
   return get_coords(lat, lon, 20, 20, 10, 20)
 
-def check_availability(hackrf_mode) -> bool:
-
-  if hackrf_mode:
-    output = sp.check_output(["hackrf/host/hackrf-tools/src/hackrf_info"])
-    if output.strip() == b"" or b"No HackRF boards found." in output:
-      return False
-    return True
-  else:
-    output = sp.check_output(["LimeSuite/builddir/LimeUtil/LimeUtil", "--find"])
-    if output.strip() == b"":
-      return False
-
-    print(f"Device: {output.strip().decode('utf-8')}")
-    return True
-
 def run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout):
   while True:
     try:
@@ -69,7 +54,7 @@ def run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout):
         return
 
       print(f"LimeGPS crashed: {str(e)}")
-      print(f"stderr:\n{e.stderr.decode('utf-8')}")# pylint:disable=no-member
+      print(f"stderr:\n{e.stderr.decode(' utf-8')}")# pylint:disable=no-member
       return
 
     if contin_sim:
@@ -107,24 +92,34 @@ def run_hackRF_loop(lat, lon, rinex_file, timeout):
 
 def main(lat, lon, jump_sim, contin_sim, hackrf_mode):
 
-  if not os.path.exists('LimeGPS') and not hackrf_mode:
-    print("LimeGPS not found run 'setup.sh' first")
-    return
+  if hackrf_mode:
+    if not os.path.exists('hackrf'):
+      print("hackrf not found run 'setup_hackrf.sh' first")
+      return
 
-  if not os.path.exists('LimeSuite') and not hackrf_mode:
-    print("LimeSuite not found run 'setup.sh' first")
-    return
+    if not os.path.exists('gps-sdr-sim'):
+      print("gps-sdr-sim not found run 'setup_hackrf.sh' first")
+      return
 
-  if not os.path.exists('hackrf') and hackrf_mode:
-    print("hackrf not found run 'setup_hackrf.sh' first")
-    return
+    output = sp.check_output(["hackrf/host/hackrf-tools/src/hackrf_info"])
+    if output.strip() == b"" or b"No HackRF boards found." in output:
+      print("No HackRF boards found!")
+      return
 
-  if not os.path.exists('gps-sdr-sim') and hackrf_mode:
-    print("gps-sdr-sim not found run 'setup_hackrf.sh' first")
-    return
+  else:
+    if not os.path.exists('LimeGPS'):
+      print("LimeGPS not found run 'setup.sh' first")
+      return
 
-  if not check_availability(hackrf_mode):
-    return
+    if not os.path.exists('LimeSuite'):
+      print("LimeSuite not found run 'setup.sh' first")
+      return
+
+    output = sp.check_output(["LimeSuite/builddir/LimeUtil/LimeUtil", "--find"])
+    if output.strip() == b"":
+      print("No LimeSDR device found!")
+      return
+    print(f"Device: {output.strip().decode('utf-8')}")
 
   if lat == 0 and lon == 0:
     lat, lon = get_random_coords(47.2020, 15.7403)
