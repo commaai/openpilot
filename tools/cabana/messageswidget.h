@@ -17,19 +17,39 @@ public:
   QTextEdit *dbc_edit;
 };
 
+class SaveDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  SaveDBCDialog(QWidget *parent);
+  void copytoClipboard();
+  void saveAs();
+  QTextEdit *dbc_edit;
+};
+
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
 public:
   MessageListModel(QObject *parent) : QAbstractTableModel(parent) {}
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 4; }
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 5; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
-  void updateState();
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
+  void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+  void updateState(bool sort = false);
+  void setFilterString(const QString &string);
 
 private:
-  int row_count = 0;
+  bool updateMessages(bool sort);
+
+  struct Message {
+    QString id, name;
+  };
+  std::vector<std::unique_ptr<Message>> msgs;
+  QString filter_str;
+  int sort_column = 0;
+  Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
 
 class MessagesWidget : public QWidget {
@@ -42,6 +62,7 @@ public slots:
   void loadDBCFromName(const QString &name);
   void loadDBCFromFingerprint();
   void loadDBCFromPaste();
+  void saveDBC();
 
 signals:
   void msgSelectionChanged(const QString &message_id);

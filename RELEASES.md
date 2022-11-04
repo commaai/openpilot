@@ -6,6 +6,7 @@ Version 0.8.17 (2022-XX-XX)
   * New end-to-end distracted trigger
 * Self-tuning torque lateral controller parameters
   * Parameters learned live for each car
+* Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
 * UI updates
   * Multi-language in navigation
   * Matched speeds shown on car's dash
