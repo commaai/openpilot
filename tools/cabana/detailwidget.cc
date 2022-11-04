@@ -268,7 +268,7 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
 
   dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
   // update binary view and history log
-  dbcMsgChanged();
+  updateState();
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {

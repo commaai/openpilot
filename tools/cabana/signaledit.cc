@@ -15,6 +15,7 @@
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   QFormLayout *form_layout = new QFormLayout(this);
+  form_layout->setContentsMargins(0, 0, 0, 0);
 
   name = new QLineEdit();
   form_layout->addRow(tr("Name"), name);
