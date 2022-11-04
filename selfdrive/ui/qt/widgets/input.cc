@@ -223,8 +223,8 @@ bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), tr("Cancel"), false, parent);
+bool ConfirmationDialog::confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Cancel"), false, parent);
   return d.exec();
 }
 

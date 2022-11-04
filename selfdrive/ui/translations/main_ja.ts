@@ -238,6 +238,10 @@
         <source>Disengage to Power Off</source>
         <translation>openpilot をキャンセルしてシャットダウンができます</translation>
     </message>
+    <message>
+        <source>Review Training</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -854,6 +858,10 @@ location set</source>
         <source>CHECK</source>
         <translation>確認</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1055,6 +1063,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>Wi-Fiﾈｯﾄﾜｰｸ%1を削除してもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Forget Network</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
