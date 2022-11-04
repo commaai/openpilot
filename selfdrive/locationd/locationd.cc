@@ -504,8 +504,8 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
-
   ublox_available = Params().getBool("UbloxAvailable", true);
+
   const char* gps_location_socket;
   if (ublox_available) {
     gps_location_socket = "gpsLocationExternal";
