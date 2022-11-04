@@ -11,7 +11,7 @@
 
 // BinaryView
 
-const int CELL_HEIGHT = 30;
+const int CELL_HEIGHT = 26;
 
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
@@ -105,15 +105,9 @@ void BinaryView::leaveEvent(QEvent *event) {
 }
 
 void BinaryView::setMessage(const QString &message_id) {
-  msg_id = message_id;
   model->setMessage(message_id);
   clearSelection();
   updateState();
-  updateGeometry();
-}
-
-void BinaryView::updateState() {
-  model->updateState();
 }
 
 const Signal *BinaryView::getResizingSignal() const {
@@ -176,6 +170,9 @@ void BinaryViewModel::setMessage(const QString &message_id) {
         items[idx].sigs.push_back(&dbc_msg->sigs[i]);
       }
     }
+  } else {
+    row_count = can->lastMessage(msg_id).dat.size();
+    items.resize(row_count * column_count);
   }
 
   endResetModel();
