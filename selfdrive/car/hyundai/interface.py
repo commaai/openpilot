@@ -39,7 +39,6 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
       else:
         # non-HDA2
-        ret.flags |= HyundaiFlags.CANFD_NON_HDA2.value
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
         
