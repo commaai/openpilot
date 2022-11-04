@@ -80,7 +80,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // signals
   signal_layout = new QVBoxLayout();
   signal_layout->setContentsMargins(11, 11, 11, 11);
-  signal_layout->setSpacing(5);
+  signal_layout->setSpacing(2);
   container_layout->addLayout(signal_layout);
 
   // history log
