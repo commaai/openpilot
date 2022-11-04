@@ -78,7 +78,6 @@ class CAR:
   SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
   IONIQ_5 = "HYUNDAI IONIQ 5 2022"
   TUCSON_HYBRID_4TH_GEN = "HYUNDAI TUCSON HYBRID 4TH GEN"
-  SANTA_CRUZ_1ST_GEN = "HYUNDAI SANTA CRUZ 1ST GEN"
 
   # Kia
   KIA_FORTE = "KIA FORTE E 2018 & GT 2021"
@@ -90,7 +89,6 @@ class CAR:
   KIA_OPTIMA_G4_FL = "KIA OPTIMA 4TH GEN FACELIFT"
   KIA_OPTIMA_H = "KIA OPTIMA HYBRID 2017 & SPORTS 2019"
   KIA_SELTOS = "KIA SELTOS 2021"
-  KIA_SPORTAGE_5TH_GEN = "KIA SPORTAGE 5TH GEN"
   KIA_SORENTO = "KIA SORENTO GT LINE 2018"
   KIA_SPORTAGE_HYBRID_5TH_GEN = "KIA SPORTAGE HYBRID 5TH GEN"
   KIA_STINGER = "KIA STINGER GT2 2018"
@@ -100,7 +98,6 @@ class CAR:
   # Genesis
   GENESIS_G70 = "GENESIS G70 2018"
   GENESIS_G70_2020 = "GENESIS G70 2020"
-  GENESIS_GV70_1ST_GEN = "GENESIS GV70 1ST GEN"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
 
@@ -150,7 +147,6 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022-23", "Highway Driving Assist II", harness=Harness.hyundai_q),
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
-  CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),
 
   # Kia
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
@@ -189,7 +185,6 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   # Genesis
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
-  CAR.GENESIS_GV70_1ST_GEN: HyundaiCarInfo("Genesis GV70 2022-23", "All", harness=Harness.hyundai_l),
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2017-19", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
 }
@@ -1398,32 +1393,6 @@ FW_VERSIONS = {
       b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
     ],
   },
-  CAR.SANTA_CRUZ_1ST_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW000 14M',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NX4__               1.00 1.00 99110-K5000         ',
-    ],
-  },
-  CAR.KIA_SPORTAGE_5TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1030 662',
-      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1040 663',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
-      b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
-    ],
-  },
-  CAR.GENESIS_GV70_1ST_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.04 99211-AR000 210204',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00JK1_ SCC FHCUP      1.00 1.02 99110-AR000         ',
-    ],
-  },
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
@@ -1449,7 +1418,7 @@ FEATURES = {
   "use_fca": {CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.KIA_STINGER, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.TUCSON, CAR.KONA_EV_2022},
 }
 
-CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.TUCSON_HYBRID_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.SANTA_CRUZ_1ST_GEN, CAR.KIA_SPORTAGE_5TH_GEN, CAR.GENESIS_GV70_1ST_GEN}
+CANFD_CAR = {CAR.KIA_EV6, CAR.IONIQ_5, CAR.TUCSON_HYBRID_4TH_GEN}
 
 # The camera does SCC on these cars, rather than the radar
 CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
@@ -1506,8 +1475,5 @@ DBC = {
   CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.TUCSON_HYBRID_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.IONIQ_5: dbc_dict('hyundai_canfd', None),
-  CAR.SANTA_CRUZ_1ST_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_SPORTAGE_5TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.GENESIS_GV70_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: dbc_dict('hyundai_canfd', None),
 }
