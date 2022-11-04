@@ -192,7 +192,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
-  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState() {
