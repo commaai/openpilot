@@ -58,7 +58,7 @@ class LongitudinalPlanner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, DT_MDL)
-    self.v_model_error = FirstOrderFilter(0.0, 2.0, DT_MDL)
+    self.v_model_error = 0.0
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -113,8 +113,9 @@ class LongitudinalPlanner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-    if len(sm['cameraOdometry'].trans):
-      self.v_model_error.update(sm['cameraOdometry'].trans[0] - v_ego)
+    # Compute model v_ego error
+    if len(sm['modelV2'].simPose.trans):
+      self.v_model_error = sm['modelV2'].simPose.trans[0] - v_ego
 
     if force_slow_decel:
       # if required so, force a smooth deceleration
@@ -127,7 +128,7 @@ class LongitudinalPlanner:
     self.mpc.set_weights(prev_accel_constraint)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error.x)
+    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise, x, v, a, j)
 
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
