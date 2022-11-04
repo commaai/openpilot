@@ -21,6 +21,7 @@
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
   const float margin = 500.0f;
   const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
+//  const QRectF clip_region{0, 0, (float)s->fb_w, (float)s->fb_h};
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
@@ -28,10 +29,15 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
+  qDebug() << "car_space_transform point" << QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]};
+  qDebug() << "car_space_transform.maped" << point;
+  qDebug() << "clip region" << clip_region;
   if (clip_region.contains(point)) {
+    qDebug() << "true";
     *out = point;
     return true;
   }
+  qDebug() << "false";
   return false;
 }
 
@@ -45,18 +51,18 @@ int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const
 }
 
 void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
-  for (int i = 0; i < 2; ++i) {
-    auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
-    if (lead_data.getStatus()) {
-      float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
-      calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
-    }
-  }
+//  for (int i = 0; i < 2; ++i) {
+//    auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
+//    if (lead_data.getStatus()) {
+//      float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
+//      calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
+//    }
+//  }
 }
 
 void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
                              float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
-  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
+  const auto line_x = line.getX();
 
   QPolygonF left_points, right_points;
   left_points.reserve(max_idx + 1);
@@ -64,16 +70,21 @@ void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Rea
 
   for (int i = 0; i <= max_idx; i++) {
     QPointF left, right;
-    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
+    bool l = calib_frame_to_full_frame(s, fmax(line_x[i], 0), 0 - y_off, 0 + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, fmax(line_x[i], 0), 0 + y_off, 0 + z_off, &right);
+    qDebug() << "idx" << i << "line_x:" << line_x[i] << "line_y" << 0 - y_off << "line_z" << 0 - z_off << "left y" << left.y();
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
       if (!allow_invert && left_points.size() && left.y() > left_points.back().y()) {
-        continue;
+        qDebug() << "Bad point";
+//        continue;
       }
       left_points.push_back(left);
       right_points.push_front(right);
+    } else {
+      qDebug() << "NOT ADDING POINT";
     }
+    qDebug() << "\n";
   }
   *pvd = left_points + right_points;
 }
@@ -84,22 +95,22 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
-  // update lane lines
-  const auto lane_lines = model.getLaneLines();
-  const auto lane_line_probs = model.getLaneLineProbs();
-  int max_idx = get_path_length_idx(lane_lines[0], max_distance);
-  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
-    scene.lane_line_probs[i] = lane_line_probs[i];
-    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
-  }
-
-  // update road edges
-  const auto road_edges = model.getRoadEdges();
-  const auto road_edge_stds = model.getRoadEdgeStds();
-  for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
-    scene.road_edge_stds[i] = road_edge_stds[i];
-    update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_idx);
-  }
+//  // update lane lines
+//  const auto lane_lines = model.getLaneLines();
+//  const auto lane_line_probs = model.getLaneLineProbs();
+//  int max_idx = get_path_length_idx(lane_lines[0], max_distance);
+//  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+//    scene.lane_line_probs[i] = lane_line_probs[i];
+//    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
+//  }
+//
+//  // update road edges
+//  const auto road_edges = model.getRoadEdges();
+//  const auto road_edge_stds = model.getRoadEdgeStds();
+//  for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
+//    scene.road_edge_stds[i] = road_edge_stds[i];
+//    update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_idx);
+//  }
 
   // update path
   auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
@@ -107,7 +118,9 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     const float lead_d = lead_one.getDRel() * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
-  max_idx = get_path_length_idx(model_position, max_distance);
+  int max_idx = get_path_length_idx(model_position, max_distance);
+  qDebug() << "max_idx" << max_idx;
+  qDebug() << "\n\n";
   update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 

@@ -469,6 +469,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
+  qDebug() << std::size(scene.track_vertices);
   QLinearGradient bg(0, height(), 0, height() / 4);
   float start_hue, end_hue;
   if (scene.end_to_end_long) {
@@ -580,6 +581,7 @@ void AnnotatedCameraWidget::paintGL() {
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
+//    qDebug() << wide_cam_requested;
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
@@ -596,6 +598,8 @@ void AnnotatedCameraWidget::paintGL() {
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
+
+//  qDebug() << s->worldObjectsVisible();
 
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
