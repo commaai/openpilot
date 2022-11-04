@@ -1,9 +1,16 @@
 #pragma once
 
+#include <QHeaderView>
 #include <QTableView>
 
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+
+class HeaderView : public QHeaderView {
+public:
+  HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
+  QSize sectionSizeFromContents(int logicalIndex) const;
+};
 
 class HistoryLogModel : public QAbstractTableModel {
   Q_OBJECT
