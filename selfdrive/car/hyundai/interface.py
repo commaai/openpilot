@@ -39,10 +39,10 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
       else:
         # non-HDA2
+        ret.flags |= HyundaiFlags.CANFD_NON_HDA2.value
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-        if candidate in CAMERA_SCC_CAR:
-          ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+        
     
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
@@ -204,7 +204,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = bool(ret.flags & (HyundaiFlags.CANFD_HDA2 | HyundaiFlags.CANFD_CAMERA_SCC))
+      ret.experimentalLongitudinalAvailable = True
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
