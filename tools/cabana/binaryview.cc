@@ -176,6 +176,9 @@ void BinaryViewModel::setMessage(const QString &message_id) {
         items[idx].sigs.push_back(&dbc_msg->sigs[i]);
       }
     }
+  } else {
+    row_count = can->lastMessage(msg_id).dat.size();
+    items.resize(row_count * column_count);
   }
 
   endResetModel();
