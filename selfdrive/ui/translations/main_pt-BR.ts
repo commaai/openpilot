@@ -465,6 +465,17 @@ trabalho definido</translation>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -587,13 +598,6 @@ trabalho definido</translation>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>Não foi possível montar a partição de dados. Pressione confirmar para resetar seu dispositivo.</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>Ok</translation>
     </message>
 </context>
 <context>
