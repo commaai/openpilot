@@ -19,8 +19,6 @@
 #include <future>
 #include <thread>
 
-#include <libusb-1.0/libusb.h>
-
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
 #include "common/params.h"
@@ -184,7 +182,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   return true;
 }
 
-Panda *usb_connect(std::string serial="", uint32_t index=0) {
+Panda *connect(std::string serial="", uint32_t index=0) {
   std::unique_ptr<Panda> panda;
   try {
     panda = std::make_unique<Panda>(serial, (index * PANDA_BUS_CNT));
@@ -595,7 +593,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
   // connect to all provided serials
   std::vector<Panda *> pandas;
   for (int i = 0; i < serials.size() && !do_exit; /**/) {
-    Panda *p = usb_connect(serials[i], i);
+    Panda *p = connect(serials[i], i);
     if (!p) {
       // send empty pandaState & peripheralState and try again
       send_empty_panda_state(&pm);

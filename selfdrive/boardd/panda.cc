@@ -13,9 +13,6 @@
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // TODO: support SPI here one day...
   handle = new PandaUsbHandle(serial);
-  if (!handle) {
-    goto fail;
-  }
 
   hw_type = get_hw_type();
 
@@ -26,10 +23,6 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
             (hw_type == cereal::PandaState::PandaType::DOS);
 
   return;
-
-fail:
-  //cleanup();
-  throw std::runtime_error("Error connecting to panda");
 }
 
 Panda::~Panda() {
