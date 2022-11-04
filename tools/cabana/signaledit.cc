@@ -124,6 +124,7 @@ SignalEdit::SignalEdit(int index, const QString &msg_id, const Signal *sig, QWid
     SignalFindDlg dlg(msg_id, this->sig, this);
     dlg.exec();
   });
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
 void SignalEdit::saveSignal() {

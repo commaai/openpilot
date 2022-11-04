@@ -80,7 +80,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // signals
   signals_container = new QWidget(this);
   signals_container->setLayout(new QVBoxLayout);
-  signals_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+  signals_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   container_layout->addWidget(signals_container);
 
   // history log
@@ -201,8 +201,6 @@ void DetailWidget::showForm() {
   SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
   for (auto f : signals_container->findChildren<SignalEdit *>()) {
     f->setFormVisible(f == sender && !f->isFormVisible());
-    if (f == sender)
-      QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
   }
 }
 
