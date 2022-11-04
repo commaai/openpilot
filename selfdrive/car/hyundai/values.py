@@ -143,7 +143,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
   CAR.IONIQ_5: [
     HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022" , "Highway Driving Assist", harness=Harness.hyundai_k),
-    HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022", "Highway Driving Assist II", harness=Harness.hyundai_q),
+    HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022-23", "Highway Driving Assist II", harness=Harness.hyundai_q),
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
 
@@ -1379,6 +1379,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
       b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.06 99211-GI000 210813',
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.05 99211-GI010 220614',
     ],
   },
   CAR.TUCSON_HYBRID_4TH_GEN: {
