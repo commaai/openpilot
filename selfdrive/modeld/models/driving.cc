@@ -339,10 +339,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 
   // sim pose
-  const auto &v_mean = net_outputs.pose.velocity_mean;
-  const auto &r_mean = net_outputs.pose.rotation_mean;
-  const auto &v_std = net_outputs.pose.velocity_std;
-  const auto &r_std = net_outputs.pose.rotation_std;
+  const auto &v_mean = net_outputs.sim_pose.velocity_mean;
+  const auto &r_mean = net_outputs.sim_pose.rotation_mean;
+  const auto &v_std = net_outputs.sim_pose.velocity_std;
+  const auto &r_std = net_outputs.sim_pose.rotation_std;
   auto sim_pose = framed.initSimPose();
   sim_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
   sim_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
