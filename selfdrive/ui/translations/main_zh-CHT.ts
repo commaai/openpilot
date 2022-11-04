@@ -464,6 +464,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">確定</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">取消</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -583,13 +594,6 @@ location set</source>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>無法掛載數據分區。請按確認重置您的設備。</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>確定</translation>
     </message>
 </context>
 <context>
