@@ -63,10 +63,11 @@ void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Rea
   right_points.reserve(max_idx + 1);
 
   for (int i = 0; i <= max_idx; i++) {
+    // highly negative x positions cause flickering, clip to zy plane of camera
+    if (line_x[i] < 0) continue;
     QPointF left, right;
-    // Clip x positions to zy plane of camera
-    bool l = calib_frame_to_full_frame(s, fmax(line_x[i], 0.0), line_y[i] - y_off, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, fmax(line_x[i], 0.0), line_y[i] + y_off, line_z[i] + z_off, &right);
+    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
       if (!allow_invert && left_points.size() && left.y() > left_points.back().y()) {
