@@ -91,7 +91,7 @@ pipeline {
             sh "git lfs pull"
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
-              sh "DETACH=1 exit -1"
+              sh "DETACH=1 timeout 10 sleep 1000"
               sh "DETACH=1 ${WORKSPACE}/tools/sim/start_carla.sh"
               sh "${WORKSPACE}/tools/sim/start_openpilot_docker.sh"
             }
