@@ -1,9 +1,16 @@
 #pragma once
 
+#include <QHeaderView>
 #include <QTableView>
 
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+
+class HeaderView : public QHeaderView {
+public:
+  HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
+  QSize sectionSizeFromContents(int logicalIndex) const;
+};
 
 class HistoryLogModel : public QAbstractTableModel {
   Q_OBJECT
@@ -25,15 +32,13 @@ private:
   std::deque<CanData> messages;
 };
 
-class HistoryLog : public QWidget {
+class HistoryLog : public QTableView {
   Q_OBJECT
 
 public:
   HistoryLog(QWidget *parent);
   void setMessage(const QString &message_id) { model->setMessage(message_id); }
   void updateState() { model->updateState(); }
-
 private:
-  QTableView *table;
   HistoryLogModel *model;
 };
