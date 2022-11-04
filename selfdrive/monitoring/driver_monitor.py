@@ -84,7 +84,7 @@ def get_conf(v, bp, sp, gp, ep, ys):
   sv = min(max(sp-0.02, 0.0) / max(0.85-0.015*abs(v-18), 0.1), 1.0)
   gv = min(max(gp-0.005, 0.0) / max(0.25-0.008*v, 0.01), 1.0)
   ev = 0
-  yv = min(max(ys-0.05, 0.0) / max(0.1-0.0005*v, 0.01), 1.0)
+  yv = min(max(ys-0.05, 0.0) / max(0.2-0.0005*v, 0.01), 1.0)
   return 1 - max(bv, sv, gv, ev, yv)
 
 def face_orientation_from_net(angles_desc, pos_desc, rpy_calib):
