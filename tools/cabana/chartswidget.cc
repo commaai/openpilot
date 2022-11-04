@@ -410,6 +410,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // zoom in if selected range is greater than 0.5s
       emit zoomIn(min, max);
     }
+    viewport()->update();
     event->accept();
   } else if (event->button() == Qt::RightButton) {
     emit zoomReset();
