@@ -10,9 +10,8 @@ from selfdrive.car.honda.values import CAR as HONDA
 
 
 class TestCarDocs(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
-    cls.all_cars = get_all_car_info()
+  def setUp(self):
+    self.all_cars = get_all_car_info()
 
   def test_generator(self):
     generated_cars_md = generate_cars_md(self.all_cars, CARS_MD_TEMPLATE)

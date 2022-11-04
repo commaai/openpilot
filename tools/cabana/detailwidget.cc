@@ -4,9 +4,7 @@
 #include <QFormLayout>
 #include <QMenu>
 #include <QMessageBox>
-#include <QScrollBar>
 #include <QTimer>
-#include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/canmessages.h"
@@ -15,26 +13,38 @@
 // DetailWidget
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
 
-   // tabbar
+  right_column = new QVBoxLayout();
+  main_layout->addLayout(right_column);
+
+  binary_view_container = new QWidget(this);
+  binary_view_container->setMinimumWidth(500);
+  binary_view_container->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+  QVBoxLayout *bin_layout = new QVBoxLayout(binary_view_container);
+  bin_layout->setContentsMargins(0, 0, 0, 0);
+  bin_layout->setSpacing(0);
+  // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
   tabbar->setDrawBase(false);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
-  main_layout->addWidget(tabbar);
+  bin_layout->addWidget(tabbar);
 
-  QFrame *title_frame = new QFrame(this);
-  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
+  TitleFrame *title_frame = new TitleFrame(this);
   title_frame->setFrameShape(QFrame::StyledPanel);
   title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
+  split_btn = new QPushButton("⬅", this);
+  split_btn->setFixedSize(20, 20);
+  split_btn->setToolTip(tr("Split to two columns"));
+  title_layout->addWidget(split_btn);
   title_layout->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -52,7 +62,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // warning
   warning_widget = new QWidget(this);
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
-  warning_hlayout->setContentsMargins(0, 0, 0, 0);
   QLabel *warning_icon = new QLabel(this);
   warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning));
   warning_hlayout->addWidget(warning_icon, 0, Qt::AlignTop);
@@ -60,33 +69,30 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
   warning_widget->hide();
   frame_layout->addWidget(warning_widget);
-  main_layout->addWidget(title_frame);
-
-  QWidget *container = new QWidget(this);
-  QVBoxLayout *container_layout = new QVBoxLayout(container);
-  container_layout->setSpacing(0);
-  container_layout->setContentsMargins(0, 0, 0, 0);
-
-  scroll = new QScrollArea(this);
-  scroll->setWidget(container);
-  scroll->setWidgetResizable(true);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
+  bin_layout->addWidget(title_frame);
 
   // binary view
   binary_view = new BinaryView(this);
-  container_layout->addWidget(binary_view);
+  bin_layout->addWidget(binary_view);
+  right_column->addWidget(binary_view_container);
 
   // signals
   signals_container = new QWidget(this);
   signals_container->setLayout(new QVBoxLayout);
   signals_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-  container_layout->addWidget(signals_container);
+
+  scroll = new ScrollArea(this);
+  scroll->setWidget(signals_container);
+  scroll->setWidgetResizable(true);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  right_column->addWidget(scroll);
 
   // history log
   history_log = new HistoryLog(this);
-  container_layout->addWidget(history_log);
+  right_column->addWidget(history_log);
 
+  QObject::connect(split_btn, &QPushButton::clicked, this, &DetailWidget::moveBinaryView);
+  QObject::connect(title_frame, &TitleFrame::doubleClicked, this, &DetailWidget::moveBinaryView);
   QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
@@ -140,8 +146,6 @@ void DetailWidget::setMessage(const QString &message_id) {
   tabbar->setCurrentIndex(index);
   msg_id = message_id;
   dbcMsgChanged();
-
-  scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
@@ -197,12 +201,27 @@ void DetailWidget::updateState() {
   history_log->updateState();
 }
 
+void DetailWidget::moveBinaryView() {
+  if (binview_in_left_col) {
+    right_column->insertWidget(0, binary_view_container);
+    emit binaryViewMoved(true);
+  } else {
+    main_layout->insertWidget(0, binary_view_container);
+    emit binaryViewMoved(false);
+  }
+  split_btn->setText(binview_in_left_col ? "⬅" : "➡");
+  split_btn->setToolTip(binview_in_left_col ? tr("Split to two columns") : tr("Move back"));
+  binary_view->updateGeometry();
+  binview_in_left_col = !binview_in_left_col;
+}
+
 void DetailWidget::showForm() {
   SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
   for (auto f : signals_container->findChildren<SignalEdit *>()) {
     f->setFormVisible(f == sender && !f->isFormVisible());
-    if (f == sender)
+    if (f == sender) {
       QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
+    }
   }
 }
 
@@ -302,4 +321,20 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
 
   connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+// ScrollArea
+
+bool ScrollArea::eventFilter(QObject *obj, QEvent *ev) {
+  if (obj == widget() && ev->type() == QEvent::Resize) {
+    int height = widget()->height() + 4;
+    setMinimumHeight(height > 480 ? 480 : height);
+    setMaximumHeight(height);
+  }
+  return QScrollArea::eventFilter(obj, ev);
+}
+
+void ScrollArea::setWidget(QWidget *w) {
+  QScrollArea::setWidget(w);
+  w->installEventFilter(this);
 }

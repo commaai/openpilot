@@ -20,12 +20,15 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->hide();
+  verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-  setFrameShape(QFrame::NoFrame);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   setMouseTracking(true);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+}
+
+QSize BinaryView::sizeHint() const {
+  QSize sz = QTableView::sizeHint();
+  return {sz.width(), model->rowCount() <= 8 ? ((CELL_HEIGHT + 1) * model->rowCount() + 2) : sz.height()};
 }
 
 void BinaryView::highlight(const Signal *sig) {
