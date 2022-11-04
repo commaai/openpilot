@@ -44,7 +44,7 @@ private:
   QLabel *name_label, *time_label, *warning_label;
   QWidget *warning_widget;
   QPushButton *edit_btn;
-  QVBoxLayout *signal_layout;
+  QWidget *signals_container;
   QTabBar *tabbar;
   HistoryLog *history_log;
   BinaryView *binary_view;

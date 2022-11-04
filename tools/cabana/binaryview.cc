@@ -105,15 +105,9 @@ void BinaryView::leaveEvent(QEvent *event) {
 }
 
 void BinaryView::setMessage(const QString &message_id) {
-  msg_id = message_id;
   model->setMessage(message_id);
   clearSelection();
   updateState();
-  updateGeometry();
-}
-
-void BinaryView::updateState() {
-  model->updateState();
 }
 
 const Signal *BinaryView::getResizingSignal() const {

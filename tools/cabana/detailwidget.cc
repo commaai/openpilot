@@ -77,10 +77,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   container_layout->addWidget(binary_view);
 
   // signals
-  signal_layout = new QVBoxLayout();
-  signal_layout->setContentsMargins(11, 11, 11, 11);
-  signal_layout->setSpacing(3);
-  container_layout->addLayout(signal_layout);
+  signals_container = new QWidget(this);
+  signals_container->setLayout(new QVBoxLayout);
+  container_layout->addWidget(signals_container);
 
   // history log
   history_log = new HistoryLog(this);
@@ -148,10 +147,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
   setUpdatesEnabled(false);
   QStringList warnings;
-  QString msg_name = tr("untitled");
-  int signal_count = 0;
-  if (auto msg = dbc()->msg(msg_id)) {
-    signal_count = msg->sigs.size();
+  for (auto f : signal_list) f->hide();
+
+  const Msg *msg = dbc()->msg(msg_id);
+  if (msg) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
@@ -162,23 +161,19 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
         QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
         QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
-        signal_layout->addWidget(form);
+        signals_container->layout()->addWidget(form);
         signal_list.push_back(form);
       }
       form->setSignal(msg_id, &(msg->sigs[i]), i == show_form_idx);
       form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
       form->show();
     }
-    msg_name = msg->name.c_str();
     if (msg->size != can->lastMessage(msg_id).dat.size())
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
   }
 
-  for (int i = signal_count; i < signal_list.size(); ++i) {
-    signal_list[i]->hide();
-  }
   edit_btn->setVisible(true);
-  name_label->setText(msg_name);
+  name_label->setText(msg ? msg->name.c_str() : "untitled");
 
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
