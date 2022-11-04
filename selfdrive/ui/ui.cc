@@ -64,7 +64,7 @@ void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Rea
 
   for (int i = 0; i <= max_idx; i++) {
     QPointF left, right;
-    // Clip x positions to 0
+    // Clip x positions to zy plane of camera
     bool l = calib_frame_to_full_frame(s, fabs(line_x[i], 0.0), line_y[i] - y_off, line_z[i] + z_off, &left);
     bool r = calib_frame_to_full_frame(s, fabs(line_x[i], 0.0), line_y[i] + y_off, line_z[i] + z_off, &right);
     if (l && r) {
