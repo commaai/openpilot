@@ -78,10 +78,10 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   container_layout->addWidget(binary_view);
 
   // signals
-  signals_container = new QWidget(this);
-  signals_container->setLayout(new QVBoxLayout);
-  signals_container->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-  container_layout->addWidget(signals_container);
+  signal_layout = new QVBoxLayout();
+  signal_layout->setContentsMargins(11, 11, 11, 11);
+  signal_layout->setSpacing(5);
+  container_layout->addLayout(signal_layout);
 
   // history log
   history_log = new HistoryLog(this);
@@ -147,29 +147,36 @@ void DetailWidget::setMessage(const QString &message_id) {
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (msg_id.isEmpty()) return;
 
-  warning_widget->hide();
+  setUpdatesEnabled(false);
   QStringList warnings;
-
-  clearLayout(signals_container->layout());
   QString msg_name = tr("untitled");
+  int signal_count = 0;
   if (auto msg = dbc()->msg(msg_id)) {
+    signal_count = msg->sigs.size();
     for (int i = 0; i < msg->sigs.size(); ++i) {
-      auto form = new SignalEdit(i, msg_id, &(msg->sigs[i]));
-      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
-      signals_container->layout()->addWidget(form);
-      QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
-      QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
-      QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
-      QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
-      QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
-      QObject::connect(form, &SignalEdit::showChart, [this, sig = &msg->sigs[i]](bool show) { charts->showChart(msg_id, sig, show); });
-      if (i == show_form_idx) {
-        QTimer::singleShot(0, [=]() { emit form->showFormClicked(); });
+      SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
+      if (!form) {
+        form = new SignalEdit(i);
+        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
+        QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
+        QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
+        QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
+        QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
+        QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
+        signal_layout->addWidget(form);
+        signal_list.push_back(form);
       }
+      form->setSignal(msg_id, &(msg->sigs[i]), i == show_form_idx);
+      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
+      form->show();
     }
     msg_name = msg->name.c_str();
     if (msg->size != can->lastMessage(msg_id).dat.size())
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
+  }
+
+  for (int i = signal_count; i < signal_list.size(); ++i) {
+    signal_list[i]->hide();
   }
   edit_btn->setVisible(true);
   name_label->setText(msg_name);
@@ -183,10 +190,9 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
       warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
   }
 
-  if (!warnings.isEmpty()) {
-    warning_label->setText(warnings.join('\n'));
-    warning_widget->show();
-  }
+  warning_label->setText(warnings.join('\n'));
+  warning_widget->setVisible(!warnings.isEmpty());
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState() {
@@ -199,16 +205,15 @@ void DetailWidget::updateState() {
 
 void DetailWidget::showForm() {
   SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
-  for (auto f : signals_container->findChildren<SignalEdit *>()) {
+  setUpdatesEnabled(false);
+  for (auto f : signal_list)
     f->setFormVisible(f == sender && !f->isFormVisible());
-  }
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
-  if (id == msg_id) {
-    for (auto f : signals_container->findChildren<SignalEdit *>())
-      if (f->sig == sig) f->setChartOpened(opened);
-  }
+  for (auto f : signal_list)
+    if (f->msg_id == id && f->sig == sig) f->setChartOpened(opened);
 }
 
 void DetailWidget::editMsg() {

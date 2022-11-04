@@ -44,10 +44,11 @@ private:
   QLabel *name_label, *time_label, *warning_label;
   QWidget *warning_widget;
   QPushButton *edit_btn;
-  QWidget *signals_container;
+  QVBoxLayout *signal_layout;
   QTabBar *tabbar;
   HistoryLog *history_log;
   BinaryView *binary_view;
   QScrollArea *scroll;
   ChartsWidget *charts;
+  QList<SignalEdit *> signal_list;
 };
