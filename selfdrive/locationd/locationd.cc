@@ -277,6 +277,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   }
 
   if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
+    this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
   }
@@ -284,6 +285,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   double sensor_time = current_time - sensor_time_offset;
 
   // Process message
+  this->gps_valid = true;
   this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
@@ -482,7 +484,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 }
 
 bool Localizer::isGpsOK() {
-  return this->gps_mode;
+  return this->gps_valid;
 }
 
 void Localizer::determine_gps_mode(double current_time) {
