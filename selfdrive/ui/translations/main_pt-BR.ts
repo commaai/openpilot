@@ -239,7 +239,11 @@
         <translation>Desacione para Desligar</translation>
     </message>
     <message>
-        <source>Review Training</source>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1069,7 +1073,7 @@ trabalho definido</translation>
         <translation>Esquecer Rede Wi-Fi &quot;%1&quot;?</translation>
     </message>
     <message>
-        <source>Forget Network</source>
+        <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

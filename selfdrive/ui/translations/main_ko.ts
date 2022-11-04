@@ -239,7 +239,11 @@
         <translation>전원을 종료하려면 해제하세요</translation>
     </message>
     <message>
-        <source>Review Training</source>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1065,7 +1069,7 @@ location set</source>
         <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
     </message>
     <message>
-        <source>Forget Network</source>
+        <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

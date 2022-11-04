@@ -239,7 +239,11 @@
         <translation>取消openpilot以关机</translation>
     </message>
     <message>
-        <source>Review Training</source>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1063,7 +1067,7 @@ location set</source>
         <translation>忘记WiFi网络 &quot;%1&quot;?</translation>
     </message>
     <message>
-        <source>Forget Network</source>
+        <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

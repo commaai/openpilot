@@ -239,7 +239,11 @@
         <translation>請先取消控車才能關機</translation>
     </message>
     <message>
-        <source>Review Training</source>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1065,7 +1069,7 @@ location set</source>
         <translation>清除 Wi-Fi 網路 &quot;%1&quot;?</translation>
     </message>
     <message>
-        <source>Forget Network</source>
+        <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

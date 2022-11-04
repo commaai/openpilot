@@ -169,7 +169,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset Calibration"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
       params.remove("CalibrationParams");
     }
   });
@@ -178,7 +178,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   if (!params.getBool("Passive")) {
     auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review Training"), this)) {
+      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
         emit reviewTrainingGuide();
       }
     });

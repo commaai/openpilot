@@ -239,7 +239,11 @@
         <translation>openpilot をキャンセルしてシャットダウンができます</translation>
     </message>
     <message>
-        <source>Review Training</source>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1065,7 +1069,7 @@ location set</source>
         <translation>Wi-Fiﾈｯﾄﾜｰｸ%1を削除してもよろしいですか？</translation>
     </message>
     <message>
-        <source>Forget Network</source>
+        <source>Forget</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
