@@ -31,7 +31,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QFrame *title_frame = new QFrame(this);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
   title_frame->setFrameShape(QFrame::StyledPanel);
-  title_frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
