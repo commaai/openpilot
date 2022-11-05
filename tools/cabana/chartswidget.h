@@ -33,7 +33,6 @@ signals:
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
-  void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void adjustChartMargins();
   void updateAxisY();

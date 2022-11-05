@@ -380,13 +380,6 @@ void ChartView::updateAxisY() {
   }
 }
 
-void ChartView::enterEvent(QEvent *event) {
-  track_line->setVisible(true);
-  value_text->setVisible(true);
-  track_ellipse->setVisible(true);
-  QChartView::enterEvent(event);
-}
-
 void ChartView::leaveEvent(QEvent *event) {
   track_line->setVisible(false);
   value_text->setVisible(false);
