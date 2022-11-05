@@ -134,15 +134,15 @@ A supported vehicle is one that just works when you install a comma three. All s
 |SEAT|Ateca 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |SEAT|Leon 2014-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|Crosstrek 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|Forester 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|Impreza 2017-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|Impreza 2020-22|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|Legacy 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru B|
-|Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru B|
-|Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
-|Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Crosstrek 2018-19|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Crosstrek 2020-21|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Forester 2019-21|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Impreza 2017-19|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Impreza 2020-22|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|Legacy 2020-22|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru B|
+|Subaru|Outback 2020-22|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru B|
+|Subaru|XV 2018-19|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
+|Subaru|XV 2020-21|EyeSight with Lane Keep Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Subaru A|
 |Škoda|Kamiq 2021[<sup>6</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
 |Škoda|Karoq 2019-21|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Škoda|Kodiaq 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
