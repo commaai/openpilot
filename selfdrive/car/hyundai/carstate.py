@@ -420,6 +420,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
       ("GEAR", gear_msg),
+      ("BRAKE", 100),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
