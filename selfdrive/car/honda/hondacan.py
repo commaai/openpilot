@@ -51,7 +51,6 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
 
   control_on = 5 if enabled else 0
-  # control_off = not enabled
   gas_command = gas if active and accel > min_gas_accel else -30000
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
@@ -62,7 +61,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
     control_on = 1 if enabled else 0
     acc_control_values = {
       "CONTROL_ON": control_on,
-      # "CONTROL_OFF": control_off,  # TODO: not sure this signal is needed
+      "CONTROL_OFF": 1,  # TODO: not sure this signal is needed
       "ACCEL_COMMAND": accel_command,
       "STANDSTILL": standstill,
     }
