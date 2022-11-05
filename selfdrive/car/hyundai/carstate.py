@@ -443,7 +443,6 @@ class CarState(CarStateBase):
     checks = [
       ("WHEEL_SPEEDS", 100),
       ("GEAR_SHIFTER", 100),
-      ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("TCS", 50),
