@@ -1432,14 +1432,6 @@ FW_VERSIONS = {
       b'\xf1\x00JK1_ SCC FHCUP      1.00 1.02 99110-AR000         ',
     ],
   },
-  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
-    ],
-  },
 }
 
 CHECKSUM = {
