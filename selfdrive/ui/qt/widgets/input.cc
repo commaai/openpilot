@@ -185,7 +185,11 @@ void InputDialog::setMinLength(int length) {
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        const bool rich, QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { background-color: #1B1B1B; color: #C9C9C9; }");
+  container->setStyleSheet(R"(
+    QFrame { background-color: #1B1B1B; color: #C9C9C9; }
+    #confirm_btn { background-color: #465BEA; }
+    #confirm_btn:pressed { background-color: #3049F4; }
+  )");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, rich ? 32 : 120, 32, 32);
 
@@ -208,6 +212,7 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
 
   if (confirm_text.length()) {
     QPushButton* confirm_btn = new QPushButton(confirm_text);
+    confirm_btn->setObjectName("confirm_btn");
     btn_layout->addWidget(confirm_btn);
     QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
   }
@@ -223,8 +228,8 @@ bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {
   return d.exec();
 }
 
-bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
-  ConfirmationDialog d = ConfirmationDialog(prompt_text, tr("Ok"), tr("Cancel"), false, parent);
+bool ConfirmationDialog::confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent) {
+  ConfirmationDialog d = ConfirmationDialog(prompt_text, confirm_text, tr("Cancel"), false, parent);
   return d.exec();
 }
 

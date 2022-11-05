@@ -57,7 +57,7 @@ public:
   explicit ConfirmationDialog(const QString &prompt_text, const QString &confirm_text,
                               const QString &cancel_text, const bool rich, QWidget* parent);
   static bool alert(const QString &prompt_text, QWidget *parent);
-  static bool confirm(const QString &prompt_text, QWidget *parent);
+  static bool confirm(const QString &prompt_text, const QString &confirm_text, QWidget *parent);
   static bool rich(const QString &prompt_text, QWidget *parent);
 };
 
