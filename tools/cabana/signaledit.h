@@ -16,7 +16,7 @@ class SignalForm : public QWidget {
 public:
   SignalForm(QWidget *parent);
 
-  QLineEdit *name, *unit, *comment, *val_desc, *offset, *factor, *min_val, *max_val;
+  QLineEdit *name, *unit, *comment, *offset, *factor, *min, *max;
   QLabel *lsb, *msb;
   QSpinBox *size;
   QComboBox *sign, *endianness;

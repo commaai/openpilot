@@ -51,14 +51,12 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   form_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
   form_layout->addRow(tr("Comment"), comment);
-  min_val = new QLineEdit();
-  min_val->setValidator(double_validator);
-  form_layout->addRow(tr("Minimum value"), min_val);
-  max_val = new QLineEdit();
-  max_val->setValidator(double_validator);
-  form_layout->addRow(tr("Maximum value"), max_val);
-  val_desc = new QLineEdit();
-  form_layout->addRow(tr("Value descriptions"), val_desc);
+  min = new QLineEdit();
+  min->setValidator(double_validator);
+  form_layout->addRow(tr("Minimum value"), min);
+  max = new QLineEdit();
+  max->setValidator(double_validator);
+  form_layout->addRow(tr("Maximum value"), max);
 }
 
 // SignalEdit
@@ -130,6 +128,10 @@ void SignalEdit::saveSignal() {
   s.offset = form->offset->text().toDouble();
   s.factor = form->factor->text().toDouble();
   s.is_signed = form->sign->currentIndex() == 0;
+  s.min = form->min->text().toDouble();
+  s.max = form->max->text().toDouble();
+  s.unit = form->unit->text().toStdString();
+  s.comment = form->comment->text().toStdString();
   s.is_little_endian = form->endianness->currentIndex() == 0;
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
@@ -162,6 +164,10 @@ void SignalEdit::setFormVisible(bool visible) {
     form->offset->setText(QString::number(sig->offset));
     form->msb->setText(QString::number(sig->msb));
     form->lsb->setText(QString::number(sig->lsb));
+    form->min->setText(QString::number(sig->min));
+    form->max->setText(QString::number(sig->max));
+    form->comment->setText(sig->comment.c_str());
+    form->unit->setText(sig->unit.c_str());
   }
   form_container->setVisible(visible);
   icon->setText(visible ? "▼" : ">");

@@ -36,16 +36,26 @@ QString DBCManager::generateDBC() {
   for (auto &m : dbc->msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(m.address).arg(m.name.c_str()).arg(m.size);
     for (auto &sig : m.sigs) {
-      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
+      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
                         .arg(sig.name.c_str())
                         .arg(sig.start_bit)
                         .arg(sig.size)
                         .arg(sig.is_little_endian ? '1' : '0')
                         .arg(sig.is_signed ? '-' : '+')
                         .arg(sig.factor, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10);
+                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig.min, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig.max, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig.unit.c_str());
     }
     dbc_string += "\n";
+  }
+  // write comments
+  for (auto &m : dbc->msgs) {
+    for (auto &sig : m.sigs) {
+      if (!sig.comment.empty())
+        dbc_string += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(m.address).arg(sig.name.c_str()).arg(sig.comment.c_str());
+    }
   }
   return dbc_string;
 }
