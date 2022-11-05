@@ -504,11 +504,13 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
+    signals = []
+    checks = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
-      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
-      checks = [("CAM_0x2a4", 20)]
-    else:
-      signals = [
+      signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks += [("CAM_0x2a4", 20)]
+    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      signals += [
         ("COUNTER", "SCC_CONTROL"),
         ("NEW_SIGNAL_1", "SCC_CONTROL"),
         ("MainMode_ACC", "SCC_CONTROL"),
@@ -521,7 +523,7 @@ class CarState(CarStateBase):
         ("VSetDis", "SCC_CONTROL"),
       ]
 
-      checks = [
+      checks += [
         ("SCC_CONTROL", 50),
       ]
 
