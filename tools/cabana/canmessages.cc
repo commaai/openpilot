@@ -1,6 +1,5 @@
 #include "tools/cabana/canmessages.h"
 
-#include <QDebug>
 #include <QSettings>
 
 #include "tools/cabana/dbcmanager.h"
@@ -9,7 +8,6 @@ CANMessages *can = nullptr;
 
 CANMessages::CANMessages(QObject *parent) : QObject(parent) {
   can = this;
-
   QObject::connect(this, &CANMessages::received, this, &CANMessages::process, Qt::QueuedConnection);
   QObject::connect(&settings, &Settings::changed, this, &CANMessages::settingChanged);
 }
@@ -24,11 +22,11 @@ static bool event_filter(const Event *e, void *opaque) {
 }
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
-  routeName = route;
   replay = new Replay(route, {"can", "roadEncodeIdx", "carParams"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
+  QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
     replay->start();
     return true;
@@ -40,12 +38,9 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
   auto evts = events();
   if (!evts) return {};
 
-  auto l = id.split(':');
-  int bus = l[0].toInt();
-  uint32_t address = l[1].toUInt(nullptr, 16);
-
   QList<QPointF> ret;
   ret.reserve(max_count);
+  auto [bus, address] = DBCManager::parseId(id);
   for (auto &evt : *evts) {
     if (evt->which != cereal::Event::Which::CAN) continue;
 
@@ -101,10 +96,9 @@ bool CANMessages::eventFilter(const Event *event) {
       data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
 
-      auto &count = counters[id];
-      data.count = ++count;
+      data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
-        data.freq = count / delta;
+        data.freq = data.count / delta;
       }
       (*new_msgs)[id] = data;
     }

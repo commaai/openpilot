@@ -8,7 +8,6 @@
 #include <QGraphicsTextItem>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QWidget>
 #include <QtCharts/QChartView>
 
 #include "tools/cabana/canmessages.h"
@@ -33,11 +32,11 @@ signals:
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
-  void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void adjustChartMargins();
   void updateAxisY();
 
+  QGraphicsItemGroup *item_group;
   QGraphicsLineItem *track_line;
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;

@@ -176,16 +176,8 @@ void ChartsWidget::removeChart(ChartWidget *chart) {
 }
 
 void ChartsWidget::removeAll(const Signal *sig) {
-  QMutableListIterator<ChartWidget *> it(charts);
-  while (it.hasNext()) {
-    auto c = it.next();
-    if (sig == nullptr || c->signal == sig) {
-      c->deleteLater();
-      emit chartClosed(c->id, c->signal);
-      it.remove();
-    }
-  }
-  updateTitleBar();
+  for (auto c : charts.toVector())
+    if (!sig || c->signal == sig) removeChart(c);
 }
 
 void ChartsWidget::signalUpdated(const Signal *sig) {
@@ -267,26 +259,21 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
-  track_line = new QGraphicsLineItem(chart);
-  track_line->setZValue(chart->zValue() + 10);
-  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
-  track_ellipse = new QGraphicsEllipseItem(chart);
-  track_ellipse->setZValue(chart->zValue() + 10);
-  track_ellipse->setBrush(Qt::darkGray);
-  value_text = new QGraphicsTextItem(chart);
-  value_text->setZValue(chart->zValue() + 10);
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
+
+  track_line = new QGraphicsLineItem(chart);
+  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+  track_ellipse = new QGraphicsEllipseItem(chart);
+  track_ellipse->setBrush(Qt::darkGray);
+  value_text = new QGraphicsTextItem(chart);
+  item_group = scene()->createItemGroup({track_line, track_ellipse, value_text});
+  item_group->setZValue(chart->zValue() + 10);
 
   setChart(chart);
 
   setRenderHint(QPainter::Antialiasing);
   setRubberBand(QChartView::HorizontalRubberBand);
-  if (auto rubber = findChild<QRubberBand *>()) {
-    QPalette pal;
-    pal.setBrush(QPalette::Base, QColor(0, 0, 0, 80));
-    rubber->setPalette(pal);
-  }
 
   QTimer *timer = new QTimer(this);
   timer->setInterval(100);
@@ -335,12 +322,9 @@ void ChartView::updateSeries(const std::pair<double, double> range) {
   auto events = can->events();
   if (!events) return;
 
-  auto l = id.split(':');
-  int bus = l[0].toInt();
-  uint32_t address = l[1].toUInt(nullptr, 16);
-
   vals.clear();
   vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
+  auto [bus, address] = DBCManager::parseId(id);
   double route_start_time = can->routeStartTime();
   Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
   auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
@@ -380,17 +364,8 @@ void ChartView::updateAxisY() {
   }
 }
 
-void ChartView::enterEvent(QEvent *event) {
-  track_line->setVisible(true);
-  value_text->setVisible(true);
-  track_ellipse->setVisible(true);
-  QChartView::enterEvent(event);
-}
-
 void ChartView::leaveEvent(QEvent *event) {
-  track_line->setVisible(false);
-  value_text->setVisible(false);
-  track_ellipse->setVisible(false);
+  item_group->setVisible(false);
   QChartView::leaveEvent(event);
 }
 
@@ -442,9 +417,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       }
       value_text->setPos(text_x, pos.y() - 10);
     }
-    track_line->setVisible(value != vals.end());
-    value_text->setVisible(value != vals.end());
-    track_ellipse->setVisible(value != vals.end());
+    item_group->setVisible(value != vals.end());
   } else {
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   }

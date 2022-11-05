@@ -67,7 +67,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
-  QObject::connect(can, &CANMessages::eventsMerged, this, &MessagesWidget::loadDBCFromFingerprint);
+  QObject::connect(can, &CANMessages::streamStarted, this, &MessagesWidget::loadDBCFromFingerprint);
   QObject::connect(can, &CANMessages::updated, [this]() { model->updateState(); });
   QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
   QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadDBCFromPaste);

@@ -36,8 +36,7 @@ void Settings::load() {
 
 SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Settings"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QFormLayout *form_layout = new QFormLayout();
+  QFormLayout *form_layout = new QFormLayout(this);
 
   fps = new QSpinBox(this);
   fps->setRange(10, 100);
@@ -74,10 +73,8 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   chart_theme->setCurrentIndex(settings.chart_theme == 1 ? 1 : 0);
   form_layout->addRow(tr("Chart theme"), chart_theme);
 
-  main_layout->addLayout(form_layout);
-
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
+  form_layout->addRow(buttonBox);
 
   setFixedWidth(360);
   connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);
