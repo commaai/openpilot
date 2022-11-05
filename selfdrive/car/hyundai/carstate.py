@@ -200,7 +200,7 @@ class CarState(CarStateBase):
     self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-      cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+      cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 or not self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp_cam
       ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["VSetDis"] * speed_factor
       ret.cruiseState.standstill = cp_cruise_info.vl["SCC_CONTROL"]["CRUISE_STANDSTILL"] == 1
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
