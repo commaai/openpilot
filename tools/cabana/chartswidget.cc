@@ -1,11 +1,13 @@
 #include "tools/cabana/chartswidget.h"
 
+#include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QGridLayout>
 #include <QRubberBand>
 #include <QTimer>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
+#include <QtConcurrent>
 
 // ChartsWidget
 
@@ -116,8 +118,9 @@ void ChartsWidget::updateState() {
     display_range.first = std::max(display_range.first, event_range.first);
     display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
     if (prev_range != display_range) {
+      QFutureSynchronizer<void> future_synchronizer;
       for (auto c : charts)
-        c->chart_view->updateSeries(display_range);
+        future_synchronizer.addFuture(QtConcurrent::run(c->chart_view, &ChartView::updateSeries, display_range));
     }
   }
 
@@ -325,11 +328,10 @@ void ChartView::updateLineMarker(double current_sec) {
           chart()->plotArea().width() * (current_sec - axis_x->min()) / (axis_x->max() - axis_x->min());
   if (int(line_marker->line().x1()) != x) {
     line_marker->setLine(x, 0, x, height());
-    chart()->update();
   }
 }
 
-void ChartView::updateSeries(const std::pair<double, double> &range) {
+void ChartView::updateSeries(const std::pair<double, double> range) {
   auto events = can->events();
   if (!events) return;
 
@@ -338,7 +340,7 @@ void ChartView::updateSeries(const std::pair<double, double> &range) {
   uint32_t address = l[1].toUInt(nullptr, 16);
 
   vals.clear();
-  vals.reserve((range.second - range.first) * 100);  // [n]minutes * 100hz
+  vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
   double route_start_time = can->routeStartTime();
   Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
   auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
@@ -369,8 +371,13 @@ void ChartView::updateAxisY() {
 
   auto end = std::upper_bound(vals.begin(), vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
   const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
-  (min->y() == max->y()) ? axis_y->setRange(min->y() - 1, max->y() + 1)
-                         : axis_y->setRange(min->y(), max->y());
+  if (max->y() == min->y()) {
+    axis_y->setRange(min->y() - 1, max->y() + 1);
+  } else {
+    double range = max->y() - min->y();
+    axis_y->setRange(min->y() - range * 0.05, max->y() + range * 0.05);
+    axis_y->applyNiceNumbers();
+  }
 }
 
 void ChartView::enterEvent(QEvent *event) {
@@ -403,6 +410,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // zoom in if selected range is greater than 0.5s
       emit zoomIn(min, max);
     }
+    viewport()->update();
     event->accept();
   } else if (event->button() == Qt::RightButton) {
     emit zoomReset();
@@ -410,6 +418,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   } else {
     QGraphicsView::mouseReleaseEvent(event);
   }
+  setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
@@ -436,6 +445,8 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     track_line->setVisible(value != vals.end());
     value_text->setVisible(value != vals.end());
     track_ellipse->setVisible(value != vals.end());
+  } else {
+    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   }
   QChartView::mouseMoveEvent(ev);
 }

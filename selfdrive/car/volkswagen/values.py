@@ -1,5 +1,5 @@
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Union
 
@@ -151,75 +151,74 @@ class Footnote(Enum):
   PASSAT = CarFootnote(
     "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  VW_HARNESS = CarFootnote(
-    "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
-    "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
-    "(older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway " +
-    "inside the dashboard, choose \"VW J533 Development\" from the vehicle drop-down for a suitable harness. " +
-    "(Some newer models are also observed to not have a J533 connector.)",
-    Column.MODEL)
-  VW_VARIANT = CarFootnote(
-    "Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.)",
-    Column.MODEL)
+  VW_EXP_LONG = CarFootnote (
+    "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness " +
+    "are limited to using stock ACC.",
+    Column.LONGITUDINAL)
+  VW_MQB_A0 = CarFootnote(
+    "Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot " +
+    "in software, but doesn't yet have a harness available from the comma store.",
+    Column.HARNESS)
 
 
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  harness: Enum = Harness.vw
+  harness: Enum = Harness.j533
+  footnotes: List[Enum] = field(default_factory=lambda: [Footnote.VW_EXP_LONG])
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen CC 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
-    VWCarInfo("Volkswagen Atlas 2018-23", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Atlas Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Teramont 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Teramont Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Teramont X 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Atlas 2018-23"),
+    VWCarInfo("Volkswagen Atlas Cross Sport 2021-22"),
+    VWCarInfo("Volkswagen Teramont 2018-22"),
+    VWCarInfo("Volkswagen Teramont Cross Sport 2021-22"),
+    VWCarInfo("Volkswagen Teramont X 2021-22"),
   ],
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014-20"),
-    VWCarInfo("Volkswagen Golf 2015-20", footnotes=[Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Golf 2015-20"),
     VWCarInfo("Volkswagen Golf Alltrack 2015-19"),
     VWCarInfo("Volkswagen Golf GTD 2015-20"),
     VWCarInfo("Volkswagen Golf GTE 2015-20"),
     VWCarInfo("Volkswagen Golf GTI 2015-21"),
-    VWCarInfo("Volkswagen Golf R 2015-19", footnotes=[Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Golf R 2015-19"),
     VWCarInfo("Volkswagen Golf SportsVan 2015-20"),
   ],
   CAR.JETTA_MK7: [
-    VWCarInfo("Volkswagen Jetta 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Jetta GLI 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Jetta 2018-22"),
+    VWCarInfo("Volkswagen Jetta GLI 2021-22"),
   ],
   CAR.PASSAT_MK8: [
-    VWCarInfo("Volkswagen Passat 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.PASSAT, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Passat Alltrack 2015-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Passat GTE 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
+    VWCarInfo("Volkswagen Passat 2015-22", footnotes=[Footnote.VW_EXP_LONG, Footnote.PASSAT]),
+    VWCarInfo("Volkswagen Passat Alltrack 2015-22"),
+    VWCarInfo("Volkswagen Passat GTE 2015-22"),
   ],
-  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22", harness=Harness.j533),
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22"),
   CAR.POLO_MK6: [
-    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_EXP_LONG, Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_EXP_LONG, Footnote.VW_MQB_A0]),
   ],
   CAR.SHARAN_MK2: [
-    VWCarInfo("Volkswagen Sharan 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("SEAT Alhambra 2018-20", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Sharan 2018-22"),
+    VWCarInfo("SEAT Alhambra 2018-20"),
   ],
-  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022"),
+  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_EXP_LONG, Footnote.VW_MQB_A0]),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22"),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Caravelle 2020"),
+    VWCarInfo("Volkswagen California 2021"),
   ],
-  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_EXP_LONG, Footnote.VW_MQB_A0]),
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18"),
@@ -227,13 +226,13 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Audi S3 2015-17"),
   ],
   CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018"),
-  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2019-23"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
-  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
-  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21", footnotes=[Footnote.VW_HARNESS]),
+  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.VW_EXP_LONG, Footnote.VW_MQB_A0, Footnote.KAMIQ]),
+  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
-  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
+  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020", footnotes=[Footnote.VW_EXP_LONG, Footnote.VW_MQB_A0]),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-18"),
   CAR.SKODA_OCTAVIA_MK3: [
     VWCarInfo("Škoda Octavia 2015, 2018-19"),
@@ -872,20 +871,24 @@ FW_VERSIONS = {
   CAR.AUDI_Q3_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018N \xf1\x899970',
+      b'\xf1\x8705L906022M \xf1\x890901',
       b'\xf1\x8783A906259  \xf1\x890001',
       b'\xf1\x8783A906259  \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158CN\xf1\x893608',
+      b'\xf1\x870GC300045D \xf1\x892802',
       b'\xf1\x870GC300046F \xf1\x892701',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655BF\xf1\x890403\xf1\x82\x1321211111211200311121232152219321422111',
+      b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111224118A119321532111',
       b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111237116A119321532111',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000300',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000800',
+      b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\x0571G60533A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
