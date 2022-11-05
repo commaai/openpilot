@@ -50,4 +50,5 @@ private:
   BinaryView *binary_view;
   QScrollArea *scroll;
   ChartsWidget *charts;
+  QList<SignalEdit *> signal_list;
 };
