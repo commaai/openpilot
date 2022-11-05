@@ -48,7 +48,7 @@ public:
 
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
-  void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+  void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255, QColor color = QColor(0xff, 0xff, 0xff, 255));
 
   QPixmap steer_img;
   QPixmap longitudinal_img;

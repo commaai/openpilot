@@ -370,9 +370,9 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   // current speed
-  configFont(p, "Inter", 176, "Bold");
+  configFont(p, "Road Rage", 176, "Bold");
   drawText(p, rect().center().x(), 210, speedStr);
-  configFont(p, "Inter", 66, "Regular");
+  configFont(p, "Road Rage", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   // engage-ability icon
@@ -380,6 +380,17 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
              steer_img, bg_colors[status], 1.0);
   }
+
+//  drawText();
+
+  Params().put
+
+  configFont(p, "Road Rage", 85, "Regular");
+  drawText(p, 125          , 350          , "E", 170, QColor("#00FF85"));
+  drawText(p, 125 + 30     , 350 + 50     , "2", 170, QColor("#DADADA"));
+  drawText(p, 125 + 30 + 50, 350 + 50 + 50, "E", 170, QColor("#00FF85"));
+//  drawText(p, 70, 400, "E");
+
 
   if (!hideFooterIcons) {
     // lateral + longitudinal control icons
@@ -412,11 +423,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 // Window that shows camera view and variety of
 // info drawn on top
 
-void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
+void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha, QColor color) {
   QRect real_rect = getTextRect(p, 0, text);
   real_rect.moveCenter({x, y - real_rect.height() / 2});
 
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
+  p.setPen(color);
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
