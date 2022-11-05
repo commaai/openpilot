@@ -47,6 +47,7 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void streamStarted();
   void eventsMerged();
   void updated();
   void received(QHash<QString, CanData> *);

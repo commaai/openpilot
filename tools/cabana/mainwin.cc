@@ -85,7 +85,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+  QObject::connect(can, &CANMessages::streamStarted, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
 
   main_win = this;
   qInstallMessageHandler(qLogMessageHandler);

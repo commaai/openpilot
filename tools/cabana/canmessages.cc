@@ -26,6 +26,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
+  QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
     replay->start();
     return true;
