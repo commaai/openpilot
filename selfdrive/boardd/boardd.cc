@@ -19,8 +19,6 @@
 #include <future>
 #include <thread>
 
-#include <libusb-1.0/libusb.h>
-
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
 #include "common/params.h"
@@ -67,7 +65,7 @@ static std::string get_time_str(const struct tm &time) {
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
-    if (!panda->connected) {
+    if (!panda->connected()) {
       do_exit = true;
       return false;
     }
@@ -184,7 +182,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   return true;
 }
 
-Panda *usb_connect(std::string serial="", uint32_t index=0) {
+Panda *connect(std::string serial="", uint32_t index=0) {
   std::unique_ptr<Panda> panda;
   try {
     panda = std::make_unique<Panda>(serial, (index * PANDA_BUS_CNT));
@@ -227,9 +225,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
-        LOGT("sending sendcan to panda: %s", (panda->usb_serial).c_str());
+        LOGT("sending sendcan to panda: %s", (panda->hw_serial).c_str());
         panda->can_send(event.getSendcan());
-        LOGT("sendcan sent to panda: %s", (panda->usb_serial).c_str());
+        LOGT("sendcan sent to panda: %s", (panda->hw_serial).c_str());
       }
     }
   }
@@ -357,7 +355,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
   #endif
 
-    if (!panda->comms_healthy) {
+    if (!panda->comms_healthy()) {
       evt.setValid(false);
     }
 
@@ -433,7 +431,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
-  evt.setValid(panda->comms_healthy);
+  evt.setValid(panda->comms_healthy());
 
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
@@ -526,7 +524,7 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
@@ -595,7 +593,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
   // connect to all provided serials
   std::vector<Panda *> pandas;
   for (int i = 0; i < serials.size() && !do_exit; /**/) {
-    Panda *p = usb_connect(serials[i], i);
+    Panda *p = connect(serials[i], i);
     if (!p) {
       // send empty pandaState & peripheralState and try again
       send_empty_panda_state(&pm);
