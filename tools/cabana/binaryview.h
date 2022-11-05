@@ -57,11 +57,10 @@ class BinaryView : public QTableView {
 public:
   BinaryView(QWidget *parent = nullptr);
   void setMessage(const QString &message_id);
-  void updateState();
   void highlight(const Signal *sig);
-  const Signal *hoveredSignal() const { return hovered_sig; }
   QSet<const Signal*> getOverlappingSignals() const;
-  QSize sizeHint() const override;
+  inline const Signal *hoveredSignal() const { return hovered_sig; }
+  inline void updateState() { model->updateState(); }
 
 signals:
   void signalHovered(const Signal *sig);
@@ -76,7 +75,6 @@ private:
   void leaveEvent(QEvent *event) override;
   const Signal *getResizingSignal() const;
 
-  QString msg_id;
   QModelIndex anchor_index;
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;

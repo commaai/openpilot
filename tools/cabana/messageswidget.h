@@ -38,7 +38,7 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void updateState(bool sort = false);
-  void setFilterString(const QString &string) { filter_str = string; }
+  void setFilterString(const QString &string);
 
 private:
   bool updateMessages(bool sort);

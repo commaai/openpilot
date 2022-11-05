@@ -14,9 +14,10 @@
 
 class SignalForm : public QWidget {
 public:
-  SignalForm(const Signal &sig, QWidget *parent);
+  SignalForm(QWidget *parent);
 
   QLineEdit *name, *unit, *comment, *val_desc, *offset, *factor, *min_val, *max_val;
+  QLabel *lsb, *msb;
   QSpinBox *size;
   QComboBox *sign, *endianness;
 };
@@ -25,16 +26,18 @@ class SignalEdit : public QWidget {
   Q_OBJECT
 
 public:
-  SignalEdit(int index, const QString &msg_id, const Signal *sig, QWidget *parent = nullptr);
+  SignalEdit(int index, QWidget *parent = nullptr);
+  void setSignal(const QString &msg_id, const Signal *sig, bool show_form);
   void setChartOpened(bool opened);
   void setFormVisible(bool show);
   void signalHovered(const Signal *sig);
   inline bool isFormVisible() const { return form_container->isVisible(); }
   const Signal *sig = nullptr;
+  QString msg_id;
 
 signals:
   void highlight(const Signal *sig);
-  void showChart(bool show);
+  void showChart(const QString &name, const Signal *sig, bool show);
   void showFormClicked();
   void remove(const Signal *sig);
   void save(const Signal *sig, const Signal &new_sig);
@@ -44,12 +47,11 @@ protected:
   void leaveEvent(QEvent *event) override;
   void saveSignal();
 
-  SignalForm *form;
+  SignalForm *form = nullptr;
   ElidedLabel *title;
   QWidget *form_container;
   QLabel *icon;
   int form_idx = 0;
-  QString msg_id;
   bool chart_opened = false;
   QPushButton *plot_btn;
 };
