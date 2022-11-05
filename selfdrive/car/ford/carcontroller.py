@@ -49,7 +49,7 @@ class CarController:
 
         # use LatCtlCurv_No_Actl to actuate steering
         # TODO: apply rate limits
-        apply_curvature = actuators.curvature * CarControllerParams.CURVATURE_MAX
+        apply_curvature = actuators.curvature
       else:
         lca_rq = 0
         apply_curvature = 0.
