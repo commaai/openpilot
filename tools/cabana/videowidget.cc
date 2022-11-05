@@ -28,8 +28,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   slider = new Slider(this);
   slider->setSingleStep(0);
-  slider->setMinimum(0);
-  slider->setMaximum(can->totalSeconds() * 1000);
+  slider->setRange(0, can->totalSeconds() * 1000);
   slider_layout->addWidget(slider);
 
   end_time_label = new QLabel(formatTime(can->totalSeconds()));
@@ -74,8 +73,7 @@ void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
     max = can->totalSeconds();
   }
   end_time_label->setText(formatTime(max));
-  slider->setMinimum(min * 1000);
-  slider->setMaximum(max * 1000);
+  slider->setRange(min * 1000, max * 1000);
 }
 
 void VideoWidget::updateState() {
