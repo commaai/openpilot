@@ -1,6 +1,5 @@
 #include "tools/cabana/canmessages.h"
 
-#include <QDebug>
 #include <QSettings>
 
 #include "tools/cabana/dbcmanager.h"

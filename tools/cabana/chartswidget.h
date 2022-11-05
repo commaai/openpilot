@@ -8,7 +8,6 @@
 #include <QGraphicsTextItem>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QWidget>
 #include <QtCharts/QChartView>
 
 #include "tools/cabana/canmessages.h"
