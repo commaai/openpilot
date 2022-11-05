@@ -274,11 +274,6 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
 
   setRenderHint(QPainter::Antialiasing);
   setRubberBand(QChartView::HorizontalRubberBand);
-  if (auto rubber = findChild<QRubberBand *>()) {
-    QPalette pal;
-    pal.setBrush(QPalette::Base, QColor(0, 0, 0, 80));
-    rubber->setPalette(pal);
-  }
 
   QTimer *timer = new QTimer(this);
   timer->setInterval(100);
