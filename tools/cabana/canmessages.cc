@@ -96,10 +96,9 @@ bool CANMessages::eventFilter(const Event *event) {
       data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
 
-      auto &count = counters[id];
-      data.count = ++count;
+      data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
-        data.freq = count / delta;
+        data.freq = data.count / delta;
       }
       (*new_msgs)[id] = data;
     }
