@@ -74,10 +74,10 @@ void OnroadWindow::updateState(const UIState &s) {
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   UIState *s = uiState();
-  qDebug() << e->x() << e->y();
   // TODO: make a widget for button
   if (e->x() < 400 && e->y() < 600) {
-    Params().putBool("EndToEndToggle", !s->scene.end_to_end_long);
+    qDebug() << e->x() << e->y();
+    Params().putBool("EndToEndLong", !s->scene.end_to_end_long);
     s->scene.end_to_end_long = !s->scene.end_to_end_long;
     return;
   }
@@ -392,9 +392,9 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   UIState *s = uiState();
 //  qDebug() << s->scene.end_to_end_long;
   configFont(p, "Road Rage", 85, "Regular");
-  drawText(p, 125          , 375          , "E", 170, QColor(s->scene.end_to_end_long ? "#00FF85" : "#54DADADA"));
-  drawText(p, 125 + 30     , 375 + 50     , "2", 170, QColor(s->scene.end_to_end_long ? "#DADADA" : "#54DADADA"));
-  drawText(p, 125 + 30 + 50, 375 + 50 + 50, "E", 170, QColor(s->scene.end_to_end_long ? "#00FF85" : "#54DADADA"));
+  drawText(p, 125          , 375          , "E", 170, QColor(s->scene.end_to_end_long ? "#00FF85" : "#B2DADADA"));
+  drawText(p, 125 + 30     , 375 + 50     , "2", 170, QColor(s->scene.end_to_end_long ? "#DADADA" : "#B2DADADA"));
+  drawText(p, 125 + 30 + 50, 375 + 50 + 50, "E", 170, QColor(s->scene.end_to_end_long ? "#00FF85" : "#B2DADADA"));
 
 
   if (!hideFooterIcons) {
