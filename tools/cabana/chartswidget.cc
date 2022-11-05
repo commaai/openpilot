@@ -176,16 +176,8 @@ void ChartsWidget::removeChart(ChartWidget *chart) {
 }
 
 void ChartsWidget::removeAll(const Signal *sig) {
-  QMutableListIterator<ChartWidget *> it(charts);
-  while (it.hasNext()) {
-    auto c = it.next();
-    if (sig == nullptr || c->signal == sig) {
-      c->deleteLater();
-      emit chartClosed(c->id, c->signal);
-      it.remove();
-    }
-  }
-  updateTitleBar();
+  for (auto c : charts.toVector())
+    if (!sig || c->signal == sig) removeChart(c);
 }
 
 void ChartsWidget::signalUpdated(const Signal *sig) {
