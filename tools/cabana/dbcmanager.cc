@@ -49,22 +49,19 @@ QString DBCManager::generateDBC() {
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
-  auto m = const_cast<Msg *>(msg(id));
-  if (m) {
+  if (auto m = const_cast<Msg *>(msg(id))) {
     m->name = name.toStdString();
     m->size = size;
   } else {
-    uint32_t address = parseId(id).second;
-    dbc->msgs.push_back({.address = address, .name = name.toStdString(), .size = size});
-    msg_map[address] = &dbc->msgs.back();
+    m = &dbc->msgs.emplace_back(Msg{.address = parseId(id).second, .name = name.toStdString(), .size = size});
+    msg_map[m->address] = m;
   }
   emit msgUpdated(id);
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (Msg *m = const_cast<Msg *>(msg(id))) {
-    m->sigs.push_back(sig);
-    emit signalAdded(&m->sigs.back());
+    emit signalAdded(&m->sigs.emplace_back(sig));
   }
 }
 
