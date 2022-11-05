@@ -20,7 +20,7 @@ public:
 
   static std::pair<uint8_t, uint32_t> parseId(const QString &id);
   inline static std::vector<std::string> allDBCNames() { return get_dbc_names(); }
-  inline QString name() const { return dbc_name; }
+  inline QString name() const { return dbc ? dbc->name.c_str() : ""; }
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   inline const DBC *getDBC() const { return dbc; }
@@ -38,7 +38,6 @@ signals:
   void DBCFileChanged();
 
 private:
-  QString dbc_name;
   DBC *dbc = nullptr;
   std::unordered_map<uint32_t, const Msg *> msg_map;
 };
