@@ -54,7 +54,7 @@ def run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout):
         return
 
       print(f"LimeGPS crashed: {str(e)}")
-      print(f"stderr:\n{e.stderr.decode(' utf-8')}")# pylint:disable=no-member
+      print(f"stderr:\n{e.stderr.decode('utf-8')}")# pylint:disable=no-member
       return
 
     if contin_sim:
