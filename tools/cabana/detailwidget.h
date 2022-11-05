@@ -26,9 +26,6 @@ public:
   void setMessage(const QString &message_id);
   void dbcMsgChanged(int show_form_idx = -1);
 
-signals:
-  void binaryViewMoved(bool in);
-
 private:
   void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);

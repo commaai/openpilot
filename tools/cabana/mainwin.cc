@@ -81,7 +81,6 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(this, &MainWindow::showMessage, status_bar, &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
-  QObject::connect(detail_widget, &DetailWidget::binaryViewMoved, [this](bool in) { splitter->setSizes({in ? 100 : 0, 500}); });
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
