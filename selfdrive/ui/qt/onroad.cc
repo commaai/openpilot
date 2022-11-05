@@ -73,6 +73,14 @@ void OnroadWindow::updateState(const UIState &s) {
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
+  UIState *s = uiState();
+  qDebug() << e->x() << e->y();
+  // TODO: make a widget for button
+  if (e->x() < 400 && e->y() < 600) {
+    Params().putBool("EndToEndToggle", !s->scene.end_to_end_long);
+    s->scene.end_to_end_long = !s->scene.end_to_end_long;
+    return;
+  }
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
     map->setVisible(!sidebarVisible && !map->isVisible());
@@ -370,9 +378,9 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   // current speed
-  configFont(p, "Road Rage", 176, "Bold");
+  configFont(p, "Inter", 176, "Bold");
   drawText(p, rect().center().x(), 210, speedStr);
-  configFont(p, "Road Rage", 66, "Regular");
+  configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   // engage-ability icon
@@ -381,21 +389,18 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
              steer_img, bg_colors[status], 1.0);
   }
 
-//  drawText();
-
-  Params().put
-
+  UIState *s = uiState();
+//  qDebug() << s->scene.end_to_end_long;
   configFont(p, "Road Rage", 85, "Regular");
-  drawText(p, 125          , 350          , "E", 170, QColor("#00FF85"));
-  drawText(p, 125 + 30     , 350 + 50     , "2", 170, QColor("#DADADA"));
-  drawText(p, 125 + 30 + 50, 350 + 50 + 50, "E", 170, QColor("#00FF85"));
-//  drawText(p, 70, 400, "E");
+  drawText(p, 125          , 375          , "E", 170, QColor(s->scene.end_to_end_long ? "#00FF85" : "#54DADADA"));
+  drawText(p, 125 + 30     , 375 + 50     , "2", 170, QColor(s->scene.end_to_end_long ? "#DADADA" : "#54DADADA"));
+  drawText(p, 125 + 30 + 50, 375 + 50 + 50, "E", 170, QColor(s->scene.end_to_end_long ? "#00FF85" : "#54DADADA"));
 
 
   if (!hideFooterIcons) {
     // lateral + longitudinal control icons
     // TODO: handle controls unresponsive
-    UIState *s = uiState();
+//    UIState *s = uiState();
     SubMaster &sm = *(s->sm);
     auto CC = sm["carControl"].getCarControl();
     auto CS = sm["carState"].getCarState();
@@ -505,6 +510,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     bg.setColorAt(0.75, QColor::fromHslF(63 / 360., 1.0, 0.68, 0.35));
     bg.setColorAt(1.0, QColor::fromHslF(63 / 360., 1.0, 0.68, 0.0));
   } else {
+    accel_filter.update(0);
     const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
     float orientation_future = 0;
     if (orientation.getZ().size() > 16) {
