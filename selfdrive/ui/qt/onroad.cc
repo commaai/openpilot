@@ -219,7 +219,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  setProperty("hideFooterIcons", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
   // update engageability and DM icons at 2Hz
@@ -379,28 +379,9 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   if (engageable) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
              steer_img, bg_colors[status], 1.0);
-
-//    UIState *s = uiState();
-//    SubMaster &sm = *(s->sm);
-//    auto CC = sm["carControl"].getCarControl();
-//    auto CS = sm["carState"].getCarState();
-
-//    int base_status = sm["controlsState"].getControlsState().getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-//    int lat_status = (CC.getEnabled() && (!CC.getLatActive() || CS.getSteeringPressed())) ? STATUS_OVERRIDE : base_status;
-//    int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
-
-//    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-//             steer_img, blackColor(70), 0.2);
-//    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius * 2 + int(bdr_s * 1.5),
-//             longitudinal_img, blackColor(70), 0.2);
-
-//    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
-//    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-//             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
-
   }
 
-  if (!hideDM) {
+  if (!hideFooterIcons) {
     // lateral + longitudinal control icons
     // TODO: handle controls unresponsive
     UIState *s = uiState();
@@ -411,6 +392,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     bool lat_active = CC.getLatActive() && !CS.getSteeringPressed();
     bool long_active = CC.getLongActive();
 
+    // TODO: handle rh DM
     int steer_icon_x = rect().right() -  radius / 2 - (bdr_s * 2);
     int longitudinal_icon_x = steer_icon_x - radius * 1.25;
     drawIcon(p, steer_icon_x, rect().bottom() - footer_h / 2,

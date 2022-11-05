@@ -38,7 +38,7 @@ class AnnotatedCameraWidget : public CameraWidget {
 
   Q_PROPERTY(bool engageable MEMBER engageable);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
-  Q_PROPERTY(bool hideDM MEMBER hideDM);
+  Q_PROPERTY(bool hideFooterIcons MEMBER hideFooterIcons);
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
   Q_PROPERTY(int status MEMBER status);
 
@@ -63,7 +63,7 @@ private:
   bool is_metric = false;
   bool engageable = false;
   bool dmActive = false;
-  bool hideDM = false;
+  bool hideFooterIcons = false;
   bool rightHandDM = false;
   bool has_us_speed_limit = false;
   bool has_eu_speed_limit = false;
