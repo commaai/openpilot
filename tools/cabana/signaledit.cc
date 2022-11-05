@@ -139,7 +139,7 @@ void SignalEdit::saveSignal() {
     s.msb = s.start_bit;
   }
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
-  emit save(this->sig, s);
+  emit save(this->sig, s, form->val_desc->text());
 }
 
 void SignalEdit::setChartOpened(bool opened) {
@@ -162,6 +162,8 @@ void SignalEdit::setFormVisible(bool visible) {
     form->offset->setText(QString::number(sig->offset));
     form->msb->setText(QString::number(sig->msb));
     form->lsb->setText(QString::number(sig->lsb));
+    auto val = dbc()->val(msg_id, sig->name.c_str());
+    form->val_desc->setText(val ? dbc()->valDescription(val) : "");
   }
   form_container->setVisible(visible);
   icon->setText(visible ? "▼" : ">");

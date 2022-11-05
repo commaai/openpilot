@@ -40,7 +40,7 @@ signals:
   void showChart(const QString &name, const Signal *sig, bool show);
   void showFormClicked();
   void remove(const Signal *sig);
-  void save(const Signal *sig, const Signal &new_sig);
+  void save(const Signal *sig, const Signal &new_sig, const QString &val_desc);
 
 protected:
   void enterEvent(QEvent *event) override;

@@ -239,10 +239,10 @@ void DetailWidget::addSignal(int from, int to) {
 void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
   Signal s = *sig;
   updateSigSizeParamsFromRange(s, from, to);
-  saveSignal(sig, s);
+  dbc()->updateSignal(msg_id, sig->name.c_str(), s);
 }
 
-void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
+void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig, const QString &val_desc) {
   auto msg = dbc()->msg(msg_id);
   if (new_sig.name != sig->name) {
     auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return s.name == new_sig.name; });
@@ -260,7 +260,7 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
     return;
   }
 
-  dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
+  dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig, val_desc);
   // update binary view and history log
   updateState();
 }

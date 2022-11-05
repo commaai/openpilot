@@ -34,7 +34,7 @@ private:
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int to);
   void resizeSignal(const Signal *sig, int from, int to);
-  void saveSignal(const Signal *sig, const Signal &new_sig);
+  void saveSignal(const Signal *sig, const Signal &new_sig, const QString &val_desc);
   void removeSignal(const Signal *sig);
   void editMsg();
   void showForm();

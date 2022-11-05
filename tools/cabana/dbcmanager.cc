@@ -47,6 +47,11 @@ QString DBCManager::generateDBC() {
     }
     dbc_string += "\n";
   }
+
+  // value description
+  for (auto &v : dbc->vals) {
+    dbc_string += QString("VAL_ %1 %2 %3;\n").arg(v.address).arg(v.name.c_str()).arg(valDescription(&v));
+  }
   return dbc_string;
 }
 
@@ -70,10 +75,18 @@ void DBCManager::addSignal(const QString &id, const Signal &sig) {
   }
 }
 
-void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
+void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig, std::optional<QString> val_desc) {
   if (Msg *m = const_cast<Msg *>(msg(id))) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
     if (it != m->sigs.end()) {
+      if (val_desc) {
+        Val *v = val(id, sig_name);
+        if (!v) {
+          v = &dbc->vals.emplace_back(Val{.name = sig.name, .address = m->address});
+        }
+        v->name = sig.name;
+        v->def_val = val_desc->toStdString();
+      }
       *it = sig;
       emit signalUpdated(&(*it));
     }
@@ -88,6 +101,24 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
       m->sigs.erase(it);
     }
   }
+}
+
+Val *DBCManager::val(const QString &id, const QString &name) {
+  uint32_t address = addressFromId(id);
+  for (auto &v : dbc->vals) {
+    if (v.address == address && name == v.name.c_str())
+      return &v;
+  }
+  return {};
+}
+
+QString DBCManager::valDescription(const Val *val) {
+  assert(val != nullptr);
+  QString desc;
+  QStringList list = QString::fromStdString(val->def_val).split(' ');
+  for (int i = 1; i < list.size(); i+=2)
+    list[i] = '"' + list[i].replace('_', ' ').toLower() + '"';
+  return list.join(' ');
 }
 
 uint32_t DBCManager::addressFromId(const QString &id) {

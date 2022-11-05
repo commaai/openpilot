@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <QObject>
 
 #include "opendbc/can/common_dbc.h"
@@ -15,7 +16,7 @@ public:
   void open(const QString &name, const QString &content);
   QString generateDBC();
   void addSignal(const QString &id, const Signal &sig);
-  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
+  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig, std::optional<QString> val_desc = {});
   void removeSignal(const QString &id, const QString &sig_name);
 
   static uint32_t addressFromId(const QString &id);
@@ -24,6 +25,8 @@ public:
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   inline const DBC *getDBC() const { return dbc; }
+  Val *val(const QString &id, const QString &name);
+  QString valDescription(const Val *val);
   inline const Msg *msg(const QString &id) const { return msg(addressFromId(id)); }
   inline const Msg *msg(uint32_t address) const {
     auto it = msg_map.find(address);
