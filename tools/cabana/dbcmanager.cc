@@ -56,7 +56,7 @@ void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size
     m->name = name.toStdString();
     m->size = size;
   } else {
-    uint32_t address = addressFromId(id);
+    uint32_t address = parseId(id).second;
     dbc->msgs.push_back({.address = address, .name = name.toStdString(), .size = size});
     msg_map[address] = &dbc->msgs.back();
   }
@@ -90,8 +90,9 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
   }
 }
 
-uint32_t DBCManager::addressFromId(const QString &id) {
-  return id.mid(id.indexOf(':') + 1).toUInt(nullptr, 16);
+std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
+  const auto list = id.split(':');
+  return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 
 DBCManager *dbc() {

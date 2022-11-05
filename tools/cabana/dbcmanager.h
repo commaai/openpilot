@@ -18,13 +18,13 @@ public:
   void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
   void removeSignal(const QString &id, const QString &sig_name);
 
-  static uint32_t addressFromId(const QString &id);
+  static std::pair<uint8_t, uint32_t> parseId(const QString &id);
   inline static std::vector<std::string> allDBCNames() { return get_dbc_names(); }
   inline QString name() const { return dbc_name; }
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   inline const DBC *getDBC() const { return dbc; }
-  inline const Msg *msg(const QString &id) const { return msg(addressFromId(id)); }
+  inline const Msg *msg(const QString &id) const { return msg(parseId(id).second); }
   inline const Msg *msg(uint32_t address) const {
     auto it = msg_map.find(address);
     return it != msg_map.end() ? it->second : nullptr;

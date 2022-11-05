@@ -40,12 +40,9 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
   auto evts = events();
   if (!evts) return {};
 
-  auto l = id.split(':');
-  int bus = l[0].toInt();
-  uint32_t address = l[1].toUInt(nullptr, 16);
-
   QList<QPointF> ret;
   ret.reserve(max_count);
+  auto [bus, address] = DBCManager::parseId(id);
   for (auto &evt : *evts) {
     if (evt->which != cereal::Event::Which::CAN) continue;
 

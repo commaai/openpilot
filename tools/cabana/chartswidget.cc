@@ -322,12 +322,9 @@ void ChartView::updateSeries(const std::pair<double, double> range) {
   auto events = can->events();
   if (!events) return;
 
-  auto l = id.split(':');
-  int bus = l[0].toInt();
-  uint32_t address = l[1].toUInt(nullptr, 16);
-
   vals.clear();
   vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
+  auto [bus, address] = DBCManager::parseId(id);
   double route_start_time = can->routeStartTime();
   Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
   auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
