@@ -420,7 +420,6 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
       ("GEAR", gear_msg),
-      ("BRAKE", 100),
 
       ("STEERING_RATE", "STEERING_SENSORS"),
       ("STEERING_ANGLE", "STEERING_SENSORS"),
@@ -446,6 +445,7 @@ class CarState(CarStateBase):
     checks = [
       ("WHEEL_SPEEDS", 100),
       (gear_msg, 100),
+      ("BRAKE", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("TCS", 50),
