@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
+import numpy as np
 from cereal import car
 from math import fabs
 from panda import Panda
 
+from common.numpy_fast import interp
+from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -15,6 +18,10 @@ TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+
+
+def nthroot(n, x):
+  return x ** (1 / n)
 
 
 class CarInterface(CarInterfaceBase):
@@ -44,7 +51,25 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
+  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, speed, friction_compensation):
+    # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
+    friction_interp = interp(
+      apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
+      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
+      [-torque_params.friction, torque_params.friction]
+    )
+    friction = friction_interp if friction_compensation else 0.0
+
+    lateral_accel_value = lateral_accel_value / torque_params.latAccelFactor
+    numerator = nthroot(3, np.sqrt(lateral_accel_value ** 2 + 4) + lateral_accel_value)
+    return float(np.log(numerator / nthroot(3, 2)) + friction)
+
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+    return self.torque_from_lateral_accel_gm
+
+  @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
