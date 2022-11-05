@@ -32,7 +32,7 @@ void DBCManager::open(const QString &name, const QString &content) {
 QString DBCManager::generateDBC() {
   if (!dbc) return {};
 
-  QString dbc_string;
+  QString dbc_string, signal_comment;
   for (auto &m : dbc->msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(m.address).arg(m.name.c_str()).arg(m.size);
     for (auto &sig : m.sigs) {
@@ -47,17 +47,13 @@ QString DBCManager::generateDBC() {
                         .arg(sig.min, 0, 'g', std::numeric_limits<double>::digits10)
                         .arg(sig.max, 0, 'g', std::numeric_limits<double>::digits10)
                         .arg(sig.unit.c_str());
+      if (!sig.comment.empty()) {
+        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(m.address).arg(sig.name.c_str()).arg(sig.comment.c_str());
+      }
     }
     dbc_string += "\n";
   }
-  // write comments
-  for (auto &m : dbc->msgs) {
-    for (auto &sig : m.sigs) {
-      if (!sig.comment.empty())
-        dbc_string += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(m.address).arg(sig.name.c_str()).arg(sig.comment.c_str());
-    }
-  }
-  return dbc_string;
+  return dbc_string + signal_comment;
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
