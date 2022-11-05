@@ -375,26 +375,50 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // lateral + longitudinal control icons
-  // TODO: handle controls unresponsive
+  // engage-ability icon
   if (engageable) {
+    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
+             steer_img, bg_colors[status], 1.0);
+
+//    UIState *s = uiState();
+//    SubMaster &sm = *(s->sm);
+//    auto CC = sm["carControl"].getCarControl();
+//    auto CS = sm["carState"].getCarState();
+
+//    int base_status = sm["controlsState"].getControlsState().getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+//    int lat_status = (CC.getEnabled() && (!CC.getLatActive() || CS.getSteeringPressed())) ? STATUS_OVERRIDE : base_status;
+//    int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
+
+//    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
+//             steer_img, blackColor(70), 0.2);
+//    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius * 2 + int(bdr_s * 1.5),
+//             longitudinal_img, blackColor(70), 0.2);
+
+//    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
+//    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
+//             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+
+  }
+
+  if (!hideDM) {
+    // lateral + longitudinal control icons
+    // TODO: handle controls unresponsive
     UIState *s = uiState();
     SubMaster &sm = *(s->sm);
     auto CC = sm["carControl"].getCarControl();
     auto CS = sm["carState"].getCarState();
 
-    int base_status = sm["controlsState"].getControlsState().getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
-    int lat_status = (CC.getEnabled() && (!CC.getLatActive() || CS.getSteeringPressed())) ? STATUS_OVERRIDE : base_status;
-    int long_status = (CC.getEnabled() && !CC.getLongActive()) ? STATUS_OVERRIDE : base_status;
+    bool lat_active = CC.getLatActive() && !CS.getSteeringPressed();
+    bool long_active = CC.getLongActive();
 
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             steer_img, bg_colors[lat_status], 1.0);
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius * 2 + int(bdr_s * 1.5),
-             longitudinal_img, bg_colors[long_status], 1.0);
-  }
+    int steer_icon_x = rect().right() -  radius / 2 - (bdr_s * 2);
+    int longitudinal_icon_x = steer_icon_x - radius * 1.25;
+    drawIcon(p, steer_icon_x, rect().bottom() - footer_h / 2,
+             steer_img, blackColor(70), lat_active ? 1.0 : 0.2);
+    drawIcon(p, longitudinal_icon_x, rect().bottom() - footer_h / 2,
+             longitudinal_img, blackColor(70), long_active ? 1.0 : 0.2);
 
-  // dm icon
-  if (!hideDM) {
+    // dm icon
     int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
     drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
