@@ -277,9 +277,7 @@ void DetailWidget::removeSignal(const Signal *sig) {
 
 EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Edit message"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-  QFormLayout *form_layout = new QFormLayout();
+  QFormLayout *form_layout = new QFormLayout(this);
   form_layout->addRow("ID", new QLabel(msg_id));
 
   name_edit = new QLineEdit(title, this);
@@ -291,10 +289,8 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   size_spin->setValue(size);
   form_layout->addRow(tr("Size"), size_spin);
 
-  main_layout->addLayout(form_layout);
-
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
+  form_layout->addRow(buttonBox);
   setFixedWidth(parent->width() * 0.9);
 
   connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
