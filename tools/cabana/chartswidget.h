@@ -37,6 +37,7 @@ private:
   void adjustChartMargins();
   void updateAxisY();
 
+  QGraphicsItemGroup *item_group;
   QGraphicsLineItem *track_line;
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;

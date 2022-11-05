@@ -259,16 +259,16 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->setMargins({0, 0, 0, 0});
   chart->layout()->setContentsMargins(0, 0, 0, 0);
 
-  track_line = new QGraphicsLineItem(chart);
-  track_line->setZValue(chart->zValue() + 10);
-  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
-  track_ellipse = new QGraphicsEllipseItem(chart);
-  track_ellipse->setZValue(chart->zValue() + 10);
-  track_ellipse->setBrush(Qt::darkGray);
-  value_text = new QGraphicsTextItem(chart);
-  value_text->setZValue(chart->zValue() + 10);
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
+
+  track_line = new QGraphicsLineItem(chart);
+  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+  track_ellipse = new QGraphicsEllipseItem(chart);
+  track_ellipse->setBrush(Qt::darkGray);
+  value_text = new QGraphicsTextItem(chart);
+  item_group = scene()->createItemGroup({track_line, track_ellipse, value_text});
+  item_group->setZValue(chart->zValue() + 10);
 
   setChart(chart);
 
@@ -373,9 +373,7 @@ void ChartView::updateAxisY() {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  track_line->setVisible(false);
-  value_text->setVisible(false);
-  track_ellipse->setVisible(false);
+  item_group->setVisible(false);
   QChartView::leaveEvent(event);
 }
 
@@ -427,9 +425,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       }
       value_text->setPos(text_x, pos.y() - 10);
     }
-    track_line->setVisible(value != vals.end());
-    value_text->setVisible(value != vals.end());
-    track_ellipse->setVisible(value != vals.end());
+    item_group->setVisible(value != vals.end());
   } else {
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   }
