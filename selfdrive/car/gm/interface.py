@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, speed, friction_compensation):
+  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction_interp = interp(
       apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
