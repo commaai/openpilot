@@ -25,8 +25,7 @@ public:
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   inline const DBC *getDBC() const { return dbc; }
-  Val *val(const QString &id, const QString &name);
-  QString valDescription(const Val *val);
+  QString valDescription(const Signal *sig);
   inline const Msg *msg(const QString &id) const { return msg(addressFromId(id)); }
   inline const Msg *msg(uint32_t address) const {
     auto it = msg_map.find(address);
@@ -41,9 +40,11 @@ signals:
   void DBCFileChanged();
 
 private:
+  void afterOpen();
   QString dbc_name;
   DBC *dbc = nullptr;
   std::unordered_map<uint32_t, const Msg *> msg_map;
+  std::unordered_map<const Signal*, QString> val_map;
 };
 
 // TODO: Add helper function in dbc.h

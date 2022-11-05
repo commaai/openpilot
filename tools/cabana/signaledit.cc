@@ -162,8 +162,7 @@ void SignalEdit::setFormVisible(bool visible) {
     form->offset->setText(QString::number(sig->offset));
     form->msb->setText(QString::number(sig->msb));
     form->lsb->setText(QString::number(sig->lsb));
-    auto val = dbc()->val(msg_id, sig->name.c_str());
-    form->val_desc->setText(val ? dbc()->valDescription(val) : "");
+    form->val_desc->setText(dbc()->valDescription(sig));
   }
   form_container->setVisible(visible);
   icon->setText(visible ? "▼" : ">");
