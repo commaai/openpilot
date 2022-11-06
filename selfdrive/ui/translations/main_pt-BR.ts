@@ -238,6 +238,14 @@
         <source>Disengage to Power Off</source>
         <translation>Desacione para Desligar</translation>
     </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -465,6 +473,17 @@ trabalho definido</translation>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">OK</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -587,13 +606,6 @@ trabalho definido</translation>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>Não foi possível montar a partição de dados. Pressione confirmar para resetar seu dispositivo.</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>Ok</translation>
     </message>
 </context>
 <context>
@@ -854,6 +866,10 @@ trabalho definido</translation>
         <source>CHECK</source>
         <translation>VERIFICAR</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1055,6 +1071,10 @@ trabalho definido</translation>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>Esquecer Rede Wi-Fi &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

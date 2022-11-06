@@ -32,7 +32,7 @@ public:
   QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
-  inline QString route() const { return routeName; }
+  inline QString route() const { return replay->route()->name(); }
   inline QString carFingerprint() const { return replay->carFingerprint().c_str(); }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
@@ -47,6 +47,7 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void streamStarted();
   void eventsMerged();
   void updated();
   void received(QHash<QString, CanData> *);
@@ -58,9 +59,7 @@ protected:
   void process(QHash<QString, CanData> *);
   void settingChanged();
 
-  QString routeName;
   Replay *replay = nullptr;
-
   std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
   QHash<QString, uint32_t> counters;
