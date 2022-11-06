@@ -1,15 +1,8 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <QCompleter>
-#include <QDialogButtonBox>
-#include <QFile>
-#include <QFileDialog>
-#include <QFileInfo>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QLineEdit>
-#include <QPushButton>
-#include <QTextEdit>
 #include <QVBoxLayout>
 
 #include "tools/cabana/dbcmanager.h"
@@ -17,31 +10,6 @@
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-
-  // DBC file selector
-  QHBoxLayout *dbc_file_layout = new QHBoxLayout();
-  dbc_combo = new QComboBox(this);
-  auto dbc_names = dbc()->allDBCNames();
-  for (const auto &name : dbc_names) {
-    dbc_combo->addItem(QString::fromStdString(name));
-  }
-  dbc_combo->model()->sort(0);
-  dbc_combo->setEditable(true);
-  dbc_combo->setCurrentText(QString());
-  dbc_combo->setInsertPolicy(QComboBox::NoInsert);
-  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
-  QFont font;
-  font.setBold(true);
-  dbc_combo->lineEdit()->setFont(font);
-  dbc_file_layout->addWidget(dbc_combo);
-
-  QPushButton *load_from_paste = new QPushButton(tr("Load from paste"), this);
-  dbc_file_layout->addWidget(load_from_paste);
-
-  dbc_file_layout->addStretch();
-  QPushButton *save_btn = new QPushButton(tr("Save DBC"), this);
-  dbc_file_layout->addWidget(save_btn);
-  main_layout->addLayout(dbc_file_layout);
 
   // message filter
   QLineEdit *filter = new QLineEdit(this);
@@ -67,55 +35,13 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
-  QObject::connect(can, &CANMessages::streamStarted, this, &MessagesWidget::loadDBCFromFingerprint);
   QObject::connect(can, &CANMessages::updated, [this]() { model->updateState(); });
-  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
-  QObject::connect(load_from_paste, &QPushButton::clicked, this, &MessagesWidget::loadDBCFromPaste);
-  QObject::connect(save_btn, &QPushButton::clicked, this, &MessagesWidget::saveDBC);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { model->updateState(true); });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid()) {
       emit msgSelectionChanged(current.data(Qt::UserRole).toString());
     }
   });
-
-  QFile json_file("./car_fingerprint_to_dbc.json");
-  if (json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
-  }
-}
-
-void MessagesWidget::loadDBCFromName(const QString &name) {
-  if (name != dbc()->name()) {
-    dbc()->open(name);
-    dbc_combo->setCurrentText(name);
-    // re-sort model to refresh column 'Name'
-    model->updateState(true);
-  }
-}
-
-void MessagesWidget::loadDBCFromPaste() {
-  LoadDBCDialog dlg(this);
-  if (dlg.exec()) {
-    dbc()->open("from paste", dlg.dbc_edit->toPlainText());
-    dbc_combo->setCurrentText("loaded from paste");
-    model->updateState(true);
-  }
-}
-
-void MessagesWidget::loadDBCFromFingerprint() {
-  auto fingerprint = can->carFingerprint();
-  if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
-    auto dbc_name = fingerprint_to_dbc[fingerprint];
-    if (dbc_name != QJsonValue::Undefined) {
-      loadDBCFromName(dbc_name.toString());
-    }
-  }
-}
-
-void MessagesWidget::saveDBC() {
-  SaveDBCDialog dlg(this);
-  dlg.dbc_edit->setText(dbc()->generateDBC());
-  dlg.exec();
 }
 
 // MessageListModel
@@ -233,62 +159,5 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_column = column;
     sort_order = order;
     updateState(true);
-  }
-}
-
-// LoadDBCDialog
-
-LoadDBCDialog::LoadDBCDialog(QWidget *parent) : QDialog(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  dbc_edit = new QTextEdit(this);
-  dbc_edit->setAcceptRichText(false);
-  dbc_edit->setPlaceholderText(tr("paste DBC file here"));
-  main_layout->addWidget(dbc_edit);
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
-
-  setMinimumSize({640, 480});
-  QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-  QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-}
-
-// SaveDBCDialog
-
-SaveDBCDialog::SaveDBCDialog(QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Save DBC"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  dbc_edit = new QTextEdit(this);
-  dbc_edit->setAcceptRichText(false);
-  main_layout->addWidget(dbc_edit);
-
-  QPushButton *copy_to_clipboard = new QPushButton(tr("Copy To Clipboard"), this);
-  QPushButton *save_as = new QPushButton(tr("Save As"), this);
-
-  QHBoxLayout *btn_layout = new QHBoxLayout();
-  btn_layout->addStretch();
-  btn_layout->addWidget(copy_to_clipboard);
-  btn_layout->addWidget(save_as);
-  main_layout->addLayout(btn_layout);
-  setMinimumSize({640, 480});
-
-  QObject::connect(copy_to_clipboard, &QPushButton::clicked, this, &SaveDBCDialog::copytoClipboard);
-  QObject::connect(save_as, &QPushButton::clicked, this, &SaveDBCDialog::saveAs);
-}
-
-void SaveDBCDialog::copytoClipboard() {
-  dbc_edit->selectAll();
-  dbc_edit->copy();
-  QDialog::accept();
-}
-
-void SaveDBCDialog::saveAs() {
-  QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                                   QDir::homePath() + "/untitled.dbc", tr("DBC (*.dbc)"));
-  if (!file_name.isEmpty()) {
-    QFile file(file_name);
-    if (file.open(QIODevice::WriteOnly)) {
-      file.write(dbc_edit->toPlainText().toUtf8());
-    }
-    QDialog::accept();
   }
 }
