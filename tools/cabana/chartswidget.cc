@@ -11,7 +11,7 @@
 
 // ChartsWidget
 
-ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
+ChartsWidget::ChartsWidget(QWidget *parent) : parent_widget(parent), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
 
@@ -70,11 +70,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
   QObject::connect(remove_all_btn, &QPushButton::clicked, [this]() { removeAll(); });
   QObject::connect(reset_zoom_btn, &QPushButton::clicked, this, &ChartsWidget::zoomReset);
-  QObject::connect(dock_btn, &QPushButton::clicked, [this]() {
-    emit dock(!docking);
-    docking = !docking;
-    updateTitleBar();
-  });
+  QObject::connect(dock_btn, &QPushButton::clicked, this, &ChartsWidget::dock);
 }
 
 void ChartsWidget::eventsMerged() {
@@ -141,8 +137,8 @@ void ChartsWidget::updateTitleBar() {
     range_label->setText(tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2));
   }
   title_label->setText(tr("Charts (%1)").arg(charts.size()));
-  dock_btn->setText(docking ? "⬈" : "⬋");
-  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
+  dock_btn->setText(parentWidget() ? "⬈" : "⬋");
+  dock_btn->setToolTip(parentWidget() ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show) {
@@ -190,12 +186,20 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
   }
 }
 
-bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
-  if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->clicked();
-    return true;
+void ChartsWidget::dock() {
+  bool docked = parentWidget() != nullptr;
+  if (docked) {
+    setParent(nullptr);
+    showMaximized();
+  } else {
+    parent_widget->layout()->addWidget(this);
   }
-  return false;
+  updateTitleBar();
+}
+
+void ChartsWidget::closeEvent(QCloseEvent *event) {
+  dock();
+  event->ignore();
 }
 
 // ChartWidget

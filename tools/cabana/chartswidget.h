@@ -77,12 +77,13 @@ public:
   bool isChartOpened(const QString &id, const Signal *sig);
 
 signals:
-  void dock(bool floating);
   void rangeChanged(double min, double max, bool is_zommed);
   void chartOpened(const QString &id, const Signal *sig);
   void chartClosed(const QString &id, const Signal *sig);
 
 private:
+  void dock();
+  void closeEvent(QCloseEvent *event) override;
   void eventsMerged();
   void updateState();
   void zoomIn(double min, double max);
@@ -90,12 +91,11 @@ private:
   void signalUpdated(const Signal *sig);
   void updateTitleBar();
   void removeAll(const Signal *sig = nullptr);
-  bool eventFilter(QObject *obj, QEvent *event) override;
 
+  QWidget *parent_widget;
   QWidget *title_bar;
   QLabel *title_label;
   QLabel *range_label;
-  bool docking = true;
   QPushButton *dock_btn;
   QPushButton *reset_zoom_btn;
   QPushButton *remove_all_btn;

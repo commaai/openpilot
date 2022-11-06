@@ -26,14 +26,14 @@ MainWindow::MainWindow() : QWidget() {
   messages_widget = new MessagesWidget(this);
   splitter->addWidget(messages_widget);
 
-  charts_widget = new ChartsWidget(this);
+  QWidget *right_container = new QWidget(this);
+  charts_widget = new ChartsWidget(right_container);
   detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
 
   h_layout->addWidget(splitter);
 
   // right widgets
-  QWidget *right_container = new QWidget(this);
   right_container->setFixedWidth(640);
   r_layout = new QVBoxLayout(right_container);
   r_layout->setContentsMargins(11, 0, 0, 0);
@@ -81,7 +81,6 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(this, &MainWindow::showMessage, status_bar, &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
-  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
   QObject::connect(can, &CANMessages::streamStarted, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
@@ -98,29 +97,6 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   } else {
     progress_bar->hide();
   }
-}
-
-void MainWindow::dockCharts(bool dock) {
-  if (dock && floating_window) {
-    floating_window->removeEventFilter(charts_widget);
-    r_layout->addWidget(charts_widget);
-    floating_window->deleteLater();
-    floating_window = nullptr;
-  } else if (!dock && !floating_window) {
-    floating_window = new QWidget(nullptr);
-    floating_window->setLayout(new QVBoxLayout());
-    floating_window->layout()->addWidget(charts_widget);
-    floating_window->installEventFilter(charts_widget);
-    floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
-    floating_window->showMaximized();
-  }
-}
-
-void MainWindow::closeEvent(QCloseEvent *event) {
-  main_win = nullptr;
-  if (floating_window)
-    floating_window->deleteLater();
-  QWidget::closeEvent(event);
 }
 
 void MainWindow::setOption() {

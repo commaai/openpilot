@@ -14,7 +14,6 @@ class MainWindow : public QWidget {
 
 public:
   MainWindow();
-  void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { status_bar->showMessage(msg, timeout); }
 
 signals:
@@ -22,7 +21,6 @@ signals:
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
-  void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
 
@@ -31,7 +29,6 @@ protected:
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
   QSplitter *splitter;
-  QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
   QStatusBar *status_bar;
