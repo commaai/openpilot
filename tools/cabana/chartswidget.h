@@ -70,17 +70,16 @@ private:
   void zoomIn(double min, double max);
   void zoomReset();
   void signalUpdated(const Signal *sig);
-  void updateTitleBar();
+  void updateToolBar();
   void removeAll(const Signal *sig = nullptr);
   bool eventFilter(QObject *obj, QEvent *event) override;
 
-  QWidget *title_bar;
   QLabel *title_label;
   QLabel *range_label;
   bool docking = true;
-  QPushButton *dock_btn;
-  QPushButton *reset_zoom_btn;
-  QPushButton *remove_all_btn;
+  QAction *dock_btn;
+  QAction *reset_zoom_btn;
+  QAction *remove_all_btn;
   QVBoxLayout *charts_layout;
   QList<ChartView *> charts;
   bool is_zoomed = false;

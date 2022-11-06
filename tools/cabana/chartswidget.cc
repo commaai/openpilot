@@ -8,47 +8,31 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 #include <QtConcurrent>
+#include <QToolBar>
 
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  // title bar
-  title_bar = new QWidget(this);
-  title_bar->setVisible(false);
-  QHBoxLayout *title_layout = new QHBoxLayout(title_bar);
-  title_layout->setContentsMargins(0, 0, 0, 0);
-  title_label = new QLabel(tr("Charts"));
-
-  title_layout->addWidget(title_label);
-  title_layout->addStretch();
-
-  range_label = new QLabel();
-  title_layout->addWidget(range_label);
-
-  reset_zoom_btn = new QPushButton("⟲", this);
-  reset_zoom_btn->setFixedSize(30, 30);
+  // toolbar
+  QToolBar *toolbar = new QToolBar(tr("Charts"), this);
+  title_label = new QLabel();
+  title_label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+  toolbar->addWidget(title_label);
+  toolbar->addWidget(range_label = new QLabel());
+  reset_zoom_btn = toolbar->addAction("⟲");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
-  title_layout->addWidget(reset_zoom_btn);
-
-  remove_all_btn = new QPushButton("✖", this);
+  remove_all_btn = toolbar->addAction("✖");
   remove_all_btn->setToolTip(tr("Remove all charts"));
-  remove_all_btn->setFixedSize(30, 30);
-  title_layout->addWidget(remove_all_btn);
-
-  dock_btn = new QPushButton();
-  dock_btn->setFixedSize(30, 30);
-  title_layout->addWidget(dock_btn);
-
-  main_layout->addWidget(title_bar, 0, Qt::AlignTop);
+  dock_btn = toolbar->addAction("");
+  main_layout->addWidget(toolbar);
+  updateToolBar();
 
   // charts
   QWidget *charts_container = new QWidget(this);
-  QVBoxLayout *charts_main = new QVBoxLayout(charts_container);
-  charts_layout = new QVBoxLayout();
-  charts_main->addLayout(charts_layout);
-  charts_main->addStretch();
+  charts_layout = new QVBoxLayout(charts_container);
+  charts_layout->addStretch();
 
   QScrollArea *charts_scroll = new QScrollArea(this);
   charts_scroll->setWidgetResizable(true);
@@ -67,12 +51,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
-  QObject::connect(remove_all_btn, &QPushButton::clicked, [this]() { removeAll(); });
-  QObject::connect(reset_zoom_btn, &QPushButton::clicked, this, &ChartsWidget::zoomReset);
-  QObject::connect(dock_btn, &QPushButton::clicked, [this]() {
+  QObject::connect(remove_all_btn, &QAction::triggered, [this]() { removeAll(); });
+  QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
+  QObject::connect(dock_btn, &QAction::triggered, [this]() {
     emit dock(!docking);
     docking = !docking;
-    updateTitleBar();
+    updateToolBar();
   });
 }
 
@@ -91,7 +75,7 @@ void ChartsWidget::eventsMerged() {
 void ChartsWidget::zoomIn(double min, double max) {
   zoomed_range = {min, max};
   is_zoomed = zoomed_range != display_range;
-  updateTitleBar();
+  updateToolBar();
   emit rangeChanged(min, max, is_zoomed);
   updateState();
 }
@@ -130,16 +114,11 @@ void ChartsWidget::updateState() {
   }
 }
 
-void ChartsWidget::updateTitleBar() {
-  title_bar->setVisible(!charts.isEmpty());
-  if (charts.isEmpty()) return;
-
-  range_label->setVisible(is_zoomed);
+void ChartsWidget::updateToolBar() {
+  remove_all_btn->setEnabled(!charts.isEmpty());
   reset_zoom_btn->setEnabled(is_zoomed);
-  if (is_zoomed) {
-    range_label->setText(tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2));
-  }
-  title_label->setText(tr("Charts (%1)").arg(charts.size()));
+  range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
+  title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));
   dock_btn->setText(docking ? "⬈" : "⬋");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
@@ -159,7 +138,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show) {
     emit chartOpened(chart->id, chart->signal);
     updateState();
   }
-  updateTitleBar();
+  updateToolBar();
 }
 
 bool ChartsWidget::isChartOpened(const QString &id, const Signal *sig) {
@@ -170,7 +149,7 @@ bool ChartsWidget::isChartOpened(const QString &id, const Signal *sig) {
 void ChartsWidget::removeChart(ChartView *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
-  updateTitleBar();
+  updateToolBar();
   emit chartClosed(chart->id, chart->signal);
 }
 
@@ -191,7 +170,7 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
   if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->clicked();
+    emit dock_btn->triggered();
     return true;
   }
   return false;
