@@ -1,8 +1,12 @@
 #pragma once
 
+#include <QComboBox>
+#include <QDialog>
+#include <QJsonDocument>
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <QTextEdit>
 
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
@@ -16,6 +20,12 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { status_bar->showMessage(msg, timeout); }
+
+public slots:
+  void loadDBCFromName(const QString &name);
+  void loadDBCFromFingerprint();
+  void loadDBCFromPaste();
+  void saveDBC();
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -35,4 +45,25 @@ protected:
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
   QStatusBar *status_bar;
+  QJsonDocument fingerprint_to_dbc;
+  QComboBox *dbc_combo;
+};
+
+
+class LoadDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  LoadDBCDialog(QWidget *parent);
+  QTextEdit *dbc_edit;
+};
+
+class SaveDBCDialog : public QDialog {
+  Q_OBJECT
+
+public:
+  SaveDBCDialog(QWidget *parent);
+  void copytoClipboard();
+  void saveAs();
+  QTextEdit *dbc_edit;
 };
