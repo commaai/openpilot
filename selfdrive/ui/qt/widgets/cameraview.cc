@@ -101,6 +101,7 @@ CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool 
 }
 
 CameraWidget::~CameraWidget() {
+  stopVipcThread();
   makeCurrent();
   if (isValid()) {
     glDeleteVertexArrays(1, &frame_vao);
@@ -168,6 +169,15 @@ void CameraWidget::showEvent(QShowEvent *event) {
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
     connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
     vipc_thread->start();
+  }
+}
+
+void CameraWidget::stopVipcThread() {
+  if (vipc_thread) {
+    vipc_thread->requestInterruption();
+    vipc_thread->quit();
+    vipc_thread->wait();
+    vipc_thread = nullptr;
   }
 }
 
