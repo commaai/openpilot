@@ -224,7 +224,7 @@ void MessageListModel::updateState(bool sort) {
           changePersistentIndex(idx, index(std::distance(msgs.begin(), it), idx.column()));
       }
     }
-    emit dataChanged(index(0, 0), index(msgs.size() - 1, 3), {Qt::DisplayRole});
+    emit dataChanged(index(0, 0), index(msgs.size() - 1, columnCount() - 1), {Qt::DisplayRole});
   }
 }
 
