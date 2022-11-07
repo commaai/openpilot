@@ -338,7 +338,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
 
-  // sim pose
+  // temporal pose
   const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
   const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
   const auto &v_std = net_outputs.temporal_pose.velocity_std;
