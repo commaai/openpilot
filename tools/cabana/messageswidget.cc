@@ -65,17 +65,12 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
   return {};
 }
 
-inline QString msg_name(const QString &id) {
-  auto msg = dbc()->msg(id);
-  return msg ? msg->name.c_str() : "untitled";
-}
-
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &id = msgs[index.row()];
     auto &can_data = can->lastMessage(id);
     switch (index.column()) {
-      case 0: return msg_name(id);
+      case 0: return msgName(id);
       case 1: return id;
       case 2: return can_data.freq;
       case 3: return can_data.count;
@@ -92,7 +87,7 @@ void MessageListModel::setFilterString(const QString &string) {
   bool search_id = filter_str.contains(':');
   msgs.clear();
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
-    if ((search_id ? it.key() : msg_name(it.key())).contains(filter_str, Qt::CaseInsensitive))
+    if ((search_id ? it.key() : msgName(it.key())).contains(filter_str, Qt::CaseInsensitive))
       msgs.push_back(it.key());
   }
   sortMessages();
@@ -102,8 +97,8 @@ void MessageListModel::sortMessages() {
   beginResetModel();
   if (sort_column == 0) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto l_name = msg_name(l);
-      auto r_name = msg_name(r);
+      auto l_name = msgName(l);
+      auto r_name = msgName(r);
       bool ret = l_name < r_name || (l_name == r_name && l < r);
       return sort_order == Qt::AscendingOrder ? ret : !ret;
     });
