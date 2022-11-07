@@ -53,7 +53,7 @@ class CarState(CarStateBase):
 
     ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["BrakePressed"] != 0
+      ret.brakePressed = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePressed"] != 0
     else:
       # Some Volt 2016-17 have loose brake pedal push rod retainers which causes the ECM to believe
       # that the brake is being intermittently pressed without user interaction.
@@ -157,7 +157,7 @@ class CarState(CarStateBase):
       ("TractionControlOn", "ESPStatus"),
       ("ParkBrake", "VehicleIgnitionAlt"),
       ("CruiseMainOn", "ECMEngineStatus"),
-      ("BrakePressed", "ECMEngineStatus"),
+      ("BrakePressed", "EBCMBrakePedalPosition"),
     ]
 
     checks = [
@@ -172,6 +172,7 @@ class CarState(CarStateBase):
       ("AcceleratorPedal2", 33),
       ("ASCMSteeringButton", 33),
       ("ECMEngineStatus", 100),
+      ("EBCMBrakePedalPosition", 100),
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
     ]
