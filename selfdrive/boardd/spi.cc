@@ -8,7 +8,6 @@
 #include "common/swaglog.h"
 #include "selfdrive/boardd/panda_comms.h"
 
-#define SPI_PATH "/dev/spidev0.0"
 
 #define SPI_SYNC 0x5AU
 #define SPI_HACK 0x79U
@@ -44,7 +43,7 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   // SPI settings
   err = ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode);
   if (err < 0) {
-    LOGE("failed setting SPI mode");
+    LOGE("failed setting SPI mode %d", err);
     goto fail;
   }
 
@@ -114,6 +113,7 @@ int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t para
 
     // TODO: handle error
     err = spi_transfer(0, (uint8_t *) &packet, sizeof(packet), data, length);
+
   } while (err < 0 && connected);
 
   return err;
@@ -129,13 +129,8 @@ int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
 
 std::vector<std::string> PandaSpiHandle::list() {
   // TODO: list all pandas available over SPI
-  std::vector<std::string> ret;
-  if (util::file_exists(SPI_PATH)) {
-    ret.push_back(SPI_PATH);
-  }
-  return ret;
+  return {};
 }
-
 
 
 
@@ -146,9 +141,14 @@ void add_checksum(uint8_t *data, int data_len) {
   }
 }
 
+
 int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len) {
-  int ret = 0, rx_data_len, i = 0;
-  uint8_t tx_buf[SPI_BUF_SIZE], rx_buf[SPI_BUF_SIZE];
+  int ret = 0;
+  int rx_data_len;
+  int i = 0;
+
+  uint8_t tx_buf[SPI_BUF_SIZE];
+  uint8_t rx_buf[SPI_BUF_SIZE];
 
   // needs to be less, since we need to have space for the checksum
   assert(tx_len < SPI_BUF_SIZE);
@@ -171,14 +171,20 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   add_checksum(tx_buf, sizeof(header));
   transfer.len = sizeof(header) + 1;
   ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
-  if (ret < 0) { LOGE("SPI: failed to send header"); goto transfer_fail; }
+  if (ret < 0) {
+    LOGE("SPI: failed to send header");
+    goto transfer_fail;
+  }
 
   // Wait for (N)ACK
   tx_buf[0] = 0x12;
   transfer.len = 1;
   while (true) {
     ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
-    if (ret < 0) { LOGE("SPI: failed to send ACK request"); goto transfer_fail; }
+    if (ret < 0) {
+      LOGE("SPI: failed to send ACK request");
+      goto transfer_fail;
+    }
 
     if (rx_buf[0] == SPI_HACK) {
       break;
@@ -202,14 +208,17 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   transfer.len = 1;
   while (true) {
     ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
-    if (ret < 0) { LOGE("SPI: failed to send ACK request"); goto transfer_fail; }
+    if (ret < 0) {
+      LOGE("SPI: failed to send ACK request");
+      goto transfer_fail;
+    }
 
     i++;
 
     if (rx_buf[0] == SPI_DACK) {
       break;
     } else if (rx_buf[0] == SPI_NACK) {
-      LOGW("SPI: got data NACK");
+      LOGE("SPI: got data NACK");
       goto transfer_fail;
     }
   }
@@ -217,14 +226,20 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   // Read data len
   transfer.len = 2;
   ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
-  if (ret < 0) { LOGE("SPI: failed to read rx data len"); goto transfer_fail; }
+  if (ret < 0) {
+    LOGE("SPI: failed to read rx data len");
+    goto transfer_fail;
+  }
   rx_data_len = *(uint16_t *)rx_buf;
   assert(rx_data_len < SPI_BUF_SIZE);
 
   // Read data
   transfer.len = rx_data_len + 1;
   ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
-  if (ret < 0) { LOGE("SPI: failed to read rx data"); goto transfer_fail; }
+  if (ret < 0) {
+    LOGE("SPI: failed to read rx data");
+    goto transfer_fail;
+  }
   // TODO: check checksum
 
   if (rx_data != NULL) {
