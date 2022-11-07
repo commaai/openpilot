@@ -50,6 +50,7 @@ signals:
   void streamStarted();
   void eventsMerged();
   void updated();
+  void msgsUpdated(const QHash<QString, CanData> *);
   void received(QHash<QString, CanData> *);
 
 public:

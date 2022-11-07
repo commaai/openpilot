@@ -35,16 +35,29 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
-  QObject::connect(can, &CANMessages::updated, [this]() { model->updateState(); });
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { model->updateState(true); });
+  QObject::connect(can, &CANMessages::msgsUpdated, model, &MessageListModel::msgsUpdated);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
+  QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
-    if (current.isValid()) {
-      emit msgSelectionChanged(current.data(Qt::UserRole).toString());
+    if (current.isValid() && current.row() < model->msgs.size()) {
+      current_msg_id = model->msgs[current.row()];
+      emit msgSelectionChanged(current_msg_id);
     }
+  });
+  QObject::connect(model, &MessageListModel::modelReset, [this]() {
+    if (int row = model->msgs.indexOf(current_msg_id); row != -1)
+      table_widget->selectionModel()->select(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   });
 }
 
 // MessageListModel
+
+MessageListModel::MessageListModel(QObject *parent) : QAbstractTableModel(parent) {
+  sort_timer = new QTimer(this);
+  sort_timer->setSingleShot(true);
+  sort_timer->setInterval(100);
+  sort_timer->callOnTimeout(this, &MessageListModel::sortMessages);
+}
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
@@ -52,105 +65,86 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
   return {};
 }
 
+inline QString msg_name(const QString &id) {
+  auto msg = dbc()->msg(id);
+  return msg ? msg->name.c_str() : "untitled";
+}
+
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
-    const auto &m = msgs[index.row()];
-    auto &can_data = can->lastMessage(m->id);
+    const auto &id = msgs[index.row()];
+    auto &can_data = can->lastMessage(id);
     switch (index.column()) {
-      case 0: return m->name;
-      case 1: return m->id;
+      case 0: return msg_name(id);
+      case 1: return id;
       case 2: return can_data.freq;
       case 3: return can_data.count;
       case 4: return toHex(can_data.dat);
     }
-  } else if (role == Qt::UserRole) {
-    return msgs[index.row()]->id;
-  } else if (role == Qt::FontRole) {
-    if (index.column() == columnCount() - 1) {
-      return QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    }
+  } else if (role == Qt::FontRole && index.column() == columnCount() - 1) {
+    return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
   return {};
 }
 
-void MessageListModel::setFilterString(const QString &string) { 
+void MessageListModel::setFilterString(const QString &string) {
   filter_str = string;
-  updateState(true);
+  bool search_id = filter_str.contains(':');
+  msgs.clear();
+  for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+    if ((search_id ? it.key() : msg_name(it.key())).contains(filter_str, Qt::CaseInsensitive))
+      msgs.push_back(it.key());
+  }
+  sortMessages();
 }
 
-bool MessageListModel::updateMessages(bool sort) {
-  if (msgs.size() == can->can_msgs.size() && filter_str.isEmpty() && !sort)
-    return false;
-
-  // update message list
-  int i = 0;
-  bool search_id = filter_str.contains(':');
-  for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
-    const Msg *msg = dbc()->msg(it.key());
-    QString msg_name = msg ? msg->name.c_str() : "untitled";
-    if (!filter_str.isEmpty() && !(search_id ? it.key() : msg_name).contains(filter_str, Qt::CaseInsensitive))
-      continue;
-    auto &m = i < msgs.size() ? msgs[i] : msgs.emplace_back(new Message);
-    m->id = it.key();
-    m->name = msg_name;
-    ++i;
-  }
-  msgs.resize(i);
-
+void MessageListModel::sortMessages() {
+  beginResetModel();
   if (sort_column == 0) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      bool ret = l->name < r->name || (l->name == r->name && l->id < r->id);
+      auto l_name = msg_name(l);
+      auto r_name = msg_name(r);
+      bool ret = l_name < r_name || (l_name == r_name && l < r);
       return sort_order == Qt::AscendingOrder ? ret : !ret;
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      return sort_order == Qt::AscendingOrder ? l->id < r->id : l->id > r->id;
+      return sort_order == Qt::AscendingOrder ? l < r : l > r;
     });
   } else if (sort_column == 2) {
     // sort by frequency
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      uint32_t lfreq = can->lastMessage(l->id).freq;
-      uint32_t rfreq = can->lastMessage(r->id).freq;
-      bool ret = lfreq < rfreq || (lfreq == rfreq && l->id < r->id);
+      uint32_t lfreq = can->lastMessage(l).freq;
+      uint32_t rfreq = can->lastMessage(r).freq;
+      bool ret = lfreq < rfreq || (lfreq == rfreq && l < r);
       return sort_order == Qt::AscendingOrder ? ret : !ret;
     });
   } else if (sort_column == 3) {
     // sort by count
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      uint32_t lcount = can->lastMessage(l->id).count;
-      uint32_t rcount = can->lastMessage(r->id).count;
-      bool ret = lcount < rcount || (lcount == rcount && l->id < r->id);
+      uint32_t lcount = can->lastMessage(l).count;
+      uint32_t rcount = can->lastMessage(r).count;
+      bool ret = lcount < rcount || (lcount == rcount && l < r);
       return sort_order == Qt::AscendingOrder ? ret : !ret;
     });
   }
-  return true;
+  endResetModel();
 }
 
-void MessageListModel::updateState(bool sort) {
+void MessageListModel::msgsUpdated(const QHash<QString, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
-  auto prev_idx = persistentIndexList();
-  QString selected_msg_id = prev_idx.empty() ? "" : prev_idx[0].data(Qt::UserRole).toString();
-
-  bool msg_updated = updateMessages(sort);
-  int delta = msgs.size() - prev_row_count;
-  if (delta > 0) {
-    beginInsertRows({}, prev_row_count, msgs.size() - 1);
-    endInsertRows();
-  } else if (delta < 0) {
-    beginRemoveRows({}, msgs.size(), prev_row_count - 1);
-    endRemoveRows();
+  if (filter_str.isEmpty() && msgs.size() != can->can_msgs.size()) {
+    msgs = can->can_msgs.keys();
   }
-
-  if (!msgs.empty()) {
-    if (msg_updated && !prev_idx.isEmpty()) {
-      // keep selection
-      auto it = std::find_if(msgs.begin(), msgs.end(), [&](auto &m) { return m->id == selected_msg_id; });
-      if (it != msgs.end()) {
-        for (auto &idx : prev_idx)
-          changePersistentIndex(idx, index(std::distance(msgs.begin(), it), idx.column()));
+  if (msgs.size() != prev_row_count) {
+    sort_timer->start();
+  } else {
+    for (int i = 0; i < msgs.size(); ++i) {
+      if (new_msgs->contains(msgs[i])) {
+        for (int col = 2; col < columnCount(); ++col)
+          dataChanged(index(i, col), index(i, col), {Qt::DisplayRole});
       }
     }
-    emit dataChanged(index(0, 0), index(msgs.size() - 1, columnCount() - 1), {Qt::DisplayRole});
   }
 }
 
@@ -158,6 +152,6 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
   if (column != columnCount() - 1) {
     sort_column = column;
     sort_order = order;
-    updateState(true);
+    sortMessages();
   }
 }
