@@ -180,7 +180,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 
 void AnnotatedCameraWidget::mousePressEvent(QMouseEvent* e) {
   QRect engageability_rect = QRect(engageability_icon.x() - radius / 2, engageability_icon.y() - radius / 2, radius, radius);
-  if (engageability_rect.contains(e->pos())) {
+  if (engageable && engageability_rect.contains(e->pos())) {
     // set e2e long params and state
     UIState *s = uiState();
     s->scene.end_to_end_long = !s->scene.end_to_end_long;
