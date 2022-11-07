@@ -49,9 +49,12 @@ public:
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+  void mousePressEvent(QMouseEvent* e) override;
 
+  QPixmap taco_img;
   QPixmap engage_img;
   QPixmap dm_img;
+  QPoint engageability_icon = QPoint(0, 0);
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   float speed;
