@@ -2,14 +2,34 @@
 import sounddevice as sd
 import numpy as np
 
+from cereal import messaging
+from common.realtime import Ratekeeper
 
-def print_sound(indata, frames, time, status):
-  if status:
-    print(status, end='')
-  volume_norm = np.linalg.norm(indata) * 10
-  print ("|" * int(volume_norm))
+
+class Microphone:
+  def __init__(self):
+    self.pm = messaging.PubMaster(['microphone'])
+    self.last_volume = 0
+
+  def update(self):
+    msg = messaging.new_message('microphone')
+    microphone = msg.microphone
+    microphone.noiseLevel = float(self.last_volume)
+    self.pm.send('microphone', msg)
+
+  def calculate_volume(self, indata, frames, time, status):
+    self.last_volume = np.linalg.norm(indata)
+
+
+def main():
+  mic = Microphone()
+  rk = Ratekeeper(1.0)
+
+  with sd.InputStream(callback=mic.calculate_volume):
+    while True:
+      rk.keep_time()
+      mic.update()
 
 
 if __name__ == "__main__":
-  with sd.InputStream(callback=print_sound):
-    sd.sleep(10000)
+  main()
