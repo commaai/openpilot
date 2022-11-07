@@ -4,6 +4,7 @@
 #include <QTableView>
 
 #include "tools/cabana/canmessages.h"
+
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
@@ -14,16 +15,12 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
-  void updateState(bool sort = false);
   void setFilterString(const QString &string);
+  void msgsReceived(const QHash<QString, CanData> *new_msgs = nullptr);
+  void sortMessages();
+  QStringList msgs;
 
 private:
-  bool updateMessages(bool sort);
-
-  struct Message {
-    QString id, name;
-  };
-  std::vector<std::unique_ptr<Message>> msgs;
   QString filter_str;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
@@ -34,11 +31,11 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
-
 signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
   QTableView *table_widget;
+  QString current_msg_id;
   MessageListModel *model;
 };
