@@ -176,29 +176,17 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   taco_img = loadPixmap(":/img_taco.svg", {img_size, img_size});
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
-//  engageability_icon.setHeight(img_size);
-//  engageability_icon.setWidth(img_size);
 }
 
 void AnnotatedCameraWidget::mousePressEvent(QMouseEvent* e) {
-  qDebug() << engageable;
-  // propagation event to parent(OnroadWindow)
   QRect engageability_rect = QRect(engageability_icon.x() - radius / 2, engageability_icon.y() - radius / 2, radius, radius);
-
-//  qDebug() << rect().right() - radius / 2 - bdr_s * 2 << radius / 2 + int(bdr_s * 1.5);
-//  qDebug() << e->x() << e->y();
-  qDebug() << engageability_rect.x();
-  qDebug() << engageability_rect.y();
-  qDebug() << engageability_rect.height();
-  qDebug() << engageability_rect.width();
-  qDebug() << "Touched:" << e->pos();
-
   if (engageability_rect.contains(e->pos())) {
-    qDebug() << "Touched!";
+    // set e2e long params and state
     UIState *s = uiState();
     s->scene.end_to_end_long = !s->scene.end_to_end_long;
     Params().putBool("EndToEndLong", s->scene.end_to_end_long);
   } else {
+    // propagate event to parent(OnroadWindow)
     QWidget::mousePressEvent(e);
   }
 }
