@@ -63,7 +63,7 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
     can_msgs[it.key()] = it.value();
   }
   emit updated();
-  emit msgsUpdated(messages);
+  emit msgsReceived(messages);
   delete messages;
 }
 
