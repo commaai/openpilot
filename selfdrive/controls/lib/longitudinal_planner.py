@@ -114,8 +114,8 @@ class LongitudinalPlanner:
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
     # Compute model v_ego error
-    if len(sm['modelV2'].simPose.trans):
-      self.v_model_error = sm['modelV2'].simPose.trans[0] - v_ego
+    if len(sm['modelV2'].temporalPose.trans):
+      self.v_model_error = sm['modelV2'].temporalPose.trans[0] - v_ego
 
     if force_slow_decel:
       # if required so, force a smooth deceleration
