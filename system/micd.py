@@ -3,7 +3,7 @@ import sounddevice as sd
 import numpy as np
 
 from cereal import messaging
-from common.realtime import Priority, Ratekeeper, config_realtime_process
+from common.realtime import Ratekeeper
 
 
 class Mic:
@@ -30,8 +30,6 @@ class Mic:
 
 
 def main(pm=None):
-  config_realtime_process(5, Priority.CTRL_LOW)
-
   if pm is None:
     pm = messaging.PubMaster(['microphone'])
 
