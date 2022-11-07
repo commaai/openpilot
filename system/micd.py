@@ -3,32 +3,40 @@ import sounddevice as sd
 import numpy as np
 
 from cereal import messaging
-from common.realtime import Ratekeeper
+from common.realtime import Priority, Ratekeeper, config_realtime_process
 
 
-class Microphone:
-  def __init__(self):
-    self.pm = messaging.PubMaster(['microphone'])
-    self.last_volume = 0
+class Mic:
+  def __init__(self, pm):
+    self.pm = pm
+    self.rk = Ratekeeper(1.0)
+    self.noise_level = 0
 
   def update(self):
     msg = messaging.new_message('microphone')
     microphone = msg.microphone
-    microphone.noiseLevel = float(self.last_volume)
+    microphone.noiseLevel = float(self.noise_level)
+
     self.pm.send('microphone', msg)
+    self.rk.keep_time()
 
   def calculate_volume(self, indata, frames, time, status):
-    self.last_volume = np.linalg.norm(indata)
+    self.noise_level = np.linalg.norm(indata)
+
+  def micd_thread(self):
+    with sd.InputStream(callback=self.calculate_volume):
+      while True:
+        self.update()
 
 
-def main():
-  mic = Microphone()
-  rk = Ratekeeper(1.0)
+def main(pm=None):
+  config_realtime_process(5, Priority.CTRL_LOW)
 
-  with sd.InputStream(callback=mic.calculate_volume):
-    while True:
-      rk.keep_time()
-      mic.update()
+  if pm is None:
+    pm = messaging.PubMaster(['microphone'])
+
+  mic = Mic(pm)
+  mic.micd_thread()
 
 
 if __name__ == "__main__":
