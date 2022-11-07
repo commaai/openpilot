@@ -119,7 +119,6 @@ class CarInterface(CarInterfaceBase):
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
         if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-          ret.lateralTuning.init('pid')
           ret.lateralTuning.pid.kpV = [0.15]
           ret.lateralTuning.pid.kiV = [0.05]
           ret.lateralTuning.pid.kf = 0.00004
