@@ -25,7 +25,7 @@ void Settings::save() {
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  can_msg_log_size = s.value("log_size", 100).toInt();
+  can_msg_log_size = s.value("log_size", 50).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_theme = s.value("chart_theme", 0).toInt();
@@ -36,8 +36,7 @@ void Settings::load() {
 
 SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Settings"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QFormLayout *form_layout = new QFormLayout();
+  QFormLayout *form_layout = new QFormLayout(this);
 
   fps = new QSpinBox(this);
   fps->setRange(10, 100);
@@ -74,10 +73,8 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   chart_theme->setCurrentIndex(settings.chart_theme == 1 ? 1 : 0);
   form_layout->addRow(tr("Chart theme"), chart_theme);
 
-  main_layout->addLayout(form_layout);
-
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
+  form_layout->addRow(buttonBox);
 
   setFixedWidth(360);
   connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);

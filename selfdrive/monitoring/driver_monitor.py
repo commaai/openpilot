@@ -34,6 +34,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._EE_THRESH11 = 0.275
     self._EE_THRESH12 = 5.5
     self._EE_MAX_OFFSET1 = 0.06
+    self._EE_MIN_OFFSET1 = 0.025
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 
@@ -44,6 +45,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_YAW_THRESHOLD_SLACK = 0.5042
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
     self._PITCH_NATURAL_OFFSET = 0.029 # initial value before offset is learned
+    self._PITCH_NATURAL_THRESHOLD = 0.449
     self._YAW_NATURAL_OFFSET = 0.097 # initial value before offset is learned
     self._PITCH_MAX_OFFSET = 0.124
     self._PITCH_MIN_OFFSET = -0.0881
@@ -197,7 +199,7 @@ class DriverStatus():
                                                     self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
     yaw_error = abs(yaw_error)
-    if pitch_error > self.settings._POSE_PITCH_THRESHOLD*self.pose.cfactor_pitch or \
+    if pitch_error > (self.settings._POSE_PITCH_THRESHOLD*self.pose.cfactor_pitch if self.pose_calibrated else self.settings._PITCH_NATURAL_THRESHOLD) or \
        yaw_error > self.settings._POSE_YAW_THRESHOLD*self.pose.cfactor_yaw:
       distracted_types.append(DistractedType.DISTRACTED_POSE)
 
@@ -205,7 +207,7 @@ class DriverStatus():
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.ee1_calibrated:
-      ee1_dist = self.eev1 > min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1) * self.settings._EE_THRESH12
+      ee1_dist = self.eev1 > max(min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1), self.settings._EE_MIN_OFFSET1) * self.settings._EE_THRESH12
     else:
       ee1_dist = self.eev1 > self.settings._EE_THRESH11
     # if self.ee2_calibrated:
