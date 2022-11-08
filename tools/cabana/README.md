@@ -8,7 +8,7 @@ Cabana is a tool developed to view raw CAN data. One use for this is creating an
 
 ```bash
 $ ./cabana -h
-Usage: ./_cabana [options] route
+Usage: ./cabana [options] route
 
 Options:
   -h, --help             Displays this help.
