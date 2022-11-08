@@ -28,11 +28,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   slider = new Slider(this);
   slider->setSingleStep(0);
-  slider->setMinimum(0);
-  slider->setMaximum(can->totalSeconds() * 1000);
   slider_layout->addWidget(slider);
 
-  end_time_label = new QLabel(formatTime(can->totalSeconds()));
+  end_time_label = new QLabel(this);
   slider_layout->addWidget(end_time_label);
   main_layout->addLayout(slider_layout);
 
@@ -61,6 +59,10 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
+  QObject::connect(can, &CANMessages::streamStarted, [this]() {
+    end_time_label->setText(formatTime(can->totalSeconds()));
+    slider->setRange(0, can->totalSeconds() * 1000);
+  });
 }
 
 void VideoWidget::pause(bool pause) {
@@ -74,8 +76,7 @@ void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
     max = can->totalSeconds();
   }
   end_time_label->setText(formatTime(max));
-  slider->setMinimum(min * 1000);
-  slider->setMaximum(max * 1000);
+  slider->setRange(min * 1000, max * 1000);
 }
 
 void VideoWidget::updateState() {
@@ -91,7 +92,7 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
     timeline = can->getTimeline();
     update();
   });
-  timer->start();
+  QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
 }
 
 void Slider::sliderChange(QAbstractSlider::SliderChange change) {
