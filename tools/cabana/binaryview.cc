@@ -13,6 +13,11 @@
 
 const int CELL_HEIGHT = 26;
 
+inline int get_bit_index(const QModelIndex &index, bool little_endian) {
+  return little_endian ? index.row() * 8 + 7 - index.column()
+                       : index.row() * 8 + index.column();
+}
+
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
   setModel(model);
@@ -81,18 +86,27 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   QTableView::mouseReleaseEvent(event);
 
   if (auto indexes = selectedIndexes(); !indexes.isEmpty()) {
-    int from = indexes.first().row() * 8 + indexes.first().column();
-    int to = indexes.back().row() * 8 + indexes.back().column();
     if (auto sig = getResizingSignal()) {
+      auto release_index = indexAt(event->pos());
       auto [sig_from, sig_to] = getSignalRange(sig);
-      if (from >= sig_from && to <= sig_to) {  // reduce size
-        emit(from == sig_from ? resizeSignal(sig, std::min(to + 1, sig_to), sig_to)
-                              : resizeSignal(sig, sig_from, std::max(from - 1, sig_from)));
-      } else {  // increase size
-        emit resizeSignal(sig, std::min(from, sig_from), std::max(to, sig_to));
+      if (release_index.column() == 8) {
+        release_index = model->index(release_index.row(), 7);
       }
+      int release_pos = get_bit_index(release_index, sig->is_little_endian);
+      int archor_pos = get_bit_index(anchor_index, sig->is_little_endian);
+      int start_bit, size;
+      if (archor_pos == sig_from) {
+        start_bit = release_pos;
+        size = std::max(1, sig_to - start_bit + 1);
+      } else {
+        start_bit = sig_from;
+        size = std::max(1, release_pos - start_bit + 1);
+      }
+      emit resizeSignal(sig, start_bit, size);
     } else {
-      emit addSignal(from, to);
+      int from = indexes.first().row() * 8 + indexes.first().column();
+      int to = indexes.back().row() * 8 + indexes.back().column();
+      emit addSignal(from, to - from + 1);
     }
     clearSelection();
   }
@@ -117,6 +131,10 @@ const Signal *BinaryView::getResizingSignal() const {
       int archor_pos = anchor_index.row() * 8 + anchor_index.column();
       for (auto s : item->sigs) {
         auto [sig_from, sig_to] = getSignalRange(s);
+        if (s->is_little_endian) {
+          sig_from = bigEndianBitIndex(sig_from);
+          sig_to = bigEndianBitIndex(sig_to);
+        }
         if (archor_pos == sig_from || archor_pos == sig_to)
           return s;
       }
@@ -156,14 +174,16 @@ void BinaryViewModel::setMessage(const QString &message_id) {
       const auto &sig = dbc_msg->sigs[i];
       auto [start, end] = getSignalRange(&sig);
       for (int j = start; j <= end; ++j) {
-        int idx = column_count * (j / 8) + j % 8;
+        int bit_index = sig.is_little_endian ? bigEndianBitIndex(j) : j;
+        int idx = column_count * (bit_index / 8) + bit_index % 8;
         if (idx >= items.size()) {
           qWarning() << "signal " << sig.name.c_str() << "out of bounds.start_bit:" << sig.start_bit << "size:" << sig.size;
           break;
         }
         if (j == start) {
           sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        } else if (j == end) {
+        }
+        if (j == end) {
           sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         }
         items[idx].bg_color = getColor(i);
