@@ -9,13 +9,13 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
+from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.tests.routes import non_tested_cars, routes, TestRoute
+from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
@@ -38,7 +38,7 @@ routes_by_car = defaultdict(set)
 for r in routes:
   routes_by_car[r.car_model].add(r)
 
-test_cases: List[Tuple[str, Optional[TestRoute]]] = []
+test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
@@ -58,7 +58,6 @@ class TestCarModelBase(unittest.TestCase):
       raise unittest.SkipTest
 
     if 'FILTER' in os.environ:
-      print(tuple(os.environ.get('FILTER').split(', ')))
       if not cls.car_model.startswith(tuple(os.environ.get('FILTER').split(','))):
         raise unittest.SkipTest
 
@@ -68,7 +67,7 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    disable_radar = False
+    experimental_long = False
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
@@ -82,6 +81,7 @@ class TestCarModelBase(unittest.TestCase):
       except Exception:
         continue
 
+      car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
       for msg in lr:
@@ -91,8 +91,9 @@ class TestCarModelBase(unittest.TestCase):
               fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
+          car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
-            disable_radar = True
+            experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
@@ -104,9 +105,13 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [], disable_radar)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+  @classmethod
+  def tearDownClass(cls):
+    del cls.can_msgs
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
@@ -136,22 +141,26 @@ class TestCarModelBase(unittest.TestCase):
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
       else:
-        raise Exception("unkown tuning")
+        raise Exception("unknown tuning")
 
   def test_car_interface(self):
-    # TODO: also check for checkusm and counter violations from can parser
+    # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
+    can_valid = False
     CC = car.CarControl.new_message()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC)
 
-      # wait 2s for low frequency msgs to be seen
-      if i > 200:
+      if CS.canValid:
+        can_valid = True
+
+      # wait max of 2s for low frequency msgs to be seen
+      if i > 200 or can_valid:
         can_invalid_cnt += not CS.canValid
 
-    self.assertLess(can_invalid_cnt, 50)
+    self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
@@ -205,35 +214,45 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
+      self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
         to_send = package_can_msg(msg)
         self.safety.safety_rx_hook(to_send)
-        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
-
-    if not self.CP.pcmCruise:
-      self.safety.set_controls_allowed(0)
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
-    for can in self.can_msgs:
+    for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
+        msg = list(msg)
+        msg[3] %= 4
         to_send = package_can_msg(msg)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
+      # Skip first frame so CS_prev is properly initialized
+      if idx == 0:
+        CS_prev = CS
+        # Button may be left pressed in warm up period
+        if not self.CP.pcmCruise:
+          self.safety.set_controls_allowed(0)
+        continue
+
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
+      if self.CP.carName not in ("hyundai", "volkswagen", "body"):
+        # TODO: fix standstill mismatches for other makes
+        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-      checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
+      checks['brakePressed'] += brake_pressed != safety_brake_pressed
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
@@ -256,8 +275,6 @@ class TestCarModelBase(unittest.TestCase):
 
       if self.CP.carName == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
-        # TODO: fix standstill mismatches for other makes
-        checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       CS_prev = CS
 

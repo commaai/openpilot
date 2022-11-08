@@ -27,71 +27,130 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
-  // param, title, desc, icon
-  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+  // param, title, desc, icon, confirm
+  std::vector<std::tuple<QString, QString, QString, QString, bool>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
       "../assets/offroad/icon_openpilot.png",
+      false,
     },
     {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/offroad/icon_warning.png",
+      false,
     },
     {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
+      false,
     },
     {
       "RecordFront",
       tr("Record and Upload Driver Camera"),
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
       "../assets/offroad/icon_monitoring.png",
+      false,
     },
     {
       "DisengageOnAccelerator",
       tr("Disengage On Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
+      false,
+    },
+    {
+      "EndToEndLong",
+      tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
+      "",
+      "../assets/offroad/icon_road.png",
+      false,
+    },
+    {
+      "ExperimentalLongitudinalEnabled",
+      tr("Experimental openpilot longitudinal control"),
+      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
+      "../assets/offroad/icon_speed_limit.png",
+      true,
     },
 #ifdef ENABLE_MAPS
     {
       "NavSettingTime24h",
-      tr("Show ETA in 24h format"),
+      tr("Show ETA in 24h Format"),
       tr("Use 24h format instead of am/pm"),
       "../assets/offroad/icon_metric.png",
+      false,
     },
     {
       "NavSettingLeftSide",
       tr("Show Map on Left Side of UI"),
       tr("Show map on left side when in split screen view."),
       "../assets/offroad/icon_road.png",
+      false,
     },
 #endif
-
   };
 
-  Params params;
+  for (auto &[param, title, desc, icon, confirm] : toggle_defs) {
+    auto toggle = new ParamControl(param, title, desc, icon, confirm, this);
 
-  if (params.getBool("DisableRadar_Allow")) {
-    toggles.push_back({
-      "DisableRadar",
-      tr("openpilot Longitudinal Control"),
-      tr("openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!"),
-      "../assets/offroad/icon_speed_limit.png",
-    });
-  }
-
-  for (auto &[param, title, desc, icon] : toggles) {
-    auto toggle = new ParamControl(param, title, desc, icon, this);
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
+
     addItem(toggle);
+    toggles[param.toStdString()] = toggle;
+  }
+
+  connect(toggles["ExperimentalLongitudinalEnabled"], &ToggleControl::toggleFlipped, [=]() {
+    updateToggles();
+  });
+}
+
+void TogglesPanel::showEvent(QShowEvent *event) {
+  updateToggles();
+}
+
+void TogglesPanel::updateToggles() {
+  auto e2e_toggle = toggles["EndToEndLong"];
+  auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
+  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+
+  auto cp_bytes = params.get("CarParamsPersistent");
+  if (!cp_bytes.empty()) {
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+
+    if (!CP.getExperimentalLongitudinalAvailable()) {
+      params.remove("ExperimentalLongitudinalEnabled");
+    }
+    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable());
+
+    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+    const bool exp_long_enabled = CP.getExperimentalLongitudinalAvailable() && params.getBool("ExperimentalLongitudinalEnabled");
+    if (op_long || exp_long_enabled) {
+      // normal description and toggle
+      e2e_toggle->setEnabled(true);
+      e2e_toggle->setDescription(e2e_description);
+    } else {
+      // no long for now
+      e2e_toggle->setEnabled(false);
+      params.remove("EndToEndLong");
+
+      const QString no_long = tr("openpilot longitudinal control is not currently available for this car.");
+      const QString exp_long = tr("Enable experimental longitudinal control to enable this.");
+      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
+    }
+
+    e2e_toggle->refresh();
+  } else {
+    e2e_toggle->setDescription(e2e_description);
+    op_long_toggle->setVisible(false);
   }
 }
 
@@ -108,9 +167,9 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(dcamBtn);
 
   auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
-  connect(resetCalibBtn, &ButtonControl::showDescription, this, &DevicePanel::updateCalibDescription);
+  connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
       params.remove("CalibrationParams");
     }
   });
@@ -119,7 +178,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   if (!params.getBool("Passive")) {
     auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), this)) {
+      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
         emit reviewTrainingGuide();
       }
     });
@@ -130,7 +189,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
-      RichTextDialog::alert(QString::fromStdString(txt), this);
+      ConfirmationDialog::rich(QString::fromStdString(txt), this);
     });
     addItem(regulatoryBtn);
   }
@@ -138,8 +197,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
-    QString currentLang = QString::fromStdString(Params().get("LanguageSetting"));
-    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(currentLang), this);
+    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(uiState()->language), this);
     if (!selection.isEmpty()) {
       // put language setting, exit Qt UI, and trigger fast restart
       Params().put("LanguageSetting", langs[selection].toStdString());
@@ -208,7 +266,7 @@ void DevicePanel::updateCalibDescription() {
 
 void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         Params().putBool("DoReboot", true);
@@ -221,7 +279,7 @@ void DevicePanel::reboot() {
 
 void DevicePanel::poweroff() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         Params().putBool("DoShutdown", true);
@@ -230,85 +288,6 @@ void DevicePanel::poweroff() {
   } else {
     ConfirmationDialog::alert(tr("Disengage to Power Off"), this);
   }
-}
-
-SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
-  gitBranchLbl = new LabelControl(tr("Git Branch"));
-  gitCommitLbl = new LabelControl(tr("Git Commit"));
-  osVersionLbl = new LabelControl(tr("OS Version"));
-  versionLbl = new LabelControl(tr("Version"), "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
-  lastUpdateLbl = new LabelControl(tr("Last Update Check"), "", tr("The last time openpilot successfully checked for an update. The updater only runs while the car is off."));
-  updateBtn = new ButtonControl(tr("Check for Update"), "");
-  connect(updateBtn, &ButtonControl::clicked, [=]() {
-    if (params.getBool("IsOffroad")) {
-      fs_watch->addPath(QString::fromStdString(params.getParamPath("LastUpdateTime")));
-      fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdateFailedCount")));
-      updateBtn->setText(tr("CHECKING"));
-      updateBtn->setEnabled(false);
-    }
-    std::system("pkill -1 -f selfdrive.updated");
-  });
-  connect(uiState(), &UIState::offroadTransition, updateBtn, &QPushButton::setEnabled);
-
-  branchSwitcherBtn = new ButtonControl(tr("Switch Branch"), tr("ENTER"), tr("The new branch will be pulled the next time the updater runs."));
-  connect(branchSwitcherBtn, &ButtonControl::clicked, [=]() {
-    QString branch = InputDialog::getText(tr("Enter branch name"), this, tr("The new branch will be pulled the next time the updater runs."),
-                                          false, -1, QString::fromStdString(params.get("SwitchToBranch")));
-    if (branch.isEmpty()) {
-      params.remove("SwitchToBranch");
-    } else {
-      params.put("SwitchToBranch", branch.toStdString());
-    }
-    std::system("pkill -1 -f selfdrive.updated");
-  });
-  connect(uiState(), &UIState::offroadTransition, branchSwitcherBtn, &QPushButton::setEnabled);
-
-  auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
-  connect(uninstallBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), this)) {
-      params.putBool("DoUninstall", true);
-    }
-  });
-  connect(uiState(), &UIState::offroadTransition, uninstallBtn, &QPushButton::setEnabled);
-
-  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, branchSwitcherBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
-  for (QWidget* w : widgets) {
-    if (w == branchSwitcherBtn && params.getBool("IsTestedBranch")) {
-      continue;
-    }
-    addItem(w);
-  }
-
-  fs_watch = new QFileSystemWatcher(this);
-  QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    if (path.contains("UpdateFailedCount") && std::atoi(params.get("UpdateFailedCount").c_str()) > 0) {
-      lastUpdateLbl->setText(tr("failed to fetch update"));
-      updateBtn->setText(tr("CHECK"));
-      updateBtn->setEnabled(true);
-    } else if (path.contains("LastUpdateTime")) {
-      updateLabels();
-    }
-  });
-}
-
-void SoftwarePanel::showEvent(QShowEvent *event) {
-  updateLabels();
-}
-
-void SoftwarePanel::updateLabels() {
-  QString lastUpdate = "";
-  auto tm = params.get("LastUpdateTime");
-  if (!tm.empty()) {
-    lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
-  }
-
-  versionLbl->setText(getBrandVersion());
-  lastUpdateLbl->setText(lastUpdate);
-  updateBtn->setText(tr("CHECK"));
-  updateBtn->setEnabled(true);
-  gitBranchLbl->setText(QString::fromStdString(params.get("GitBranch")));
-  gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")).left(10));
-  osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {

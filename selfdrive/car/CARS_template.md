@@ -5,24 +5,12 @@
 
 # Supported Cars
 
-A supported vehicle is one that just works when you install a comma device. Every car performs differently with openpilot, but all supported cars should provide a better experience than any stock system.
-
-## How We Rate The Cars
-
-{% for star_row in STAR_DESCRIPTIONS.values() %}
-{% for name, stars in star_row.items() %}
-### {{name}}
-{% for star, description in stars %}
-- {{star_icon.format(star)}} - {{description}}
-{% endfor %}
-
-{% endfor %}
-{% endfor %}
+A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
 # {{all_car_info | length}} Supported Cars
 
 |{{Column | map(attribute='value') | join('|')}}|
-|---|---|---|:---:|:---:|:---:|:---:|
+|---|---|---|{% for _ in range((Column | length) - 3) %}{{':---:|'}}{% endfor +%}
 {% for car_info in all_car_info %}
 |{% for column in Column %}{{car_info.get_column(column, star_icon, footnote_tag)}}|{% endfor %}
 
@@ -39,13 +27,13 @@ Although they're not upstream, the community has openpilot running on other make
 # Don't see your car here?
 
 **openpilot can support many more cars than it currently does.** There are a few reasons your car may not be supported.
-If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. We don't have a roadmap for car support, and in fact, most car support comes from users like you!
+If your car doesn't fit into any of the incompatibility criteria here, then there's a good chance it can be supported! We're adding support for new cars all the time. **We don't have a roadmap for car support**, and in fact, most car support comes from users like you!
 
 ### Which cars are able to be supported?
 
-openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering) and [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control), then it almost certainly has these interfaces. These interfaces generally started shipping on cars around 2016.
+openpilot uses the existing steering, gas, and brake interfaces in your car. If your car lacks any one of these interfaces, openpilot will not be able to control the car. If your car has [ACC](https://en.wikipedia.org/wiki/Adaptive_cruise_control) and any form of [LKAS](https://en.wikipedia.org/wiki/Automated_Lane_Keeping_Systems)/[LCA](https://en.wikipedia.org/wiki/Lane_centering), then it almost certainly has these interfaces. These features generally started shipping on cars around 2016. Note that manufacturers will often make their own [marketing terms](https://en.wikipedia.org/wiki/Adaptive_cruise_control#Vehicle_models_supporting_adaptive_cruise_control) for these features, such as Hyundai's "Smart Cruise Control" branding of Adaptive Cruise Control.
 
-If your car has the following packages or features, then it's a good candidate for support. If it does not, then it's unlikely able to be supported.
+If your car has the following packages or features, then it's a good candidate for support.
 
 | Make | Required Package/Features |
 | ---- | ------------------------- |
@@ -63,8 +51,9 @@ All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wi
 
 ### Toyota Security
 
-Specific new Toyota models are shipping with a new message authentication method that openpilot does not yet support.
-So far, this list includes:
+openpilot does not yet support these Toyota models due to a new message authentication method.
+[Vote](https://comma.ai/shop/products/vote) if you'd like to see openpilot support on these models.
+
 * Toyota RAV4 Prime 2021+
 * Toyota Sienna 2021+
 * Toyota Venza 2021+
@@ -74,3 +63,4 @@ So far, this list includes:
 * Lexus NX 2022+
 * Toyota bZ4x 2023+
 * Subaru Solterra 2023+
+

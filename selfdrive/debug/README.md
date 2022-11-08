@@ -19,7 +19,7 @@ optional arguments:
 ```
 usage: dump.py [-h] [--pipe] [--raw] [--json] [--dump-json] [--no-print] [--addr ADDR] [--values VALUES] [socket [socket ...]]
 
-Dump communcation sockets. See cereal/services.py for a complete list of available sockets.
+Dump communication sockets. See cereal/services.py for a complete list of available sockets.
 
 positional arguments:
   socket           socket names to dump. defaults to all services defined in cereal

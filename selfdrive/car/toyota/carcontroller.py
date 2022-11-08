@@ -5,10 +5,18 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
+                                        UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+
+# EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
+MAX_STEER_RATE = 100  # deg/s
+MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
+
+# EPS allows user torque above threshold for 50 frames before permanently faulting
+MAX_USER_TORQUE = 500
 
 
 class CarController:
@@ -20,6 +28,7 @@ class CarController:
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
+    self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -29,6 +38,7 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
+    lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
     # gas and brake
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -52,11 +62,19 @@ class CarController:
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
-    if not CC.latActive:
+    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
+    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+      self.steer_rate_counter += 1
+    else:
+      self.steer_rate_counter = 0
+
+    apply_steer_req = 1
+    if not lat_active:
       apply_steer = 0
       apply_steer_req = 0
-    else:
-      apply_steer_req = 1
+    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+      apply_steer_req = 0
+      self.steer_rate_counter = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
@@ -64,7 +82,7 @@ class CarController:
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and self.CP.carFingerprint not in NO_STOP_TIMER_CAR:
+    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
       self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled
@@ -95,7 +113,7 @@ class CarController:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Lexus IS uses a different cancellation message
-      if pcm_cancel_cmd and self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+      if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
         can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
@@ -109,28 +127,29 @@ class CarController:
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, self.frame // 2))
       self.gas = interceptor_gas_cmd
 
-    # ui mesg is at 1Hz but we send asap if:
-    # - there is something to display
-    # - there is something to stop displaying
-    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
-    steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+    if self.CP.carFingerprint != CAR.PRIUS_V:
+      # ui mesg is at 1Hz but we send asap if:
+      # - there is something to display
+      # - there is something to stop displaying
+      fcw_alert = hud_control.visualAlert == VisualAlert.fcw
+      steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
 
-    send_ui = False
-    if ((fcw_alert or steer_alert) and not self.alert_active) or \
-       (not (fcw_alert or steer_alert) and self.alert_active):
-      send_ui = True
-      self.alert_active = not self.alert_active
-    elif pcm_cancel_cmd:
-      # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
-      send_ui = True
+      send_ui = False
+      if ((fcw_alert or steer_alert) and not self.alert_active) or \
+         (not (fcw_alert or steer_alert) and self.alert_active):
+        send_ui = True
+        self.alert_active = not self.alert_active
+      elif pcm_cancel_cmd:
+        # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
+        send_ui = True
 
-    if (self.frame % 100 == 0 or send_ui) and (self.CP.carFingerprint != CAR.PRIUS_V):
-      can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
-                                         hud_control.rightLaneVisible, hud_control.leftLaneDepart,
-                                         hud_control.rightLaneDepart, CC.enabled))
+      if self.frame % 100 == 0 or send_ui:
+        can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
+                                           hud_control.rightLaneVisible, hud_control.leftLaneDepart,
+                                           hud_control.rightLaneDepart, CC.enabled))
 
-    if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
-      can_sends.append(create_fcw_command(self.packer, fcw_alert))
+      if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
+        can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:

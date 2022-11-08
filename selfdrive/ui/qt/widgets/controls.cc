@@ -18,8 +18,6 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
@@ -42,6 +40,12 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
   hlayout->addWidget(title_label);
 
+  // value next to control button
+  value = new ElidedLabel();
+  value->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+  value->setStyleSheet("color: #aaaaaa");
+  hlayout->addWidget(value);
+
   main_layout->addLayout(hlayout);
 
   // description
@@ -54,7 +58,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   connect(title_label, &QPushButton::clicked, [=]() {
     if (!description->isVisible()) {
-      emit showDescription();
+      emit showDescriptionEvent();
     }
 
     if (!description->text().isEmpty()) {
@@ -66,7 +70,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 }
 
 void AbstractControl::hideEvent(QHideEvent *e) {
-  if(description != nullptr) {
+  if (description != nullptr) {
     description->hide();
   }
 }

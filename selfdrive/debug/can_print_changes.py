@@ -54,6 +54,7 @@ def can_printer(bus=0, init_msgs=None, new_msgs=None, table=False):
     update(new_msgs, bus, dat, low_to_high, high_to_low)
   else:
     # Live mode
+    print(f"Waiting for messages on bus {bus}")
     try:
       while 1:
         can_recv = messaging.drain_sock(logcan)
@@ -89,14 +90,17 @@ if __name__ == "__main__":
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--bus", type=int, help="CAN bus to print out", default=0)
   parser.add_argument("--table", action="store_true", help="Print a cabana-like table")
-  parser.add_argument("init", type=str, nargs='?', help="Route or segment to initialize with")
+  parser.add_argument("init", type=str, nargs='?', help="Route or segment to initialize with. Use empty quotes to compare against all zeros.")
   parser.add_argument("comp", type=str, nargs='?', help="Route or segment to compare against init")
 
   args = parser.parse_args()
 
   init_lr, new_lr = None, None
   if args.init:
-    init_lr = logreader_from_route_or_segment(args.init)
+    if args.init == '':
+      init_lr = []
+    else:
+      init_lr = logreader_from_route_or_segment(args.init)
   if args.comp:
     new_lr = logreader_from_route_or_segment(args.comp)
 

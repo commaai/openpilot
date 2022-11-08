@@ -3,8 +3,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+
 Ecu = car.CarParams.Ecu
 
 
@@ -22,27 +25,34 @@ class CAR:
 
   # Ram
   RAM_1500 = "RAM 1500 5TH GEN"
+  RAM_HD = "RAM HD 5TH GEN"
 
 
 class CarControllerParams:
   def __init__(self, CP):
-    self.STEER_MAX = 261  # higher than this faults the EPS on Chrysler/Jeep. Ram DT allows more
     self.STEER_ERROR_MAX = 80
-
-    if CP.carFingerprint in RAM_CARS:
+    if CP.carFingerprint in RAM_HD:
+      self.STEER_DELTA_UP = 14
+      self.STEER_DELTA_DOWN = 14
+      self.STEER_MAX = 361  # higher than this faults the EPS
+    elif CP.carFingerprint in RAM_DT:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
+      self.STEER_MAX = 261  # EPS allows more, up to 350?
     else:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
+      self.STEER_MAX = 261  # higher than this faults the EPS
 
 STEER_THRESHOLD = 120
 
-RAM_CARS = {CAR.RAM_1500, }
+RAM_DT = {CAR.RAM_1500, }
+RAM_HD = {CAR.RAM_HD, }
+RAM_CARS = RAM_DT | RAM_HD
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
-  package: str = "Adaptive Cruise Control"
+  package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.fca
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -57,6 +67,10 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
   CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.ram),
+  CAR.RAM_HD: [
+    ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 3500 2020-22", harness=Harness.ram),
+  ],
 }
 
 # Unique CAN messages:
@@ -118,6 +132,46 @@ FINGERPRINTS = {
   }],
 }
 
+CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf132)
+CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xf132)
+
+CHRYSLER_SOFTWARE_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+CHRYSLER_SOFTWARE_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.SYSTEM_SUPPLIER_ECU_SOFTWARE_NUMBER)
+
+CHRYSLER_RX_OFFSET = -0x280
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      rx_offset=CHRYSLER_RX_OFFSET,
+      bus=0,
+    ),
+    Request(
+      [CHRYSLER_VERSION_REQUEST],
+      [CHRYSLER_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      bus=0,
+    ),
+    Request(
+      [CHRYSLER_SOFTWARE_VERSION_REQUEST],
+      [CHRYSLER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      bus=0,
+    ),
+  ],
+  extra_ecus=[
+    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+  ],
+)
+
 FW_VERSIONS = {
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
@@ -133,7 +187,7 @@ FW_VERSIONS = {
       b'68428609AB',
       b'68500728AA',
     ],
-    (Ecu.esp, 0x747, None): [
+    (Ecu.abs, 0x747, None): [
       b'68432418AD',
       b'68432418AB',
       b'68436004AE',
@@ -159,6 +213,7 @@ FW_VERSIONS = {
       b'68448163AJ',
       b'68500630AD',
       b'68539650AD',
+      b'68378758AM ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
@@ -170,11 +225,37 @@ FW_VERSIONS = {
       b'68540431AB',
       b'68484467AC',
     ],
-    (Ecu.gateway, 0x18DACBF1, None): [
-      b'68402660AB',
-      b'68445283AB',
-      b'68533631AB',
-      b'68500483AB',
+  },
+
+  CAR.RAM_HD: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68361606AH',
+      b'68492693AD',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68399794AC',
+      b'68428503AA',
+      b'68428505AA',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68334977AH',
+      b'68504022AB',
+      b'68530686AB',
+      b'68504022AC',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'04672895AB',
+      b'56029827AG',
+      b'68484694AE',
+    ],
+    (Ecu.eps, 0x761, None): [
+      b'68421036AC',
+      b'68507906AB',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'52421132AF',
+      b'M2370131MB',
+      b'M2421132MB',
     ],
   },
 }
@@ -188,4 +269,5 @@ DBC = {
   CAR.JEEP_CHEROKEE: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.RAM_1500: dbc_dict('chrysler_ram_dt_generated', None),
+  CAR.RAM_HD: dbc_dict('chrysler_ram_hd_generated', None),
 }
