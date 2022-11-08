@@ -14,8 +14,7 @@
 const int CELL_HEIGHT = 26;
 
 inline int get_bit_index(const QModelIndex &index, bool little_endian) {
-  return little_endian ? index.row() * 8 + 7 - index.column()
-                       : index.row() * 8 + index.column();
+  return index.row() * 8 + (little_endian ? 7 - index.column() : index.column());
 }
 
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
@@ -73,10 +72,18 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
-  anchor_index = indexAt(event->pos());
-  if (resize_sig = getResizeSignal(); resize_sig != nullptr) {
+  if (anchor_index = indexAt(event->pos()); anchor_index.isValid()) {
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    delegate->setSelectionColor(item->bg_color);
+    if (item && item->sigs.size() > 0) {
+      int bit_idx = get_bit_index(anchor_index, true);
+      for (auto s : item->sigs) {
+        if (bit_idx == s->lsb || bit_idx == s->msb) {
+          resize_sig = s;
+          delegate->setSelectionColor(item->bg_color);
+          break;
+        }
+      }
+    }
   }
   QTableView::mousePressEvent(event);
 }
@@ -146,35 +153,11 @@ void BinaryView::setMessage(const QString &message_id) {
   updateState();
 }
 
-const Signal *BinaryView::getResizeSignal() const {
-  if (anchor_index.isValid()) {
-    auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    if (item && item->sigs.size() > 0) {
-      int archor_pos = anchor_index.row() * 8 + anchor_index.column();
-      for (auto s : item->sigs) {
-        auto [sig_from, sig_to] = getSignalRange(s);
-        if (s->is_little_endian) {
-          sig_from = bigEndianBitIndex(sig_from);
-          sig_to = bigEndianBitIndex(sig_to);
-        }
-        if (archor_pos == sig_from || archor_pos == sig_to)
-          return s;
-      }
-    }
-  }
-  return nullptr;
-}
-
 QSet<const Signal *> BinaryView::getOverlappingSignals() const {
   QSet<const Signal *> overlapping;
-  for (int i = 0; i < model->rowCount(); ++i) {
-    for (int j = 0; j < model->columnCount() - 1; ++j) {
-      auto item = (const BinaryViewModel::Item *)model->index(i, j).internalPointer();
-      if (item && item->sigs.size() > 1) {
-        for (auto s : item->sigs)
-          overlapping.insert(s);
-      }
-    }
+  for (auto &item : model->items) {
+    if (item.sigs.size() > 1)
+      for (auto s : item.sigs) overlapping += s;
   }
   return overlapping;
 }
@@ -182,14 +165,10 @@ QSet<const Signal *> BinaryView::getOverlappingSignals() const {
 // BinaryViewModel
 
 void BinaryViewModel::setMessage(const QString &message_id) {
-  msg_id = message_id;
-
   beginResetModel();
+  msg_id = message_id;
   items.clear();
-  row_count = 0;
-
-  dbc_msg = dbc()->msg(msg_id);
-  if (dbc_msg) {
+  if ((dbc_msg = dbc()->msg(msg_id))) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     for (int i = 0; i < dbc_msg->sigs.size(); ++i) {
@@ -202,35 +181,21 @@ void BinaryViewModel::setMessage(const QString &message_id) {
           qWarning() << "signal " << sig.name.c_str() << "out of bounds.start_bit:" << sig.start_bit << "size:" << sig.size;
           break;
         }
-        if (j == start) {
-          sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        }
-        if (j == end) {
-          sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        }
+        if (j == start) sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        if (j == end) sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         items[idx].bg_color = getColor(i);
-        items[idx].sigs.push_back(&dbc_msg->sigs[i]);
+        items[idx].sigs.push_back(&sig);
       }
     }
   } else {
     row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
-
   endResetModel();
-}
-
-QModelIndex BinaryViewModel::index(int row, int column, const QModelIndex &parent) const {
-  return createIndex(row, column, (void *)&items[row * column_count + column]);
-}
-
-Qt::ItemFlags BinaryViewModel::flags(const QModelIndex &index) const {
-  return (index.column() == column_count - 1) ? Qt::ItemIsEnabled : Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
 void BinaryViewModel::updateState() {
   auto prev_items = items;
-
   const auto &binary = can->lastMessage(msg_id).dat;
   // data size may changed.
   if (!dbc_msg && binary.size() != row_count) {
@@ -240,7 +205,6 @@ void BinaryViewModel::updateState() {
     items.resize(row_count * column_count);
     endResetModel();
   }
-
   char hex[3] = {'\0'};
   for (int i = 0; i < std::min(binary.size(), row_count); ++i) {
     for (int j = 0; j < column_count - 1; ++j) {
@@ -290,9 +254,8 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
-  bool hover = std::find_if(item->sigs.begin(), item->sigs.end(), [=](auto s) { return s == bin_view->hoveredSignal(); }) !=
-               item->sigs.end();
   // background
+  bool hover = item->sigs.contains(bin_view->hoveredSignal());
   QColor bg_color = hover ? hoverColor(item->bg_color) : item->bg_color;
   if (option.state & QStyle::State_Selected) {
     bg_color = selection_color;

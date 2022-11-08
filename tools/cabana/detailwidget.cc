@@ -130,12 +130,12 @@ void DetailWidget::setMessage(const QString &message_id) {
       break;
     }
   }
+  msg_id = message_id;
   if (index == -1) {
     index = tabbar->addTab(message_id);
     tabbar->setTabToolTip(index, msgName(message_id));
   }
   tabbar->setCurrentIndex(index);
-  msg_id = message_id;
   dbcMsgChanged();
 }
 

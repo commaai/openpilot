@@ -135,18 +135,10 @@ void SignalEdit::saveSignal() {
     int start = std::floor(s.start_bit / 8);
     if (little_endian) {
       int end = std::floor((s.start_bit - s.size + 1) / 8);
-      if (start == end) {
-        s.start_bit = s.start_bit - s.size + 1;
-      } else {
-        s.start_bit = bigEndianStartBitsIndex(s.start_bit);
-      }
+      s.start_bit = start == end ? s.start_bit - s.size + 1 : bigEndianStartBitsIndex(s.start_bit);
     } else {
       int end = std::floor((s.start_bit + s.size - 1) / 8);
-      if (start == end) {
-        s.start_bit = s.start_bit + s.size - 1;
-      } else {
-        s.start_bit = bigEndianBitIndex(s.start_bit);
-      }
+      s.start_bit = start == end ? s.start_bit + s.size - 1 : bigEndianBitIndex(s.start_bit);
     }
     s.is_little_endian = little_endian;
   }
