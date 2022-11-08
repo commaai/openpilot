@@ -34,6 +34,7 @@ HYUNDAI TUCSON HYBRID 4TH GEN: [2.5, 2.5, 0.0]
 HYUNDAI SANTA CRUZ 1ST GEN: [2.7, 2.7, 0.0]
 KIA SPORTAGE 5TH GEN: [2.7, 2.7, 0.0]
 KIA SPORTAGE HYBRID 5TH GEN: [2.5, 2.5, 0.0]
+GENESIS GV70 1ST GEN: [2.42, 2.42, 0.01]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

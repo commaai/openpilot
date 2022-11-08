@@ -48,5 +48,8 @@ int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(Signal &s, int from, int to);
 std::pair<int, int> getSignalRange(const Signal *s);
-
 DBCManager *dbc();
+inline QString msgName(const QString &id, const char *def = "untitled") {
+  auto msg = dbc()->msg(id);
+  return msg ? msg->name.c_str() : def;
+}
