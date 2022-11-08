@@ -73,10 +73,11 @@ private:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
-  const Signal *getResizingSignal() const;
+  const Signal *getResizeSignal() const;
 
   QModelIndex anchor_index;
   BinaryViewModel *model;
+  const Signal *resize_sig = nullptr;
   BinaryItemDelegate *delegate;
   const Signal *hovered_sig = nullptr;
 };

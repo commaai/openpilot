@@ -42,21 +42,31 @@ void BinaryView::highlight(const Signal *sig) {
 }
 
 void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) {
-  QModelIndex tl = indexAt({qMin(rect.left(), rect.right()), qMin(rect.top(), rect.bottom())});
-  QModelIndex br = indexAt({qMax(rect.left(), rect.right()), qMax(rect.top(), rect.bottom())});
-  if (!tl.isValid() || !br.isValid())
+  auto index = indexAt(viewport()->mapFromGlobal(QCursor::pos()));
+  if (!anchor_index.isValid() || !index.isValid())
     return;
 
-  if (tl < anchor_index) {
-    br = anchor_index;
-  } else if (anchor_index < br) {
-    tl = anchor_index;
-  }
+  auto tl = std::min(anchor_index, index);
+  auto br = std::max(anchor_index, index);
   QItemSelection selection;
-  for (int row = tl.row(); row <= br.row(); ++row) {
-    int left_col = (row == tl.row()) ? tl.column() : 0;
-    int right_col = (row == br.row()) ? br.column() : 7;
-    selection.merge({model->index(row, left_col), model->index(row, right_col)}, flags);
+  if ((resize_sig && resize_sig->is_little_endian) || (!resize_sig && index < anchor_index)) {
+    // little_endian selection
+    if (tl.row() == br.row()) {
+      selection.merge({model->index(tl.row(), tl.column()), model->index(tl.row(), br.column())}, flags);
+    } else {
+      for (int row = tl.row(); row <= br.row(); ++row) {
+        int left_col = (row == br.row()) ? br.column() : 0;
+        int right_col = (row == tl.row()) ? tl.column() : 7;
+        selection.merge({model->index(row, left_col), model->index(row, right_col)}, flags);
+      }
+    }
+  } else {
+    // big endian selection
+    for (int row = tl.row(); row <= br.row(); ++row) {
+      int left_col = (row == tl.row()) ? tl.column() : 0;
+      int right_col = (row == br.row()) ? br.column() : 7;
+      selection.merge({model->index(row, left_col), model->index(row, right_col)}, flags);
+    }
   }
   selectionModel()->select(selection, flags);
 }
@@ -64,7 +74,7 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
   anchor_index = indexAt(event->pos());
-  if (getResizingSignal() != nullptr) {
+  if (resize_sig = getResizeSignal(); resize_sig != nullptr) {
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     delegate->setSelectionColor(item->bg_color);
   }
@@ -85,36 +95,41 @@ void BinaryView::mouseMoveEvent(QMouseEvent *event) {
 void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   QTableView::mouseReleaseEvent(event);
 
-  if (auto selected_indexes = selectedIndexes(); !selected_indexes.isEmpty()) {
-    auto release_index = indexAt(event->pos());
+  auto release_index = indexAt(event->pos());
+  if (release_index.isValid() && anchor_index.isValid()) {
     if (release_index.column() == 8) {
       release_index = model->index(release_index.row(), 7);
     }
-    if (auto sig = getResizingSignal()) {
-      auto [sig_from, sig_to] = getSignalRange(sig);
-      int release_pos = get_bit_index(release_index, sig->is_little_endian);
-      int archor_pos = get_bit_index(anchor_index, sig->is_little_endian);
-      int start_bit, size;
-      if (archor_pos == sig_from) {
-        start_bit = release_pos;
-        size = std::max(1, sig_to - start_bit + 1);
+    bool little_endian = (resize_sig && resize_sig->is_little_endian) || (!resize_sig && release_index < anchor_index);
+    int release_bit_idx = get_bit_index(release_index, little_endian);
+    int archor_bit_idx = get_bit_index(anchor_index, little_endian);
+    if (resize_sig) {
+      auto [sig_from, sig_to] = getSignalRange(resize_sig);
+      int start_bit, end_bit;
+      if (archor_bit_idx == sig_from) {
+        start_bit = std::min(release_bit_idx, sig_to);
+        end_bit = std::max(release_bit_idx, sig_to);
+        if (start_bit >= sig_from && start_bit <= sig_to) {
+          start_bit = std::min(start_bit + 1, sig_to);
+        }
       } else {
-        start_bit = sig_from;
-        size = std::max(1, release_pos - start_bit + 1);
+        start_bit = std::min(release_bit_idx, sig_from);
+        end_bit = std::max(release_bit_idx, sig_from);
+        if (end_bit >= sig_from && end_bit <= sig_to) {
+          end_bit = std::max(end_bit - 1, sig_from);
+        }
       }
-      emit resizeSignal(sig, start_bit, size);
+      emit resizeSignal(resize_sig, start_bit, end_bit - start_bit + 1);
     } else {
-      bool little_endian = (release_index < anchor_index);
-      int from = get_bit_index(selected_indexes.first(), little_endian);
-      int to = get_bit_index(selected_indexes.back(), little_endian);
-      if (from > to) {
-        std::swap(from, to);
+      if (archor_bit_idx > release_bit_idx) {
+        std::swap(archor_bit_idx, release_bit_idx);
       }
-      emit addSignal(from, to - from + 1, little_endian);
+      emit addSignal(archor_bit_idx, release_bit_idx - archor_bit_idx + 1, little_endian);
     }
-    clearSelection();
   }
+  clearSelection();
   anchor_index = QModelIndex();
+  resize_sig = nullptr;
 }
 
 void BinaryView::leaveEvent(QEvent *event) {
@@ -125,10 +140,13 @@ void BinaryView::leaveEvent(QEvent *event) {
 void BinaryView::setMessage(const QString &message_id) {
   model->setMessage(message_id);
   clearSelection();
+  anchor_index = QModelIndex();
+  resize_sig = nullptr;
+  hovered_sig = nullptr;
   updateState();
 }
 
-const Signal *BinaryView::getResizingSignal() const {
+const Signal *BinaryView::getResizeSignal() const {
   if (anchor_index.isValid()) {
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     if (item && item->sigs.size() > 0) {
@@ -282,7 +300,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   painter->fillRect(option.rect, bg_color);
 
   // text
-  if (index.column() == 8) { // hex column
+  if (index.column() == 8) {  // hex column
     painter->setFont(hex_font);
   } else if (hover) {
     painter->setPen(Qt::white);
