@@ -200,7 +200,7 @@ class CarState(CarStateBase):
     self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-      cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+      cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["VSetDis"] * speed_factor
       ret.cruiseState.standstill = cp_cruise_info.vl["SCC_CONTROL"]["CRUISE_STANDSTILL"] == 1
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
@@ -467,7 +467,7 @@ class CarState(CarStateBase):
         ("BLINDSPOTS_REAR_CORNERS", 20),
       ]
 
-    if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
+    if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and not CP.openpilotLongitudinalControl:
       signals += [
         ("ACCMode", "SCC_CONTROL"),
         ("VSetDis", "SCC_CONTROL"),
@@ -504,11 +504,13 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
+    signals = []
+    checks = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
-      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
-      checks = [("CAM_0x2a4", 20)]
-    else:
-      signals = [
+      signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks += [("CAM_0x2a4", 20)]
+    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      signals += [
         ("COUNTER", "SCC_CONTROL"),
         ("NEW_SIGNAL_1", "SCC_CONTROL"),
         ("MainMode_ACC", "SCC_CONTROL"),
@@ -521,7 +523,7 @@ class CarState(CarStateBase):
         ("VSetDis", "SCC_CONTROL"),
       ]
 
-      checks = [
+      checks += [
         ("SCC_CONTROL", 50),
       ]
 
