@@ -9,7 +9,7 @@
 class HeaderView : public QHeaderView {
 public:
   HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
-  QSize sectionSizeFromContents(int logicalIndex) const;
+  QSize sectionSizeFromContents(int logicalIndex) const override;
 };
 
 class HistoryLogModel : public QAbstractTableModel {
@@ -40,5 +40,6 @@ public:
   void setMessage(const QString &message_id) { model->setMessage(message_id); }
   void updateState() { model->updateState(); }
 private:
+  int sizeHintForColumn(int column) const override;
   HistoryLogModel *model;
 };

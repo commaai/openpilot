@@ -1,7 +1,6 @@
 #include "tools/cabana/historylog.h"
 
 #include <QFontDatabase>
-#include <QVBoxLayout>
 
 // HistoryLogModel
 
@@ -88,4 +87,9 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
+}
+
+int HistoryLog::sizeHintForColumn(int column) const {
+  // sizeHintForColumn is only called for column 0 (ResizeToContents)
+  return itemDelegate()->sizeHint(viewOptions(), model->index(0, 0)).width() + 1; // +1 for grid
 }

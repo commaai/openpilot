@@ -132,8 +132,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   }
   if (index == -1) {
     index = tabbar->addTab(message_id);
-    auto msg = dbc()->msg(message_id);
-    tabbar->setTabToolTip(index, msg ? msg->name.c_str() : "untitled");
+    tabbar->setTabToolTip(index, msgName(message_id));
   }
   tabbar->setCurrentIndex(index);
   msg_id = message_id;
@@ -173,7 +172,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   }
 
   edit_btn->setVisible(true);
-  name_label->setText(msg ? msg->name.c_str() : "untitled");
+  name_label->setText(msgName(msg_id));
 
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
@@ -212,7 +211,7 @@ void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool o
 
 void DetailWidget::editMsg() {
   auto msg = dbc()->msg(msg_id);
-  QString name = msg ? msg->name.c_str() : "untitled";
+  QString name = msgName(msg_id);
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   EditMessageDialog dlg(msg_id, name, size, this);
   if (dlg.exec()) {
