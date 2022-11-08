@@ -155,7 +155,7 @@ void SNPEModel::addDesire(float *state, int state_size) {
 
 void SNPEModel::addDrivingStyle(float *state, int state_size) {
   drivingStyle = state;
-  drivingStyle = this->addExtra(state, state_size, 2);
+  drivingStyleBuffer = this->addExtra(state, state_size, 2);
 }
 
 void SNPEModel::addCalib(float *state, int state_size) {

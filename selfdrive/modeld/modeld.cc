@@ -16,7 +16,6 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
 
-constexpr int DRIVING_STYLE_LEN = 10;
 
 ExitHandler do_exit;
 
