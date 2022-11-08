@@ -1,9 +1,13 @@
-Version 0.8.17 (2022-XX-XX)
+Version 0.8.17 (2022-11-XX)
 ========================
 * New driving model
   * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
 * New driver monitoring model
   * New end-to-end distracted trigger
+* Experimental driving mode
+  * End-to-end longitudinal control
+  * Stops for red lights and stop signs
+  * openpilot defaults to chill mode, enable experimental in settings
 * Self-tuning torque lateral controller parameters
   * Parameters learned live for each car
 * Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
@@ -12,7 +16,7 @@ Version 0.8.17 (2022-XX-XX)
   * Matched speeds shown on car's dash
   * Improved update experience
   * Border turns grey while overriding steering
-  * Added button to bookmark events while driving; view them later in comma connect
+  * Bookmark events while driving; view them in comma connect
 * AGNOS 6
 * tools: new and improved cabana thanks to deanlee!
 * Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
