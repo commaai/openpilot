@@ -390,23 +390,23 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // e2e long toggle icon
-  e2e_long_pos.setX(rect().right() - radius / 2 - bdr_s * 2);
-  e2e_long_pos.setY(int(radius * 1.5) + bdr_s * 3);
-  drawIcon(p, e2e_long_pos.x(), e2e_long_pos.y(),
-             taco_img, blackColor(70), uiState()->scene.end_to_end_long ? 1.0 : 0.2);
-
   // engage-ability icon
   if (engageable) {
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
              engage_img, bg_colors[status], 1.0);
   }
 
-  // dm icon
   if (!hideDM) {
+    // dm icon
     int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
     drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+
+    // e2e long toggle icon
+    e2e_long_pos.setX(rect().right() - radius / 2 - bdr_s * 2);
+    e2e_long_pos.setY(rect().bottom() - footer_h / 2);
+    drawIcon(p, e2e_long_pos.x(), e2e_long_pos.y(),
+               taco_img, blackColor(70), uiState()->scene.end_to_end_long ? 1.0 : 0.2);
   }
   p.restore();
 }
