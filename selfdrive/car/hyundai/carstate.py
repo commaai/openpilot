@@ -467,16 +467,15 @@ class CarState(CarStateBase):
         ("BLINDSPOTS_REAR_CORNERS", 20),
       ]
 
-    if not CP.openpilotLongitudinalControl:
-      if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value):
-        signals += [
-          ("ACCMode", "SCC_CONTROL"),
-          ("VSetDis", "SCC_CONTROL"),
-          ("CRUISE_STANDSTILL", "SCC_CONTROL"),
-        ]
-        checks += [
-          ("SCC_CONTROL", 50),
-        ]
+    if not CP.openpilotLongitudinalControl and not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value):
+      signals += [
+        ("ACCMode", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
+        ("CRUISE_STANDSTILL", "SCC_CONTROL"),
+      ]
+      checks += [
+        ("SCC_CONTROL", 50),
+      ]
 
     if CP.carFingerprint in EV_CAR:
       signals += [
