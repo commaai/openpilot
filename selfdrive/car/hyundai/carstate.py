@@ -468,7 +468,7 @@ class CarState(CarStateBase):
       ]
 
     if not CP.openpilotLongitudinalControl:
-      if not (CP.flags | HyundaiFlags.CANFD_CAMERA_SCC.value):
+      if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value):
         signals += [
           ("ACCMode", "SCC_CONTROL"),
           ("VSetDis", "SCC_CONTROL"),
