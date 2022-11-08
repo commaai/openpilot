@@ -148,7 +148,7 @@
     </message>
     <message>
         <source>RESET</source>
-        <translation>Auf Wekseinstellungen ZURÜCKSETZEN</translation>
+        <translation>Auf Werkseinstellungen ZURÜCKSETZEN</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
