@@ -54,7 +54,7 @@ private:
   QPixmap taco_img;
   QPixmap engage_img;
   QPixmap dm_img;
-  QPoint engageability_icon = QPoint(0, 0);
+  QPoint e2e_long_pos = QPoint(0, 0);
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
   float speed;

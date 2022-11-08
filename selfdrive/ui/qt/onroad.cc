@@ -179,8 +179,8 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 }
 
 void AnnotatedCameraWidget::mousePressEvent(QMouseEvent* e) {
-  QRect engageability_rect = QRect(engageability_icon.x() - radius / 2, engageability_icon.y() - radius / 2, radius, radius);
-  if (engageable && engageability_rect.contains(e->pos())) {
+  QRect e2e_rect = QRect(e2e_long_pos.x() - radius / 2, e2e_long_pos.y() - radius / 2, radius, radius);
+  if (e2e_rect.contains(e->pos())) {
     // set e2e long params and state
     UIState *s = uiState();
     s->scene.end_to_end_long = !s->scene.end_to_end_long;
@@ -390,12 +390,16 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
+  // e2e long toggle icon
+  e2e_long_pos.setX(rect().right() - radius / 2 - bdr_s * 2);
+  e2e_long_pos.setY(int(radius * 1.5) + bdr_s * 3);
+  drawIcon(p, e2e_long_pos.x(), e2e_long_pos.y(),
+             taco_img, blackColor(70), uiState()->scene.end_to_end_long ? 1.0 : 0.2);
+
   // engage-ability icon
-  engageability_icon.setX(rect().right() - radius / 2 - bdr_s * 2);
-  engageability_icon.setY(radius / 2 + int(bdr_s * 1.5));
   if (engageable) {
-    drawIcon(p, engageability_icon.x(), engageability_icon.y(),
-             uiState()->scene.end_to_end_long ? taco_img : engage_img, bg_colors[status], 1.0);
+    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
+             engage_img, bg_colors[status], 1.0);
   }
 
   // dm icon
@@ -422,6 +426,7 @@ void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &t
 void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
+  p.setOpacity(1.0);
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
   p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
