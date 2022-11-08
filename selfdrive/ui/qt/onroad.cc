@@ -427,7 +427,6 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.setOpacity(1.0);
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
   p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
