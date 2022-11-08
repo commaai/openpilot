@@ -137,8 +137,6 @@ void DetailWidget::setMessage(const QString &message_id) {
   tabbar->setCurrentIndex(index);
   msg_id = message_id;
   dbcMsgChanged();
-
-  scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
@@ -186,6 +184,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
   setUpdatesEnabled(true);
+  scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::updateState() {
