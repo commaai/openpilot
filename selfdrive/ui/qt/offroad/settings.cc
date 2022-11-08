@@ -37,7 +37,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       false,
     },
     {
-      "EndToEndLong",
+      "ExperimentalMode",
       tr("Experimental mode"),
       "",
       "../assets/offroad/icon_road.png",
@@ -117,7 +117,7 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updateToggles() {
-  auto e2e_toggle = toggles["EndToEndLong"];
+  auto e2e_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = tr("\
     openpilot defaults to driving in <b>chill mode</b>.\
@@ -147,7 +147,7 @@ void TogglesPanel::updateToggles() {
     } else {
       // no long for now
       e2e_toggle->setEnabled(false);
-      params.remove("EndToEndLong");
+      params.remove("ExperimentalMode");
 
       const QString no_long = tr("openpilot longitudinal control is not currently available for this car.");
       const QString exp_long = tr("Enable experimental longitudinal control to enable this.");
