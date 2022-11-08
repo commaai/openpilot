@@ -5,6 +5,7 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 #define DRIVING_STYLE
+#define PASSENGER
 
 #include <array>
 #include <memory>
@@ -23,6 +24,7 @@ constexpr int DESIRE_LEN = 8;
 constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int DRIVING_STYLE_LEN = 10;
+constexpr int PASSENGER_LEN = 2;
 constexpr int MODEL_FREQ = 20;
 
 constexpr int DISENGAGE_LEN = 5;
@@ -264,11 +266,14 @@ struct ModelState {
 #ifdef DRIVING_STYLE
   float driving_style[DRIVING_STYLE_LEN] = {};
 #endif
+#ifdef PASSENGER
+  float passenger[PASSENGER_LEN] = {};
+#endif
 };
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide, const mat3 &transform, const mat3 &transform_wide, 
-                              float *desire_in, float *driving_style, bool is_rhd, bool prepare_only);
+                              float *desire_in, float *driving_style, float *passenger, bool is_rhd, bool prepare_only);
 void model_free(ModelState* s);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,

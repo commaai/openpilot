@@ -73,6 +73,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   mat3 model_transform_extra = {};
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+  float passenger[PASSENGER_LEN] = {0, 0};
+
 
   VisionBuf *buf_main = nullptr;
   VisionBuf *buf_extra = nullptr;
@@ -153,7 +155,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     double mt1 = millis_since_boot();
     ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra,
-                                                 vec_desire, driving_style, is_rhd, prepare_only);
+                                                 vec_desire, driving_style, passenger, is_rhd, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 

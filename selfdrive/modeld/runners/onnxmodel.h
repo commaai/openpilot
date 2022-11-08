@@ -11,6 +11,7 @@ public:
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addDrivingStyle(float *state, int state_size);
+  void addPassenger(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addCalib(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
@@ -28,6 +29,8 @@ private:
   int desire_state_size;
   float *driving_style_input_buf = NULL;
   int driving_style_size;
+  float *passenger_input_buf = NULL;
+  int passenger_size;
   float *traffic_convention_input_buf = NULL;
   int traffic_convention_size;
   float *calib_input_buf = NULL;

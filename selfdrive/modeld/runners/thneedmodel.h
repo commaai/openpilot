@@ -10,6 +10,7 @@ public:
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addDrivingStyle(float *state, int state_size);
+  void addPassenger(float *state, int state_size); 
   void addImage(float *image_buf, int buf_size);
   void addExtra(float *image_buf, int buf_size);
   void execute();
@@ -29,5 +30,6 @@ private:
   float *trafficConvention;
   float *desire;
   float *drivingStyle;
+  float *passenger;
 };
 

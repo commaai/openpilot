@@ -158,6 +158,11 @@ void SNPEModel::addDrivingStyle(float *state, int state_size) {
   drivingStyleBuffer = this->addExtra(state, state_size, 2);
 }
 
+void SNPEModel::addPassenger(float *state, int state_size) {
+  passenger = state;
+  passengerBuffer = this->addExtra(state, state_size, 2);
+}
+
 void SNPEModel::addCalib(float *state, int state_size) {
   calib = state;
   calibBuffer = this->addExtra(state, state_size, 1);

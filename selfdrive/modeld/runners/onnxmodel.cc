@@ -102,6 +102,11 @@ void ONNXModel::addDrivingStyle(float *state, int state_size) {
   driving_style_size = state_size;
 }
 
+void ONNXModel::addPassenger(float *state, int state_size) {
+  passenger_input_buf = state;
+  passenger_size = state_size;
+}
+
 void ONNXModel::addTrafficConvention(float *state, int state_size) {
   traffic_convention_input_buf = state;
   traffic_convention_size = state_size;
@@ -135,6 +140,9 @@ void ONNXModel::execute() {
   }
   if (driving_style_input_buf != NULL) {
     pwrite(driving_style_input_buf, driving_style_size);
+  }
+  if (passenger_input_buf != NULL) {
+    pwrite(passenger_input_buf, passenger_size);
   }
   if (traffic_convention_input_buf != NULL) {
     pwrite(traffic_convention_input_buf, traffic_convention_size);
