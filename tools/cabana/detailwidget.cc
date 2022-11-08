@@ -220,7 +220,7 @@ void DetailWidget::editMsg() {
   }
 }
 
-void DetailWidget::addSignal(int from, int to) {
+void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   if (auto msg = dbc()->msg(msg_id)) {
     Signal sig = {};
     for (int i = 1; /**/; ++i) {
@@ -228,8 +228,8 @@ void DetailWidget::addSignal(int from, int to) {
       auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
       if (it == msg->sigs.end()) break;
     }
-    sig.is_little_endian = false,
-    updateSigSizeParamsFromRange(sig, from, to);
+    sig.is_little_endian = little_endian;
+    updateSigSizeParamsFromRange(sig, start_bit, size);
     dbc()->addSignal(msg_id, sig);
     dbcMsgChanged(msg->sigs.size() - 1);
   }

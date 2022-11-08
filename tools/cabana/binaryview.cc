@@ -85,13 +85,13 @@ void BinaryView::mouseMoveEvent(QMouseEvent *event) {
 void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   QTableView::mouseReleaseEvent(event);
 
-  if (auto indexes = selectedIndexes(); !indexes.isEmpty()) {
+  if (auto selected_indexes = selectedIndexes(); !selected_indexes.isEmpty()) {
+    auto release_index = indexAt(event->pos());
+    if (release_index.column() == 8) {
+      release_index = model->index(release_index.row(), 7);
+    }
     if (auto sig = getResizingSignal()) {
-      auto release_index = indexAt(event->pos());
       auto [sig_from, sig_to] = getSignalRange(sig);
-      if (release_index.column() == 8) {
-        release_index = model->index(release_index.row(), 7);
-      }
       int release_pos = get_bit_index(release_index, sig->is_little_endian);
       int archor_pos = get_bit_index(anchor_index, sig->is_little_endian);
       int start_bit, size;
@@ -104,9 +104,13 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
       }
       emit resizeSignal(sig, start_bit, size);
     } else {
-      int from = indexes.first().row() * 8 + indexes.first().column();
-      int to = indexes.back().row() * 8 + indexes.back().column();
-      emit addSignal(from, to - from + 1);
+      bool little_endian = (release_index < anchor_index);
+      int from = get_bit_index(selected_indexes.first(), little_endian);
+      int to = get_bit_index(selected_indexes.back(), little_endian);
+      if (from > to) {
+        std::swap(from, to);
+      }
+      emit addSignal(from, to - from + 1, little_endian);
     }
     clearSelection();
   }

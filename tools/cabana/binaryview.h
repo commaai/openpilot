@@ -64,7 +64,7 @@ public:
 
 signals:
   void signalHovered(const Signal *sig);
-  void addSignal(int from, int size);
+  void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int size);
 
 private:
