@@ -37,6 +37,21 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       false,
     },
     {
+      "EndToEndLong",
+      tr("Experimental mode"),
+      "",
+      "../assets/offroad/icon_road.png",
+      false,
+    },
+    {
+      "ExperimentalLongitudinalEnabled",
+      tr("Experimental openpilot longitudinal control"),
+      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br>\
+          openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control on this car. Enable this to switch to openpilot longitudinal control."),
+      "../assets/offroad/icon_speed_limit.png",
+      true,
+    },
+    {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
@@ -63,20 +78,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
       false,
-    },
-    {
-      "EndToEndLong",
-      tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
-      "",
-      "../assets/offroad/icon_road.png",
-      false,
-    },
-    {
-      "ExperimentalLongitudinalEnabled",
-      tr("Experimental openpilot longitudinal control"),
-      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
-      "../assets/offroad/icon_speed_limit.png",
-      true,
     },
 #ifdef ENABLE_MAPS
     {
@@ -118,7 +119,13 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 void TogglesPanel::updateToggles() {
   auto e2e_toggle = toggles["EndToEndLong"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
-  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+  const QString e2e_description = tr("\
+    openpilot defaults to driving in <b>chill mode</b>.\
+    Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. \
+    Experimental features are listed below:\
+    <br> \
+    <h4>🌮 End-to-End Longitudinal Control 🌮</h4> \
+    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would.");
 
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
