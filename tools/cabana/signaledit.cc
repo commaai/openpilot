@@ -130,7 +130,26 @@ void SignalEdit::saveSignal() {
   s.offset = form->offset->text().toDouble();
   s.factor = form->factor->text().toDouble();
   s.is_signed = form->sign->currentIndex() == 0;
-  s.is_little_endian = form->endianness->currentIndex() == 0;
+  bool little_endian = form->endianness->currentIndex() == 0;
+  if (little_endian != s.is_little_endian) {
+    int start = std::floor(s.start_bit / 8);
+    if (little_endian) {
+      int end = std::floor((s.start_bit - s.size + 1) / 8);
+      if (start == end) {
+        s.start_bit = s.start_bit - s.size + 1;
+      } else {
+        s.start_bit = bigEndianStartBitsIndex(s.start_bit);
+      }
+    } else {
+      int end = std::floor((s.start_bit + s.size - 1) / 8);
+      if (start == end) {
+        s.start_bit = s.start_bit + s.size - 1;
+      } else {
+        s.start_bit = bigEndianBitIndex(s.start_bit);
+      }
+    }
+    s.is_little_endian = little_endian;
+  }
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;
@@ -138,6 +157,7 @@ void SignalEdit::saveSignal() {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
+
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
   emit save(this->sig, s);
 }
