@@ -36,3 +36,10 @@ const int NM_DEVICE_TYPE_WIFI = 2;
 const int NM_DEVICE_TYPE_MODEM = 8;
 const int NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8;
 const int DBUS_TIMEOUT = 100;
+
+// https://developer-old.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMMetered
+const int NM_METERED_UNKNOWN   = 0;
+const int NM_METERED_YES       = 1;
+const int NM_METERED_NO        = 2;
+const int NM_METERED_GUESS_YES = 3;
+const int NM_METERED_GUESS_NO  = 4;

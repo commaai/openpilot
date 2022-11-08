@@ -13,8 +13,13 @@ fi
 ACADOS_FLAGS="-DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
-  ARCHNAME="Darwin"
+  if [[  $(uname -m) == "x86_64" ]]; then
+    ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=x86_64"
+    ARCHNAME="Darwin_x86_64"
+  else
+    ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+    ARCHNAME="Darwin"
+  fi
 fi
 
 if [ ! -d acados_repo/ ]; then

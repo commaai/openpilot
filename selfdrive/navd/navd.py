@@ -120,6 +120,10 @@ class RouteEngine:
     cloudlog.warning(f"Calculating route {self.last_position} -> {destination}")
     self.nav_destination = destination
 
+    lang = self.params.get('LanguageSetting', encoding='utf8')
+    if lang is not None:
+      lang = lang.replace('main_', '')
+
     params = {
       'access_token': self.mapbox_token,
       'annotations': 'maxspeed',
@@ -128,6 +132,7 @@ class RouteEngine:
       'steps': 'true',
       'banner_instructions': 'true',
       'alternatives': 'false',
+      'language': lang,
     }
 
     if self.last_bearing is not None:
@@ -135,7 +140,7 @@ class RouteEngine:
 
     url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
     try:
-      resp = requests.get(url, params=params)
+      resp = requests.get(url, params=params, timeout=10)
       resp.raise_for_status()
 
       r = resp.json()
@@ -194,10 +199,10 @@ class RouteEngine:
     parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
 
     # Compute total remaining time and distance
-    remaning = 1.0 - along_geometry / max(step['distance'], 1)
-    total_distance = step['distance'] * remaning
-    total_time = step['duration'] * remaning
-    total_time_typical = step['duration_typical'] * remaning
+    remaining = 1.0 - along_geometry / max(step['distance'], 1)
+    total_distance = step['distance'] * remaining
+    total_time = step['duration'] * remaining
+    total_time_typical = step['duration_typical'] * remaining
 
     # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
@@ -236,7 +241,7 @@ class RouteEngine:
         self.recompute_countdown = 0
       else:
         cloudlog.warning("Destination reached")
-        Params().delete("NavDestination")
+        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)

@@ -6,7 +6,7 @@
 
 ```bash
 # Log in via browser to have access to non-public routes
-python lib/auth.py
+python tools/lib/auth.py
 
 # Start a replay
 tools/replay/replay <route-name>
@@ -24,6 +24,7 @@ python replay/ui.py
 ```
 
 ## usage
+
 ``` bash
 $ tools/replay/replay -h
 Usage: tools/replay/replay [options] route

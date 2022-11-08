@@ -7,6 +7,7 @@
 #include <QPushButton>
 
 #include "common/params.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
@@ -45,8 +46,21 @@ public:
     title_label->setText(title);
   }
 
+  void setValue(const QString &val) {
+    value->setText(val);
+  }
+
+  const QString getDescription() {
+    return description->text();
+  }
+
+public slots:
+  void showDescription() {
+    description->setVisible(true);
+  };
+
 signals:
-  void showDescription();
+  void showDescriptionEvent();
 
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
@@ -54,6 +68,9 @@ protected:
 
   QHBoxLayout *hlayout;
   QPushButton *title_label;
+
+private:
+  ElidedLabel *value;
   QLabel *description = nullptr;
 };
 
@@ -105,7 +122,10 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
+  void setEnabled(bool enabled) {
+    toggle.setEnabled(enabled);
+    toggle.update();
+  }
 
 signals:
   void toggleFlipped(bool state);
@@ -119,17 +139,28 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool confirm, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
-    QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
-      params.putBool(key, state);
+    QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
+      QString content("<body><h2>" + title + "</h2><br><br>"
+                      "<p style=\"text-align: center; margin: 0 128px;\">" + getDescription() + "</p></body>");
+      ConfirmationDialog dialog(content, tr("Ok"), tr("Cancel"), true, this);
+      if (!confirm || !state || dialog.exec()) {
+        params.putBool(key, state);
+      } else {
+        toggle.togglePosition();
+      }
     });
   }
 
-  void showEvent(QShowEvent *event) override {
+  void refresh() {
     if (params.getBool(key) != toggle.on) {
       toggle.togglePosition();
     }
+  };
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
   };
 
 private:
@@ -157,9 +188,12 @@ private:
     QPainter p(this);
     p.setPen(Qt::gray);
     for (int i = 0; i < inner_layout.count() - 1; ++i) {
-      QRect r = inner_layout.itemAt(i)->geometry();
-      int bottom = r.bottom() + inner_layout.spacing() / 2;
-      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      QWidget *widget = inner_layout.itemAt(i)->widget();
+      if (widget == nullptr || widget->isVisible()) {
+        QRect r = inner_layout.itemAt(i)->geometry();
+        int bottom = r.bottom() + inner_layout.spacing() / 2;
+        p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      }
     }
   }
   QVBoxLayout outer_layout;

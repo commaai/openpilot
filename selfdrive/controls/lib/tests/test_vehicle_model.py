@@ -41,7 +41,7 @@ class TestVehicleModel(unittest.TestCase):
           self.assertAlmostEqual(float(yr1), yr2)
 
   def test_syn_ss_sol_simulate(self):
-    """Verifies that dyn_ss_sol mathes a simulation"""
+    """Verifies that dyn_ss_sol matches a simulation"""
 
     for roll in np.linspace(math.radians(-20), math.radians(20), num=11):
       for u in np.linspace(1, 30, num=10):

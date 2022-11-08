@@ -12,10 +12,7 @@ fi
 # set git identity
 source $DIR/identity.sh
 
-echo "[-] Setting up repo T=$SECONDS"
-
-cd $SOURCE_DIR
-git fetch origin
+echo "[-] Setting up target repo T=$SECONDS"
 
 rm -rf $TARGET_DIR
 mkdir -p $TARGET_DIR
@@ -25,14 +22,14 @@ pre-commit uninstall || true
 
 echo "[-] bringing master-ci and devel in sync T=$SECONDS"
 cd $TARGET_DIR
-git fetch origin master-ci
-git fetch origin devel
+git fetch --depth 1 origin master-ci
+git fetch --depth 1 origin devel
 
 git checkout -f --track origin/master-ci
 git reset --hard master-ci
 git checkout master-ci
 git reset --hard origin/devel
-git clean -xdf
+git clean -xdff
 git lfs uninstall
 
 # remove everything except .git
@@ -41,7 +38,7 @@ find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -
 
 # reset source tree
 cd $SOURCE_DIR
-git clean -xdf
+git clean -xdff
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -68,6 +65,15 @@ git commit -a -m "openpilot v$VERSION release
 date: $DATETIME
 master commit: $GIT_HASH
 "
+
+# ensure files are within GitHub's limit
+BIG_FILES="$(find . -type f -not -path './.git/*' -size +95M)"
+if [ ! -z "$BIG_FILES" ]; then
+  printf '\n\n\n'
+  echo "Found files exceeding GitHub's 100MB limit:"
+  echo "$BIG_FILES"
+  exit 1
+fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"

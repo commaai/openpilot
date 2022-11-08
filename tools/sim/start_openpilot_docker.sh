@@ -20,6 +20,7 @@ else
   EXTRA_ARGS="${EXTRA_ARGS} -it"
 fi
 
+docker kill openpilot_client || true
 docker run --net=host\
   --name openpilot_client \
   --rm \
