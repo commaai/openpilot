@@ -157,7 +157,6 @@ void SignalEdit::saveSignal() {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
   emit save(this->sig, s);
 }
