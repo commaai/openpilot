@@ -60,34 +60,34 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>Getaktete Verbindung</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Hochladen großer Dateien über getaktete Verbindungen unterbinden</translation>
     </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
     <message>
         <source>km/h</source>
-        <translation type="unfinished">km/h</translation>
+        <translation>km/h</translation>
     </message>
     <message>
         <source>mph</source>
-        <translation type="unfinished">mph</translation>
+        <translation>mph</translation>
     </message>
     <message>
         <source>MAX</source>
-        <translation type="unfinished">MAX</translation>
+        <translation>MAX</translation>
     </message>
     <message>
         <source>SPEED</source>
-        <translation type="unfinished">Geschwindigkeit</translation>
+        <translation>Geschwindigkeit</translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation type="unfinished">LIMIT</translation>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -140,7 +140,7 @@
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation type="unfinished"></translation>
+        <translation>Vorschau der auf den Fahrer gerichteten Kamera, um sicherzustellen, dass die Fahrerüberwachung eine gute Sicht hat. (Fahrzeug muss aus sein)</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
@@ -240,11 +240,11 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Review</source>
-        <translation type="unfinished"></translation>
+        <translation>Überprüfen</translation>
     </message>
 </context>
 <context>
@@ -289,8 +289,8 @@
     </message>
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Mindestens %n Buchstabe(n) benötigt!</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -428,7 +428,7 @@ location set</source>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>für &quot;%1&quot;</translation>
     </message>
     <message>
         <source>Wrong password</source>
@@ -458,26 +458,26 @@ location set</source>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Gehe zu https://connect.comma.ai auf deinem Handy</translation>
     </message>
     <message>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation type="unfinished"></translation>
+        <translation>Klicke auf &quot;neues Gerät hinzufügen&quot; und scanne den QR code rechts</translation>
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation type="unfinished"></translation>
+        <translation>Füge connect.comma.ai als Lesezeichen auf deinem Homescreen hinzu um es wie eine App zu verwenden</translation>
     </message>
 </context>
 <context>
     <name>ParamControl</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">Ok</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
 </context>
 <context>
@@ -546,22 +546,22 @@ location set</source>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>vor %n Minute(n)</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>vor %n Stunde(n)</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>vor %n Tag(en)</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -821,7 +821,7 @@ location set</source>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation type="unfinished"></translation>
+        <translation>DEINSTALLIERE %1</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
@@ -833,39 +833,39 @@ location set</source>
     </message>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Updates werden nur heruntergeladen, wenn das Auto aus ist.</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuelle Version</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Download</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Update installieren</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>INSTALLIEREN</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Ziel Branch</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>AUSWÄHLEN</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Wähle einen Branch</translation>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation type="unfinished"></translation>
+        <translation>Deinstallieren</translation>
     </message>
 </context>
 <context>
@@ -981,39 +981,39 @@ location set</source>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige die Karte auf der linken Seite der Benutzeroberfläche</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige die Karte auf der linken Seite der Benutzeroberfläche bei geteilten Bildschirm.</translation>
     </message>
     <message>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 Ende-zu-Ende Tempomat (extrem alpha) 🌮</translation>
     </message>
     <message>
         <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
+        <translation>Experimentaler Openpilot Tempomat</translation>
     </message>
     <message>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;WARNUNG: Der Openpilot Tempomat ist experimentell für dieses Auto und wird den Notbremsassistenten deaktivieren.&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige die vorraussichtliche Ankunftszeit im 24 Stunden Format</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lass das Openpilot Modell Gas und Bremse kontrollieren. Openpilot wird so fahren wie es denkt ein Mensch fahren würde.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>Openpilot Tepomat ist momentan nicht für dieses Auto verfügbar.</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviere den experimentellen Openpilot Tempomaten, um dies zu aktivieren.</translation>
     </message>
 </context>
 <context>
@@ -1067,11 +1067,11 @@ location set</source>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation type="unfinished"></translation>
+        <translation>WLAN Netzwerk &quot;%1&quot; vergessen?</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>Vergessen</translation>
     </message>
 </context>
 </TS>
