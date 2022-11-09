@@ -12,6 +12,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
+    self.esp_hold_confirmation = False
 
   def create_button_events(self, pt_cp, buttons):
     button_events = []
@@ -220,7 +221,6 @@ class CarState(CarStateBase):
     self.acc_type = 0  # TODO: this is ACC "basic" with nonzero min speed, support FtS (1) later
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = bool(pt_cp.vl["Motor_2"]["GRA_Status"])
-    self.esp_hold_confirmation = False
     if self.CP.pcmCruise:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"] in (6, 7)
     # TODO: update opendbc with PQ TSK state for OP long accFaulted
