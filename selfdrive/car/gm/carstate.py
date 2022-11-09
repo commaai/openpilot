@@ -57,7 +57,7 @@ class CarState(CarStateBase):
     else:
       # Some Volt 2016-17 have loose brake pedal push rod retainers which causes the ECM to believe
       # that the brake is being intermittently pressed without user interaction.
-      # To avoid a cruise fault we need to match the ECM's brake pressed signal and threshold
+      # To avoid a cruise fault we need to use a conservative brake position threshold
       # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
       ret.brakePressed = ret.brake >= 8
 
