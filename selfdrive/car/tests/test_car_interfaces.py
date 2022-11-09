@@ -37,10 +37,10 @@ class TestCarInterfaces(unittest.TestCase):
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
         self.assertTrue(not math.isnan(tune.pid.kf) and tune.pid.kf > 0)
-        for v_attr, bp_attr in [("kpV", "kpBP"), ("kiV", "kiBP")]:
-          with self.subTest(v_attr=v_attr, bp_attr=bp_attr):
-            self.assertTrue(len(getattr(tune.pid, v_attr)) > 0)
-            self.assertEqual(len(getattr(tune.pid, v_attr)), len(getattr(tune.pid, bp_attr)))
+        self.assertTrue(len(tune.pid.kpV) > 0)
+        self.assertEqual(len(tune.pid.kpV), len(tune.pid.kpBP))
+        self.assertTrue(len(tune.pid.kiV) > 0)
+        self.assertEqual(len(tune.pid.kiV), len(tune.pid.kiBP))
 
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
