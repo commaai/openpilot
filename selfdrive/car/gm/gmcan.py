@@ -6,12 +6,16 @@ def create_buttons(packer, bus, idx, button):
   values = {
     "ACCButtons": button,
     "RollingCounter": idx,
-    # When bit 24 is 1 (eg Acadia)
-    #"SteeringButtonChecksum": 0x1000 - ((button & 0x7) << 4) - 0x24 - (0x4ef * (3-idx)),
-    # When bit 24 is zero (Bolt EV no ACC)
-    # TODO: Try to merge the two formulae
-    "SteeringButtonChecksum": 0x1000 - ((button & 0x7) << 4) - 0x330 - (0x3f0 * (3-idx)),
+    "ACCAlwaysOne": 1,
+    "DistanceButton": 0,
   }
+
+  checksum = 240 + int(values["ACCAlwaysOne"] * 0xf)
+  checksum += values["RollingCounter"] * (0x4ef if values["ACCAlwaysOne"] != 0 else 0x3f0)
+  checksum -= int(values["ACCButtons"] - 1) << 4  # TODO: not tested with values of 0
+  checksum -= 2 * values["DistanceButton"]
+
+  values["SteeringButtonChecksum"] = checksum
   return packer.make_can_msg("ASCMSteeringButton", bus, values)
 
 
