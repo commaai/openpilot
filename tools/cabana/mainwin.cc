@@ -42,7 +42,6 @@ MainWindow::MainWindow() : QMainWindow() {
   }
   dbc_combo->model()->sort(0);
   dbc_combo->setEditable(true);
-  dbc_combo->setCurrentText(QString());
   dbc_combo->setInsertPolicy(QComboBox::NoInsert);
   dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   messages_layout->addWidget(dbc_combo);
@@ -142,7 +141,6 @@ void MainWindow::loadDBCFromFile() {
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(file_name).baseName();
       dbc()->open(dbc_name, file.readAll());
-      return;
     }
   }
 }
