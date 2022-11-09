@@ -45,9 +45,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { removeAll(nullptr); });
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeAll);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartsWidget::signalUpdated);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, [this](const QString &msg_id) {
+  QObject::connect(dbc(), &DBCManager::msgRemoved, [this](uint32_t address) {
+    for (auto c : charts.toVector())
+      if (DBCManager::parseId(c->id).second == address) removeChart(c);
+  });
+  QObject::connect(dbc(), &DBCManager::msgUpdated, [this](uint32_t address) {
     for (auto c : charts) {
-      if (c->id == msg_id) c->updateTitle();
+      if (DBCManager::parseId(c->id).second == address) c->updateTitle();
     }
   });
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
