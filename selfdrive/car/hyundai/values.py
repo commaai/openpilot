@@ -1394,13 +1394,13 @@ FW_VERSIONS = {
     ],
   },
   CAR.TUCSON_4TH_GEN: {
-    # (Ecu.fwdCamera, 0x7c4, None): [
-    #   b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q',
-    #   b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9220 14K',
-    # ],
-    # (Ecu.fwdRadar, 0x7d0, None): [
-    #   b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
-    # ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9220 14K',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
+    ],
   },
   CAR.TUCSON_HYBRID_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
