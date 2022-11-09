@@ -4,6 +4,7 @@ import numpy as np
 
 from cereal import messaging
 from common.realtime import Ratekeeper
+from system.hardware import HARDWARE
 
 
 class Mic:
@@ -23,8 +24,11 @@ class Mic:
   def calculate_volume(self, indata, frames, time, status):
     self.noise_level = np.linalg.norm(indata)
 
-  def micd_thread(self):
-    with sd.InputStream(callback=self.calculate_volume):
+  def micd_thread(self, device=None):
+    if device is None:
+      device = HARDWARE.get_sound_input_device()
+
+    with sd.InputStream(callback=self.calculate_volume, device=device):
       while True:
         self.update()
 
