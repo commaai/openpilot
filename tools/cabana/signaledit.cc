@@ -28,7 +28,6 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   endianness->addItems({"Little", "Big"});
   form_layout->addRow(tr("Endianness"), endianness);
 
-  ;
   form_layout->addRow(tr("lsb"), lsb = new QLabel());
   form_layout->addRow(tr("msb"), msb = new QLabel());
 
