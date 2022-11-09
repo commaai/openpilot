@@ -220,18 +220,28 @@ void DetailWidget::editMsg() {
 }
 
 void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
-  if (auto msg = dbc()->msg(msg_id)) {
-    Signal sig = {};
+  auto msg = dbc()->msg(msg_id);
+  if (!msg) {
     for (int i = 1; /**/; ++i) {
-      sig.name = "NEW_SIGNAL_" + std::to_string(i);
-      auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
-      if (it == msg->sigs.end()) break;
+      std::string name = "NEW_MSG_" + std::to_string(i);
+      auto it = std::find_if(dbc()->getDBC()->msgs.begin(), dbc()->getDBC()->msgs.end(), [&](auto &m) { return m.name == name; });
+      if (it == dbc()->getDBC()->msgs.end()) {
+        dbc()->updateMsg(msg_id, name.c_str(), can->lastMessage(msg_id).dat.size());
+        msg = dbc()->msg(msg_id);
+        break;
+      }
     }
-    sig.is_little_endian = little_endian;
-    updateSigSizeParamsFromRange(sig, start_bit, size);
-    dbc()->addSignal(msg_id, sig);
-    dbcMsgChanged(msg->sigs.size() - 1);
   }
+  Signal sig = {};
+  for (int i = 1; /**/; ++i) {
+    sig.name = "NEW_SIGNAL_" + std::to_string(i);
+    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
+    if (it == msg->sigs.end()) break;
+  }
+  sig.is_little_endian = little_endian;
+  updateSigSizeParamsFromRange(sig, start_bit, size);
+  dbc()->addSignal(msg_id, sig);
+  dbcMsgChanged(msg->sigs.size() - 1);
 }
 
 void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
