@@ -33,20 +33,21 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   title_frame->setFrameShape(QFrame::StyledPanel);
 
   // message title
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->addWidget(new QLabel("time:"));
+  toolbar = new QToolBar(this);
+  toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
-  title_layout->addWidget(time_label);
-  title_layout->addStretch();
+  toolbar->addWidget(time_label);
   name_label = new QLabel(this);
   name_label->setStyleSheet("font-weight:bold;");
-  title_layout->addWidget(name_label);
-  title_layout->addStretch();
-  edit_btn = new QPushButton(tr("Edit"), this);
-  edit_btn->setVisible(false);
-  title_layout->addWidget(edit_btn);
-  frame_layout->addLayout(title_layout);
+  name_label->setAlignment(Qt::AlignCenter);
+  name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(name_label);
+  toolbar->addAction("🖍", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
+  remove_msg_act = toolbar->addAction("X", this, &DetailWidget::removeMsg);
+  remove_msg_act->setToolTip(tr("Remove Message"));
+  toolbar->setVisible(false);
+  frame_layout->addWidget(toolbar);
 
   // warning
   warning_widget = new QWidget(this);
@@ -85,7 +86,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   history_log = new HistoryLog(this);
   container_layout->addWidget(history_log);
 
-  QObject::connect(edit_btn, &QPushButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
@@ -171,7 +171,8 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
   }
 
-  edit_btn->setVisible(true);
+  toolbar->setVisible(!msg_id.isEmpty());
+  remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
   binary_view->setMessage(msg_id);
@@ -210,13 +211,24 @@ void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool o
 }
 
 void DetailWidget::editMsg() {
-  auto msg = dbc()->msg(msg_id);
-  QString name = msgName(msg_id);
-  int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
-  EditMessageDialog dlg(msg_id, name, size, this);
+  QString id = msg_id;
+  auto msg = dbc()->msg(id);
+  int size = msg ? msg->size : can->lastMessage(id).dat.size();
+  EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    dbc()->updateMsg(msg_id, dlg.name_edit->text(), dlg.size_spin->value());
+    dbc()->updateMsg(id, dlg.name_edit->text(), dlg.size_spin->value());
     dbcMsgChanged();
+  }
+}
+
+void DetailWidget::removeMsg() {
+  QString id = msg_id;
+  if (auto msg = dbc()->msg(id)) {
+    QString text = tr("Are you sure you want to remove '%1'").arg(msg->name.c_str());
+    if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove Message"), text)) {
+      dbc()->removeMsg(id);
+      dbcMsgChanged();
+    }
   }
 }
 
