@@ -10,9 +10,8 @@ from common.realtime import Ratekeeper
 from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
-DT_MIC = 0.1
-
-SAMPLERATE = 44100
+RATE = 10
+DT_MIC = 1. / RATE
 
 MUTE_TIME = 5
 
@@ -21,9 +20,10 @@ class Mic:
   def __init__(self, pm, sm):
     self.pm = pm
     self.sm = sm
-    self.rk = Ratekeeper(DT_MIC)
+    self.rk = Ratekeeper(RATE)
 
     self.measurements = np.array([])
+    self.noise_level_raw = 0
     self.filter = FirstOrderFilter(0, 10, DT_MIC, initialized=False)
     self.last_alert_time = 0
 
@@ -40,13 +40,15 @@ class Mic:
       if self.sm['controlsState'].alertSound > 0:
         self.last_alert_time = time.time()
 
-    if len(self.measurements) >= SAMPLERATE:
-      self.filter.update(float(np.linalg.norm(self.measurements)))
+    if len(self.measurements) > 0:
+      self.noise_level_raw = float(np.linalg.norm(self.measurements))
       self.measurements = np.array([])
+      self.filter.update(self.noise_level_raw)
 
     msg = messaging.new_message('microphone')
     microphone = msg.microphone
     microphone.noiseLevel = self.noise_level
+    microphone.noiseLevelRaw = self.noise_level_raw
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
@@ -59,7 +61,7 @@ class Mic:
     if device is None:
       device = HARDWARE.get_sound_input_device()
 
-    with sd.InputStream(device=device, channels=1, samplerate=SAMPLERATE, callback=self.callback) as stream:
+    with sd.InputStream(device=device, channels=1, samplerate=44100, callback=self.callback) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         self.update()
