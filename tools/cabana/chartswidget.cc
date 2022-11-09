@@ -14,6 +14,7 @@
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
