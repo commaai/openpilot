@@ -1,7 +1,11 @@
 Version 0.8.17 (2022-11-XX)
 ========================
 * New driving model
-  * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
+  * Internal feature space information content increased tenfold during training (to ~700 bits), this makes the model dramatically more accurate
+  * Less reliance on previous frames makes model more reactive and snappy
+  * Trained in new reprojective simulator
+  * Model trained in openpilot was trained in 36hrs from scratch, compared to around 1 week of previous releases
+  * Model training now simulates lateral and longitudinal behavior, this allows openpilot to slow down for turns, stop at traffic lights, etc,... in experimental mode
 * New driver monitoring model
   * New end-to-end distracted trigger
 * Experimental driving mode
