@@ -131,7 +131,7 @@ MainWindow::MainWindow() : QWidget() {
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
-  QObject::connect(can, &CANMessages::streamStarted, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
+  QObject::connect(can, &CANMessages::streamStarted, [=]() { fingerprint_label->setText(can->carFingerprint()); });
 }
 
 void MainWindow::loadDBCFromName(const QString &name) {
@@ -166,7 +166,7 @@ void MainWindow::saveDBC() {
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
-   if (success && cur < total) {
+  if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
     progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
     progress_bar->show();
