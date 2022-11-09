@@ -49,9 +49,7 @@ void Sound::update() {
 
   // scale volume with speed
   if (sm.updated("microphone")) {
-    // tici microphone low approx 0.2 with engine off, 2.5 in quiet car, 20 with loud music, and
-    // spikes above this up to 60 when on highway with rain
-    float volume = util::map_val(sm["microphone"].getMicrophone().getNoiseLevel(), 4.f, 20.f, 0.f, 1.0f);
+    float volume = util::map_val(sm["microphone"].getMicrophone().getNoiseLevel(), 2.f, 25.f, 0.f, 1.0f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     for (auto &[s, loops] : sounds) {
