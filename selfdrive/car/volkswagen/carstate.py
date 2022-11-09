@@ -220,6 +220,7 @@ class CarState(CarStateBase):
     self.acc_type = 0  # TODO: this is ACC "basic" with nonzero min speed, support FtS (1) later
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = bool(pt_cp.vl["Motor_2"]["GRA_Status"])
+    self.esp_hold_confirmation = False
     if self.CP.pcmCruise:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"] in (6, 7)
     # TODO: update opendbc with PQ TSK state for OP long accFaulted
