@@ -71,7 +71,8 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
-  if (anchor_index = indexAt(event->pos()); anchor_index.isValid()) {
+  if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8)  {
+    anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
     if (item && item->sigs.size() > 0) {
       int bit_idx = get_bit_index(anchor_index, true);
@@ -113,17 +114,13 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
       auto [sig_from, sig_to] = getSignalRange(resize_sig);
       int start_bit, end_bit;
       if (archor_bit_idx == sig_from) {
-        start_bit = std::min(release_bit_idx, sig_to);
-        end_bit = std::max(release_bit_idx, sig_to);
-        if (start_bit >= sig_from && start_bit <= sig_to) {
+        std::tie(start_bit, end_bit) = std::minmax(release_bit_idx, sig_to);
+        if (start_bit >= sig_from && start_bit <= sig_to)
           start_bit = std::min(start_bit + 1, sig_to);
-        }
       } else {
-        start_bit = std::min(release_bit_idx, sig_from);
-        end_bit = std::max(release_bit_idx, sig_from);
-        if (end_bit >= sig_from && end_bit <= sig_to) {
+        std::tie(start_bit, end_bit) = std::minmax(release_bit_idx, sig_from);
+        if (end_bit >= sig_from && end_bit <= sig_to)
           end_bit = std::max(end_bit - 1, sig_from);
-        }
       }
       emit resizeSignal(resize_sig, start_bit, end_bit - start_bit + 1);
     } else {
