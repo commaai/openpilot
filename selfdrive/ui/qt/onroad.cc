@@ -404,6 +404,7 @@ void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &t
 }
 
 void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
+  p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
@@ -460,7 +461,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
   float start_hue, end_hue;
-  if (scene.end_to_end_long) {
+  if (scene.experimental_mode) {
     const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
     float acceleration_future = 0;
     if (acceleration.getZ().size() > 16) {
@@ -468,7 +469,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     }
     start_hue = 60;
     // speed up: 120, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 30, 120), 0);
+    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
@@ -566,6 +567,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else if (v_ego > 15) {
       wide_cam_requested = false;
     }
+    wide_cam_requested = wide_cam_requested && s->scene.experimental_mode;
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
