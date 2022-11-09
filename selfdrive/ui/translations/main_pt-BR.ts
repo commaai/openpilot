@@ -240,11 +240,11 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Resetar</translation>
     </message>
     <message>
         <source>Review</source>
-        <translation type="unfinished"></translation>
+        <translation>Revisar</translation>
     </message>
 </context>
 <context>
@@ -476,11 +476,11 @@ trabalho definido</translation>
     <name>ParamControl</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">OK</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
 </context>
 <context>
@@ -868,7 +868,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation type="unfinished"></translation>
+        <translation>Desinstalar</translation>
     </message>
 </context>
 <context>
@@ -1008,15 +1008,15 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Experimental mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo Experimental</translation>
     </message>
     <message>
         <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;&lt;br&gt;          openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.&lt;/b&gt;&lt;br&gt;          O padrão do openpilot é o ACC integrado do carro em vez do controle longitudinal do openpilot neste carro. Habilite isto para alternar para controle longitudinal do openpilot.</translation>
     </message>
     <message>
         <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.</source>
-        <translation type="unfinished"></translation>
+        <translation>    o padrão do openpilot é dirigir no &lt;b&gt;modo chill&lt;/b&gt;.    Modo experimental habilita &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que não estão prontos para o modo chill.     Os recursos experimentais estão listados abaixo:    &lt;br&gt;     &lt;h4&gt;🌮 Controle Longitudinal de Ponta a Ponta 🌮&lt;/h4&gt;     Deixe o modelo de direção controlar o acelerador e os freios. openpilot irá conduzir como pensa que um ser humano faria, incluindo parar para sinais vermelhos e sinais de parada.</translation>
     </message>
 </context>
 <context>
@@ -1074,7 +1074,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>Esquecer</translation>
     </message>
 </context>
 </TS>
