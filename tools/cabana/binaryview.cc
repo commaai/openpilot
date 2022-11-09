@@ -45,9 +45,8 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
   if (!anchor_index.isValid() || !index.isValid())
     return;
 
-  auto tl = std::min(anchor_index, index);
-  auto br = std::max(anchor_index, index);
   QItemSelection selection;
+  auto [tl, br] = std::minmax(anchor_index, index);
   if ((resize_sig && resize_sig->is_little_endian) || (!resize_sig && index < anchor_index)) {
     // little_endian selection
     if (tl.row() == br.row()) {
@@ -128,10 +127,8 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
       }
       emit resizeSignal(resize_sig, start_bit, end_bit - start_bit + 1);
     } else {
-      if (archor_bit_idx > release_bit_idx) {
-        std::swap(archor_bit_idx, release_bit_idx);
-      }
-      emit addSignal(archor_bit_idx, release_bit_idx - archor_bit_idx + 1, little_endian);
+      auto [sart_bit, end_bit] = std::minmax(archor_bit_idx, release_bit_idx);
+      emit addSignal(sart_bit, end_bit - sart_bit + 1, little_endian);
     }
   }
   clearSelection();
