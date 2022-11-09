@@ -34,15 +34,18 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
-      tuning = car_params.lateralTuning.which()
-      if tuning == 'pid':
-        self.assertTrue(len(car_params.lateralTuning.pid.kpV))
-      elif tuning == 'torque':
-        kf = car_params.lateralTuning.torque.kf
-        self.assertTrue(not math.isnan(kf) and kf > 0)
-        self.assertTrue(not math.isnan(car_params.lateralTuning.torque.friction))
-      elif tuning == 'indi':
-        self.assertTrue(len(car_params.lateralTuning.indi.outerLoopGainV))
+      tune = car_params.lateralTuning
+      if tune.which() == 'pid':
+        self.assertTrue(not math.isnan(tune.pid.kf) and tune.pid.kf > 0)
+        self.assertTrue(len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP))
+        self.assertTrue(len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP))
+
+      elif tune.which() == 'torque':
+        self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
+        self.assertTrue(not math.isnan(tune.torque.friction))
+
+      elif tune.which() == 'indi':
+        self.assertTrue(len(tune.indi.outerLoopGainV))
 
     # Run car interface
     CC = car.CarControl.new_message()
