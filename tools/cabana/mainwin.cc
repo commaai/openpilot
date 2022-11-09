@@ -102,6 +102,10 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() {
+    dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
+    setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+  });
 }
 
 void MainWindow::createActions() {
@@ -127,10 +131,8 @@ void MainWindow::createStatusBar() {
 }
 
 void MainWindow::loadDBCFromName(const QString &name) {
-  if (name != dbc()->name()) {
+  if (name != dbc()->name())
     dbc()->open(name);
-    dbc_combo->setCurrentText(name);
-  }
 }
 
 void MainWindow::loadDBCFromFile() {
@@ -140,7 +142,6 @@ void MainWindow::loadDBCFromFile() {
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(file_name).baseName();
       dbc()->open(dbc_name, file.readAll());
-      dbc_combo->setCurrentText(dbc_name);
       return;
     }
   }
@@ -149,7 +150,6 @@ void MainWindow::loadDBCFromFile() {
 void MainWindow::loadDBCFromClipboard() {
   QString dbc_str = QGuiApplication::clipboard()->text();
   dbc()->open("From Clipboard", dbc_str);
-  dbc_combo->setCurrentText("Load from clipboard");
   QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
 }
 
