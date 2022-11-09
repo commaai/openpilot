@@ -5,6 +5,7 @@ import numpy as np
 from cereal import messaging
 from common.realtime import Ratekeeper
 from system.hardware import HARDWARE
+from system.swaglog import cloudlog
 
 
 class Mic:
@@ -28,7 +29,8 @@ class Mic:
     if device is None:
       device = HARDWARE.get_sound_input_device()
 
-    with sd.InputStream(callback=self.calculate_volume, device=device):
+    with sd.InputStream(callback=self.calculate_volume, device=device) as stream:
+      cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
         self.update()
 
