@@ -23,6 +23,7 @@ public:
   inline QString name() const { return dbc ? dbc->name.c_str() : ""; }
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
+  void removeMsg(const QString &id);
   inline const DBC *getDBC() const { return dbc; }
   inline const Msg *msg(const QString &id) const { return msg(parseId(id).second); }
   inline const Msg *msg(uint32_t address) const {
@@ -34,10 +35,12 @@ signals:
   void signalAdded(const Signal *sig);
   void signalRemoved(const Signal *sig);
   void signalUpdated(const Signal *sig);
-  void msgUpdated(const QString &id);
+  void msgUpdated(uint32_t address);
+  void msgRemoved(uint32_t address);
   void DBCFileChanged();
 
 private:
+  void updateMsgMap();
   DBC *dbc = nullptr;
   std::unordered_map<uint32_t, const Msg *> msg_map;
 };
