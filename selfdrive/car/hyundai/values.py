@@ -151,7 +151,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022-23" , "Highway Driving Assist", harness=Harness.hyundai_k),
     HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022-23", "Highway Driving Assist II", harness=Harness.hyundai_q),
   ],
-  CAR.TUCSON_4TH_GEN: HyundaiCarInfo("Hyundai Tucson 2022", "All", harness=Harness.hyundai_n),  # TODO: harness and packages
+  CAR.TUCSON_4TH_GEN: HyundaiCarInfo("Hyundai Tucson 2022", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),  # TODO: harness and packages
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),
 
