@@ -971,20 +971,8 @@ trabalho definido</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 End-to-end longitudinal (experimental) 🌮</translation>
-    </message>
-    <message>
         <source>Experimental openpilot longitudinal control</source>
         <translation>Controle longitudinal experimental openpilot</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>Deixe o modelo controlar o acelerador e os freios. openpilot irá conduzir como pensa que um humano faria. Super experimental.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
@@ -1017,6 +1005,18 @@ trabalho definido</translation>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
+    </message>
+    <message>
+        <source>Experimental mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;&lt;br&gt;          openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
