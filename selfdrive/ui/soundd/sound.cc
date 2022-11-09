@@ -12,7 +12,7 @@
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
-Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
+Sound::Sound(QObject *parent) : sm({"controlsState", "deviceState", "microphone"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   for (auto &[alert, fn, loops] : sound_list) {
@@ -48,8 +48,9 @@ void Sound::update() {
   }
 
   // scale volume with speed
-  if (sm.updated("carState")) {
-    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.0f);
+  if (sm.updated("microphone")) {
+    // tici microphone low approx 0.2 in quiet car, high spiky more than 2.0 on highway with rain
+    float volume = util::map_val(sm["microphone"].getMicrophone().getNoiseLevel(), .2f, 2.f, 0.f, 1.0f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     for (auto &[s, loops] : sounds) {
