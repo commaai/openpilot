@@ -123,17 +123,6 @@ pipeline {
           }
         }
 
-        /*
-        stage('can-tests') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tici-loop", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-            ])
-          }
-        }
-        */
-
         stage('HW + Unit Tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
