@@ -473,11 +473,15 @@ location set</source>
     <name>ParamControl</name>
     <message>
         <source>Ok</source>
-        <translation>好的</translation>
+        <translation type="vanished">好的</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation>取消</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
