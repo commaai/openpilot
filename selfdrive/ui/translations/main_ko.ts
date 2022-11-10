@@ -1016,7 +1016,7 @@ location set</source>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>경고: openpilot 롱컨트롤은 실험적인 기능으로 차량의 AEB를 비활성화합니다.</translation>
+        <translation>경고: openpilot 롱컨트롤은 실험적인 기능으로 차량의 자동긴급제동(AEB)를 비활성화합니다.</translation>
     </message>
 </context>
 <context>
