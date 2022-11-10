@@ -28,7 +28,6 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   endianness->addItems({"Little", "Big"});
   form_layout->addRow(tr("Endianness"), endianness);
 
-  ;
   form_layout->addRow(tr("lsb"), lsb = new QLabel());
   form_layout->addRow(tr("msb"), msb = new QLabel());
 
@@ -130,7 +129,18 @@ void SignalEdit::saveSignal() {
   s.offset = form->offset->text().toDouble();
   s.factor = form->factor->text().toDouble();
   s.is_signed = form->sign->currentIndex() == 0;
-  s.is_little_endian = form->endianness->currentIndex() == 0;
+  bool little_endian = form->endianness->currentIndex() == 0;
+  if (little_endian != s.is_little_endian) {
+    int start = std::floor(s.start_bit / 8);
+    if (little_endian) {
+      int end = std::floor((s.start_bit - s.size + 1) / 8);
+      s.start_bit = start == end ? s.start_bit - s.size + 1 : bigEndianStartBitsIndex(s.start_bit);
+    } else {
+      int end = std::floor((s.start_bit + s.size - 1) / 8);
+      s.start_bit = start == end ? s.start_bit + s.size - 1 : bigEndianBitIndex(s.start_bit);
+    }
+    s.is_little_endian = little_endian;
+  }
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;

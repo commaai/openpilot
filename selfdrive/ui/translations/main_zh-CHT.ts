@@ -474,12 +474,12 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation type="unfinished">確定</translation>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <source>Enable</source>
+        <translation>啟用</translation>
     </message>
 </context>
 <context>
@@ -967,7 +967,7 @@ location set</source>
         <translation>上傳駕駛監控的錄像來協助我們提升駕駛監控的準確率。</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>使用 openpilot 縱向控制（實驗）</translation>
     </message>
     <message>
@@ -979,7 +979,7 @@ location set</source>
         <translation>打開縱向控制（實驗）以啟用此功能。</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>油門取消控車</translation>
     </message>
     <message>
@@ -1003,15 +1003,19 @@ location set</source>
         <translation>進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
     </message>
     <message>
-        <source>Experimental mode</source>
+        <source>Experimental Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;&lt;br&gt;          openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.</source>
+        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
