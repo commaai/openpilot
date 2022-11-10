@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
 
 TMP_TRANSLATIONS_DIR = os.path.join(TRANSLATIONS_DIR, "tmp")
+UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
 LOCATION_TAG = "<location "
 
 
@@ -56,7 +57,7 @@ class TestTranslations(unittest.TestCase):
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
         cur_translations = self._read_translation_file(TRANSLATIONS_DIR, file)
-        self.assertTrue("<translation type=\"unfinished\">" not in cur_translations,
+        self.assertTrue(UNFINISHED_TRANSLATION_TAG not in cur_translations,
                         f"{file} ({name}) translation file has unfinished translations. Finish translations or mark them as completed in Qt Linguist")
 
   def test_vanished_translations(self):
