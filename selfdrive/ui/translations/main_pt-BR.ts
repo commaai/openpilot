@@ -971,7 +971,7 @@ trabalho definido</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>Controle longitudinal experimental openpilot</translation>
     </message>
     <message>
@@ -983,7 +983,7 @@ trabalho definido</translation>
         <translation>Habilite o controle longitudinal experimental para habilitar isso.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>
     <message>
@@ -1007,7 +1007,7 @@ trabalho definido</translation>
         <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
     </message>
     <message>
-        <source>Experimental mode</source>
+        <source>Experimental Mode</source>
         <translation>Modo Experimental</translation>
     </message>
     <message>

@@ -965,7 +965,7 @@ location set</source>
         <translation>上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -977,7 +977,7 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>踩油门时取消控制</translation>
     </message>
     <message>
@@ -1001,7 +1001,7 @@ location set</source>
         <translation>在分屏模式中，将地图置于屏幕左侧。</translation>
     </message>
     <message>
-        <source>Experimental mode</source>
+        <source>Experimental Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
