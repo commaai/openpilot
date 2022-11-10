@@ -46,7 +46,6 @@ class CarInterface(CarInterfaceBase):
       ret.init('events', 1)
       ret.events[0].name = car.CarEvent.EventName.pcmEnable
       ret.events[0].enable = True
-    self.frame += 1
 
     return ret
 
