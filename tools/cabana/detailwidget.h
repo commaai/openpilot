@@ -2,6 +2,7 @@
 
 #include <QScrollArea>
 #include <QTabBar>
+#include <QToolBar>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chartswidget.h"
@@ -34,15 +35,17 @@ private:
   void saveSignal(const Signal *sig, const Signal &new_sig);
   void removeSignal(const Signal *sig);
   void editMsg();
+  void removeMsg();
   void showForm();
   void updateState();
 
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;
   QWidget *warning_widget;
-  QPushButton *edit_btn;
   QWidget *signals_container;
   QTabBar *tabbar;
+  QToolBar *toolbar;
+  QAction *remove_msg_act;
   HistoryLog *history_log;
   BinaryView *binary_view;
   QScrollArea *scroll;

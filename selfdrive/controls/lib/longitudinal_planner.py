@@ -66,7 +66,7 @@ class LongitudinalPlanner:
     self.solverExecutionTime = 0.0
 
   def read_param(self):
-    e2e = self.params.get_bool('EndToEndLong') and self.CP.openpilotLongitudinalControl
+    e2e = self.params.get_bool('ExperimentalMode') and self.CP.openpilotLongitudinalControl
     self.mpc.mode = 'blended' if e2e else 'acc'
 
   def parse_model(self, model_msg, model_error):

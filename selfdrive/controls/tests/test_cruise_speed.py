@@ -26,7 +26,7 @@ class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
     params = Params()
     for e2e in [False, True]:
-      params.put_bool("EndToEndLong", e2e)
+      params.put_bool("ExperimentalMode", e2e)
       for speed in np.arange(5, 40, 5):
         print(f'Testing {speed} m/s')
         cruise_speed = float(speed)
