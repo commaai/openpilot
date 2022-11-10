@@ -734,7 +734,8 @@ location set</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>VERBINDEN</translation>
+        <translatorcomment>This is a brand/service name for comma connect, don&apos;t translate</translatorcomment>
+        <translation type="unfinished">CONNECT</translation>
     </message>
     <message>
         <source>OFFLINE</source>
