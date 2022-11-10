@@ -1011,11 +1011,11 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</source>
+        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -1011,12 +1011,12 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</source>
-        <translation>경고:  openpilot 롱컨트롤은 실험적인 기능으로 차량의 AEB를 비활성화합니다.</translation>
-    </message>
-    <message>
         <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
         <translation>openpilot은 차량의 내장 ACC로 기본 설정됩니다. 롱컨트롤으로 전환하려면 이 옵션을 활성화하세요.</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
