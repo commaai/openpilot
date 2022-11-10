@@ -144,7 +144,7 @@ public:
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
                       "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
-      ConfirmationDialog dialog(content, tr("Ok"), tr("Cancel"), true, this);
+      ConfirmationDialog dialog(content, tr("Enable"), tr("Cancel"), true, this);
       if (!confirm || !state || dialog.exec()) {
         params.putBool(key, state);
       } else {

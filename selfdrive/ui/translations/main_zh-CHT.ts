@@ -474,12 +474,12 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation>確定</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>取消</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation>啟用</translation>
     </message>
 </context>
 <context>

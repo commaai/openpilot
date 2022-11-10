@@ -474,12 +474,12 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation>OK</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation>を有効化</translation>
     </message>
 </context>
 <context>

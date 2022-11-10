@@ -475,12 +475,12 @@ trabalho definido</translation>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation>OK</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Cancelar</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation>Ativar</translation>
     </message>
 </context>
 <context>
