@@ -16,9 +16,6 @@ LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
 
 def create_radar_can_parser(car_fingerprint):
-  if car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE_ESV):
-    return None
-
   # C1A-ARS3-A by Continental
   radar_targets = list(range(SLOT_1_MSG, SLOT_1_MSG + NUM_SLOTS))
   signals = list(zip(['FLRRNumValidTargets',
