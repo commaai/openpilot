@@ -39,7 +39,7 @@ private:
   void editMsg();
   void removeMsg();
   void showForm();
-  void updateState();
+  void updateState(const QHash<QString, CanData> * msgs);
 
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;
