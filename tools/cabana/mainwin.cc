@@ -102,11 +102,12 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() {
+    detail_widget->undo_stack->clear();
     dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
     setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
   });
-  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this]() {
-    setWindowTitle(tr("* %1 - Cabana").arg(dbc()->name()));
+  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
+    setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
   });
 }
 
