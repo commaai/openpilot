@@ -10,11 +10,14 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/canmessages.h"
+#include "tools/cabana/commands.h"
 #include "tools/cabana/dbcmanager.h"
 
 // DetailWidget
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+  undo_stack = new QUndoStack(this);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -216,19 +219,15 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    dbc()->updateMsg(id, dlg.name_edit->text(), dlg.size_spin->value());
+    undo_stack->push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
     dbcMsgChanged();
   }
 }
 
 void DetailWidget::removeMsg() {
-  QString id = msg_id;
-  if (auto msg = dbc()->msg(id)) {
-    QString text = tr("Are you sure you want to remove '%1'").arg(msg->name.c_str());
-    if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove Message"), text)) {
-      dbc()->removeMsg(id);
-      dbcMsgChanged();
-    }
+  if (auto msg = dbc()->msg(msg_id)) {
+    undo_stack->push(new RemoveMsgCommand(msg_id));
+    dbcMsgChanged();
   }
 }
 
@@ -242,7 +241,7 @@ void DetailWidget::addSignal(int from, int to) {
     }
     sig.is_little_endian = false,
     updateSigSizeParamsFromRange(sig, from, to);
-    dbc()->addSignal(msg_id, sig);
+    undo_stack->push(new AddSigCommand(msg_id, sig));
     dbcMsgChanged(msg->sigs.size() - 1);
   }
 }
@@ -271,17 +270,13 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
     return;
   }
 
-  dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
-  // update binary view and history log
-  updateState();
+  undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
+  dbcMsgChanged();
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {
-  QString text = tr("Are you sure you want to remove signal '%1'").arg(sig->name.c_str());
-  if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove signal"), text)) {
-    dbc()->removeSignal(msg_id, sig->name.c_str());
-    dbcMsgChanged();
-  }
+  undo_stack->push(new RemoveSigCommand(msg_id, sig));
+  dbcMsgChanged();
 }
 
 // EditMessageDialog

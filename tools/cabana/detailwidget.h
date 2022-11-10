@@ -3,6 +3,7 @@
 #include <QScrollArea>
 #include <QTabBar>
 #include <QToolBar>
+#include <QUndoStack>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chartswidget.h"
@@ -26,6 +27,8 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const QString &message_id);
   void dbcMsgChanged(int show_form_idx = -1);
+  void undo() { undo_stack->undo(); dbcMsgChanged(); }
+  void redo() { undo_stack->redo(); dbcMsgChanged(); }
 
 private:
   void updateChartState(const QString &id, const Signal *sig, bool opened);
@@ -51,4 +54,5 @@ private:
   QScrollArea *scroll;
   ChartsWidget *charts;
   QList<SignalEdit *> signal_list;
+  QUndoStack *undo_stack = nullptr;
 };
