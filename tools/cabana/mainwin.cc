@@ -229,7 +229,7 @@ void MainWindow::dockCharts(bool dock) {
 void MainWindow::closeEvent(QCloseEvent *event) {
   if (detail_widget->undo_stack->index() > 0) {
     auto ret = QMessageBox::question(this, tr("Unsaved Changes"),
-                                     tr("Are you sure you want to exit withou saving?\nAny unsaved changes will be lost."),
+                                     tr("Are you sure you want to exit without saving?\nAny unsaved changes will be lost."),
                                      QMessageBox::Yes | QMessageBox::No);
     if (ret == QMessageBox::No) {
       event->ignore();
