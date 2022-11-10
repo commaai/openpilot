@@ -136,7 +136,7 @@
     </message>
     <message>
         <source>PREVIEW</source>
-        <translation>Vorschau</translation>
+        <translation>VORSCHAU</translation>
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
@@ -148,7 +148,7 @@
     </message>
     <message>
         <source>RESET</source>
-        <translation>Auf Werkseinstellungen ZURÜCKSETZEN</translation>
+        <translation type="unfinished">RÜCKSETZEN</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
@@ -477,7 +477,7 @@ location set</source>
     </message>
     <message>
         <source>Enable</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">AKTIVIEREN</translation>
     </message>
 </context>
 <context>
@@ -735,7 +735,7 @@ location set</source>
     <message>
         <source>CONNECT</source>
         <translatorcomment>This is a brand/service name for comma connect, don&apos;t translate</translatorcomment>
-        <translation type="unfinished">CONNECT</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <source>OFFLINE</source>
