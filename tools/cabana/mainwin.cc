@@ -120,10 +120,12 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
 
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
-  auto undo_act = edit_menu->addAction(tr("&Undo"), detail_widget, &DetailWidget::undo);
+  auto undo_act = detail_widget->undo_stack->createUndoAction(this, tr("&Undo"));
   undo_act->setShortcuts(QKeySequence::Undo);
-  auto redo_act = edit_menu->addAction(tr("&Redo"), detail_widget, &DetailWidget::redo);
+  edit_menu->addAction(undo_act);
+  auto redo_act = detail_widget->undo_stack->createRedoAction(this, tr("&Rndo"));
   redo_act->setShortcuts(QKeySequence::Redo);
+  edit_menu->addAction(redo_act);
   edit_menu->addSeparator();
 
   QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));

@@ -27,8 +27,6 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const QString &message_id);
   void dbcMsgChanged(int show_form_idx = -1);
-  void undo() { undo_stack->undo(); dbcMsgChanged(); }
-  void redo() { undo_stack->redo(); dbcMsgChanged(); }
   QUndoStack *undo_stack = nullptr;
 
 private:
