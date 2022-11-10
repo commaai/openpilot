@@ -115,6 +115,7 @@ pipeline {
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
+              ["DEBUG", "pwd"],
               ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
