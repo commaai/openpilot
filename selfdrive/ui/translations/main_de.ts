@@ -443,11 +443,11 @@ location set</source>
     </message>
     <message>
         <source> ALERTS</source>
-        <translation> Hinweise</translation>
+        <translation> HINWEISE</translation>
     </message>
     <message>
         <source> ALERT</source>
-        <translation> Hinweis</translation>
+        <translation> HINWEIS</translation>
     </message>
 </context>
 <context>
@@ -477,7 +477,7 @@ location set</source>
     </message>
     <message>
         <source>Enable</source>
-        <translation type="unfinished">AKTIVIEREN</translation>
+        <translation>Aktivieren</translation>
     </message>
 </context>
 <context>
