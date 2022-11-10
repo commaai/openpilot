@@ -10,6 +10,7 @@ EditMsgCommand::EditMsgCommand(const QString &id, const QString &title, int size
     old_size = msg->size;
   }
   dbc()->updateMsg(id, new_title, new_size);
+  setText(QObject::tr("Edit message %1:%2").arg(id).arg(title));
 }
 
 void EditMsgCommand::undo() {
@@ -31,6 +32,7 @@ RemoveMsgCommand::RemoveMsgCommand(const QString &id, QUndoCommand *parent) : id
     size = msg->size;
     sigs = msg->sigs;
     dbc()->removeMsg(id);
+    setText(QObject::tr("Remove message %1:%2").arg(id).arg(title));
   }
 }
 
@@ -53,6 +55,7 @@ void RemoveMsgCommand::redo() {
 AddSigCommand::AddSigCommand(const QString &id, const Signal &sig, QUndoCommand *parent)
     : id(id), signal(sig), QUndoCommand(parent) {
   dbc()->addSignal(id, signal);
+  setText(QObject::tr("Add signal %1 to %2").arg(sig.name.c_str()).arg(id));
 }
 
 void AddSigCommand::undo() {
@@ -68,6 +71,7 @@ void AddSigCommand::redo() {
 RemoveSigCommand::RemoveSigCommand(const QString &id, const Signal *sig, QUndoCommand *parent)
     : id(id), signal(*sig), QUndoCommand(parent) {
   dbc()->removeSignal(id, signal.name.c_str());
+  setText(QObject::tr("Remove signal %1 from %2").arg(signal.name.c_str()).arg(id));
 }
 
 void RemoveSigCommand::undo() {
@@ -83,6 +87,7 @@ void RemoveSigCommand::redo() {
 EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
     : old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
   dbc()->updateSignal(id, old_signal.name.c_str(), new_signal);
+  setText(QObject::tr("Eidt signal %1").arg(old_signal.name.c_str()));
 }
 
 void EditSignalCommand::undo() {

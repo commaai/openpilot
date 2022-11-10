@@ -12,7 +12,9 @@
 #include <QMessageBox>
 #include <QScreen>
 #include <QToolBar>
+#include <QUndoView>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 
 #include "tools/replay/util.h"
 
@@ -116,11 +118,21 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
   file_menu->addSeparator();
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
-  QMenu *edit_Menu = menuBar()->addMenu(tr("&Edit"));
-  auto undo_act = edit_Menu->addAction(tr("&Undo"), detail_widget, &DetailWidget::undo);
+
+  QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
+  auto undo_act = edit_menu->addAction(tr("&Undo"), detail_widget, &DetailWidget::undo);
   undo_act->setShortcuts(QKeySequence::Undo);
-  auto redo_act = edit_Menu->addAction(tr("&Redo"), detail_widget, &DetailWidget::redo);
+  auto redo_act = edit_menu->addAction(tr("&Redo"), detail_widget, &DetailWidget::redo);
   redo_act->setShortcuts(QKeySequence::Redo);
+  edit_menu->addSeparator();
+
+  QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
+  auto undo_view = new QUndoView(detail_widget->undo_stack);
+  undo_view->setWindowTitle(tr("Command List"));
+  QWidgetAction *commands_act = new QWidgetAction(this);
+  commands_act->setDefaultWidget(undo_view);
+  commands_menu->addAction(commands_act);
+
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }

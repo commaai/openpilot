@@ -29,6 +29,7 @@ public:
   void dbcMsgChanged(int show_form_idx = -1);
   void undo() { undo_stack->undo(); dbcMsgChanged(); }
   void redo() { undo_stack->redo(); dbcMsgChanged(); }
+  QUndoStack *undo_stack = nullptr;
 
 private:
   void updateChartState(const QString &id, const Signal *sig, bool opened);
@@ -54,5 +55,4 @@ private:
   QScrollArea *scroll;
   ChartsWidget *charts;
   QList<SignalEdit *> signal_list;
-  QUndoStack *undo_stack = nullptr;
 };
