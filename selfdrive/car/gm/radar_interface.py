@@ -16,10 +16,7 @@ LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
 
 def create_radar_can_parser(car_fingerprint):
-  if (car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE_ESV) or
-      (0x2cb not in car_fingerprint and          # Radar missing or unplugged
-       car_fingerprint != CAR.ESCALADE_ESV)):    # This CAN message is missing from Escalade for some reason,
-                                                 # but is present in all other models with radar
+  if car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE_ESV):
     return None
 
   # C1A-ARS3-A by Continental

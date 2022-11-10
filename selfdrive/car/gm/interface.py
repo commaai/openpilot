@@ -86,7 +86,8 @@ class CarInterface(CarInterfaceBase):
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
-      ret.radarOffCan = False
+      radar_missing = 0x2cb not in fingerprint[0]
+      ret.radarOffCan = radar_missing
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -125,7 +126,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
-      if 0x788 not in fingerprint[0]:  # MY2018 can enable from 0
+      model_year_2018: bool = 0x788 not in fingerprint[0]  # Indicator only present on Volts, MY2019 not checked
+      if model_year_2018:
         ret.minEnableSpeed = -1
 
     elif candidate == CAR.MALIBU:
@@ -163,6 +165,7 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
+      ret.radarOffCan = False  # 0x2cb missing from Escalade fingerprint
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302
