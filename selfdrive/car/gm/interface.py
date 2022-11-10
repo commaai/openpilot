@@ -126,9 +126,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
-      model_year_2018: bool = 0x788 not in fingerprint[0]  # Indicator only present on Volts, MY2019 not checked
-      if model_year_2018:
-        ret.minEnableSpeed = -1
 
     elif candidate == CAR.MALIBU:
       ret.mass = 1496. + STD_CARGO_KG
