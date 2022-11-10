@@ -16,7 +16,10 @@ LAST_RADAR_MSG = RADAR_HEADER_MSG + NUM_SLOTS
 
 
 def create_radar_can_parser(car_fingerprint):
-  if car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE_ESV):
+  if (car_fingerprint not in (CAR.VOLT, CAR.MALIBU, CAR.HOLDEN_ASTRA, CAR.ACADIA, CAR.CADILLAC_ATS, CAR.ESCALADE_ESV) or
+      (0x2cb not in car_fingerprint and          # Radar missing or unplugged
+       car_fingerprint != CAR.ESCALADE_ESV)):    # This CAN message is missing from Escalade for some reason,
+                                                 # but is present in all other models with radar
     return None
 
   # C1A-ARS3-A by Continental
@@ -57,8 +60,8 @@ class RadarInterface(RadarInterfaceBase):
     ret = car.RadarData.new_message()
     header = self.rcp.vl[RADAR_HEADER_MSG]
     fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
-      header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
-      header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
+            header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
+            header['FLRRAntTngFltPrsnt'] or header['FLRRAlgnFltPrsnt']
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
