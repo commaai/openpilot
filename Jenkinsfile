@@ -111,26 +111,28 @@ pipeline {
             R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
           }
           steps {
-            phone_steps("tici-build", [
+            phone_steps("tici-can", [
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+              ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
             ])
           }
         }
 
+        /*
         stage('can-tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-loop", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
             ])
           }
         }
+        */
 
         stage('HW + Unit Tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
@@ -140,7 +142,6 @@ pipeline {
               ["test power draw", "python system/hardware/tici/test_power_draw.py"],
               ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
-              ["test sensord", "python selfdrive/sensord/tests/test_sensord.py"],
               ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
             ])
           }
@@ -168,10 +169,14 @@ pipeline {
           }
         }
 
-        stage('sensord (LSM-C)') {
+        stage('sensord') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-lsmc", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+            ])
+            phone_steps("tici-bmx-lsm", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
             ])
