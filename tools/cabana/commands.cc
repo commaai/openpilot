@@ -80,7 +80,7 @@ void RemoveSigCommand::redo() {
 // EditSignalCommand
 
 EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
-    : old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
+    : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
   setText(QObject::tr("Eidt signal %1").arg(old_signal.name.c_str()));
 }
 

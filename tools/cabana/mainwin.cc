@@ -43,9 +43,7 @@ MainWindow::MainWindow() : QMainWindow() {
     dbc_combo->addItem(QString::fromStdString(name));
   }
   dbc_combo->model()->sort(0);
-  dbc_combo->setEditable(true);
   dbc_combo->setInsertPolicy(QComboBox::NoInsert);
-  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   messages_layout->addWidget(dbc_combo);
 
   messages_widget = new MessagesWidget(this);
