@@ -15,9 +15,14 @@ TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+ENABLE_BUTTON_TIMEOUT = 50
 
 
 class CarInterface(CarInterfaceBase):
+  def __init__(self, CP, CarController, CarState):
+    super().__init__(CP, CarController, CarState)
+    self.last_enable_interaction = -ENABLE_BUTTON_TIMEOUT
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
@@ -219,9 +224,14 @@ class CarInterface(CarInterfaceBase):
 
       ret.buttonEvents = [be]
 
+    for b in ret.buttonEvents:
+      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and b.pressed:
+        self.last_enable_interaction = self.frame
+
+    allow_enable = self.CP.pcmCruise or (self.frame - self.last_enable_interaction) < ENABLE_BUTTON_TIMEOUT
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
-                                       pcm_enable=self.CP.pcmCruise)
+                                       pcm_enable=self.CP.pcmCruise, allow_enable=allow_enable)
 
     # Enabling at a standstill with brake is allowed
     # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs

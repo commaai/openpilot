@@ -66,7 +66,6 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
-    self.enable_button_frame = 0
 
     self.CS = None
     self.can_parsers = []
@@ -249,13 +248,9 @@ class CarInterfaceBase(ABC):
 
     # Handle button presses
     for b in cs_out.buttonEvents:
-      if b.type in enable_buttons and b.pressed:
-        self.enable_button_frame = self.frame
       # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        self.enable_button_frame = 0  # reset
-        if self.frame - self.enable_button_frame < 50:
-          events.add(EventName.buttonEnable)
+      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed) and allow_enable:
+        events.add(EventName.buttonEnable)
       # Disable on rising edge of cancel for both stock and OP long
       if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
