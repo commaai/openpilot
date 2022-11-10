@@ -16,7 +16,6 @@ TEST_CASE("DBCManager::generateDBC") {
   for (auto &[address, m] : msgs) {
     auto new_m = new_msgs.at(address);
     REQUIRE(m.name == new_m.name);
-    REQUIRE(m.address == new_m.address);
     REQUIRE(m.size == new_m.size);
     REQUIRE(m.sigs.size() == new_m.sigs.size());
     auto &sig = m.sigs;

@@ -6,7 +6,6 @@
 #include "opendbc/can/common_dbc.h"
 struct DBCMsg {
   QString name;
-  uint32_t address;
   uint32_t size;
   QList<Signal> sigs;
 };
@@ -47,7 +46,7 @@ signals:
   void DBCFileChanged();
 
 private:
-  void updateMsgMap();
+  void initMsgMap();
   DBC *dbc = nullptr;
   std::map<uint32_t, DBCMsg> msgs;
 };
