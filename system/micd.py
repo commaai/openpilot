@@ -24,6 +24,7 @@ class Mic:
 
     self.measurements = np.array([])
     self.filter = FirstOrderFilter(1, 8, DT_MIC)
+    self.last_alert_time = 0
 
   def update(self):
     if self.sm.updated['controlsState']:
