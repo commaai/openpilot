@@ -30,7 +30,7 @@ public:
 private:
   void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
-  void addSignal(int start_bit, int to);
+  void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int to);
   void saveSignal(const Signal *sig, const Signal &new_sig);
   void removeSignal(const Signal *sig);
