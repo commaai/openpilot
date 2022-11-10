@@ -65,7 +65,6 @@ class CarInterface(CarInterfaceBase):
       ret.experimentalLongitudinalAvailable = True
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarOffCan = True  # no radar
-      radar_missing = False
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
@@ -87,9 +86,7 @@ class CarInterface(CarInterfaceBase):
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
-      radar_whitelist = {CAR.ESCALADE_ESV}  # 0x2cb missing from fingerprint even though it has radar
-      radar_missing = 0x2cb not in fingerprint[0] and candidate not in radar_whitelist
-      ret.radarOffCan = radar_missing
+      ret.radarOffCan = 0x2cb not in fingerprint[0]  # 0x2cb indicates radar presence in gateway ASCM cars
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -102,7 +99,7 @@ class CarInterface(CarInterfaceBase):
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = (candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
-                       or radar_missing)  # Until vision only policy is good enough
+                       or (ret.radarOffCan and candidate not in CAMERA_ACC_CAR))  # Until vision only policy is good enough
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     # Some GMs need some tolerance above 10 kph to avoid a fault
@@ -165,6 +162,8 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
+      ret.radarOffCan = False  # 0x2cb not in Escalade fingerprint even though it has radar. Likely incomplete fingerprint.
+      ret.dashcamOnly = False  # TODO: Remove this special logic if Escalade is re-fingerprinted
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302
