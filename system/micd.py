@@ -56,6 +56,8 @@ class Mic:
   def callback(self, indata, frames, time, status):
     if not self.muted:
       self.measurements = np.concatenate((self.measurements, indata[:, 0]))
+    else:
+      self.measurements = np.array([])
 
   def micd_thread(self, device=None):
     if device is None:
