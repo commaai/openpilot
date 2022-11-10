@@ -37,7 +37,7 @@ if __name__ == "__main__":
     badge_label = f"LANGUAGE {name}"
     badge_message = f"{percent_finished}% complete"
     if unfinished_translations != 0:
-      badge_message += f" ({unfinished_translations} unfinished translations)"
+      badge_message += f" ({unfinished_translations} unfinished)"
 
     r = requests.get(f"{SHIELDS_URL}/{badge_label}-{badge_message}-{color}", timeout=10)
     assert r.status_code == 200, "Error downloading badge"
