@@ -9,6 +9,7 @@ from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 TRANSLATION_TAG = "<translation"
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""
 BADGE_HEIGHT = 20 + 8
+SHIELDS_URL = "https://img.shields.io/badge"
 
 if __name__ == "__main__":
   with open(LANGUAGES_FILE, "r") as f:
@@ -28,13 +29,19 @@ if __name__ == "__main__":
         unfinished_translations += 1
 
     percent_finished = int(100 - (unfinished_translations / total_translations * 100.))
-    color = "green" if percent_finished == 100 else "orange" if percent_finished >= 70 else "red"
+    color = "green" if percent_finished == 100 else "orange" if percent_finished > 90 else "red"
 
-    r = requests.get(f"https://img.shields.io/badge/LANGUAGE {name}-{percent_finished}%25 complete-{color}", timeout=10)
+    # Download badge
+    badge_label = f"LANGUAGE {name}"
+    badge_message = f"{percent_finished}% complete"
+    if unfinished_translations != 0:
+      badge_message += f" ({unfinished_translations} missing translations)"
+
+    r = requests.get(f"{SHIELDS_URL}/{badge_label}-{badge_message}-{color}", timeout=10)
     assert r.status_code == 200, "Error downloading badge"
-    content_svg = r.content.decode("utf-8")
 
-    # make tag ids in each badge unique
+    # Make tag ids in each badge unique to combine them into one svg
+    content_svg = r.content.decode("utf-8")
     for tag in ("r", "s"):
       content_svg = content_svg.replace(f'id="{tag}"', f'id="{tag}{idx}"')
       content_svg = content_svg.replace(f'"url(#{tag})"', f'"url(#{tag}{idx})"')
