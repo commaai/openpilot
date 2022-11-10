@@ -290,8 +290,8 @@
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>Mindestens %n Buchstabe(n) benötigt!</numerusform>
-            <numerusform></numerusform>
+            <numerusform>Mindestens %n Buchstabe benötigt!</numerusform>
+            <numerusform>Mindestens %n Buchstaben benötigt!</numerusform>
         </translation>
     </message>
 </context>
@@ -547,22 +547,22 @@ location set</source>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>vor %n Minute(n)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>vor %n Minute</numerusform>
+            <numerusform>vor %n Minuten</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
         <translation>
-            <numerusform>vor %n Stunde(n)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>vor %n Stunde</numerusform>
+            <numerusform>vor %n Stunden</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
         <translation>
-            <numerusform>vor %n Tag(en)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>vor %n Tag</numerusform>
+            <numerusform>vor %n Tagen</numerusform>
         </translation>
     </message>
 </context>
