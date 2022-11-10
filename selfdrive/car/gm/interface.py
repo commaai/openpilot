@@ -125,6 +125,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiV = [0.]
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
+      if 0x788 not in fingerprint[0]:  # MY2018 can enable from 0
+        ret.minEnableSpeed = -1
 
     elif candidate == CAR.MALIBU:
       ret.mass = 1496. + STD_CARGO_KG
