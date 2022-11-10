@@ -43,7 +43,6 @@ if __name__ == "__main__":
     assert r.status_code == 200, "Error downloading badge"
     content_svg = r.content.decode("utf-8")
 
-    ET.fromstring(content_svg).get("width")
     xml = ET.fromstring(content_svg)
     assert "width" in xml.attrib
     max_badge_width = max(max_badge_width, int(xml.attrib["width"]))
