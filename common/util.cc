@@ -1,5 +1,6 @@
 #include "common/util.h"
 
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -146,6 +147,14 @@ int safe_fflush(FILE *stream) {
   do {
     ret = fflush(stream);
   } while ((EOF == ret) && (errno == EINTR));
+  return ret;
+}
+
+int safe_ioctl(int fd, unsigned long request, void *argp) {
+  int ret;
+  do {
+    ret = ioctl(fd, request, argp);
+  } while ((ret == -1) && (errno == EINTR));
   return ret;
 }
 

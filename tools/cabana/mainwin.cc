@@ -1,8 +1,17 @@
 #include "tools/cabana/mainwin.h"
 
 #include <QApplication>
+#include <QClipboard>
+#include <QCompleter>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
 #include <QScreen>
+#include <QToolBar>
 #include <QVBoxLayout>
 
 #include "tools/replay/util.h"
@@ -12,25 +21,39 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
   if (main_win) emit main_win->showMessage(msg, 0);
 }
 
-MainWindow::MainWindow() : QWidget() {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(11, 11, 11, 5);
+MainWindow::MainWindow() : QMainWindow() {
+  setWindowTitle("Cabana");
+  QWidget *central_widget = new QWidget(this);
+  QHBoxLayout *main_layout = new QHBoxLayout(central_widget);
+  main_layout->setContentsMargins(11, 11, 11, 0);
   main_layout->setSpacing(0);
-
-  QHBoxLayout *h_layout = new QHBoxLayout();
-  h_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->addLayout(h_layout);
 
   splitter = new QSplitter(Qt::Horizontal, this);
   splitter->setHandleWidth(11);
+
+  // DBC file selector
+  QWidget *messages_container = new QWidget(this);
+  QVBoxLayout *messages_layout = new QVBoxLayout(messages_container);
+  messages_layout->setContentsMargins(0, 0, 0, 0);
+  dbc_combo = new QComboBox(this);
+  auto dbc_names = dbc()->allDBCNames();
+  for (const auto &name : dbc_names) {
+    dbc_combo->addItem(QString::fromStdString(name));
+  }
+  dbc_combo->model()->sort(0);
+  dbc_combo->setEditable(true);
+  dbc_combo->setInsertPolicy(QComboBox::NoInsert);
+  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  messages_layout->addWidget(dbc_combo);
+
   messages_widget = new MessagesWidget(this);
-  splitter->addWidget(messages_widget);
+  messages_layout->addWidget(messages_widget);
+  splitter->addWidget(messages_container);
 
   charts_widget = new ChartsWidget(this);
   detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
-
-  h_layout->addWidget(splitter);
+  main_layout->addWidget(splitter);
 
   // right widgets
   QWidget *right_container = new QWidget(this);
@@ -38,35 +61,21 @@ MainWindow::MainWindow() : QWidget() {
   r_layout = new QVBoxLayout(right_container);
   r_layout->setContentsMargins(11, 0, 0, 0);
   QHBoxLayout *right_hlayout = new QHBoxLayout();
-  QLabel *fingerprint_label = new QLabel(this);
-  right_hlayout->addWidget(fingerprint_label);
+  fingerprint_label = new QLabel(this);
+  right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
   // TODO: click to select another route.
-  right_hlayout->addWidget(new QLabel(can->route()));
-  QPushButton *settings_btn = new QPushButton("Settings");
-  right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
-
+  right_hlayout->addWidget(new QLabel(can->route()), 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
-
   r_layout->addWidget(charts_widget);
+  main_layout->addWidget(right_container);
 
-  h_layout->addWidget(right_container);
-
-  // status bar
-  status_bar = new QStatusBar(this);
-  status_bar->setFixedHeight(20);
-  status_bar->setContentsMargins(0, 0, 0, 0);
-  status_bar->setSizeGripEnabled(true);
-  progress_bar = new QProgressBar();
-  progress_bar->setRange(0, 100);
-  progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
-  progress_bar->setVisible(false);
-  status_bar->addPermanentWidget(progress_bar);
-  main_layout->addWidget(status_bar);
+  setCentralWidget(central_widget);
+  createActions();
+  createStatusBar();
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
@@ -78,21 +87,98 @@ MainWindow::MainWindow() : QWidget() {
     emit updateProgressBar(cur, total, success);
   });
 
-  QObject::connect(this, &MainWindow::showMessage, status_bar, &QStatusBar::showMessage);
-  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
-  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
-  QObject::connect(detail_widget, &DetailWidget::binaryViewMoved, [this](bool in) { splitter->setSizes({in ? 100 : 0, 500}); });
-  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
-  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
-  QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
-
   main_win = this;
   qInstallMessageHandler(qLogMessageHandler);
+  QFile json_file("./car_fingerprint_to_dbc.json");
+  if (json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+  }
+
+  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
+  QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
+  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
+  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
+  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
+  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
+  QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() {
+    dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
+    setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+  });
+}
+
+void MainWindow::createActions() {
+  QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::loadDBCFromFile);
+  file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
+  file_menu->addSeparator();
+  file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveDBCToFile);
+  file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
+  file_menu->addSeparator();
+  file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
+  QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
+  help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
+}
+
+void MainWindow::createStatusBar() {
+  progress_bar = new QProgressBar();
+  progress_bar->setRange(0, 100);
+  progress_bar->setTextVisible(true);
+  progress_bar->setFixedSize({230, 16});
+  progress_bar->setVisible(false);
+  statusBar()->addPermanentWidget(progress_bar);
+}
+
+void MainWindow::loadDBCFromName(const QString &name) {
+  if (name != dbc()->name())
+    dbc()->open(name);
+}
+
+void MainWindow::loadDBCFromFile() {
+  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "DBC (*.dbc)");
+  if (!file_name.isEmpty()) {
+    QFile file(file_name);
+    if (file.open(QIODevice::ReadOnly)) {
+      auto dbc_name = QFileInfo(file_name).baseName();
+      dbc()->open(dbc_name, file.readAll());
+    }
+  }
+}
+
+void MainWindow::loadDBCFromClipboard() {
+  QString dbc_str = QGuiApplication::clipboard()->text();
+  dbc()->open("From Clipboard", dbc_str);
+  QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
+}
+
+void MainWindow::loadDBCFromFingerprint() {
+  auto fingerprint = can->carFingerprint();
+  fingerprint_label->setText(fingerprint);
+  if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
+    auto dbc_name = fingerprint_to_dbc[fingerprint];
+    if (dbc_name != QJsonValue::Undefined) {
+      loadDBCFromName(dbc_name.toString());
+    }
+  }
+}
+
+void MainWindow::saveDBCToFile() {
+  QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                   QDir::homePath() + "/untitled.dbc", tr("DBC (*.dbc)"));
+  if (!file_name.isEmpty()) {
+    QFile file(file_name);
+    if (file.open(QIODevice::WriteOnly))
+      file.write(dbc()->generateDBC().toUtf8());
+  }
+}
+
+void MainWindow::saveDBCToClipboard() {
+  QGuiApplication::clipboard()->setText(dbc()->generateDBC());
+  QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
-   if (success && cur < total) {
+  if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
     progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
     progress_bar->show();

@@ -102,7 +102,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DashcamOverride", PERSISTENT},
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
-    {"EndToEndLong", PERSISTENT},
+    {"ExperimentalMode", PERSISTENT},
     {"ExperimentalLongitudinalEnabled", PERSISTENT}, // WARNING: THIS MAY DISABLE AEB
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},

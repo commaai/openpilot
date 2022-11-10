@@ -8,6 +8,7 @@
 #include <libusb-1.0/libusb.h>
 
 #define TIMEOUT 0
+#define SPI_BUF_SIZE 1024
 
 
 // comms base class
@@ -48,4 +49,25 @@ private:
   libusb_device_handle *dev_handle = NULL;
   std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
+};
+
+class PandaSpiHandle : public PandaCommsHandle {
+public:
+  PandaSpiHandle(std::string serial);
+  ~PandaSpiHandle();
+  int control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout=TIMEOUT);
+  int control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout=TIMEOUT);
+  int bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
+  int bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
+  void cleanup();
+
+  static std::vector<std::string> list();
+
+private:
+  int spi_fd = -1;
+  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
+  int wait_for_ack();
+
+  uint8_t tx_buf[SPI_BUF_SIZE];
+  uint8_t rx_buf[SPI_BUF_SIZE];
 };

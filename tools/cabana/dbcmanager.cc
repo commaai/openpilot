@@ -9,24 +9,22 @@ DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 DBCManager::~DBCManager() {}
 
 void DBCManager::open(const QString &dbc_file_name) {
-  dbc_name = dbc_file_name;
-  dbc = const_cast<DBC *>(dbc_lookup(dbc_name.toStdString()));
-  msg_map.clear();
-  for (auto &msg : dbc->msgs) {
-    msg_map[msg.address] = &msg;
-  }
+  dbc = const_cast<DBC *>(dbc_lookup(dbc_file_name.toStdString()));
+  updateMsgMap();
   emit DBCFileChanged();
 }
 
 void DBCManager::open(const QString &name, const QString &content) {
-  this->dbc_name = name;
   std::istringstream stream(content.toStdString());
   dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
-  msg_map.clear();
-  for (auto &msg : dbc->msgs) {
-    msg_map[msg.address] = &msg;
-  }
+  updateMsgMap();
   emit DBCFileChanged();
+}
+
+void DBCManager::updateMsgMap() {
+  msg_map.clear();
+  for (auto &msg : dbc->msgs)
+    msg_map[msg.address] = &msg;
 }
 
 QString DBCManager::generateDBC() {
@@ -51,22 +49,30 @@ QString DBCManager::generateDBC() {
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
-  auto m = const_cast<Msg *>(msg(id));
-  if (m) {
+  auto [bus, address] = parseId(id);
+  if (auto m = const_cast<Msg *>(msg(address))) {
     m->name = name.toStdString();
     m->size = size;
   } else {
-    uint32_t address = addressFromId(id);
-    dbc->msgs.push_back({.address = address, .name = name.toStdString(), .size = size});
-    msg_map[address] = &dbc->msgs.back();
+    m = &dbc->msgs.emplace_back(Msg{.address = address, .name = name.toStdString(), .size = size});
+    msg_map[address] = m;
   }
-  emit msgUpdated(id);
+  emit msgUpdated(address);
+}
+
+void DBCManager::removeMsg(const QString &id) {
+  uint32_t address = parseId(id).second;
+  auto it = std::find_if(dbc->msgs.begin(), dbc->msgs.end(), [address](auto &m) { return m.address == address; });
+  if (it != dbc->msgs.end()) {
+    dbc->msgs.erase(it);
+    updateMsgMap();
+    emit msgRemoved(address);
+  }
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (Msg *m = const_cast<Msg *>(msg(id))) {
-    m->sigs.push_back(sig);
-    emit signalAdded(&m->sigs.back());
+    emit signalAdded(&m->sigs.emplace_back(sig));
   }
 }
 
@@ -90,8 +96,9 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
   }
 }
 
-uint32_t DBCManager::addressFromId(const QString &id) {
-  return id.mid(id.indexOf(':') + 1).toUInt(nullptr, 16);
+std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
+  const auto list = id.split(':');
+  return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 
 DBCManager *dbc() {
@@ -140,9 +147,9 @@ double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   return value;
 }
 
-void updateSigSizeParamsFromRange(Signal &s, int from, int to) {
-  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);
-  s.size = to - from + 1;
+void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size) {
+  s.start_bit = s.is_little_endian ? start_bit : bigEndianBitIndex(start_bit);
+  s.size = size;
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;
