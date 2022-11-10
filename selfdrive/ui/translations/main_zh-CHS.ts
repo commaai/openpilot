@@ -472,10 +472,6 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation type="vanished">好的</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>

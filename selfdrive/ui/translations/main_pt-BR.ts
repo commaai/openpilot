@@ -475,10 +475,6 @@ trabalho definido</translation>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation type="vanished">OK</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>

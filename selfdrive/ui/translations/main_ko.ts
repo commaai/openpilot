@@ -474,10 +474,6 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation type="vanished">확인</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
