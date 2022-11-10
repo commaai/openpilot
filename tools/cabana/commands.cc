@@ -68,7 +68,7 @@ void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name.c_str()); }
 
 EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
     : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
-  setText(QObject::tr("Eidt signal %1").arg(old_signal.name.c_str()));
+  setText(QObject::tr("Edit signal %1").arg(old_signal.name.c_str()));
 }
 
 void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name.c_str(), old_signal); }
