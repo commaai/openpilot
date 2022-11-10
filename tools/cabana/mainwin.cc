@@ -107,6 +107,9 @@ MainWindow::MainWindow() : QMainWindow() {
     dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
     setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
   });
+  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this]() {
+    setWindowTitle(tr("* %1 - Cabana").arg(dbc()->name()));
+  });
 }
 
 void MainWindow::createActions() {
