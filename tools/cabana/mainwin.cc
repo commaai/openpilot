@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCompleter>
+#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -135,8 +136,9 @@ void MainWindow::loadDBCFromName(const QString &name) {
 }
 
 void MainWindow::loadDBCFromFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "DBC (*.dbc)");
+  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
   if (!file_name.isEmpty()) {
+    settings.last_dir = QDir().absoluteFilePath(file_name);
     QFile file(file_name);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(file_name).baseName();
@@ -164,8 +166,9 @@ void MainWindow::loadDBCFromFingerprint() {
 
 void MainWindow::saveDBCToFile() {
   QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                                   QDir::homePath() + "/untitled.dbc", tr("DBC (*.dbc)"));
+                                                   QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
   if (!file_name.isEmpty()) {
+    settings.last_dir = QDir().absoluteFilePath(file_name);
     QFile file(file_name);
     if (file.open(QIODevice::WriteOnly))
       file.write(dbc()->generateDBC().toUtf8());
@@ -207,6 +210,8 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   main_win = nullptr;
   if (floating_window)
     floating_window->deleteLater();
+
+  settings.save();
   QWidget::closeEvent(event);
 }
 
