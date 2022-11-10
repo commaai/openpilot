@@ -377,7 +377,8 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Erhalte echtzeit Wegführung und mehr mit dem Comma Prime Abonnement. Melde dich jetzt an: https://connect.comma.ai</translation>
+        <translation>Erhalte echtzeit Wegführung und mehr mit dem comma prime
+Abonnement. Melde dich jetzt an: https://connect.comma.ai</translation>
     </message>
     <message>
         <source>No home
