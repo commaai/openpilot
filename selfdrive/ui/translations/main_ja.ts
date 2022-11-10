@@ -967,7 +967,7 @@ location set</source>
         <translation>車内カメラの映像をアップロードし、ドライバー監視システムのアルゴリズムの向上に役立てます。</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>実験段階のopenpilotによるアクセル制御</translation>
     </message>
     <message>
@@ -979,7 +979,7 @@ location set</source>
         <translation>ここ機能を使う為には、「実験段階のopenpilotによるアクセル制御」を先に有効化してください。</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>ｱｸｾﾙを踏むと openpilot を中断</translation>
     </message>
     <message>
@@ -1003,7 +1003,7 @@ location set</source>
         <translation>分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
     </message>
     <message>
-        <source>Experimental mode</source>
+        <source>Experimental Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

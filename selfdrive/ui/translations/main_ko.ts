@@ -967,7 +967,7 @@ location set</source>
         <translation>운전자 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선합니다.</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>openpilot 롱컨트롤 (실험적)</translation>
     </message>
     <message>
@@ -979,7 +979,7 @@ location set</source>
         <translation>openpilot 롱컨트롤을 활성화합니다. (실험적)</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>가속페달 조작시 해제</translation>
     </message>
     <message>
@@ -1003,7 +1003,7 @@ location set</source>
         <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
     </message>
     <message>
-        <source>Experimental mode</source>
+        <source>Experimental Mode</source>
         <translation>실험 모드</translation>
     </message>
     <message>

@@ -967,7 +967,7 @@ location set</source>
         <translation>上傳駕駛監控的錄像來協助我們提升駕駛監控的準確率。</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>使用 openpilot 縱向控制（實驗）</translation>
     </message>
     <message>
@@ -979,7 +979,7 @@ location set</source>
         <translation>打開縱向控制（實驗）以啟用此功能。</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>油門取消控車</translation>
     </message>
     <message>
@@ -1003,7 +1003,7 @@ location set</source>
         <translation>進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
     </message>
     <message>
-        <source>Experimental mode</source>
+        <source>Experimental Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
