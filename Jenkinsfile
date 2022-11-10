@@ -124,9 +124,6 @@ pipeline {
 
         stage('can-tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          environment {
-            R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
-          }
           steps {
             phone_steps("tici-can", [
               ["build", "cd selfdrive/manager && ./build.py"],
@@ -134,7 +131,6 @@ pipeline {
             ])
           }
         }
-
 
         stage('HW + Unit Tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
