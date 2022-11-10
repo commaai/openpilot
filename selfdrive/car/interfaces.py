@@ -259,7 +259,7 @@ class CarInterfaceBase(ABC):
     if cs_out.steerFaultPermanent:
       events.add(EventName.steerUnavailable)
 
-    # Handle button presses and PCM cruise state
+    # Handle button presses and enable with PCM cruise state
     # enabling can optionally be blocked by the car interface
     for b in cs_out.buttonEvents:
       # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
