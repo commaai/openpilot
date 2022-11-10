@@ -376,7 +376,7 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>订阅comma prime以获取导航。 
+        <translation>订阅comma prime以获取导航。
 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
@@ -473,11 +473,11 @@ location set</source>
     <name>ParamControl</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">好的</translation>
+        <translation>好的</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
