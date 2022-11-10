@@ -134,15 +134,13 @@ void DetailWidget::setMessage(const QString &message_id) {
       break;
     }
   }
+  msg_id = message_id;
   if (index == -1) {
     index = tabbar->addTab(message_id);
     tabbar->setTabToolTip(index, msgName(message_id));
   }
   tabbar->setCurrentIndex(index);
-  msg_id = message_id;
   dbcMsgChanged();
-
-  scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
@@ -191,6 +189,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
   setUpdatesEnabled(true);
+  scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::updateState() {
@@ -232,24 +231,34 @@ void DetailWidget::removeMsg() {
   }
 }
 
-void DetailWidget::addSignal(int from, int to) {
-  if (auto msg = dbc()->msg(msg_id)) {
-    Signal sig = {};
+void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
+  auto msg = dbc()->msg(msg_id);
+  if (!msg) {
     for (int i = 1; /**/; ++i) {
-      sig.name = "NEW_SIGNAL_" + std::to_string(i);
-      auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
-      if (it == msg->sigs.end()) break;
+      std::string name = "NEW_MSG_" + std::to_string(i);
+      auto it = std::find_if(dbc()->getDBC()->msgs.begin(), dbc()->getDBC()->msgs.end(), [&](auto &m) { return m.name == name; });
+      if (it == dbc()->getDBC()->msgs.end()) {
+        undo_stack->push(new EditMsgCommand(msg_id, name.c_str(), can->lastMessage(msg_id).dat.size()));
+        msg = dbc()->msg(msg_id);
+        break;
+      }
     }
-    sig.is_little_endian = false,
-    updateSigSizeParamsFromRange(sig, from, to);
-    undo_stack->push(new AddSigCommand(msg_id, sig));
-    dbcMsgChanged(msg->sigs.size() - 1);
   }
+  Signal sig = {};
+  for (int i = 1; /**/; ++i) {
+    sig.name = "NEW_SIGNAL_" + std::to_string(i);
+    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
+    if (it == msg->sigs.end()) break;
+  }
+  sig.is_little_endian = little_endian;
+  updateSigSizeParamsFromRange(sig, start_bit, size);
+  undo_stack->push(new AddSigCommand(msg_id, sig));
+  dbcMsgChanged(msg->sigs.size() - 1);
 }
 
-void DetailWidget::resizeSignal(const Signal *sig, int from, int to) {
+void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
   Signal s = *sig;
-  updateSigSizeParamsFromRange(s, from, to);
+  updateSigSizeParamsFromRange(s, start_bit, size);
   saveSignal(sig, s);
 }
 

@@ -147,9 +147,9 @@ double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   return value;
 }
 
-void updateSigSizeParamsFromRange(Signal &s, int from, int to) {
-  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);
-  s.size = to - from + 1;
+void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size) {
+  s.start_bit = s.is_little_endian ? start_bit : bigEndianBitIndex(start_bit);
+  s.size = size;
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;
