@@ -479,7 +479,7 @@ location set</source>
     </message>
     <message>
         <source>Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>を有効化</translation>
     </message>
 </context>
 <context>

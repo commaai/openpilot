@@ -477,7 +477,7 @@ location set</source>
     </message>
     <message>
         <source>Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>启用</translation>
     </message>
 </context>
 <context>

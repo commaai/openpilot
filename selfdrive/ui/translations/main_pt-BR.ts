@@ -377,7 +377,7 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com 
+        <translation>Obtenha instruções passo a passo exibidas e muito mais com
 uma assinatura prime Inscreva-se agora:  https://connect.comma.ai</translation>
     </message>
     <message>
@@ -480,7 +480,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ativar</translation>
     </message>
 </context>
 <context>
