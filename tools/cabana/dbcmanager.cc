@@ -1,8 +1,8 @@
 #include "tools/cabana/dbcmanager.h"
 
+#include <QVector>
 #include <limits>
 #include <sstream>
-#include <QVector>
 
 DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 
@@ -22,17 +22,22 @@ void DBCManager::open(const QString &name, const QString &content) {
 }
 
 void DBCManager::updateMsgMap() {
-  msg_map.clear();
-  for (auto &msg : dbc->msgs)
-    msg_map[msg.address] = &msg;
+  msgs.clear();
+  for (auto &msg : dbc->msgs) {
+    auto &m = msgs[msg.address];
+    m.name = msg.name.c_str();
+    m.address = msg.address;
+    m.size = msg.size;
+    std::copy(msg.sigs.begin(), msg.sigs.end(), std::back_inserter(m.sigs));
+  }
 }
 
 QString DBCManager::generateDBC() {
   if (!dbc) return {};
 
   QString dbc_string;
-  for (auto &m : dbc->msgs) {
-    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(m.address).arg(m.name.c_str()).arg(m.size);
+  for (auto &[address, m] : msgs) {
+    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(m.address).arg(m.name).arg(m.size);
     for (auto &sig : m.sigs) {
       dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
                         .arg(sig.name.c_str())
@@ -50,34 +55,32 @@ QString DBCManager::generateDBC() {
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
   auto [bus, address] = parseId(id);
-  if (auto m = const_cast<Msg *>(msg(address))) {
-    m->name = name.toStdString();
+  if (auto m = const_cast<DBCMsg *>(msg(address))) {
+    m->name = name;
     m->size = size;
   } else {
-    m = &dbc->msgs.emplace_back(Msg{.address = address, .name = name.toStdString(), .size = size});
-    msg_map[address] = m;
+    msgs[address] = DBCMsg{.address = address, .name = name, .size = size};
   }
   emit msgUpdated(address);
 }
 
 void DBCManager::removeMsg(const QString &id) {
   uint32_t address = parseId(id).second;
-  auto it = std::find_if(dbc->msgs.begin(), dbc->msgs.end(), [address](auto &m) { return m.address == address; });
-  if (it != dbc->msgs.end()) {
-    dbc->msgs.erase(it);
-    updateMsgMap();
+  if (auto it = msgs.find(address); it != msgs.end()) {
+    msgs.erase(it);
     emit msgRemoved(address);
   }
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
-  if (Msg *m = const_cast<Msg *>(msg(id))) {
-    emit signalAdded(&m->sigs.emplace_back(sig));
+  if (auto m = const_cast<DBCMsg *>(msg(id))) {
+    m->sigs.push_back(sig);
+    emit signalAdded(&m->sigs.back());
   }
 }
 
 void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
-  if (Msg *m = const_cast<Msg *>(msg(id))) {
+  if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
     if (it != m->sigs.end()) {
       *it = sig;
@@ -87,7 +90,7 @@ void DBCManager::updateSignal(const QString &id, const QString &sig_name, const 
 }
 
 void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
-  if (Msg *m = const_cast<Msg *>(msg(id))) {
+  if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
     if (it != m->sigs.end()) {
       emit signalRemoved(&(*it));

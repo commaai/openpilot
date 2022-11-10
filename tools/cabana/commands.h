@@ -25,9 +25,7 @@ public:
 
 private:
   const QString id;
-  QString title;
-  int size = 0;
-  std::vector<Signal> sigs;
+  DBCMsg message;
 };
 
 class AddSigCommand : public QUndoCommand {

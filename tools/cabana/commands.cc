@@ -6,7 +6,7 @@ EditMsgCommand::EditMsgCommand(const QString &id, const QString &title, int size
     : id(id), new_title(title), new_size(size), QUndoCommand(parent) {
   auto msg = dbc()->msg(id);
   if (msg) {
-    old_title = msg->name.c_str();
+    old_title = msg->name;
     old_size = msg->size;
   }
   dbc()->updateMsg(id, new_title, new_size);
@@ -28,25 +28,23 @@ void EditMsgCommand::redo() {
 RemoveMsgCommand::RemoveMsgCommand(const QString &id, QUndoCommand *parent) : id(id), QUndoCommand(parent) {
   auto msg = dbc()->msg(id);
   if (msg) {
-    title = msg->name.c_str();
-    size = msg->size;
-    sigs = msg->sigs;
+    message = *msg;
     dbc()->removeMsg(id);
-    setText(QObject::tr("Remove message %1:%2").arg(id).arg(title));
+    setText(QObject::tr("Remove message %1:%2").arg(id).arg(message.name));
   }
 }
 
 void RemoveMsgCommand::undo() {
-  if (!title.isEmpty()) {
-    dbc()->updateMsg(id, title, size);
-    for (auto &s : sigs) {
+  if (!message.name.isEmpty()) {
+    dbc()->updateMsg(id, message.name, message.size);
+    for (auto &s : message.sigs) {
       dbc()->addSignal(id, s);
     }
   }
 }
 
 void RemoveMsgCommand::redo() {
-  if (!title.isEmpty())
+  if (!message.name.isEmpty())
     dbc()->removeMsg(id);
 }
 

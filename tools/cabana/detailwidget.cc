@@ -150,7 +150,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   QStringList warnings;
   for (auto f : signal_list) f->hide();
 
-  const Msg *msg = dbc()->msg(msg_id);
+  const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
     for (int i = 0; i < msg->sigs.size(); ++i) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
@@ -235,10 +235,10 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   if (!msg) {
     for (int i = 1; /**/; ++i) {
-      std::string name = "NEW_MSG_" + std::to_string(i);
-      auto it = std::find_if(dbc()->getDBC()->msgs.begin(), dbc()->getDBC()->msgs.end(), [&](auto &m) { return m.name == name; });
-      if (it == dbc()->getDBC()->msgs.end()) {
-        undo_stack->push(new EditMsgCommand(msg_id, name.c_str(), can->lastMessage(msg_id).dat.size()));
+      QString name = QString("NEW_MSG_%1").arg(i);
+      auto it = std::find_if(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; });
+      if (it == dbc()->messages().end()) {
+        undo_stack->push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
         msg = dbc()->msg(msg_id);
         break;
       }
@@ -253,7 +253,7 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   sig.is_little_endian = little_endian;
   updateSigSizeParamsFromRange(sig, start_bit, size);
   undo_stack->push(new AddSigCommand(msg_id, sig));
-  dbcMsgChanged(msg->sigs.size() - 1);
+  dbcMsgChanged();
 }
 
 void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {

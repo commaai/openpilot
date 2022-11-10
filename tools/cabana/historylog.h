@@ -28,7 +28,7 @@ private:
   QString msg_id;
   int row_count = 0;
   int column_count = 2;
-  const Msg *dbc_msg = nullptr;
+  const DBCMsg *dbc_msg = nullptr;
   std::deque<CanData> messages;
 };
 
