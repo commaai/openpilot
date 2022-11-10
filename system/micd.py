@@ -23,41 +23,32 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.array([])
-    self.noise_level_raw = 0
     self.filter = FirstOrderFilter(1, 8, DT_MIC)
-    self.last_alert_time = 0
-
-  @property
-  def noise_level(self):
-    return self.filter.x
-
-  @property
-  def muted(self):
-    return time.time() - self.last_alert_time < MUTE_TIME
 
   def update(self):
     if self.sm.updated['controlsState']:
       if self.sm['controlsState'].alertSound > 0:
         self.last_alert_time = time.time()
 
-    if len(self.measurements) > 0:
-      self.noise_level_raw = float(np.linalg.norm(self.measurements))
-      self.measurements = np.array([])
-      self.filter.update(self.noise_level_raw)
+    muted = time.time() - self.last_alert_time < MUTE_TIME
+
+    if not muted and len(self.measurements) > 0:
+      noise_level_raw = float(np.linalg.norm(self.measurements))
+      self.filter.update(noise_level_raw)
+    else:
+      noise_level_raw = 0
+    self.measurements = np.array([])
 
     msg = messaging.new_message('microphone')
     microphone = msg.microphone
-    microphone.noiseLevel = self.noise_level
-    microphone.noiseLevelRaw = self.noise_level_raw
+    microphone.noiseLevel = self.filter.x
+    microphone.noiseLevelRaw = noise_level_raw
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
 
   def callback(self, indata, frames, time, status):
-    if not self.muted:
-      self.measurements = np.concatenate((self.measurements, indata[:, 0]))
-    else:
-      self.measurements = np.array([])
+    self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
   def micd_thread(self, device=None):
     if device is None:
