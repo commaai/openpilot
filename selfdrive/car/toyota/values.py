@@ -119,7 +119,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
-    ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-21", min_enable_speed=7.5),
+    ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
   ],
   CAR.COROLLAH_TSS2: [
@@ -713,6 +713,7 @@ FW_VERSIONS = {
   },
   CAR.COROLLA_TSS2: {
     (Ecu.engine, 0x700, None): [
+      b'\x01896630A22000\x00\x00\x00\x00',
       b'\x01896630ZG2000\x00\x00\x00\x00',
       b'\x01896630ZG5000\x00\x00\x00\x00',
       b'\x01896630ZG5100\x00\x00\x00\x00',
@@ -792,6 +793,7 @@ FW_VERSIONS = {
       b'F152602191\x00\x00\x00\x00\x00\x00',
       b'\x01F152612862\x00\x00\x00\x00\x00\x00',
       b'\x01F152612B91\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260A070\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
@@ -809,6 +811,7 @@ FW_VERSIONS = {
       b'\x028646F1202100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F1202200\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
       b'\x028646F1601100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F1601300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.COROLLAH_TSS2: {
