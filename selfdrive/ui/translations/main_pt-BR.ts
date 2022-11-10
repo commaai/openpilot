@@ -377,7 +377,7 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com 
+        <translation>Obtenha instruções passo a passo exibidas e muito mais com
 uma assinatura prime Inscreva-se agora:  https://connect.comma.ai</translation>
     </message>
     <message>
@@ -1020,11 +1020,11 @@ trabalho definido</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</source>
-        <translation type="unfinished"></translation>
+        <translation>AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.</translation>
     </message>
     <message>
         <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>O padrão do openpilot é o ACC integrado do carro em vez do controle longitudinal do openpilot neste carro. Habilite isto para alternar para controle longitudinal do openpilot.</translation>
     </message>
 </context>
 <context>
