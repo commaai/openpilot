@@ -4,6 +4,10 @@
 
 // HistoryLogModel
 
+inline const Signal &get_signal(const DBCMsg *m, int index) {
+  return std::next(m->sigs.begin(), index)->second;
+}
+
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
   if (role == Qt::DisplayRole) {
@@ -11,13 +15,8 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     if (index.column() == 0) {
       return QString::number(m.ts, 'f', 2);
     }
-    if (has_signal) {
-      auto it = dbc_msg->sigs.begin();
-      std::advance(it, index.column() - 1);
-      return QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), it->second));
-    } else {
-      return toHex(m.dat);
-    }
+    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), get_signal(dbc_msg, index.column() - 1)))
+                      : toHex(m.dat);
   } else if (role == Qt::FontRole && index.column() == 1 && !has_signal) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
@@ -42,14 +41,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      if (has_signal) {
-        auto it = dbc_msg->sigs.begin();
-        std::advance(it, section - 1);
-        QString name = it->first;
-        return name.replace('_', ' ');
-      } else {
-        return "Data";
-      }
+      return has_signal ? QString::fromStdString(get_signal(dbc_msg, section - 1).name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
     }

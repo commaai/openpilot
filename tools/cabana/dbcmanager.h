@@ -1,9 +1,10 @@
 #pragma once
 
 #include <map>
-#include <QList>
-
+#include <QObject>
+#include <QString>
 #include "opendbc/can/common_dbc.h"
+
 struct DBCMsg {
   QString name;
   uint32_t size;

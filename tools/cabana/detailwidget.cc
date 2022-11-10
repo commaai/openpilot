@@ -272,7 +272,6 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
       return;
     }
   }
-
   auto [start, end] = getSignalRange(&new_sig);
   if (start < 0 || end >= msg->size * 8) {
     QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);

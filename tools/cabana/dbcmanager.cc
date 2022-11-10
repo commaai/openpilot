@@ -1,8 +1,8 @@
 #include "tools/cabana/dbcmanager.h"
 
-#include <QVector>
 #include <limits>
 #include <sstream>
+#include <QVector>
 
 DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 
@@ -53,7 +53,7 @@ QString DBCManager::generateDBC() {
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
-  auto [bus, address] = parseId(id);
+  auto [_, address] = parseId(id);
   auto &m = msgs[address];
   m.name = name;
   m.size = size;
@@ -62,10 +62,8 @@ void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size
 
 void DBCManager::removeMsg(const QString &id) {
   uint32_t address = parseId(id).second;
-  if (auto it = msgs.find(address); it != msgs.end()) {
-    msgs.erase(it);
-    emit msgRemoved(address);
-  }
+  msgs.erase(address);
+  emit msgRemoved(address);
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
