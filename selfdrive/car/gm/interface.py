@@ -225,7 +225,7 @@ class CarInterface(CarInterfaceBase):
       ret.buttonEvents = [be]
 
     for b in ret.buttonEvents:
-      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and b.pressed:
+      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and b.pressed and not ret.brakePressed:
         self.last_enable_interaction = self.frame
 
     allow_enable = self.CP.pcmCruise or (self.frame - self.last_enable_interaction) < ENABLE_BUTTON_TIMEOUT
