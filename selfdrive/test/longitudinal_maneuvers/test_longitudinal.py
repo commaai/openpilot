@@ -143,11 +143,11 @@ def run_maneuver_worker(k):
     params = Params()
 
     man = maneuvers[k]
-    params.put_bool("EndToEndLong", True)
+    params.put_bool("ExperimentalMode", True)
     print(man.title, ' in e2e mode')
     valid, _ = man.evaluate()
     self.assertTrue(valid, msg=man.title)
-    params.put_bool("EndToEndLong", False)
+    params.put_bool("ExperimentalMode", False)
     print(man.title, ' in acc mode')
     valid, _ = man.evaluate()
     self.assertTrue(valid, msg=man.title)

@@ -474,12 +474,12 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation type="unfinished">OK</translation>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="unfinished">キャンセル</translation>
+        <source>Enable</source>
+        <translation>を有効化</translation>
     </message>
 </context>
 <context>
@@ -967,20 +967,8 @@ location set</source>
         <translation>車内カメラの映像をアップロードし、ドライバー監視システムのアルゴリズムの向上に役立てます。</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 エンドツーエンドのアクセル制御 (超α版) 🌮</translation>
-    </message>
-    <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>実験段階のopenpilotによるアクセル制御</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;警告: openpilotによるアクセル制御は実験段階であり、AEBを無効化します。&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>アクセルとブレーキの制御をopenpilotに任せます。openpilotが人間と同じように運転します。最初期の実験段階です。</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
@@ -991,7 +979,7 @@ location set</source>
         <translation>ここ機能を使う為には、「実験段階のopenpilotによるアクセル制御」を先に有効化してください。</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>ｱｸｾﾙを踏むと openpilot を中断</translation>
     </message>
     <message>
@@ -1013,6 +1001,22 @@ location set</source>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

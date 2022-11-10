@@ -167,7 +167,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|Camry Hybrid 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Corolla 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Corolla Cross (Non-US only) 2020-21|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Corolla Cross (Non-US only) 2020-23|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Hatchback 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Corolla Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
