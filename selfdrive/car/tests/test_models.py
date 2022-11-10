@@ -251,8 +251,8 @@ class TestCarModelBase(unittest.TestCase):
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
         if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-      safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
-      checks['brakePressed'] += brake_pressed != safety_brake_pressed
+      checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
