@@ -22,7 +22,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
-   // tabbar
+  // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
   tabbar->setDrawBase(false);
@@ -102,7 +102,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
   QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
-  QObject::connect(undo_stack, &QUndoStack::indexChanged, this, &DetailWidget::dbcMsgChanged);
+  QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() { dbcMsgChanged(); });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -147,6 +147,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (msg_id.isEmpty()) return;
 
   setUpdatesEnabled(false);
+
+  binary_view->setMessage(msg_id);
+  history_log->setMessage(msg_id);
+
   QStringList warnings;
   for (auto f : signal_list) f->hide();
 
@@ -176,9 +180,6 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
-
-  binary_view->setMessage(msg_id);
-  history_log->setMessage(msg_id);
 
   // Check overlapping bits
   if (auto overlapping = binary_view->getOverlappingSignals(); !overlapping.isEmpty()) {
@@ -220,14 +221,12 @@ void DetailWidget::editMsg() {
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
     undo_stack->push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
-    dbcMsgChanged();
   }
 }
 
 void DetailWidget::removeMsg() {
   if (auto msg = dbc()->msg(msg_id)) {
     undo_stack->push(new RemoveMsgCommand(msg_id));
-    dbcMsgChanged();
   }
 }
 
@@ -253,7 +252,6 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   sig.is_little_endian = little_endian;
   updateSigSizeParamsFromRange(sig, start_bit, size);
   undo_stack->push(new AddSigCommand(msg_id, sig));
-  dbcMsgChanged();
 }
 
 void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
@@ -281,12 +279,10 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
   }
 
   undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
-  dbcMsgChanged();
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {
   undo_stack->push(new RemoveSigCommand(msg_id, sig));
-  dbcMsgChanged();
 }
 
 // EditMessageDialog

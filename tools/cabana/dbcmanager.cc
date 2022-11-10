@@ -81,7 +81,7 @@ void DBCManager::addSignal(const QString &id, const Signal &sig) {
 
 void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [sig_name](auto &sig) { return sig_name == sig.name.c_str(); });
     if (it != m->sigs.end()) {
       *it = sig;
       emit signalUpdated(&(*it));
@@ -91,7 +91,7 @@ void DBCManager::updateSignal(const QString &id, const QString &sig_name, const 
 
 void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [sig_name](auto &sig) { return sig_name == sig.name.c_str(); });
     if (it != m->sigs.end()) {
       emit signalRemoved(&(*it));
       m->sigs.erase(it);
