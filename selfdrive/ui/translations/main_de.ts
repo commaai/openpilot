@@ -148,7 +148,7 @@
     </message>
     <message>
         <source>RESET</source>
-        <translation type="unfinished">RÜCKSETZEN</translation>
+        <translation>RÜCKSETZEN</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
@@ -818,11 +818,12 @@ location set</source>
     <name>SoftwarePanel</name>
     <message>
         <source>UNINSTALL</source>
-        <translation>DEINSTALLIEREN</translation>
+        <translatorcomment>Too long for UI</translatorcomment>
+        <translation type="unfinished">DEINSTALLIEREN</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation>DEINSTALLIERE %1</translation>
+        <translation>Deinstalliere %1</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
@@ -978,7 +979,8 @@ location set</source>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>Zeige die Karte auf der linken Seite der Benutzeroberfläche</translation>
+        <translatorcomment>Too long for UI</translatorcomment>
+        <translation type="unfinished">Zeige die Karte auf der linken Seite der Benutzeroberfläche</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
@@ -986,7 +988,8 @@ location set</source>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>Zeige die vorraussichtliche Ankunftszeit im 24 Stunden Format</translation>
+        <translatorcomment>Too long for UI</translatorcomment>
+        <translation type="unfinished">Zeige die vorraussichtliche Ankunftszeit im 24 Stunden Format</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
