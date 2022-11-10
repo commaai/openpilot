@@ -12,7 +12,9 @@
 #include <QMessageBox>
 #include <QScreen>
 #include <QToolBar>
+#include <QUndoView>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 
 #include "tools/replay/util.h"
 
@@ -41,9 +43,7 @@ MainWindow::MainWindow() : QMainWindow() {
     dbc_combo->addItem(QString::fromStdString(name));
   }
   dbc_combo->model()->sort(0);
-  dbc_combo->setEditable(true);
   dbc_combo->setInsertPolicy(QComboBox::NoInsert);
-  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   messages_layout->addWidget(dbc_combo);
 
   messages_widget = new MessagesWidget(this);
@@ -102,8 +102,12 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() {
+    detail_widget->undo_stack->clear();
     dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
     setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+  });
+  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
+    setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
   });
 }
 
@@ -116,6 +120,23 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
   file_menu->addSeparator();
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
+
+  QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
+  auto undo_act = detail_widget->undo_stack->createUndoAction(this, tr("&Undo"));
+  undo_act->setShortcuts(QKeySequence::Undo);
+  edit_menu->addAction(undo_act);
+  auto redo_act = detail_widget->undo_stack->createRedoAction(this, tr("&Rndo"));
+  redo_act->setShortcuts(QKeySequence::Redo);
+  edit_menu->addAction(redo_act);
+  edit_menu->addSeparator();
+
+  QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
+  auto undo_view = new QUndoView(detail_widget->undo_stack);
+  undo_view->setWindowTitle(tr("Command List"));
+  QWidgetAction *commands_act = new QWidgetAction(this);
+  commands_act->setDefaultWidget(undo_view);
+  commands_menu->addAction(commands_act);
+
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
