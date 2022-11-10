@@ -125,7 +125,7 @@ void TogglesPanel::updateToggles() {
     Experimental features are listed below:\
     <br> \
     <h4>🌮 End-to-End Longitudinal Control 🌮</h4> \
-    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.");
+    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.");
 
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {

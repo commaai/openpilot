@@ -1015,8 +1015,8 @@ trabalho definido</translation>
         <translation>&lt;b&gt;AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.&lt;/b&gt;&lt;br&gt;          O padrão do openpilot é o ACC integrado do carro em vez do controle longitudinal do openpilot neste carro. Habilite isto para alternar para controle longitudinal do openpilot.</translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.</source>
-        <translation>    o padrão do openpilot é dirigir no &lt;b&gt;modo chill&lt;/b&gt;.    Modo experimental habilita &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que não estão prontos para o modo chill.     Os recursos experimentais estão listados abaixo:    &lt;br&gt;     &lt;h4&gt;🌮 Controle Longitudinal de Ponta a Ponta 🌮&lt;/h4&gt;     Deixe o modelo de direção controlar o acelerador e os freios. openpilot irá conduzir como pensa que um ser humano faria, incluindo parar para sinais vermelhos e sinais de parada.</translation>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
