@@ -50,7 +50,7 @@ public:
 
 private:
   QString msg_id;
-  const Msg *dbc_msg;
+  const DBCMsg *dbc_msg;
   int row_count = 0;
   const int column_count = 9;
 };
