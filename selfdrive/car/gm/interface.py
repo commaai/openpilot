@@ -87,7 +87,8 @@ class CarInterface(CarInterfaceBase):
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
-      radar_missing = 0x2cb not in fingerprint[0]
+      radar_whitelist = {CAR.ESCALADE_ESV}  # 0x2cb missing from fingerprint even though it has radar
+      radar_missing = 0x2cb not in fingerprint[0] and candidate not in radar_whitelist
       ret.radarOffCan = radar_missing
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
@@ -164,7 +165,6 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
-      ret.radarOffCan = False  # 0x2cb missing from Escalade fingerprint
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302
