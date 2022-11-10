@@ -472,12 +472,12 @@ location set</source>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation>Ok</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -968,10 +968,6 @@ location set</source>
         <translation>Lade Daten der Fahreraufmerksamkeitsüberwachungskamera hoch, um die Fahreraufmerksamkeitsüberwachungsalgorithmen zu verbessern.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
-        <translation>Deaktivierung durch Gaspedal</translation>
-    </message>
-    <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
     </message>
@@ -988,24 +984,8 @@ location set</source>
         <translation>Zeige die Karte auf der linken Seite der Benutzeroberfläche bei geteilten Bildschirm.</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 Ende-zu-Ende Tempomat (extrem alpha) 🌮</translation>
-    </message>
-    <message>
-        <source>Experimental openpilot longitudinal control</source>
-        <translation>Experimentaler Openpilot Tempomat</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;WARNUNG: Der Openpilot Tempomat ist experimentell für dieses Auto und wird den Notbremsassistenten deaktivieren.&lt;/b&gt;</translation>
-    </message>
-    <message>
         <source>Show ETA in 24h Format</source>
         <translation>Zeige die vorraussichtliche Ankunftszeit im 24 Stunden Format</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>Lass das Openpilot Modell Gas und Bremse kontrollieren. Openpilot wird so fahren wie es denkt ein Mensch fahren würde.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
@@ -1014,6 +994,30 @@ location set</source>
     <message>
         <source>Enable experimental longitudinal control to enable this.</source>
         <translation>Aktiviere den experimentellen Openpilot Tempomaten, um dies zu aktivieren.</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experimental openpilot Longitudinal Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disengage on Accelerator Pedal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
