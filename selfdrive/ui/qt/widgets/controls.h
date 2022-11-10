@@ -142,8 +142,8 @@ public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool confirm, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
-      QString content("<body><h2>" + title + "</h2><br><br>"
-                      "<p style=\"text-align: center; margin: 0 128px;\">" + getDescription() + "</p></body>");
+      QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
+                      "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
       ConfirmationDialog dialog(content, tr("Ok"), tr("Cancel"), true, this);
       if (!confirm || !state || dialog.exec()) {
         params.putBool(key, state);
