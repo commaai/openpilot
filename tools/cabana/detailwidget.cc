@@ -156,7 +156,8 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
   const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    for (int i = 0; i < msg->sigs.size(); ++i) {
+    int i = 0;
+    for (auto &[name, sig] : msg->sigs) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
         form = new SignalEdit(i);
@@ -169,9 +170,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signals_container->layout()->addWidget(form);
         signal_list.push_back(form);
       }
-      form->setSignal(msg_id, &(msg->sigs[i]), i == show_form_idx);
-      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
+      form->setSignal(msg_id, &sig, i == show_form_idx);
+      form->setChartOpened(charts->isChartOpened(msg_id, &sig));
       form->show();
+      ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
@@ -246,7 +248,7 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   Signal sig = {};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
+    auto it = msg->sigs.find(sig.name.c_str());
     if (it == msg->sigs.end()) break;
   }
   sig.is_little_endian = little_endian;
@@ -263,7 +265,7 @@ void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
 void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
   auto msg = dbc()->msg(msg_id);
   if (new_sig.name != sig->name) {
-    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return s.name == new_sig.name; });
+    auto it = msg->sigs.find(new_sig.name.c_str());
     if (it != msg->sigs.end()) {
       QString warning_str = tr("There is already a signal with the same name '%1'").arg(new_sig.name.c_str());
       QMessageBox::warning(this, tr("Failed to save signal"), warning_str);

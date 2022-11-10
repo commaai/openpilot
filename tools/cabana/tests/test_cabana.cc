@@ -18,18 +18,17 @@ TEST_CASE("DBCManager::generateDBC") {
     REQUIRE(m.name == new_m.name);
     REQUIRE(m.size == new_m.size);
     REQUIRE(m.sigs.size() == new_m.sigs.size());
-    auto &sig = m.sigs;
-    auto &new_sig = new_m.sigs;
-    for (int j = 0; j < sig.size(); ++j) {
-      REQUIRE(sig[j].name == new_sig[j].name);
-      REQUIRE(sig[j].start_bit == new_sig[j].start_bit);
-      REQUIRE(sig[j].msb == new_sig[j].msb);
-      REQUIRE(sig[j].lsb == new_sig[j].lsb);
-      REQUIRE(sig[j].size == new_sig[j].size);
-      REQUIRE(sig[j].is_signed == new_sig[j].is_signed);
-      REQUIRE(sig[j].factor == new_sig[j].factor);
-      REQUIRE(sig[j].offset == new_sig[j].offset);
-      REQUIRE(sig[j].is_little_endian == new_sig[j].is_little_endian);
+    for (auto &[name, sig] : m.sigs) {
+      auto &new_sig = new_m.sigs[name];
+      REQUIRE(sig.name == new_sig.name);
+      REQUIRE(sig.start_bit == new_sig.start_bit);
+      REQUIRE(sig.msb == new_sig.msb);
+      REQUIRE(sig.lsb == new_sig.lsb);
+      REQUIRE(sig.size == new_sig.size);
+      REQUIRE(sig.is_signed == new_sig.is_signed);
+      REQUIRE(sig.factor == new_sig.factor);
+      REQUIRE(sig.offset == new_sig.offset);
+      REQUIRE(sig.is_little_endian == new_sig.is_little_endian);
     }
   }
 }

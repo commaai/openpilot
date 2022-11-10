@@ -25,7 +25,8 @@ void DBCManager::initMsgMap() {
     auto &m = msgs[msg.address];
     m.name = msg.name.c_str();
     m.size = msg.size;
-    std::copy(msg.sigs.begin(), msg.sigs.end(), std::back_inserter(m.sigs));
+    for (auto &s : msg.sigs)
+      m.sigs[QString::fromStdString(s.name)] = s;
   }
   emit DBCFileChanged();
 }
@@ -36,9 +37,9 @@ QString DBCManager::generateDBC() {
   QString dbc_string;
   for (auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
-    for (auto &sig : m.sigs) {
+    for (auto &[name, sig] : m.sigs) {
       dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
-                        .arg(sig.name.c_str())
+                        .arg(name)
                         .arg(sig.start_bit)
                         .arg(sig.size)
                         .arg(sig.is_little_endian ? '1' : '0')
@@ -69,26 +70,30 @@ void DBCManager::removeMsg(const QString &id) {
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
-    m->sigs.push_back(sig);
-    emit signalAdded(&m->sigs.back());
+    auto &s = m->sigs[sig.name.c_str()];
+    s = sig;
+    emit signalAdded(&s);
   }
 }
 
 void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [sig_name](auto &sig) { return sig_name == sig.name.c_str(); });
-    if (it != m->sigs.end()) {
-      *it = sig;
-      emit signalUpdated(&(*it));
-    }
+    // change key name
+    QString new_name = QString::fromStdString(sig.name);
+    auto node = m->sigs.extract(sig_name);
+    node.key() = new_name;
+    auto it = m->sigs.insert(std::move(node));
+    auto &s = m->sigs[new_name];
+    s = sig;
+    emit signalUpdated(&s);
   }
 }
 
 void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [sig_name](auto &sig) { return sig_name == sig.name.c_str(); });
+    auto it = m->sigs.find(sig_name);
     if (it != m->sigs.end()) {
-      emit signalRemoved(&(*it));
+      emit signalRemoved(&(it->second));
       m->sigs.erase(it);
     }
   }

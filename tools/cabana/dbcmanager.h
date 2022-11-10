@@ -7,7 +7,7 @@
 struct DBCMsg {
   QString name;
   uint32_t size;
-  QList<Signal> sigs;
+  std::map<QString, Signal> sigs;
 };
 
 class DBCManager : public QObject {
