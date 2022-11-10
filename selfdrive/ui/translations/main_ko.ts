@@ -238,6 +238,14 @@
         <source>Disengage to Power Off</source>
         <translation>전원을 종료하려면 해제하세요</translation>
     </message>
+    <message>
+        <source>Reset</source>
+        <translation>리셋</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation>다시보기</translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -464,6 +472,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation>사용</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -583,13 +602,6 @@ location set</source>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>데이터 파티션을 마운트할 수 없습니다. 확인 버튼을 눌러 장치를 리셋합니다.</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>확인</translation>
     </message>
 </context>
 <context>
@@ -850,6 +862,10 @@ location set</source>
         <source>CHECK</source>
         <translation>확인</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation>삭제</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -951,20 +967,8 @@ location set</source>
         <translation>운전자 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선합니다.</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 e2e 롱컨트롤 사용 (매우 실험적) 🌮 </translation>
-    </message>
-    <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>openpilot 롱컨트롤 (실험적)</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;경고: openpilot 롱컨트롤은 실험적인 기능으로 차량의 AEB를 비활성화합니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>주행모델이 가속과 감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
@@ -975,7 +979,7 @@ location set</source>
         <translation>openpilot 롱컨트롤을 활성화합니다. (실험적)</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>가속페달 조작시 해제</translation>
     </message>
     <message>
@@ -997,6 +1001,22 @@ location set</source>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation>실험 모드</translation>
+    </message>
+    <message>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <translation>openpilot은 차량의 내장 ACC로 기본 설정됩니다. 롱컨트롤으로 전환하려면 이 옵션을 활성화하세요.</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1051,6 +1071,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>저장안함</translation>
     </message>
 </context>
 </TS>

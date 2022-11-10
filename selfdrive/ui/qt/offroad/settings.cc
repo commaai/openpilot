@@ -27,49 +27,58 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
-  // param, title, desc, icon
-  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
+  // param, title, desc, icon, confirm
+  std::vector<std::tuple<QString, QString, QString, QString, bool>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
       "../assets/offroad/icon_openpilot.png",
+      false,
+    },
+    {
+      "ExperimentalMode",
+      tr("Experimental Mode"),
+      "",
+      "../assets/offroad/icon_road.png",
+      false,
+    },
+    {
+      "ExperimentalLongitudinalEnabled",
+      tr("Experimental openpilot Longitudinal Control"),
+      QString("<b>%1</b><br>%2")
+      .arg(tr("WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB)."))
+      .arg(tr("openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control on this car. Enable this to switch to openpilot longitudinal control.")),
+      "../assets/offroad/icon_speed_limit.png",
+      true,
     },
     {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/offroad/icon_warning.png",
+      false,
     },
     {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
+      false,
     },
     {
       "RecordFront",
       tr("Record and Upload Driver Camera"),
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
       "../assets/offroad/icon_monitoring.png",
+      false,
     },
     {
       "DisengageOnAccelerator",
-      tr("Disengage On Accelerator Pedal"),
+      tr("Disengage on Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
-    },
-    {
-      "EndToEndLong",
-      tr("🌮 End-to-end longitudinal (extremely alpha) 🌮"),
-      "",
-      "../assets/offroad/icon_road.png",
-    },
-    {
-      "ExperimentalLongitudinalEnabled",
-      tr("Experimental openpilot longitudinal control"),
-      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b>"),
-      "../assets/offroad/icon_speed_limit.png",
+      false,
     },
 #ifdef ENABLE_MAPS
     {
@@ -77,19 +86,20 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Show ETA in 24h Format"),
       tr("Use 24h format instead of am/pm"),
       "../assets/offroad/icon_metric.png",
+      false,
     },
     {
       "NavSettingLeftSide",
       tr("Show Map on Left Side of UI"),
       tr("Show map on left side when in split screen view."),
       "../assets/offroad/icon_road.png",
+      false,
     },
 #endif
-
   };
 
-  for (auto &[param, title, desc, icon] : toggle_defs) {
-    auto toggle = new ParamControl(param, title, desc, icon, this);
+  for (auto &[param, title, desc, icon, confirm] : toggle_defs) {
+    auto toggle = new ParamControl(param, title, desc, icon, confirm, this);
 
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
@@ -108,9 +118,15 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updateToggles() {
-  auto e2e_toggle = toggles["EndToEndLong"];
+  auto e2e_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
-  const QString e2e_description = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.");
+  const QString e2e_description = tr("\
+    openpilot defaults to driving in <b>chill mode</b>.\
+    Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. \
+    Experimental features are listed below:\
+    <br> \
+    <h4>🌮 End-to-End Longitudinal Control 🌮</h4> \
+    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.");
 
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
@@ -132,7 +148,7 @@ void TogglesPanel::updateToggles() {
     } else {
       // no long for now
       e2e_toggle->setEnabled(false);
-      params.remove("EndToEndLong");
+      params.remove("ExperimentalMode");
 
       const QString no_long = tr("openpilot longitudinal control is not currently available for this car.");
       const QString exp_long = tr("Enable experimental longitudinal control to enable this.");
@@ -161,7 +177,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
       params.remove("CalibrationParams");
     }
   });
@@ -170,7 +186,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   if (!params.getBool("Passive")) {
     auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), this)) {
+      if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
         emit reviewTrainingGuide();
       }
     });
@@ -181,7 +197,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
-      RichTextDialog::alert(QString::fromStdString(txt), this);
+      ConfirmationDialog::rich(QString::fromStdString(txt), this);
     });
     addItem(regulatoryBtn);
   }
@@ -258,7 +274,7 @@ void DevicePanel::updateCalibDescription() {
 
 void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         Params().putBool("DoReboot", true);
@@ -271,7 +287,7 @@ void DevicePanel::reboot() {
 
 void DevicePanel::poweroff() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         Params().putBool("DoShutdown", true);

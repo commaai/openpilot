@@ -1,8 +1,12 @@
 #include "tools/cabana/historylog.h"
 
 #include <QFontDatabase>
-#include <QHeaderView>
-#include <QVBoxLayout>
+
+// HistoryLogModel
+
+inline const Signal &get_signal(const DBCMsg *m, int index) {
+  return std::next(m->sigs.begin(), index)->second;
+}
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
@@ -11,7 +15,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     if (index.column() == 0) {
       return QString::number(m.ts, 'f', 2);
     }
-    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), dbc_msg->sigs[index.column() - 1]))
+    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), get_signal(dbc_msg, index.column() - 1)))
                       : toHex(m.dat);
   } else if (role == Qt::FontRole && index.column() == 1 && !has_signal) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -37,7 +41,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return has_signal ? dbc_msg->sigs[section - 1].name.c_str() : "Data";
+      return has_signal ? QString::fromStdString(get_signal(dbc_msg, section - 1).name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
     }
@@ -64,16 +68,32 @@ void HistoryLogModel::updateState() {
   }
 }
 
-HistoryLog::HistoryLog(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
+// HeaderView
+
+QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
+  const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+  const QRect rect = fontMetrics().boundingRect(QRect(0, 0, sectionSize(logicalIndex), 1000), defaultAlignment(), text);
+  return rect.size() + QSize{10, 5};
+}
+
+// HistoryLog
+
+HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   model = new HistoryLogModel(this);
-  table = new QTableView(this);
-  table->setModel(model);
-  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-  table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-  table->setColumnWidth(0, 60);
-  table->verticalHeader()->setVisible(false);
-  table->setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
-  main_layout->addWidget(table);
+  setModel(model);
+  setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
+  horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
+  horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  verticalHeader()->setVisible(false);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+  setFrameShape(QFrame::NoFrame);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
+}
+
+int HistoryLog::sizeHintForColumn(int column) const {
+  // sizeHintForColumn is only called for column 0 (ResizeToContents)
+  return itemDelegate()->sizeHint(viewOptions(), model->index(0, 0)).width() + 1; // +1 for grid
 }
