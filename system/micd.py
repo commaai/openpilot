@@ -24,7 +24,7 @@ class Mic:
 
     self.measurements = np.array([])
     self.noise_level_raw = 0
-    self.filter = FirstOrderFilter(0, 10, DT_MIC, initialized=False)
+    self.filter = FirstOrderFilter(1, 8, DT_MIC)
     self.last_alert_time = 0
 
   @property
