@@ -475,11 +475,11 @@ location set</source>
     <name>ParamControl</name>
     <message>
         <source>Ok</source>
-        <translation type="unfinished">確定</translation>
+        <translation>確定</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
