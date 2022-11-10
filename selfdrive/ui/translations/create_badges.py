@@ -43,7 +43,9 @@ if __name__ == "__main__":
     assert r.status_code == 200, "Error downloading badge"
     content_svg = r.content.decode("utf-8")
 
-    max_badge_width = max(max_badge_width, int(ET.fromstring(content_svg).get("width")))
+    xml = ET.fromstring(content_svg)
+    assert "width" in xml.attrib
+    max_badge_width = max(max_badge_width, int(xml.attrib["width"]))
 
     # Make tag ids in each badge unique to combine them into one svg
     for tag in ("r", "s"):
