@@ -111,7 +111,7 @@ pipeline {
             R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
           }
           steps {
-            phone_steps("tici-can", [
+            phone_steps("tici-build", [
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
@@ -125,7 +125,7 @@ pipeline {
         stage('can-tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici-can", [
+            phone_steps("tici-loop", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
             ])
