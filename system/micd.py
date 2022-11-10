@@ -23,7 +23,7 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.array([])
-    self.filter = FirstOrderFilter(1, 8, DT_MIC)
+    self.filter = FirstOrderFilter(1, 7, DT_MIC)
     self.last_alert_time = 0
 
   def update(self):
