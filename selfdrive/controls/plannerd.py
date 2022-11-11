@@ -14,10 +14,6 @@ def plannerd_thread(sm=None, pm=None):
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-  cloudlog.warning(f"plannerd CarParams: {CP}")
-  cloudlog.warning("plannerd got CarParams: %s", CP.carName)
-
-  print(f"DEBUG: (CP.wheelbase * CP.tireStiffnessRear) {CP.wheelbase} * {CP.tireStiffnessRear} ")
 
   longitudinal_planner = LongitudinalPlanner(CP)
   lateral_planner = LateralPlanner(CP)
