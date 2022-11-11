@@ -34,7 +34,7 @@ public:
   void time_check(double current_time = NAN);
   void update_reset_tracker();
   bool isGpsOK();
-  bool critical_services_sane(std::map<std::string, double> critical_services);
+  bool critical_services_valid(std::map<std::string, double> critical_services);
   bool is_timestamp_valid(double current_time, double filter_time);
   void determine_gps_mode(double current_time);
 
@@ -76,6 +76,6 @@ private:
   bool gps_mode = false;
   bool gps_valid = false;
   bool ublox_available = true;
-  bool observation_timings_valid = true;
-  std::map<std::string, double> input_invalid;  
+  bool observation_timings_invalid = false;
+  std::map<std::string, double> observation_values_invalid;  
 };
