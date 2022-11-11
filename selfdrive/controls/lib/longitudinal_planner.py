@@ -69,7 +69,8 @@ class LongitudinalPlanner:
     e2e = self.params.get_bool('ExperimentalMode') and self.CP.openpilotLongitudinalControl
     self.mpc.mode = 'blended' if e2e else 'acc'
 
-  def parse_model(self, model_msg, model_error):
+  @staticmethod
+  def parse_model(model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
        len(model_msg.velocity.x) == 33 and
        len(model_msg.acceleration.x) == 33):
@@ -107,6 +108,7 @@ class LongitudinalPlanner:
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
+      accel_limits = [MIN_ACCEL, MAX_ACCEL]
       accel_limits_turns = [MIN_ACCEL, MAX_ACCEL]
 
     if reset_state:
