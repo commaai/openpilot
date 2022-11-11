@@ -1004,11 +1004,11 @@ location set</source>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation>실험 모드</translation>
+        <translation>실험적 모드</translation>
     </message>
     <message>
         <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>    openpilot은 기본적으로 &lt;b&gt;안정적 모드&lt;/b&gt;로 주행합니다.    실험적 모드는 안정적 모드에 준비되지 않은 &lt;b&gt;알파 수준 기능&lt;/b&gt;을 활성화 합니다.     실험 모드의 특징은 아래에 나열되어 있습니다    &lt;br&gt;     &lt;h4&gt;🌮 E2E 롱컨트롤 🌮&lt;/h4&gt;     주행모델이 가속과 감속을 제어하도록 합니다. openpilot은 신호등과 정지표지판을 보고 멈추는 것을 포함하여 운전자가 생각하는것처럼 주행합니다. 주행 모델이 주행할 속도를 결정하므로 설정된 속도는 상한선으로만 작용합니다.</translation>
     </message>
     <message>
         <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
@@ -1016,7 +1016,7 @@ location set</source>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>경고: openpilot 롱컨트롤은 실험적인 기능으로 차량의 자동긴급제동(AEB)를 비활성화합니다.</translation>
     </message>
 </context>
 <context>
