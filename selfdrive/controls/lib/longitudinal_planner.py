@@ -107,6 +107,7 @@ class LongitudinalPlanner:
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
+      accel_limits = [MIN_ACCEL, MAX_ACCEL]
       accel_limits_turns = [MIN_ACCEL, MAX_ACCEL]
 
     if reset_state:
