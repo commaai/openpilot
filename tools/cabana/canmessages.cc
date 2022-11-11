@@ -62,8 +62,9 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
     can_msgs[it.key()] = it.value();
   }
-  delete messages;
   emit updated();
+  emit msgsReceived(messages);
+  delete messages;
 }
 
 bool CANMessages::eventFilter(const Event *event) {
