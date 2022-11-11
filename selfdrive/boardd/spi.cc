@@ -6,6 +6,7 @@
 
 #include "common/util.h"
 #include "common/swaglog.h"
+#include "panda/board/comms_definitions.h"
 #include "selfdrive/boardd/panda_comms.h"
 
 
@@ -20,13 +21,6 @@ struct __attribute__((packed)) spi_header {
   uint8_t endpoint;
   uint16_t tx_len;
   uint16_t max_rx_len;
-};
-
-struct __attribute__((packed)) spi_control_packet {
-  uint16_t request;
-  uint16_t param1;
-  uint16_t param2;
-  uint16_t length;
 };
 
 
@@ -85,7 +79,7 @@ void PandaSpiHandle::cleanup() {
 
 
 int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout) {
-  spi_control_packet packet = {
+  ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
     .param2 = param2,
@@ -95,7 +89,7 @@ int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t par
 }
 
 int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout) {
-  spi_control_packet packet = {
+  ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
     .param2 = param2,
