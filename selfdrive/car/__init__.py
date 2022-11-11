@@ -23,7 +23,7 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
 
 def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
                          unpressed_btn: int = 0, init_btn: Optional[int] = None) -> List[capnp.lib.capnp._DynamicStructBuilder]:
-  events = []
+  events: List[capnp.lib.capnp._DynamicStructBuilder] = []
 
   # Initialized to unpressed, don't add any events
   if cur_btn == unpressed_btn and prev_btn == init_btn:
