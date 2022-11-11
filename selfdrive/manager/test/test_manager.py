@@ -4,6 +4,7 @@ import signal
 import time
 import unittest
 
+from common.params import Params
 import selfdrive.manager.manager as manager
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
@@ -19,6 +20,9 @@ class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'
     HARDWARE.set_power_save(False)
+
+    params = Params()
+    params.remove("CarParams")
 
   def tearDown(self):
     manager.manager_cleanup()
