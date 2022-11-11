@@ -23,7 +23,7 @@ class TestManager(unittest.TestCase):
 
     # ensure clean CarParams
     params = Params()
-    params.remove("CarParams")
+    params.clear_all()
 
   def tearDown(self):
     manager.manager_cleanup()
