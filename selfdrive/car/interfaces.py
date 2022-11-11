@@ -66,6 +66,7 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
+    self.cancel_depressed = False
 
     self.CS = None
     self.can_parsers = []
@@ -250,9 +251,14 @@ class CarInterfaceBase(ABC):
       # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
       if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
         events.add(EventName.buttonEnable)
-      # Disable on rising edge of cancel for both stock and OP long
-      if b.type == ButtonType.cancel and b.pressed:
-        events.add(EventName.buttonCancel)
+
+      # Disable while cancel is depressed on rising edge of cancel for both stock and OP long
+      if b.type == ButtonType.cancel:
+        self.cancel_depressed = b.pressed
+
+    # noEntry while cancel is depressed, matches panda
+    if self.cancel_depressed:
+      events.add(EventName.buttonCancel)
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
