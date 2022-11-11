@@ -1,19 +1,19 @@
-Version 0.8.17 (2022-11-XX)
+Version 0.8.17 (2022-11-21)
 ========================
 * New driving model
-  * Internal feature space information content increased tenfold during training (to ~700 bits), this makes the model dramatically more accurate
+  * Internal feature space information content increased tenfold during training (to ~700 bits), which makes the model dramatically more accurate
   * Less reliance on previous frames makes model more reactive and snappy
   * Trained in new reprojective simulator
-  * Model trained in openpilot was trained in 36hrs from scratch, compared to around 1 week of previous releases
-  * Model training now simulates lateral and longitudinal behavior, this allows openpilot to slow down for turns, stop at traffic lights, etc,... in experimental mode
+  * Trained in 36hrs from scratch, compared to one week for previous releases
+  * Training now simulates both lateral and longitudinal behavior, which allows openpilot to slow down for turns, stop at traffic lights, and more in experimental mode
 * New driver monitoring model
   * New end-to-end distracted trigger
 * Experimental driving mode
   * End-to-end longitudinal control
-  * Stops for red lights and stop signs
+  * Stops for traffic lights and stop signs
+  * Slows down for turns
   * openpilot defaults to chill mode, enable experimental in settings
-* Self-tuning torque lateral controller parameters
-  * Parameters learned live for each car
+* Self-tuning torque controller: learns parameters live for each car
 * Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
 * UI updates
   * Multi-language in navigation
@@ -21,8 +21,10 @@ Version 0.8.17 (2022-11-XX)
   * Improved update experience
   * Border turns grey while overriding steering
   * Bookmark events while driving; view them in comma connect
+  * New onroad visualization for experimental mode
 * AGNOS 6
 * tools: new and improved cabana thanks to deanlee!
+* Experimental longitudinal support for Volkswagen, CAN-FD Hyundai, and new GM models
 * Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
 * Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
 * Kia Sportage 2023 support thanks to sunnyhaibin!
