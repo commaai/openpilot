@@ -21,18 +21,18 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def create_button_events(cur_button: int, prev_button: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
-                         unpressed: int = 0, init: Optional[int] = None) -> List[capnp.lib.capnp._DynamicStructBuilder]:
+def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+                         unpressed_btn: int = 0, init: Optional[int] = None) -> List[capnp.lib.capnp._DynamicStructBuilder]:
   events = []
 
-  # Initialized to unpressed, don't add any events
-  if cur_button == unpressed and prev_button == init:
+  # Initialized to unpressed_btn, don't add any events
+  if cur_btn == unpressed_btn and prev_btn == init:
     return events
 
-  # Add events for button presses, handling when a button switches without going to unpressed
-  if cur_button != prev_button:
-    for pressed, btn in ((False, prev_button), (True, cur_button)):
-      if btn == unpressed:
+  # Add events for button presses, handling when a button switches without going to unpressed_btn
+  if cur_btn != prev_btn:
+    for pressed, btn in ((False, prev_btn), (True, cur_btn)):
+      if btn == unpressed_btn:
         continue
 
       be = car.CarState.ButtonEvent(pressed=pressed)
