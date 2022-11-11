@@ -1,5 +1,6 @@
 # functions common among cars
 import capnp
+from typing import List, Optional
 
 from cereal import car
 from common.numpy_fast import clip
@@ -20,16 +21,24 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def create_button_events(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
-                         unpressed: int = 0) -> capnp.lib.capnp._DynamicStructBuilder:
-  if cur_but != unpressed:
-    be = car.CarState.ButtonEvent(pressed=True)
-    but = cur_but
-  else:
-    be = car.CarState.ButtonEvent(pressed=False)
-    but = prev_but
-  be.type = buttons_dict.get(but, ButtonType.unknown)
-  return be
+def create_button_events(cur_button: int, prev_button: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
+                         unpressed: int = 0, init: Optional[int] = None) -> List[capnp.lib.capnp._DynamicStructBuilder]:
+  events = []
+  # initializing, don't add any events
+  # TODO: if it's possible to go from init to NOT unpressed, we want to check that as well
+  if (init is not None and prev_button == init) or cur_button == prev_button:
+    return events
+
+  if cur_button != prev_button:
+    for pressed, btn in ((False, prev_button), (True, cur_button)):
+      if btn == unpressed:
+        continue
+
+      be = car.CarState.ButtonEvent(pressed=pressed)
+      be.type = buttons_dict.get(btn, ButtonType.unknown)
+      events.append(be)
+
+  return events
 
 
 def gen_empty_fingerprint():
