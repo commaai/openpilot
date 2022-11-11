@@ -38,16 +38,17 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     },
     {
       "ExperimentalMode",
-      tr("Experimental mode"),
+      tr("Experimental Mode"),
       "",
       "../assets/offroad/icon_road.png",
       false,
     },
     {
       "ExperimentalLongitudinalEnabled",
-      tr("Experimental openpilot longitudinal control"),
-      tr("<b>WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.</b><br>\
-          openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control on this car. Enable this to switch to openpilot longitudinal control."),
+      tr("Experimental openpilot Longitudinal Control"),
+      QString("<b>%1</b><br>%2")
+      .arg(tr("WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB)."))
+      .arg(tr("openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control on this car. Enable this to switch to openpilot longitudinal control.")),
       "../assets/offroad/icon_speed_limit.png",
       true,
     },
@@ -74,7 +75,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     },
     {
       "DisengageOnAccelerator",
-      tr("Disengage On Accelerator Pedal"),
+      tr("Disengage on Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
       false,
@@ -125,7 +126,7 @@ void TogglesPanel::updateToggles() {
     Experimental features are listed below:\
     <br> \
     <h4>🌮 End-to-End Longitudinal Control 🌮</h4> \
-    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.");
+    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.");
 
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
