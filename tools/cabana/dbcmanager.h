@@ -54,6 +54,8 @@ private:
 
 // TODO: Add helper function in dbc.h
 double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
+bool operator==(const Signal &l, const Signal &r);
+inline bool operator!=(const Signal &l, const Signal &r) { return !(l == r); }
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size);
