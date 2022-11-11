@@ -40,20 +40,6 @@ def phone_steps(String device_type, steps) {
   }
 }
 
-def exec_five_times() {
-  for (int i = 0; i < 5; i++) {
-    phone_steps("tici-loop", [
-         ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
-         ["build openpilot", "cd selfdrive/manager && ./build.py"],
-         ["check dirty", "release/check-dirty.sh"],
-         ["test manager", "python selfdrive/manager/test/test_manager.py"],
-         ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-         ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
-         ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-       ])
-  }
-}
-
 pipeline {
   agent none
   environment {
@@ -127,8 +113,7 @@ pipeline {
             R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
           }
           steps {
-            exec_five_times()
-            /*phone_steps("tici-loop", [
+            phone_steps("tici-loop", [
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
@@ -136,11 +121,10 @@ pipeline {
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
               ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-            ])*/
+            ])
           }
         }
 
-        /*
         stage('HW + Unit Tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
@@ -199,7 +183,7 @@ pipeline {
             ])
           }
         }
-        */
+
       }
     }
 
