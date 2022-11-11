@@ -203,6 +203,10 @@ VectorXd Localizer::get_stdev() {
   return this->kf->get_P().diagonal().array().sqrt();
 }
 
+bool Localizer::are_inputs_ok() {
+  return this->critical_services_valid(this->observation_values_invalid) && !this->observation_timings_invalid;
+}
+
 void Localizer::handle_sensor(double current_time, const cereal::SensorEventData::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
 
@@ -439,7 +443,7 @@ void Localizer::time_check(double current_time) {
 
 void Localizer::update_reset_tracker() {
   // reset tracker is tuned to trigger when over 1reset/10s over 2min period
-  if (this->isGpsOK()) {
+  if (this->is_gps_ok()) {
     this->reset_tracker *= DECAY;
   } else {
     this->reset_tracker = 0.0;
@@ -515,7 +519,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
   return msg_builder.toBytes();
 }
 
-bool Localizer::isGpsOK() {
+bool Localizer::is_gps_ok() {
   return this->gps_valid;
 }
 
@@ -592,8 +596,8 @@ int Localizer::locationd_thread() {
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
-      bool inputsOK = sm.allAliveAndValid() && this->critical_services_valid(this->observation_values_invalid) && !this->observation_timings_invalid;
-      bool gpsOK = this->isGpsOK();
+      bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
+      bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
       MessageBuilder msg_builder;
