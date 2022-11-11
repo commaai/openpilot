@@ -114,7 +114,6 @@ pipeline {
           }
           steps {
             phone_steps("tici-loop", [
-              ["clean params", "rm -rf !(DongleId)"],
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
