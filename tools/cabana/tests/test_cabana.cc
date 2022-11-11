@@ -10,26 +10,25 @@ TEST_CASE("DBCManager::generateDBC") {
   DBCManager dbc_from_generated(nullptr);
   dbc_from_generated.open("", dbc_string);
 
-  auto dbc = dbc_origin.getDBC();
-  auto new_dbc = dbc_from_generated.getDBC();
-  REQUIRE(dbc->msgs.size() == new_dbc->msgs.size());
-  for (int i = 0; i < dbc->msgs.size(); ++i) {
-    REQUIRE(dbc->msgs[i].name == new_dbc->msgs[i].name);
-    REQUIRE(dbc->msgs[i].address == new_dbc->msgs[i].address);
-    REQUIRE(dbc->msgs[i].size == new_dbc->msgs[i].size);
-    REQUIRE(dbc->msgs[i].sigs.size() == new_dbc->msgs[i].sigs.size());
-    auto &sig = dbc->msgs[i].sigs;
-    auto &new_sig = new_dbc->msgs[i].sigs;
-    for (int j = 0; j < sig.size(); ++j) {
-      REQUIRE(sig[j].name == new_sig[j].name);
-      REQUIRE(sig[j].start_bit == new_sig[j].start_bit);
-      REQUIRE(sig[j].msb == new_sig[j].msb);
-      REQUIRE(sig[j].lsb == new_sig[j].lsb);
-      REQUIRE(sig[j].size == new_sig[j].size);
-      REQUIRE(sig[j].is_signed == new_sig[j].is_signed);
-      REQUIRE(sig[j].factor == new_sig[j].factor);
-      REQUIRE(sig[j].offset == new_sig[j].offset);
-      REQUIRE(sig[j].is_little_endian == new_sig[j].is_little_endian);
+  auto &msgs = dbc_origin.messages();
+  auto &new_msgs = dbc_from_generated.messages();
+  REQUIRE(msgs.size() == new_msgs.size());
+  for (auto &[address, m] : msgs) {
+    auto new_m = new_msgs.at(address);
+    REQUIRE(m.name == new_m.name);
+    REQUIRE(m.size == new_m.size);
+    REQUIRE(m.sigs.size() == new_m.sigs.size());
+    for (auto &[name, sig] : m.sigs) {
+      auto &new_sig = new_m.sigs[name];
+      REQUIRE(sig.name == new_sig.name);
+      REQUIRE(sig.start_bit == new_sig.start_bit);
+      REQUIRE(sig.msb == new_sig.msb);
+      REQUIRE(sig.lsb == new_sig.lsb);
+      REQUIRE(sig.size == new_sig.size);
+      REQUIRE(sig.is_signed == new_sig.is_signed);
+      REQUIRE(sig.factor == new_sig.factor);
+      REQUIRE(sig.offset == new_sig.offset);
+      REQUIRE(sig.is_little_endian == new_sig.is_little_endian);
     }
   }
 }

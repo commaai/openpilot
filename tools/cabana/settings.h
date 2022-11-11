@@ -18,6 +18,7 @@ public:
   int chart_height = 200;
   int chart_theme = 0;
   int max_chart_x_range = 3 * 60; // 3 minutes
+  QString last_dir;
 
 signals:
   void changed();

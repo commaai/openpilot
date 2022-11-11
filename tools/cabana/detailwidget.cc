@@ -10,16 +10,19 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/canmessages.h"
+#include "tools/cabana/commands.h"
 #include "tools/cabana/dbcmanager.h"
 
 // DetailWidget
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+  undo_stack = new QUndoStack(this);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
-   // tabbar
+  // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
   tabbar->setDrawBase(false);
@@ -99,6 +102,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
   QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
+  QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() { dbcMsgChanged(); });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -143,12 +147,17 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   if (msg_id.isEmpty()) return;
 
   setUpdatesEnabled(false);
+
+  binary_view->setMessage(msg_id);
+  history_log->setMessage(msg_id);
+
   QStringList warnings;
   for (auto f : signal_list) f->hide();
 
-  const Msg *msg = dbc()->msg(msg_id);
+  const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    for (int i = 0; i < msg->sigs.size(); ++i) {
+    int i = 0;
+    for (auto &[name, sig] : msg->sigs) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
         form = new SignalEdit(i);
@@ -161,9 +170,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signals_container->layout()->addWidget(form);
         signal_list.push_back(form);
       }
-      form->setSignal(msg_id, &(msg->sigs[i]), i == show_form_idx);
-      form->setChartOpened(charts->isChartOpened(msg_id, &(msg->sigs[i])));
+      form->setSignal(msg_id, &sig, i == show_form_idx);
+      form->setChartOpened(charts->isChartOpened(msg_id, &sig));
       form->show();
+      ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
@@ -172,9 +182,6 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
-
-  binary_view->setMessage(msg_id);
-  history_log->setMessage(msg_id);
 
   // Check overlapping bits
   if (auto overlapping = binary_view->getOverlappingSignals(); !overlapping.isEmpty()) {
@@ -215,19 +222,13 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    dbc()->updateMsg(id, dlg.name_edit->text(), dlg.size_spin->value());
-    dbcMsgChanged();
+    undo_stack->push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  QString id = msg_id;
-  if (auto msg = dbc()->msg(id)) {
-    QString text = tr("Are you sure you want to remove '%1'").arg(msg->name.c_str());
-    if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove Message"), text)) {
-      dbc()->removeMsg(id);
-      dbcMsgChanged();
-    }
+  if (auto msg = dbc()->msg(msg_id)) {
+    undo_stack->push(new RemoveMsgCommand(msg_id));
   }
 }
 
@@ -235,10 +236,10 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   if (!msg) {
     for (int i = 1; /**/; ++i) {
-      std::string name = "NEW_MSG_" + std::to_string(i);
-      auto it = std::find_if(dbc()->getDBC()->msgs.begin(), dbc()->getDBC()->msgs.end(), [&](auto &m) { return m.name == name; });
-      if (it == dbc()->getDBC()->msgs.end()) {
-        dbc()->updateMsg(msg_id, name.c_str(), can->lastMessage(msg_id).dat.size());
+      QString name = QString("NEW_MSG_%1").arg(i);
+      auto it = std::find_if(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; });
+      if (it == dbc()->messages().end()) {
+        undo_stack->push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
         msg = dbc()->msg(msg_id);
         break;
       }
@@ -247,13 +248,12 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
   Signal sig = {};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return sig.name == s.name; });
+    auto it = msg->sigs.find(sig.name.c_str());
     if (it == msg->sigs.end()) break;
   }
   sig.is_little_endian = little_endian;
   updateSigSizeParamsFromRange(sig, start_bit, size);
-  dbc()->addSignal(msg_id, sig);
-  dbcMsgChanged(msg->sigs.size() - 1);
+  undo_stack->push(new AddSigCommand(msg_id, sig));
 }
 
 void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
@@ -265,14 +265,13 @@ void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
 void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
   auto msg = dbc()->msg(msg_id);
   if (new_sig.name != sig->name) {
-    auto it = std::find_if(msg->sigs.begin(), msg->sigs.end(), [&](auto &s) { return s.name == new_sig.name; });
+    auto it = msg->sigs.find(new_sig.name.c_str());
     if (it != msg->sigs.end()) {
       QString warning_str = tr("There is already a signal with the same name '%1'").arg(new_sig.name.c_str());
       QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
       return;
     }
   }
-
   auto [start, end] = getSignalRange(&new_sig);
   if (start < 0 || end >= msg->size * 8) {
     QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
@@ -280,16 +279,11 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
     return;
   }
 
-  dbc()->updateSignal(msg_id, sig->name.c_str(), new_sig);
-  dbcMsgChanged();
+  undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {
-  QString text = tr("Are you sure you want to remove signal '%1'").arg(sig->name.c_str());
-  if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove signal"), text)) {
-    dbc()->removeSignal(msg_id, sig->name.c_str());
-    dbcMsgChanged();
-  }
+  undo_stack->push(new RemoveSigCommand(msg_id, sig));
 }
 
 // EditMessageDialog
