@@ -104,8 +104,7 @@ class Plant():
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
     model.modelV2.acceleration = acceleration
 
-    enabled = LongCtrlState.off if self.current_time() < 1.0 else LongCtrlState.pid
-    control.controlsState.longControlState = enabled
+    control.controlsState.longControlState = LongCtrlState.pid
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
