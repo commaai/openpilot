@@ -240,7 +240,7 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 
 void ChartView::updateTitle() {
   chart()->setTitle(signal->name.c_str());
-  msg_title->setHtml(tr("%1 <font color=\"gray\">%2</font>").arg(dbc()->msg(id)->name.c_str()).arg(id));
+  msg_title->setHtml(tr("%1 <font color=\"gray\">%2</font>").arg(dbc()->msg(id)->name).arg(id));
 }
 
 void ChartView::updateFromSettings() {
