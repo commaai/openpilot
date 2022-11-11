@@ -35,9 +35,8 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, ca
       if btn == unpressed_btn:
         continue
 
-      be = car.CarState.ButtonEvent(pressed=pressed)
-      be.type = buttons_dict.get(btn, ButtonType.unknown)
-      events.append(be)
+      events.append(car.CarState.ButtonEvent(pressed=pressed,
+                                             type=buttons_dict.get(btn, ButtonType.unknown)))
 
   return events
 
