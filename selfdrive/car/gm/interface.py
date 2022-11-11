@@ -162,8 +162,6 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.5
 
     elif candidate == CAR.ESCALADE_ESV:
-      ret.radarOffCan = False  # 0x2cb not in Escalade fingerprint even though it has radar. Likely incomplete fingerprint.
-      ret.dashcamOnly = False  # TODO: Remove this special logic if Escalade is re-fingerprinted
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
       ret.wheelbase = 3.302

@@ -3,7 +3,7 @@ import math
 from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
-from selfdrive.car.gm.values import DBC, CAR, CanBus
+from selfdrive.car.gm.values import DBC, CanBus
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_HEADER_MSG = 1120
@@ -35,11 +35,7 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
 
-    if CP.radarOffCan:
-      self.rcp = None
-    else:
-      self.rcp = create_radar_can_parser(CP.carFingerprint)
-
+    self.rcp = None if CP.radarOffCan else create_radar_can_parser(CP.carFingerprint)
     self.trigger_msg = LAST_RADAR_MSG
     self.updated_messages = set()
     self.radar_ts = CP.radarTimeStep
