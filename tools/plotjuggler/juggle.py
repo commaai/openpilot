@@ -37,7 +37,7 @@ def install():
   os.mkdir(INSTALL_DIR)
 
   url = os.path.join(RELEASES_URL, m + ".tar.gz")
-  with requests.get(url, stream=True) as r, tempfile.NamedTemporaryFile() as tmp:
+  with requests.get(url, stream=True, timeout=10) as r, tempfile.NamedTemporaryFile() as tmp:
     r.raise_for_status()
     with open(tmp.name, 'wb') as tmpf:
       for chunk in r.iter_content(chunk_size=1024*1024):
@@ -89,7 +89,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     query = parse_qs(urlparse(route_or_segment_name).query)
     route_or_segment_name = query["route"][0]
 
-  if route_or_segment_name.startswith(("http://", "https://")) or os.path.isfile(route_or_segment_name):
+  if route_or_segment_name.startswith(("http://", "https://", "cd:/")) or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   elif ci:
     route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
@@ -110,8 +110,8 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   logs = logs[segment_start:segment_end]
 
   if None in logs:
-    ans = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
-    if ans == 'y':
+    resp = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
+    if resp == 'y':
       logs = r.qlog_paths()[segment_start:segment_end]
     else:
       print("Please try a different route or segment")

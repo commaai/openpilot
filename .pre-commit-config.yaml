@@ -15,23 +15,28 @@ repos:
     -   id: check-symlinks
     -   id: check-added-large-files
         args: ['--maxkb=100']
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.931
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.2.1
+    hooks:
+    -   id: codespell
+        exclude: '^(pyextra/)|(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(include/)|(selfdrive/ui/translations/.*.ts)|(selfdrive/controls/lib/cluster)'
+        args:
+        # if you've got a short variable name that's getting flagged, add it here
+        - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup
+        - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
+-   repo: local
     hooks:
     -   id: mypy
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)/'
-        additional_dependencies: ['types-PyYAML', 'lxml', 'numpy', 'types-atomicwrites', 'types-pycurl', 'types-requests', 'types-certifi']
-        args:
-        - --warn-redundant-casts
-        - --warn-return-any
-        - --warn-unreachable
-        - --warn-unused-ignores
-        #- --html-report=/home/batman/openpilot
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        exclude: '^(pyextra/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
     -   id: flake8
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/debug/)/'
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(selfdrive/debug/)/'
         additional_dependencies: ['flake8-no-implicit-concat']
         args:
         - --indent-size=2
@@ -46,7 +51,12 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)'
+        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
+        args:
+        - -j0
+        - -rn
+        - -sn
+        - --rcfile=.pylintrc
 -   repo: local
     hooks:
     -   id: cppcheck
@@ -61,3 +71,14 @@ repos:
         - --quiet
         - --force
         - -j8
+-   repo: local
+    hooks:
+    -   id: test_translations
+        name: test translations
+        entry: selfdrive/ui/tests/test_translations.py
+        language: script
+        pass_filenames: false
+-   repo: https://github.com/python-poetry/poetry
+    rev: '1.2.2'
+    hooks:
+    -   id: poetry-check

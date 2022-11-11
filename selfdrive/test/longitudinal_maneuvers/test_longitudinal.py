@@ -10,7 +10,7 @@ from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 # TODO: make new FCW tests
 maneuvers = [
   Maneuver(
-    'approach stopped car at 20m/s, initial distance: 120m',
+    'approach stopped car at 25m/s, initial distance: 120m',
     duration=20.,
     initial_speed=25.,
     lead_relevancy=True,
@@ -118,6 +118,13 @@ maneuvers = [
     breakpoints=[1., 10., 15.],
     ensure_start=True,
   ),
+  Maneuver(
+    'cruising at 25 m/s while disabled',
+    duration=20.,
+    initial_speed=25.,
+    lead_relevancy=False,
+    enabled=False,
+  ),
 ]
 
 
@@ -140,16 +147,23 @@ class LongitudinalControl(unittest.TestCase):
 
 def run_maneuver_worker(k):
   def run(self):
+    params = Params()
+
     man = maneuvers[k]
-    print(man.title)
+    params.put_bool("ExperimentalMode", True)
+    print(man.title, ' in e2e mode')
+    valid, _ = man.evaluate()
+    self.assertTrue(valid, msg=man.title)
+    params.put_bool("ExperimentalMode", False)
+    print(man.title, ' in acc mode')
     valid, _ = man.evaluate()
     self.assertTrue(valid, msg=man.title)
   return run
 
-
 for k in range(len(maneuvers)):
   setattr(LongitudinalControl, f"test_longitudinal_maneuvers_{k+1}",
           run_maneuver_worker(k))
+
 
 if __name__ == "__main__":
   unittest.main(failfast=True)
