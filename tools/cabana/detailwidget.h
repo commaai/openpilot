@@ -11,8 +11,6 @@
 #include "tools/cabana/signaledit.h"
 
 class EditMessageDialog : public QDialog {
-  Q_OBJECT
-
 public:
   EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
 
@@ -38,13 +36,12 @@ private:
   void removeSignal(const Signal *sig);
   void editMsg();
   void removeMsg();
-  void showForm();
   void updateState();
 
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;
   QWidget *warning_widget;
-  QWidget *signals_container;
+  QVBoxLayout *signals_layout;
   QTabBar *tabbar;
   QToolBar *toolbar;
   QAction *remove_msg_act;
