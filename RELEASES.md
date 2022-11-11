@@ -6,8 +6,9 @@ Version 0.8.17 (2022-11-21)
   * Trained in new reprojective simulator
   * Trained in 36hrs from scratch, compared to one week for previous releases
   * Training now simulates both lateral and longitudinal behavior, which allows openpilot to slow down for turns, stop at traffic lights, and more in experimental mode
-* New driver monitoring model
-  * New end-to-end distracted trigger
+* Driver monitoring updates
+  * New bigger model with added end-to-end distracted trigger
+  * Reduced false positives during driver calibration
 * Experimental driving mode
   * End-to-end longitudinal control
   * Stops for traffic lights and stop signs
