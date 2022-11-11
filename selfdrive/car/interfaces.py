@@ -61,7 +61,7 @@ class CarInterfaceBase(ABC):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
-    self.frame = -1
+    self.frame = 0
     self.steering_unpressed = 0
     self.low_speed_alert = False
     self.silent_steer_warning = True
@@ -175,7 +175,6 @@ class CarInterfaceBase(ABC):
     pass
 
   def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
-    self.frame += 1
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
@@ -249,7 +248,7 @@ class CarInterfaceBase(ABC):
     # Handle button presses
     for b in cs_out.buttonEvents:
       # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed) and allow_enable:
+      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
         events.add(EventName.buttonEnable)
       # Disable on rising edge of cancel for both stock and OP long
       if b.type == ButtonType.cancel and b.pressed:
