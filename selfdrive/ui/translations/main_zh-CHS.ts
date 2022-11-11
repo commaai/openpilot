@@ -60,11 +60,11 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>蜂窝计量</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>在按流量计费的连接上禁止大数据上传</translation>
     </message>
 </context>
 <context>
@@ -83,11 +83,11 @@
     </message>
     <message>
         <source>SPEED</source>
-        <translation>SPEED</translation>
+        <translation>速度</translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation>LIMIT</translation>
+        <translation>限速</translation>
     </message>
 </context>
 <context>
@@ -124,7 +124,7 @@
     </message>
     <message>
         <source>N/A</source>
-        <translation>N/A</translation>
+        <translation>空</translation>
     </message>
     <message>
         <source>Serial</source>
@@ -240,11 +240,11 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>重置</translation>
     </message>
     <message>
         <source>Review</source>
-        <translation type="unfinished"></translation>
+        <translation>回顾</translation>
     </message>
 </context>
 <context>
@@ -329,30 +329,30 @@
     </message>
     <message>
         <source>km</source>
-        <translation>km</translation>
+        <translation>公里</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>mi</translation>
+        <translation>英里</translation>
     </message>
 </context>
 <context>
     <name>MapInstructions</name>
     <message>
         <source> km</source>
-        <translation> km</translation>
+        <translation> 公里</translation>
     </message>
     <message>
         <source> m</source>
-        <translation> m</translation>
+        <translation> 米</translation>
     </message>
     <message>
         <source> mi</source>
-        <translation> mi</translation>
+        <translation> 英里</translation>
     </message>
     <message>
         <source> ft</source>
-        <translation> ft</translation>
+        <translation> 英尺</translation>
     </message>
 </context>
 <context>
@@ -731,7 +731,7 @@ location set</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECT</translation>
+        <translation>连接</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -814,35 +814,35 @@ location set</source>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>仅在车辆关闭后下载更新。</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>当前版本</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>下载</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>安装更新</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>安装</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>目标分支</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>选择</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>选择一个分支</translation>
     </message>
     <message>
         <source>UNINSTALL</source>
@@ -862,7 +862,7 @@ location set</source>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation type="unfinished"></translation>
+        <translation>卸载</translation>
     </message>
 </context>
 <context>
@@ -966,15 +966,15 @@ location set</source>
     </message>
     <message>
         <source>Experimental openpilot Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <translation>实验性 openpilot 纵向控制</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 纵向控制目前不适用于这辆车。</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
+        <translation>启用实验纵向控制以启用此功能。</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
@@ -1002,19 +1002,19 @@ location set</source>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>实验模式</translation>
     </message>
     <message>
         <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>    openpilot默认驾驶模式为&lt;b&gt;激进模式&&lt;/b&gt;。   实验模式开启&lt;b&gt;α级功能&lt;/b&gt; 这是 aren&apos;t 准备好进入激进模式。    实验特性如下所示：    &lt;br&gt;     &lt;h4&gt;🌮 端到端纵向控制 🌮&lt;/h4&gt;     让驾驶模型控制油门和刹车。openpilot将执行它认为的人类驾驶行为，包括在红灯和停车标志时停车。由于驾驶模型决定了驾驶的速度，因此设定的速度仅作为上限</translation>
     </message>
     <message>
         <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 默认使用汽车的内置 ACC，而不是 openpilot 在这辆车上的纵向控制。 启用此选项以切换到 openpilot 纵向控制</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 纵向控制对于这辆车是实验性的，将禁用自动紧急制动 (AEB)。</translation>
     </message>
 </context>
 <context>
@@ -1072,7 +1072,7 @@ location set</source>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>忘记</translation>
     </message>
 </context>
 </TS>
