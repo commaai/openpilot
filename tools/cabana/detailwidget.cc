@@ -102,7 +102,10 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
   QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
-  QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() { dbcMsgChanged(); });
+  QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
+    if (undo_stack->count() > 0)
+      dbcMsgChanged();
+  });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
