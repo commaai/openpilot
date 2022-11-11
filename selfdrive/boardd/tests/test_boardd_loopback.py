@@ -28,7 +28,6 @@ class TestBoardd(unittest.TestCase):
   def tearDownClass(cls):
     cls.spinner.close()
 
-
   @phone_only
   @with_processes(['pandad'])
   def test_loopback(self):
