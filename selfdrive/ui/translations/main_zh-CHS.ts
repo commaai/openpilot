@@ -731,7 +731,7 @@ location set</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>连接</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <source>OFFLINE</source>
