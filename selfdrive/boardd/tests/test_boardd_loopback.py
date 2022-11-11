@@ -28,6 +28,12 @@ class TestBoardd(unittest.TestCase):
   def tearDownClass(cls):
     cls.spinner.close()
 
+    # clear Params
+    params = Params()
+    params.remove("CarVin")
+    params.remove("ControlsReady")
+    params.remove("CarParams")
+
   @phone_only
   @with_processes(['pandad'])
   def test_loopback(self):
