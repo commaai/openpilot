@@ -1,12 +1,11 @@
 #include "tools/cabana/signaledit.h"
 
-#include <QDialogButtonBox>
 #include <QDoubleValidator>
 #include <QFormLayout>
 #include <QHBoxLayout>
-#include <QMessageBox>
-#include <QRadioButton>
 #include <QScrollArea>
+#include <QTimer>
+#include <QToolBar>
 #include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/util.h"
@@ -15,7 +14,6 @@
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   QFormLayout *form_layout = new QFormLayout(this);
-  form_layout->setContentsMargins(0, 0, 0, 0);
 
   name = new QLineEdit();
   form_layout->addRow(tr("Name"), name);
@@ -58,6 +56,13 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   form_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
   form_layout->addRow(tr("Value descriptions"), val_desc);
+
+  QObject::connect(name, &QLineEdit::textEdited, this, &SignalForm::changed);
+  QObject::connect(factor, &QLineEdit::textEdited, this, &SignalForm::changed);
+  QObject::connect(offset, &QLineEdit::textEdited, this, &SignalForm::changed);
+  QObject::connect(sign, SIGNAL(activated(int)), SIGNAL(changed()));
+  QObject::connect(endianness, SIGNAL(activated(int)), SIGNAL(changed()));
+  QObject::connect(size, SIGNAL(valueChanged(int)), SIGNAL(changed()));
 }
 
 // SignalEdit
@@ -67,36 +72,25 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // title bar
-  QHBoxLayout *title_layout = new QHBoxLayout();
+  auto toolbar = new QToolBar(this);
+  toolbar->setStyleSheet("QToolButton {width:15px;height:15px;font-size:15px}");
   icon = new QLabel();
-  title_layout->addWidget(icon);
+  toolbar->addWidget(icon);
   title = new ElidedLabel(this);
+  title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(getColor(index)));
-  title_layout->addWidget(title, 1);
-
-  QPushButton *seek_btn = new QPushButton("⌕");
-  seek_btn->setStyleSheet("QPushButton{font-weight:bold;font-size:18px}");
+  toolbar->addWidget(title);
+  plot_btn = toolbar->addAction("", [this]() { emit showChart(msg_id, sig, !chart_opened); });
+  auto seek_btn = toolbar->addAction(QIcon::fromTheme("edit-find"), "", [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
   seek_btn->setToolTip(tr("Find signal values"));
-  seek_btn->setFixedSize(25, 25);
-  title_layout->addWidget(seek_btn);
-
-  plot_btn = new QPushButton(this);
-  plot_btn->setStyleSheet("QPushButton {font-size:18px}");
-  plot_btn->setFixedSize(25, 25);
-  title_layout->addWidget(plot_btn);
-  main_layout->addLayout(title_layout);
+  auto remove_btn = toolbar->addAction("x", [this]() { emit remove(sig); });
+  remove_btn->setToolTip(tr("Remove signal"));
+  main_layout->addWidget(toolbar);
 
   // signal form
-  form_container = new QWidget(this);
-  QVBoxLayout *v_layout = new QVBoxLayout(form_container);
-  QHBoxLayout *h = new QHBoxLayout();
-  QPushButton *remove_btn = new QPushButton(tr("Remove Signal"));
-  h->addWidget(remove_btn);
-  h->addStretch();
-  QPushButton *save_btn = new QPushButton(tr("Save"));
-  h->addWidget(save_btn);
-  v_layout->addLayout(h);
-  main_layout->addWidget(form_container);
+  form = new SignalForm(this);
+  form->setVisible(false);
+  main_layout->addWidget(form);
 
   // bottom line
   QFrame *hline = new QFrame();
@@ -104,25 +98,22 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
-  QObject::connect(remove_btn, &QPushButton::clicked, [this]() { emit remove(this->sig); });
+  QObject::connect(form, &SignalForm::changed, this, &SignalEdit::saveSignal);
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
-  QObject::connect(save_btn, &QPushButton::clicked, this, &SignalEdit::saveSignal);
-  QObject::connect(plot_btn, &QPushButton::clicked, [this]() { emit showChart(msg_id, sig, !chart_opened); });
-  QObject::connect(seek_btn, &QPushButton::clicked, [this]() {
-    SignalFindDlg dlg(msg_id, sig, this);
-    dlg.exec();
-  });
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
-void SignalEdit::setSignal(const QString &message_id, const Signal *signal, bool show_form) {
-  msg_id = message_id;
+void SignalEdit::setSignal(const QString &message_id, const Signal *signal) {
   sig = signal;
+  updateForm(msg_id == message_id && form->isVisible());
+  msg_id = message_id;
   title->setText(QString("%1. %2").arg(form_idx + 1).arg(sig->name.c_str()));
-  setFormVisible(show_form);
+  show();
 }
 
 void SignalEdit::saveSignal() {
+  if (!sig || !form->changed_by_user) return;
+
   Signal s = *sig;
   s.name = form->name->text().toStdString();
   s.size = form->size->text().toInt();
@@ -148,38 +139,50 @@ void SignalEdit::saveSignal() {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-  title->setText(QString("%1. %2").arg(form_idx + 1).arg(form->name->text()));
-  emit save(this->sig, s);
+  if (s != *sig)
+    emit save(this->sig, s);
 }
 
 void SignalEdit::setChartOpened(bool opened) {
   plot_btn->setText(opened ? "☒" : "📈");
-  plot_btn->setToolTip(opened ? tr("Close Plot") :tr("Show Plot"));
+  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot"));
   chart_opened = opened;
 }
 
-void SignalEdit::setFormVisible(bool visible) {
-  if (visible) {
-    if (!form) {
-      form = new SignalForm(this);
-      ((QVBoxLayout *)form_container->layout())->insertWidget(0, form);
-    }
+void SignalEdit::updateForm(bool visible) {
+  if (visible && sig) {
+    form->changed_by_user = false;
     form->name->setText(sig->name.c_str());
-    form->size->setValue(sig->size);
     form->endianness->setCurrentIndex(sig->is_little_endian ? 0 : 1);
     form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
     form->factor->setText(QString::number(sig->factor));
     form->offset->setText(QString::number(sig->offset));
     form->msb->setText(QString::number(sig->msb));
     form->lsb->setText(QString::number(sig->lsb));
+    form->size->setValue(sig->size);
+    form->changed_by_user = true;
   }
-  form_container->setVisible(visible);
-  icon->setText(visible ? "▼" : ">");
+  form->setVisible(visible);
+  icon->setText(visible ? "▼ " : "> ");
+}
+
+void SignalEdit::showFormClicked() {
+  parentWidget()->setUpdatesEnabled(false);
+  for (auto &edit : parentWidget()->findChildren<SignalEdit*>())
+    edit->updateForm(edit == this && !form->isVisible());
+  QTimer::singleShot(1, [this]() { parentWidget()->setUpdatesEnabled(true); });
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
   auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
+}
+
+void SignalEdit::hideEvent(QHideEvent *event) {
+  msg_id = "";
+  sig = nullptr;
+  updateForm(false);
+  QWidget::hideEvent(event);
 }
 
 void SignalEdit::enterEvent(QEvent *event) {
@@ -204,7 +207,7 @@ SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *p
   comp_box->addItems({">", "=", "<"});
   h->addWidget(comp_box);
   QLineEdit *value_edit = new QLineEdit("0", this);
-  value_edit->setValidator( new QDoubleValidator(-500000, 500000, 6, this) );
+  value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
   h->addWidget(value_edit, 1);
   QPushButton *search_btn = new QPushButton(tr("Find"), this);
   h->addWidget(search_btn);

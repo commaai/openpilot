@@ -6,7 +6,6 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QTimer>
-#include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/canmessages.h"
@@ -81,9 +80,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   container_layout->addWidget(binary_view);
 
   // signals
-  signals_container = new QWidget(this);
-  signals_container->setLayout(new QVBoxLayout);
-  container_layout->addWidget(signals_container);
+  signals_layout = new QVBoxLayout();
+  container_layout->addLayout(signals_layout);
 
   // history log
   history_log = new HistoryLog(this);
@@ -114,36 +112,25 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
     QMenu menu(this);
     menu.addAction(tr("Close Other Tabs"));
     if (menu.exec(tabbar->mapToGlobal(pt))) {
-      tabbar->setCurrentIndex(index);
-      // remove all tabs before the one to keep
-      for (int i = 0; i < index; ++i) {
-        tabbar->removeTab(0);
-      }
-      // remove all tabs after the one to keep
-      while (tabbar->count() > 1) {
+      tabbar->moveTab(index, 0);
+      tabbar->setCurrentIndex(0);
+      while (tabbar->count() > 1)
         tabbar->removeTab(1);
-      }
     }
   }
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
-  if (message_id.isEmpty()) return;
-
-  int index = -1;
-  for (int i = 0; i < tabbar->count(); ++i) {
-    if (tabbar->tabText(i) == message_id) {
-      index = i;
-      break;
-    }
-  }
   msg_id = message_id;
+  int index = tabbar->count() - 1;
+  for (/**/; index >= 0 && tabbar->tabText(index) != msg_id; --index) { /**/ }
   if (index == -1) {
     index = tabbar->addTab(message_id);
     tabbar->setTabToolTip(index, msgName(message_id));
   }
   tabbar->setCurrentIndex(index);
   dbcMsgChanged();
+  scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
@@ -154,48 +141,42 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
 
+  int i = 0;
   QStringList warnings;
-  for (auto f : signal_list) f->hide();
-
   const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    int i = 0;
     for (auto &[name, sig] : msg->sigs) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
         form = new SignalEdit(i);
-        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
         QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
         QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
         QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
         QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
         QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
-        signals_container->layout()->addWidget(form);
+        signals_layout->addWidget(form);
         signal_list.push_back(form);
       }
-      form->setSignal(msg_id, &sig, i == show_form_idx);
+      form->setSignal(msg_id, &sig);
       form->setChartOpened(charts->isChartOpened(msg_id, &sig));
-      form->show();
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
   }
+  for (/**/; i < signal_list.size(); ++i)
+    signal_list[i]->hide();
 
   toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
-  // Check overlapping bits
-  if (auto overlapping = binary_view->getOverlappingSignals(); !overlapping.isEmpty()) {
-    for (auto s : overlapping)
-      warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
-  }
+  for (auto s : binary_view->getOverlappingSignals())
+    warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
 
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
-  setUpdatesEnabled(true);
-  scroll->verticalScrollBar()->setValue(0);
+  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
 }
 
 void DetailWidget::updateState() {
@@ -204,14 +185,6 @@ void DetailWidget::updateState() {
 
   binary_view->updateState();
   history_log->updateState();
-}
-
-void DetailWidget::showForm() {
-  SignalEdit *sender = qobject_cast<SignalEdit *>(QObject::sender());
-  setUpdatesEnabled(false);
-  for (auto f : signal_list)
-    f->setFormVisible(f == sender && !f->isFormVisible());
-  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
@@ -230,9 +203,7 @@ void DetailWidget::editMsg() {
 }
 
 void DetailWidget::removeMsg() {
-  if (auto msg = dbc()->msg(msg_id)) {
-    undo_stack->push(new RemoveMsgCommand(msg_id));
-  }
+  undo_stack->push(new RemoveMsgCommand(msg_id));
 }
 
 void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
@@ -248,13 +219,11 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
       }
     }
   }
-  Signal sig = {};
+  Signal sig = {.is_little_endian = little_endian};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    auto it = msg->sigs.find(sig.name.c_str());
-    if (it == msg->sigs.end()) break;
+    if (msg->sigs.count(sig.name.c_str()) == 0) break;
   }
-  sig.is_little_endian = little_endian;
   updateSigSizeParamsFromRange(sig, start_bit, size);
   undo_stack->push(new AddSigCommand(msg_id, sig));
 }
