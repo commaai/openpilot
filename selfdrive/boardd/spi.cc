@@ -109,17 +109,16 @@ int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
 int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len) {
   std::lock_guard lk(hw_lock);
 
-  const uint16_t xfer_size = 0x40;
+  const int xfer_size = 0x280;
 
   int ret = 0;
   uint16_t length = (tx_data != NULL) ? tx_len : rx_len;
   for (int i = 0; i < (int)std::ceil(length / xfer_size); i++) {
     int d;
     if (tx_data != NULL) {
-      d = 0;
-      //d = spi_transfer_retry(endpoint, tx_data, 0, (data + (xfer_size*i)), xfer_size);
+      d = spi_transfer_retry(endpoint, tx_data + (xfer_size * i), std::min(xfer_size, tx_len - ret), NULL, 0);
     } else {
-      d = spi_transfer_retry(endpoint, NULL, 0, (rx_data + (xfer_size*i)), xfer_size);
+      d = spi_transfer_retry(endpoint, NULL, 0, rx_data + (xfer_size * i), xfer_size);
     }
 
     if (d < 0) {
