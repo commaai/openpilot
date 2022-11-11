@@ -21,6 +21,7 @@ class TestManager(unittest.TestCase):
     os.environ['PASSIVE'] = '0'
     HARDWARE.set_power_save(False)
 
+    # ensure clean CarParams
     params = Params()
     params.remove("CarParams")
 
@@ -44,6 +45,7 @@ class TestManager(unittest.TestCase):
       Ensure all processes exit cleanly when stopped.
     """
     HARDWARE.set_power_save(False)
+    manager.manager_init()
     manager.manager_prepare()
     for p in ALL_PROCESSES:
       managed_processes[p].start()
