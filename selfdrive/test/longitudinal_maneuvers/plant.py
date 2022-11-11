@@ -11,11 +11,11 @@ from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 
-class Plant():
+class Plant:
   messaging_initialized = False
 
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
-               only_lead2=False, only_radar=False):
+               enabled=True, only_lead2=False, only_radar=False):
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
@@ -33,10 +33,11 @@ class Plant():
     self.speeds = []
 
     # lead car
-    self.distance_lead = distance_lead
     self.lead_relevancy = lead_relevancy
-    self.only_lead2=only_lead2
-    self.only_radar=only_radar
+    self.distance_lead = distance_lead
+    self.enabled = enabled
+    self.only_lead2 = only_lead2
+    self.only_radar = only_radar
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
@@ -106,8 +107,7 @@ class Plant():
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
     model.modelV2.acceleration = acceleration
 
-    enabled = LongCtrlState.off if self.current_time < 1.0 else LongCtrlState.pid
-    control.controlsState.longControlState = enabled
+    control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01

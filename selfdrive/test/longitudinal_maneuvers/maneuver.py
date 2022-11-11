@@ -17,6 +17,7 @@ class Maneuver():
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
     self.ensure_start = kwargs.get("ensure_start", False)
+    self.enabled = kwargs.get("enabled", True)
 
     self.duration = duration
     self.title = title
@@ -26,6 +27,7 @@ class Maneuver():
       lead_relevancy=self.lead_relevancy,
       speed=self.speed,
       distance_lead=self.distance_lead,
+      enabled=self.enabled,
       only_lead2=self.only_lead2,
       only_radar=self.only_radar,
     )
