@@ -101,8 +101,8 @@ CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool 
 }
 
 CameraWidget::~CameraWidget() {
-  stopVipcThread();
   makeCurrent();
+  stopVipcThread();
   if (isValid()) {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
