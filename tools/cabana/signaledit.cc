@@ -73,7 +73,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
 
   // title bar
   auto toolbar = new QToolBar(this);
-  toolbar->setStyleSheet("QToolButton {width:16px;height:16px;font-size:16px}");
+  toolbar->setStyleSheet("QToolButton {width:15px;height:15px;font-size:15px}");
   icon = new QLabel();
   toolbar->addWidget(icon);
   title = new ElidedLabel(this);
@@ -81,7 +81,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(getColor(index)));
   toolbar->addWidget(title);
   plot_btn = toolbar->addAction("", [this]() { emit showChart(msg_id, sig, !chart_opened); });
-  auto seek_btn = toolbar->addAction("🔍", [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
+  auto seek_btn = toolbar->addAction(QIcon::fromTheme("edit-find"), "", [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
   seek_btn->setToolTip(tr("Find signal values"));
   auto remove_btn = toolbar->addAction("x", [this]() { emit remove(sig); });
   remove_btn->setToolTip(tr("Remove signal"));
