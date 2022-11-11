@@ -34,4 +34,8 @@ extern "C" {
     return localizer->are_inputs_ok();
   }
 
+  void observation_timings_invalid_reset(Localizer *localizer){
+    localizer->observation_timings_invalid_reset();
+  }
+
 }
