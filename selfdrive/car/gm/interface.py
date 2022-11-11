@@ -210,14 +210,14 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
-    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      be = create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
-
+    button_events = []
+    for be in create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT,
+                                   unpressed=CruiseButtons.UNPRESS, init=CruiseButtons.INIT):
       # Suppress resume button if we're resuming from stop so we don't adjust speed.
       if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill):
         be.type = ButtonType.unknown
-
-      ret.buttonEvents = [be]
+      button_events.append(be)
+    ret.buttonEvents = button_events
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],

@@ -317,10 +317,10 @@ class CarInterface(CarInterfaceBase):
     buttonEvents = []
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons:
-      buttonEvents.append(create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT))
+      buttonEvents.extend(create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT))
 
     if self.CS.cruise_setting != self.CS.prev_cruise_setting:
-      buttonEvents.append(create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, {1: ButtonType.altButton1}))
+      buttonEvents.extend(create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, {1: ButtonType.altButton1}))
 
     ret.buttonEvents = buttonEvents
 
