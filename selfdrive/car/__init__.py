@@ -25,11 +25,11 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, ca
                          unpressed_btn: int = 0, init: Optional[int] = None) -> List[capnp.lib.capnp._DynamicStructBuilder]:
   events = []
 
-  # Initialized to unpressed_btn, don't add any events
+  # Initialized to unpressed, don't add any events
   if cur_btn == unpressed_btn and prev_btn == init:
     return events
 
-  # Add events for button presses, handling when a button switches without going to unpressed_btn
+  # Add events for button presses, handling when a button switches without going to unpressed
   if cur_btn != prev_btn:
     for pressed, btn in ((False, prev_btn), (True, cur_btn)):
       if btn == unpressed_btn:
