@@ -2,6 +2,7 @@
 #include <linux/spi/spidev.h>
 
 #include <cassert>
+#include <cmath>
 #include <cstring>
 
 #include "common/util.h"
@@ -99,12 +100,44 @@ int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t para
 }
 
 int PandaSpiHandle::bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  return 0;
+  return bulk_transfer(endpoint, data, length, NULL, 0);
+}
+int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  return bulk_transfer(endpoint, NULL, 0, data, length);
 }
 
-int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  return 0;
+int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len) {
+  std::lock_guard lk(hw_lock);
+
+  const int xfer_size = 0x40;
+
+  int ret = 0;
+  uint16_t length = (tx_data != NULL) ? tx_len : rx_len;
+  for (int i = 0; i < (int)std::ceil((float)length / xfer_size); i++) {
+    int d;
+    if (tx_data != NULL) {
+      int len = std::min(xfer_size, tx_len - (xfer_size * i));
+      d = spi_transfer_retry(endpoint, tx_data + (xfer_size * i), len, NULL, 0);
+    } else {
+      d = spi_transfer_retry(endpoint, NULL, 0, rx_data + (xfer_size * i), xfer_size);
+    }
+
+    if (d < 0) {
+      LOGE("SPI: bulk transfer failed with %d", d);
+      comms_healthy = false;
+      return -1;
+    }
+
+    ret += d;
+    if ((rx_data != NULL) && d < xfer_size) {
+      break;
+    }
+  }
+
+  return ret;
 }
+
+
 
 std::vector<std::string> PandaSpiHandle::list() {
   // TODO: list all pandas available over SPI
@@ -130,15 +163,15 @@ bool check_checksum(uint8_t *data, int data_len) {
 
 
 int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len) {
-  int err;
+  int ret;
 
   std::lock_guard lk(hw_lock);
   do {
     // TODO: handle error
-    err = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len);
-  } while (err < 0 && connected && !PANDA_NO_RETRY);
+    ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len);
+  } while (ret < 0 && connected && !PANDA_NO_RETRY);
 
-  return err;
+  return ret;
 }
 
 int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
@@ -153,7 +186,7 @@ int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
     if (rx_buf[0] == ack) {
       break;
     } else if (rx_buf[0] == SPI_NACK) {
-      LOGW("SPI: got header NACK");
+      LOGW("SPI: got NACK");
       return -1;
     }
   }
