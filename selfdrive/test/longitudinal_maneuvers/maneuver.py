@@ -32,17 +32,17 @@ class Maneuver():
 
     valid = True
     logs = []
-    while plant.current_time() < self.duration:
-      speed_lead = np.interp(plant.current_time(), self.breakpoints, self.speed_lead_values)
-      prob = np.interp(plant.current_time(), self.breakpoints, self.prob_lead_values)
-      cruise = np.interp(plant.current_time(), self.breakpoints, self.cruise_values)
+    while plant.current_time < self.duration:
+      speed_lead = np.interp(plant.current_time, self.breakpoints, self.speed_lead_values)
+      prob = np.interp(plant.current_time, self.breakpoints, self.prob_lead_values)
+      cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
       log = plant.step(speed_lead, prob, cruise)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
-      logs.append(np.array([plant.current_time(),
+      logs.append(np.array([plant.current_time,
                             log['distance'],
                             log['distance_lead'],
                             log['speed'],

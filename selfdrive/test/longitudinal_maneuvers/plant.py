@@ -10,6 +10,7 @@ from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
+
 class Plant():
   messaging_initialized = False
 
@@ -47,6 +48,7 @@ class Plant():
 
     self.planner = LongitudinalPlanner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
 
+  @property
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
@@ -104,7 +106,7 @@ class Plant():
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
     model.modelV2.acceleration = acceleration
 
-    enabled = LongCtrlState.off if self.current_time() < 1.0 else LongCtrlState.pid
+    enabled = LongCtrlState.off if self.current_time < 1.0 else LongCtrlState.pid
     control.controlsState.longControlState = enabled
     control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
@@ -140,7 +142,7 @@ class Plant():
     # print at 5hz
     if (self.rk.frame % (self.rate // 5)) == 0:
       print("%2.2f sec   %6.2f m  %6.2f m/s  %6.2f m/s2   lead_rel: %6.2f m  %6.2f m/s"
-            % (self.current_time(), self.distance, self.speed, self.acceleration, d_rel, v_rel))
+            % (self.current_time, self.distance, self.speed, self.acceleration, d_rel, v_rel))
 
 
     # ******** update prevs ********
