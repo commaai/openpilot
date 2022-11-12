@@ -1,4 +1,3 @@
-from collections import defaultdict
 import math
 
 from cereal import car
@@ -59,8 +58,6 @@ class VCruiseHelper:
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
-        # Store current state on change of button pressed
-        self.button_change_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
 
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
@@ -101,10 +98,6 @@ class VCruiseHelper:
           button_type = k
           long_press = True
           break
-
-    # Don't adjust speed when pressing resume to exit standstill
-    if button_type == ButtonType.accelCruise and self.button_change_state[button_type]["standstill"]:
-      button_type = None
 
     if button_type:
       v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
