@@ -77,6 +77,7 @@ class TestVCruiseHelper(unittest.TestCase):
                              (True, False)):
       CS = car.CarState(cruiseState={"available": True})
       CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
+
       self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=False)
       self.assertEqual(initial_v_cruise, self.v_cruise_helper.v_cruise_kph)
 
