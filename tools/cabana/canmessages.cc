@@ -120,7 +120,7 @@ const std::deque<CanData> CANMessages::messages(const QString &id) {
 }
 
 void CANMessages::seekTo(double ts) {
-  replay->seekTo(ts, false);
+  replay->seekTo(std::max(0, ts), false);
   counters_begin_sec = 0;
 }
 
