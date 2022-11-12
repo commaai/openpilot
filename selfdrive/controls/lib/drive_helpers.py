@@ -90,8 +90,7 @@ class VCruiseHelper:
           break
 
     # Don't adjust speed when pressing resume to exit standstill
-    cruise_standstill = self.button_change_state[button_type]["standstill"] or CS.cruiseState.standstill
-    if button_type == ButtonType.accelCruise and cruise_standstill:
+    if button_type == ButtonType.accelCruise and (self.button_change_state[button_type]["standstill"] or CS.cruiseState.standstill):
       button_type = None
 
     if button_type:
