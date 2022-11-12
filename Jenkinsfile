@@ -122,7 +122,8 @@ pipeline {
           }
         }
 
-        stage('tici-loopback') {
+        stage('loopback-tests') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-loopback", [
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
