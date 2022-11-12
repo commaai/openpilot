@@ -34,7 +34,7 @@ public:
   virtual int bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT) = 0;
 
 protected:
-  std::mutex hw_lock;
+  std::recursive_mutex hw_lock;
 };
 
 class PandaUsbHandle : public PandaCommsHandle {
@@ -74,6 +74,7 @@ private:
   uint8_t rx_buf[SPI_BUF_SIZE];
 
   int wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack);
+  int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len);
   int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
   int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
 };
