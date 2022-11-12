@@ -1,4 +1,3 @@
-from collections import defaultdict
 import math
 
 from cereal import car
@@ -43,7 +42,7 @@ class VCruiseHelper:
     self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     self.v_cruise_kph_last = 0
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
-    self.button_change_state = defaultdict(lambda: {"standstill": False})
+    self.button_change_state = {btn: {"standstill": False} for btn in self.button_timers}
 
   @property
   def v_cruise_initialized(self):
