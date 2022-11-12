@@ -182,7 +182,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: HyundaiCarInfo("Kia Sportage Hybrid 2023", harness=Harness.hyundai_n),
   CAR.KIA_STINGER: HyundaiCarInfo("Kia Stinger 2018-20", video_link="https://www.youtube.com/watch?v=MJ94qoofYw0", harness=Harness.hyundai_c),
-  CAR.KIA_STINGER_2022: HyundaiCarInfo("Kia Stinger 2022", "All", harness=Harness.hyundai_c),
+  CAR.KIA_STINGER_2022: HyundaiCarInfo("Kia Stinger 2022", "All", harness=Harness.hyundai_k),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
   CAR.KIA_EV6: [
     HyundaiCarInfo("Kia EV6 (without HDA II) 2022", "Highway Driving Assist", harness=Harness.hyundai_l),
