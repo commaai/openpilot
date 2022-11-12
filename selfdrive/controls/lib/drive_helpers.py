@@ -42,6 +42,7 @@ class VCruiseHelper:
     self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     self.v_cruise_kph_last = 0
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
+    self.button_change_state = {btn: {"standstill": False} for btn in self.button_timers}
 
   @property
   def v_cruise_initialized(self):
@@ -88,6 +89,11 @@ class VCruiseHelper:
           long_press = True
           break
 
+    # Don't adjust speed when pressing resume to exit standstill
+    cruise_standstill = self.button_change_state[button_type]["standstill"] or CS.cruiseState.standstill
+    if button_type == ButtonType.accelCruise and cruise_standstill:
+      button_type = None
+
     if button_type:
       v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
       if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
@@ -109,7 +115,9 @@ class VCruiseHelper:
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers:
+        # Start/end timer and store current state on change of button pressed
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
+        self.button_change_state[b.type.raw].update({"standstill": CS.cruiseState.standstill})
 
   def initialize_v_cruise(self, CS):
     # initializing is handled by the PCM
