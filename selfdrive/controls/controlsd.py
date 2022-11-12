@@ -16,7 +16,7 @@ from system.version import is_tested_branch, get_short_branch
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
 from selfdrive.controls.lib.lateral_planner import CAMERA_OFFSET
-from selfdrive.controls.lib.drive_helpers import Buttons, get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import VCruiseHelper, get_lag_adjusted_curvature
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -184,7 +184,7 @@ class Controls:
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
-    self.buttons = Buttons(self.CP)
+    self.v_cruise_helper = VCruiseHelper(self.CP)
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -214,7 +214,7 @@ class Controls:
       controls_state = Params().get("ReplayControlsState")
       if controls_state is not None:
         controls_state = log.ControlsState.from_bytes(controls_state)
-        self.buttons.v_cruise_kph = controls_state.vCruise
+        self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
 
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
         self.state = State.enabled
@@ -240,7 +240,7 @@ class Controls:
 
     # Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
-    if not self.CP.pcmCruise and not self.buttons.v_cruise_initialized and resume_pressed:
+    if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
       self.events.add(EventName.resumeBlocked)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
@@ -473,7 +473,7 @@ class Controls:
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
 
-    self.buttons.update_v_cruise(CS, self.enabled, self.is_metric)
+    self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -551,7 +551,7 @@ class Controls:
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
-          self.buttons.initialize_v_cruise(CS)
+          self.v_cruise_helper.initialize_v_cruise(CS)
 
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
@@ -599,7 +599,7 @@ class Controls:
 
     if not self.joystick_mode:
       # accel PID loop
-      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.buttons.v_cruise_kph * CV.KPH_TO_MS)
+      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.rcv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
@@ -685,7 +685,7 @@ class Controls:
       CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
 
     hudControl = CC.hudControl
-    hudControl.setSpeed = float(self.buttons.v_cruise_cluster_kph * CV.KPH_TO_MS)
+    hudControl.setSpeed = float(self.v_cruise_helper.v_cruise_cluster_kph * CV.KPH_TO_MS)
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
@@ -768,8 +768,8 @@ class Controls:
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
-    controlsState.vCruise = float(self.buttons.v_cruise_kph)
-    controlsState.vCruiseCluster = float(self.buttons.v_cruise_cluster_kph)
+    controlsState.vCruise = float(self.v_cruise_helper.v_cruise_kph)
+    controlsState.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
@@ -850,7 +850,7 @@ class Controls:
     self.publish_logs(CS, start_time, CC, lac_log)
     self.prof.checkpoint("Sent")
 
-    self.buttons.update_button_timers(CS)
+    self.v_cruise_helper.update_button_timers(CS)
     self.CS_prev = CS
 
   def controlsd_thread(self):

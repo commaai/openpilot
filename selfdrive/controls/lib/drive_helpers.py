@@ -35,7 +35,7 @@ CRUISE_INTERVAL_SIGN = {
 }
 
 
-class Buttons:
+class VCruiseHelper:
   def __init__(self, CP):
     self.CP = CP
     self.v_cruise_kph = V_CRUISE_INITIAL
