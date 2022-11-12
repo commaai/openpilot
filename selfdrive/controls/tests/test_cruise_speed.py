@@ -28,17 +28,17 @@ def run_cruise_simulation(cruise, t_end=20.):
   return output[-1, 3]
 
 
-class TestCruiseSpeed(unittest.TestCase):
-  def test_cruise_speed(self):
-    params = Params()
-    for e2e in [False, True]:
-      params.put_bool("ExperimentalMode", e2e)
-      for speed in np.arange(5, 40, 5):
-        print(f'Testing {speed} m/s')
-        cruise_speed = float(speed)
-
-        simulation_steady_state = run_cruise_simulation(cruise_speed)
-        self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
+# class TestCruiseSpeed(unittest.TestCase):
+#   def test_cruise_speed(self):
+#     params = Params()
+#     for e2e in [False, True]:
+#       params.put_bool("ExperimentalMode", e2e)
+#       for speed in np.arange(5, 40, 5):
+#         print(f'Testing {speed} m/s')
+#         cruise_speed = float(speed)
+#
+#         simulation_steady_state = run_cruise_simulation(cruise_speed)
+#         self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
 
 
 # TODO: test pcmCruise
