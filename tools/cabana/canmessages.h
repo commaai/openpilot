@@ -16,7 +16,6 @@ struct CanData {
   double ts = 0.;
   uint32_t count = 0;
   uint32_t freq = 0;
-  uint16_t bus_time = 0;
   QByteArray dat;
 };
 
