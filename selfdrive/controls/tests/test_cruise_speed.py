@@ -8,7 +8,6 @@ from cereal import car
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
-
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 
@@ -26,7 +25,7 @@ def run_cruise_simulation(cruise, t_end=20.):
   )
   valid, output = man.evaluate()
   assert valid
-  return output[-1,3]
+  return output[-1, 3]
 
 
 class TestCruiseSpeed(unittest.TestCase):
@@ -46,7 +45,7 @@ class TestCruiseSpeed(unittest.TestCase):
 @parameterized_class(('pcm_cruise',), [(False,)])
 class TestVCruiseHelper(unittest.TestCase):
   def setUp(self):
-    self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
+    self.CP = car.CarParams(pcmCruise=self.pcm_cruise)  # pylint: disable=E1101
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
   def test_adjust_speed_in_standstill(self):
@@ -67,7 +66,7 @@ class TestVCruiseHelper(unittest.TestCase):
         should_equal = standstill or pressed
         self.assertEqual(should_equal, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
 
-  def test_v_cruise_initialize(self):
+  def test_initialize_v_cruise(self):
     """
     Asserts allowed cruise speeds on enabling with SET
     """
