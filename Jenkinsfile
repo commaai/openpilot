@@ -118,6 +118,14 @@ pipeline {
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
+            ])
+          }
+        }
+
+        stage('tici-loopback') {
+          steps {
+            phone_steps("tici-loopback", [
+              ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
             ])
           }
