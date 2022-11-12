@@ -78,7 +78,7 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     double current_sec = replay->currentSeconds();
-    if (counters_begin_sec == 0) {
+    if (counters_begin_sec == 0 || counters_begin_sec > current_sec) {
       counters.clear();
       counters_begin_sec = current_sec;
     }
