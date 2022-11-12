@@ -47,7 +47,7 @@ class VCruiseHelper:
   def v_cruise_initialized(self):
     return self.v_cruise_kph != V_CRUISE_INITIAL
 
-  def update_button_timers(self, CS, enabled):
+  def update_button_timers(self, CS):
     # increment timer for buttons still pressed
     for k in self.button_timers:
       if self.button_timers[k] > 0:
