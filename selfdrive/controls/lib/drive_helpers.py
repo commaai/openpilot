@@ -115,8 +115,8 @@ class VCruiseHelper:
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers:
+        # Start/end timer and store current state on change of button pressed
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
-        # Store current state on change of button pressed
         self.button_change_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
 
   def initialize_v_cruise(self, CS):
