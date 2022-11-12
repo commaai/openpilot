@@ -124,7 +124,7 @@
     </message>
     <message>
         <source>N/A</source>
-        <translation>空</translation>
+        <translation>N/A</translation>
     </message>
     <message>
         <source>Serial</source>
