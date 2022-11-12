@@ -850,7 +850,6 @@ class Controls:
     self.publish_logs(CS, start_time, CC, lac_log)
     self.prof.checkpoint("Sent")
 
-    self.v_cruise_helper.update_button_timers(CS)
     self.CS_prev = CS
 
   def controlsd_thread(self):

@@ -42,25 +42,12 @@ class VCruiseHelper:
     self.v_cruise_kph = V_CRUISE_INITIAL
     self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     self.v_cruise_kph_last = 0
-
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
     self.button_change_state = defaultdict(lambda: {"enabled": False, "standstill": False})
 
   @property
   def v_cruise_initialized(self):
     return self.v_cruise_kph != V_CRUISE_INITIAL
-
-  def update_button_timers(self, CS, enabled):
-    # increment timer for buttons still pressed
-    for k in self.button_timers:
-      if self.button_timers[k] > 0:
-        self.button_timers[k] += 1
-
-    for b in CS.buttonEvents:
-      if b.type.raw in self.button_timers:
-        self.button_timers[b.type.raw] = 1 if b.pressed else 0
-        # Store current state on change of button pressed
-        self.button_change_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
 
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
@@ -70,6 +57,7 @@ class VCruiseHelper:
         # if stock cruise is completely disabled, then we can use our own set speed logic
         self._update_v_cruise_non_pcm(CS, enabled, is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
+        self.update_button_timers(CS, enabled)
       else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
@@ -119,16 +107,26 @@ class VCruiseHelper:
 
       self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 
+  def update_button_timers(self, CS, enabled):
+    # increment timer for buttons still pressed
+    for k in self.button_timers:
+      if self.button_timers[k] > 0:
+        self.button_timers[k] += 1
+
+    for b in CS.buttonEvents:
+      if b.type.raw in self.button_timers:
+        self.button_timers[b.type.raw] = 1 if b.pressed else 0
+        # Store current state on change of button pressed
+        self.button_change_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
+
   def initialize_v_cruise(self, CS):
     # initializing is handled by the PCM
     if self.CP.pcmCruise:
       return
 
-    for b in CS.buttonEvents:
-      # 250kph or above probably means we never had a set speed
-      if b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) and self.v_cruise_kph_last < 250:
-        self.v_cruise_kph = self.v_cruise_kph_last
-        break
+    # 250kph or above probably means we never had a set speed
+    if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
+      self.v_cruise_kph = self.v_cruise_kph_last
     else:
       self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
 
