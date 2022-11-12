@@ -64,28 +64,32 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   frame_layout->addWidget(warning_widget);
   main_layout->addWidget(title_frame);
 
-  QWidget *container = new QWidget(this);
-  QVBoxLayout *container_layout = new QVBoxLayout(container);
-  container_layout->setSpacing(0);
-  container_layout->setContentsMargins(0, 0, 0, 0);
-
-  scroll = new QScrollArea(this);
-  scroll->setWidget(container);
-  scroll->setWidgetResizable(true);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
+  QWidget *msg_container = new QWidget(this);
+  QVBoxLayout *msg_layout = new QVBoxLayout(msg_container);
+  msg_layout->setContentsMargins(0, 0, 0, 0);
 
   // binary view
   binary_view = new BinaryView(this);
-  container_layout->addWidget(binary_view);
+  msg_layout->addWidget(binary_view);
 
   // signals
   signals_layout = new QVBoxLayout();
-  container_layout->addLayout(signals_layout);
+  msg_layout->addLayout(signals_layout);
+  msg_layout->addStretch(0);
 
-  // history log
+  scroll = new QScrollArea(this);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setWidget(msg_container);
+  scroll->setWidgetResizable(true);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  tag_widget = new QTabWidget(this);
+  tag_widget->setTabPosition(QTabWidget::South);
+  tag_widget->addTab(scroll, "Msg");
   history_log = new HistoryLog(this);
-  container_layout->addWidget(history_log);
+  tag_widget->addTab(history_log, "Logs");
+
+  main_layout->addWidget(tag_widget);
 
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
@@ -176,15 +180,17 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
-  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState() {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
   if (msg_id.isEmpty()) return;
 
-  binary_view->updateState();
-  history_log->updateState();
+  if (tag_widget->currentIndex() == 0)
+    binary_view->updateState();
+  else
+    history_log->updateState();
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {

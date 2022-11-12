@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QScrollArea>
-#include <QTabBar>
+#include <QTabWidget>
 #include <QToolBar>
 #include <QUndoStack>
 
@@ -43,6 +43,7 @@ private:
   QWidget *warning_widget;
   QVBoxLayout *signals_layout;
   QTabBar *tabbar;
+  QTabWidget *tag_widget;
   QToolBar *toolbar;
   QAction *remove_msg_act;
   HistoryLog *history_log;

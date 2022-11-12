@@ -167,10 +167,8 @@ void SignalEdit::updateForm(bool visible) {
 }
 
 void SignalEdit::showFormClicked() {
-  parentWidget()->setUpdatesEnabled(false);
   for (auto &edit : parentWidget()->findChildren<SignalEdit*>())
     edit->updateForm(edit == this && !form->isVisible());
-  QTimer::singleShot(1, [this]() { parentWidget()->setUpdatesEnabled(true); });
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
