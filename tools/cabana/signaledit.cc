@@ -4,7 +4,6 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QScrollArea>
-#include <QTimer>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -166,16 +165,9 @@ void SignalEdit::updateForm(bool visible) {
   icon->setText(visible ? "▼ " : "> ");
 }
 
-void SignalEdit::showFormClicked() {
-  for (auto &edit : parentWidget()->findChildren<SignalEdit*>())
-    edit->updateForm(edit == this && !form->isVisible());
-}
-
 void SignalEdit::signalHovered(const Signal *s) {
-  if (isVisible()) {
-    auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
-    title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
-  }
+  auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
+  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
 }
 
 void SignalEdit::enterEvent(QEvent *event) {

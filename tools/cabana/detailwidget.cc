@@ -64,14 +64,13 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   frame_layout->addWidget(warning_widget);
   main_layout->addWidget(title_frame);
 
-  QWidget *msg_container = new QWidget(this);
-  QVBoxLayout *msg_layout = new QVBoxLayout(msg_container);
+  // msg widget
+  QWidget *msg_widget = new QWidget(this);
+  QVBoxLayout *msg_layout = new QVBoxLayout(msg_widget);
   msg_layout->setContentsMargins(0, 0, 0, 0);
-
   // binary view
   binary_view = new BinaryView(this);
   msg_layout->addWidget(binary_view);
-
   // signals
   signals_layout = new QVBoxLayout();
   msg_layout->addLayout(signals_layout);
@@ -79,21 +78,20 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   scroll = new QScrollArea(this);
   scroll->setFrameShape(QFrame::NoFrame);
-  scroll->setWidget(msg_container);
+  scroll->setWidget(msg_widget);
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   tab_widget = new QTabWidget(this);
-  // tab_widget->setVisible(false);
   tab_widget->setTabPosition(QTabWidget::South);
   tab_widget->addTab(scroll, "Msg");
   history_log = new HistoryLog(this);
   tab_widget->addTab(history_log, "Logs");
-
   main_layout->addWidget(tab_widget);
 
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
+  QObject::connect(tab_widget, &QTabWidget::currentChanged, this, &DetailWidget::updateState);
   QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
@@ -103,7 +101,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(tab_widget, &QTabWidget::currentChanged, this, &DetailWidget::updateState);
   QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
   QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
@@ -136,7 +133,6 @@ void DetailWidget::setMessage(const QString &message_id) {
   }
   tabbar->setCurrentIndex(index);
   dbcMsgChanged();
-  // tab_widget->setVisible(true);
   scroll->verticalScrollBar()->setValue(0);
 }
 
@@ -158,6 +154,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         form = new SignalEdit(i);
         QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
         QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
+        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showFormClicked);
         QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
         QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
         QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
@@ -194,6 +191,14 @@ void DetailWidget::updateState() {
     binary_view->updateState();
   else
     history_log->updateState();
+}
+
+void DetailWidget::showFormClicked() {
+  auto s = qobject_cast<SignalEdit *>(sender());
+  setUpdatesEnabled(false);
+  for (auto f : signal_list)
+    f->updateForm(f == s && !f->isFormVisible());
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
