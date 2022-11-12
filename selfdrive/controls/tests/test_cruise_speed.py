@@ -3,7 +3,7 @@ import numpy as np
 from parameterized import parameterized_class
 import unittest
 
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_ENABLE_MIN
+from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN
 from cereal import car
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -68,10 +68,14 @@ class TestVCruiseHelper(unittest.TestCase):
         self.assertEqual(should_equal, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
 
   def test_v_cruise_initialize(self):
-    # TODO: test with different speeds and buttons
-    self.v_cruise_helper.initialize_v_cruise(car.CarState())
-    self.assertTrue(self.v_cruise_helper.v_cruise_initialized)
-    self.assertEqual(V_CRUISE_ENABLE_MIN, self.v_cruise_helper.v_cruise_kph)
+    """
+    Asserts allowed cruise speeds on enabling with SET
+    """
+
+    for v_ego in np.linspace(0, 100, 101):
+      self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=float(v_ego)))
+      self.assertTrue(V_CRUISE_ENABLE_MIN <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX)
+      self.assertTrue(self.v_cruise_helper.v_cruise_initialized)
 
 
 if __name__ == "__main__":
