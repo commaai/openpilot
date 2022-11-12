@@ -47,16 +47,6 @@ class VCruiseHelper:
   def v_cruise_initialized(self):
     return self.v_cruise_kph != V_CRUISE_INITIAL
 
-  def update_button_timers(self, CS):
-    # increment timer for buttons still pressed
-    for k in self.button_timers:
-      if self.button_timers[k] > 0:
-        self.button_timers[k] += 1
-
-    for b in CS.buttonEvents:
-      if b.type.raw in self.button_timers:
-        self.button_timers[b.type.raw] = 1 if b.pressed else 0
-
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
 
@@ -111,6 +101,16 @@ class VCruiseHelper:
         self.v_cruise_kph = max(self.v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
 
       self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+
+  def update_button_timers(self, CS):
+    # increment timer for buttons still pressed
+    for k in self.button_timers:
+      if self.button_timers[k] > 0:
+        self.button_timers[k] += 1
+
+    for b in CS.buttonEvents:
+      if b.type.raw in self.button_timers:
+        self.button_timers[b.type.raw] = 1 if b.pressed else 0
 
   def initialize_v_cruise(self, CS):
     # initializing is handled by the PCM
