@@ -119,7 +119,7 @@ class VCruiseHelper:
       if b.type.raw in self.button_timers:
         # Start/end timer and store current state on change of button pressed
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
-        self.button_change_states[b.type.raw].update({"standstill": CS.cruiseState.standstill})
+        self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill}
 
   def initialize_v_cruise(self, CS):
     # initializing is handled by the PCM
