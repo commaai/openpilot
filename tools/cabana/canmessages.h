@@ -63,6 +63,7 @@ protected:
   Replay *replay = nullptr;
   std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
+  std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
   QHash<QString, std::deque<CanData>> received_msgs;
 };

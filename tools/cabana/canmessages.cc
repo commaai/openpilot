@@ -65,6 +65,7 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
   emit updated();
   emit msgsReceived(messages);
   delete messages;
+  processing = false;
 }
 
 bool CANMessages::eventFilter(const Event *event) {
@@ -105,7 +106,9 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     double ts = millis_since_boot();
-    if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps) && !processing) {
+      // delay posting CAN message if UI thread is busy
+      processing = true;
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
