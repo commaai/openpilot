@@ -49,12 +49,12 @@ class TestVCruiseHelper(unittest.TestCase):
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
   def test_v_cruise_initialized_pcm(self):
-    if not self.CP.pcmCruise:
-      raise unittest.SkipTest
-
     for cruise_available in [False, True, False]:
       CS = car.CarState(cruiseState={"available": cruise_available, "speed": 10.})
-      self.v_cruise_helper.update_v_cruise(CS, False, False)
+      if not self.CP.pcmCruise:
+        CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=False)]
+
+      self.v_cruise_helper.update_v_cruise(CS, True, False)
       self.assertEqual(cruise_available, self.v_cruise_helper.v_cruise_initialized)
 
 
