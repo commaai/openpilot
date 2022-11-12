@@ -45,7 +45,6 @@ signals:
   void save(const Signal *sig, const Signal &new_sig);
 
 protected:
-  void hideEvent(QHideEvent *event) override;
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void saveSignal();

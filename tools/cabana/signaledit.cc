@@ -176,13 +176,6 @@ void SignalEdit::signalHovered(const Signal *s) {
   title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
 }
 
-void SignalEdit::hideEvent(QHideEvent *event) {
-  msg_id = "";
-  sig = nullptr;
-  updateForm(false);
-  QWidget::hideEvent(event);
-}
-
 void SignalEdit::enterEvent(QEvent *event) {
   emit highlight(sig);
   QWidget::enterEvent(event);
