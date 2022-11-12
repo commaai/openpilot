@@ -44,7 +44,7 @@ class VCruiseHelper:
     self.v_cruise_kph_last = 0
 
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
-    self.depressed_state = defaultdict(lambda: {"enabled": False, "standstill": False})
+    self.button_change_state = defaultdict(lambda: {"enabled": False, "standstill": False})
 
   @property
   def v_cruise_initialized(self):
@@ -59,11 +59,8 @@ class VCruiseHelper:
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
-        # TODO: do we need to reset?
-        if b.pressed:
-          self.depressed_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
-        else:
-          self.depressed_state[b.type.raw].clear()
+        # Store current state on change of button pressed
+        self.button_change_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
 
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
@@ -106,7 +103,7 @@ class VCruiseHelper:
           break
 
     # Don't adjust speed when pressing resume to exit standstill
-    if button_type == ButtonType.accelCruise and self.depressed_state[button_type]["standstill"]:
+    if button_type == ButtonType.accelCruise and self.button_change_state[button_type]["standstill"]:
       button_type = None
 
     if button_type:
