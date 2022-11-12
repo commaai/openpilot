@@ -41,9 +41,7 @@ class VCruiseHelper:
     self.v_cruise_kph = V_CRUISE_INITIAL
     self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     self.v_cruise_kph_last = 0
-
     self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
-    self.button_change_state = defaultdict(lambda: {"enabled": False, "standstill": False})
 
   @property
   def v_cruise_initialized(self):
