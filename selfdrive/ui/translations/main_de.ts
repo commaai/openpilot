@@ -772,7 +772,7 @@ location set</source>
     </message>
     <message>
         <source>NO</source>
-        <translation>NEIN</translation>
+        <translation>KEIN</translation>
     </message>
     <message>
         <source>PANDA</source>
