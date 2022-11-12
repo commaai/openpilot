@@ -57,31 +57,17 @@ class VCruiseHelper:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
 
-  def initialize_v_cruise(self, CS):
-    if self.CP.pcmCruise:
-      return
-
-    for b in CS.buttonEvents:
-      # 250kph or above probably means we never had a set speed
-      if b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) and self.v_cruise_kph_last < 250:
-        self.v_cruise_kph = self.v_cruise_kph_last
-        break
-    else:
-      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
-
-    self.v_cruise_cluster_kph = self.v_cruise_kph
-
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
 
     if CS.cruiseState.available:
-      if self.CP.pcmCruise:
-        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
-      else:
+      if not self.CP.pcmCruise:
         # if stock cruise is completely disabled, then we can use our own set speed logic
         self._update_v_cruise_non_pcm(CS, enabled, is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
+      else:
+        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
     else:
       self.v_cruise_kph = V_CRUISE_INITIAL
       self.v_cruise_cluster_kph = V_CRUISE_INITIAL
@@ -127,6 +113,20 @@ class VCruiseHelper:
         self.v_cruise_kph = max(self.v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
 
       self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+
+  def initialize_v_cruise(self, CS):
+    if self.CP.pcmCruise:
+      return
+
+    for b in CS.buttonEvents:
+      # 250kph or above probably means we never had a set speed
+      if b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) and self.v_cruise_kph_last < 250:
+        self.v_cruise_kph = self.v_cruise_kph_last
+        break
+    else:
+      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, V_CRUISE_ENABLE_MIN, V_CRUISE_MAX)))
+
+    self.v_cruise_cluster_kph = self.v_cruise_kph
 
 
 def apply_deadzone(error, deadzone):
