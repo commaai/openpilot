@@ -48,7 +48,23 @@ class TestVCruiseHelper(unittest.TestCase):
     self.CP = car.CarParams(pcmCruise=self.pcm_cruise)  # pylint: disable=E1101
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-  def test_adjust_speed_in_standstill(self):
+  def test_adjust_speed(self):
+    """
+    Asserts speed changes on falling edges of buttons.
+    """
+
+    self.v_cruise_helper.initialize_v_cruise(car.CarState())
+
+    for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
+      initial_v_cruise = self.v_cruise_helper.v_cruise_kph
+      for pressed in (True, False):
+        CS = car.CarState(cruiseState={"available": True})
+        CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
+
+        self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+        self.assertEqual(pressed, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
+
+  def test_resume_in_standstill(self):
     """
     Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
     """
