@@ -172,8 +172,10 @@ void SignalEdit::showFormClicked() {
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
-  auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
-  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
+  if (isVisible()) {
+    auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
+    title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
+  }
 }
 
 void SignalEdit::enterEvent(QEvent *event) {

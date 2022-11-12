@@ -83,13 +83,14 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   scroll->setWidgetResizable(true);
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  tag_widget = new QTabWidget(this);
-  tag_widget->setTabPosition(QTabWidget::South);
-  tag_widget->addTab(scroll, "Msg");
+  tab_widget = new QTabWidget(this);
+  // tab_widget->setVisible(false);
+  tab_widget->setTabPosition(QTabWidget::South);
+  tab_widget->addTab(scroll, "Msg");
   history_log = new HistoryLog(this);
-  tag_widget->addTab(history_log, "Logs");
+  tab_widget->addTab(history_log, "Logs");
 
-  main_layout->addWidget(tag_widget);
+  main_layout->addWidget(tab_widget);
 
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
@@ -102,6 +103,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
+  QObject::connect(tab_widget, &QTabWidget::currentChanged, this, &DetailWidget::updateState);
   QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
   QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
@@ -134,6 +136,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   }
   tabbar->setCurrentIndex(index);
   dbcMsgChanged();
+  // tab_widget->setVisible(true);
   scroll->verticalScrollBar()->setValue(0);
 }
 
@@ -187,7 +190,7 @@ void DetailWidget::updateState() {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
   if (msg_id.isEmpty()) return;
 
-  if (tag_widget->currentIndex() == 0)
+  if (tab_widget->currentIndex() == 0)
     binary_view->updateState();
   else
     history_log->updateState();
