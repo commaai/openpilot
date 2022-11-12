@@ -1,3 +1,4 @@
+from collections import defaultdict
 import math
 
 from cereal import car
@@ -41,13 +42,15 @@ class VCruiseHelper:
     self.v_cruise_kph = V_CRUISE_INITIAL
     self.v_cruise_cluster_kph = V_CRUISE_INITIAL
     self.v_cruise_kph_last = 0
-    self.button_timers = {ButtonEvent.Type.decelCruise: 0, ButtonEvent.Type.accelCruise: 0}
+
+    self.button_timers = {ButtonType.decelCruise: 0, ButtonType.accelCruise: 0}
+    self.depressed_state = defaultdict(lambda: {"enabled": False, "standstill": False})
 
   @property
   def v_cruise_initialized(self):
     return self.v_cruise_kph != V_CRUISE_INITIAL
 
-  def update_button_timers(self, CS):
+  def update_button_timers(self, CS, enabled):
     # increment timer for buttons still pressed
     for k in self.button_timers:
       if self.button_timers[k] > 0:
@@ -56,6 +59,11 @@ class VCruiseHelper:
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
+        # TODO: do we need to reset?
+        if b.pressed:
+          self.depressed_state[b.type.raw].update({"enabled": enabled, "standstill": CS.cruiseState.standstill})
+        else:
+          self.depressed_state[b.type.raw].clear()
 
   def update_v_cruise(self, CS, enabled, is_metric):
     self.v_cruise_kph_last = self.v_cruise_kph
@@ -72,7 +80,7 @@ class VCruiseHelper:
       self.v_cruise_kph = V_CRUISE_INITIAL
       self.v_cruise_cluster_kph = V_CRUISE_INITIAL
 
-  def _update_v_cruise_non_pcm(self, CS, enabled, metric):
+  def _update_v_cruise_non_pcm(self, CS, enabled, is_metric):
     # handle button presses. TODO: this should be in state_control, but a decelCruise press
     # would have the effect of both enabling and changing speed is checked after the state transition
     if not enabled:
@@ -82,7 +90,7 @@ class VCruiseHelper:
     button_type = None
 
     # should be CV.MPH_TO_KPH, but this causes rounding errors
-    v_cruise_delta = 1. if metric else 1.6
+    v_cruise_delta = 1. if is_metric else 1.6
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers and not b.pressed:
@@ -98,7 +106,7 @@ class VCruiseHelper:
           break
 
     # Don't adjust speed when pressing resume to exit standstill
-    if CS.cruiseState.standstill and button_type in (ButtonType.accelCruise, ButtonType.resumeCruise):
+    if button_type == ButtonType.accelCruise and self.depressed_state[button_type]["standstill"]:
       button_type = None
 
     if button_type:
@@ -115,6 +123,7 @@ class VCruiseHelper:
       self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 
   def initialize_v_cruise(self, CS):
+    # initializing is handled by the PCM
     if self.CP.pcmCruise:
       return
 
