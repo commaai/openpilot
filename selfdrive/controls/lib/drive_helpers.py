@@ -54,9 +54,9 @@ class VCruiseHelper:
     if CS.cruiseState.available:
       if not self.CP.pcmCruise:
         # if stock cruise is completely disabled, then we can use our own set speed logic
+        self.update_button_timers(CS)
         self._update_v_cruise_non_pcm(CS, enabled, is_metric)
         self.v_cruise_cluster_kph = self.v_cruise_kph
-        self.update_button_timers(CS)
       else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
@@ -90,8 +90,7 @@ class VCruiseHelper:
           break
 
     # Don't adjust speed when pressing resume to exit standstill
-    cruise_standstill = self.button_change_state[button_type]["standstill"] or CS.cruiseState.standstill
-    if button_type == ButtonType.accelCruise and cruise_standstill:
+    if button_type == ButtonType.accelCruise and self.button_change_state[button_type]["standstill"]:
       button_type = None
 
     if button_type:
