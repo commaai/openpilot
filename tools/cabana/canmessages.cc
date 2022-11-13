@@ -44,7 +44,7 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
   for (auto &evt : *evts) {
     if (evt->which != cereal::Event::Which::CAN) continue;
 
-    for (auto c : evt->event.getCan()) {
+    for (const auto &c : evt->event.getCan()) {
       if (bus == c.getSrc() && address == c.getAddress()) {
         double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
         if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
