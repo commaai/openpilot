@@ -192,6 +192,8 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->createDefaultAxes();
   chart->legend()->hide();
   chart->layout()->setContentsMargins(0, 0, 0, 0);
+  // top margin for title
+  chart->setMargins({0, 11, 0, 0});
 
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
@@ -265,6 +267,7 @@ void ChartView::adjustChartMargins() {
   if (chart()->plotArea().left() != aligned_pos) {
     const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
     chart()->setMargins(QMargins(left_margin, 11, 0, 0));
+    updateLineMarker(can->currentSec());
   }
 }
 
@@ -290,7 +293,7 @@ void ChartView::updateSeries(const std::pair<double, double> range) {
   double end_ns = (route_start_time + range.second) * 1e9;
   for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
-      for (auto c : (*it)->event.getCan()) {
+      for (const auto &c : (*it)->event.getCan()) {
         if (bus == c.getSrc() && address == c.getAddress()) {
           auto dat = c.getDat();
           double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *signal);
