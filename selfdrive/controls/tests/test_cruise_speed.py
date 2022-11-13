@@ -65,7 +65,7 @@ class TestVCruiseHelper(unittest.TestCase):
       CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
 
-      print(v_ego, self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
+      print(v_ego, self.v_cruise_helper.v_cruise_kph * 1.6)
 
 
     # CS = car.CarState(cruiseState={"available": True})
