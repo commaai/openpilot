@@ -5,6 +5,7 @@ import unittest
 
 from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN
 from cereal import car
+from common.conversions import Conversions as CV
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
@@ -55,9 +56,20 @@ class TestVCruiseHelper(unittest.TestCase):
     the speed to the maximum of vEgo and current cruise speed.
     """
 
-    CS = car.CarState(cruiseState={"available": True})
-    self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
-    print(self.v_cruise_helper.v_cruise_kph)
+    for v_ego in np.linspace(0, 100, 101):
+      self.v_cruise_helper.initialize_v_cruise(car.CarState())
+      initial_v_cruise = self.v_cruise_helper.v_cruise_kph
+      print(self.v_cruise_helper.v_cruise_kph)
+
+      CS = car.CarState(vEgo=float(v_ego), gasPressed=True, cruiseState={"available": True})
+      CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
+      self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+
+      print(v_ego, self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
+
+
+    # CS = car.CarState(cruiseState={"available": True})
+    # self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
 
   def test_adjust_speed(self):
     """
