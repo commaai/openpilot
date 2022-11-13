@@ -44,7 +44,7 @@ QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *si
   for (auto &evt : *evts) {
     if (evt->which != cereal::Event::Which::CAN) continue;
 
-    for (auto c : evt->event.getCan()) {
+    for (const auto &c : evt->event.getCan()) {
       if (bus == c.getSrc() && address == c.getAddress()) {
         double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
         if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
@@ -65,6 +65,7 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
   emit updated();
   emit msgsReceived(messages);
   delete messages;
+  processing = false;
 }
 
 bool CANMessages::eventFilter(const Event *event) {
@@ -78,7 +79,7 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     double current_sec = replay->currentSeconds();
-    if (counters_begin_sec == 0) {
+    if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
       counters.clear();
       counters_begin_sec = current_sec;
     }
@@ -94,7 +95,6 @@ bool CANMessages::eventFilter(const Event *event) {
       }
       CanData &data = list.emplace_front();
       data.ts = current_sec;
-      data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
 
       data.count = ++counters[id];
@@ -105,7 +105,9 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     double ts = millis_since_boot();
-    if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps) && !processing) {
+      // delay posting CAN message if UI thread is busy
+      processing = true;
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
@@ -120,7 +122,7 @@ const std::deque<CanData> CANMessages::messages(const QString &id) {
 }
 
 void CANMessages::seekTo(double ts) {
-  replay->seekTo(ts, false);
+  replay->seekTo(std::max(double(0), ts), false);
   counters_begin_sec = 0;
 }
 
