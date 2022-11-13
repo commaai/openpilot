@@ -58,14 +58,19 @@ class TestVCruiseHelper(unittest.TestCase):
 
     for v_ego in np.linspace(0, 100, 101):
       self.v_cruise_helper.initialize_v_cruise(car.CarState())
-      initial_v_cruise = self.v_cruise_helper.v_cruise_kph
+      # initial_v_cruise = self.v_cruise_helper.v_cruise_kph
       print(self.v_cruise_helper.v_cruise_kph)
+      expected_v_cruise_kph = max(self.v_cruise_helper.v_cruise_kph, v_ego * CV.MS_TO_KPH)
+      expected_v_cruise_kph = float(np.clip(round(expected_v_cruise_kph, 1), V_CRUISE_ENABLE_MIN, V_CRUISE_MAX))
 
       CS = car.CarState(vEgo=float(v_ego), gasPressed=True, cruiseState={"available": True})
       CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
 
-      print(v_ego, self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
+      print(expected_v_cruise_kph, self.v_cruise_helper.v_cruise_kph)
+      self.assertAlmostEqual(expected_v_cruise_kph, self.v_cruise_helper.v_cruise_kph, delta=2)
+
+      # print(v_ego * 1.6, self.v_cruise_helper.v_cruise_kph)
 
 
     # CS = car.CarState(cruiseState={"available": True})
