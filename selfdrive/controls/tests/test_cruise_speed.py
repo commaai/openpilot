@@ -65,52 +65,52 @@ class TestVCruiseHelper(unittest.TestCase):
       CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
 
-      print(v_ego, self.v_cruise_helper.v_cruise_kph / 1.6)
+      print(v_ego, self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
 
 
     # CS = car.CarState(cruiseState={"available": True})
     # self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
 
-  def test_adjust_speed(self):
-    """
-    Asserts speed changes on falling edges of buttons.
-    """
-
-    for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
-      initial_v_cruise = self.v_cruise_helper.v_cruise_kph
-      for pressed in (True, False):
-        CS = car.CarState(cruiseState={"available": True})
-        CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
-
-        self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
-        self.assertEqual(pressed, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
-
-  def test_resume_in_standstill(self):
-    """
-    Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
-    """
-
-    initial_v_cruise = self.v_cruise_helper.v_cruise_kph
-
-    for standstill in (True, False):
-      for pressed in (True, False):
-        CS = car.CarState(cruiseState={"available": True, "standstill": standstill})
-        CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
-
-        self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
-        # speed should only update if not at standstill and button falling edge
-        should_equal = standstill or pressed
-        self.assertEqual(should_equal, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
-
-  def test_initialize_v_cruise(self):
-    """
-    Asserts allowed cruise speeds on enabling with SET
-    """
-
-    for v_ego in np.linspace(0, 100, 101):
-      self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=float(v_ego)))
-      self.assertTrue(V_CRUISE_ENABLE_MIN <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX)
-      self.assertTrue(self.v_cruise_helper.v_cruise_initialized)
+  # def test_adjust_speed(self):
+  #   """
+  #   Asserts speed changes on falling edges of buttons.
+  #   """
+  #
+  #   for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
+  #     initial_v_cruise = self.v_cruise_helper.v_cruise_kph
+  #     for pressed in (True, False):
+  #       CS = car.CarState(cruiseState={"available": True})
+  #       CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
+  #
+  #       self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+  #       self.assertEqual(pressed, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
+  #
+  # def test_resume_in_standstill(self):
+  #   """
+  #   Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
+  #   """
+  #
+  #   initial_v_cruise = self.v_cruise_helper.v_cruise_kph
+  #
+  #   for standstill in (True, False):
+  #     for pressed in (True, False):
+  #       CS = car.CarState(cruiseState={"available": True, "standstill": standstill})
+  #       CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
+  #
+  #       self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+  #       # speed should only update if not at standstill and button falling edge
+  #       should_equal = standstill or pressed
+  #       self.assertEqual(should_equal, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
+  #
+  # def test_initialize_v_cruise(self):
+  #   """
+  #   Asserts allowed cruise speeds on enabling with SET
+  #   """
+  #
+  #   for v_ego in np.linspace(0, 100, 101):
+  #     self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=float(v_ego)))
+  #     self.assertTrue(V_CRUISE_ENABLE_MIN <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX)
+  #     self.assertTrue(self.v_cruise_helper.v_cruise_initialized)
 
 
 if __name__ == "__main__":
