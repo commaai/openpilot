@@ -16,6 +16,7 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   QFormLayout *form_layout = new QFormLayout(this);
 
   name = new QLineEdit();
+  name->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name));
   form_layout->addRow(tr("Name"), name);
 
   size = new QSpinBox();
