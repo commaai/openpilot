@@ -71,22 +71,40 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
 SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
 
   // title bar
-  auto toolbar = new QToolBar(this);
-  toolbar->setStyleSheet("QToolButton {width:15px;height:15px;font-size:15px}");
-  icon = new QLabel();
-  toolbar->addWidget(icon);
+  auto title_bar = new QWidget(this);
+  title_bar->setFixedHeight(32);
+  QHBoxLayout *title_layout = new QHBoxLayout(title_bar);
+  title_layout->setContentsMargins(0, 0, 0, 0);
+  title_bar->setStyleSheet("QToolButton {width:15px;height:15px;font-size:15px}");
+  color_label = new QLabel(this);
+  color_label->setFixedWidth(25);
+  color_label->setContentsMargins(5, 0, 0, 0);
+  title_layout->addWidget(color_label);
+  icon = new QLabel(this);
+  title_layout->addWidget(icon);
   title = new ElidedLabel(this);
   title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(getColor(index)));
-  toolbar->addWidget(title);
-  plot_btn = toolbar->addAction("", [this]() { emit showChart(msg_id, sig, !chart_opened); });
-  auto seek_btn = toolbar->addAction(QIcon::fromTheme("edit-find"), "", [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
+  title_layout->addWidget(title);
+
+  plot_btn = new QToolButton(this);
+  plot_btn->setText("📈");
+  plot_btn->setCheckable(true);
+  plot_btn->setAutoRaise(true);
+  title_layout->addWidget(plot_btn);
+  auto seek_btn = new QToolButton(this);
+  seek_btn->setIcon(QIcon::fromTheme("edit-find"));
+  seek_btn->setAutoRaise(true);
   seek_btn->setToolTip(tr("Find signal values"));
-  auto remove_btn = toolbar->addAction("x", [this]() { emit remove(sig); });
+  title_layout->addWidget(seek_btn);
+  auto remove_btn = new QToolButton(this);
+  remove_btn->setAutoRaise(true);
+  remove_btn->setText("x");
   remove_btn->setToolTip(tr("Remove signal"));
-  main_layout->addWidget(toolbar);
+  title_layout->addWidget(remove_btn);
+  main_layout->addWidget(title_bar);
 
   // signal form
   form = new SignalForm(this);
@@ -99,8 +117,11 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
-  QObject::connect(form, &SignalForm::changed, this, &SignalEdit::saveSignal);
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
+  QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) { emit showChart(msg_id, sig, checked); });
+  QObject::connect(seek_btn, &QToolButton::clicked, [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
+  QObject::connect(remove_btn, &QToolButton::clicked,  [this]() { emit remove(sig); });
+  QObject::connect(form, &SignalForm::changed, this, &SignalEdit::saveSignal);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
@@ -108,7 +129,9 @@ void SignalEdit::setSignal(const QString &message_id, const Signal *signal) {
   sig = signal;
   updateForm(msg_id == message_id && form->isVisible());
   msg_id = message_id;
-  title->setText(QString("%1. %2").arg(form_idx + 1).arg(sig->name.c_str()));
+  color_label->setText(QString::number(form_idx + 1));
+  color_label->setStyleSheet(QString("background-color:%1").arg(getColor(form_idx)));
+  title->setText(sig->name.c_str());
   show();
 }
 
@@ -145,9 +168,8 @@ void SignalEdit::saveSignal() {
 }
 
 void SignalEdit::setChartOpened(bool opened) {
-  plot_btn->setText(opened ? "☒" : "📈");
   plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot"));
-  chart_opened = opened;
+  plot_btn->setChecked(opened);
 }
 
 void SignalEdit::updateForm(bool visible) {
@@ -175,8 +197,9 @@ void SignalEdit::showFormClicked() {
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
-  auto color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
-  title->setStyleSheet(QString("font-weight:bold; color:%1").arg(color.name()));
+  auto bg_color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
+  auto color = sig == s ? "white" : "black";
+  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(bg_color.name()));
 }
 
 void SignalEdit::hideEvent(QHideEvent *event) {
