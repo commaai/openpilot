@@ -95,7 +95,6 @@ bool CANMessages::eventFilter(const Event *event) {
       }
       CanData &data = list.emplace_front();
       data.ts = current_sec;
-      data.bus_time = c.getBusTime();
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
 
       data.count = ++counters[id];
