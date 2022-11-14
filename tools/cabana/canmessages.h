@@ -16,7 +16,6 @@ struct CanData {
   double ts = 0.;
   uint32_t count = 0;
   uint32_t freq = 0;
-  uint16_t bus_time = 0;
   QByteArray dat;
 };
 
@@ -63,6 +62,7 @@ protected:
   Replay *replay = nullptr;
   std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
+  std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
   QHash<QString, std::deque<CanData>> received_msgs;
 };
