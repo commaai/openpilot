@@ -1,5 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
+#include <iostream>
 #include <QApplication>
 #include <QClipboard>
 #include <QCompleter>
@@ -20,6 +21,7 @@
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
   if (main_win) emit main_win->showMessage(msg, 0);
 }
 
@@ -192,6 +194,7 @@ void MainWindow::saveDBCToFile() {
     QFile file(file_name);
     if (file.open(QIODevice::WriteOnly))
       file.write(dbc()->generateDBC().toUtf8());
+      detail_widget->undo_stack->clear();
   }
 }
 

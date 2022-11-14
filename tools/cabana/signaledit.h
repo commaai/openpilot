@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QAction>
 #include <QComboBox>
 #include <QDialog>
 #include <QLabel>
@@ -54,10 +53,10 @@ protected:
 
   SignalForm *form = nullptr;
   ElidedLabel *title;
+  QLabel *color_label;
   QLabel *icon;
   int form_idx = 0;
-  bool chart_opened = false;
-  QAction *plot_btn;
+  QToolButton *plot_btn;
 };
 
 class SignalFindDlg : public QDialog {
