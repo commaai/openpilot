@@ -192,9 +192,10 @@ void MainWindow::saveDBCToFile() {
   if (!file_name.isEmpty()) {
     settings.last_dir = QFileInfo(file_name).absolutePath();
     QFile file(file_name);
-    if (file.open(QIODevice::WriteOnly))
+    if (file.open(QIODevice::WriteOnly)) {
       file.write(dbc()->generateDBC().toUtf8());
       detail_widget->undo_stack->clear();
+    }
   }
 }
 
