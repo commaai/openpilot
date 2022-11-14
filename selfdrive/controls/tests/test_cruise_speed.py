@@ -53,7 +53,7 @@ class TestVCruiseHelper(unittest.TestCase):
   def reset_cruise_speed_state(self):
     # Two resets previous cruise speed
     for _ in range(2):
-      self.v_cruise_helper.update_v_cruise(car.CarState(), enabled=False, is_metric=False)
+      self.v_cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": False}), enabled=False, is_metric=False)
 
   def enable(self, v_ego):
     # Simulates user pressing set with a current speed
