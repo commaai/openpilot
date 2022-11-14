@@ -38,24 +38,28 @@ TEST_CASE("Parse can messages") {
   REQUIRE(log.events.size() > 0);
   for (auto e : log.events) {
     if (e->which == cereal::Event::Which::CAN) {
-      std::vector<SignalValue> values_1;
+      std::map<std::pair<uint32_t, std::string>, std::vector<SignalValue>> values_1;
       for (const auto &c : e->event.getCan()) {
         const auto msg = dbc.msg(c.getAddress());
         if (c.getSrc() == 0 && msg) {
           for (auto &[name, sig] : msg->sigs) {
             double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), sig);
-            values_1.push_back({.address = c.getAddress(), .name = name.toStdString(), .value = val});
+            SignalValue v = {.address = c.getAddress(), .name = name.toStdString(), .value = val};
+            std::pair<uint32_t, std::string> key = {c.getAddress(), name.toStdString()};
+            values_1[key].push_back(v);
           }
         }
       }
       can_parser.UpdateCans(e->mono_time, e->event.getCan());
       auto values_2 = can_parser.query_latest();
-      for (auto &v1 : values_1) {
+      for (auto &[key, v1] : values_1) {
         bool found = false;
         for (auto &v2 : values_2) {
-          if (v2.address == v1.address && v2.name == v1.name) {
-            auto it = std::find(v2.all_values.begin(), v2.all_values.end(), v1.value);
-            REQUIRE(it != v2.all_values.end());
+          if (v2.address == key.first && v2.name == key.second) {
+            REQUIRE(v2.all_values.size() == v1.size());
+            for (int i = 0; i < v2.all_values.size(); ++i) {
+              REQUIRE(v1[i].value == v2.all_values[i]);
+            }
             found = true;
             break;
           }
