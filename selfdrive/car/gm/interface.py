@@ -219,7 +219,7 @@ class CarInterface(CarInterfaceBase):
       ret.buttonEvents = buttonEvents
 
     # The ECM allows enabling on falling edge of set, but only rising edge of resume.
-    # Override standard behavior and enable on rising edge of resume below
+    # Override standard behavior and enable on rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
@@ -228,7 +228,7 @@ class CarInterface(CarInterfaceBase):
         events.add(EventName.buttonEnable)
 
       # Cancel on rising and falling edge of cancel button
-      if any(b.type == ButtonType.accelCruise for b in ret.buttonEvents):
+      if any(b.type == ButtonType.cancel for b in ret.buttonEvents):
         events.add(EventName.buttonCancel)
 
     # Enabling at a standstill with brake is allowed
