@@ -431,9 +431,6 @@ class Tici(HardwareBase):
   def initialize_hardware(self):
     self.amplifier.initialize_configuration()
 
-    # TODO: this should go in AGNOS
-    os.system("sudo chmod 666 /dev/spidev0.0")
-
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 

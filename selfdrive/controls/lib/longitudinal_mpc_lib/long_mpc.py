@@ -301,8 +301,10 @@ class LongitudinalMpc:
     return lead_xv
 
   def set_accel_limits(self, min_a, max_a):
+    # TODO this sets a max accel limit, but the minimum limit is only for cruise decel
+    # needs refactor
     self.cruise_min_a = min_a
-    self.cruise_max_a = max_a
+    self.max_a = max_a
 
   def update(self, carstate, radarstate, v_cruise, x, v, a, j):
     v_ego = self.x0[1]
@@ -317,16 +319,17 @@ class LongitudinalMpc:
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
+    self.params[:,0] = MIN_ACCEL
+    self.params[:,1] = self.max_a
+
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
-      self.params[:,0] = MIN_ACCEL
-      self.params[:,1] = self.cruise_max_a
       self.params[:,5] = LEAD_DANGER_FACTOR
 
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
       v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
-      v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.05)
+      v_upper = v_ego + (T_IDXS * self.max_a * 1.05)
       v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
                                  v_upper)
@@ -338,9 +341,6 @@ class LongitudinalMpc:
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
     elif self.mode == 'blended':
-      self.params[:,0] = MIN_ACCEL
-      self.params[:,1] = MAX_ACCEL
-
       self.params[:,5] = 1.0
 
       x_obstacles = np.column_stack([lead_0_obstacle,
