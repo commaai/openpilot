@@ -5,6 +5,7 @@ import unittest
 
 from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN
 from cereal import car
+from common.conversions import Conversions as CV
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
@@ -47,48 +48,78 @@ class TestVCruiseHelper(unittest.TestCase):
   def setUp(self):
     self.CP = car.CarParams(pcmCruise=self.pcm_cruise)  # pylint: disable=E1101
     self.v_cruise_helper = VCruiseHelper(self.CP)
+    self.reset_cruise_speed_state()
+
+  def reset_cruise_speed_state(self):
+    # Two resets previous cruise speed
+    for _ in range(2):
+      self.v_cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": False}), enabled=False, is_metric=False)
+
+  def enable(self, v_ego):
+    # Simulates user pressing set with a current speed
+    self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego))
 
   def test_adjust_speed(self):
     """
     Asserts speed changes on falling edges of buttons.
     """
 
-    self.v_cruise_helper.initialize_v_cruise(car.CarState())
+    self.enable(V_CRUISE_ENABLE_MIN * CV.KPH_TO_MS)
 
     for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
-      initial_v_cruise = self.v_cruise_helper.v_cruise_kph
       for pressed in (True, False):
         CS = car.CarState(cruiseState={"available": True})
         CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
 
         self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
-        self.assertEqual(pressed, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
+        self.assertEqual(pressed, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
+
+  def test_rising_edge_enable(self):
+    """
+    Some car interfaces may enable on rising edge of a button,
+    ensure we don't adjust speed if enabled changes mid-press.
+    """
+
+    # NOTE: enabled is always one frame behind the result from button press in controlsd
+    for enabled, pressed in ((False, False),
+                             (False, True),
+                             (True, False)):
+      CS = car.CarState(cruiseState={"available": True})
+      CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=pressed)]
+      self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=False)
+      if pressed:
+        self.enable(V_CRUISE_ENABLE_MIN * CV.KPH_TO_MS)
+
+      # Expected diff on enabling. Speed should not change on falling edge of pressed
+      self.assertEqual(not pressed, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_resume_in_standstill(self):
     """
     Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
     """
 
-    self.v_cruise_helper.initialize_v_cruise(car.CarState())
-    initial_v_cruise = self.v_cruise_helper.v_cruise_kph
+    self.enable(0)
 
     for standstill in (True, False):
       for pressed in (True, False):
         CS = car.CarState(cruiseState={"available": True, "standstill": standstill})
         CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
-
         self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+
         # speed should only update if not at standstill and button falling edge
         should_equal = standstill or pressed
-        self.assertEqual(should_equal, (initial_v_cruise == self.v_cruise_helper.v_cruise_kph))
+        self.assertEqual(should_equal, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_initialize_v_cruise(self):
     """
-    Asserts allowed cruise speeds on enabling with SET
+    Asserts allowed cruise speeds on enabling with SET.
     """
 
     for v_ego in np.linspace(0, 100, 101):
-      self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=float(v_ego)))
+      self.reset_cruise_speed_state()
+      self.assertFalse(self.v_cruise_helper.v_cruise_initialized)
+
+      self.enable(float(v_ego))
       self.assertTrue(V_CRUISE_ENABLE_MIN <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX)
       self.assertTrue(self.v_cruise_helper.v_cruise_initialized)
 

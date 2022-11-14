@@ -91,8 +91,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
-  QObject::connect(tab_widget, &QTabWidget::currentChanged, this, &DetailWidget::updateState);
-  QObject::connect(can, &CANMessages::updated, this, &DetailWidget::updateState);
+  QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
+  QObject::connect(can, &CANMessages::msgsReceived, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
@@ -183,9 +183,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   setUpdatesEnabled(true);
 }
 
-void DetailWidget::updateState() {
+void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if (msg_id.isEmpty()) return;
+  if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
+    return;
 
   if (tab_widget->currentIndex() == 0)
     binary_view->updateState();
@@ -280,6 +281,7 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   form_layout->addRow("ID", new QLabel(msg_id));
 
   name_edit = new QLineEdit(title, this);
+  name_edit->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name_edit));
   form_layout->addRow(tr("Name"), name_edit);
 
   size_spin = new QSpinBox(this);
