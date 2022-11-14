@@ -93,24 +93,6 @@ class TestVCruiseHelper(unittest.TestCase):
       # Expected diff on enabling. Speed should not change on falling edge of pressed
       self.assertEqual(not pressed, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
-  def test_rising_edge_enable(self):
-    """
-    Some car interfaces may enable on rising edge of a button,
-    ensure we don't adjust speed if enabled changes mid-press.
-    """
-
-    initial_v_cruise = self.v_cruise_helper.v_cruise_kph
-
-    # NOTE: enabled is always one frame behind the result from button press in controlsd
-    for enabled, pressed in ((False, False),
-                             (False, True),
-                             (True, False)):
-      CS = car.CarState(cruiseState={"available": True})
-      CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
-
-      self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=False)
-      self.assertEqual(initial_v_cruise, self.v_cruise_helper.v_cruise_kph)
-
   def test_resume_in_standstill(self):
     """
     Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
