@@ -80,17 +80,18 @@ class TestVCruiseHelper(unittest.TestCase):
     ensure we don't adjust speed if enabled changes mid-press.
     """
 
-    initial_v_cruise = self.v_cruise_helper.v_cruise_kph
-
     # NOTE: enabled is always one frame behind the result from button press in controlsd
     for enabled, pressed in ((False, False),
                              (False, True),
                              (True, False)):
       CS = car.CarState(cruiseState={"available": True})
-      CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
-
+      CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=pressed)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=False)
-      self.assertEqual(initial_v_cruise, self.v_cruise_helper.v_cruise_kph)
+      if pressed:
+        self.enable(V_CRUISE_ENABLE_MIN * CV.KPH_TO_MS)
+
+      # Expected diff on enabling. Speed should not change on falling edge of pressed
+      self.assertEqual(not pressed, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_resume_in_standstill(self):
     """
