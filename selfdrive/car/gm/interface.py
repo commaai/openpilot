@@ -227,10 +227,6 @@ class CarInterface(CarInterfaceBase):
       if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
         events.add(EventName.buttonEnable)
 
-      # Cancel on rising and falling edge of cancel button
-      if any(b.type == ButtonType.cancel for b in ret.buttonEvents):
-        events.add(EventName.buttonCancel)
-
     # Enabling at a standstill with brake is allowed
     # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
     below_min_enable_speed = ret.vEgo < self.CP.minEnableSpeed or self.CS.moving_backward
