@@ -6,6 +6,7 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
+#include "selfdrive/ui/qt/widgets/experimental_mode.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
@@ -128,11 +129,16 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
+  QWidget* statsAndExperimentalModeWidget = new QWidget(this);
+  QVBoxLayout* statsAndExperimentalMode = new QVBoxLayout(statsAndExperimentalModeWidget);
+  statsAndExperimentalMode->addWidget(new ExperimentalMode, 1);
+  statsAndExperimentalMode->addWidget(new DriveStats, 1);
+
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
   statsAndSetup->setSpacing(30);
-  statsAndSetup->addWidget(new DriveStats, 1);
+  statsAndSetup->addWidget(statsAndExperimentalModeWidget, 1);
   statsAndSetup->addWidget(new SetupWidget);
 
   center_layout->addWidget(statsAndSetupWidget);
