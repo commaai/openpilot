@@ -73,6 +73,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   msg_layout->addWidget(binary_view);
   // signals
   signals_layout = new QVBoxLayout();
+  signals_layout->setSpacing(0);
   msg_layout->addLayout(signals_layout);
   msg_layout->addStretch(0);
 
