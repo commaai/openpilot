@@ -4,6 +4,10 @@
 
 // HistoryLogModel
 
+inline const Signal &get_signal(const DBCMsg *m, int index) {
+  return std::next(m->sigs.begin(), index)->second;
+}
+
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
   if (role == Qt::DisplayRole) {
@@ -11,7 +15,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     if (index.column() == 0) {
       return QString::number(m.ts, 'f', 2);
     }
-    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), dbc_msg->sigs[index.column() - 1]))
+    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), get_signal(dbc_msg, index.column() - 1)))
                       : toHex(m.dat);
   } else if (role == Qt::FontRole && index.column() == 1 && !has_signal) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -37,7 +41,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return has_signal ? QString::fromStdString(dbc_msg->sigs[section - 1].name).replace('_', ' ') : "Data";
+      return has_signal ? QString::fromStdString(get_signal(dbc_msg, section - 1).name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
     }

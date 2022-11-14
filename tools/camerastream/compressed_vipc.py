@@ -91,9 +91,14 @@ def main(addr, cams, nvidia=False):
     vipc_server.create_buffers(vst, 4, False, W, H)
   vipc_server.start_listener()
 
+  procs = []
   for k, v in cams.items():
-    multiprocessing.Process(target=decoder, args=(addr, k, vipc_server, v, nvidia)).start()
+    p = multiprocessing.Process(target=decoder, args=(addr, k, vipc_server, v, nvidia))
+    p.start()
+    procs.append(p)
 
+  for p in procs:
+    p.join()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
