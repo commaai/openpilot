@@ -79,15 +79,14 @@ class TestVCruiseHelper(unittest.TestCase):
     Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
     """
 
+    self.enable(0)
+
     for standstill in (True, False):
       for pressed in (True, False):
-        self.reset_cruise_speed_state()
-        self.enable(0)
-
         CS = car.CarState(cruiseState={"available": True, "standstill": standstill})
         CS.buttonEvents = [ButtonEvent(type=ButtonType.accelCruise, pressed=pressed)]
-
         self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+
         # speed should only update if not at standstill and button falling edge
         should_equal = standstill or pressed
         self.assertEqual(should_equal, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
