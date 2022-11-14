@@ -1,37 +1,40 @@
 #pragma once
 
 #include <QComboBox>
-#include <QDialog>
 #include <QJsonDocument>
+#include <QMainWindow>
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
-#include <QTextEdit>
 
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
 
-class MainWindow : public QWidget {
+class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:
   MainWindow();
   void dockCharts(bool dock);
-  void showStatusMessage(const QString &msg, int timeout = 0) { status_bar->showMessage(msg, timeout); }
+  void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
 
 public slots:
   void loadDBCFromName(const QString &name);
   void loadDBCFromFingerprint();
-  void loadDBCFromPaste();
-  void saveDBC();
+  void loadDBCFromFile();
+  void loadDBCFromClipboard();
+  void saveDBCToFile();
+  void saveDBCToClipboard();
 
 signals:
   void showMessage(const QString &msg, int timeout);
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
+  void createActions();
+  void createStatusBar();
   void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
@@ -44,26 +47,7 @@ protected:
   QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
-  QStatusBar *status_bar;
+  QLabel *fingerprint_label;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
-};
-
-
-class LoadDBCDialog : public QDialog {
-  Q_OBJECT
-
-public:
-  LoadDBCDialog(QWidget *parent);
-  QTextEdit *dbc_edit;
-};
-
-class SaveDBCDialog : public QDialog {
-  Q_OBJECT
-
-public:
-  SaveDBCDialog(QWidget *parent);
-  void copytoClipboard();
-  void saveAs();
-  QTextEdit *dbc_edit;
 };

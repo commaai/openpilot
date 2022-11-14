@@ -240,11 +240,11 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Resetar</translation>
     </message>
     <message>
         <source>Review</source>
-        <translation type="unfinished"></translation>
+        <translation>Revisar</translation>
     </message>
 </context>
 <context>
@@ -475,12 +475,12 @@ trabalho definido</translation>
 <context>
     <name>ParamControl</name>
     <message>
-        <source>Ok</source>
-        <translation type="unfinished">OK</translation>
+        <source>Cancel</source>
+        <translation>Cancelar</translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <source>Enable</source>
+        <translation>Ativar</translation>
     </message>
 </context>
 <context>
@@ -868,7 +868,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation type="unfinished"></translation>
+        <translation>Desinstalar</translation>
     </message>
 </context>
 <context>
@@ -971,20 +971,8 @@ trabalho definido</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 End-to-end longitudinal (experimental) 🌮</translation>
-    </message>
-    <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>Controle longitudinal experimental openpilot</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;AVISO: o controle longitudinal openpilot é experimental para este carro e irá desabilitar AEB.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>Deixe o modelo controlar o acelerador e os freios. openpilot irá conduzir como pensa que um humano faria. Super experimental.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control is not currently available for this car.</source>
@@ -995,7 +983,7 @@ trabalho definido</translation>
         <translation>Habilite o controle longitudinal experimental para habilitar isso.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>Desacionar Com Pedal Do Acelerador</translation>
     </message>
     <message>
@@ -1017,6 +1005,22 @@ trabalho definido</translation>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation>Modo Experimental</translation>
+    </message>
+    <message>
+        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
+        <translation>    openpilot por padrão funciona em &lt;b&gt;modo chill&lt;/b&gt;.    modo Experimental ativa &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que não estão prontos para o modo chill.     Recursos experimentais estão listados abaixo:    &lt;br&gt;     &lt;h4&gt;🌮 Controle Longitudinal de Ponta a Ponta 🌮&lt;/h4&gt;     Deixe o modelo de condução controlar o acelerador e os freios. Uma vez que o modelo de condução decide qual velocidade dirigir, a velocidade definida só funcionará como um limite superior.</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
+        <translation>O padrão do openpilot é o ACC integrado do carro em vez do controle longitudinal do openpilot neste carro. Habilite isto para alternar para controle longitudinal do openpilot.</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>ATENÇÃO: o controle longitudinal do openpilot é experimental para este carro e desativará a Frenagem Automática de Emergência (AEB).</translation>
     </message>
 </context>
 <context>
@@ -1074,7 +1078,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>Esquecer</translation>
     </message>
 </context>
 </TS>
