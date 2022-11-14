@@ -97,7 +97,7 @@ class VCruiseHelper:
     if button_type == ButtonType.accelCruise and cruise_standstill:
       return
 
-    # Don't adjust speed if we've enabled since the button was depressed
+    # Don't adjust speed if we've enabled since the button was depressed (some ports enable on rising edge)
     if not self.button_change_states[button_type]["enabled"]:
       return
 
