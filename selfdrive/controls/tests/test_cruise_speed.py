@@ -64,10 +64,9 @@ class TestVCruiseHelper(unittest.TestCase):
     Asserts speed changes on falling edges of buttons.
     """
 
-    for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
-      self.reset_cruise_speed_state()
-      self.enable(V_CRUISE_ENABLE_MIN * CV.KPH_TO_MS)
+    self.enable(V_CRUISE_ENABLE_MIN * CV.KPH_TO_MS)
 
+    for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
       for pressed in (True, False):
         CS = car.CarState(cruiseState={"available": True})
         CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
