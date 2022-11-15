@@ -44,7 +44,7 @@ private:
   QGraphicsItemGroup *item_group;
   QGraphicsLineItem *line_marker, *track_line;
   QGraphicsEllipseItem *track_ellipse;
-  QGraphicsTextItem *value_text, *msg_title;
+  QGraphicsTextItem *value_text;
   QGraphicsProxyWidget *close_btn_proxy;
   QVector<QPointF> vals;
  };

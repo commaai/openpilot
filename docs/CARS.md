@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 214 Supported Cars
+# 215 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -107,6 +107,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Sportage 2023|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Kia|Sportage Hybrid 2023|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Kia|Stinger 2018-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
+|Kia|Stinger 2022|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Kia|Telluride 2020-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai H|
 |Lexus|CT Hybrid 2017-18|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
@@ -150,7 +151,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Škoda|Octavia 2015, 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Škoda|Octavia RS 2016|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Škoda|Scala 2020|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533[<sup>9</sup>](#footnotes)|
-|Škoda|Superb 2015-18|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
+|Škoda|Superb 2015-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,8</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|J533|
 |Toyota|Alphard 2019-20|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Alphard Hybrid 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Avalon 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|

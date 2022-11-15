@@ -60,11 +60,11 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>従量制通信設定</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>大量のデータのアップロードを防止します。</translation>
     </message>
 </context>
 <context>
@@ -240,11 +240,11 @@
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>リセット</translation>
     </message>
     <message>
         <source>Review</source>
-        <translation type="unfinished"></translation>
+        <translation>確認</translation>
     </message>
 </context>
 <context>
@@ -864,7 +864,7 @@ location set</source>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation type="unfinished"></translation>
+        <translation>アンインストール</translation>
     </message>
 </context>
 <context>
@@ -1004,19 +1004,19 @@ location set</source>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>実験モード</translation>
     </message>
     <message>
         <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotは標準ではゆっくりとくつろげる運転を提供します。この実験モードを有効にすると、以下のくつろげる段階ではない開発中の機能を利用する事ができます。   &lt;br&gt;     &lt;h4&gt;🌮 エンドツーエンドアクセル制御 🌮&lt;/h4&gt;     エンジンとブレーキの制御を全てopenpilotの運転モデルに委ねます。openpilotは人間が運転するのと同じように考え、赤信号や停止サインで車を停止します。openpilotが運転速度も決めるので、あなたが設定する速度は上限速度になります。</translation>
     </message>
     <message>
         <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotは、この車に搭載されているアクセル制御(ACC)を標準で利用します。openpilotによるアクセル制御を利用したい場合は、この設定を有効にしてください。</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>警告: この車種でのopenpilotによるアクセル制御は実験段階であり、衝突被害軽減ブレーキ(AEB)を無効化します。</translation>
     </message>
 </context>
 <context>
@@ -1074,7 +1074,7 @@ location set</source>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>削除</translation>
     </message>
 </context>
 </TS>
