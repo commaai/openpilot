@@ -85,12 +85,11 @@ class CarController:
     # *** common hyundai stuff ***
 
     # tester present - w/ no response (keeps relevant ECU disabled)
-    if not self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
-      if self.frame % 100 == 0 and self.CP.openpilotLongitudinalControl:
-        addr, bus = 0x7d0, 0
-        if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
-          addr, bus = 0x730, 5
-        can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
+    if self.frame % 100 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and self.CP.openpilotLongitudinalControl:
+      addr, bus = 0x7d0, 0
+      if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
+        addr, bus = 0x730, 5
+      can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
 
     # >90 degree steering fault prevention
     # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
