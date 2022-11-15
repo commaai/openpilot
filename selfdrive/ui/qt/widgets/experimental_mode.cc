@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 #include <QStyle>
 
-#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
   chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
@@ -68,7 +68,8 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
 }
 
 void ExperimentalMode::showEvent(QShowEvent *event) {
-  setProperty("experimental_mode", params.getBool("ExperimentalMode"));
+  ui_update_params(uiState());
+  setProperty("experimental_mode", uiState()->scene.experimental_mode);
   mode_icon->setPixmap(experimental_mode ? experimental_pixmap : chill_pixmap);
   mode_label->setText(experimental_mode ? "EXPERIMENTAL MODE ON" : "CHILL MODE ON");
   style()->unpolish(this);
