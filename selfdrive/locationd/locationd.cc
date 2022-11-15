@@ -348,29 +348,28 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  // store last location for bearing
-  static double last_lat = 0;
-  static double last_lon = 0;
+  double pos_x, pos_y, pos_z, bearing;
+  VectorXd ecef_pos;
+  ECEF pos_ecef_ecef;
+  Geodetic pos_geo;
 
   if (!log.getPositionECEF().getValid() && !log.getVelocityECEF().getValid()) {
-     // TODO: merge with below
-    this->determine_gps_mode(current_time);
-    this->gps_valid = false;
-    return;
+    goto INVALID_DATA;
   }
 
-  double pos_x = log.getPositionECEF().getValue()[0];
-  double pos_y = log.getPositionECEF().getValue()[1];
-  double pos_z = log.getPositionECEF().getValue()[2];
+  pos_x = log.getPositionECEF().getValue()[0];
+  pos_y = log.getPositionECEF().getValue()[1];
+  pos_z = log.getPositionECEF().getValue()[2];
 
-  VectorXd ecef_pos = Vector3d(pos_x, pos_y, pos_z);
-  ECEF pos_ecef_ecef = { .x = pos_x, .y = pos_y, .z = pos_z };
-  Geodetic pos_geo = ecef2geodetic(pos_ecef_ecef);
+  ecef_pos = Vector3d(pos_x, pos_y, pos_z);
+  pos_ecef_ecef = { .x = pos_x, .y = pos_y, .z = pos_z };
+  pos_geo = ecef2geodetic(pos_ecef_ecef);
+  LOGE("lat: %f lon: %f", pos_geo.lat, pos_geo.lon);
 
   // location sanity checks
   assert((std::abs(pos_geo.lat) <= 90) || (std::abs(pos_geo.lon) <= 180));
   if (std::abs(pos_geo.alt) > ALTITUDE_SANITY_CHECK) {
-    // TODO: merge with above
+  INVALID_DATA:
     this->determine_gps_mode(current_time);
     this->gps_valid = false;
     return;
@@ -380,40 +379,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   //bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
   //bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  // calculate current bearing
-  double bearing = 0;
-  if (last_lat != 0 && last_lon != 0) {
-
-    // TODO: implement bearing
-    /*
-    https://www.movable-type.co.uk/scripts/latlong.html
-    β = atan2(X,Y) ... bearing between two coordinates
-    X = cos θb * sin ∆L
-    Y = cos θa * sin θb – sin θa * cos θb * cos ∆L
-
-    θ ... lat
-    L ... lon
-    β ... bearing
-
-    as measurements are received in 10Hz rate, start bearing == end bearing
-    */
-
-    // this is so bad...
-    double ba = last_lat - pos_geo.lat;
-    double bo = last_lon - pos_geo.lon;
-
-    if (ba == 0) {
-      bearing = 0;
-    }
-    else {
-      bearing = atan(bo/ba);
-    }
-    LOGE("TMP BEARING: %f", bearing)
-  }
-
-  last_lat = pos_geo.lat;
-  last_lon = pos_geo.lon;
-  LOGE("lat: %f lon: %f", last_lat, last_lon);
 
   auto ecef_pos_std = log.getPositionECEF().getStd();
   MatrixXdr ecef_pos_R = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]).asDiagonal();
