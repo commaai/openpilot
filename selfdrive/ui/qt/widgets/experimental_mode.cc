@@ -9,7 +9,7 @@
 #include "selfdrive/ui/qt/util.h"
 
 ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
-  setIconSize({100, 100});
+//  setIconSize({100, 100});
 //  setLayoutDirection(Qt::RightToLeft);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
 
@@ -60,11 +60,11 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
 
     QPushButton[experimental_mode="false"] {
       background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                  stop:0 #2395FF, stop:1 #14FFAB);
+                  stop:0 #14FFAB, stop:1 #2395FF);
     }
     QPushButton[experimental_mode="false"]:pressed {
       background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                  stop:0 #CC2395FF, stop:1 #CC14FFAB);
+                  stop:0 #CC14FFAB, stop:1 #CC2395FF);
     }
 
     QPushButton[experimental_mode="true"] {
@@ -79,6 +79,21 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
 }
 
 void ExperimentalMode::showEvent(QShowEvent *event) {
+//  auto cp_bytes = params.get("CarParamsPersistent");
+//  if (!cp_bytes.empty()) {
+//    AlignedBuffer aligned_buf;
+//    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+//    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+//    const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
+//    const bool exp_long_enabled = CP.getExperimentalLongitudinalAvailable() && params.getBool("ExperimentalLongitudinalEnabled");
+//    if (op_long || exp_long_enabled) {
+//      show();
+//    } else {
+//      hide();
+//    }
+//  }
+
+
   qDebug() << "showEvent!";
 //  experimental_mode = params.getBool("ExperimentalMode");
   setProperty("experimental_mode", params.getBool("ExperimentalMode"));
@@ -86,8 +101,9 @@ void ExperimentalMode::showEvent(QShowEvent *event) {
 //  setText(experimental_mode ? "EXPERIMENTAL MODE" : "CHILL MODE");
 //  mode_icon->setIcon(experimental_mode ? experimental_pixmap : chill_pixmap);
   mode_icon->setPixmap(experimental_mode ? experimental_pixmap : chill_pixmap);
-  mode_label->setText(experimental_mode ? "EXPERIMENTAL MODE" : "CHILL MODE");
+  mode_label->setText(experimental_mode ? "EXPERIMENTAL MODE ON" : "CHILL MODE ON");
   updateStyle();
+//  hide();
 //  QHBoxLayout *layout = new QHBoxLayout;
 //  layout->addWidget(new QLabel("hia"));
 //  layout->addWidget(new QLabel("hia2"));
