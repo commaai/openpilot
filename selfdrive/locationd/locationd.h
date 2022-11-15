@@ -77,7 +77,6 @@ private:
   bool device_fell = false;
   bool gps_mode = false;
   bool gps_valid = false;
-  bool ublox_available = true;
   bool observation_timings_invalid = false;
-  std::map<std::string, double> observation_values_invalid;  
+  std::map<std::string, double> observation_values_invalid;
 };
