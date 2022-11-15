@@ -223,6 +223,7 @@ void MainWindow::dockCharts(bool dock) {
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
     floating_window = new QWidget(nullptr);
+    floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->installEventFilter(charts_widget);
