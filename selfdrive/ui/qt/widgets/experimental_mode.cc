@@ -8,7 +8,7 @@
 
 ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(parent) {
   chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
-  experimental_pixmap = QPixmap("../assets/img_experimental_grey.png").scaledToWidth(100, Qt::SmoothTransformation);
+  experimental_pixmap = QPixmap("../assets/img_experimental_grey.svg").scaledToWidth(100, Qt::SmoothTransformation);
 
   setFixedHeight(125);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles

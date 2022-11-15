@@ -174,7 +174,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
-  experimental_img = loadPixmap("../assets/img_experimental.png", {img_size, img_size});
+  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
 

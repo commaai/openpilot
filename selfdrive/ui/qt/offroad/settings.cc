@@ -40,7 +40,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "ExperimentalMode",
       tr("Experimental Mode"),
       "",
-      "../assets/img_experimental.png",
+      "../assets/img_experimental.svg",
       false,
     },
     {
