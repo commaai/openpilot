@@ -1,22 +1,17 @@
 #include "selfdrive/ui/qt/widgets/experimental_mode.h"
 
 #include <QDebug>
-#include <QLayout>
-#include <QPushButton>
-#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QStyle>
 
-#include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 
 ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
+  chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
+  experimental_pixmap = QPixmap("../assets/img_experimental_grey.png").scaledToWidth(100, Qt::SmoothTransformation);
+
   setFixedHeight(125);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
-
-  experimental_pixmap = QPixmap("../assets/img_experimental_grey.png").scaledToWidth(100, Qt::SmoothTransformation);
-  chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
-
-  mode_icon = new QLabel;
-  mode_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
   QWidget *verticalLine = new QWidget;
   verticalLine->setFixedWidth(2);
@@ -27,6 +22,8 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
   main_layout->setContentsMargins(30, 0, 30, 0);
 
   mode_label = new QLabel;
+  mode_icon = new QLabel;
+  mode_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
   main_layout->addWidget(mode_label, 1, Qt::AlignLeft);
   main_layout->addWidget(verticalLine, 0, Qt::AlignRight);
@@ -37,14 +34,9 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
 
   setStyleSheet(R"(
     QPushButton {
-      font-size: 45px;
-      font-weight: 300;
       border: none;
-      text-align: left;
-      padding: 25 50;
-      font-family: JetBrainsMono;
+      padding: 0 50;
       border-radius: 10px;
-      color: #000000;
     }
 
     QLabel {
@@ -79,5 +71,6 @@ void ExperimentalMode::showEvent(QShowEvent *event) {
   setProperty("experimental_mode", params.getBool("ExperimentalMode"));
   mode_icon->setPixmap(experimental_mode ? experimental_pixmap : chill_pixmap);
   mode_label->setText(experimental_mode ? "EXPERIMENTAL MODE ON" : "CHILL MODE ON");
-  updateStyle();
+  style()->unpolish(this);
+  style()->polish(this);
 }

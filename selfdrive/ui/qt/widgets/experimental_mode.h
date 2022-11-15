@@ -1,13 +1,7 @@
 #pragma once
 
-#include <QFrame>
-#include <QHBoxLayout>
 #include <QLabel>
-#include <QPainter>
 #include <QPushButton>
-#include <QMouseEvent>
-#include <QDebug>
-#include <QStyle>
 
 #include "common/params.h"
 
@@ -22,12 +16,10 @@ signals:
   void openSettings(int index = 0);
 
 private:
-  void updateStyle() {style()->unpolish(this); style()->polish(this);}
+  void showEvent(QShowEvent *event) override;
 
   Params params;
   bool experimental_mode;
-  void showEvent(QShowEvent *event) override;
-
   QPixmap experimental_pixmap;
   QPixmap chill_pixmap;
   QLabel *mode_label;
