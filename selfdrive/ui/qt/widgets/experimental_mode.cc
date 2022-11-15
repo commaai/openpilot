@@ -9,12 +9,34 @@
 #include "selfdrive/ui/qt/util.h"
 
 ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
-//  QPixmap pixmap("../assets/offroad/icon_settings.png");
-  QPixmap pixmap("../assets/img_experimental.png");
-  setIcon(pixmap);
-  setLayoutDirection(Qt::RightToLeft);
-  setIconSize({75, 75});
+  setIconSize({100, 100});
+//  setLayoutDirection(Qt::RightToLeft);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
+
+  experimental_pixmap = QPixmap("../assets/img_experimental_grey.png").scaledToWidth(100, Qt::SmoothTransformation);
+  chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
+
+  mode_icon = new QLabel;
+//  mode_icon->setPixmap(chill_pixmap.scaledToWidth(100, Qt::SmoothTransformation));
+  mode_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+
+
+  QWidget *verticalLine = new QWidget;
+  verticalLine->setFixedWidth(2);
+  verticalLine->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+  verticalLine->setStyleSheet(QString("background-color: #4D000000;"));
+
+  QHBoxLayout *main_layout = new QHBoxLayout;
+  main_layout->setContentsMargins(30, 0, 30, 0);
+
+  mode_label = new QLabel;
+
+  main_layout->addWidget(mode_label, 1, Qt::AlignLeft);
+  main_layout->addWidget(verticalLine, 0, Qt::AlignRight);
+  main_layout->addSpacing(30);
+  main_layout->addWidget(mode_icon, 0, Qt::AlignRight);
+
+  setLayout(main_layout);
 
   setStyleSheet(R"(
     QPushButton {
@@ -25,6 +47,14 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
       padding: 25 50;
       font-family: JetBrainsMono;
       border-radius: 10px;
+      color: #000000;
+    }
+
+    QLabel {
+      font-size: 45px;
+      font-weight: 300;
+      text-align: left;
+      font-family: JetBrainsMono;
       color: #000000;
     }
 
@@ -52,10 +82,16 @@ void ExperimentalMode::showEvent(QShowEvent *event) {
   qDebug() << "showEvent!";
 //  experimental_mode = params.getBool("ExperimentalMode");
   setProperty("experimental_mode", params.getBool("ExperimentalMode"));
-  qDebug() << "experimental_mode" << experimental_mode;
-  update();
-  setText(experimental_mode ? "MODE: EXPERIMENTAL" : "MODE: CHILL");
+//  setIcon(experimental_mode ? experimental_pixmap : chill_pixmap);
+//  setText(experimental_mode ? "EXPERIMENTAL MODE" : "CHILL MODE");
+//  mode_icon->setIcon(experimental_mode ? experimental_pixmap : chill_pixmap);
+  mode_icon->setPixmap(experimental_mode ? experimental_pixmap : chill_pixmap);
+  mode_label->setText(experimental_mode ? "EXPERIMENTAL MODE" : "CHILL MODE");
   updateStyle();
+//  QHBoxLayout *layout = new QHBoxLayout;
+//  layout->addWidget(new QLabel("hia"));
+//  layout->addWidget(new QLabel("hia2"));
+//  setLayout(layout);
 //  style()->unpolish(this);
 //  style()->polish(this);
 }

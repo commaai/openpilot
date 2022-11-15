@@ -27,4 +27,9 @@ private:
   Params params;
   bool experimental_mode;
   void showEvent(QShowEvent *event) override;
+
+  QPixmap experimental_pixmap;
+  QPixmap chill_pixmap;
+  QLabel *mode_label;
+  QLabel *mode_icon;
 };
