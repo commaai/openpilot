@@ -30,6 +30,7 @@ Version 0.8.17 (2022-11-21)
 * Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
 * Kia Sportage 2023 support thanks to sunnyhaibin!
 * Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Stinger 2022 support thanks to sunnyhaibin!
 
 Version 0.8.16 (2022-08-26)
 ========================
