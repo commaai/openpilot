@@ -86,10 +86,8 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
   horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   verticalHeader()->setVisible(false);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
   setFrameShape(QFrame::NoFrame);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
 }
 
