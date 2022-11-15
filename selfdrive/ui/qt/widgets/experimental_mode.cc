@@ -10,7 +10,7 @@
 
 ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
 //  QPixmap pixmap("../assets/offroad/icon_settings.png");
-  QPixmap pixmap("../assets/icon_experimental.png");
+  QPixmap pixmap("../assets/img_experimental.png");
   setIcon(pixmap);
   setLayoutDirection(Qt::RightToLeft);
   setIconSize({75, 75});
