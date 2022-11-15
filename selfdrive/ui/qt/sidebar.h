@@ -20,7 +20,7 @@ public:
   explicit Sidebar(QWidget* parent = 0);
 
 signals:
-  void openSettings();
+  void openSettings(int index = 0);
   void valueChanged();
 
 public slots:

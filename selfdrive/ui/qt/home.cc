@@ -23,7 +23,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
-  home = new OffroadHome();
+  home = new OffroadHome(this);
+  QObject::connect(home, &OffroadHome::openSettings, this, &HomeWindow::openSettings);
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
@@ -129,11 +130,19 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
+  // Vertical experimental button and drive stats layout
   QWidget* statsAndExperimentalModeWidget = new QWidget(this);
   QVBoxLayout* statsAndExperimentalMode = new QVBoxLayout(statsAndExperimentalModeWidget);
-  statsAndExperimentalMode->addWidget(new ExperimentalMode, 1);
+  statsAndExperimentalMode->setSpacing(30);
+  statsAndExperimentalMode->setMargin(0);
+
+  ExperimentalMode *experimental_mode = new ExperimentalMode(this);
+  QObject::connect(experimental_mode, &ExperimentalMode::openSettings, this, &OffroadHome::openSettings);
+
+  statsAndExperimentalMode->addWidget(experimental_mode, 1);
   statsAndExperimentalMode->addWidget(new DriveStats, 1);
 
+  // Horizontal experimental + drive stats and setup widget
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);

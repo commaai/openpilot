@@ -11,7 +11,7 @@
 
 #include "common/params.h"
 
-class ExperimentalMode : public QFrame {
+class ExperimentalMode : public QPushButton {
   Q_OBJECT
   Q_PROPERTY(bool experimental_mode MEMBER experimental_mode);
 
@@ -19,10 +19,7 @@ public:
   explicit ExperimentalMode(QWidget* parent = 0);
 
 signals:
-  void openSettings();
-  void pressed();
-  void released();
-  void clicked();
+  void openSettings(int index = 0);
 
 private:
   void updateStyle() {style()->unpolish(this); style()->polish(this);}
@@ -30,25 +27,4 @@ private:
   Params params;
   bool experimental_mode;
   void showEvent(QShowEvent *event) override;
-  QPushButton *button;
-
-protected:
-  void mousePressEvent(QMouseEvent *event) override {
-    if (rect().contains(event->pos())) {
-      emit pressed();
-      qDebug() << "pressed";
-      updateStyle();
-    }
-  }
-
-  void mouseReleaseEvent(QMouseEvent *event) override {
-    emit released();
-    qDebug() << "released";
-    if (rect().contains(event->pos())) {
-      emit clicked();
-      emit openSettings();
-      qDebug() << "clicked";
-    }
-    updateStyle();
-  }
 };
