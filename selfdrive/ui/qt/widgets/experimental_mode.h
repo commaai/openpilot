@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QLabel>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -31,7 +30,6 @@ private:
   Params params;
   bool experimental_mode;
   void showEvent(QShowEvent *event) override;
-  QLabel *label;
   QPushButton *button;
 
 protected:
