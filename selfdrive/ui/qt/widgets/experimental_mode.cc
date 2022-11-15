@@ -6,7 +6,7 @@
 
 #include "selfdrive/ui/ui.h"
 
-ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
+ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(parent) {
   chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
   experimental_pixmap = QPixmap("../assets/img_experimental_grey.png").scaledToWidth(100, Qt::SmoothTransformation);
 
@@ -67,7 +67,7 @@ ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
   )");
 }
 
-void ExperimentalMode::showEvent(QShowEvent *event) {
+void ExperimentalModeButton::showEvent(QShowEvent *event) {
   ui_update_params(uiState());
   setProperty("experimental_mode", uiState()->scene.experimental_mode);
   mode_icon->setPixmap(experimental_mode ? experimental_pixmap : chill_pixmap);

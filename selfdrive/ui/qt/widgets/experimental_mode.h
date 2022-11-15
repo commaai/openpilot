@@ -3,12 +3,12 @@
 #include <QLabel>
 #include <QPushButton>
 
-class ExperimentalMode : public QPushButton {
+class ExperimentalModeButton : public QPushButton {
   Q_OBJECT
   Q_PROPERTY(bool experimental_mode MEMBER experimental_mode);
 
 public:
-  explicit ExperimentalMode(QWidget* parent = 0);
+  explicit ExperimentalModeButton(QWidget* parent = 0);
 
 signals:
   void openSettings(int index = 0);

@@ -131,23 +131,23 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   center_layout = new QStackedLayout();
 
   // Vertical experimental button and drive stats layout
-  QWidget* statsAndExperimentalModeWidget = new QWidget(this);
-  QVBoxLayout* statsAndExperimentalMode = new QVBoxLayout(statsAndExperimentalModeWidget);
-  statsAndExperimentalMode->setSpacing(30);
-  statsAndExperimentalMode->setMargin(0);
+  QWidget* statsAndExperimentalModeButtonWidget = new QWidget(this);
+  QVBoxLayout* statsAndExperimentalModeButton = new QVBoxLayout(statsAndExperimentalModeButtonWidget);
+  statsAndExperimentalModeButton->setSpacing(30);
+  statsAndExperimentalModeButton->setMargin(0);
 
-  ExperimentalMode *experimental_mode = new ExperimentalMode(this);
-  QObject::connect(experimental_mode, &ExperimentalMode::openSettings, this, &OffroadHome::openSettings);
+  ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
+  QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
 
-  statsAndExperimentalMode->addWidget(experimental_mode, 1);
-  statsAndExperimentalMode->addWidget(new DriveStats, 1);
+  statsAndExperimentalModeButton->addWidget(experimental_mode, 1);
+  statsAndExperimentalModeButton->addWidget(new DriveStats, 1);
 
   // Horizontal experimental + drive stats and setup widget
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
   statsAndSetup->setSpacing(30);
-  statsAndSetup->addWidget(statsAndExperimentalModeWidget, 1);
+  statsAndSetup->addWidget(statsAndExperimentalModeButtonWidget, 1);
   statsAndSetup->addWidget(new SetupWidget);
 
   center_layout->addWidget(statsAndSetupWidget);
