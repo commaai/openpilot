@@ -11,6 +11,7 @@
 ExperimentalMode::ExperimentalMode(QWidget *parent) : QPushButton(parent) {
 //  setIconSize({100, 100});
 //  setLayoutDirection(Qt::RightToLeft);
+  setFixedHeight(125);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
 
   experimental_pixmap = QPixmap("../assets/img_experimental_grey.png").scaledToWidth(100, Qt::SmoothTransformation);
