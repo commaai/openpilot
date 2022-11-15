@@ -298,12 +298,14 @@ if arch == "Darwin":
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
-  qt_env['QTDIR'] = "/usr"
+  qt_query = os.popen('qmake -query').read()
+  qt_query = {kv[0]: kv[1] for kv in [line.split(':') for line in qt_query.split('\n')] if len(kv) == 2}
+
+  qt_env['QTDIR'] = qt_query['QT_INSTALL_PREFIX']
   qt_dirs = [
-    f"/usr/include/{real_arch}-linux-gnu/qt5",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
+    f"{qt_query['QT_INSTALL_HEADERS']}",
   ]
-  qt_dirs += [f"/usr/include/{real_arch}-linux-gnu/qt5/Qt{m}" for m in qt_modules]
+  qt_dirs += [f"{qt_query['QT_INSTALL_HEADERS']}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
