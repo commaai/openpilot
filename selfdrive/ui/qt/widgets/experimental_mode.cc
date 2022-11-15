@@ -14,7 +14,7 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
 
   QWidget *verticalLine = new QWidget;
-  verticalLine->setFixedWidth(2);
+  verticalLine->setFixedWidth(3);
   verticalLine->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
   verticalLine->setStyleSheet(QString("background-color: #4D000000;"));
 
