@@ -24,11 +24,6 @@ const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
 const double DECAY = 0.99995; // same as reset tracker
 const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
-// TODO: GPS sensor time offsets are empirically calculated
-// They should be replaced with synced time from a real clock
-const double GPS_LOCATION_SENSOR_TIME_OFFSET = 0.630; // s
-const double GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET = 0.095; // s
-
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
@@ -287,6 +282,7 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
+#ifdef NOT_DEFINED
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset) {
   // ignore the message if the fix is invalid
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
@@ -348,41 +344,72 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
+#endif
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
+  // store last location for bearing
+  static double last_lat = 0;
+  static double last_lon = 0;
+
   if (!log.getPositionECEF().getValid() && !log.getVelocityECEF().getValid()) {
-    LOGE("LOCATIOND: POS OR VEL not ready!!")
     this->determine_gps_mode(current_time);
     this->gps_valid = false;
     return;
   }
 
-  // TODO: make inline
   double pos_x = log.getPositionECEF().getValue()[0];
   double pos_y = log.getPositionECEF().getValue()[1];
   double pos_z = log.getPositionECEF().getValue()[2];
+
   VectorXd ecef_pos = Vector3d(pos_x, pos_y, pos_z);
+  ECEF pos_ecef_ecef = { .x = pos_x, .y = pos_y, .z = pos_z };
+  Geodetic pos_geo = ecef2geodetic(pos_ecef_ecef);
 
-  // TODO: make inline
-  double pos_x_r = log.getPositionECEF().getStd()[0];
-  double pos_y_r = log.getPositionECEF().getStd()[1];
-  double pos_z_r = log.getPositionECEF().getStd()[2];
-  MatrixXdr ecef_pos_R = Vector3d(pos_x_r, pos_y_r, pos_z_r).asDiagonal();
+  // location sanity checks
+  assert((std::abs(pos_geo.lat) <= 90) || (std::abs(pos_geo.lon) <= 180));
+  if (std::abs(pos_geo.alt) > ALTITUDE_SANITY_CHECK) {
+    // TODO: merge with above
+    this->determine_gps_mode(current_time);
+    this->gps_valid = false;
+    return;
+  }
 
-  // TODO: validate data
+  //bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
+  //bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
+  //bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  double vel_x = log.getVelocityECEF().getValue()[0];
-  double vel_y = log.getVelocityECEF().getValue()[1];
-  double vel_z = log.getVelocityECEF().getValue()[2];
-  VectorXd ecef_vel = Vector3d(vel_x, vel_y, vel_z);
+  // calculate current bearing
+  double bearing = 0;
+  if (last_lat != 0 && last_lon != 0) {
 
-  double vel_x_r = log.getVelocityECEF().getStd()[0];
-  double vel_y_r = log.getVelocityECEF().getStd()[1];
-  double vel_z_r = log.getVelocityECEF().getStd()[2];
-  VectorXd ecef_vel_R = Vector3d(vel_x_r, vel_y_r, vel_z_r);
+    //this is so bad...
+    double ba = last_lat - pos_geo.lat;
+    double bo = last_lon - pos_geo.lon;
 
-  this->unix_timestamp_millis = log.getLogMonoTime();
+    if (ba == 0) {
+      bearing = 0;
+    }
+    else {
+      bearing = atan(bo/ba);
+    }
+    LOGE("TMP BEARING: %f", bearing)
+  }
+
+  last_lat = pos_geo.lat;
+  last_lon = pos_geo.lon;
+  LOGE("lat: %f lon: %f", last_lat, last_lon);
+
+  auto ecef_pos_std = log.getPositionECEF().getStd();
+  MatrixXdr ecef_pos_R = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]).asDiagonal();
+
+  auto ecef_vel_values = log.getVelocityECEF().getValue();
+  VectorXd ecef_vel = Vector3d(ecef_vel_values[0], ecef_vel_values[1], ecef_vel_values[2]);
+
+  auto ecef_vel_std = log.getVelocityECEF().getStd();
+  MatrixXdr ecef_vel_R = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]).asDiagonal();
+
+  this->unix_timestamp_millis = log.getMeasTime();
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
@@ -398,12 +425,15 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
-    LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
+  LOGE("vel: %f, error: %f, gps_est_error: %f", ecef_vel.norm(), orientation_error.norm(), gps_est_error)
+  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 5.0) {
+    LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset 1");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
-    LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
+    LOGE("Locationd vs ubloxLocation position difference too large, kalman reset 2");
+    LOGE("r: %d %d %d %d", initial_pose_ecef_quat.rows(), ecef_pos.rows(), ecef_pos_R.rows(), ecef_vel_R.rows());
+    LOGE("c: %d %d %d %d", initial_pose_ecef_quat.cols(), ecef_pos.cols(), ecef_pos_R.cols(), ecef_vel_R.cols());
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
@@ -561,14 +591,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_sensor(t, log.getGyroscope());
   } else if (log.isGnssMeasurements()) {
     this->handle_gnss(t, log.getGnssMeasurements());
-  }
-  /* else if (log.isGpsLocation()) {
-    this->handle_gps(t, log.getGpsLocation(), GPS_LOCATION_SENSOR_TIME_OFFSET);
-  } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal(), GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET);
-  }
-  */
-  else if (log.isCarState()) {
+  } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
     this->handle_cam_odo(t, log.getCameraOdometry());
@@ -632,18 +655,13 @@ void Localizer::determine_gps_mode(double current_time) {
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
 
-  const char* gps_location_socket;
-  if (ublox_available) {
-    gps_location_socket = "gpsLocationExternal";
-  } else {
-    gps_location_socket = "gpsLocation";
-  }
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration", 
-                                                          "carState", "carParams", "accelerometer", "gyroscope"};
-  PubMaster pm({"liveLocationKalman"});
+  const std::initializer_list<const char *> service_list = {
+    "gnssMeasurements", "cameraOdometry", "liveCalibration",
+    "carState", "carParams", "accelerometer", "gyroscope"};
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"carParams"});
+  PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
