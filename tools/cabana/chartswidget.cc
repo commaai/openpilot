@@ -14,6 +14,7 @@
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
@@ -44,9 +45,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { removeAll(nullptr); });
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeAll);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartsWidget::signalUpdated);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, [this](const QString &msg_id) {
+  QObject::connect(dbc(), &DBCManager::msgRemoved, [this](uint32_t address) {
+    for (auto c : charts.toVector())
+      if (DBCManager::parseId(c->id).second == address) removeChart(c);
+  });
+  QObject::connect(dbc(), &DBCManager::msgUpdated, [this](uint32_t address) {
     for (auto c : charts) {
-      if (c->id == msg_id) c->updateTitle();
+      if (DBCManager::parseId(c->id).second == address) c->updateTitle();
     }
   });
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
@@ -187,6 +192,8 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   chart->createDefaultAxes();
   chart->legend()->hide();
   chart->layout()->setContentsMargins(0, 0, 0, 0);
+  // top margin for title
+  chart->setMargins({0, 11, 0, 0});
 
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
@@ -200,7 +207,6 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   item_group->setZValue(chart->zValue() + 10);
 
   // title
-  msg_title = new QGraphicsTextItem(chart);
   QToolButton *remove_btn = new QToolButton();
   remove_btn->setText("X");
   remove_btn->setAutoRaise(true);
@@ -229,13 +235,11 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
 
 void ChartView::resizeEvent(QResizeEvent *event) {
   QChartView::resizeEvent(event);
-  msg_title->setPos(11, 6);
   close_btn_proxy->setPos(event->size().width() - close_btn_proxy->size().width() - 11, 8);
 }
 
 void ChartView::updateTitle() {
-  chart()->setTitle(signal->name.c_str());
-  msg_title->setHtml(tr("%1 <font color=\"gray\">%2</font>").arg(dbc()->msg(id)->name.c_str()).arg(id));
+  chart()->setTitle(tr("<font color=\"gray\" text-align:left>%1 %2</font> <b>%3</b>").arg(dbc()->msg(id)->name).arg(id).arg(signal->name.c_str()));
 }
 
 void ChartView::updateFromSettings() {
@@ -243,7 +247,6 @@ void ChartView::updateFromSettings() {
   chart()->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
   auto color = chart()->titleBrush().color();
   line_marker->setPen(QPen(color, 2));
-  msg_title->setDefaultTextColor(color);
 }
 
 void ChartView::setRange(double min, double max, bool force_update) {
@@ -260,6 +263,7 @@ void ChartView::adjustChartMargins() {
   if (chart()->plotArea().left() != aligned_pos) {
     const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
     chart()->setMargins(QMargins(left_margin, 11, 0, 0));
+    updateLineMarker(can->currentSec());
   }
 }
 
@@ -285,7 +289,7 @@ void ChartView::updateSeries(const std::pair<double, double> range) {
   double end_ns = (route_start_time + range.second) * 1e9;
   for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
-      for (auto c : (*it)->event.getCan()) {
+      for (const auto &c : (*it)->event.getCan()) {
         if (bus == c.getSrc() && address == c.getAddress()) {
           auto dat = c.getDat();
           double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *signal);
