@@ -304,6 +304,7 @@ else:
   qt_env['QTDIR'] = qt_query['QT_INSTALL_PREFIX']
   qt_dirs = [
     f"{qt_query['QT_INSTALL_HEADERS']}",
+    f"{qt_query['QT_INSTALL_HEADERS']}/QtGui/5.12.8/QtGui",
   ]
   qt_dirs += [f"{qt_query['QT_INSTALL_HEADERS']}/Qt{m}" for m in qt_modules]
 
