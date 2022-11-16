@@ -8,14 +8,14 @@
 #include "selfdrive/ui/ui.h"
 
 ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(parent) {
-  chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(100, Qt::SmoothTransformation);
-  experimental_pixmap = QPixmap("../assets/img_experimental_grey.svg").scaledToWidth(100, Qt::SmoothTransformation);
+  chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(img_width, Qt::SmoothTransformation);
+  experimental_pixmap = QPixmap("../assets/img_experimental_grey.svg").scaledToWidth(img_width, Qt::SmoothTransformation);
 
   setFixedHeight(125);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
 
   QHBoxLayout *main_layout = new QHBoxLayout;
-  main_layout->setContentsMargins(30, 0, 30, 0);
+  main_layout->setContentsMargins(horizontal_padding, 0, horizontal_padding, 0);
 
   mode_label = new QLabel;
   mode_icon = new QLabel;
@@ -29,7 +29,6 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   setStyleSheet(R"(
     QPushButton {
       border: none;
-      padding: 0 50;
     }
 
     QLabel {
@@ -50,6 +49,7 @@ void ExperimentalModeButton::paintEvent(QPaintEvent *event) {
   QPainterPath path;
   path.addRoundedRect(rect(), 10, 10);
 
+  // gradient
   bool pressed = isDown();
   QLinearGradient gradient(rect().left(), 0, rect().right(), 0);
   if (experimental_mode) {
@@ -62,9 +62,9 @@ void ExperimentalModeButton::paintEvent(QPaintEvent *event) {
   p.fillPath(path, gradient);
 
   // vertical line
-  qDebug() << rect().right() - 30 - 100 - 30;
   p.setPen(QPen(QColor(0, 0, 0, 0x4d), 3, Qt::SolidLine));
-  p.drawLine(839, rect().bottom(), 839, rect().top());
+  int line_x = rect().right() - img_width - (2 * horizontal_padding);
+  p.drawLine(line_x, rect().bottom(), line_x, rect().top());
 }
 
 void ExperimentalModeButton::showEvent(QShowEvent *event) {
