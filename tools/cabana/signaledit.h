@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
+#include <QTimer>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -57,6 +58,7 @@ protected:
   QLabel *icon;
   int form_idx = 0;
   QToolButton *plot_btn;
+  QTimer *save_timer;
 };
 
 class SignalFindDlg : public QDialog {
