@@ -54,6 +54,9 @@ public:
     return description->text();
   }
 
+  QLabel *icon_label;
+  QPixmap icon_pixmap;
+
 public slots:
   void showDescription() {
     description->setVisible(true);
@@ -153,6 +156,12 @@ public:
       } else {
         toggle.togglePosition();
       }
+
+      if (state && !active_icon_pixmap.isNull()) {
+        icon_label->setPixmap(active_icon_pixmap);
+      } else if (!icon_pixmap.isNull()) {
+        icon_label->setPixmap(icon_pixmap);
+      }
     });
   }
 
@@ -160,6 +169,10 @@ public:
     confirm = _confirm;
     store_confirm = _store_confirm;
   };
+
+  void setActiveIcon(const QString &icon) {
+    active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
+  }
 
   void refresh() {
     if (params.getBool(key) != toggle.on) {
@@ -174,6 +187,7 @@ public:
 private:
   std::string key;
   Params params;
+  QPixmap active_icon_pixmap;
   bool confirm = false;
   bool store_confirm = false;
 };
