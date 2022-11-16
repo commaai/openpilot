@@ -1027,11 +1027,11 @@ location set</source>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot은 기본적으로 &lt;b&gt;안정적 모드&lt;/b&gt;로 주행합니다. 실험적 모드는 안정적 모드에 준비되지 않은 &lt;b&gt;알파 수준 기능&lt;/b&gt;을 활성화 합니다. 실험 모드의 특징은 아래에 나열되어 있습니다</translation>
     </message>
     <message>
         <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 E2E 롱컨트롤 🌮</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>

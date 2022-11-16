@@ -130,7 +130,7 @@ void TogglesPanel::updateToggles() {
                                   .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
                                        "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected."))
                                   .arg(tr("New Driving Visualization"))
-                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.");)
+                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
 
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
