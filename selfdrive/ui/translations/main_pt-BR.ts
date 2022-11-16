@@ -1031,11 +1031,11 @@ trabalho definido</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot por padrão funciona em &lt;b&gt;modo chill&lt;/b&gt;. modo Experimental ativa &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que não estão prontos para o modo chill. Recursos experimentais estão listados abaixo:</translation>
     </message>
     <message>
         <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 Controle Longitudinal de Ponta a Ponta 🌮</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
