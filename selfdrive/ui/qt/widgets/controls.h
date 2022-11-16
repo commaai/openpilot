@@ -139,7 +139,12 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool confirm, const bool store_confirm = false, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
+  bool confirm = false;
+  bool store_confirm = false;
+
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool _confirm, const bool _store_confirm, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
+    confirm = _confirm;
+    store_confirm = _store_confirm;
     key = param.toStdString();
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
