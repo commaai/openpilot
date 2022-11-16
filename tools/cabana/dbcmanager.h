@@ -9,6 +9,7 @@ struct DBCMsg {
   QString name;
   uint32_t size;
   std::map<QString, Signal> sigs;
+  std::vector<const Signal*> getSignals() const;
 };
 
 class DBCManager : public QObject {

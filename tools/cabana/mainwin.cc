@@ -55,6 +55,9 @@ MainWindow::MainWindow() : QMainWindow() {
   charts_widget = new ChartsWidget(this);
   detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
+  if (!settings.splitter_state.isEmpty()) {
+    splitter->restoreState(settings.splitter_state);
+  }
   main_layout->addWidget(splitter);
 
   // right widgets
@@ -247,6 +250,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
+  settings.splitter_state = splitter->saveState();
   settings.save();
   QWidget::closeEvent(event);
 }
