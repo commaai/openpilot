@@ -403,7 +403,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   tmp_logfile << "LOCATIOND: NED: " <<  ned_coords[0] << " " << ned_coords[1] << " " << ned_coords[2] << "\n";
 
   bearing = atan2(ned_coords[1], ned_coords[0]); // radians
-  tmp_logfile << "LOCATIOND: bearing: " <<  bearing << "\n";
+  tmp_logfile << "LOCATIOND: bearing: " <<  RAD2DEG(bearing) << "\n";
 
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
@@ -416,7 +416,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  tmp_logfile << "velk: " <<  ecef_vel.norm() << ", error: " << orientation_error.norm() << "gps_est_error: " << gps_est_error << "\n";
+  tmp_logfile << "velk: " <<  ecef_vel.norm() << ", error: " << orientation_error.norm() << ", gps_est_error: " << gps_est_error << "\n";
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 5.0) {
     tmp_logfile << "Locationd vs gnss orientation difference too large, kalman reset\n";
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
