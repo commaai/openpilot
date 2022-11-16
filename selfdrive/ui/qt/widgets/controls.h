@@ -139,9 +139,6 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  bool confirm = false;
-  bool store_confirm = false;
-
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool _confirm, QWidget *parent = nullptr) : confirm(_confirm), ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
@@ -158,6 +155,9 @@ public:
       }
     });
   }
+
+  bool confirm = false;
+  bool store_confirm = false;
 
   void refresh() {
     if (params.getBool(key) != toggle.on) {
