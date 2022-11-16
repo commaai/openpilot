@@ -14,11 +14,6 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   setFixedHeight(125);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
 
-//  QWidget *verticalLine = new QWidget;
-//  verticalLine->setFixedWidth(3);
-//  verticalLine->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-//  verticalLine->setStyleSheet(QString("background-color: #4D000000;"));
-
   QHBoxLayout *main_layout = new QHBoxLayout;
   main_layout->setContentsMargins(30, 0, 30, 0);
 
@@ -27,8 +22,6 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   mode_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
   main_layout->addWidget(mode_label, 1, Qt::AlignLeft);
-//  main_layout->addWidget(verticalLine, 0, Qt::AlignRight);
-//  main_layout->addSpacing(30);
   main_layout->addWidget(mode_icon, 0, Qt::AlignRight);
 
   setLayout(main_layout);
