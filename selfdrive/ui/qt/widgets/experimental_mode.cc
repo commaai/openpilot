@@ -14,10 +14,10 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   setFixedHeight(125);
   connect(this, &QPushButton::clicked, [=]() { emit openSettings(2); });  // show toggles
 
-  QWidget *verticalLine = new QWidget;
-  verticalLine->setFixedWidth(3);
-  verticalLine->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-  verticalLine->setStyleSheet(QString("background-color: #4D000000;"));
+//  QWidget *verticalLine = new QWidget;
+//  verticalLine->setFixedWidth(3);
+//  verticalLine->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+//  verticalLine->setStyleSheet(QString("background-color: #4D000000;"));
 
   QHBoxLayout *main_layout = new QHBoxLayout;
   main_layout->setContentsMargins(30, 0, 30, 0);
@@ -27,8 +27,8 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
   mode_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
 
   main_layout->addWidget(mode_label, 1, Qt::AlignLeft);
-  main_layout->addWidget(verticalLine, 0, Qt::AlignRight);
-  main_layout->addSpacing(30);
+//  main_layout->addWidget(verticalLine, 0, Qt::AlignRight);
+//  main_layout->addSpacing(30);
   main_layout->addWidget(mode_icon, 0, Qt::AlignRight);
 
   setLayout(main_layout);
@@ -67,6 +67,11 @@ void ExperimentalModeButton::paintEvent(QPaintEvent *event) {
     gradient.setColorAt(1, QColor(35, 149, 255, pressed ? 0xcc : 0xff));
   }
   p.fillPath(path, gradient);
+
+  // vertical line
+  qDebug() << rect().right() - 30 - 100 - 30;
+  p.setPen(QPen(QColor(0, 0, 0, 0x4d), 3, Qt::SolidLine));
+  p.drawLine(839, rect().bottom(), 839, rect().top());
 }
 
 void ExperimentalModeButton::showEvent(QShowEvent *event) {
