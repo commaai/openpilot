@@ -159,10 +159,9 @@ public:
 
       if (state && !active_icon_pixmap.isNull()) {
         icon_label->setPixmap(active_icon_pixmap);
-      } else {
+      } else if (!icon_pixmap.isNull()) {
         icon_label->setPixmap(icon_pixmap);
       }
-
     });
   }
 

@@ -26,9 +26,9 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout->setSpacing(20);
 
   // left icon
+  icon_label = new QLabel();
   if (!icon.isEmpty()) {
     icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
-    icon_label = new QLabel();
     icon_label->setPixmap(icon_pixmap);
     icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon_label);
