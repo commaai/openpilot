@@ -149,7 +149,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    for (auto &[name, sig] : msg->sigs) {
+    for (auto sig : msg->getSignals()) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
         form = new SignalEdit(i);
@@ -162,8 +162,8 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signals_layout->addWidget(form);
         signal_list.push_back(form);
       }
-      form->setSignal(msg_id, &sig);
-      form->setChartOpened(charts->isChartOpened(msg_id, &sig));
+      form->setSignal(msg_id, sig);
+      form->setChartOpened(charts->isChartOpened(msg_id, sig));
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())

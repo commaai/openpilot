@@ -166,19 +166,19 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     int i = 0;
-    for (auto &[name, sig] : dbc_msg->sigs) {
-      auto [start, end] = getSignalRange(&sig);
+    for (auto sig : dbc_msg->getSignals()) {
+      auto [start, end] = getSignalRange(sig);
       for (int j = start; j <= end; ++j) {
-        int bit_index = sig.is_little_endian ? bigEndianBitIndex(j) : j;
+        int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
         int idx = column_count * (bit_index / 8) + bit_index % 8;
         if (idx >= items.size()) {
-          qWarning() << "signal " << name << "out of bounds.start_bit:" << sig.start_bit << "size:" << sig.size;
+          qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
           break;
         }
-        if (j == start) sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        if (j == end) sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
+        if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         items[idx].bg_color = getColor(i);
-        items[idx].sigs.push_back(&sig);
+        items[idx].sigs.push_back(sig);
       }
       ++i;
     }
