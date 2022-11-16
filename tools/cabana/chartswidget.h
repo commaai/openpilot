@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
+#include <QtCharts/QValueAxis>
 
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
@@ -41,6 +42,8 @@ private:
   void adjustChartMargins();
   void updateAxisY();
 
+  QValueAxis *axis_x;
+  QValueAxis *axis_y;
   QGraphicsItemGroup *item_group;
   QGraphicsLineItem *line_marker, *track_line;
   QGraphicsEllipseItem *track_ellipse;

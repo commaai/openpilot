@@ -6,7 +6,6 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QtCharts/QLineSeries>
-#include <QtCharts/QValueAxis>
 #include <QtConcurrent>
 #include <QToolBar>
 
@@ -189,7 +188,12 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   QChart *chart = new QChart();
   chart->setBackgroundRoundness(0);
   chart->addSeries(series);
-  chart->createDefaultAxes();
+  axis_x = new QValueAxis(this);
+  axis_y = new QValueAxis(this);
+  chart->addAxis(axis_x, Qt::AlignBottom);
+  chart->addAxis(axis_y, Qt::AlignLeft);
+  series->attachAxis(axis_x);
+  series->attachAxis(axis_y);
   chart->legend()->hide();
   chart->layout()->setContentsMargins(0, 0, 0, 0);
   // top margin for title
@@ -250,7 +254,6 @@ void ChartView::updateFromSettings() {
 }
 
 void ChartView::setRange(double min, double max, bool force_update) {
-  auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
   if (force_update || (min != axis_x->min() || max != axis_x->max())) {
     axis_x->setRange(min, max);
     updateAxisY();
@@ -268,7 +271,6 @@ void ChartView::adjustChartMargins() {
 }
 
 void ChartView::updateLineMarker(double current_sec) {
-  auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
   int x = chart()->plotArea().left() +
           chart()->plotArea().width() * (current_sec - axis_x->min()) / (axis_x->max() - axis_x->min());
   if (int(line_marker->line().x1()) != x) {
@@ -305,8 +307,6 @@ void ChartView::updateSeries(const std::pair<double, double> range) {
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
-  const auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
-  const auto axis_y = dynamic_cast<QValueAxis *>(chart()->axisY());
   auto begin = std::lower_bound(vals.begin(), vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
   if (begin == vals.end())
     return;
@@ -333,7 +333,6 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     rubber->hide();
     QRectF rect = rubber->geometry().normalized();
     rect.translate(-chart()->plotArea().topLeft());
-    const auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
     double min = axis_x->min() + (rect.left() / chart()->plotArea().width()) * (axis_x->max() - axis_x->min());
     double max = axis_x->min() + (rect.right() / chart()->plotArea().width()) * (axis_x->max() - axis_x->min());
     if (rubber->width() <= 0) {
@@ -359,7 +358,6 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   bool is_zooming = rubber && rubber->isVisible();
   if (!is_zooming) {
     const auto plot_area = chart()->plotArea();
-    auto axis_x = dynamic_cast<QValueAxis *>(chart()->axisX());
     double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right() - 1);
     double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
     auto value = std::upper_bound(vals.begin(), vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
