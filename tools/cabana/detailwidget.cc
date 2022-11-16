@@ -235,7 +235,7 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
       }
     }
   }
-  Signal sig = {.is_little_endian = little_endian};
+  Signal sig = {.is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
     if (msg->sigs.count(sig.name.c_str()) == 0) break;
