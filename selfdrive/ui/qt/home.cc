@@ -4,6 +4,7 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
@@ -22,7 +23,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
-  home = new OffroadHome();
+  home = new OffroadHome(this);
+  QObject::connect(home, &OffroadHome::openSettings, this, &HomeWindow::openSettings);
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
@@ -128,11 +130,24 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
+  // Vertical experimental button and drive stats layout
+  QWidget* statsAndExperimentalModeButtonWidget = new QWidget(this);
+  QVBoxLayout* statsAndExperimentalModeButton = new QVBoxLayout(statsAndExperimentalModeButtonWidget);
+  statsAndExperimentalModeButton->setSpacing(30);
+  statsAndExperimentalModeButton->setMargin(0);
+
+  ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
+  QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
+
+  statsAndExperimentalModeButton->addWidget(experimental_mode, 1);
+  statsAndExperimentalModeButton->addWidget(new DriveStats, 1);
+
+  // Horizontal experimental + drive stats and setup widget
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
   statsAndSetup->setSpacing(30);
-  statsAndSetup->addWidget(new DriveStats, 1);
+  statsAndSetup->addWidget(statsAndExperimentalModeButtonWidget, 1);
   statsAndSetup->addWidget(new SetupWidget);
 
   center_layout->addWidget(statsAndSetupWidget);
