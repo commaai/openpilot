@@ -21,6 +21,7 @@ void Settings::save() {
   s.setValue("chart_theme", chart_theme);
   s.setValue("max_chart_x_range", max_chart_x_range);
   s.setValue("last_dir", last_dir);
+  s.setValue("splitter_state", splitter_state);
 }
 
 void Settings::load() {
@@ -32,6 +33,7 @@ void Settings::load() {
   chart_theme = s.value("chart_theme", 0).toInt();
   max_chart_x_range = s.value("max_chart_x_range", 3 * 60).toInt();
   last_dir = s.value("last_dir", QDir::homePath()).toString();
+  splitter_state = s.value("splitter_state").toByteArray();
 }
 
 // SettingsDlg
