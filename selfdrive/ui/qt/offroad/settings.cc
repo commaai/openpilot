@@ -39,7 +39,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "ExperimentalMode",
       tr("Experimental Mode"),
       "",
-      "../assets/img_experimental.svg",
+      "../assets/img_experimental_white.svg",
     },
     {
       "ExperimentalLongitudinalEnabled",
@@ -100,6 +100,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   // Toggles with confirmation dialogs
+  toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
   toggles["ExperimentalMode"]->setConfirmation(true, true);
   toggles["ExperimentalLongitudinalEnabled"]->setConfirmation(true, false);
 
