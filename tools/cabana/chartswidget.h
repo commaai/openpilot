@@ -20,16 +20,22 @@ class ChartView : public QChartView {
 
 public:
   ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
+  void addSignal(const QString &msg_id, const Signal *sig);
   void updateSeries(const std::pair<double, double> range);
   void setRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
   void updateFromSettings();
   void updateTitle();
 
+  struct SigItem {
+    const Signal *signal;
+    QVector<QPointF> vals;
+  };
   QString id;
   const Signal *signal;
+  QList<SigItem> sigs;
 
-signals:
+ signals:
   void zoomIn(double min, double max);
   void zoomReset();
   void remove(const QString &msg_id, const Signal *sig);

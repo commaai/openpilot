@@ -237,6 +237,10 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   });
 }
 
+void ChartView::addSignal(const QString &msg_id, const Signal *sig) {
+
+}
+
 void ChartView::resizeEvent(QResizeEvent *event) {
   QChartView::resizeEvent(event);
   close_btn_proxy->setPos(event->size().width() - close_btn_proxy->size().width() - 11, 8);
