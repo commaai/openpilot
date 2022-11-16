@@ -87,15 +87,19 @@ void BinaryView::mouseMoveEvent(QMouseEvent *event) {
 void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   QTableView::mouseReleaseEvent(event);
 
-  if (selectionModel()->hasSelection()) {
-    auto release_index = indexAt(event->pos());
-    if (release_index.isValid() && anchor_index.isValid()) {
+  auto release_index = indexAt(event->pos());
+  if (release_index.isValid() && anchor_index.isValid()) {
+    if (selectionModel()->hasSelection()) {
       auto [start_bit, size, is_lb] = getSelection(release_index);
       resize_sig ? emit resizeSignal(resize_sig, start_bit, size)
                  : emit addSignal(start_bit, size, is_lb);
+    } else {
+      auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
+      if (item && item->sigs.size() > 0)
+        emit signalClicked(item->sigs.back());
     }
-    clearSelection();
   }
+  clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;
 }

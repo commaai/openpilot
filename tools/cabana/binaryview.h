@@ -67,6 +67,7 @@ public:
   inline void updateState() { model->updateState(); }
 
 signals:
+  void signalClicked(const Signal *sig);
   void signalHovered(const Signal *sig);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int size);
