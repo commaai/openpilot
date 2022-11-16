@@ -1022,15 +1022,31 @@ trabalho definido</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:     &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.     Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.     &lt;br&gt;     &lt;h4&gt;New Driving Visualization&lt;/h4&gt;     The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.    </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
