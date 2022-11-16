@@ -53,25 +53,6 @@ void red_set_usb_load_switch(bool enabled) {
   set_gpio_output(GPIOB, 14, !enabled);
 }
 
-void red_set_usb_power_mode(uint8_t mode) {
-  bool valid = false;
-  switch (mode) {
-    case USB_POWER_CLIENT:
-      red_set_usb_load_switch(false);
-      valid = true;
-      break;
-    case USB_POWER_CDP:
-      red_set_usb_load_switch(true);
-      valid = true;
-      break;
-    default:
-      break;
-  }
-  if (valid) {
-    usb_power_mode = mode;
-  }
-}
-
 void red_set_can_mode(uint8_t mode) {
   switch (mode) {
     case CAN_MODE_NORMAL:
@@ -118,13 +99,6 @@ bool red_check_ignition(void) {
 void red_init(void) {
   common_init_gpio();
 
-  //C4,A1: OBD_SBU1, OBD_SBU2
-  set_gpio_pullup(GPIOC, 4, PULL_NONE);
-  set_gpio_mode(GPIOC, 4, MODE_ANALOG);
-
-  set_gpio_pullup(GPIOA, 1, PULL_NONE);
-  set_gpio_mode(GPIOA, 1, MODE_ANALOG);
-
   //C10,C11 : OBD_SBU1_RELAY, OBD_SBU2_RELAY
   set_gpio_output_type(GPIOC, 10, OUTPUT_TYPE_OPEN_DRAIN);
   set_gpio_pullup(GPIOC, 10, PULL_NONE);
@@ -136,11 +110,29 @@ void red_init(void) {
   set_gpio_mode(GPIOC, 11, MODE_OUTPUT);
   set_gpio_output(GPIOC, 11, 1);
 
+  // G11,B3,D7,B4: transceiver enable
+  set_gpio_pullup(GPIOG, 11, PULL_NONE);
+  set_gpio_mode(GPIOG, 11, MODE_OUTPUT);
+
+  set_gpio_pullup(GPIOB, 3, PULL_NONE);
+  set_gpio_mode(GPIOB, 3, MODE_OUTPUT);
+
+  set_gpio_pullup(GPIOD, 7, PULL_NONE);
+  set_gpio_mode(GPIOD, 7, MODE_OUTPUT);
+
+  set_gpio_pullup(GPIOB, 4, PULL_NONE);
+  set_gpio_mode(GPIOB, 4, MODE_OUTPUT);
+
+  // B14: usb load switch
+  set_gpio_pullup(GPIOB, 14, PULL_NONE);
+  set_gpio_mode(GPIOB, 14, MODE_OUTPUT);
+
+  //B1: 5VOUT_S
+  set_gpio_pullup(GPIOB, 1, PULL_NONE);
+  set_gpio_mode(GPIOB, 1, MODE_ANALOG);
+
   // Turn on USB load switch.
   red_set_usb_load_switch(true);
-
-  // Set right power mode
-  red_set_usb_power_mode(USB_POWER_CDP);
 
   // Initialize harness
   harness_init();
@@ -181,21 +173,22 @@ const harness_configuration red_harness_config = {
 
 const board board_red = {
   .board_type = "Red",
+  .board_tick = unused_board_tick,
   .harness_config = &red_harness_config,
   .has_gps = false,
   .has_hw_gmlan = false,
   .has_obd = true,
   .has_lin = false,
+  .has_spi = false,
+  .has_canfd = true,
   .has_rtc_battery = false,
   .fan_max_rpm = 0U,
   .init = red_init,
   .enable_can_transceiver = red_enable_can_transceiver,
   .enable_can_transceivers = red_enable_can_transceivers,
   .set_led = red_set_led,
-  .set_usb_power_mode = red_set_usb_power_mode,
   .set_gps_mode = unused_set_gps_mode,
   .set_can_mode = red_set_can_mode,
-  .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = red_check_ignition,
   .read_current = unused_read_current,
   .set_fan_enabled = unused_set_fan_enabled,

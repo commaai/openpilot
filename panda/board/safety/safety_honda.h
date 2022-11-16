@@ -263,14 +263,6 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
     tx = msg_allowed(to_send, HONDA_N_TX_MSGS, sizeof(HONDA_N_TX_MSGS)/sizeof(HONDA_N_TX_MSGS[0]));
   }
 
-  // disallow actuator commands if gas or brake (with vehicle moving) are pressed
-  // and the latching controls_allowed flag is True
-  int pedal_pressed = brake_pressed_prev && vehicle_moving;
-  bool alt_exp_allow_gas = alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS;
-  if (!alt_exp_allow_gas) {
-    pedal_pressed = pedal_pressed || gas_pressed_prev;
-  }
-  bool current_controls_allowed = controls_allowed && !(pedal_pressed);
   int bus_pt = honda_get_pt_bus();
   int bus_buttons = (honda_bosch_radarless) ? 2 : bus_pt;  // the camera controls ACC on radarless Bosch cars
 
@@ -278,7 +270,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   if ((addr == 0x30C) && (bus == bus_pt)) {
     int pcm_speed = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
     int pcm_gas = GET_BYTE(to_send, 2);
-    if (!current_controls_allowed || !longitudinal_allowed) {
+    if (!longitudinal_allowed) {
       if ((pcm_speed != 0) || (pcm_gas != 0)) {
         tx = 0;
       }
@@ -288,7 +280,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   // BRAKE: safety check (nidec)
   if ((addr == 0x1FA) && (bus == bus_pt)) {
     honda_brake = (GET_BYTE(to_send, 0) << 2) + ((GET_BYTE(to_send, 1) >> 6) & 0x3U);
-    if (!current_controls_allowed || !longitudinal_allowed) {
+    if (!longitudinal_allowed) {
       if (honda_brake != 0) {
         tx = 0;
       }
@@ -305,7 +297,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   if ((addr == 0x1DF) && (bus == bus_pt)) {
     int accel = (GET_BYTE(to_send, 3) << 3) | ((GET_BYTE(to_send, 4) >> 5) & 0x7U);
     accel = to_signed(accel, 11);
-    if (!current_controls_allowed || !longitudinal_allowed) {
+    if (!longitudinal_allowed) {
       if (accel != 0) {
         tx = 0;
       }
@@ -316,7 +308,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
 
     int gas = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
     gas = to_signed(gas, 16);
-    if (!current_controls_allowed || !longitudinal_allowed) {
+    if (!longitudinal_allowed) {
       if (gas != HONDA_BOSCH_NO_GAS_VALUE) {
         tx = 0;
       }
@@ -328,7 +320,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
 
   // STEER: safety check
   if ((addr == 0xE4) || (addr == 0x194)) {
-    if (!current_controls_allowed) {
+    if (!controls_allowed) {
       bool steer_applied = GET_BYTE(to_send, 0) | GET_BYTE(to_send, 1);
       if (steer_applied) {
         tx = 0;
@@ -345,7 +337,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
 
   // GAS: safety check (interceptor)
   if (addr == 0x200) {
-    if (!current_controls_allowed || !longitudinal_allowed) {
+    if (!longitudinal_allowed) {
       if (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1)) {
         tx = 0;
       }
@@ -355,7 +347,7 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
-  if ((addr == 0x296) && !current_controls_allowed && (bus == bus_buttons)) {
+  if ((addr == 0x296) && !controls_allowed && (bus == bus_buttons)) {
     if (((GET_BYTE(to_send, 0) >> 5) & 0x7U) != 2U) {
       tx = 0;
     }

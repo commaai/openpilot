@@ -10,10 +10,6 @@ from common.conversions import Conversions as CV
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
 
-# Makes that lack auto-resume with stock long, and auto resume in any configuration
-NO_AUTO_RESUME_STOCK_LONG = {"toyota", "gm"}
-NO_AUTO_RESUME = NO_AUTO_RESUME_STOCK_LONG | {"nissan", "subaru"}
-
 
 class Column(Enum):
   MAKE = "Make"
@@ -23,6 +19,7 @@ class Column(Enum):
   FSR_LONGITUDINAL = "No ACC accel below"
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
+  AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
 
 
@@ -71,7 +68,18 @@ class Harness(Enum):
   none = "None"
 
 
-CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
+CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only"], defaults=(None, False))
+
+
+class CommonFootnote(Enum):
+  EXP_LONG_AVAIL = CarFootnote(
+    "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `master-ci`. " +
+    "Using openpilot longitudinal may disable Automatic Emergency Braking (AEB).",
+    Column.LONGITUDINAL, docs_only=True)
+  EXP_LONG_DSU = CarFootnote(
+    "When the Driver Support Unit (DSU) is disconnected, openpilot Adaptive Cruise Control (ACC) will replace " +
+    "stock Adaptive Cruise Control (ACC). <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
+    Column.LONGITUDINAL)
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
@@ -131,14 +139,26 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+
+    op_long = "Stock"
+    if CP.openpilotLongitudinalControl and not CP.enableDsu:
+      op_long = "openpilot"
+    elif CP.experimentalLongitudinalAvailable or CP.enableDsu:
+      op_long = "openpilot available"
+      if CP.enableDsu:
+        self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
+      else:
+        self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl and not CP.radarOffCan else "Stock",
+      Column.LONGITUDINAL: op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
+      Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: self.harness.value,
     }
 
@@ -166,7 +186,7 @@ class CarInfo:
       acc = ""
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif CP.carName not in NO_AUTO_RESUME or (CP.carName in NO_AUTO_RESUME_STOCK_LONG and CP.openpilotLongitudinalControl):
+      elif CP.autoResumeSng:
         acc = " <strong>that automatically resumes from a stop</strong>"
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
@@ -193,4 +213,3 @@ class CarInfo:
       item += footnote_tag.format(f'{",".join(map(str, sups))}')
 
     return item
-

@@ -249,7 +249,7 @@ BO_ 1005 REVERSE_CAMERA_STATE: 2 BGM
 BO_ 1009 PCM_CRUISE_ALT: 8 XXX
  SG_ MAIN_ON : 13|1@0+ (1,0) [0|3] "" XXX
  SG_ CRUISE_STATE : 10|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ UI_SET_SPEED : 23|8@0+ (1,0) [0|255] "mph" XXX
 
 BO_ 1020 SOLAR_SENSOR: 8 XXX
  SG_ LUX_SENSOR : 55|13@0+ (1,0) [0|0] "" XXX
@@ -373,6 +373,7 @@ BO_ 1552 BODY_CONTROL_STATE_2: 8 XXX
  SG_ METER_SLIDER_BRIGHTNESS_PCT : 30|7@0+ (1,0) [12|100] "%" XXX
  SG_ METER_SLIDER_LOW_BRIGHTNESS : 37|1@0+ (1,0) [0|1] "" XXX
  SG_ METER_SLIDER_DIMMED : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ UNITS : 63|3@0+ (1,0) [1|4] "" XXX
 
 BO_ 1553 UI_SETTING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
@@ -439,7 +440,7 @@ CM_ SG_ 865 CLUTCH_RELEASED "boolean of clutch for 6MT.";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in the vehicle's UI with the vehicle's unit";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
 CM_ SG_ 956 GEAR "on 6MT, only R shows.";
-CM_ SG_ 1009 SET_SPEED "units seem to be whatever the car is set to";
+CM_ SG_ 1009 UI_SET_SPEED "units seem to be whatever the car is set to";
 CM_ SG_ 1041 PCS_INDICATOR "Pre-Collision System Indicator";
 CM_ SG_ 1041 PCS_SENSITIVITY "Pre-Collision System Sensitivity";
 CM_ SG_ 1042 LDA_SA_TOGGLE "LDA Steering Assist Toggle";
@@ -472,7 +473,7 @@ CM_ SG_ 1163 OVSPVALL "-5 at start then 2 after 2 seconds";
 CM_ SG_ 1163 OVSPVALM "-5 at start then 5 after 2 seconds";
 CM_ SG_ 1163 OVSPVALH "-5 at start then 10 after 2 seconds";
 CM_ SG_ 1163 TSRSPU "always 1";
-CM_ SG_ 1552 UI_SPEED "Vehicle's speedometer's display speed after Toyota's offset was applied, uses vehicle's unit";
+CM_ SG_ 1552 UI_SPEED "Does not appear to match dash";
 CM_ SG_ 1552 METER_SLIDER_BRIGHTNESS_PCT "Combination display brightness setting, scales from 12 per cent to 100 per cent, reflects combination meter settings only, not linked with headlight state";
 CM_ SG_ 1552 METER_SLIDER_LOW_BRIGHTNESS "Combination display low brightness mode, also controls footwell lighting";
 CM_ SG_ 1552 METER_SLIDER_DIMMED "Combination display slider not at max, reflects combination meter settings only, not linked with headlight state";
@@ -524,6 +525,7 @@ VAL_ 1162 TSGN3 0 "none" 1 "speed sign" 2 "0 unlimited" 7 "unlimited" 16 "highwa
 VAL_ 1162 SPLSGN3 15 "conditional blank" 4 "wet road" 5 "rain" 0 "none";
 VAL_ 1552 METER_SLIDER_LOW_BRIGHTNESS 1 "Low brightness mode, footwell lights off" 0 "Normal mode, footwell lights on";
 VAL_ 1552 METER_SLIDER_DIMMED 1 "Dimmed" 0 "Not Dimmed";
+VAL_ 1552 UNITS 1 "km (km/L)" 2 "km (L/100km)" 3 "miles (MPG US)" 4 "miles (MPG Imperial)";
 VAL_ 1553 UNITS 1 "km" 2 "miles";
 VAL_ 1556 TURN_SIGNALS 3 "none" 2 "right" 1 "left";
 VAL_ 1592 LOCK_STATUS 0 "locked" 1 "unlocked";

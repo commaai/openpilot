@@ -66,6 +66,11 @@
 #include "stm32fx/board.h"
 #include "stm32fx/clock.h"
 
+#ifdef ENABLE_SPI
+  #include "drivers/spi.h"
+  #include "stm32fx/llspi.h"
+#endif
+
 #if !defined(BOOTSTUB) && (defined(PANDA) || defined(PEDAL_USB))
   #include "drivers/uart.h"
   #include "stm32fx/lluart.h"

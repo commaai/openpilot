@@ -20,8 +20,6 @@ const SteeringLimits SUBARU_GEN2_STEERING_LIMITS = {
   .type = TorqueDriverLimited,
 };
 
-const int SUBARU_STANDSTILL_THRSLD = 20;  // about 1kph
-
 const CanMsg SUBARU_TX_MSGS[] = {
   {0x122, 0, 8},
   {0x221, 0, 8},
@@ -104,11 +102,9 @@ static int subaru_rx_hook(CANPacket_t *to_push) {
       pcm_cruise_check(cruise_engaged);
     }
 
-    // sample wheel speed, averaging opposite corners
+    // update vehicle moving with any non-zero wheel speed
     if ((addr == 0x13a) && (bus == alt_bus)) {
-      int subaru_speed = ((GET_BYTES_04(to_push) >> 12) & 0x1FFFU) + ((GET_BYTES_48(to_push) >> 6) & 0x1FFFU);  // FR + RL
-      subaru_speed /= 2;
-      vehicle_moving = subaru_speed > SUBARU_STANDSTILL_THRSLD;
+      vehicle_moving = ((GET_BYTES_04(to_push) >> 12) != 0U) || (GET_BYTES_48(to_push) != 0U);
     }
 
     if ((addr == 0x13c) && (bus == alt_bus)) {

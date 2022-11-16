@@ -21,7 +21,7 @@ int64_t get_raw_value(const std::vector<uint8_t> &msg, const Signal &sig) {
     int msb = (int)(sig.msb / 8) == i ? sig.msb : (i+1)*8 - 1;
     int size = msb - lsb + 1;
 
-    uint8_t d = (msg[i] >> (lsb - (i*8))) & ((1ULL << size) - 1);
+    uint64_t d = (msg[i] >> (lsb - (i*8))) & ((1ULL << size) - 1);
     ret |= d << (bits - size);
 
     bits -= size;
@@ -127,7 +127,7 @@ CANParser::CANParser(int abus, const std::string& dbc_name,
     }
 
     state.size = msg->size;
-    assert(state.size < 64);  // max signal size is 64 bytes
+    assert(state.size <= 64);  // max signal size is 64 bytes
 
     // track checksums and counters for this message
     for (const auto& sig : msg->sigs) {
@@ -287,10 +287,12 @@ void CANParser::UpdateValid(uint64_t sec) {
     const bool missing = state.last_seen_nanos == 0;
     const bool timed_out = (sec - state.last_seen_nanos) > state.check_threshold;
     if (state.check_threshold > 0 && (missing || timed_out)) {
-      if (missing) {
-        LOGE("0x%X MISSING", state.address);
-      } else if (show_missing) {
-        LOGE("0x%X TIMEOUT", state.address);
+      if (show_missing && !bus_timeout) {
+        if (missing) {
+          LOGE("0x%X NOT SEEN", state.address);
+        } else if (timed_out) {
+          LOGE("0x%X TIMED OUT", state.address);
+        }
       }
       _valid = false;
     }

@@ -52,10 +52,3 @@ void detect_board_type(void) {
     #endif
   #endif
 }
-
-bool has_external_debug_serial = 0;
-
-void detect_external_debug_serial(void) {
-  // detect if external serial debugging is present
-  has_external_debug_serial = detect_with_pull(GPIOA, 3, PULL_DOWN);
-}

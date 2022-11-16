@@ -1,3 +1,22 @@
+/*
+HSE: 25MHz
+PLL1Q: 80MHz (for FDCAN)
+HSI48 enabled (for USB)
+CPU: 240MHz
+CPU Systick: 240MHz
+AXI: 120MHz
+HCLK3: 60MHz
+APB3 per: 60MHz
+AHB1,2 per: 120MHz
+APB1 per: 60MHz
+APB1 tim: 120MHz
+APB2 per: 60MHz
+APB2 tim: 120MHz
+AHB4 per: 120MHz
+APB4 per: 60MHz
+PCLK1: 60MHz (for USART2,3,4,5,7,8)
+*/
+
 void clock_init(void) {
   //Set power mode to direct SMPS power supply(depends on the board layout)
   register_set(&(PWR->CR3), PWR_CR3_SMPSEN, 0xFU); // powered only by SMPS
@@ -42,7 +61,7 @@ void clock_init(void) {
   register_set_bits(&(RCC->AHB4ENR), RCC_APB4ENR_SYSCFGEN);
   //////////////END OTHER CLOCKS////////////////////
 
-  // Configure clock source for USB (HSI at 48Mhz)
+  // Configure clock source for USB (HSI48)
   register_set(&(RCC->D2CCIP2R), RCC_D2CCIP2R_USBSEL_1 | RCC_D2CCIP2R_USBSEL_0, RCC_D2CCIP2R_USBSEL);
   // Configure clock source for FDCAN (PLL1Q at 80Mhz)
   register_set(&(RCC->D2CCIP1R), RCC_D2CCIP1R_FDCANSEL_0, RCC_D2CCIP1R_FDCANSEL);
@@ -52,4 +71,8 @@ void clock_init(void) {
   register_set_bits(&(RCC->CR), RCC_CR_CSSHSEON);
   //Enable Vdd33usb supply level detector
   register_set_bits(&(PWR->CR3), PWR_CR3_USB33DEN);
+
+  // Enable CPU access to SRAM1 and SRAM2 (in domain D2)
+  register_set_bits(&(RCC->AHB2ENR), RCC_AHB2ENR_SRAM1EN);
+  register_set_bits(&(RCC->AHB2ENR), RCC_AHB2ENR_SRAM2EN);
 }

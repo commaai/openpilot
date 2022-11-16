@@ -18,8 +18,6 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
@@ -28,10 +26,10 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout->setSpacing(20);
 
   // left icon
+  icon_label = new QLabel();
   if (!icon.isEmpty()) {
-    QPixmap pix(icon);
-    QLabel *icon_label = new QLabel();
-    icon_label->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
+    icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
+    icon_label->setPixmap(icon_pixmap);
     icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     hlayout->addWidget(icon_label);
   }
@@ -40,7 +38,13 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   title_label = new QPushButton(title);
   title_label->setFixedHeight(120);
   title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
-  hlayout->addWidget(title_label);
+  hlayout->addWidget(title_label, 1);
+
+  // value next to control button
+  value = new ElidedLabel();
+  value->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+  value->setStyleSheet("color: #aaaaaa");
+  hlayout->addWidget(value);
 
   main_layout->addLayout(hlayout);
 
@@ -54,7 +58,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   connect(title_label, &QPushButton::clicked, [=]() {
     if (!description->isVisible()) {
-      emit showDescription();
+      emit showDescriptionEvent();
     }
 
     if (!description->text().isEmpty()) {
@@ -66,7 +70,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 }
 
 void AbstractControl::hideEvent(QHideEvent *e) {
-  if(description != nullptr) {
+  if (description != nullptr) {
     description->hide();
   }
 }

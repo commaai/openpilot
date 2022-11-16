@@ -12,13 +12,16 @@ typedef struct {
   uint32_t can_data_speed;
   bool canfd_enabled;
   bool brs_enabled;
+  bool canfd_non_iso;
 } bus_config_t;
 
-uint32_t can_rx_errs = 0;
-uint32_t can_send_errs = 0;
-uint32_t can_fwd_errs = 0;
+uint32_t safety_tx_blocked = 0;
+uint32_t safety_rx_invalid = 0;
+uint32_t tx_buffer_overflow = 0;
+uint32_t rx_buffer_overflow = 0;
 uint32_t gmlan_send_errs = 0;
-uint32_t blocked_msg_cnt = 0;
+
+can_health_t can_health[] = {{0}, {0}, {0}};
 
 extern int can_live;
 extern int pending_can_live;
@@ -50,24 +53,18 @@ void process_can(uint8_t can_number);
 
 #ifdef STM32H7
 __attribute__((section(".ram_d1"))) can_buffer(rx_q, 0x1000)
-__attribute__((section(".ram_d1"))) can_buffer(txgmlan_q, 0x1A0)
+__attribute__((section(".ram_d1"))) can_buffer(tx2_q, 0x1A0)
+__attribute__((section(".ram_d2"))) can_buffer(txgmlan_q, 0x1A0)
 #else
 can_buffer(rx_q, 0x1000)
+can_buffer(tx2_q, 0x1A0)
 can_buffer(txgmlan_q, 0x1A0)
 #endif
 can_buffer(tx1_q, 0x1A0)
-can_buffer(tx2_q, 0x1A0)
 can_buffer(tx3_q, 0x1A0)
 // FIXME:
 // cppcheck-suppress misra-c2012-9.3
 can_ring *can_queues[] = {&can_tx1_q, &can_tx2_q, &can_tx3_q, &can_txgmlan_q};
-
-// global CAN stats
-int can_rx_cnt = 0;
-int can_tx_cnt = 0;
-int can_txd_cnt = 0;
-int can_err_cnt = 0;
-int can_overflow_cnt = 0;
 
 // ********************* interrupt safe queue *********************
 bool can_pop(can_ring *q, CANPacket_t *elem) {
@@ -105,7 +102,6 @@ bool can_push(can_ring *q, CANPacket_t *elem) {
   }
   EXIT_CRITICAL();
   if (!ret) {
-    can_overflow_cnt++;
     #ifdef DEBUG
       puts("can_push to ");
       if (q == &can_rx_q) {
@@ -161,10 +157,10 @@ void can_clear(can_ring *q) {
 // Helpers
 // Panda:       Bus 0=CAN1   Bus 1=CAN2   Bus 2=CAN3
 bus_config_t bus_config[] = {
-  { .bus_lookup = 0U, .can_num_lookup = 0U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false },
-  { .bus_lookup = 1U, .can_num_lookup = 1U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false },
-  { .bus_lookup = 2U, .can_num_lookup = 2U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false },
-  { .bus_lookup = 0xFFU, .can_num_lookup = 0xFFU, .can_speed = 333U, .can_data_speed = 333U, .canfd_enabled = false, .brs_enabled = false },
+  { .bus_lookup = 0U, .can_num_lookup = 0U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 1U, .can_num_lookup = 1U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 2U, .can_num_lookup = 2U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 0xFFU, .can_num_lookup = 0xFFU, .can_speed = 333U, .can_data_speed = 333U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
 };
 
 #define CANIF_FROM_CAN_NUM(num) (cans[num])
@@ -174,6 +170,9 @@ bus_config_t bus_config[] = {
 void can_init_all(void) {
   bool ret = true;
   for (uint8_t i=0U; i < CAN_CNT; i++) {
+    if (!current_board->has_canfd) {
+      bus_config[i].can_data_speed = 0U;
+    }
     can_clear(can_queues[i]);
     ret &= can_init(i);
   }
@@ -230,13 +229,23 @@ void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook) {
       if ((bus_number == 3U) && (bus_config[3].can_num_lookup == 0xFFU)) {
         gmlan_send_errs += bitbang_gmlan(to_push) ? 0U : 1U;
       } else {
-        can_fwd_errs += can_push(can_queues[bus_number], to_push) ? 0U : 1U;
+        tx_buffer_overflow += can_push(can_queues[bus_number], to_push) ? 0U : 1U;
         process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
       }
     }
   } else {
-    blocked_msg_cnt += 1U;
+    safety_tx_blocked += 1U;
     to_push->rejected = 1U;
-    can_send_errs += can_push(&can_rx_q, to_push) ? 0U : 1U;
+    rx_buffer_overflow += can_push(&can_rx_q, to_push) ? 0U : 1U;
   }
+}
+
+bool is_speed_valid(uint32_t speed, const uint32_t *speeds, uint8_t len) {
+  bool ret = false;
+  for (uint8_t i = 0U; i < len; i++) {
+    if (speeds[i] == speed) {
+      ret = true;
+    }
+  }
+  return ret;
 }

@@ -21,7 +21,13 @@ class Service:
 services = {
   # service: (should_log, frequency, qlog decimation (optional))
   # note: the "EncodeIdx" packets will still be in the log
-  "sensorEvents": (True, 100., 100),
+  "gyroscope": (True, 104., 104),
+  "gyroscope2": (True, 100., 100),
+  "accelerometer": (True, 104., 104),
+  "accelerometer2": (True, 100., 100),
+  "magnetometer": (True, 100., 100),
+  "lightSensor": (True, 100., 100),
+  "temperatureSensor": (True, 100., 100),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
   "can": (True, 100.),
@@ -35,6 +41,7 @@ services = {
   "logMessage": (True, 0.),
   "errorLogMessage": (True, 0., 1),
   "liveCalibration": (True, 4., 4),
+  "liveTorqueParameters": (True, 4., 1),
   "androidLog": (True, 0.),
   "carState": (True, 100., 10),
   "carControl": (True, 100., 10),
@@ -71,6 +78,7 @@ services = {
   "userFlag": (True, 0., 1),
 
   # debug
+  "uiDebug": (True, 0., 1),
   "testJoystick": (True, 0.),
   "roadEncodeData": (False, 20.),
   "driverEncodeData": (False, 20.),

@@ -18,13 +18,18 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-  nvg = new NvgWindow(VISION_STREAM_ROAD, this);
+  nvg = new AnnotatedCameraWidget(VISION_STREAM_ROAD, this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
   split->addWidget(nvg);
+
+  if (getenv("DUAL_CAMERA_VIEW")) {
+    CameraWidget *arCam = new CameraWidget("camerad", VISION_STREAM_ROAD, true, this);
+    split->insertWidget(0, arCam);
+  }
 
   stacked_layout->addWidget(split_wrapper);
 
@@ -95,10 +100,6 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #endif
 
   alerts->updateAlert({}, bg);
-
-  // update stream type
-  bool wide_cam = Params().getBool("WideCameraOnly");
-  nvg->setStreamType(wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -168,14 +169,16 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   }
 }
 
-// NvgWindow
 
-NvgWindow::NvgWindow(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraViewWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+  pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
+
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
 
-void NvgWindow::updateState(const UIState &s) {
+void AnnotatedCameraWidget::updateState(const UIState &s) {
   const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
 
@@ -225,15 +228,9 @@ void NvgWindow::updateState(const UIState &s) {
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
-
-  if (s.scene.calibration_valid) {
-    CameraViewWidget::updateCalibration(s.scene.view_from_calib);
-  } else {
-    CameraViewWidget::updateCalibration(DEFAULT_CALIBRATION);
-  }
 }
 
-void NvgWindow::drawHud(QPainter &p) {
+void AnnotatedCameraWidget::drawHud(QPainter &p) {
   p.save();
 
   // Header gradient
@@ -382,8 +379,9 @@ void NvgWindow::drawHud(QPainter &p) {
 
   // engage-ability icon
   if (engageable) {
+    SubMaster &sm = *(uiState()->sm);
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             engage_img, bg_colors[status], 1.0);
+             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0);
   }
 
   // dm icon
@@ -395,7 +393,11 @@ void NvgWindow::drawHud(QPainter &p) {
   p.restore();
 }
 
-void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
+
+// Window that shows camera view and variety of
+// info drawn on top
+
+void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = getTextRect(p, 0, text);
   real_rect.moveCenter({x, y - real_rect.height() / 2});
 
@@ -403,17 +405,18 @@ void NvgWindow::drawText(QPainter &p, int x, int y, const QString &text, int alp
   p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
-void NvgWindow::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
+void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
+  p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
-  p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
+  p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
 
 
-void NvgWindow::initializeGL() {
-  CameraViewWidget::initializeGL();
+void AnnotatedCameraWidget::initializeGL() {
+  CameraWidget::initializeGL();
   qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
   qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
@@ -423,8 +426,8 @@ void NvgWindow::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void NvgWindow::updateFrameMat() {
-  CameraViewWidget::updateFrameMat();
+void AnnotatedCameraWidget::updateFrameMat() {
+  CameraWidget::updateFrameMat();
   UIState *s = uiState();
   int w = width(), h = height();
 
@@ -441,10 +444,12 @@ void NvgWindow::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
+void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.save();
 
   const UIScene &scene = s->scene;
+  SubMaster &sm = *(s->sm);
+
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
@@ -459,26 +464,36 @@ void NvgWindow::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
-  float orientation_future = 0;
-  if (orientation.getZ().size() > 16) {
-    orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
-  }
-  // straight: 112, in turns: 70
-  float curve_hue = fmax(70, 112 - (orientation_future * 420));
-  // FIXME: painter.drawPolygon can be slow if hue is not rounded
-  curve_hue = int(curve_hue * 100 + 0.5) / 100;
+  float start_hue, end_hue;
+  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
+    float acceleration_future = 0;
+    if (acceleration.getZ().size() > 16) {
+      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+    }
+    start_hue = 60;
+    // speed up: 120, slow down: 0
+    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
 
-  bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-  bg.setColorAt(0.75 / 1.5, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.35));
-  bg.setColorAt(1.0, QColor::fromHslF(curve_hue / 360., 1.0, 0.68, 0.0));
+    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+    end_hue = int(end_hue * 100 + 0.5) / 100;
+
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+  } else {
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+  }
+
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
 
   painter.restore();
 }
 
-void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
+void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
   painter.save();
 
   const float speedBuff = 10.;
@@ -514,17 +529,64 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   painter.restore();
 }
 
-void NvgWindow::paintGL() {
+void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
-  const cereal::ModelDataV2::Reader &model = (*s->sm)["modelV2"].getModelV2();
-  CameraViewWidget::setFrameId(model.getFrameId());
-  CameraViewWidget::paintGL();
+  SubMaster &sm = *(s->sm);
+  const double start_draw_t = millis_since_boot();
+  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
+
+  // draw camera frame
+  {
+    std::lock_guard lk(frame_lock);
+
+    if (frames.empty()) {
+      if (skip_frame_count > 0) {
+        skip_frame_count--;
+        qDebug() << "skipping frame, not ready";
+        return;
+      }
+    } else {
+      // skip drawing up to this many frames if we're
+      // missing camera frames. this smooths out the
+      // transitions from the narrow and wide cameras
+      skip_frame_count = 5;
+    }
+
+    // Wide or narrow cam dependent on speed
+    float v_ego = sm["carState"].getCarState().getVEgo();
+    if ((v_ego < 10) || s->wide_cam_only) {
+      wide_cam_requested = true;
+    } else if (v_ego > 15) {
+      wide_cam_requested = false;
+    }
+    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
+    // TODO: also detect when ecam vision stream isn't available
+    // for replay of old routes, never go to widecam
+    wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
+    CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+
+    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
+    if (s->scene.calibration_valid) {
+      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
+      CameraWidget::updateCalibration(calib);
+    } else {
+      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
+    }
+    CameraWidget::setFrameId(model.getFrameId());
+    CameraWidget::paintGL();
+  }
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
   if (s->worldObjectsVisible()) {
+    if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
+      update_model(s, sm["modelV2"].getModelV2());
+      if (sm.rcv_frame("radarState") > s->scene.started_frame) {
+        update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
+      }
+    }
 
     drawLaneLines(painter, s);
 
@@ -548,10 +610,16 @@ void NvgWindow::paintGL() {
     LOGW("slow frame rate: %.2f fps", fps);
   }
   prev_draw_t = cur_draw_t;
+
+  // publish debug msg
+  MessageBuilder msg;
+  auto m = msg.initEvent().initUiDebug();
+  m.setDrawTimeMillis(cur_draw_t - start_draw_t);
+  pm->send("uiDebug", msg);
 }
 
-void NvgWindow::showEvent(QShowEvent *event) {
-  CameraViewWidget::showEvent(event);
+void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
+  CameraWidget::showEvent(event);
 
   ui_update_params(uiState());
   prev_draw_t = millis_since_boot();

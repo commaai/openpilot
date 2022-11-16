@@ -48,7 +48,6 @@ void early_initialization(void) {
   // early GPIOs float everything
   early_gpio_float();
 
-  detect_external_debug_serial();
   detect_board_type();
 
   if (enter_bootloader_mode == ENTER_BOOTLOADER_MAGIC) {

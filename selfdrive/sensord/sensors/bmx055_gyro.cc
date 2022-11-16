@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "common/swaglog.h"
+#include "common/util.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
@@ -25,6 +26,13 @@ int BMX055_Gyro::init() {
     ret = -1;
     goto fail;
   }
+
+  ret = set_register(BMX055_GYRO_I2C_REG_LPM1, BMX055_GYRO_NORMAL_MODE);
+  if (ret < 0) {
+    goto fail;
+  }
+  // bmx055 gyro has a 30ms wakeup time from deep suspend mode
+  util::sleep_for(50);
 
   // High bandwidth
   // ret = set_register(BMX055_GYRO_I2C_REG_HBW, BMX055_GYRO_HBW_ENABLE);
@@ -54,7 +62,17 @@ fail:
   return ret;
 }
 
-void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
+int BMX055_Gyro::shutdown()  {
+  // enter deep suspend mode (lowest power mode)
+  int ret = set_register(BMX055_GYRO_I2C_REG_LPM1, BMX055_GYRO_DEEP_SUSPEND);
+  if (ret < 0) {
+    LOGE("Could not move BMX055 GYRO in deep suspend mode!")
+  }
+
+  return ret;
+}
+
+bool BMX055_Gyro::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
   int len = read_register(BMX055_GYRO_I2C_REG_RATE_X_LSB, buffer, sizeof(buffer));
@@ -66,6 +84,7 @@ void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   float y = -DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
   float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
+  auto event = msg.initEvent().initGyroscope2();
   event.setSource(cereal::SensorEventData::SensorSource::BMX055);
   event.setVersion(1);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
@@ -77,4 +96,5 @@ void BMX055_Gyro::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

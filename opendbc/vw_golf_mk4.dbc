@@ -296,7 +296,9 @@ BO_ 1408 Motor_Flexia: 8 XXX
  SG_ Verschleissindex : 16|8@1+ (1,0) [0|254] "" XXX
  SG_ Russindex : 8|8@1+ (1,0) [0|254] "" XXX
  SG_ Verbrennungsart : 7|1@1+ (1,0) [0|0] "" XXX
- SG_ Frei_Motor_Flexia_1 : 4|3@1+ (1,0) [0|0] "" XXX
+ SG_ Frei_Motor_Flexia_1 : 6|1@1+ (1,0) [0|0] "" XXX
+ SG_ Warm_Up_Cycle : 5|1@1+ (1,0) [0|0] "" XXX
+ SG_ Driving_Cycle : 4|1@1+ (1,0) [0|0] "" XXX
  SG_ Zaehler_Motor_Flexia : 1|3@1+ (1,0) [0|15] "" XXX
  SG_ Multiplex_Schalter_Motor_Flexia M : 0|1@1+ (1,0) [0|0] "" XXX
 
@@ -1121,7 +1123,7 @@ BO_ 208 Lenkhilfe_3: 6 XXX
  SG_ LH3_BLWValid : 45|1@1+ (1,0) [0|1] "" XXX
  SG_ LH3_Lenkungstyp : 46|2@1+ (1,0) [0|3] "" XXX
 
-BO_ 978 Lenkhilfe_2: 8 XXX
+BO_ 978 Lenkhilfe_2: 7 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ LH2_Geradeaus : 12|1@1+ (1,0) [0|1] "" XXX
@@ -1457,19 +1459,28 @@ CM_ SG_ 640 Fahrerwunschmoment "Driver Requested Torque";
 CM_ SG_ 640 mechanisches_Motor_Verlustmomen "Mechanical Torque Loss";
 CM_ SG_ 640 Fahrpedalwert_oder_Drosselklapp "Accelerator Pedal or Throttle Position";
 CM_ SG_ 640 Motordrehzahl "Engine Speed";
+CM_ SG_ 640 Momentenangaben_ungenau "Approximate Torque Values";
 
 CM_ SG_ 644 MOB_CHECKSUM "Checksum MOB";
 CM_ SG_ 644 MOB_COUNTER "Counter MOB";
 
+CM_ SG_ 648 Minimales_Motormoment_bei_Zuend "Minimum Torque Adjustment";
+CM_ SG_ 648 Begrenzungsmoment "Maximum Inner Torque";
 CM_ SG_ 648 Bremstestschalter "Brake Test Switch";
+CM_ SG_ 648 Soll_Geschwindigkeit_bei_GRA_Be "Desired Vehicle Speed";
 CM_ SG_ 648 Bremslichtschalter "Brake Light Switch";
 CM_ SG_ 648 Leerlaufsolldrehzahl__Motor_2_ "Target Idle Speed";
 CM_ SG_ 648 Fahrzeuggeschwindigkeit "Vehicle Speed";
 CM_ SG_ 648 Kuehlmitteltemperatur__Motor_2_ "Coolant Temperature";
 
 CM_ SG_ 896 Drosselklappenpoti "Throttle Position";
+CM_ SG_ 896 Motor_Wunschdrehzahl "Desired engine speed";
+CM_ SG_ 896 Motordrehzahlbeeinflussung "Shift Target Influence";
 CM_ SG_ 896 Fahrpedal_Rohsignal "Accelerator Pedal Position";
 CM_ SG_ 896 Ansauglufttemperatur "Intake Air Temperature";
+CM_ SG_ 896 Kein_E_Gas "ETB flag";
+CM_ SG_ 896 Kein_Start_Stop "Start/stop flag";
+CM_ SG_ 896 Rad_Wunschmoment "Desired wheel torque";
 
 CM_ SG_ 912 GK1_Fa_Tuerkont "Status of the driver's door rotary latch";
 CM_ SG_ 912 BSK_HL_geoeffnet "Status of the rear left door rotary latch";
@@ -1479,6 +1490,15 @@ CM_ SG_ 912 BSK_HD_Hauptraste "Status of trunk lid main detent";
 
 CM_ SG_ 1088 Zaehler_Getriebe_1 "Counter Getriebe_1";
 CM_ SG_ 1088 Waehlhebelposition__Getriebe_1_ "Gear Selector Position";
+
+CM_ SG_ 1056 Fehlerstatus_Aussentemp__4_1 "ambient temp error";
+CM_ SG_ 1056 Fehlerstatus_Oeltemperatur_4_1 "oil temp error";
+CM_ SG_ 1056 Fehlerst__Kuehlmitteltemp__4_1 "water temp error";
+CM_ SG_ 1056 Aussentemperatur_gefiltert "outside temp, filtered";
+CM_ SG_ 1056 Oeltemperatur_4_1 "kombi oil temperature";
+CM_ SG_ 1056 Kuehlmitteltemp__4_1__Kombi_2_ "kombi coolant temperature";
+
+CM_ SG_ 1096 Zaehler_Waehlhebel_1 "Counter Waehlhebel_1";
 
 CM_ SG_ 1152 Checksumme_Motor_5 "Checksum Motor_5";
 
@@ -1491,6 +1511,16 @@ CM_ SG_ 1160 Checksumme_Motor_6 "Checksum Motor_6";
 CM_ SG_ 1344 Zahler_Getriebe_2 "Counter Getriebe_2";
 
 CM_ SG_ 1386 ACA_V_Wunsch "255=unset";
+
+CM_ SG_ 1408 Zaehler_Motor_Flexia "Counter Motor_Flexia";
+CM_ SG_ 1408 Verbrennungsart "Type of combustion";
+CM_ SG_ 1408 Max_Drehmoment "Maximum torque";
+CM_ SG_ 1408 Drehzahl_MaxNorm "RPM of maximum torque";
+CM_ SG_ 1408 Hubraum "Displacement";
+CM_ SG_ 1408 Anzahl_Zylinder "Number of cylinders";
+CM_ SG_ 1408 Anzahl_Ventile "Number of valves";
+CM_ SG_ 1408 Ansaugsystem "Induction System";
+CM_ SG_ 1408 Motorleistung "Maximum engine power";
 
 CM_ SG_ 1416 Ladedruck "Boost Pressure";
 

@@ -36,39 +36,69 @@ BS_:
 BU_: Airbag_MQB BAP_Tester_MQB BMS_MQB Datenlogger_MQB Gateway_MQB Getriebe_DQ_Hybrid_MQB Getriebe_DQ_MQB LEH_MQB Motor_Diesel_MQB Motor_Hybrid_MQB Motor_Otto_MQB SAK_MQB Waehlhebel_MQB Vector__XXX l c i XXX
 
 
-BO_ 290 ACC_06: 8 Gateway_MQB
- SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_limitierte_Anfahrdyn : 12|1@1+ (1,0) [0|1] "" Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_zul_Regelabw_unten : 16|6@1+ (0.024,0) [0|1.512] "Unit_MeterPerSeconSquar" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_StartStopp_Info : 22|2@1+ (1,0) [0|3] "" Motor_Diesel_MQB,Motor_Otto_MQB
- SG_ ACC_Sollbeschleunigung_02 : 24|11@1+ (0.005,-7.22) [-7.22|3.005] "Unit_MeterPerSeconSquar" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_zul_Regelabw_oben : 35|5@1+ (0.0625,0) [0|1.9375] "Unit_MeterPerSeconSquar" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_neg_Sollbeschl_Grad_02 : 40|8@1+ (0.05,0) [0|12.75] "Unit_MeterPerCubicSecon" Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_pos_Sollbeschl_Grad_02 : 48|8@1+ (0.05,0) [0|12.75] "Unit_MeterPerCubicSecon" Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_Anfahren : 56|1@1+ (1,0) [0|1] "" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_Anhalten : 57|1@1+ (1,0) [0|1] "" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_Typ : 58|2@1+ (1,0) [0|3] "" Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_Status_ACC : 60|3@1+ (1,0) [0|7] "" Getriebe_DQ_Hybrid_MQB,Getriebe_DQ_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
- SG_ ACC_Minimale_Bremsung : 63|1@1+ (1,0) [0|1] "" Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
+BO_ 290 ACC_06: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  XXX
+ SG_ ACC_limitierte_Anfahrdyn : 12|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_nachtr_Stopp_Anf : 13|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_DynErhoehung : 14|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ ACC_Freilaufstrategie_TSK : 15|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ ACC_zul_Regelabw_unten : 16|6@1+ (0.024,0) [0|1.512] "Unit_MeterPerSeconSquar"  XXX
+ SG_ ACC_StartStopp_Info : 22|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Sollbeschleunigung_02 : 24|11@1+ (0.005,-7.22) [-7.22|3.005] "Unit_MeterPerSeconSquar"  XXX
+ SG_ ACC_zul_Regelabw_oben : 35|5@1+ (0.0625,0) [0|1.9375] "Unit_MeterPerSeconSquar"  XXX
+ SG_ ACC_neg_Sollbeschl_Grad_02 : 40|8@1+ (0.05,0) [0|12.75] "Unit_MeterPerCubicSecon"  XXX
+ SG_ ACC_pos_Sollbeschl_Grad_02 : 48|8@1+ (0.05,0) [0|12.75] "Unit_MeterPerCubicSecon"  XXX
+ SG_ ACC_Anfahren : 56|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Anhalten : 57|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Typ : 58|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Status_ACC : 60|3@1+ (1,0) [0|7] ""  XXX
+ SG_ ACC_Minimale_Bremsung : 63|1@1+ (1,0) [0|1] ""  XXX
 
-BO_ 279 ACC_10: 8 Gateway_MQB
- SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" Airbag_MQB
- SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" Airbag_MQB
- SG_ AWV1_Anf_Prefill : 16|1@1+ (1,0) [0|1] "" Airbag_MQB
- SG_ ANB_CM_Info : 17|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ AWV2_Freigabe : 18|1@1+ (1,0) [0|1] "" Airbag_MQB
- SG_ AWV1_HBA_Param : 19|2@1+ (1,0) [0|3] "" Vector__XXX
- SG_ AWV2_Ruckprofil : 21|3@1+ (1,0) [0|7] "" Vector__XXX
- SG_ AWV2_Priowarnung : 24|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ ANB_CM_Anforderung : 25|1@1+ (1,0) [0|1] "" Airbag_MQB
- SG_ ANB_Info_Teilbremsung : 26|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ ANB_Notfallblinken : 27|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ ANB_Teilbremsung_Freigabe : 28|1@1+ (1,0) [0|1] "" Airbag_MQB
- SG_ ANB_Zielbrems_Teilbrems_Verz_Anf : 29|10@1+ (0.024,-20.016) [-20.016|4.536] "Unit_MeterPerSeconSquar" Airbag_MQB
- SG_ ANB_Zielbremsung_Freigabe : 39|1@1+ (1,0) [0|1] "" Airbag_MQB
- SG_ AWV_Vorstufe : 40|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ AWV_Halten : 41|1@1+ (1,0) [0|1] "" Vector__XXX
+BO_ 279 ACC_10: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  XXX
+ SG_ AWV1_Anf_Prefill : 16|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ANB_CM_Info : 17|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV2_Freigabe : 18|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV1_HBA_Param : 19|2@1+ (1,0) [0|3] ""  XXX
+ SG_ AWV2_Ruckprofil : 21|3@1+ (1,0) [0|7] ""  XXX
+ SG_ AWV2_Priowarnung : 24|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ANB_CM_Anforderung : 25|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ANB_Info_Teilbremsung : 26|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ANB_Notfallblinken : 27|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ANB_Teilbremsung_Freigabe : 28|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ANB_Zielbrems_Teilbrems_Verz_Anf : 29|10@1+ (0.024,-20.016) [-20.016|4.536] "Unit_MeterPerSeconSquar"  XXX
+ SG_ ANB_Zielbremsung_Freigabe : 39|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV_Vorstufe : 40|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV_Halten : 41|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV_CityANB_Auspraegung : 42|1@1+ (1,0) [0|1] ""  XXX
+ SG_ PCF_Freigabe : 43|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV1_ECD_Anlauf : 44|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV_AWA_VZ_Anf_Lenkmomoffset : 46|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+ SG_ AWV_AWA_Anf_Lenkmomoffset : 47|9@1+ (0.01,0) [0.00|5.11] "Unit_NewtoMeter"  XXX
+ SG_ PCF_Time_to_collision : 56|8@1+ (0.01,0) [0|2.5] "Unit_Secon"  XXX
+
+BO_ 679 ACC_13: 8 XXX
+ SG_ ACC_Regelgeschw : 12|10@1+ (0.32,0) [0|327.04] "Unit_KiloMeterPerHour"  XXX
+ SG_ ACC_Einheit_maxSetzgeschw : 22|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_maxSetzgeschw : 23|9@1+ (1,0) [0|510] ""  XXX
+ SG_ ACC_minRegelgeschw : 32|8@1+ (0.32,0) [0|81.28] "Unit_KiloMeterPerHour"  XXX
+ SG_ ACC_maxRegelgeschw : 40|8@1+ (0.32,0) [0|81.28] "Unit_KiloMeterPerHour"  XXX
+ SG_ ACC_Tempolimitassistent : 48|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Kurvenassistent : 52|3@1+ (1,0) [0|7] ""  XXX
+ SG_ ACC_RUV : 56|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Tachokranz : 58|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Typ_Tachokranz_unten : 59|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_ENG_Texte : 60|2@1+ (1,0) [0|3] ""  XXX
+
+BO_ 681 ACC_15: 8 XXX
+ SG_ AWV_Warnung : 16|3@1+ (1,0) [0|7] ""  XXX
+ SG_ AWV_Texte : 24|3@1+ (1,0) [0|7] ""  XXX
+ SG_ AWV_Status_Anzeige : 32|2@1+ (1,0) [0|3] ""  XXX
+ SG_ AWV_Einstellung_System_FSG : 34|1@1+ (1,0) [0|1] ""  XXX
+ SG_ AWV_Einstellung_Warnung_FSG : 36|3@1+ (1,0) [0|7] ""  XXX
+ SG_ AWV_Warnlevel : 58|6@1+ (1,0) [0|63] ""  XXX
 
 BO_ 64 Airbag_01: 8 Airbag_MQB
  SG_ Airbag_01_CRC : 0|8@1+ (1,0) [0|255] "" BMS_MQB,Gateway_MQB,LEH_MQB,Motor_Diesel_MQB,Motor_Hybrid_MQB,Motor_Otto_MQB
@@ -1237,33 +1267,35 @@ BO_ 919 LDW_02: 8 XXX
 BO_ 780 ACC_02: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  XXX
- SG_ ACC_Wunschgeschw : 12|10@1+ (0.32,0) [0.00|326.72] "Unit_KiloMeterPerHour"  XXX
- SG_ ACC_Status_Prim_Anz : 22|2@1+ (1.0,0.0) [0.0|3] ""  XXX
+ SG_ ACC_Wunschgeschw_02 : 12|10@1+ (0.32,0) [0|327.04] "Unit_KiloMeterPerHour"  XXX
+ SG_ ACC_Status_Prim_Anz : 22|2@1+ (1,0) [0|3] ""  XXX
  SG_ ACC_Abstandsindex : 24|10@1+ (1,0) [1|1021] ""  XXX
- SG_ ACC_Akustik : 34|3@1+ (1.0,0.0) [0.0|7] ""  XXX
- SG_ ACC_Gesetzte_Zeitluecke : 37|3@1+ (1.0,0.0) [0.0|7] ""  XXX
- SG_ ACC_Optischer_Fahrerhinweis : 40|1@1+ (1.0,0.0) [0.0|1] ""  XXX
- SG_ ACC_Typ_Tachokranz : 41|1@1+ (1.0,0.0) [0.0|1] ""  XXX
- SG_ ACC_Anzeige_Zeitluecke : 42|1@1+ (1.0,0.0) [0.0|1] ""  XXX
- SG_ ACC_Tachokranz : 43|1@1+ (1.0,0.0) [0.0|1] ""  XXX
- SG_ ACC_Display_Prio : 44|2@1+ (1.0,0.0) [0.0|3] ""  XXX
- SG_ ACC_Relevantes_Objekt : 46|2@1+ (1.0,0.0) [0.0|3] ""  XXX
- SG_ ACC_Texte_Primaeranz : 48|7@1+ (1.0,0.0) [0.0|127] ""  XXX
- SG_ ACC_Wunschgeschw_erreicht : 55|1@1+ (1.0,0.0) [0.0|1] ""  XXX
- SG_ ACC_Status_Anzeige : 61|3@1+ (1.0,0.0) [0.0|7] ""  XXX
+ SG_ ACC_Akustik_02 : 34|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Warnung_Verkehrszeichen_1 : 36|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Gesetzte_Zeitluecke : 37|3@1+ (1,0) [0|7] ""  XXX
+ SG_ ACC_Optischer_Fahrerhinweis : 40|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Typ_Tachokranz : 41|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Anzeige_Zeitluecke : 42|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Tachokranz : 43|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Display_Prio : 44|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Relevantes_Objekt : 46|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Texte_Primaeranz : 48|7@1+ (1,0) [0|127] ""  XXX
+ SG_ ACC_Wunschgeschw_erreicht : 55|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Typ_Tachokranz_unten : 60|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Status_Anzeige : 61|3@1+ (1,0) [0|7] ""  XXX
 
 BO_ 302 ACC_07: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  XXX
- SG_ ACC_Distance_to_Stop : 12|11@1+ (0.01,0) [0|1] "m"  XXX
- SG_ ACC_Hold_Request : 23|1@1+ (1,0) [0|1] "x"  XXX
- SG_ ACC_Boost_Request : 24|1@1+ (1,0) [0|1] ""  XXX
- SG_ ACC_Freewheel_Request : 25|1@1+ (1,0) [0|1] ""  XXX
- SG_ ACC_Freewheel_Type : 26|2@1+ (1,0) [0|3] "enum"  XXX
- SG_ ACC_Hold_Type : 28|3@1+ (1,0) [0|15] "enum"  XXX
- SG_ ACC_Hold_Release : 31|1@1+ (1,0) [0|1] ""  XXX
- SG_ ACC_Accel_Secondary : 32|8@1+ (0.03,-4.6) [-4.6|2.99] "m/s2"  XXX
- SG_ ACC_Accel_TSK : 53|11@1+ (0.005,-7.22) [-7.22|3.005] "m/s2"  XXX
+ SG_ ACC_Anhalteweg : 12|11@1+ (0.01,0) [0|20.45] "Unit_Meter"  XXX
+ SG_ ACC_Anhalten : 23|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Boost_Anf : 24|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Freilauf_Anf : 25|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Freilauf_Info : 26|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Anforderung_HMS : 28|3@1+ (1,0) [0|7] ""  XXX
+ SG_ ACC_Anfahren : 31|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Folgebeschl : 32|8@1+ (0.03,-4.6) [-4.6|2.99] "Unit_MeterPerSeconSquar"  XXX
+ SG_ ACC_Sollbeschleunigung_02 : 53|11@1+ (0.005,-7.22) [-7.22|3.005] "Unit_MeterPerSeconSquar"  XXX
 
 BO_ 264 Fahrwerk_01: 8 XXX
  SG_ Fahrwerk_01_BZ : 8|4@1+ (1,0) [0|15] "" XXX
@@ -1297,15 +1329,18 @@ BO_ 783 SWA_01: 8 Gateway_MQB
 BO_ 804 ACC_04: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  XXX
- SG_ ACC_Texte_Zusatzanz : 16|6@1+ (1.0,0.0) [0.0|63] ""  XXX
- SG_ ACC_Status_Zusatzanz : 22|5@1+ (1.0,0.0) [0.0|31] ""  XXX
- SG_ ACC_Texte : 27|5@1+ (1.0,0.0) [0.0|31] ""  XXX
- SG_ ACC_Texte_braking_guard : 32|3@1+ (1.0,0.0) [0.0|7] ""  XXX
- SG_ ACC_Warnhinweis : 35|1@1+ (1.0,0.0) [0.0|1] ""  XXX
- SG_ ACC_Geschw_Zielfahrzeug : 40|10@1+ (0.32,0) [0.00|326.72] "Unit_KiloMeterPerHour"  XXX
- SG_ ACC_Charisma_FahrPr : 56|3@1+ (1.0,0.0) [0.0|7] ""  XXX
- SG_ ACC_Charisma_Status : 59|2@1+ (1.0,0.0) [0.0|3] ""  XXX
- SG_ ACC_Charisma_Umschaltung : 61|2@1+ (1.0,0.0) [0.0|3] ""  XXX
+ SG_ ACC_Texte_Sekundaeranz : 12|4@1+ (1,0) [0|15] ""  XXX
+ SG_ ACC_Texte_Zusatzanz : 16|6@1+ (1,0) [0|63] ""  XXX
+ SG_ ACC_Status_Zusatzanz : 22|5@1+ (1,0) [0|31] ""  XXX
+ SG_ ACC_Texte : 27|5@1+ (1,0) [0|31] ""  XXX
+ SG_ ACC_Texte_braking_guard : 32|3@1+ (1,0) [0|7] ""  XXX
+ SG_ ACC_Warnhinweis : 35|1@1+ (1,0) [0|1] ""  XXX
+ SG_ ACC_Zeitluecke_Abstandswarner : 36|6@1+ (0.1,0) [0|6] "Unit_Secon"  XXX
+ SG_ ACC_Abstand_Abstandswarner : 42|9@1+ (1,0) [0|508] ""  XXX
+ SG_ ACC_Tempolimit : 51|5@1+ (1,0) [0|31] ""  XXX
+ SG_ ACC_Charisma_FahrPr : 56|4@1+ (1,0) [0|15] ""  XXX
+ SG_ ACC_Charisma_Status : 60|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_Texte_Abstandswarner : 62|2@1+ (1,0) [0|3] ""  XXX
 
 BO_ 917 LWR_AFS_01: 8 XXX
 
@@ -1437,14 +1472,90 @@ CM_ SG_ 1720 KBI_Variante "Zeigt an ob es sich um ein konventionelles Zeiger-Kom
 CM_ SG_ 1720 KBI_Variante_USA "In diesem Signal wird die HW-Variante des Kombis ausgegeben, ACC plausibilisiert auf dieses Signal hin seine US-Codierung";
 
 
-VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active";
-VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 13 "T" 14 "T";
-VAL_ 288 TSK_Status 0 "init" 1 "disabled" 2 "enabled" 3 "regulating" 4 "accel_pedal_override" 5 "brake_only" 6 "temp_fault" 7 "perm_fault";
-VAL_ 302 ACC_Freewheel_Type 0 "freewheel_released" 1 "freewheel_not_permitted" 2 "freewheel_not_released" 3 "freewheel_requested" ;
-VAL_ 302 ACC_Hold_Type 0 "no_request" 1 "hold" 2 "park" 3 "hold_standby" 4 "startup" 5 "loosen_over_ramp" ;
-VAL_ 391 GearPosition 2 "P" 3 "R" 4 "N" 5 "D" 6 "D";
-VAL_ 391 RegenBrakingMode 0 "default" 1 "B1" 2 "B2" 3 "B3";
-VAL_ 870 Fast_Send_Rate_Active 0 "1 Hz" 1 "50 Hz";
+VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active" ;
+VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 13 "T" 14 "T" ;
+VAL_ 288 TSK_Status 0 "init" 1 "disabled" 2 "enabled" 3 "regulating" 4 "accel_pedal_override" 5 "brake_only" 6 "temp_fault" 7 "perm_fault" ;
+VAL_ 780 ACC_Wunschgeschw_02 1023 "keine_Anzeige" ;
+VAL_ 780 ACC_Status_Prim_Anz 0 "Symbol nicht beleuchtet" 1 "Farbe 1 (typisch 'gruen')" 2 "Farbe 2 (typisch 'rot')" 3 "Farbe 3 (typisch 'gelb')" ;
+VAL_ 780 ACC_Abstandsindex 0 "Sonderanzeige_graue_Fahrbahn" 1022 "Sonderanzeige_graue_Fahrbahn" 1023 "Sonderanzeige_Fahrbahn_mit_gruenem_roten_Bereich" ;
+VAL_ 780 ACC_Akustik_02 0 "keine_Akustik" 1 "hochpriore_Akustik" 2 "niederpriore_Akustik" 3 "hochpriore_Dauerakustik" ;
+VAL_ 780 ACC_Warnung_Verkehrszeichen_1 0 "keine_Warnung_Initialwert" 1 "Warnung" ;
+VAL_ 780 ACC_Gesetzte_Zeitluecke 0 "keine_Anzeige" 1 "Zeitluecke_1" 2 "Zeitluecke_2" 3 "Zeitluecke_3" 4 "Zeitluecke_4" 5 "Zeitluecke_5" 6 "nicht_definiert" 7 "nicht_definiert" ;
+VAL_ 780 ACC_Optischer_Fahrerhinweis 0 "optischer_Fahrerhinweis_AUS" 1 "optischer_Fahrerhinweis_EIN" ;
+VAL_ 780 ACC_Typ_Tachokranz 0 "Tachokranz_lang" 1 "Tachokranz_kurz" ;
+VAL_ 780 ACC_Anzeige_Zeitluecke 0 "Anzeige_Zeitluecke_nicht_angefordert" 1 "Anzeige_Zeitluecke_angefordert" ;
+VAL_ 780 ACC_Tachokranz 0 "Tachokranz_nicht_beleuchtet" 1 "Tachokranz_beleuchtet" ;
+VAL_ 780 ACC_Display_Prio 0 "hoechste_Prio" 1 "mittlere_Prio" 2 "geringe_Prio" 3 "keine_Prio" ;
+VAL_ 780 ACC_Relevantes_Objekt 0 "Symbol_nicht_beleuchtet" 1 "Farbe_1_typisch_gruen" 2 "Farbe_2_typisch_rot" 3 "Farbe_3_typisch_gelb" ;
+VAL_ 780 ACC_Texte_Primaeranz 0 "keine Anzeige" 1 "ACC nicht verfuegbar !" 2 "Auto_Auto_ _ _" 3 "Auto_ _Auto_ _" 4 "Auto_ _ _Auto_" 5 "Auto_ _ _ _Auto" 6 "Auto_Auto_ _ _ Gong (durchgestrichen)" 7 "Auto_ _Auto_ _ Gong (durchgestrichen)" 8 "Auto_ _ _Auto_ Gong (durchgestrichen)" 9 "Auto_ _ _ _Auto Gong (durchgestrichen)" 10 "ACC bereit" 11 "keine Abstandsregelung" 12 "ACC Sensor Sicht !" 13 "ACC nicht verfuegbar" 14 "o  o  o" 15 "Hochschalten" 16 "ESP Eingriff" 17 "Herunterschalten" 18 "Parkbremse !" 19 "Geschwindigkeitsgrenze" 20 "Waehlhebelposition !" 21 "VDA ACC-Symbol YYY km/h / mph" 22 "Tempolimit XXX km/h / mph" 23 "Kurve XXX km/h / mph" 24 "ACC Abschaltung" 25 "Symbol 'Eieruhr'" 26 "!" 27 "--- km/h / mph" 28 "XXX km/h / mph (Schriftart 2)" 29 "Lenkradwinkel" 30 "Anfahren bestaetigen" 31 "Fahrzeug verloren" 32 "Im Stand nicht moeglich" 33 "Ungueltiger Anfahrbefehl" 34 "Tuer offen !" 35 "Fahrer Gurtschloss offen !" 36 "Schalthebelposition !" 37 "Drehzahl !" 38 "Kurvenassistent aus" 39 "Tempolimit aus" 40 "Abbiegeassistent" 41 "Ortsanfang XXX km/h / mph" 42 "Ortsende XXX km/h / mph" 43 "Tempolimit Ende XXX km/h / mph" 44 "HDC aktiv" 45 "braking guard Bremsruck" 46 "braking guard aus" 47 "braking guard aus" 48 "Uebernehmen !" 49 "Steigung zu gross" 50 "Stehendes Objekt voraus" 51 "SET / 'GRA Symbol'___xxx km/h / mph" 52 "SET / 'GRA Symbol' xxx km/h / mph" 53 "ACC aus" 54 "ACC startet" 55 "ACC reinigen" 56 "ACC Fehler" 57 "ACC haelt an !" 58 "Bremse betaetigen !" 59 "Kupplung betaetigt" 60 "LIM AUS" 61 "LIM AKTIV" 62 "LIM PASSIV" 63 "LIM FEHLER" 64 "Bremse ueberhitzt !" 65 "Bremse haelt !" 66 "ESP PASSIV !" 67 "ACC_anfahrbereit" 68 "Gang_einlegen" 69 "Rechtsueberholen_verhindert" 70 "Linksueberholen_verhindert" 71 "Achtung_Geschwindigkeitsueberschreitung" 72 "Tempolimit_und_Kurvenassistent_nicht_verfuegbar" ;
+VAL_ 780 ACC_Wunschgeschw_erreicht 0 "Wunschgeschwindigkeit_nicht_erreicht" 1 "Wunschgeschwindigkeit_erreicht" ;
+VAL_ 780 ACC_Typ_Tachokranz_unten 0 "LEDs_an" 1 "LEDs_aus" ;
+VAL_ 780 ACC_Status_Anzeige 0 "ACC_GRA_Hauptschalter_aus" 1 "ACC_in_Init_nicht_bei_GRA" 2 "ACC_GRA_passiv" 3 "ACC_GRA_aktiv" 4 "ACC_GRA_im_Hintergrund_uebertreten" 5 "ACC_GRA_Abschaltreaktion" 6 "ACC_reversibel_aus_nicht_bei_GRA" 7 "ACC_GRA_irreversibel_aus" ;
+VAL_ 804 ACC_Texte_Sekundaeranz 0 "keine_Anzeige" 1 "Zielfahrzeug_erkannt" 2 "Rechtskurve_voraus" 3 "Linkskurve_voraus" 4 "Tempolimit_voraus" 5 "Sensorsicht" 6 "Anfahrbereit" 7 "Tempolimit_erkannt" 8 "Kreuzung_voraus" 9 "Kreisverkehr_voraus" ;
+VAL_ 804 ACC_Texte_Zusatzanz 0 "keine_Anzeige" 1 "ACC_AUS" 2 "ACC_BEREIT" 3 "UEBERTRETEN" 4 "ABSTAND" 5 "DISTANZ_1" 6 "DISTANZ_2" 7 "DISTANZ_3" 8 "DISTANZ_4" 9 "DISTANZ_1__dyn" 10 "DISTANZ_2__dyn" 11 "DISTANZ_3__dyn" 12 "DISTANZ_4__dyn" 13 "DISTANZ_1__stand" 14 "DISTANZ_2__stand" 15 "DISTANZ_3__stand" 16 "DISTANZ_4__stand" 17 "DISTANZ_1__comf" 18 "DISTANZ_2__comf" 19 "DISTANZ_3__comf" 20 "DISTANZ_4__comf" 21 "DISTANZ_1__efficiency" 22 "DISTANZ_2__efficiency" 23 "DISTANZ_3__efficiency" 24 "DISTANZ_4__efficiency" 25 "DISTANZ_5" 26 "DISTANZ_5__dyn" 27 "DISTANZ_5__stand" 28 "DISTANZ_5__comf" 29 "DISTANZ_5__efficiency" 30 "ACHTUNG" 31 "Abstandsanzeige" 32 "Abstandsanz_Warnung_aktiviert" ;
+VAL_ 804 ACC_Status_Zusatzanz 0 "keine Anzeige" 1 "Bild 1 (Fzg. Silhouette, typ. farblos)" 2 "Bild 2 (Fzg. Farbe 1, typ. grau)" 3 "Bild 3 (Fzg. Farbe 2, typ. rot)" 4 "Bild 4 (Symbol 1 ACCplus, typ. Doppelfzg. gelb)" 5 "Bild 5 (Symbol 2 ACCplus, typ. Doppelfzg. grau)" 6 "Bild 6 (Fzg. Farbe 2, typ. rot) mit Priorität im Kombi (Pop-up)" ;
+VAL_ 804 ACC_Texte 0 "keine_Anzeige" 1 "ACC_nicht_verfuegbar" 2 "ACC_und_AWV_nicht_verfuegbar" 3 "ACC_keine_Sensorsicht" 4 "ACC_und_AWV_keine_Sensorsicht" 5 "ACC_Steigung_zu_gross" 6 "ACC_nur_in_Fahrstufe_verfuegbar" 7 "ACC_Parkbremse_betaetigt" 8 "ACC_ESP_Eingriff" 9 "ACC_Bitte_uebernehmen" 10 "ACC_HDC_betaetigt" 11 "ACC_Geschwindigkeitsgrenze" 12 "ACC_Schalthebelposition" 13 "ACC_Drehzahl" 14 "ACC_Kupplung_betaetigt" 15 "ACC_Aktivierverhinderung" 16 "ACC_Abschaltung" 17 "ACC_Parkassistent_aktiv" 18 "ACC_ESC_aus" 19 "ACC_Charisma_Modus_inkompatibel" 20 "ACC_Stehendes_Objekt_voraus" 21 "ACA_Fahreruebernahme" 22 "ACA_Querfuehrung_nicht_verfuegbar" ;
+VAL_ 804 ACC_Texte_braking_guard 0 "keine_Anzeige" 1 "AWV_aus" 2 "AWV_Warnung" 3 "AWV_Demomodus" 4 "AWV_Systemstoerung" 5 "AWV_Eingriff" 6 "AWV_Vorwarnung_aus" 7 "AWV_keine_Sensorsicht" ;
+VAL_ 804 ACC_Warnhinweis 0 "kein_Warnhinweis" 1 "Warnhinweis" ;
+VAL_ 804 ACC_Zeitluecke_Abstandswarner 61 "Freifahrt" 62 "nicht_definiert" 63 "keine_Anzeige" ;
+VAL_ 804 ACC_Abstand_Abstandswarner 509 "Freifahrt" 510 "nicht_definiert" 511 "keine_Anzeige" ;
+VAL_ 804 ACC_Tempolimit 0 "keine_Anzeige" 1 "5_zulHoechstgeschw" 2 "7_zulHoechstgeschw" 3 "10_zulHoechstgeschw" 4 "15_zulHoechstgeschw" 5 "20_zulHoechstgeschw" 6 "25_zulHoechstgeschw" 7 "30_zulHoechstgeschw" 8 "35_zulHoechstgeschw" 9 "40_zulHoechstgeschw" 10 "45_zulHoechstgeschw" 11 "50_zulHoechstgeschw" 12 "55_zulHoechstgeschw" 13 "60_zulHoechstgeschw" 14 "65_zulHoechstgeschw" 15 "70_zulHoechstgeschw" 16 "75_zulHoechstgeschw" 17 "80_zulHoechstgeschw" 18 "85_zulHoechstgeschw" 19 "90_zulHoechstgeschw" 20 "95_zulHoechstgeschw" 21 "100_zulHoechstgeschw" 22 "110_zulHoechstgeschw" 23 "120_zulHoechstgeschw" 24 "130_zulHoechstgeschw" 25 "140_zulHoechstgeschw" 26 "150_zulHoechstgeschw" 27 "160_zulHoechstgeschw" 28 "200_zulHoechstgeschw" 30 "250_zulHoechstgeschw" 31 "Ende_zulHoechstgeschw" ;
+VAL_ 804 ACC_Charisma_FahrPr 0 "keine_Funktion" 1 "Programm_1" 2 "Programm_2" 3 "Programm_3" 4 "Programm_4" 5 "Programm_5" 6 "Programm_6" 7 "Programm_7" 8 "Programm_8" 9 "Programm_9" 10 "Programm_10" 11 "Programm_11" 12 "Programm_12" 13 "Programm_13" 14 "Programm_14" 15 "Programm_15" ;
+VAL_ 804 ACC_Charisma_Status 0 "Init" 1 "verfuegbar" 2 "nicht_verfuegbar" 3 "asynchron_durch_Fahrerwunsch" ;
+VAL_ 804 ACC_Texte_Abstandswarner 0 "keine_Anzeige" 1 "Systemstoerung" 2 "keine_Sensorsicht" 3 "zurzeit_eingeschraenkt" ;
+VAL_ 290 ACC_limitierte_Anfahrdyn 0 "keine_Limitierung" 1 "Limitierung_Anfahrdynamik_angefordert" ;
+VAL_ 290 ACC_nachtr_Stopp_Anf 0 "nicht_angefordert" 1 "angefordert" ;
+VAL_ 290 ACC_StartStopp_Info 0 "Motorlauf_langfristig_nicht_notwendig_Stoppfreigabe" 1 "Motoranlauf_nicht_zwingend_notwendig_Stoppverbot_keine_Startanforderung" 2 "Motoranlauf_zwingend_notwendig_Startanforderung" 3 "Systemfehler" ;
+VAL_ 290 ACC_Sollbeschleunigung_02 2046 "Neutralwert" 2047 "Fehler" ;
+VAL_ 290 ACC_Anfahren 0 "keine_Anforderung_Anfahren" 1 "Anforderung_Anfahren" ;
+VAL_ 290 ACC_Anhalten 0 "kein_Anhalten_gewuenscht" 1 "Anhalten_gewuenscht" ;
+VAL_ 290 ACC_Typ 0 "Basis_ACC" 1 "ACC_mit_FollowToStop" 2 "ACC_mit_StopAndGo" 3 "ACC_nicht_codiert" ;
+VAL_ 290 ACC_Status_ACC 0 "ACC_OFF_Hauptschalter_aus" 1 "ACC_INIT" 2 "ACC_STANDBY" 3 "ACC_AKTIV_regelt" 4 "ACC_OVERRIDE" 5 "ACC_Abschaltreaktion" 6 "reversibler_Fehler_im_ACC_System" 7 "irreversibler_Fehler_im_ACC_System" ;
+VAL_ 290 ACC_Minimale_Bremsung 0 "Anforderung_Minimale_Bremsung_nicht_aktiv" 1 "Anforderung_Minimale_Bremsung_aktiv" ;
+VAL_ 302 ACC_Anhalteweg 2046 "Neutralwert" 2047 "Fehler" ;
+VAL_ 302 ACC_Anhalten 0 "kein_Anhalten_gewuenscht" 1 "Anhalten_gewuenscht" ;
+VAL_ 302 ACC_Freilauf_Anf 0 "keine Freilauf-Anforderung" 1 "Freilauf-Anforderung" ;
+VAL_ 302 ACC_Freilauf_Info 0 "Freilauf_freigegeben" 1 "kein_Uebergang_in_Freilauf_zulaessig" 2 "Freilauf_nicht_freigegeben" 3 "Freilauf_Anforderung" ;
+VAL_ 302 ACC_Anforderung_HMS 0 "keine_Anforderung" 1 "halten" 2 "parken" 3 "halten_Standby" 4 "anfahren" 5 "Loesen_ueber_Rampe" ;
+VAL_ 302 ACC_Anfahren 0 "keine_Anforderung_Anfahren" 1 "Anforderung_Anfahren" ;
+VAL_ 302 ACC_Folgebeschl 254 "Neutralwert" ;
+VAL_ 302 ACC_Sollbeschleunigung_02 2046 "Neutralwert" 2047 "Fehler" ;
+VAL_ 279 AWV1_Anf_Prefill 0 "Prefill_nicht_aktivieren" 1 "Prefill_aktivieren" ;
+VAL_ 279 ANB_CM_Info 0 "Standard" 1 "Erweitert" ;
+VAL_ 279 AWV2_Freigabe 0 "keine_Freigabe" 1 "Freigabe" ;
+VAL_ 279 AWV1_HBA_Param 0 "Defaultparametersatz" 1 "Parametersatz_mit_leicht_erhoehter_Empfindlichkeit" 2 "Parametersatz_mit_erhoehter_Empfindlichkeit" 3 "Parametersatz_mit_hoechster_Empfindlichkeit" ;
+VAL_ 279 AWV2_Priowarnung 0 "Anzeige_Verlassen_der_Fahrspur_wird_nicht_unterdrueckt" 1 "Anzeige_Verlassen_der_Fahrspur_wird_unterdrueckt" ;
+VAL_ 279 ANB_CM_Anforderung 0 "keine_Anforderung" 1 "Anforderung_aktiv" ;
+VAL_ 279 ANB_Info_Teilbremsung 0 "Auspraegung_Standard" 1 "Auspraegung_Erweitert" ;
+VAL_ 279 ANB_Notfallblinken 0 "kein_ANB_Notfallblinken" 1 "Notfallblinken_ANB_angefordert" ;
+VAL_ 279 ANB_Teilbremsung_Freigabe 0 "Teilbremsung_nicht_freigegeben" 1 "Teilbremsung_freigegeben" ;
+VAL_ 279 ANB_Zielbremsung_Freigabe 0 "Zielbremsung_nicht_freigegeben" 1 "Zielbremsung_freigegeben" ;
+VAL_ 279 AWV_Vorstufe 0 "keine_Notbremsung_erwartet" 1 "Notbremsung_in_Kuerze" ;
+VAL_ 279 AWV_Halten 0 "keine_Anforderung" 1 "Anforderung_das_Fzg_im_Stillstand_zu_halten" ;
+VAL_ 279 AWV_CityANB_Auspraegung 0 "autom_Bremsung_im_ges_vBereich" 1 "autom_Bremsung_im_def_vBereich" ;
+VAL_ 279 PCF_Freigabe 0 "keine_Freigabe_PreCrashFront" 1 "Freigabe_PreCrashFront" ;
+VAL_ 279 AWV1_ECD_Anlauf 0 "ECD_Anlauf_nicht_aktivieren" 1 "ECD_Anlauf_aktivieren" ;
+VAL_ 279 PCF_Time_to_collision 255 "Objektstatus=0x0__oder_berechneter_TTC_Wert_groesser_als_Maximalwert" ;
+VAL_ 679 ACC_Regelgeschw 1023 "keine_Anzeige" ;
+VAL_ 679 ACC_Einheit_maxSetzgeschw 0 "kmh" 1 "mph" ;
+VAL_ 679 ACC_maxSetzgeschw 511 "Init_Neutralwert" ;
+VAL_ 679 ACC_minRegelgeschw 255 "keine_Anzeige" ;
+VAL_ 679 ACC_maxRegelgeschw 255 "keine_Anzeige" ;
+VAL_ 679 ACC_Tempolimitassistent 0 "keine_Anzeige" 1 "Tempolimitassistent_aktiv" 2 "Tempolimitassistent_nicht_verfuegbar" 3 "Tempolimitassistent_Fahreruebernahme" ;
+VAL_ 679 ACC_Kurvenassistent 0 "keine_Anzeige" 1 "Kreuzung" 2 "Rechtskurve" 3 "Linkskurve" 4 "Kreisverkehr" ;
+VAL_ 679 ACC_RUV 0 "keine_Anzeige" 1 "RUV_aktiv_Rechtsverkehr" 2 "RUV_aktiv_Linksverkehr" ;
+VAL_ 679 ACC_Tachokranz 0 "Tachokranz_nicht_beleuchtet" 1 "Tachokranz_beleuchtet" ;
+VAL_ 679 ACC_Typ_Tachokranz_unten 0 "LEDs_an" 1 "LEDs_aus" ;
+VAL_ 679 ACC_ENG_Texte 0 "keine_Anzeige" 1 "keine_Laenderverfuegbarkeit" 2 "nicht_verfuegbar" 3 "Geschwindigkeitsgrenze" ;
+VAL_ 681 AWV_Warnung 0 "keine_Anzeige" 1 "latente_Vorwarnung" 2 "Vorwarnung" 3 "Akutwarnung" 4 "Eingriff" 5 "Fahreruebernahmeaufforderung" 6 "Abbiegewarnung" ;
+VAL_ 681 AWV_Texte 0 "keine_Anzeige" 1 "Systemstoerung" 2 "keine_Sensorsicht" 3 "Demomodus" 4 "System_aus" 5 "nicht_definiert" 6 "ESC_aus" 7 "zurzeit_eingeschraenkt" ;
+VAL_ 681 AWV_Status_Anzeige 0 "Init" 1 "verfuegbar" 2 "nicht_verfuegbar" ;
+VAL_ 681 AWV_Einstellung_System_FSG 0 "deaktiviert" 1 "aktiviert" ;
+VAL_ 681 AWV_Einstellung_Warnung_FSG 0 "Aus" 1 "Setting_2" 2 "Setting_3" 3 "Setting_4" 4 "Setting_5" 5 "Ein" ;
+VAL_ 681 AWV_Warnlevel 0 "keine_Gefaehrdung" 63 "max_Gefaehrdung" ;
+VAL_ 391 GearPosition 2 "P" 3 "R" 4 "N" 5 "D" 6 "D" ;
+VAL_ 391 RegenBrakingMode 0 "default" 1 "B1" 2 "B2" 3 "B3" ;
+VAL_ 870 Fast_Send_Rate_Active 0 "1 Hz" 1 "50 Hz" ;
 VAL_ 1720 KBI_Variante_USA 0 "keine USA-Variante" 1 "USA-Variante" ;
 VAL_ 1720 KBI_Variante 0 "Zeiger Kombiinstrument" 1 "Volldisplay Kombiinstrument" ;
 VAL_ 1720 KBI_BCmE_aktiv 0 "Anzeige_nicht_aktiv" 1 "Anzeige_aktiv" ;

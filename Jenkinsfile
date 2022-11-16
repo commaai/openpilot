@@ -59,7 +59,7 @@ pipeline {
         branch 'devel-staging'
       }
       steps {
-        phone_steps("tici", [
+        phone_steps("tici-needs-can", [
           ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
@@ -111,7 +111,7 @@ pipeline {
             R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
           }
           steps {
-            phone_steps("tici", [
+            phone_steps("tici-needs-can", [
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
@@ -122,24 +122,33 @@ pipeline {
           }
         }
 
-        stage('HW + Unit Tests') {
+        stage('loopback-tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici2", [
-              ["build", "cd selfdrive/manager && ./build.py"],
-              //["test power draw", "python system/hardware/tici/test_power_draw.py"],
+            phone_steps("tici-loopback", [
+              ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-              ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-              ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
-              ["test sensord", "python selfdrive/sensord/test/test_sensord.py"],
             ])
           }
         }
 
-        stage('camerad') {
+        stage('HW + Unit Tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici-party", [
+            phone_steps("tici-common", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test power draw", "python system/hardware/tici/test_power_draw.py"],
+              ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
+              ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
+              ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
+            ])
+          }
+        }
+
+        stage('camerad-ar') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-ar0321", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
@@ -147,17 +156,43 @@ pipeline {
           }
         }
 
+        stage('camerad-ox') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-ox03c10", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test camerad", "python system/camerad/test/test_camerad.py"],
+              ["test exposure", "python system/camerad/test/test_exposure.py"],
+            ])
+          }
+        }
+
+        stage('sensord') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici-lsmc", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+            ])
+            phone_steps("tici-bmx-lsm", [
+              ["build", "cd selfdrive/manager && ./build.py"],
+              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+            ])
+          }
+        }
+
         stage('replay') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici3", [
+            phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
             ])
           }
         }
-      }
 
+      }
     }
+
   }
 }

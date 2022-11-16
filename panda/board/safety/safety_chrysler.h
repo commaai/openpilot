@@ -28,9 +28,6 @@ const SteeringLimits CHRYSLER_RAM_HD_STEERING_LIMITS = {
   .type = TorqueMotorLimited,
 };
 
-const int CHRYSLER_STANDSTILL_THRSLD = 10;     // about 1m/s
-const int CHRYSLER_RAM_STANDSTILL_THRSLD = 3;  // about 1m/s changed from wheel rpm to km/h
-
 typedef struct {
   const int EPS_2;
   const int ESP_1;
@@ -204,16 +201,14 @@ static int chrysler_rx_hook(CANPacket_t *to_push) {
     }
 
     // TODO: use the same message for both
-    // update speed
+    // update vehicle moving
     if ((chrysler_platform != CHRYSLER_PACIFICA) && (bus == 0) && (addr == chrysler_addrs->ESP_8)) {
-      vehicle_speed = (((GET_BYTE(to_push, 4) & 0x3U) << 8) + GET_BYTE(to_push, 5))*0.0078125;
-      vehicle_moving = (int)vehicle_speed > CHRYSLER_RAM_STANDSTILL_THRSLD;
+      vehicle_moving = ((GET_BYTE(to_push, 4) << 8) + GET_BYTE(to_push, 5)) != 0U;
     }
     if ((chrysler_platform == CHRYSLER_PACIFICA) && (bus == 0) && (addr == 514)) {
       int speed_l = (GET_BYTE(to_push, 0) << 4) + (GET_BYTE(to_push, 1) >> 4);
       int speed_r = (GET_BYTE(to_push, 2) << 4) + (GET_BYTE(to_push, 3) >> 4);
-      vehicle_speed = (speed_l + speed_r) / 2;
-      vehicle_moving = (int)vehicle_speed > CHRYSLER_STANDSTILL_THRSLD;
+      vehicle_moving = (speed_l != 0) || (speed_r != 0);
     }
 
     // exit controls on rising edge of gas press

@@ -30,11 +30,6 @@ void pedal_set_led(uint8_t color, bool enabled) {
   }
 }
 
-void pedal_set_usb_power_mode(uint8_t mode){
-  usb_power_mode = mode;
-  puts("Trying to set USB power mode on pedal. This is not supported.\n");
-}
-
 void pedal_set_gps_mode(uint8_t mode) {
   UNUSED(mode);
   puts("Trying to set ESP/GPS mode on pedal. This is not supported.\n");
@@ -78,21 +73,22 @@ const harness_configuration pedal_harness_config = {
 
 const board board_pedal = {
   .board_type = "Pedal",
+  .board_tick = unused_board_tick,
   .harness_config = &pedal_harness_config,
   .has_gps = false,
   .has_hw_gmlan = false,
   .has_obd = false,
   .has_lin = false,
+  .has_spi = false,
+  .has_canfd = false,
   .has_rtc_battery = false,
   .fan_max_rpm = 0U,
   .init = pedal_init,
   .enable_can_transceiver = pedal_enable_can_transceiver,
   .enable_can_transceivers = pedal_enable_can_transceivers,
   .set_led = pedal_set_led,
-  .set_usb_power_mode = pedal_set_usb_power_mode,
   .set_gps_mode = pedal_set_gps_mode,
   .set_can_mode = pedal_set_can_mode,
-  .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = pedal_check_ignition,
   .read_current = unused_read_current,
   .set_fan_enabled = unused_set_fan_enabled,

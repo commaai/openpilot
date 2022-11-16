@@ -11,7 +11,8 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   STEER_MAX = 300  # GM limit is 3Nm. Used by carcontroller to generate LKA output
-  STEER_STEP = 2  # Control frames per command (50hz)
+  ACTIVE_STEER_STEP = 2  # Active control frames per command (50hz)
+  INACTIVE_STEER_STEP = 10  # Inactive control frames per command (10hz)
   STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness
   STEER_DELTA_DOWN = 17
   STEER_DRIVER_ALLOWANCE = 50
@@ -23,13 +24,6 @@ class CarControllerParams:
   ADAS_KEEPALIVE_STEP = 100
   CAMERA_KEEPALIVE_STEP = 100
 
-  # Volt gasbrake lookups
-  # TODO: These values should be confirmed on non-Volt vehicles
-  MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
-  ZERO_GAS = 2048  # Coasting
-  MAX_BRAKE = 350  # ~ -3.5 m/s^2 with regen
-  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
-
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
@@ -38,16 +32,32 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  EV_GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
-  EV_BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
+  def __init__(self, CP):
+    # Gas/brake lookups
+    self.ZERO_GAS = 2048  # Coasting
+    self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-  # ICE has much less engine braking force compared to regen in EVs,
-  # lower threshold removes some braking deadzone
-  GAS_LOOKUP_BP = [-0.1, 0., ACCEL_MAX]
-  BRAKE_LOOKUP_BP = [ACCEL_MIN, -0.1]
+    if CP.carFingerprint in CAMERA_ACC_CAR:
+      self.MAX_GAS = 3400
+      self.MAX_ACC_REGEN = 1514
+      self.INACTIVE_REGEN = 1554
+      # Camera ACC vehicles have no regen while enabled.
+      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
+      max_regen_acceleration = 0.
 
-  GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
-  BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
+    else:
+      self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
+      self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
+      self.INACTIVE_REGEN = 1404
+      # ICE has much less engine braking force compared to regen in EVs,
+      # lower threshold removes some braking deadzone
+      max_regen_acceleration = -1. if CP.carFingerprint in EV_CAR else -0.1
+
+    self.GAS_LOOKUP_BP = [max_regen_acceleration, 0., self.ACCEL_MAX]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
+
+    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, max_regen_acceleration]
+    self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
 
 class CAR:
@@ -58,8 +68,10 @@ class CAR:
   ACADIA = "GMC ACADIA DENALI 2018"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+  BOLT_EV = "CHEVROLET BOLT EV 2022"
   BOLT_EUV = "CHEVROLET BOLT EUV 2022"
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
+  EQUINOX = "CHEVROLET EQUINOX 2019"
 
 
 class Footnote(Enum):
@@ -71,24 +83,26 @@ class Footnote(Enum):
 
 @dataclass
 class GMCarInfo(CarInfo):
-  package: str = "Adaptive Cruise Control"
+  package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.obd_ii
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.OBD_II])
 
 
 CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.HOLDEN_ASTRA: GMCarInfo("Holden Astra 2017"),
-  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0),
+  CAR.VOLT: GMCarInfo("Chevrolet Volt 2017-18", min_enable_speed=0, video_link="https://youtu.be/QeMCN_4TFfQ"),
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
-  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
+  CAR.BOLT_EV: GMCarInfo("Chevrolet Bolt EV 2022-23", footnotes=[], harness=Harness.gm),
+  CAR.BOLT_EUV: GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", "https://youtu.be/xvwzGMUA210", footnotes=[], harness=Harness.gm),
   CAR.SILVERADO: [
     GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II", footnotes=[], harness=Harness.gm),
     GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", footnotes=[], harness=Harness.gm),
   ],
+  CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22", footnotes=[], harness=Harness.gm),
 }
 
 
@@ -166,13 +180,17 @@ FINGERPRINTS = {
   {
     190: 6, 193: 8, 197: 8, 201: 8, 208: 8, 209: 7, 211: 2, 241: 6, 249: 8, 257: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 322: 7, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 460: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 528: 5, 532: 6, 534: 2, 560: 8, 562: 8, 563: 5, 565: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 761: 7, 789: 5, 800: 6, 801: 8, 810: 8, 840: 5, 842: 5, 844: 8, 848: 4, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1033: 7, 1034: 7, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
   }],
+  CAR.EQUINOX: [
+  {
+    190: 6, 193: 8, 197: 8, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 257: 8, 288: 5, 289: 8, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 510: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1033: 7, 1034: 7, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
+  }],
 }
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
-EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
+EV_CAR = {CAR.VOLT, CAR.BOLT_EV, CAR.BOLT_EUV}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
-CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO}
+CAMERA_ACC_CAR = {CAR.BOLT_EV, CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX}
 
 STEER_THRESHOLD = 1.0

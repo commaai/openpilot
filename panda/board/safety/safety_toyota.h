@@ -6,13 +6,18 @@ const SteeringLimits TOYOTA_STEERING_LIMITS = {
   .max_rt_delta = 450,        // the real time limit is 1800/sec, a 20% buffer
   .max_rt_interval = 250000,
   .type = TorqueMotorLimited,
+
+  // the EPS faults when the steering angle rate is above a certain threshold for too long. to prevent this,
+  // we allow setting STEER_REQUEST bit to 0 while maintaining the requested torque value for a single frame
+  .min_valid_request_frames = 18,
+  .max_invalid_request_frames = 1,
+  .min_valid_request_rt_interval = 170000,  // 170ms; a ~10% buffer on cutting every 19 frames
+  .has_steer_req_tolerance = true,
 };
 
 // longitudinal limits
 const int TOYOTA_MAX_ACCEL = 2000;        // 2.0 m/s2
 const int TOYOTA_MIN_ACCEL = -3500;       // -3.5 m/s2
-
-const int TOYOTA_STANDSTILL_THRSLD = 100;  // 1kph
 
 // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
 // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
@@ -98,15 +103,10 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
       }
     }
 
-    // sample speed
     if (addr == 0xaa) {
-      int speed = 0;
-      // sum 4 wheel speeds
-      for (uint8_t i=0U; i<8U; i+=2U) {
-        int wheel_speed = (GET_BYTE(to_push, i) << 8U) + GET_BYTE(to_push, (i+1U));
-        speed += wheel_speed - 0x1a6f;
-      }
-      vehicle_moving = ABS(speed / 4) > TOYOTA_STANDSTILL_THRSLD;
+      // check that all wheel speeds are at zero value with offset
+      bool standstill = (GET_BYTES_04(to_push) == 0x6F1A6F1AU) && (GET_BYTES_48(to_push) == 0x6F1A6F1AU);
+      vehicle_moving = !standstill;
     }
 
     // most cars have brake_pressed on 0x226, corolla and rav4 on 0x224

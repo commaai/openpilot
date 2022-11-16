@@ -164,6 +164,7 @@ int get_addr_check_index(CANPacket_t *to_push, AddrCheckStruct addr_list[], cons
 
 // 1Hz safety function called by main. Now just a check for lagging safety messages
 void safety_tick(const addr_checks *rx_checks) {
+  bool rx_checks_invalid = false;
   uint32_t ts = microsecond_timer_get();
   if (rx_checks != NULL) {
     for (int i=0; i < rx_checks->len; i++) {
@@ -176,8 +177,14 @@ void safety_tick(const addr_checks *rx_checks) {
       if (lagging) {
         controls_allowed = 0;
       }
+
+      if (lagging || !is_msg_valid(rx_checks->check, i)) {
+        rx_checks_invalid = true;
+      }
     }
   }
+
+  safety_rx_checks_invalid = rx_checks_invalid;
 }
 
 void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter) {
@@ -250,6 +257,12 @@ void generic_rx_checks(bool stock_ecu_detected) {
   }
   brake_pressed_prev = brake_pressed;
 
+  // exit controls on rising edge of regen paddle
+  if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
+    controls_allowed = 0;
+  }
+  regen_braking_prev = regen_braking;
+
   // check if stock ECU is on bus broken by car harness
   if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && stock_ecu_detected) {
     relay_malfunction_set();
@@ -309,6 +322,8 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   gas_pressed_prev = false;
   brake_pressed = false;
   brake_pressed_prev = false;
+  regen_braking = false;
+  regen_braking_prev = false;
   cruise_engaged_prev = false;
   vehicle_speed = 0;
   vehicle_moving = false;
@@ -318,7 +333,10 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   rt_torque_last = 0;
   ts_angle_last = 0;
   desired_angle_last = 0;
-  ts_last = 0;
+  ts_torque_check_last = 0;
+  ts_steer_req_mismatch_last = 0;
+  valid_steer_req_count = 0;
+  invalid_steer_req_count = 0;
 
   torque_meas.max = 0;
   torque_meas.max = 0;
@@ -329,6 +347,7 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
 
   controls_allowed = false;
   relay_malfunction_reset();
+  safety_rx_checks_invalid = false;
 
   int set_status = -1;  // not set
   int hook_config_count = sizeof(safety_hook_registry) / sizeof(safety_hook_config);
@@ -492,10 +511,10 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
     violation |= rt_rate_limit_check(desired_torque, rt_torque_last, limits.max_rt_delta);
 
     // every RT_INTERVAL set the new limits
-    uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
+    uint32_t ts_elapsed = get_ts_elapsed(ts, ts_torque_check_last);
     if (ts_elapsed > limits.max_rt_interval) {
       rt_torque_last = desired_torque;
-      ts_last = ts;
+      ts_torque_check_last = ts;
     }
   }
 
@@ -504,16 +523,51 @@ bool steer_torque_cmd_checks(int desired_torque, int steer_req, const SteeringLi
     violation = true;
   }
 
-  // no torque if request bit isn't high
-  if ((steer_req == 0) && (desired_torque != 0)) {
-    violation = true;
+  // certain safety modes set their steer request bit low for one or more frame at a
+  // predefined max frequency to avoid steering faults in certain situations
+  bool steer_req_mismatch = (steer_req == 0) && (desired_torque != 0);
+  if (!limits.has_steer_req_tolerance) {
+    if (steer_req_mismatch) {
+      violation = true;
+    }
+
+  } else {
+    if (steer_req_mismatch) {
+      if (invalid_steer_req_count == 0) {
+        // disallow torque cut if not enough recent matching steer_req messages
+        if (valid_steer_req_count < limits.min_valid_request_frames) {
+          violation = true;
+        }
+
+        // or we've cut torque too recently in time
+        uint32_t ts_elapsed = get_ts_elapsed(ts, ts_steer_req_mismatch_last);
+        if (ts_elapsed < limits.min_valid_request_rt_interval) {
+          violation = true;
+        }
+      } else {
+        // or we're cutting more frames consecutively than allowed
+        if (invalid_steer_req_count >= limits.max_invalid_request_frames) {
+          violation = true;
+        }
+      }
+
+      valid_steer_req_count = 0;
+      ts_steer_req_mismatch_last = ts;
+      invalid_steer_req_count = MIN(invalid_steer_req_count + 1, limits.max_invalid_request_frames);
+    } else {
+      valid_steer_req_count = MIN(valid_steer_req_count + 1, limits.min_valid_request_frames);
+      invalid_steer_req_count = 0;
+    }
   }
 
   // reset to 0 if either controls is not allowed or there's a violation
   if (violation || !controls_allowed) {
+    valid_steer_req_count = 0;
+    invalid_steer_req_count = 0;
     desired_torque_last = 0;
     rt_torque_last = 0;
-    ts_last = ts;
+    ts_torque_check_last = ts;
+    ts_steer_req_mismatch_last = ts;
   }
 
   return violation;

@@ -19,6 +19,9 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
     if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
       uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
       sockets_[which] = it.name;
+      if (!allow.empty() || !block.empty()) {
+        allow_list.insert((cereal::Event::Which)which);
+      }
       s.push_back(it.name);
     }
   }
@@ -81,7 +84,7 @@ void Replay::start(int seconds) {
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {
-  // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
+  // set updating_events to true to force stream thread release the lock and wait for evnets_udpated.
   updating_events_ = true;
   {
     std::unique_lock lk(stream_lock_);
@@ -91,17 +94,17 @@ void Replay::updateEvents(const std::function<bool()> &lambda) {
   stream_cv_.notify_one();
 }
 
-void Replay::seekTo(int seconds, bool relative) {
+void Replay::seekTo(double seconds, bool relative) {
   seconds = relative ? seconds + currentSeconds() : seconds;
   updateEvents([&]() {
-    seconds = std::max(0, seconds);
-    int seg = seconds / 60;
+    seconds = std::max(double(0.0), seconds);
+    int seg = (int)seconds / 60;
     if (segments_.find(seg) == segments_.end()) {
       rWarning("can't seek to %d s segment %d is invalid", seconds, seg);
       return true;
     }
 
-    rInfo("seeking to %d s, segment %d", seconds, seg);
+    rInfo("seeking to %d s, segment %d", (int)seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     return isSegmentMerged(seg);
@@ -122,7 +125,9 @@ void Replay::buildTimeline() {
 
   for (int i = 0; i < segments_.size() && !exit_; ++i) {
     LogReader log;
-    if (!log.load(route_->at(i).qlog.toStdString(), &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
+    if (!log.load(route_->at(i).qlog.toStdString(), &exit_,
+                  {cereal::Event::Which::CONTROLS_STATE, cereal::Event::Which::USER_FLAG},
+                  !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
     for (const Event *e : log.events) {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
@@ -166,8 +171,11 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
       } else if (flag == FindFlag::nextDisEngagement && end_ts > cur_ts) {
         return end_ts;
       }
-    } else if (type == TimelineType::UserFlag) {
-      if (flag == FindFlag::nextUserFlag && start_ts > cur_ts) {
+    } else if (start_ts > cur_ts) {
+      if ((flag == FindFlag::nextUserFlag && type == TimelineType::UserFlag) ||
+          (flag == FindFlag::nextInfo && type == TimelineType::AlertInfo) ||
+          (flag == FindFlag::nextWarning && type == TimelineType::AlertWarning) ||
+          (flag == FindFlag::nextCritical && type == TimelineType::AlertCritical)) {
         return start_ts;
       }
     }
@@ -203,7 +211,7 @@ void Replay::queueSegment() {
 
   SegmentMap::iterator cur, end;
   cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  for (int i = 0; end != segments_.end() && i <= FORWARD_SEGS; ++i) {
+  for (int i = 0; end != segments_.end() && i <= segment_cache_limit + FORWARD_FETCH_SEGS; ++i) {
     ++end;
   }
   // load one segment at a time
@@ -212,7 +220,7 @@ void Replay::queueSegment() {
     if ((seg && !seg->isLoaded()) || !seg) {
       if (!seg) {
         rDebug("loading segment %d...", n);
-        seg = std::make_unique<Segment>(n, route_->at(n), flags_);
+        seg = std::make_unique<Segment>(n, route_->at(n), flags_, allow_list);
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       }
       break;
@@ -242,7 +250,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
   size_t new_events_size = 0;
-  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < 3; ++it) {
+  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < segment_cache_limit; ++it) {
     segments_need_merge.push_back(it->first);
     new_events_size += it->second->log->events.size();
   }
@@ -267,6 +275,9 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       segments_merged_ = segments_need_merge;
       return true;
     });
+    if (stream_thread_) {
+      emit segmentsMerged();
+    }
   }
 }
 
@@ -287,6 +298,7 @@ void Replay::startStream(const Segment *cur_segment) {
     auto words = capnp::messageToFlatArray(builder);
     auto bytes = words.asBytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
+    Params().put("CarParamsPersistent", (const char *)bytes.begin(), bytes.size());
   } else {
     rWarning("failed to read CarParams from current segment");
   }
@@ -302,6 +314,7 @@ void Replay::startStream(const Segment *cur_segment) {
     camera_server_ = std::make_unique<CameraServer>(camera_size);
   }
 
+  emit segmentsMerged();
   // start stream thread
   stream_thread_ = new QThread();
   QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
@@ -312,6 +325,8 @@ void Replay::startStream(const Segment *cur_segment) {
 }
 
 void Replay::publishMessage(const Event *e) {
+  if (event_filter && event_filter(e, filter_opaque)) return;
+
   if (sm == nullptr) {
     auto bytes = e->bytes();
     int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
@@ -378,7 +393,7 @@ void Replay::stream() {
 
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         // keep time
-        long etime = cur_mono_time_ - evt_start_ts;
+        long etime = (cur_mono_time_ - evt_start_ts) / speed_;
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
         // if behind_ns is greater than 1 second, it means that an invalid segemnt is skipped by seeking/replaying

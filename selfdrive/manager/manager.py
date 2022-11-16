@@ -39,7 +39,9 @@ def manager_init() -> None:
   default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "1"),
+    ("GsmMetered", "1"),
     ("HasAcceptedTerms", "0"),
+    ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
   ]
   if not PC:
@@ -47,9 +49,6 @@ def manager_init() -> None:
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
-
-  if not params.get_bool("DisableRadar_Allow"):
-    params.delete("DisableRadar")
 
   # set unset params
   for k, v in default_params:

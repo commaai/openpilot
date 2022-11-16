@@ -46,6 +46,12 @@ typedef struct {
 
   // motor torque limits
   const int max_torque_error;
+
+  // safety around steer req bit
+  const int min_valid_request_frames;
+  const int max_invalid_request_frames;
+  const uint32_t min_valid_request_rt_interval;
+  const bool has_steer_req_tolerance;
 } SteeringLimits;
 
 typedef struct {
@@ -134,18 +140,24 @@ bool gas_pressed = false;
 bool gas_pressed_prev = false;
 bool brake_pressed = false;
 bool brake_pressed_prev = false;
+bool regen_braking = false;
+bool regen_braking_prev = false;
 bool cruise_engaged_prev = false;
 float vehicle_speed = 0;
 bool vehicle_moving = false;
 bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 int cruise_button_prev = 0;
+bool safety_rx_checks_invalid = false;
 
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque
 int rt_torque_last = 0;            // last desired torque for real time check
+int valid_steer_req_count = 0;     // counter for steer request bit matching non-zero torque
+int invalid_steer_req_count = 0;   // counter to allow multiple frames of mismatching torque request bit
 struct sample_t torque_meas;       // last 6 motor torques produced by the eps
 struct sample_t torque_driver;     // last 6 driver torques measured
-uint32_t ts_last = 0;
+uint32_t ts_torque_check_last = 0;
+uint32_t ts_steer_req_mismatch_last = 0;  // last timestamp steer req was mismatched with torque
 
 // state for controls_allowed timeout logic
 bool heartbeat_engaged = false;             // openpilot enabled, passed in heartbeat USB command

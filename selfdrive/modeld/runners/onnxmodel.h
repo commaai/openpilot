@@ -6,7 +6,7 @@
 
 class ONNXModel : public RunModel {
 public:
-  ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool use_extra = false, bool _use_tf8 = false);
+  ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool use_extra = false, bool _use_tf8 = false, cl_context context = NULL);
 	~ONNXModel();
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);

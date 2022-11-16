@@ -16,7 +16,7 @@ from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
-from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem
+from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
@@ -28,7 +28,7 @@ from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
-DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache"
+DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.1
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
@@ -61,6 +61,7 @@ class Laikad:
     self.last_pos_fix = []
     self.last_pos_residual = []
     self.last_pos_fix_t = None
+    self.gps_week = None
     self.use_qcom = use_qcom
 
   def load_cache(self):
@@ -107,11 +108,11 @@ class Laikad:
     return self.last_pos_fix
 
   def is_good_report(self, gnss_msg):
-    if gnss_msg.which == 'drMeasurementReport' and self.use_qcom:
+    if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
       constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
       # TODO support GLONASS
       return constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
-    elif gnss_msg.which == 'measurementReport' and not self.use_qcom:
+    elif gnss_msg.which() == 'measurementReport' and not self.use_qcom:
       return True
     else:
       return False
@@ -129,9 +130,28 @@ class Laikad:
       new_meas = read_raw_ublox(report)
     return week, tow, new_meas
 
+  def is_ephemeris(self, gnss_msg):
+    if self.use_qcom:
+      return gnss_msg.which() == 'drSvPoly'
+    else:
+      return gnss_msg.which() == 'ephemeris'
+
+  def read_ephemeris(self, gnss_msg):
+    # TODO this only works on GLONASS
+    if self.use_qcom:
+      # TODO this is not robust to gps week rollover
+      if self.gps_week is None:
+        return
+      ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+    else:
+      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
+    self.astro_dog.add_navs({ephem.prn: [ephem]})
+    self.cache_ephemeris(t=ephem.epoch)
+
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     if self.is_good_report(gnss_msg):
       week, tow, new_meas = self.read_report(gnss_msg)
+      self.gps_week = week
 
       t = gnss_mono_time * 1e-9
       if week > 0:
@@ -167,17 +187,16 @@ class Laikad:
         "gpsTimeOfWeek": tow,
         "positionECEF": measurement_msg(value=ecef_pos.tolist(), std=pos_std.tolist(), valid=kf_valid),
         "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=kf_valid),
+        # TODO std is incorrectly the dimension of the measurements and not 3D
         "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
         "ubloxMonoTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
       return dat
-    # TODO this only works on GLONASS, qcom needs live ephemeris parsing too
-    elif gnss_msg.which == 'ephemeris':
-      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
-      self.astro_dog.add_navs({ephem.prn: [ephem]})
-      self.cache_ephemeris(t=ephem.epoch)
-    #elif gnss_msg.which == 'ionoData':
+    elif self.is_ephemeris(gnss_msg):
+      self.read_ephemeris(gnss_msg)
+
+    #elif gnss_msg.which() == 'ionoData':
     # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
@@ -265,9 +284,11 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c.satVel = meas.sat_vel.tolist()
   ephem = meas.sat_ephemeris
   assert ephem is not None
+  week, time_of_week = -1, -1
   if ephem.eph_type == EphemerisType.NAV:
     source_type = EphemerisSourceType.nav
-    week, time_of_week = -1, -1
+  elif ephem.eph_type == EphemerisType.QCOM_POLY:
+    source_type = EphemerisSourceType.qcom
   else:
     assert ephem.file_epoch is not None
     week = ephem.file_epoch.week
@@ -325,10 +346,11 @@ class EphemerisSourceType(IntEnum):
   nav = 0
   nasaUltraRapid = 1
   glonassIacUltraRapid = 2
+  qcom = 3
 
 
 def main(sm=None, pm=None):
-  use_qcom = os.path.isfile("/persist/comma/use-quectel-rawgps")
+  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom:
     raw_gnss_socket = "qcomGnss"
   else:
@@ -348,6 +370,17 @@ def main(sm=None, pm=None):
 
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
+
+      # TODO: Understand and use remaining unknown constellations
+      if gnss_msg.which() == "drMeasurementReport":
+        if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
+          continue
+
+        if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
+          # gpsWeek 65535 is received rarely from quectel, this cannot be
+          # passed to GnssMeasurements's gpsWeek (Int16)
+          continue
+
       msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)

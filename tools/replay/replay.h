@@ -7,8 +7,10 @@
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"
 
+const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
+
 // one segment uses about 100M of memory
-constexpr int FORWARD_SEGS = 5;
+constexpr int FORWARD_FETCH_SEGS = 3;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,
@@ -26,9 +28,13 @@ enum class FindFlag {
   nextEngagement,
   nextDisEngagement,
   nextUserFlag,
+  nextInfo,
+  nextWarning,
+  nextCritical
 };
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
+typedef bool (*replayEventFilter)(const Event *, void *);
 
 class Replay : public QObject {
   Q_OBJECT
@@ -42,15 +48,28 @@ public:
   void stop();
   void pause(bool pause);
   void seekToFlag(FindFlag flag);
-  void seekTo(int seconds, bool relative);
+  void seekTo(double seconds, bool relative);
   inline bool isPaused() const { return paused_; }
+  // the filter is called in streaming thread.try to return quickly from it to avoid blocking streaming.
+  // the filter function must return true if the event should be filtered.
+  // otherwise it must return false.
+  inline void installEventFilter(replayEventFilter filter, void *opaque) {
+    filter_opaque = opaque;
+    event_filter = filter;
+  }
+  inline int segmentCacheLimit() const { return segment_cache_limit; }
+  inline void setSegmentCacheLimit(int n) { segment_cache_limit = std::max(3, n); }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
   inline const Route* route() const { return route_.get(); }
-  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline uint64_t routeStartTime() const { return route_start_ts_; }
   inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
   inline int totalSeconds() const { return segments_.size() * 60; }
+  inline void setSpeed(float speed) { speed_ = speed; }
+  inline float getSpeed() const { return speed_; }
+  inline const std::vector<Event *> *events() const { return events_.get(); }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
@@ -59,9 +78,10 @@ public:
 
 signals:
   void streamStarted();
+  void segmentsMerged();
 
 protected slots:
-  void segmentLoadFinished(bool sucess);
+  void segmentLoadFinished(bool success);
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
@@ -92,7 +112,7 @@ protected:
   bool paused_ = false;
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
-  uint64_t cur_mono_time_ = 0;
+  std::atomic<uint64_t> cur_mono_time_ = 0;
   std::unique_ptr<std::vector<Event *>> events_;
   std::unique_ptr<std::vector<Event *>> new_events_;
   std::vector<int> segments_merged_;
@@ -108,5 +128,10 @@ protected:
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
+  std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
+  float speed_ = 1.0;
+  replayEventFilter event_filter = nullptr;
+  void *filter_opaque = nullptr;
+  int segment_cache_limit = 3;
 };

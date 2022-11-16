@@ -91,7 +91,7 @@ BO_ 201 ECMEngineStatus: 8 K20_ECM
  SG_ EngineTPS : 39|8@0+ (0.392156863,0) [0|100.000000065] "%" NEO
  SG_ EngineRPM : 15|16@0+ (0.25,0) [0|0] "RPM" NEO
  SG_ CruiseMainOn : 29|1@0+ (1,0) [0|1] "" NEO
- SG_ Brake_Pressed : 40|1@0+ (1,0) [0|1] "" NEO
+ SG_ BrakePressed : 40|1@0+ (1,0) [0|1] "" NEO
  SG_ Standstill : 2|1@0+ (1,0) [0|1] "" NEO
  SG_ CruiseActive : 31|2@0+ (1,0) [0|3] "" NEO
 
@@ -104,6 +104,7 @@ BO_ 209 EBCMBrakePedalSensors: 7 K17_EBCM
  SG_ BrakeNormalized2 : 47|8@0- (-1,0) [0|255] "" XXX
 
 BO_ 241 EBCMBrakePedalPosition: 6 K17_EBCM
+ SG_ BrakePressed : 1|1@0+ (1,0) [0|1] "" XXX
  SG_ BrakePedalPosition : 15|8@0+ (1,0) [0|255] ""  NEO
 
 BO_ 298 BCMDoorBeltStatus: 8 K9_BCM
@@ -143,6 +144,8 @@ BO_ 388 PSCMStatus: 8 K43_PSCM
  SG_ LKADriverAppldTrq : 50|11@0- (0.01,0) [-10.24|10.23] "Nm" NEO
  SG_ LKATorqueDelivered : 18|11@0- (0.01,0) [0|1] "" NEO
  SG_ LKATotalTorqueDelivered : 2|11@0- (0.01,0) [-10.24|10.23] "Nm" NEO
+ SG_ RollingCounter : 38|4@0+ (1,0) [0|15] "" XXX
+ SG_ PSCMStatusChecksum : 33|10@0+ (1,0) [0|1023] "" XXX
 
 BO_ 417 AcceleratorPedal: 7 XXX
  SG_ AcceleratorPedal : 55|8@0+ (1,0) [0|0] ""  NEO
@@ -184,6 +187,9 @@ BO_ 501 ECMPRDNL2: 8 K20_ECM
  SG_ PRNDL2 : 27|4@0+ (1,0) [0|255] "" NEO
  SG_ ManualMode : 41|1@0+ (1,0) [0|1] "" NEO
 
+BO_ 532 BRAKE_RELATED: 6 XXX
+ SG_ UserBrakePressure : 0|9@0+ (1,0) [0|511] "" XXX
+
 BO_ 560 EPBStatus: 8 EPB
  SG_ EPBClosed : 12|1@0+ (1,0) [0|1] ""  NEO
 
@@ -204,6 +210,9 @@ BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
 
 BO_ 717 ASCM_2CD: 5 K124_ASCM
 
+BO_ 761 BRAKE_RELATED_2: 7 XXX
+ SG_ UserBrakePressure2 : 47|9@0+ (1,0) [0|511] "" XXX
+
 BO_ 789 EBCMFrictionBrakeCmd: 5 K124_ASCM
  SG_ RollingCounter : 33|2@0+ (1,0) [0|0] ""  NEO
  SG_ FrictionBrakeMode : 7|4@0+ (1,0) [0|0] ""  NEO
@@ -221,13 +230,17 @@ BO_ 810 TCICOnStarGPSPosition: 8 K73_TCIC
  SG_ GPSLongitude : 39|32@0+ (1,-2147483648) [0|0] "milliarcsecond"  NEO
  SG_ GPSLatitude : 7|32@0+ (1,0) [0|0] "milliarcsecond"  NEO
 
-BO_ 840 EBCMWheelSpdFront: 4 K17_EBCM
+BO_ 840 EBCMWheelSpdFront: 5 K17_EBCM
  SG_ FLWheelSpd : 7|16@0+ (0.0311,0) [0|255] "km/h"  NEO
  SG_ FRWheelSpd : 23|16@0+ (0.0311,0) [0|255] "km/h"  NEO
 
 BO_ 842 EBCMWheelSpdRear: 5 K17_EBCM
  SG_ RLWheelSpd : 7|16@0+ (0.0311,0) [0|255] "km/h"  NEO
  SG_ RRWheelSpd : 23|16@0+ (0.0311,0) [0|255] "km/h"  NEO
+ SG_ MovingForward : 32|1@0+ (1,0) [0|1] "" XXX
+ SG_ MovingBackward : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ MovingForward2 : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ MovingBackward2 : 36|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 869 ASCM_365: 4 K124_ASCM
 
@@ -240,6 +253,10 @@ BO_ 880 ASCMActiveCruiseControlStatus: 6 K124_ASCM
  SG_ ACCResumeButton : 1|1@0+ (1,0) [0|0] ""  NEO
  SG_ ACCCmdActive : 23|1@0+ (1,0) [0|0] ""  NEO
  SG_ FCWAlert : 41|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 977 ECMCruiseControl: 8 K20_ECM
+ SG_ CruiseActive : 39|1@0+ (1,0) [0|3] "" NEO
+ SG_ CruiseSetSpeed : 19|12@0+ (0.0625,0) [0|0] "km/h" NEO
 
 BO_ 1001 ECMVehicleSpeed: 8 K20_ECM
  SG_ VehicleSpeed : 7|16@0+ (0.01,0) [0|0] "mph"  NEO
@@ -283,11 +300,14 @@ CM_ BU_ K114B_HPCM "Hybrid Powertrain Control Module";
 CM_ BU_ NEO "Comma NEO";
 CM_ BU_ K124_ASCM "Active Safety Control Module";
 CM_ SG_ 381 MSG17D_AccPower "Need to investigate";
+CM_ BO_ 190 "Length varies from 6 to 8 bytes by car";
 CM_ SG_ 190 GasPedalAndAcc "ACC baseline is 62";
 CM_ SG_ 352 Ignition "Non-zero when ignition is on";
 CM_ SG_ 451 GasPedalAndAcc2 "ACC baseline is 62";
 CM_ SG_ 497 Ignition "Describes ignition + preconditioning mode, noisy";
 CM_ SG_ 501 PRNDL2 "When ManualMode is Active, Value is 13=L1 12=L2 11=L3 ... 4=L10";
+CM_ SG_ 532 UserBrakePressure "can be lower than other brake position signals when the brakes are pre-filled from ACC braking and the user presses on the brakes. user-only pressure?";
+CM_ SG_ 761 UserBrakePressure2 "Similar to BRAKE_RELATED->UserBrakePressure";
 CM_ SG_ 1001 VehicleSpeed "Spinouts show here on 2wd. Speed derived from right front wheel (drive tire)";
 BA_DEF_  "UseGMParameterIDs" INT 0 0;
 BA_DEF_  "ProtocolType" STRING ;

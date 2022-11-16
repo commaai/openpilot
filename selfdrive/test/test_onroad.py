@@ -21,21 +21,22 @@ from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 35.0,
+  "selfdrive.controls.controlsd": 39.0,
   "./loggerd": 10.0,
-  "./encoderd": 12.5,
+  "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 11.7,
   "./_ui": 19.2,
   "selfdrive.locationd.paramsd": 9.0,
-  "./_sensord": 6.17,
+  "./_sensord": 12.0,
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
   "./boardd": 3.63,
   "./_dmonitoringmodeld": 5.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
+  "selfdrive.locationd.torqued": 5.0,
   "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
@@ -119,8 +120,8 @@ class TestOnroad(unittest.TestCase):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      print(segs[-1])
-      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog")))
+      print(segs[-2])
+      cls.lr = list(LogReader(os.path.join(segs[-2], "rlog")))
       return
 
     # setup env
@@ -185,6 +186,25 @@ class TestOnroad(unittest.TestCase):
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
+  def test_ui_timings(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-------------- UI Draw Timing ------------------\n"
+    result += "------------------------------------------------\n"
+
+    ts = [m.uiDebug.drawTimeMillis for m in self.lr if m.which() == 'uiDebug']
+    result += f"min  {min(ts):.2f}ms\n"
+    result += f"max  {max(ts):.2f}ms\n"
+    result += f"std  {np.std(ts):.2f}ms\n"
+    result += f"mean {np.mean(ts):.2f}ms\n"
+    result += "------------------------------------------------\n"
+    print(result)
+
+    self.assertGreater(len(ts), 20*50, "insufficient samples")
+    #self.assertLess(max(ts), 30.)
+    self.assertLess(np.mean(ts), 10.)
+    #self.assertLess(np.std(ts), 5.)
 
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']

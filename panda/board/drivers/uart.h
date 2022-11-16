@@ -150,14 +150,8 @@ void clear_uart_buff(uart_ring *q) {
 
 // ************************ High-level debug functions **********************
 void putch(const char a) {
-  if (has_external_debug_serial) {
-    // assuming debugging is important if there's external serial connected
-    while (!putc(&uart_ring_debug, a));
-
-  } else {
-    // misra-c2012-17.7: serial debug function, ok to ignore output
-    (void)injectc(&uart_ring_debug, a);
-  }
+  // misra-c2012-17.7: serial debug function, ok to ignore output
+  (void)injectc(&uart_ring_debug, a);
 }
 
 void puts(const char *a) {

@@ -6,6 +6,7 @@
 //#define DEBUG_USB
 //#define DEBUG_SPI
 //#define DEBUG_FAULTS
+//#define DEBUG_COMMS
 
 #define DEEPSLEEP_WAKEUP_DELAY 3U
 
