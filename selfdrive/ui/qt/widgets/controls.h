@@ -54,6 +54,7 @@ public:
     return description->text();
   }
 
+  QLabel *icon_label;
   QPixmap icon_pixmap;
 
 public slots:
@@ -70,7 +71,6 @@ protected:
 
   QHBoxLayout *hlayout;
   QPushButton *title_label;
-  QLabel *icon_label;
 
 private:
   ElidedLabel *value;
