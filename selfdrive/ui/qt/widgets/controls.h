@@ -148,7 +148,7 @@ public:
 
       bool confirmed = store_confirm && params.getBool(key + "Confirmed");
       if (!confirm || confirmed || !state || dialog.exec()) {
-        if (store_confirm) params.putBool(key + "Confirmed", true);
+        if (store_confirm && state) params.putBool(key + "Confirmed", true);
         params.putBool(key, state);
       } else {
         toggle.togglePosition();
