@@ -2,13 +2,11 @@
 
 #include <QLabel>
 #include <QPushButton>
-#include <QPushButton>
 
 #include "common/params.h"
 
 class ExperimentalModeButton : public QPushButton {
   Q_OBJECT
-  Q_PROPERTY(bool experimental_mode MEMBER experimental_mode);
 
 public:
   explicit ExperimentalModeButton(QWidget* parent = 0);
@@ -25,4 +23,7 @@ private:
   QPixmap chill_pixmap;
   QLabel *mode_label;
   QLabel *mode_icon;
+
+protected:
+  void paintEvent(QPaintEvent *event) override;
 };
