@@ -367,7 +367,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   LOGE("lat: %f lon: %f", pos_geo.lat, pos_geo.lon);
 
   // location sanity checks
-  assert((std::abs(pos_geo.lat) <= 90) || (std::abs(pos_geo.lon) <= 180));
+  assert((std::abs(pos_geo.lat) <= 90) && (std::abs(pos_geo.lon) <= 180));
   if (std::abs(pos_geo.alt) > ALTITUDE_SANITY_CHECK) {
   INVALID_DATA:
     this->determine_gps_mode(current_time);
@@ -396,8 +396,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
 
-
-
   auto convs = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 
   VectorXd nextfix_ecef = ecef_pos + ecef_vel;
@@ -407,7 +405,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   bearing = atan2(ned_coords[1], ned_coords[0]); // radians
   LOGE("LOCATIOND: bearing: %f", bearing)
 
-  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(bearing));
+  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
     orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
