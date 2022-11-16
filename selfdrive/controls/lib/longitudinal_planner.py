@@ -69,7 +69,8 @@ class LongitudinalPlanner:
     e2e = self.params.get_bool('ExperimentalMode') and self.CP.openpilotLongitudinalControl
     self.mpc.mode = 'blended' if e2e else 'acc'
 
-  def parse_model(self, model_msg, model_error):
+  @staticmethod
+  def parse_model(model_msg, model_error):
     if (len(model_msg.position.x) == 33 and
        len(model_msg.velocity.x) == 33 and
        len(model_msg.acceleration.x) == 33):

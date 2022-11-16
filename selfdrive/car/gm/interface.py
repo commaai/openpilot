@@ -211,17 +211,20 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
+      buttonEvents = [create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)]
+      # Handle ACCButtons changing buttons mid-press
+      if self.CS.cruise_buttons != CruiseButtons.UNPRESS and self.CS.prev_cruise_buttons != CruiseButtons.UNPRESS:
+        buttonEvents.append(create_button_event(CruiseButtons.UNPRESS, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS))
 
-      # Suppress resume button if we're resuming from stop so we don't adjust speed.
-      if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill):
-        be.type = ButtonType.unknown
+      ret.buttonEvents = buttonEvents
 
-      ret.buttonEvents = [be]
-
+    # The ECM allows enabling on falling edge of set, but only rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
-                                       pcm_enable=self.CP.pcmCruise)
+                                       pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
+    if not self.CP.pcmCruise:
+      if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
+        events.add(EventName.buttonEnable)
 
     # Enabling at a standstill with brake is allowed
     # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs

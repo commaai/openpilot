@@ -282,6 +282,17 @@
     </message>
 </context>
 <context>
+    <name>ExperimentalModeButton</name>
+    <message>
+        <source>EXPERIMENTAL MODE ON</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CHILL MODE ON</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -971,14 +982,6 @@ location set</source>
         <translation>使用 openpilot 縱向控制（實驗）</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation>openpilot 縱向控制目前不適用於這輛車。</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to enable this.</source>
-        <translation>打開縱向控制（實驗）以啟用此功能。</translation>
-    </message>
-    <message>
         <source>Disengage on Accelerator Pedal</source>
         <translation>油門取消控車</translation>
     </message>
@@ -1007,16 +1010,40 @@ location set</source>
         <translation>實驗模式</translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:    &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides which speed to drive, the set speed will only act as an upper bound.</source>
-        <translation>    openpilot 默認以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。     實驗功能如下：    &lt;br&gt;     &lt;h4&gt;🌮端到端縱向控制🌮&lt;/h4&gt;     讓駕駛模型控制油門和剎車。 openpilot 將像人類一樣駕駛，包括紅燈和停車標誌時停車，因為是由駕駛模型來決定車速，所以定速的設定值只會作為上限。</translation>
-    </message>
-    <message>
-        <source>openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control on this car. Enable this to switch to openpilot longitudinal control.</source>
-        <translation>openpilot 默認使用汽車內置的主動巡航控制 (ACC)，而不是使用 openpilot 縱向控制。啟用此選項可切換到 openpilot 縱向控制。</translation>
-    </message>
-    <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
         <translation>警告：openpilot 縱向控制在這輛車上仍屬實驗性質，啟用後會喪失自動緊急煞車 (AEB) 功能。</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>openpilot 默認以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮端到端縱向控制🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

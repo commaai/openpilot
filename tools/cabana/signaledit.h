@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QAction>
 #include <QComboBox>
 #include <QDialog>
 #include <QLabel>
@@ -35,6 +34,8 @@ public:
   void setSignal(const QString &msg_id, const Signal *sig);
   void setChartOpened(bool opened);
   void signalHovered(const Signal *sig);
+  void updateForm(bool show);
+  inline bool isFormVisible() const { return form->isVisible(); }
   const Signal *sig = nullptr;
   QString msg_id;
 
@@ -43,21 +44,19 @@ signals:
   void showChart(const QString &name, const Signal *sig, bool show);
   void remove(const Signal *sig);
   void save(const Signal *sig, const Signal &new_sig);
+  void showFormClicked();
 
 protected:
-  void hideEvent(QHideEvent *event) override;
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void saveSignal();
-  void updateForm(bool show);
-  void showFormClicked();
 
   SignalForm *form = nullptr;
   ElidedLabel *title;
+  QLabel *color_label;
   QLabel *icon;
   int form_idx = 0;
-  bool chart_opened = false;
-  QAction *plot_btn;
+  QToolButton *plot_btn;
 };
 
 class SignalFindDlg : public QDialog {
