@@ -8,7 +8,7 @@
 #include "selfdrive/ui/ui.h"
 
 ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(parent) {
-  chill_pixmap = QPixmap("../assets/img_couch.png").scaledToWidth(img_width, Qt::SmoothTransformation);
+  chill_pixmap = QPixmap("../assets/img_couch.svg").scaledToWidth(img_width, Qt::SmoothTransformation);
   experimental_pixmap = QPixmap("../assets/img_experimental_grey.svg").scaledToWidth(img_width, Qt::SmoothTransformation);
 
   setFixedHeight(125);
