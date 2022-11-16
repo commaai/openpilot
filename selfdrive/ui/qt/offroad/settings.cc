@@ -109,6 +109,11 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
 }
 
+void TogglesPanel::expandToggleDescription(const QString &param) {
+  auto e2e_toggle = toggles[param.toStdString()];
+  e2e_toggle->showDescription();
+}
+
 void TogglesPanel::showEvent(QShowEvent *event) {
   updateToggles();
 }
@@ -298,9 +303,12 @@ void SettingsWindow::showEvent(QShowEvent *event) {
   setCurrentPanel(0);
 }
 
-void SettingsWindow::setCurrentPanel(int index) {
+void SettingsWindow::setCurrentPanel(int index, QString param) {  // TODO: make const &
   panel_widget->setCurrentIndex(index);
   nav_btns->buttons()[index]->setChecked(true);
+  if (!param.isEmpty()) {
+    emit expandToggleDescription(param);
+  }
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
@@ -341,10 +349,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
+  TogglesPanel *toggles = new TogglesPanel(this);
+  QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
+
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
     {tr("Network"), new Networking(this)},
-    {tr("Toggles"), new TogglesPanel(this)},
+    {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
   };
 

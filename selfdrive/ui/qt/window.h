@@ -15,7 +15,7 @@ public:
 
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
-  void openSettings(int index = 0);
+  void openSettings(int index = 0, QString param = "");
   void closeSettings();
 
   Device device;

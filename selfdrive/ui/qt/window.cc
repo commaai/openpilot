@@ -65,9 +65,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
 }
 
-void MainWindow::openSettings(int index) {
+void MainWindow::openSettings(int index, QString param) {
   main_layout->setCurrentWidget(settingsWindow);
-  settingsWindow->setCurrentPanel(index);
+  settingsWindow->setCurrentPanel(index, param);
 }
 
 void MainWindow::closeSettings() {

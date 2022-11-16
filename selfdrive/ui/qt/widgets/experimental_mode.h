@@ -12,7 +12,7 @@ public:
   explicit ExperimentalModeButton(QWidget* parent = 0);
 
 signals:
-  void openSettings(int index = 0);
+  void openSettings(int index = 0, QString toggle = "");
 
 private:
   void showEvent(QShowEvent *event) override;
