@@ -298,15 +298,15 @@ if arch == "Darwin":
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
-  qt_query = os.popen('qmake -query').read()
-  qt_query = {kv[0]: kv[1] for kv in [line.split(':') for line in qt_query.split('\n')] if len(kv) == 2}
-
-  qt_env['QTDIR'] = qt_query['QT_INSTALL_PREFIX']
+  qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
+  qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
+  
+  qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
-    f"{qt_query['QT_INSTALL_HEADERS']}",
-    f"{qt_query['QT_INSTALL_HEADERS']}/QtGui/5.12.8/QtGui",
+    f"{qt_install_headers}",
+    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
   ]
-  qt_dirs += [f"{qt_query['QT_INSTALL_HEADERS']}/Qt{m}" for m in qt_modules]
+  qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
