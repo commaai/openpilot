@@ -54,6 +54,9 @@ public:
     return description->text();
   }
 
+  QLabel *icon_label;
+  QPixmap icon_pixmap;
+
 public slots:
   void showDescription() {
     description->setVisible(true);
@@ -139,7 +142,7 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool _confirm, QWidget *parent = nullptr) : confirm(_confirm), ToggleControl(title, desc, icon, false, parent) {
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
@@ -153,11 +156,23 @@ public:
       } else {
         toggle.togglePosition();
       }
+
+      if (state && !active_icon_pixmap.isNull()) {
+        icon_label->setPixmap(active_icon_pixmap);
+      } else if (!icon_pixmap.isNull()) {
+        icon_label->setPixmap(icon_pixmap);
+      }
     });
   }
 
-  bool confirm = false;
-  bool store_confirm = false;
+  void setConfirmation(bool _confirm, bool _store_confirm) {
+    confirm = _confirm;
+    store_confirm = _store_confirm;
+  };
+
+  void setActiveIcon(const QString &icon) {
+    active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
+  }
 
   void refresh() {
     if (params.getBool(key) != toggle.on) {
@@ -172,6 +187,9 @@ public:
 private:
   std::string key;
   Params params;
+  QPixmap active_icon_pixmap;
+  bool confirm = false;
+  bool store_confirm = false;
 };
 
 class ListWidget : public QWidget {

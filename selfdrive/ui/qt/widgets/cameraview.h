@@ -51,6 +51,7 @@ protected:
   void updateCalibration(const mat3 &calib);
   void vipcThread();
   void clearFrames();
+  void stopVipcThread();
 
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
