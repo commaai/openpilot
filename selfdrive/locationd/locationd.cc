@@ -389,11 +389,24 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   auto ecef_vel_std = log.getVelocityECEF().getStd();
   MatrixXdr ecef_vel_R = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]).asDiagonal();
 
+
   this->unix_timestamp_millis = log.getMeasTime();
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
+
+
+
+  auto convs = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
+
+  VectorXd nextfix_ecef = ecef_pos + ecef_vel;
+  VectorXd ned_coords = convs->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector();
+  LOGE("LOCATIOND: NED: %f %f %f", ned_coords[0], ned_coords[1], ned_coords[2])
+
+  bearing = atan2(ned_coords[1], ned_coords[0]); // radians
+  LOGE("LOCATIOND: bearing: %f", bearing)
+
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(bearing));
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
@@ -633,8 +646,7 @@ void Localizer::determine_gps_mode(double current_time) {
 int Localizer::locationd_thread() {
 
   const std::initializer_list<const char *> service_list = {
-    "gnssMeasurements", "cameraOdometry", "liveCalibration",
-    "carState", "carParams", "accelerometer", "gyroscope"};
+    "gnssMeasurements"};
 
   // TODO: remove carParams once we're always sending at 100Hz
   SubMaster sm(service_list, {}, nullptr, {"carParams"});
@@ -660,6 +672,7 @@ int Localizer::locationd_thread() {
     } else {
       filterInitialized = sm.allAliveAndValid();
     }
+    continue;
 
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
