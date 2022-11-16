@@ -79,4 +79,5 @@ private:
   bool gps_valid = false;
   bool observation_timings_invalid = false;
   std::map<std::string, double> observation_values_invalid;
+  std::ofstream tmp_logfile;
 };
