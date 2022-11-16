@@ -28,12 +28,13 @@
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon, confirm
-  std::vector<std::tuple<QString, QString, QString, QString, bool>> toggle_defs{
+  std::vector<std::tuple<QString, QString, QString, QString, bool, bool>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
       "../assets/offroad/icon_openpilot.png",
+      false,
       false,
     },
     {
@@ -41,7 +42,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Experimental Mode"),
       "",
       "../assets/offroad/icon_road.png",
-      false,
+      true,
+      true,
     },
     {
       "ExperimentalLongitudinalEnabled",
@@ -51,12 +53,14 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       .arg(tr("openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control on this car. Enable this to switch to openpilot longitudinal control.")),
       "../assets/offroad/icon_speed_limit.png",
       true,
+      false,
     },
     {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/offroad/icon_warning.png",
+      false,
       false,
     },
     {
@@ -65,6 +69,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
       false,
+      false,
     },
     {
       "RecordFront",
@@ -72,12 +77,14 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
       "../assets/offroad/icon_monitoring.png",
       false,
+      false,
     },
     {
       "DisengageOnAccelerator",
       tr("Disengage on Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
+      false,
       false,
     },
 #ifdef ENABLE_MAPS
@@ -87,6 +94,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Use 24h format instead of am/pm"),
       "../assets/offroad/icon_metric.png",
       false,
+      false,
     },
     {
       "NavSettingLeftSide",
@@ -94,12 +102,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Show map on left side when in split screen view."),
       "../assets/offroad/icon_road.png",
       false,
+      false,
     },
 #endif
   };
 
-  for (auto &[param, title, desc, icon, confirm] : toggle_defs) {
-    auto toggle = new ParamControl(param, title, desc, icon, confirm, this);
+  for (auto &[param, title, desc, icon, confirm, store_confirm] : toggle_defs) {
+    auto toggle = new ParamControl(param, title, desc, icon, confirm, store_confirm, this);
 
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
