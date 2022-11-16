@@ -99,8 +99,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggles[param.toStdString()] = toggle;
   }
 
-  toggles["ExperimentalMode"]->setActiveIcon("../assets/offroad/icon_warning.png");
-
   // Toggles with confirmation dialogs
   toggles["ExperimentalMode"]->confirm = true;
   toggles["ExperimentalMode"]->store_confirm = true;
