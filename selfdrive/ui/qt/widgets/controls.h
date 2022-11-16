@@ -153,14 +153,9 @@ public:
       if (!confirm || confirmed || !state || dialog.exec()) {
         if (store_confirm && state) params.putBool(key + "Confirmed", true);
         params.putBool(key, state);
+        setIcon(state);
       } else {
         toggle.togglePosition();
-      }
-
-      if (state && !active_icon_pixmap.isNull()) {
-        icon_label->setPixmap(active_icon_pixmap);
-      } else if (!icon_pixmap.isNull()) {
-        icon_label->setPixmap(icon_pixmap);
       }
     });
   }
@@ -175,8 +170,10 @@ public:
   }
 
   void refresh() {
-    if (params.getBool(key) != toggle.on) {
+    bool state = params.getBool(key);
+    if (state != toggle.on) {
       toggle.togglePosition();
+      setIcon(state);
     }
   };
 
@@ -185,6 +182,14 @@ public:
   };
 
 private:
+  void setIcon(bool state) {
+    if (state && !active_icon_pixmap.isNull()) {
+      icon_label->setPixmap(active_icon_pixmap);
+    } else if (!icon_pixmap.isNull()) {
+      icon_label->setPixmap(icon_pixmap);
+    }
+  };
+
   std::string key;
   Params params;
   QPixmap active_icon_pixmap;
