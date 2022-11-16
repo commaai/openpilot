@@ -196,9 +196,8 @@ void SignalEdit::updateForm(bool visible) {
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
-  auto bg_color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
   auto color = sig == s ? "white" : "black";
-  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(bg_color.name()));
+  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(getColor(form_idx)));
 }
 
 void SignalEdit::enterEvent(QEvent *event) {

@@ -28,6 +28,7 @@ public:
   QUndoStack *undo_stack = nullptr;
 
 private:
+  void showForm(const Signal *sig);
   void showFormClicked();
   void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);

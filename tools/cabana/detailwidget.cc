@@ -17,6 +17,7 @@
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   undo_stack = new QUndoStack(this);
 
+  setMinimumWidth(500);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -90,6 +91,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log, "Logs");
   main_layout->addWidget(tab_widget);
 
+  QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
@@ -197,9 +199,15 @@ void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
 
 void DetailWidget::showFormClicked() {
   auto s = qobject_cast<SignalEdit *>(sender());
+  showForm(s->sig);
+}
+
+void DetailWidget::showForm(const Signal *sig) {
   setUpdatesEnabled(false);
-  for (auto f : signal_list)
-    f->updateForm(f == s && !f->isFormVisible());
+  for (auto f : signal_list) {
+    f->updateForm(f->sig == sig && !f->isFormVisible());
+    if (f->sig == sig) scroll->ensureWidgetVisible(f);
+  }
   setUpdatesEnabled(true);
 }
 
