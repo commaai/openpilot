@@ -19,7 +19,7 @@ if arch == "Darwin":
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
 qt_util = qt_env.Library("qt_util", ["#selfdrive/ui/qt/api.cc", "#selfdrive/ui/qt/util.cc"], LIBS=base_libs)
-widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/widgets/experimental_mode.cc",
+widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
@@ -58,7 +58,7 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
-          "qt/offroad/driverview.cc"]
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 if GetOption('test'):
   qt_src.remove("main.cc")  # replaced by test_runner

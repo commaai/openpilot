@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/widgets/experimental_mode.h"
+#include "selfdrive/ui/qt/offroad/experimental_mode.h"
 
 #include <QDebug>
 #include <QHBoxLayout>
