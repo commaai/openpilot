@@ -110,8 +110,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void TogglesPanel::expandToggleDescription(const QString &param) {
-  auto e2e_toggle = toggles[param.toStdString()];
-  e2e_toggle->showDescription();
+  toggles[param.toStdString()]->showDescription();
 }
 
 void TogglesPanel::showEvent(QShowEvent *event) {
@@ -303,7 +302,7 @@ void SettingsWindow::showEvent(QShowEvent *event) {
   setCurrentPanel(0);
 }
 
-void SettingsWindow::setCurrentPanel(int index, QString param) {  // TODO: make const &
+void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   panel_widget->setCurrentIndex(index);
   nav_btns->buttons()[index]->setChecked(true);
   if (!param.isEmpty()) {
