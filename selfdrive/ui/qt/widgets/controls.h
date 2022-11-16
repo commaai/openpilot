@@ -142,12 +142,8 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const QString &active_icon, const bool _confirm, QWidget *parent = nullptr) : confirm(_confirm), ToggleControl(title, desc, icon, false, parent) {
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, const bool _confirm, QWidget *parent = nullptr) : confirm(_confirm), ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
-    if (!active_icon.isEmpty()) {
-      active_icon_pixmap = QPixmap(active_icon).scaledToWidth(80, Qt::SmoothTransformation);
-    }
-
     QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
       QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
                       "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
@@ -161,15 +157,17 @@ public:
         toggle.togglePosition();
       }
 
-      if (state && !active_icon.isEmpty()) {
-//        QPixmap pix(icon);
-//        icon_label = new QLabel();
+      if (state && !active_icon_pixmap.isNull()) {
         icon_label->setPixmap(active_icon_pixmap);
       } else {
         icon_label->setPixmap(icon_pixmap);
       }
 
     });
+  }
+
+  void setActiveIcon(const QString &icon) {
+    active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
   }
 
   bool confirm = false;
