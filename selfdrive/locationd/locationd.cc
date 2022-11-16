@@ -364,6 +364,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   ecef_pos = Vector3d(pos_x, pos_y, pos_z);
   pos_ecef_ecef = { .x = pos_x, .y = pos_y, .z = pos_z };
   pos_geo = ecef2geodetic(pos_ecef_ecef);
+  tmp_logfile << "------------------------- " << current_time << "\n";
   tmp_logfile << "lat: " << pos_geo.lat << ", lon: " << pos_geo.lon << "\n";
 
   // location sanity checks
