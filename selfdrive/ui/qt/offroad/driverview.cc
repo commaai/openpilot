@@ -35,6 +35,7 @@ void DriverViewScene::showEvent(QShowEvent* event) {
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
+  // TODO: stop vipc thread ?
   params.putBool("IsDriverViewEnabled", false);
 }
 
