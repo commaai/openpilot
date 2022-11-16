@@ -2,6 +2,9 @@
 
 #include <QLabel>
 #include <QPushButton>
+#include <QPushButton>
+
+#include "common/params.h"
 
 class ExperimentalModeButton : public QPushButton {
   Q_OBJECT
@@ -16,6 +19,7 @@ signals:
 private:
   void showEvent(QShowEvent *event) override;
 
+  Params params;
   bool experimental_mode;
   QPixmap experimental_pixmap;
   QPixmap chill_pixmap;

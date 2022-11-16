@@ -68,8 +68,7 @@ ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(pa
 }
 
 void ExperimentalModeButton::showEvent(QShowEvent *event) {
-  ui_update_params(uiState());
-  setProperty("experimental_mode", uiState()->scene.experimental_mode);
+  setProperty("experimental_mode", params.getBool("ExperimentalMode"));
   mode_icon->setPixmap(experimental_mode ? experimental_pixmap : chill_pixmap);
   mode_label->setText(experimental_mode ? tr("EXPERIMENTAL MODE ON") : tr("CHILL MODE ON"));
   style()->unpolish(this);

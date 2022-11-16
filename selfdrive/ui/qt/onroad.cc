@@ -379,8 +379,9 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
   // engage-ability icon
   if (engageable) {
+    SubMaster &sm = *(uiState()->sm);
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             uiState()->scene.experimental_mode ? experimental_img : engage_img, blackColor(166), 1.0);
+             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0);
   }
 
   // dm icon
