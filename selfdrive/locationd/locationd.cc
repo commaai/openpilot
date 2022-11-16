@@ -646,6 +646,10 @@ int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list = {
     "gnssMeasurements"};
 
+  const std::initializer_list<const char *> service_list = {
+    "gnssMeasurements", "cameraOdometry", "liveCalibration",
+    "carState", "carParams", "accelerometer", "gyroscope"};
+
   // TODO: remove carParams once we're always sending at 100Hz
   SubMaster sm(service_list, {}, nullptr, {"carParams"});
   PubMaster pm({"liveLocationKalman"});
@@ -662,7 +666,7 @@ int Localizer::locationd_thread() {
     if (filterInitialized){
       this->observation_timings_invalid_reset();
       for (const char* service : service_list) {
-        if (sm.updated(service) && sm.valid(service)){
+        if (sm.updated(service) && sm.valid(service)) {
           const cereal::Event::Reader log = sm[service];
           this->handle_msg(log);
         }
@@ -670,7 +674,6 @@ int Localizer::locationd_thread() {
     } else {
       filterInitialized = sm.allAliveAndValid();
     }
-    continue;
 
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
