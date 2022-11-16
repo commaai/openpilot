@@ -73,6 +73,7 @@ MainWindow::MainWindow() : QMainWindow() {
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
   r_layout->addWidget(charts_widget, 1);
+  r_layout->addStretch(0);
   main_layout->addWidget(right_container);
 
   setCentralWidget(central_widget);
@@ -217,11 +218,12 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
-    r_layout->addWidget(charts_widget, 1);
+    r_layout->insertWidget(2, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
     floating_window = new QWidget(nullptr);
+    floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->installEventFilter(charts_widget);
