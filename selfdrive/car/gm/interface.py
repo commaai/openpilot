@@ -56,9 +56,15 @@ class CarInterface(CarInterfaceBase):
     )
     friction = friction_interp if friction_compensation else 0.0
 
-    lateral_accel_value = lateral_accel_value / torque_params.latAccelFactor + friction
-    numerator = lateral_accel_value + np.sqrt(lateral_accel_value**2 + 4)
-    return float(np.log(numerator / 2) / 3)
+    steer_torque_pts = np.arange(-1, 1, 0.01)
+    lateral_accel_pts = np.interp(
+      steer_torque_pts,
+      [-1, -0.5, 0.5, 1],
+      [torque_params.latAccelFactor * 2, torque_params.latAccelFactor, torque_params.latAccelFactor, torque_params.latAccelFactor * 2]
+    ) * steer_torque_pts
+
+    lateral_accel_value = np.interp(lateral_accel_value, lateral_accel_pts, steer_torque_pts) + friction
+    return lateral_accel_value
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_gm
