@@ -35,6 +35,7 @@ signals:
 protected:
   void createActions();
   void createStatusBar();
+  void createShortcuts();
   void closeEvent(QCloseEvent *event) override;
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
