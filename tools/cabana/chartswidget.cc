@@ -99,7 +99,7 @@ void ChartsWidget::updateState() {
     if (prev_range != display_range) {
       QFutureSynchronizer<void> future_synchronizer;
       for (auto c : charts)
-        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, display_range));
+        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, display_range, nullptr));
     }
   }
 
@@ -148,7 +148,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       charts.push_back(chart);
     }
     chart->addSignal(id, sig);
-    chart->updateSeries(display_range);
+    chart->updateSeries(display_range, sig);
     chart->setRange(display_range.first, display_range.second, true);
     emit chartOpened(id, sig);
     updateState();
@@ -165,7 +165,7 @@ void ChartsWidget::removeSignal(const Signal *sig) {
     for (auto &s : c->sigs) {
       if (s.signal == sig) {
         c->removeSignal(s.msg_id, sig);
-        c->updateSeries(display_range);
+        c->updateSeries(display_range, sig);
         c->setRange(display_range.first, display_range.second, true);
         break;
       }
@@ -193,7 +193,7 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
     for (auto &s : c->sigs) {
       if (s.signal == sig) {
         c->updateTitle();
-        c->updateSeries(display_range);
+        c->updateSeries(display_range, sig);
         c->setRange(display_range.first, display_range.second, true);
         break;
       }
@@ -352,33 +352,36 @@ void ChartView::updateLineMarker(double current_sec) {
   }
 }
 
-void ChartView::updateSeries(const std::pair<double, double> range) {
+void ChartView::updateSeries(const std::pair<double, double> range, const Signal *sig) {
   auto events = can->events();
   if (!events) return;
 
   int i = 0;
   for (auto &s : sigs) {
-    s.vals.clear();
-    s.vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
-    auto [bus, address] = DBCManager::parseId(s.msg_id);
-    double route_start_time = can->routeStartTime();
-    Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
-    auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-    double end_ns = (route_start_time + range.second) * 1e9;
-    for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
-      if ((*it)->which == cereal::Event::Which::CAN) {
-        for (const auto &c : (*it)->event.getCan()) {
-          if (bus == c.getSrc() && address == c.getAddress()) {
-            auto dat = c.getDat();
-            double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.signal);
-            double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
-            s.vals.push_back({ts, value});
+    if (!sig || s.signal == sig) {
+      s.vals.clear();
+      s.vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
+      auto [bus, address] = DBCManager::parseId(s.msg_id);
+      double route_start_time = can->routeStartTime();
+      Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
+      auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+      double end_ns = (route_start_time + range.second) * 1e9;
+      for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
+        if ((*it)->which == cereal::Event::Which::CAN) {
+          for (const auto &c : (*it)->event.getCan()) {
+            if (bus == c.getSrc() && address == c.getAddress()) {
+              auto dat = c.getDat();
+              double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.signal);
+              double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
+              s.vals.push_back({ts, value});
+            }
           }
         }
       }
+      QLineSeries *series = (QLineSeries *)chart()->series()[i];
+      series->replace(s.vals);
     }
-    QLineSeries *series = (QLineSeries *)chart()->series()[i++];
-    series->replace(s.vals);
+    ++i;
   }
 }
 

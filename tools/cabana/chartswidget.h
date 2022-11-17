@@ -23,7 +23,7 @@ public:
   ChartView(QWidget *parent = nullptr);
   void addSignal(const QString &msg_id, const Signal *sig);
   void removeSignal(const QString &msg_id, const Signal *sig);
-  void updateSeries(const std::pair<double, double> range);
+  void updateSeries(const std::pair<double, double> range, const Signal *sig = nullptr);
   void setRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
   void updateFromSettings();
