@@ -285,7 +285,7 @@ void ChartView::msgUpdated(uint32_t address) {
 
 void ChartView::msgRemoved(uint32_t address) {
   for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-    it = it->address == address ? removeSeries(it) : ++it;
+    it = (it->address == address) ? removeSeries(it) : ++it;
   }
 }
 
@@ -296,8 +296,7 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 
 void ChartView::updateTitle() {
   for (auto &s : sigs) {
-    s.series->setName(QString("<b>%1</b> <font color=\"gray\">%2 %3</font>").arg(s.sig->name.c_str())
-                          .arg(msgName(s.msg_id)).arg(s.msg_id));
+    s.series->setName(QString("<b>%1</b> <font color=\"gray\">%2 %3</font>").arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
   }
 }
 
@@ -451,25 +450,28 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
     QStringList text_list;
     QPointF pos = plot_area.bottomRight();
+    double tm = 0.0;
 
     for (auto &s : sigs) {
       auto value = std::upper_bound(s.vals.begin(), s.vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
       if (value != s.vals.end()) {
-        QString name = sigs.size() > 1 ? s.sig->name.c_str() : "";
-        text_list.push_back(tr("&nbsp;%1 (%2, %3)&nbsp;").arg(name).arg(value->x(), 0, 'f', 3).arg(value->y()));
+        text_list.push_back(QString("&nbsp;%1 : %2&nbsp;").arg(sigs.size() > 1 ? s.sig->name.c_str() : "Value").arg(value->y()));
+        tm = value->x();
+        auto y_pos = chart()->mapToPosition(*value);
+        if (y_pos.y() < pos.y()) pos = y_pos;
       }
-      auto y_pos = chart()->mapToPosition(*value);
-      if (y_pos.y() < pos.y()) pos = y_pos;
     }
 
     if (!text_list.isEmpty()) {
-      value_text->setHtml("<div style=\"background-color: darkGray;color: white;\">" + text_list.join("<br />") + "</div>");
+      value_text->setHtml("<div style=\"background-color: darkGray;color: white;\">&nbsp;Time: " +
+                          QString::number(tm, 'f', 3) + "&nbsp;<br />" + text_list.join("<br />") + "</div>");
       track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
       int text_x = pos.x() + 8;
-      if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
-        text_x = pos.x() - value_text->boundingRect().width() - 8;
+      QRectF text_rect = value_text->boundingRect();
+      if ((text_x + text_rect.width()) > plot_area.right()) {
+        text_x = pos.x() - text_rect.width() - 8;
       }
-      value_text->setPos(text_x, pos.y() - 10);
+      value_text->setPos(text_x, pos.y() - text_rect.height() / 2);
       track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
     }
     item_group->setVisible(!text_list.isEmpty());
