@@ -71,11 +71,11 @@
     <name>AnnotatedCameraWidget</name>
     <message>
         <source>km/h</source>
-        <translation>km/h</translation>
+        <translation>كلم/h</translation>
     </message>
     <message>
         <source>mph</source>
-        <translation>mph</translation>
+        <translation>ميل</translation>
     </message>
     <message>
         <source>MAX</source>
@@ -453,7 +453,7 @@ location set</source>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>قم بإقران جهازك بحساب comma الخاص بك</translation>
+        <translation>قم بإقران جهازك بحساب كوما الخاص بك</translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
@@ -476,11 +476,11 @@ location set</source>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>كن عضوًا comme prime في connect.comma.ai</translation>
+        <translation>كن عضوًا بإمتيازات كوما في connect.comma.ai</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>ميزات PRIME:</translation>
+        <translation>ميزات الإمتياوات:</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -503,7 +503,7 @@ location set</source>
     </message>
     <message>
         <source>comma prime</source>
-        <translation>comma prime</translation>
+        <translation>إمتيازات كوما</translation>
     </message>
     <message>
         <source>CONNECT.COMMA.AI</source>
@@ -511,7 +511,7 @@ location set</source>
     </message>
     <message>
         <source>COMMA POINTS</source>
-        <translation>COMMA POINTS</translation>
+        <translation>نقاط كوما</translation>
     </message>
 </context>
 <context>
@@ -526,7 +526,7 @@ location set</source>
     </message>
     <message>
         <source>dashcam</source>
-        <translation>dashcam</translation>
+        <translation>داش كام</translation>
     </message>
     <message>
         <source>openpilot</source>
@@ -544,7 +544,7 @@ location set</source>
         </translation>
     </message>
     <message numerus="yes">
-        <source>%n hour(s) ago</source>
+        <source>%n ساعة(s) مضت</source>
         <translation>
             <numerusform>منذ %n ساعة</numerusform>
             <numerusform>منذ %n ساعة</numerusform>
@@ -555,7 +555,7 @@ location set</source>
         </translation>
     </message>
     <message numerus="yes">
-        <source>%n day(s) ago</source>
+        <source>%n يوم(s) مضى</source>
         <translation>
             <numerusform>منذ %n يوم</numerusform>
             <numerusform>منذ %n يوم</numerusform>
@@ -781,7 +781,7 @@ location set</source>
     </message>
     <message>
         <source>PANDA</source>
-        <translation>PANDA</translation>
+        <translation>الباندا</translation>
     </message>
     <message>
         <source>GPS</source>
@@ -797,7 +797,7 @@ location set</source>
     </message>
     <message>
         <source>Wi-Fi</source>
-        <translation>Wi-Fi</translation>
+        <translation>واي-فاي</translation>
     </message>
     <message>
         <source>ETH</source>
