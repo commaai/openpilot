@@ -50,6 +50,7 @@ class CarInterface(CarInterfaceBase):
     if self.sm.updated['gyroscope']:
       self.yaw_rate_meas = -self.sm['gyroscope'].gyroUncalibrated.v[0]
 
+    # TODO: change to liveLocationKalman accelerationDevice?
     gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
     if self.sm.updated[gps_sock]:
       self.prev_speed = self.speed
