@@ -41,10 +41,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(charts_scroll);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeSignal);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartsWidget::signalUpdated);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartsWidget::msgRemoved);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartsWidget::msgUpdated);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
@@ -120,53 +116,36 @@ void ChartsWidget::updateToolBar() {
 }
 
 ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
-  for (auto c : charts) {
-    auto it = std::find_if(c->sigs.begin(), c->sigs.end(), [=](auto &s) { return s.msg_id == id && s.signal == sig; });
-    if (it != c->sigs.end())
-      return c;
-  }
+  for (auto c : charts)
+    if (c->hasSeries(id, sig)) return c;
   return nullptr;
 }
 
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
-  ChartView *chart = findChart(id, sig);
-  if (chart) {
-    if (!show) {
-      chart->removeSignal(id, sig);
+  if (!show) {
+    if (ChartView *chart = findChart(id, sig)) {
+      chart->removeSeries(id, sig);
     }
-  } else if (show) {
-    chart = merge && charts.size() > 0 ? charts.back() : nullptr;
+  } else {
+    ChartView *chart = merge && charts.size() > 0 ? charts.back() : nullptr;
     if (!chart) {
       chart = new ChartView(this);
       chart->setEventsRange(display_range);
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
+      QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::chartClosed);
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
-    chart->addSignal(id, sig);
+    chart->addSeries(id, sig);
     emit chartOpened(id, sig);
     updateState();
   }
   updateToolBar();
 }
 
-void ChartsWidget::removeSignal(const Signal *sig) {
-  for (auto c : charts.toVector()) {
-    for (auto &s : c->sigs) {
-      if (s.signal == sig) {
-        c->removeSignal(s.msg_id, sig);
-        break;
-      }
-    }
-  }
-}
-
 void ChartsWidget::removeChart(ChartView *chart) {
-  for (auto &s : chart->sigs) {
-    emit chartClosed(s.msg_id, s.signal);
-  }
   charts.removeOne(chart);
   chart->deleteLater();
   updateToolBar();
@@ -175,36 +154,6 @@ void ChartsWidget::removeChart(ChartView *chart) {
 void ChartsWidget::removeAll() {
   for (auto c : charts.toVector())
     removeChart(c);
-}
-
-void ChartsWidget::signalUpdated(const Signal *sig) {
-  for (auto c : charts) {
-    auto it = std::find_if(c->sigs.begin(), c->sigs.end(), [=](auto &s) { return s.signal == sig; });
-    if (it != c->sigs.end()) {
-      c->updateTitle();
-      c->updateSeries(sig);
-    }
-  }
-}
-
-void ChartsWidget::msgUpdated(uint32_t address) {
-  for (auto c : charts.toVector()) {
-    for (auto &s : c->sigs) {
-      if (DBCManager::parseId(s.msg_id).second == address) {
-        c->updateTitle();
-        break;
-      }
-    }
-  }
-}
-
-void ChartsWidget::msgRemoved(uint32_t address) {
-  for (auto c : charts.toVector()) {
-    for (auto &s : c->sigs) {
-      if (DBCManager::parseId(s.msg_id).second == address)
-        c->removeSignal(s.msg_id, s.signal);
-    }
-  }
 }
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
@@ -259,6 +208,10 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   timer->setSingleShot(true);
   timer->callOnTimeout(this, &ChartView::adjustChartMargins);
 
+  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
+  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
+  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
+  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
   QObject::connect(&settings, &Settings::changed, this, &ChartView::updateFromSettings);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
   QObject::connect(chart, &QChart::plotAreaChanged, [=](const QRectF &plotArea) {
@@ -267,27 +220,72 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   });
 }
 
-void ChartView::addSignal(const QString &msg_id, const Signal *sig) {
+ChartView::~ChartView() {
+  for (auto &s : sigs)
+    emit seriesRemoved(s.msg_id, s.sig);
+}
+
+void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QLineSeries *series = new QLineSeries(this);
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
-  sigs.push_back({.msg_id = msg_id, sig = sig, .series = series});
+  auto [source, address] = DBCManager::parseId(msg_id);
+  sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
 }
 
-void ChartView::removeSignal(const QString &msg_id, const Signal *sig) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.signal == sig; });
+void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
   if (it != sigs.end()) {
-    chart()->removeSeries(it->series);
-    it->series->deleteLater();
-    sigs.erase(it);
-    if (sigs.isEmpty()) {
-      emit remove();
-    } else {
-      updateAxisY();
-    }
+    it = removeSeries(it);
+  }
+}
+
+bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
+  return it != sigs.end();
+}
+
+QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartView::SigItem>::iterator &it) {
+  chart()->removeSeries(it->series);
+  it->series->deleteLater();
+  emit seriesRemoved(it->msg_id, it->sig);
+
+  auto ret = sigs.erase(it);
+  if (!sigs.isEmpty()) {
+    updateAxisY();
+  } else {
+    emit remove();
+  }
+  return ret;
+}
+
+void ChartView::signalUpdated(const Signal *sig) {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; });
+  if (it != sigs.end()) {
+    updateTitle();
+    // TODO: don't update series if only name changed.
+    updateSeries(sig);
+  }
+}
+
+void ChartView::signalRemoved(const Signal *sig) {
+  for (auto it = sigs.begin(); it != sigs.end(); /**/) {
+    it = (it->sig == sig) ? removeSeries(it) : ++it;
+  }
+}
+
+void ChartView::msgUpdated(uint32_t address) {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; });
+  if (it != sigs.end())
+    updateTitle();
+}
+
+void ChartView::msgRemoved(uint32_t address) {
+  for (auto it = sigs.begin(); it != sigs.end(); /**/) {
+    it = it->address == address ? removeSeries(it) : ++it;
   }
 }
 
@@ -298,10 +296,8 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 
 void ChartView::updateTitle() {
   for (auto &s : sigs) {
-    s.series->setName(tr(" <b>%1</b> <font color=\"gray\" text-align:left>%2 %3</font>")
-                          .arg(s.signal->name.c_str())
-                          .arg(dbc()->msg(s.msg_id)->name)
-                          .arg(s.msg_id));
+    s.series->setName(QString("<b>%1</b> <font color=\"gray\">%2 %3</font>").arg(s.sig->name.c_str())
+                          .arg(msgName(s.msg_id)).arg(s.msg_id));
   }
 }
 
@@ -349,13 +345,12 @@ void ChartView::updateSeries(const Signal *sig) {
   if (!events) return;
 
   for (int i = 0; i < sigs.size(); ++i) {
-    if (auto &s = sigs[i]; !sig || s.signal == sig) {
+    if (auto &s = sigs[i]; !sig || s.sig == sig) {
       s.vals.clear();
       s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
-      s.min_y =  std::numeric_limits<double>::max();
+      s.min_y = std::numeric_limits<double>::max();
       s.max_y = std::numeric_limits<double>::lowest();
 
-      auto [bus, address] = DBCManager::parseId(s.msg_id);
       double route_start_time = can->routeStartTime();
       Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + events_range.first) * 1e9);
       auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
@@ -364,11 +359,12 @@ void ChartView::updateSeries(const Signal *sig) {
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
           for (const auto &c : (*it)->event.getCan()) {
-            if (bus == c.getSrc() && address == c.getAddress()) {
+            if (s.source == c.getSrc() && s.address == c.getAddress()) {
               auto dat = c.getDat();
-              double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.signal);
+              double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
               double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
               s.vals.push_back({ts, value});
+
               if (value < s.min_y) s.min_y = value;
               if (value > s.max_y) s.max_y = value;
             }
@@ -385,7 +381,7 @@ void ChartView::updateSeries(const Signal *sig) {
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
-  double min_y =  std::numeric_limits<double>::max();
+  double min_y = std::numeric_limits<double>::max();
   double max_y = std::numeric_limits<double>::lowest();
   if (events_range == std::pair{axis_x->min(), axis_x->max()}) {
     for (auto &s : sigs) {
@@ -459,7 +455,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     for (auto &s : sigs) {
       auto value = std::upper_bound(s.vals.begin(), s.vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
       if (value != s.vals.end()) {
-        QString name = sigs.size() > 1 ? s.signal->name.c_str() : "";
+        QString name = sigs.size() > 1 ? s.sig->name.c_str() : "";
         text_list.push_back(tr("&nbsp;%1 (%2, %3)&nbsp;").arg(name).arg(value->x(), 0, 'f', 3).arg(value->y()));
       }
       auto y_pos = chart()->mapToPosition(*value);

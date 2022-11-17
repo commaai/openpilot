@@ -21,37 +21,48 @@ class ChartView : public QChartView {
 
 public:
   ChartView(QWidget *parent = nullptr);
-  void addSignal(const QString &msg_id, const Signal *sig);
-  void removeSignal(const QString &msg_id, const Signal *sig);
+  ~ChartView();
+  void addSeries(const QString &msg_id, const Signal *sig);
+  void removeSeries(const QString &msg_id, const Signal *sig);
+  bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
-  void updateFromSettings();
-  void updateTitle();
 
   struct SigItem {
     QString msg_id;
-    const Signal *signal = nullptr;
+    uint8_t source = 0;
+    uint32_t address = 0;
+    const Signal *sig = nullptr;
     QLineSeries *series = nullptr;
     double min_y = 0;
     double max_y = 0;
     QVector<QPointF> vals;
   };
-  QList<SigItem> sigs;
 
 signals:
+  void seriesRemoved(const QString &id, const Signal *sig);
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
 
+private slots:
+  void msgRemoved(uint32_t address);
+  void msgUpdated(uint32_t address);
+  void signalUpdated(const Signal *sig);
+  void signalRemoved(const Signal *sig);
+
 private:
+  QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   void adjustChartMargins();
   void updateAxisY();
+  void updateTitle();
+  void updateFromSettings();
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -61,6 +72,7 @@ private:
   QGraphicsTextItem *value_text;
   QGraphicsProxyWidget *close_btn_proxy;
   std::pair<double, double> events_range = {0, 0};
+  QList<SigItem> sigs;
  };
 
 class ChartsWidget : public QWidget {
@@ -70,7 +82,6 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
   void removeChart(ChartView *chart);
-  void removeSignal(const Signal *sig);
   inline bool isChartOpened(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
 signals:
@@ -80,13 +91,10 @@ signals:
   void chartClosed(const QString &id, const Signal *sig);
 
 private:
-  void msgRemoved(uint32_t address);
-  void msgUpdated(uint32_t address);
   void eventsMerged();
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
-  void signalUpdated(const Signal *sig);
   void updateToolBar();
   void removeAll();
   bool eventFilter(QObject *obj, QEvent *event) override;

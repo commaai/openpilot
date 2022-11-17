@@ -175,7 +175,7 @@ void SignalEdit::saveSignal() {
 }
 
 void SignalEdit::setChartOpened(bool opened) {
-  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot"));
+  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened chart"));
   plot_btn->setChecked(opened);
 }
 
