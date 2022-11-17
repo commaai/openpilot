@@ -34,6 +34,8 @@ public:
     QString msg_id;
     const Signal *signal = nullptr;
     QLineSeries *series = nullptr;
+    double min_y = 0;
+    double max_y = 0;
     QVector<QPointF> vals;
   };
   QList<SigItem> sigs;

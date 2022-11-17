@@ -352,6 +352,8 @@ void ChartView::updateSeries(const Signal *sig) {
     if (auto &s = sigs[i]; !sig || s.signal == sig) {
       s.vals.clear();
       s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
+      s.min_y =  std::numeric_limits<double>::max();
+      s.max_y = std::numeric_limits<double>::lowest();
 
       auto [bus, address] = DBCManager::parseId(s.msg_id);
       double route_start_time = can->routeStartTime();
@@ -367,6 +369,8 @@ void ChartView::updateSeries(const Signal *sig) {
               double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.signal);
               double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
               s.vals.push_back({ts, value});
+              if (value < s.min_y) s.min_y = value;
+              if (value > s.max_y) s.max_y = value;
             }
           }
         }
@@ -383,16 +387,22 @@ void ChartView::updateSeries(const Signal *sig) {
 void ChartView::updateAxisY() {
   double min_y =  std::numeric_limits<double>::max();
   double max_y = std::numeric_limits<double>::lowest();
+  if (events_range == std::pair{axis_x->min(), axis_x->max()}) {
+    for (auto &s : sigs) {
+      if (s.min_y < min_y) min_y = s.min_y;
+      if (s.max_y > max_y) max_y = s.max_y;
+    }
+  } else {
+    for (auto &s : sigs) {
+      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+      if (begin == s.vals.end())
+        return;
 
-  for (auto &s : sigs) {
-    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    if (begin == s.vals.end())
-      return;
-
-    auto end = std::upper_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
-    const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
-    if (min->y() < min_y) min_y = min->y();
-    if (max->y() > max_y) max_y = max->y();
+      auto end = std::upper_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
+      const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
+      if (min->y() < min_y) min_y = min->y();
+      if (max->y() > max_y) max_y = max->y();
+    }
   }
 
   if (max_y == min_y) {
