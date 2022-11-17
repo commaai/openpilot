@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
 #include "tools/cabana/canmessages.h"
@@ -21,6 +22,7 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSignal(const QString &msg_id, const Signal *sig);
+  void removeSignal(const QString &msg_id, const Signal *sig);
   void updateSeries(const std::pair<double, double> range);
   void setRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
@@ -29,15 +31,16 @@ public:
 
   struct SigItem {
     QString msg_id;
-    const Signal *signal;
+    const Signal *signal = nullptr;
+    QLineSeries *series = nullptr;
     QVector<QPointF> vals;
   };
   QList<SigItem> sigs;
 
- signals:
+signals:
   void zoomIn(double min, double max);
   void zoomReset();
-  void remove(const QString &msg_id, const Signal *sig);
+  void remove();
 
 private:
   void mouseReleaseEvent(QMouseEvent *event) override;
@@ -54,7 +57,6 @@ private:
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;
   QGraphicsProxyWidget *close_btn_proxy;
-  QVector<QPointF> vals;
  };
 
 class ChartsWidget : public QWidget {
@@ -62,8 +64,9 @@ class ChartsWidget : public QWidget {
 
 public:
   ChartsWidget(QWidget *parent = nullptr);
-  void showChart(const QString &id, const Signal *sig, bool show);
+  void showChart(const QString &id, const Signal *sig, bool show, bool merge);
   void removeChart(ChartView *chart);
+  void removeSignal(const Signal *sig);
   bool isChartOpened(const QString &id, const Signal *sig);
 
 signals:
@@ -73,13 +76,15 @@ signals:
   void chartClosed(const QString &id, const Signal *sig);
 
 private:
+  void msgRemoved(uint32_t address);
+  void msgUpdated(uint32_t address);
   void eventsMerged();
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
   void signalUpdated(const Signal *sig);
   void updateToolBar();
-  void removeAll(const Signal *sig = nullptr);
+  void removeAll();
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
