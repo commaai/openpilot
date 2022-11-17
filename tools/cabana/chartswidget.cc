@@ -379,7 +379,8 @@ void ChartView::updateSeries(const Signal *sig) {
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
   double min_y =  std::numeric_limits<double>::max();
-  double max_y = std::numeric_limits<double>::min();
+  double max_y = std::numeric_limits<double>::lowest();
+
   for (auto &s : sigs) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     if (begin == s.vals.end())
