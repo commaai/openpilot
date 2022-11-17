@@ -101,11 +101,12 @@ class TestMonitoring(unittest.TestCase):
                       ((TEST_TIMESPAN-10-d_status.settings._AWARENESS_TIME)/2))/DT_DMON)].names[0], EventName.driverUnresponsive)
 
   # engaged, down to orange, driver pays attention, back to normal; then down to orange, driver touches wheel
-  #  - should have short orange recovery time and no green afterwards; should recover rightaway on wheel touch
+  #  - should have short orange recovery time and no green afterwards; wheel touch only recovers when paying attention
   def test_normal_driver(self):
     ds_vector = [msg_DISTRACTED] * int(DISTRACTED_SECONDS_TO_ORANGE/DT_DMON) + \
                 [msg_ATTENTIVE] * int(DISTRACTED_SECONDS_TO_ORANGE/DT_DMON) + \
-                [msg_DISTRACTED] * (int(TEST_TIMESPAN/DT_DMON)-int(DISTRACTED_SECONDS_TO_ORANGE*2/DT_DMON))
+                [msg_DISTRACTED] * int((DISTRACTED_SECONDS_TO_ORANGE+2)/DT_DMON) + \
+                [msg_ATTENTIVE] * (int(TEST_TIMESPAN/DT_DMON)-int((DISTRACTED_SECONDS_TO_ORANGE*3+2)/DT_DMON))
     interaction_vector = [car_interaction_NOT_DETECTED] * int(DISTRACTED_SECONDS_TO_ORANGE*3/DT_DMON) + \
                          [car_interaction_DETECTED] * (int(TEST_TIMESPAN/DT_DMON)-int(DISTRACTED_SECONDS_TO_ORANGE*3/DT_DMON))
     events, _ = self._run_seq(ds_vector, interaction_vector, always_true, always_false)
@@ -113,7 +114,8 @@ class TestMonitoring(unittest.TestCase):
     self.assertEqual(events[int((DISTRACTED_SECONDS_TO_ORANGE-0.1)/DT_DMON)].names[0], EventName.promptDriverDistracted)
     self.assertEqual(len(events[int(DISTRACTED_SECONDS_TO_ORANGE*1.5/DT_DMON)]), 0)
     self.assertEqual(events[int((DISTRACTED_SECONDS_TO_ORANGE*3-0.1)/DT_DMON)].names[0], EventName.promptDriverDistracted)
-    self.assertEqual(len(events[int((DISTRACTED_SECONDS_TO_ORANGE*3+0.1)/DT_DMON)]), 0)
+    self.assertEqual(events[int((DISTRACTED_SECONDS_TO_ORANGE*3+0.1)/DT_DMON)].names[0], EventName.promptDriverDistracted)
+    self.assertEqual(len(events[int((DISTRACTED_SECONDS_TO_ORANGE*3+2.5)/DT_DMON)]), 0)
 
   # engaged, down to orange, driver dodges camera, then comes back still distracted, down to red, \
   #                          driver dodges, and then touches wheel to no avail, disengages and reengages
