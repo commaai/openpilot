@@ -173,9 +173,8 @@ void ChartsWidget::removeChart(ChartView *chart) {
 }
 
 void ChartsWidget::removeAll() {
-  for (auto c : charts.toVector()) {
+  for (auto c : charts.toVector())
     removeChart(c);
-  }
 }
 
 void ChartsWidget::signalUpdated(const Signal *sig) {
@@ -202,9 +201,8 @@ void ChartsWidget::msgUpdated(uint32_t address) {
 void ChartsWidget::msgRemoved(uint32_t address) {
   for (auto c : charts.toVector()) {
     for (auto &s : c->sigs) {
-      if (DBCManager::parseId(s.msg_id).second == address) {
+      if (DBCManager::parseId(s.msg_id).second == address)
         c->removeSignal(s.msg_id, s.signal);
-      }
     }
   }
 }
@@ -437,8 +435,8 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
-  if (!is_zooming) {
-    const auto plot_area = chart()->plotArea();
+  const auto plot_area = chart()->plotArea();
+  if (!is_zooming && plot_area.contains(ev->pos())) {
     double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right() - 1);
     double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
     QStringList text;
@@ -463,6 +461,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
     item_group->setVisible(!text.isEmpty());
   } else {
+    item_group->setVisible(false);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   }
   QChartView::mouseMoveEvent(ev);
