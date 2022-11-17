@@ -348,9 +348,8 @@ void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
   if (!events) return;
 
-  int i = 0;
-  for (auto &s : sigs) {
-    if (!sig || s.signal == sig) {
+  for (int i = 0; i < sigs.size(); ++i) {
+    if (auto &s = sigs[i]; !sig || s.signal == sig) {
       s.vals.clear();
       s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
       auto [bus, address] = DBCManager::parseId(s.msg_id);
@@ -373,14 +372,14 @@ void ChartView::updateSeries(const Signal *sig) {
       QLineSeries *series = (QLineSeries *)chart()->series()[i];
       series->replace(s.vals);
     }
-    ++i;
   }
   updateAxisY();
 }
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
-  double min_y = 0, max_y = 0;
+  double min_y =  std::numeric_limits<double>::max();
+  double max_y = std::numeric_limits<double>::min();
   for (auto &s : sigs) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     if (begin == s.vals.end())
@@ -444,12 +443,11 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     for (auto &s : sigs) {
       auto value = std::upper_bound(s.vals.begin(), s.vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
       if (value != s.vals.end()) {
-        text.push_back(tr("<font color='white'>(%1, %2)</font>").arg(value->x(), 0, 'f', 3).arg(value->y()));
+        QString name = sigs.size() > 1 ? s.signal->name.c_str() : "";
+        text.push_back(tr("<font color='white'> %1 (%2, %3)</font>").arg(name).arg(value->x(), 0, 'f', 3).arg(value->y()));
       }
       auto y_pos = chart()->mapToPosition(*value);
-      if (y_pos.y() < pos.y()) {
-        pos = y_pos;
-      }
+      if (y_pos.y() < pos.y()) pos = y_pos;
     }
     value_text->setHtml("<div style='background-color:darkGray'>" + text.join("<br />") + "</div>");
     track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
