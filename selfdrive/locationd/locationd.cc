@@ -348,7 +348,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  double pos_x, pos_y, pos_z, bearing;
+  double pos_x, pos_y, pos_z;
   VectorXd ecef_pos;
   ECEF pos_ecef_ecef;
   Geodetic pos_geo;
@@ -362,6 +362,8 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   pos_z = log.getPositionECEF().getValue()[2];
 
   ecef_pos = Vector3d(pos_x, pos_y, pos_z);
+
+  // DEBUG use only
   pos_ecef_ecef = { .x = pos_x, .y = pos_y, .z = pos_z };
   pos_geo = ecef2geodetic(pos_ecef_ecef);
   tmp_logfile << "------------------------- " << current_time << "\n";
@@ -376,10 +378,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     return;
   }
 
-  //bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
-  //bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
-  //bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
-
+  this->gps_valid = true;
 
   auto ecef_pos_std = log.getPositionECEF().getStd();
   MatrixXdr ecef_pos_R = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]).asDiagonal();
@@ -390,23 +389,21 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   auto ecef_vel_std = log.getVelocityECEF().getStd();
   MatrixXdr ecef_vel_R = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]).asDiagonal();
 
-
   this->unix_timestamp_millis = log.getMeasTime();
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
 
-  auto convs = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
+  LocalCoord convs(pos_ecef_ecef);
+  ECEF next_ecef = {.x = ecef_pos[0] + ecef_vel[0], .y = ecef_pos[1] + ecef_vel[1], .z = ecef_pos[2] + ecef_vel[2]};
+  VectorXd ned_vel = convs.ecef2ned(next_ecef).to_vector();
+  double bearing_rad = atan2(ned_vel[1], ned_vel[0]);
 
-  VectorXd nextfix_ecef = ecef_pos + ecef_vel;
-  VectorXd ned_coords = convs->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector();
-  tmp_logfile << "LOCATIOND: NED: " <<  ned_coords[0] << " " << ned_coords[1] << " " << ned_coords[2] << "\n";
+  tmp_logfile << "LOCATIOND: NED: " <<  ned_vel[0] << " " << ned_vel[1] << " " << ned_vel[2] << "\n";
+  tmp_logfile << "LOCATIOND: bearing: " <<  RAD2DEG(bearing_rad) << "\n";
 
-  bearing = atan2(ned_coords[1], ned_coords[0]); // radians
-  tmp_logfile << "LOCATIOND: bearing: " <<  RAD2DEG(bearing) << "\n";
-
-  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing);
+  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing_rad);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
     orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
@@ -418,12 +415,14 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   tmp_logfile << "velk: " <<  ecef_vel.norm() << ", error: " << orientation_error.norm() << ", gps_est_error: " << gps_est_error << "\n";
-  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 5.0) {
+  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     tmp_logfile << "Locationd vs gnss orientation difference too large, kalman reset\n";
+    LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     tmp_logfile << "Locationd vs gnss position difference too large, kalman reset\n";
+    LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
