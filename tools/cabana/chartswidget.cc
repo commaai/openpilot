@@ -135,9 +135,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       chart->removeSignal(id, sig);
     }
   } else if (show) {
-    if (merge) {
-      chart = charts.size() > 0 ? charts.back() : nullptr;
-    }
+    chart = merge && charts.size() > 0 ? charts.back() : nullptr;
     if (!chart) {
       chart = new ChartView(this);
       chart->setEventsRange(display_range);
@@ -152,10 +150,6 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     updateState();
   }
   updateToolBar();
-}
-
-bool ChartsWidget::isChartOpened(const QString &id, const Signal *sig) {
-  return findChart(id, sig) != nullptr;
 }
 
 void ChartsWidget::removeSignal(const Signal *sig) {
@@ -186,12 +180,10 @@ void ChartsWidget::removeAll() {
 
 void ChartsWidget::signalUpdated(const Signal *sig) {
   for (auto c : charts) {
-    for (auto &s : c->sigs) {
-      if (s.signal == sig) {
-        c->updateTitle();
-        c->updateSeries(sig);
-        break;
-      }
+    auto it = std::find_if(c->sigs.begin(), c->sigs.end(), [=](auto &s) { return s.signal == sig; });
+    if (it != c->sigs.end()) {
+      c->updateTitle();
+      c->updateSeries(sig);
     }
   }
 }
@@ -288,19 +280,16 @@ void ChartView::addSignal(const QString &msg_id, const Signal *sig) {
 }
 
 void ChartView::removeSignal(const QString &msg_id, const Signal *sig) {
-  for (int i = 0; i < sigs.size(); ++i) {
-    if (sigs[i].msg_id == msg_id && sigs[i].signal == sig) {
-      chart()->removeSeries(sigs[i].series);
-      sigs[i].series->deleteLater();
-      sigs.removeAt(i);
-      break;
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.signal == sig; });
+  if (it != sigs.end()) {
+    chart()->removeSeries(it->series);
+    it->series->deleteLater();
+    sigs.erase(it);
+    if (sigs.isEmpty()) {
+      emit remove();
+    } else {
+      updateAxisY();
     }
-  }
-
-  if (sigs.isEmpty()) {
-    emit remove();
-  } else {
-    updateAxisY();
   }
 }
 

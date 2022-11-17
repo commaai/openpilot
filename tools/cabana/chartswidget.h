@@ -69,7 +69,7 @@ public:
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
   void removeChart(ChartView *chart);
   void removeSignal(const Signal *sig);
-  bool isChartOpened(const QString &id, const Signal *sig);
+  inline bool isChartOpened(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
 signals:
   void dock(bool floating);
