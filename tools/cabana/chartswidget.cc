@@ -352,11 +352,13 @@ void ChartView::updateSeries(const Signal *sig) {
     if (auto &s = sigs[i]; !sig || s.signal == sig) {
       s.vals.clear();
       s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
+
       auto [bus, address] = DBCManager::parseId(s.msg_id);
       double route_start_time = can->routeStartTime();
       Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + events_range.first) * 1e9);
       auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
       double end_ns = (route_start_time + events_range.second) * 1e9;
+
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
           for (const auto &c : (*it)->event.getCan()) {
@@ -369,6 +371,7 @@ void ChartView::updateSeries(const Signal *sig) {
           }
         }
       }
+
       QLineSeries *series = (QLineSeries *)chart()->series()[i];
       series->replace(s.vals);
     }
