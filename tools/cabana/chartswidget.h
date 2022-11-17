@@ -27,7 +27,7 @@ public:
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr);
   void setEventsRange(const std::pair<double, double> &range);
-  void setDisplayRange(double min, double max, bool force_update = false);
+  void setDisplayRange(double min, double max);
   void updateLineMarker(double current_sec);
 
   struct SigItem {

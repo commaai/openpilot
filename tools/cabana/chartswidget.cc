@@ -314,8 +314,8 @@ void ChartView::setEventsRange(const std::pair<double, double> &range) {
   }
 }
 
-void ChartView::setDisplayRange(double min, double max, bool force_update) {
-  if (force_update || (min != axis_x->min() || max != axis_x->max())) {
+void ChartView::setDisplayRange(double min, double max) {
+  if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
   }
