@@ -99,13 +99,13 @@ void ChartsWidget::updateState() {
     if (prev_range != display_range) {
       QFutureSynchronizer<void> future_synchronizer;
       for (auto c : charts)
-        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, display_range, nullptr));
+        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
     }
   }
 
   const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
-    c->setRange(range.first, range.second);
+    c->setDisplayRange(range.first, range.second);
     c->updateLineMarker(current_sec);
   }
 }
@@ -132,8 +132,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
   ChartView *chart = findChart(id, sig);
   if (chart) {
     if (!show) {
-      removeSignal(sig);
-      chart->setRange(display_range.first, display_range.second, true);
+      chart->removeSignal(id, sig);
     }
   } else if (show) {
     if (merge) {
@@ -141,6 +140,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     }
     if (!chart) {
       chart = new ChartView(this);
+      chart->setEventsRange(display_range);
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
@@ -148,8 +148,6 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       charts.push_back(chart);
     }
     chart->addSignal(id, sig);
-    chart->updateSeries(display_range, sig);
-    chart->setRange(display_range.first, display_range.second, true);
     emit chartOpened(id, sig);
     updateState();
   }
@@ -165,8 +163,6 @@ void ChartsWidget::removeSignal(const Signal *sig) {
     for (auto &s : c->sigs) {
       if (s.signal == sig) {
         c->removeSignal(s.msg_id, sig);
-        c->updateSeries(display_range, sig);
-        c->setRange(display_range.first, display_range.second, true);
         break;
       }
     }
@@ -193,8 +189,7 @@ void ChartsWidget::signalUpdated(const Signal *sig) {
     for (auto &s : c->sigs) {
       if (s.signal == sig) {
         c->updateTitle();
-        c->updateSeries(display_range, sig);
-        c->setRange(display_range.first, display_range.second, true);
+        c->updateSeries(sig);
         break;
       }
     }
@@ -216,8 +211,7 @@ void ChartsWidget::msgRemoved(uint32_t address) {
   for (auto c : charts.toVector()) {
     for (auto &s : c->sigs) {
       if (DBCManager::parseId(s.msg_id).second == address) {
-        removeChart(c);
-        break;
+        c->removeSignal(s.msg_id, s.signal);
       }
     }
   }
@@ -263,6 +257,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   remove_btn->setToolTip(tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart);
   close_btn_proxy->setWidget(remove_btn);
+  close_btn_proxy->setZValue(chart->zValue() + 11);
 
   setChart(chart);
   setRenderHint(QPainter::Antialiasing);
@@ -289,6 +284,7 @@ void ChartView::addSignal(const QString &msg_id, const Signal *sig) {
   series->attachAxis(axis_y);
   sigs.push_back({.msg_id = msg_id, sig = sig, .series = series});
   updateTitle();
+  updateSeries(sig);
 }
 
 void ChartView::removeSignal(const QString &msg_id, const Signal *sig) {
@@ -300,9 +296,11 @@ void ChartView::removeSignal(const QString &msg_id, const Signal *sig) {
       break;
     }
   }
-  updateTitle();
+
   if (sigs.isEmpty()) {
     emit remove();
+  } else {
+    updateAxisY();
   }
 }
 
@@ -327,7 +325,14 @@ void ChartView::updateFromSettings() {
   line_marker->setPen(QPen(color, 2));
 }
 
-void ChartView::setRange(double min, double max, bool force_update) {
+void ChartView::setEventsRange(const std::pair<double, double> &range) {
+  if (range != events_range) {
+    events_range = range;
+    updateSeries();
+  }
+}
+
+void ChartView::setDisplayRange(double min, double max, bool force_update) {
   if (force_update || (min != axis_x->min() || max != axis_x->max())) {
     axis_x->setRange(min, max);
     updateAxisY();
@@ -352,7 +357,7 @@ void ChartView::updateLineMarker(double current_sec) {
   }
 }
 
-void ChartView::updateSeries(const std::pair<double, double> range, const Signal *sig) {
+void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
   if (!events) return;
 
@@ -360,12 +365,12 @@ void ChartView::updateSeries(const std::pair<double, double> range, const Signal
   for (auto &s : sigs) {
     if (!sig || s.signal == sig) {
       s.vals.clear();
-      s.vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
+      s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
       auto [bus, address] = DBCManager::parseId(s.msg_id);
       double route_start_time = can->routeStartTime();
-      Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
+      Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + events_range.first) * 1e9);
       auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-      double end_ns = (route_start_time + range.second) * 1e9;
+      double end_ns = (route_start_time + events_range.second) * 1e9;
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
           for (const auto &c : (*it)->event.getCan()) {
@@ -383,6 +388,7 @@ void ChartView::updateSeries(const std::pair<double, double> range, const Signal
     }
     ++i;
   }
+  updateAxisY();
 }
 
 // auto zoom on yaxis
@@ -397,8 +403,6 @@ void ChartView::updateAxisY() {
     const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
     if (min->y() < min_y) min_y = min->y();
     if (max->y() > max_y) max_y = max->y();
-
-    qDebug() << min_y << max_y;
   }
 
   if (max_y == min_y) {

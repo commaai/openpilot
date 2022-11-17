@@ -23,8 +23,9 @@ public:
   ChartView(QWidget *parent = nullptr);
   void addSignal(const QString &msg_id, const Signal *sig);
   void removeSignal(const QString &msg_id, const Signal *sig);
-  void updateSeries(const std::pair<double, double> range, const Signal *sig = nullptr);
-  void setRange(double min, double max, bool force_update = false);
+  void updateSeries(const Signal *sig = nullptr);
+  void setEventsRange(const std::pair<double, double> &range);
+  void setDisplayRange(double min, double max, bool force_update = false);
   void updateLineMarker(double current_sec);
   void updateFromSettings();
   void updateTitle();
@@ -57,6 +58,7 @@ private:
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;
   QGraphicsProxyWidget *close_btn_proxy;
+  std::pair<double, double> events_range = {0, 0};
  };
 
 class ChartsWidget : public QWidget {
