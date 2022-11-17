@@ -152,7 +152,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def thermald_thread(end_event, hw_queue):
   pm = messaging.PubMaster(['deviceState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll=["pandaStates"])
+  sm = messaging.SubMaster(["peripheralState", "liveLocationKalman", "controlsState", "pandaStates"], poll=["pandaStates"])
 
   count = 0
 
@@ -403,7 +403,7 @@ def thermald_thread(end_event, hw_queue):
                      count=count,
                      pandaStates=[strip_deprecated_keys(p.to_dict()) for p in pandaStates],
                      peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
-                     location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
+                     location=(strip_deprecated_keys(sm["liveLocationKalman"].to_dict())),
                      deviceState=strip_deprecated_keys(msg.to_dict()))
 
     count += 1

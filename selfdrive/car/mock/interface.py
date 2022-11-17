@@ -34,6 +34,11 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     self.sm.update(0)
+    # get basic data from phone and gps since CAN isn't connected
+    if self.sm.updated['gyroscope']:
+      self.yaw_rate_meas = -self.sm['gyroscope'].gyroUncalibrated.v[0]
+
+    # TODO: change to liveLocationKalman accelerationDevice?
     gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
     if self.sm.updated[gps_sock]:
       self.prev_speed = self.speed
