@@ -19,7 +19,7 @@ class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
+  ChartView(QWidget *parent = nullptr);
   void addSignal(const QString &msg_id, const Signal *sig);
   void updateSeries(const std::pair<double, double> range);
   void setRange(double min, double max, bool force_update = false);
@@ -28,11 +28,10 @@ public:
   void updateTitle();
 
   struct SigItem {
+    QString msg_id;
     const Signal *signal;
     QVector<QPointF> vals;
   };
-  QString id;
-  const Signal *signal;
   QList<SigItem> sigs;
 
  signals:
@@ -82,6 +81,7 @@ private:
   void updateToolBar();
   void removeAll(const Signal *sig = nullptr);
   bool eventFilter(QObject *obj, QEvent *event) override;
+  ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
   QLabel *range_label;

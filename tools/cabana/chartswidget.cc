@@ -4,10 +4,10 @@
 #include <QGraphicsLayout>
 #include <QRubberBand>
 #include <QTimer>
+#include <QToolBar>
 #include <QToolButton>
 #include <QtCharts/QLineSeries>
 #include <QtConcurrent>
-#include <QToolBar>
 
 // ChartsWidget
 
@@ -18,7 +18,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   title_label = new QLabel();
-  title_label->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+  title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(title_label);
   toolbar->addWidget(range_label = new QLabel());
   reset_zoom_btn = toolbar->addAction("⟲");
@@ -45,12 +45,23 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartsWidget::removeAll);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartsWidget::signalUpdated);
   QObject::connect(dbc(), &DBCManager::msgRemoved, [this](uint32_t address) {
-    for (auto c : charts.toVector())
-      if (DBCManager::parseId(c->id).second == address) removeChart(c);
+    for (auto c : charts.toVector()) {
+      for (auto &s : c->sigs) {
+        if (DBCManager::parseId(s.msg_id).second == address) {
+          removeChart(c);
+          break;
+        }
+      }
+    }
   });
   QObject::connect(dbc(), &DBCManager::msgUpdated, [this](uint32_t address) {
-    for (auto c : charts) {
-      if (DBCManager::parseId(c->id).second == address) c->updateTitle();
+    for (auto c : charts.toVector()) {
+      for (auto &s : c->sigs) {
+        if (DBCManager::parseId(s.msg_id).second == address) {
+          c->updateTitle();
+          break;
+        }
+      }
     }
   });
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
@@ -127,47 +138,69 @@ void ChartsWidget::updateToolBar() {
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
+ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
+  for (auto c : charts) {
+    auto it = std::find_if(c->sigs.begin(), c->sigs.end(), [=](auto &s) { return s.msg_id == id && s.signal == sig; });
+    if (it != c->sigs.end())
+      return c;
+  }
+  return nullptr;
+}
+
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show) {
-  auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
-  if (it != charts.end()) {
-    if (!show) removeChart((*it));
+  ChartView *chart = findChart(id, sig);
+  if (chart) {
+    if (!show) removeChart(chart);
   } else if (show) {
-    auto chart = new ChartView(id, sig, this);
+    chart = new ChartView(this);
+    chart->addSignal(id, sig);
     chart->updateSeries(display_range);
     QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
     QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
     QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
     charts_layout->insertWidget(0, chart);
     charts.push_back(chart);
-    emit chartOpened(chart->id, chart->signal);
+    emit chartOpened(id, sig);
     updateState();
   }
   updateToolBar();
 }
 
 bool ChartsWidget::isChartOpened(const QString &id, const Signal *sig) {
-  auto it = std::find_if(charts.begin(), charts.end(), [=](auto c) { return c->id == id && c->signal == sig; });
-  return it != charts.end();
+  return findChart(id, sig) != nullptr;
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
   updateToolBar();
-  emit chartClosed(chart->id, chart->signal);
+  for (auto c : charts) {
+    for (auto &s : c->sigs) {
+      emit chartClosed(s.msg_id, s.signal);
+    }
+  }
 }
 
 void ChartsWidget::removeAll(const Signal *sig) {
-  for (auto c : charts.toVector())
-    if (!sig || c->signal == sig) removeChart(c);
+  for (auto c : charts.toVector()) {
+    for (auto &s : c->sigs) {
+      if (!sig || s.signal == sig) {
+        removeChart(c);
+        break;
+      }
+    }
+  }
 }
 
 void ChartsWidget::signalUpdated(const Signal *sig) {
   for (auto c : charts) {
-    if (c->signal == sig) {
-      c->updateTitle();
-      c->updateSeries(display_range);
-      c->setRange(display_range.first, display_range.second, true);
+    for (auto &s : c->sigs) {
+      if (s.signal == sig) {
+        c->updateTitle();
+        c->updateSeries(display_range);
+        c->setRange(display_range.first, display_range.second, true);
+        break;
+      }
     }
   }
 }
@@ -182,18 +215,13 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 
 // ChartView
 
-ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
-    : id(id), signal(sig), QChartView(nullptr, parent) {
-  QLineSeries *series = new QLineSeries();
+ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QChart *chart = new QChart();
   chart->setBackgroundRoundness(0);
-  chart->addSeries(series);
   axis_x = new QValueAxis(this);
   axis_y = new QValueAxis(this);
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
-  series->attachAxis(axis_x);
-  series->attachAxis(axis_y);
   chart->legend()->hide();
   chart->layout()->setContentsMargins(0, 0, 0, 0);
   // top margin for title
@@ -230,7 +258,12 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
   timer->callOnTimeout(this, &ChartView::adjustChartMargins);
 
   QObject::connect(&settings, &Settings::changed, this, &ChartView::updateFromSettings);
-  QObject::connect(remove_btn, &QToolButton::clicked, [=]() { emit remove(id, sig); });
+  QObject::connect(remove_btn, &QToolButton::clicked, [=]() {
+    for (auto &s : sigs) {
+      emit remove(s.msg_id, s.signal);
+      break;
+    }
+  });
   QObject::connect(chart, &QChart::plotAreaChanged, [=](const QRectF &plotArea) {
     // use a singleshot timer to avoid recursion call.
     timer->start();
@@ -238,7 +271,11 @@ ChartView::ChartView(const QString &id, const Signal *sig, QWidget *parent)
 }
 
 void ChartView::addSignal(const QString &msg_id, const Signal *sig) {
-
+  QLineSeries *series = new QLineSeries();
+  chart()->addSeries(series);
+  series->attachAxis(axis_x);
+  series->attachAxis(axis_y);
+  sigs.push_back({.msg_id = msg_id, sig = sig});
 }
 
 void ChartView::resizeEvent(QResizeEvent *event) {
@@ -247,7 +284,11 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 }
 
 void ChartView::updateTitle() {
-  chart()->setTitle(tr("<font color=\"gray\" text-align:left>%1 %2</font> <b>%3</b>").arg(dbc()->msg(id)->name).arg(id).arg(signal->name.c_str()));
+  QStringList titles;
+  for (auto &s : sigs) {
+    titles.push_back(tr("<font color=\"gray\" text-align:left>%1 %2</font> <b>%3</b>").arg(dbc()->msg(s.msg_id)->name).arg(s.msg_id).arg(s.signal->name.c_str()));
+  }
+  chart()->setTitle(titles.join("<br />"));
 }
 
 void ChartView::updateFromSettings() {
@@ -286,27 +327,30 @@ void ChartView::updateSeries(const std::pair<double, double> range) {
   auto events = can->events();
   if (!events) return;
 
-  vals.clear();
-  vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
-  auto [bus, address] = DBCManager::parseId(id);
-  double route_start_time = can->routeStartTime();
-  Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
-  auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-  double end_ns = (route_start_time + range.second) * 1e9;
-  for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      for (const auto &c : (*it)->event.getCan()) {
-        if (bus == c.getSrc() && address == c.getAddress()) {
-          auto dat = c.getDat();
-          double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *signal);
-          double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
-          vals.push_back({ts, value});
+  int i = 0;
+  for (auto &s : sigs) {
+    s.vals.clear();
+    s.vals.reserve((range.second - range.first) * 1000);  // [n]seconds * 1000hz
+    auto [bus, address] = DBCManager::parseId(s.msg_id);
+    double route_start_time = can->routeStartTime();
+    Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + range.first) * 1e9);
+    auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+    double end_ns = (route_start_time + range.second) * 1e9;
+    for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
+      if ((*it)->which == cereal::Event::Which::CAN) {
+        for (const auto &c : (*it)->event.getCan()) {
+          if (bus == c.getSrc() && address == c.getAddress()) {
+            auto dat = c.getDat();
+            double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.signal);
+            double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
+            s.vals.push_back({ts, value});
+          }
         }
       }
     }
+    QLineSeries *series = (QLineSeries *)chart()->series()[i];
+    series->replace(s.vals);
   }
-  QLineSeries *series = (QLineSeries *)chart()->series()[0];
-  series->replace(vals);
 }
 
 // auto zoom on yaxis
@@ -370,7 +414,8 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
       track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
       value_text->setHtml(tr("<div style='background-color:darkGray'><font color='white'>%1, %2)</font></div>")
-                              .arg(value->x(), 0, 'f', 3).arg(value->y()));
+                              .arg(value->x(), 0, 'f', 3)
+                              .arg(value->y()));
       int text_x = pos.x() + 8;
       if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
         text_x = pos.x() - value_text->boundingRect().width() - 8;
