@@ -24,7 +24,7 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-const float VALID_POS_STD = 50.0; // m
+// const float VALID_POS_STD = 50.0; // m
 
 const QString ICON_SUFFIX = ".png";
 
