@@ -72,8 +72,8 @@ void ChartsWidget::zoomIn(double min, double max) {
   zoomed_range = {min, max};
   is_zoomed = zoomed_range != display_range;
   updateToolBar();
-  emit rangeChanged(min, max, is_zoomed);
   updateState();
+  emit rangeChanged(min, max, is_zoomed);
 }
 
 void ChartsWidget::zoomReset() {
@@ -435,29 +435,34 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
+
   if (!is_zooming && plot_area.contains(ev->pos())) {
     double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right() - 1);
     double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
-    QStringList text;
+    QStringList text_list;
     QPointF pos = plot_area.bottomRight();
+
     for (auto &s : sigs) {
       auto value = std::upper_bound(s.vals.begin(), s.vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
       if (value != s.vals.end()) {
         QString name = sigs.size() > 1 ? s.signal->name.c_str() : "";
-        text.push_back(tr("<font color='white'> %1 (%2, %3)</font>").arg(name).arg(value->x(), 0, 'f', 3).arg(value->y()));
+        text_list.push_back(tr("&nbsp;%1 (%2, %3)&nbsp;").arg(name).arg(value->x(), 0, 'f', 3).arg(value->y()));
       }
       auto y_pos = chart()->mapToPosition(*value);
       if (y_pos.y() < pos.y()) pos = y_pos;
     }
-    value_text->setHtml("<div style='background-color:darkGray'>" + text.join("<br />") + "</div>");
-    track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
-    int text_x = pos.x() + 8;
-    if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
-      text_x = pos.x() - value_text->boundingRect().width() - 8;
+
+    if (!text_list.isEmpty()) {
+      value_text->setHtml("<div style=\"background-color: darkGray;color: white;\">" + text_list.join("<br />") + "</div>");
+      track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
+      int text_x = pos.x() + 8;
+      if ((text_x + value_text->boundingRect().width()) > plot_area.right()) {
+        text_x = pos.x() - value_text->boundingRect().width() - 8;
+      }
+      value_text->setPos(text_x, pos.y() - 10);
+      track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
     }
-    value_text->setPos(text_x, pos.y() - 10);
-    track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
-    item_group->setVisible(!text.isEmpty());
+    item_group->setVisible(!text_list.isEmpty());
   } else {
     item_group->setVisible(false);
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
