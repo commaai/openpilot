@@ -131,7 +131,10 @@ ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
   ChartView *chart = findChart(id, sig);
   if (chart) {
-    if (!show) removeSignal(sig);
+    if (!show) {
+      removeSignal(sig);
+      chart->setRange(display_range.first, display_range.second, true);
+    }
   } else if (show) {
     if (merge) {
       chart = charts.size() > 0 ? charts.back() : nullptr;
@@ -162,6 +165,9 @@ void ChartsWidget::removeSignal(const Signal *sig) {
     for (auto &s : c->sigs) {
       if (s.signal == sig) {
         c->removeSignal(s.msg_id, sig);
+        c->updateSeries(display_range);
+        c->setRange(display_range.first, display_range.second, true);
+        break;
       }
     }
   }
@@ -234,7 +240,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   axis_y = new QValueAxis(this);
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
-  chart->legend()->hide();
+  chart->legend()->setShowToolTips(true);
   chart->layout()->setContentsMargins(0, 0, 0, 0);
   // top margin for title
   chart->setMargins({0, 11, 0, 0});
@@ -306,11 +312,12 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 }
 
 void ChartView::updateTitle() {
-  QStringList titles;
   for (auto &s : sigs) {
-    titles.push_back(tr("<font color=\"gray\" text-align:left>%1 %2</font> <b>%3</b>").arg(dbc()->msg(s.msg_id)->name).arg(s.msg_id).arg(s.signal->name.c_str()));
+    s.series->setName(tr(" <b>%1</b> <font color=\"gray\" text-align:left>%2 %3</font>")
+                          .arg(s.signal->name.c_str())
+                          .arg(dbc()->msg(s.msg_id)->name)
+                          .arg(s.msg_id));
   }
-  chart()->setTitle(titles.join("<br />"));
 }
 
 void ChartView::updateFromSettings() {
