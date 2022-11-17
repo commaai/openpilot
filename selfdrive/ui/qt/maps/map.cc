@@ -124,6 +124,9 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
+  #ifdef NOT_DEFINED
+  // on remove, #include "common/transformations/coordinates.hpp" can be probably removed too
+
   if (sm.updated("gnssMeasurements")) {
     auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
     auto laikad_pos = laikad_location.getPositionECEF();
@@ -158,6 +161,7 @@ void MapWindow::updateState(const UIState &s) {
       }
     }
   }
+  #endif
 
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
@@ -181,7 +185,7 @@ void MapWindow::updateState(const UIState &s) {
 
   initLayers();
 
-  if (locationd_valid || laikad_valid) {
+  if (locationd_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -214,7 +218,7 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (locationd_valid || laikad_valid) {
+      if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
