@@ -102,7 +102,7 @@ void ChartsWidget::updateState() {
   const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
     c->setDisplayRange(range.first, range.second);
-    c->updateLineMarker(current_sec);
+    c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
 }
 
@@ -177,9 +177,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->layout()->setContentsMargins(0, 0, 0, 0);
   // top margin for title
   chart->setMargins({0, 11, 0, 0});
-
-  line_marker = new QGraphicsLineItem(chart);
-  line_marker->setZValue(chart->zValue() + 10);
 
   track_line = new QGraphicsLineItem(chart);
   track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
@@ -304,7 +301,6 @@ void ChartView::updateFromSettings() {
   setFixedHeight(settings.chart_height);
   chart()->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
   auto color = chart()->titleBrush().color();
-  line_marker->setPen(QPen(color, 2));
 }
 
 void ChartView::setEventsRange(const std::pair<double, double> &range) {
@@ -327,15 +323,6 @@ void ChartView::adjustChartMargins() {
   if (chart()->plotArea().left() != aligned_pos) {
     const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
     chart()->setMargins(QMargins(left_margin, 11, 0, 0));
-    updateLineMarker(can->currentSec());
-  }
-}
-
-void ChartView::updateLineMarker(double current_sec) {
-  int x = chart()->plotArea().left() +
-          chart()->plotArea().width() * (current_sec - axis_x->min()) / (axis_x->max() - axis_x->min());
-  if (int(line_marker->line().x1()) != x) {
-    line_marker->setLine(x, chart()->plotArea().top() - chart()->margins().top() + 3, x, height());
   }
 }
 
@@ -429,7 +416,6 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // zoom in if selected range is greater than 0.5s
       emit zoomIn(min, max);
     }
-    viewport()->update();
     event->accept();
   } else if (event->button() == Qt::RightButton) {
     emit zoomReset();
@@ -437,7 +423,6 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   } else {
     QGraphicsView::mouseReleaseEvent(event);
   }
-  setViewportUpdateMode(QGraphicsView::MinimalViewportUpdate);
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
@@ -477,7 +462,13 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     item_group->setVisible(!text_list.isEmpty());
   } else {
     item_group->setVisible(false);
-    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   }
   QChartView::mouseMoveEvent(ev);
+}
+
+void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
+  qreal x = chart()->plotArea().left() +
+            chart()->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
+  painter->setPen(QPen(chart()->titleBrush().color(), 2));
+  painter->drawLine(QPointF{x, chart()->plotArea().top() - 2}, QPointF{x, chart()->plotArea().bottom() + 2});
 }
