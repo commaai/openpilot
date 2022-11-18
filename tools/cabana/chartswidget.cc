@@ -99,13 +99,11 @@ void ChartsWidget::updateState() {
     }
   }
 
-  setUpdatesEnabled(false);
   const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
     c->setDisplayRange(range.first, range.second);
     c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
-  setUpdatesEnabled(true);
 }
 
 void ChartsWidget::updateToolBar() {
@@ -316,6 +314,7 @@ void ChartView::adjustChartMargins() {
   if ((int)chart()->plotArea().left() != aligned_pos) {
     const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
     chart()->setMargins(QMargins(left_margin, 11, 11, 11));
+    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
 }
 
