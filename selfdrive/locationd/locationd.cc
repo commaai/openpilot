@@ -282,6 +282,7 @@ void Localizer::input_fake_gps_observations(double current_time) {
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
+  // TODO: add more verification steps
   this->gps_valid = log.getPositionECEF().getValid() && log.getVelocityECEF().getValid();
   if (this->gps_valid) {
     this->determine_gps_mode(current_time);
