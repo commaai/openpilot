@@ -3,6 +3,7 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QRubberBand>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QtConcurrent>
@@ -98,11 +99,13 @@ void ChartsWidget::updateState() {
     }
   }
 
+  setUpdatesEnabled(false);
   const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
     c->setDisplayRange(range.first, range.second);
     c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
+  setUpdatesEnabled(true);
 }
 
 void ChartsWidget::updateToolBar() {
@@ -174,6 +177,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->setShowToolTips(true);
   chart->layout()->setContentsMargins(0, 0, 0, 0);
+  chart->setMargins(QMargins(20, 11, 11, 11));
 
   track_line = new QGraphicsLineItem(chart);
   track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
@@ -302,7 +306,7 @@ void ChartView::setDisplayRange(double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
-    adjustChartMargins();
+    QTimer::singleShot(0, this, &ChartView::adjustChartMargins);
   }
 }
 
