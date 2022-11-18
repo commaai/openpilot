@@ -64,7 +64,7 @@ class CarInterface(CarInterfaceBase):
     ) * steer_torque_pts
 
     lateral_accel_value = np.interp(lateral_accel_value, lateral_accel_pts, steer_torque_pts) + friction
-    return lateral_accel_value
+    return float(lateral_accel_value)
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_gm
