@@ -4,7 +4,7 @@
 #include <cmath>
 
 #include "locationd.h"
-#include "common/transformations/coordinates.hpp"
+//#include "common/transformations/coordinates.hpp"
 
 using namespace EKFS;
 using namespace Eigen;
