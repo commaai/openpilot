@@ -28,7 +28,6 @@ public:
   void updateSeries(const Signal *sig = nullptr);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
-  void updateLineMarker(double current_sec);
 
   struct SigItem {
     QString msg_id;
@@ -63,11 +62,12 @@ private:
   void updateAxisY();
   void updateTitle();
   void updateFromSettings();
+  void drawForeground(QPainter *painter, const QRectF &rect) override;
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
   QGraphicsItemGroup *item_group;
-  QGraphicsLineItem *line_marker, *track_line;
+  QGraphicsLineItem *track_line;
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;
   QGraphicsProxyWidget *close_btn_proxy;
