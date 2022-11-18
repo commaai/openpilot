@@ -27,18 +27,11 @@ from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
 from system.swaglog import cloudlog
 
-# for debug only
-from common.transformations.coordinates import ecef2geodetic
-from tools.lib.logreader import LogReader
-from laika.lib.coordinates import LocalCoord
-
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.1
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
-
-logfile = open("/tmp/laikad_orig_pos.log", "w+")
 
 class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_orbits=True, auto_update=False,
@@ -109,18 +102,6 @@ class Laikad:
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-
-      print(f"pos_fix: {pos_fix}")
-      print(f"pospos_fix_residual_fix: {pos_fix_residual}")
-
-      if len(pos_fix) != 0:
-        geo = ecef2geodetic(pos_fix)
-        logfile.write(f"pmeas: {processed_measurements}\n")
-        logfile.write(f"geo: {geo[0]} {geo[1]} {geo[2]}\n")
-        logfile.write(f"ecef: {pos_fix[0]} {pos_fix[1]} {pos_fix[2]}\n")
-        logfile.write(f"resi: {pos_fix_residual}\n")
-        logfile.flush()
-
       if len(pos_fix) > 0:
         self.last_pos_fix_t = t
         residual_median = np.median(np.abs(pos_fix_residual))
@@ -217,28 +198,6 @@ class Laikad:
         "ubloxMonoTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
-
-      # DEBUG: otherwise the measurements are out of sync
-      '''
-      dat.logMonoTime = gnss_mono_time - 31186506
-
-      # some extra logging
-      pos_ecef = np.array(ecef_pos.tolist())
-      vel_ecef = np.array(ecef_vel.tolist())
-
-      pos_geodetic = ecef2geodetic(pos_ecef)
-      conv = LocalCoord(pos_geodetic, pos_ecef)
-
-      ned_vel = conv.ecef2ned(pos_ecef + vel_ecef)
-
-      if np.linalg.norm(ned_vel) != 0:
-        ned_vel = ned_vel/np.linalg.norm(ned_vel)
-      
-      bearing = (math.atan2(ned_vel[1], ned_vel[0])*180/math.pi + 360) % 360 # make positive
-      print(f"Bearing: {bearing} ({round(ned_vel[0],4)} {round(ned_vel[1],4)} {round(ned_vel[2],4)})")
-      print(f"lat: {pos_geodetic[0]} lon: {pos_geodetic[1]}")
-      '''
-
       return dat
     elif self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
@@ -397,8 +356,7 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
-  use_qcom = True #not Params().get_bool("UbloxAvailable", block=True)
-  print("lets get done!!")
+  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom:
     raw_gnss_socket = "qcomGnss"
   else:
