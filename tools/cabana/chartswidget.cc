@@ -3,7 +3,6 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QRubberBand>
-#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QtConcurrent>
@@ -175,8 +174,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->setShowToolTips(true);
   chart->layout()->setContentsMargins(0, 0, 0, 0);
-  // top margin for title
-  chart->setMargins({0, 11, 0, 0});
 
   line_marker = new QGraphicsLineItem(chart);
   line_marker->setZValue(chart->zValue() + 10);
@@ -203,21 +200,12 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   setRubberBand(QChartView::HorizontalRubberBand);
   updateFromSettings();
 
-  QTimer *timer = new QTimer(this);
-  timer->setInterval(100);
-  timer->setSingleShot(true);
-  timer->callOnTimeout(this, &ChartView::adjustChartMargins);
-
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
   QObject::connect(&settings, &Settings::changed, this, &ChartView::updateFromSettings);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
-  QObject::connect(chart, &QChart::plotAreaChanged, [=](const QRectF &plotArea) {
-    // use a singleshot timer to avoid recursion call.
-    timer->start();
-  });
 }
 
 ChartView::~ChartView() {
@@ -318,15 +306,16 @@ void ChartView::setDisplayRange(double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
+    adjustChartMargins();
   }
 }
 
 void ChartView::adjustChartMargins() {
   // TODO: Remove hardcoded aligned_pos
   const int aligned_pos = 60;
-  if (chart()->plotArea().left() != aligned_pos) {
+  if ((int)chart()->plotArea().left() != aligned_pos) {
     const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
-    chart()->setMargins(QMargins(left_margin, 11, 0, 0));
+    chart()->setMargins(QMargins(left_margin, 11, 11, 11));
     updateLineMarker(can->currentSec());
   }
 }
@@ -341,7 +330,7 @@ void ChartView::updateLineMarker(double current_sec) {
 
 void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
-  if (!events) return;
+  if (!events || sigs.isEmpty()) return;
 
   for (int i = 0; i < sigs.size(); ++i) {
     if (auto &s = sigs[i]; !sig || s.sig == sig) {
