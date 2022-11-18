@@ -518,17 +518,16 @@ bool Localizer::is_gps_ok() {
 }
 
 bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
-  for (auto &kv : critical_services) {
-    if (kv.second >= INPUT_INVALID_THRESHOLD) {
+  for (auto &kv : critical_services){
+    if (kv.second >= INPUT_INVALID_THRESHOLD){
       return false;
     }
   }
   return true;
 }
 
-bool Localizer::is_timestamp_valid(double current_time) {  
+bool Localizer::is_timestamp_valid(double current_time) {
   double filter_time = this->kf->get_filter_time();
-  //LOGE("Filter time diff: %lu", filter_time - current_time)
   if (!std::isnan(filter_time) && ((filter_time - current_time) > MAX_FILTER_REWIND_TIME)) {
     LOGE("Observation timestamp is older than the max rewind threshold of the filter");
     return false;
@@ -564,8 +563,7 @@ int Localizer::locationd_thread() {
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
-  const std::vector<std::string> critical_input_services = {
-    "cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
+  const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
   for (std::string service : critical_input_services) {
     this->observation_values_invalid.insert({service, 0.0});
   }
@@ -575,7 +573,7 @@ int Localizer::locationd_thread() {
     if (filterInitialized){
       this->observation_timings_invalid_reset();
       for (const char* service : service_list) {
-        if (sm.updated(service) && sm.valid(service)) {
+        if (sm.updated(service) && sm.valid(service)){
           const cereal::Event::Reader log = sm[service];
           this->handle_msg(log);
         }
@@ -607,7 +605,6 @@ int Localizer::locationd_thread() {
       cnt++;
     }
   }
-
   return 0;
 }
 
