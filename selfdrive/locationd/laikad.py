@@ -3,7 +3,6 @@ import json
 import math
 import os
 import time
-import shutil
 from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from datetime import datetime
@@ -44,11 +43,6 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-
-    # cleanUp cache
-    if os.path.exists(DOWNLOADS_CACHE_FOLDER):
-      shutil.rmtree(DOWNLOADS_CACHE_FOLDER)
-      os.mkdir(DOWNLOADS_CACHE_FOLDER)
 
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
