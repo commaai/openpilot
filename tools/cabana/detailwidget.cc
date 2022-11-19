@@ -188,7 +188,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
 void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
+  if (msg_id.isEmpty())
     return;
 
   if (tab_widget->currentIndex() == 0)

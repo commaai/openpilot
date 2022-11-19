@@ -11,12 +11,16 @@ inline const Signal &get_signal(const DBCMsg *m, int index) {
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   bool has_signal = dbc_msg && !dbc_msg->sigs.empty();
   if (role == Qt::DisplayRole) {
-    const auto &m = messages[index.row()];
-    if (index.column() == 0) {
-      return QString::number(m.ts, 'f', 2);
+    const auto &m = logs[index.row()];
+    if (!m.dat.isEmpty()) {
+      if (index.column() == 0) {
+        return QString::number(m.ts, 'f', 2);
+      }
+      return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), get_signal(dbc_msg, index.column() - 1)))
+                        : toHex(m.dat);
+    } else {
+      return "--";
     }
-    return has_signal ? QString::number(get_raw_value((uint8_t *)m.dat.begin(), m.dat.size(), get_signal(dbc_msg, index.column() - 1)))
-                      : toHex(m.dat);
   } else if (role == Qt::FontRole && index.column() == 1 && !has_signal) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
@@ -52,9 +56,21 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 void HistoryLogModel::updateState() {
   if (msg_id.isEmpty()) return;
 
+  logs.clear();
   int prev_row_count = row_count;
-  messages = can->messages(msg_id);
-  row_count = messages.size();
+  auto messages = can->messages(msg_id);
+  if (!messages.empty()) {
+    const float freq = messages.front().freq;
+    double prev_sec = can->currentSec();
+    for (auto &can_data : messages) {
+      if (freq > 0 && (prev_sec - can_data.ts) > std::max(1.0, 2 * (1.0 / freq))) {
+        logs.emplace_back(CanData{});
+      }
+      logs.emplace_back(can_data);
+      prev_sec = can_data.ts;
+    }
+  }
+  row_count = logs.size();
   int delta = row_count - prev_row_count;
   if (delta > 0) {
     beginInsertRows({}, prev_row_count, row_count - 1);

@@ -68,7 +68,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     switch (index.column()) {
       case 0: return msgName(id);
       case 1: return id;
-      case 2: return can_data.freq;
+      case 2: return (int)(can_data.freq);
       case 3: return can_data.count;
       case 4: return toHex(can_data.dat);
     }
