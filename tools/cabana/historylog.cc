@@ -109,5 +109,5 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
 
 int HistoryLog::sizeHintForColumn(int column) const {
   // sizeHintForColumn is only called for column 0 (ResizeToContents)
-  return itemDelegate()->sizeHint(viewOptions(), model->index(0, 0)).width() + 1; // +1 for grid
+  return itemDelegate()->sizeHint(viewOptions(), model->index(0, 0)).width() + 5;
 }
