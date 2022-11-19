@@ -369,14 +369,11 @@ void ChartView::updateAxisY() {
     }
   } else {
     for (auto &s : sigs) {
-      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-      if (begin == s.vals.end())
-        continue;
-
-      auto end = std::upper_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](double x, auto &p) { return x < p.x(); });
-      const auto [min, max] = std::minmax_element(begin, end, [](auto &p1, auto &p2) { return p1.y() < p2.y(); });
-      if (min->y() < min_y) min_y = min->y();
-      if (max->y() > max_y) max_y = max->y();
+      for (int i = 0; i < s.series->count(); ++i) {
+        double y = s.series->at(i).y();
+        if (y < min_y) min_y = y;
+        if (y > max_y) max_y = y;
+      }
     }
   }
 
