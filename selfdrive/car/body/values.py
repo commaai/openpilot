@@ -26,6 +26,12 @@ CAR_INFO: Dict[str, CarInfo] = {
   CAR.BODY: CarInfo("comma body", package="All"),
 }
 
+FINGERPRINTS = {
+  CAR.BODY: [{
+    513: 8, 516: 8, 514: 3, 515: 4,
+  }],
+}
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
