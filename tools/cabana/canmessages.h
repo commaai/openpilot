@@ -16,7 +16,6 @@ struct CanData {
   double ts = 0.;
   uint32_t count = 0;
   uint32_t freq = 0;
-  uint16_t bus_time = 0;
   QByteArray dat;
 };
 
@@ -63,6 +62,7 @@ protected:
   Replay *replay = nullptr;
   std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
+  std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
   QHash<QString, std::deque<CanData>> received_msgs;
 };
@@ -78,12 +78,6 @@ inline const QString &getColor(int i) {
   // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
-}
-
-inline QColor hoverColor(const QColor &color) {
-  QColor c = color.convertTo(QColor::Hsv);
-  c.setHsv(color.hue(), 180, 180);
-  return c;
 }
 
 // A global pointer referring to the unique CANMessages object
