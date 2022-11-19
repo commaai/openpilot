@@ -307,7 +307,6 @@ class LongitudinalMpc:
     self.max_a = max_a
 
   def update(self, carstate, radarstate, v_cruise, x, v, a, j):
-    print(self.source, self.mode)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
