@@ -360,6 +360,8 @@ void ChartView::updateSeries(const Signal *sig) {
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
+  if (sigs.isEmpty()) return;
+
   double min_y = std::numeric_limits<double>::max();
   double max_y = std::numeric_limits<double>::lowest();
   if (events_range == std::pair{axis_x->min(), axis_x->max()}) {
@@ -378,10 +380,10 @@ void ChartView::updateAxisY() {
       if (min->y() < min_y) min_y = min->y();
       if (max->y() > max_y) max_y = max->y();
     }
-    if (min_y == std::numeric_limits<double>::max()) min_y = 0;
-    if (max_y == std::numeric_limits<double>::lowest()) max_y = 0;
   }
 
+  if (min_y == std::numeric_limits<double>::max()) min_y = 0;
+  if (max_y == std::numeric_limits<double>::lowest()) max_y = 0;
   if (max_y == min_y) {
     axis_y->setRange(min_y - 1, max_y + 1);
   } else {
@@ -403,9 +405,8 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
     QRectF rect = rubber->geometry().normalized();
-    rect.translate(-chart()->plotArea().topLeft());
-    double min = axis_x->min() + (rect.left() / chart()->plotArea().width()) * (axis_x->max() - axis_x->min());
-    double max = axis_x->min() + (rect.right() / chart()->plotArea().width()) * (axis_x->max() - axis_x->min());
+    double min = chart()->mapToValue(rect.topLeft()).x();
+    double max = chart()->mapToValue(rect.bottomRight()).x();
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
@@ -428,8 +429,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   const auto plot_area = chart()->plotArea();
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
-    double x = std::clamp((double)ev->pos().x(), plot_area.left(), plot_area.right() - 1);
-    double sec = axis_x->min() + (axis_x->max() - axis_x->min()) * (x - plot_area.left()) / plot_area.width();
+    double sec = chart()->mapToValue(ev->pos()).x();
     QStringList text_list;
     QPointF pos = plot_area.bottomRight();
     double tm = 0.0;
@@ -464,8 +464,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
-  qreal x = chart()->plotArea().left() +
-            chart()->plotArea().width() * (can->currentSec() - axis_x->min()) / (axis_x->max() - axis_x->min());
+  qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, chart()->plotArea().top() - 2}, QPointF{x, chart()->plotArea().bottom() + 2});
 }
