@@ -57,10 +57,23 @@ void ChartsWidget::eventsMerged() {
     auto it = std::find_if(events->begin(), events->end(), [=](const Event *e) { return e->which == cereal::Event::Which::CAN; });
     event_range.first = it == events->end() ? 0 : (*it)->mono_time / (double)1e9 - can->routeStartTime();
     event_range.second = it == events->end() ? 0 : events->back()->mono_time / (double)1e9 - can->routeStartTime();
-    if (display_range.first == 0 && display_range.second == 0) {
-      display_range.first = event_range.first;
-      display_range.second = std::min(event_range.first + settings.max_chart_x_range, event_range.second);
-    }
+    updateDisplayRange();
+  }
+}
+
+void ChartsWidget::updateDisplayRange() {
+  auto prev_range = display_range;
+  double current_sec = can->currentSec();
+  if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
+    // reached the end, or seeked to a timestamp out of range.
+    display_range.first = current_sec - 5;
+  }
+  display_range.first = std::max(display_range.first, event_range.first);
+  display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
+  if (prev_range != display_range) {
+    QFutureSynchronizer<void> future_synchronizer;
+    for (auto c : charts)
+      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
   }
 }
 
@@ -79,24 +92,10 @@ void ChartsWidget::zoomReset() {
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
-  const double current_sec = can->currentSec();
-  if (is_zoomed) {
-    if (current_sec < zoomed_range.first || current_sec >= zoomed_range.second) {
-      can->seekTo(zoomed_range.first);
-    }
-  } else {
-    auto prev_range = display_range;
-    if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
-      // line marker reached the end, or seeked to a timestamp out of range.
-      display_range.first = current_sec - 5;
-    }
-    display_range.first = std::max(display_range.first, event_range.first);
-    display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
-    if (prev_range != display_range) {
-      QFutureSynchronizer<void> future_synchronizer;
-      for (auto c : charts)
-        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
-    }
+  if (!is_zoomed) {
+    updateDisplayRange();
+  } else if (can->currentSec() < zoomed_range.first || can->currentSec() >= zoomed_range.second) {
+    can->seekTo(zoomed_range.first);
   }
 
   const auto &range = is_zoomed ? zoomed_range : display_range;

@@ -93,6 +93,7 @@ signals:
 private:
   void eventsMerged();
   void updateState();
+  void updateDisplayRange();
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
