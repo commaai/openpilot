@@ -131,6 +131,8 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     if (!chart) {
       chart = new ChartView(this);
       chart->setEventsRange(display_range);
+      auto range = is_zoomed ? zoomed_range : display_range;
+      chart->setDisplayRange(range.first, range.second);
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
@@ -138,8 +140,6 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
-    auto range = is_zoomed ? zoomed_range : display_range;
-    chart->setDisplayRange(range.first, range.second);
     chart->addSeries(id, sig);
     emit chartOpened(id, sig);
   }
@@ -304,9 +304,8 @@ void ChartView::setEventsRange(const std::pair<double, double> &range) {
 
 void ChartView::setDisplayRange(double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
-    updateAxisY();
     axis_x->setRange(min, max);
-    QTimer::singleShot(0, this, &ChartView::adjustChartMargins);
+    updateAxisY();
   }
 }
 
@@ -390,6 +389,8 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y - range * 0.05, max_y + range * 0.05);
     axis_y->applyNiceNumbers();
   }
+
+  QTimer::singleShot(0, this, &ChartView::adjustChartMargins);
 }
 
 void ChartView::leaveEvent(QEvent *event) {
