@@ -2,6 +2,7 @@
 
 #include <QDoubleValidator>
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QScrollArea>
 #include <QToolBar>
@@ -122,7 +123,9 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   save_timer->callOnTimeout(this, &SignalEdit::saveSignal);
 
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
-  QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) { emit showChart(msg_id, sig, checked); });
+  QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) {
+    emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
+  });
   QObject::connect(seek_btn, &QToolButton::clicked, [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
   QObject::connect(remove_btn, &QToolButton::clicked,  [this]() { emit remove(sig); });
   QObject::connect(form, &SignalForm::changed, [this]() { save_timer->start(); });
@@ -172,7 +175,7 @@ void SignalEdit::saveSignal() {
 }
 
 void SignalEdit::setChartOpened(bool opened) {
-  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot"));
+  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened chart"));
   plot_btn->setChecked(opened);
 }
 
