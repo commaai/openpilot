@@ -57,7 +57,7 @@ void ChartsWidget::eventsMerged() {
     auto it = std::find_if(events->begin(), events->end(), [=](const Event *e) { return e->which == cereal::Event::Which::CAN; });
     event_range.first = it == events->end() ? 0 : (*it)->mono_time / (double)1e9 - can->routeStartTime();
     event_range.second = it == events->end() ? 0 : events->back()->mono_time / (double)1e9 - can->routeStartTime();
-    if (display_range.first == 0 && event_range.second == 0) {
+    if (display_range.first == 0 && display_range.second == 0) {
       display_range.first = event_range.first;
       display_range.second = std::min(event_range.first + settings.max_chart_x_range, event_range.second);
     }
