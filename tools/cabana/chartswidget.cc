@@ -122,6 +122,7 @@ ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
 }
 
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
+  setUpdatesEnabled(false);
   if (!show) {
     if (ChartView *chart = findChart(id, sig)) {
       chart->removeSeries(id, sig);
@@ -138,11 +139,13 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
+    auto range = is_zoomed ? zoomed_range : display_range;
+    chart->setDisplayRange(range.first, range.second);
     chart->addSeries(id, sig);
     emit chartOpened(id, sig);
-    updateState();
   }
   updateToolBar();
+  setUpdatesEnabled(true);
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
@@ -302,8 +305,8 @@ void ChartView::setEventsRange(const std::pair<double, double> &range) {
 
 void ChartView::setDisplayRange(double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
-    axis_x->setRange(min, max);
     updateAxisY();
+    axis_x->setRange(min, max);
     QTimer::singleShot(0, this, &ChartView::adjustChartMargins);
   }
 }
