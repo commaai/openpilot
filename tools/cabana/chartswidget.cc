@@ -290,7 +290,6 @@ void ChartView::updateTitle() {
 void ChartView::updateFromSettings() {
   setFixedHeight(settings.chart_height);
   chart()->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
-  auto color = chart()->titleBrush().color();
 }
 
 void ChartView::setEventsRange(const std::pair<double, double> &range) {
@@ -321,8 +320,8 @@ void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
   if (!events || sigs.isEmpty()) return;
 
-  for (int i = 0; i < sigs.size(); ++i) {
-    if (auto &s = sigs[i]; !sig || s.sig == sig) {
+  for (auto &s : sigs) {
+    if (!sig || s.sig == sig) {
       s.vals.clear();
       s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
       s.min_y = std::numeric_limits<double>::max();
@@ -348,9 +347,7 @@ void ChartView::updateSeries(const Signal *sig) {
           }
         }
       }
-
-      QLineSeries *series = (QLineSeries *)chart()->series()[i];
-      series->replace(s.vals);
+      s.series->replace(s.vals);
     }
   }
   updateAxisY();
