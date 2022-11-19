@@ -351,6 +351,7 @@ class LongitudinalMpc:
 
       x_and_cruise = np.column_stack([x, cruise_target])
       x = np.min(x_and_cruise, axis=1)
+
       self.source = 'e2e' if x_and_cruise[1,0] < x_and_cruise[1,1] else 'cruise'
 
     else:
