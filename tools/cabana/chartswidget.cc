@@ -122,11 +122,7 @@ ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
 
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
   setUpdatesEnabled(false);
-  if (!show) {
-    if (ChartView *chart = findChart(id, sig)) {
-      chart->removeSeries(id, sig);
-    }
-  } else {
+  if (show) {
     ChartView *chart = merge && charts.size() > 0 ? charts.back() : nullptr;
     if (!chart) {
       chart = new ChartView(this);
@@ -142,6 +138,8 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     }
     chart->addSeries(id, sig);
     emit chartOpened(id, sig);
+  } else if (ChartView *chart = findChart(id, sig)) {
+    chart->removeSeries(id, sig);
   }
   updateToolBar();
   setUpdatesEnabled(true);
