@@ -17,6 +17,7 @@
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   undo_stack = new QUndoStack(this);
 
+  setMinimumWidth(500);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -90,6 +91,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log, "Logs");
   main_layout->addWidget(tab_widget);
 
+  QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
@@ -149,7 +151,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    for (auto &[name, sig] : msg->sigs) {
+    for (auto sig : msg->getSignals()) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
         form = new SignalEdit(i);
@@ -162,8 +164,8 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signals_layout->addWidget(form);
         signal_list.push_back(form);
       }
-      form->setSignal(msg_id, &sig);
-      form->setChartOpened(charts->isChartOpened(msg_id, &sig));
+      form->setSignal(msg_id, sig);
+      form->setChartOpened(charts->isChartOpened(msg_id, sig));
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
@@ -197,9 +199,15 @@ void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
 
 void DetailWidget::showFormClicked() {
   auto s = qobject_cast<SignalEdit *>(sender());
+  showForm(s->sig);
+}
+
+void DetailWidget::showForm(const Signal *sig) {
   setUpdatesEnabled(false);
-  for (auto f : signal_list)
-    f->updateForm(f == s && !f->isFormVisible());
+  for (auto f : signal_list) {
+    f->updateForm(f->sig == sig && !f->isFormVisible());
+    if (f->sig == sig) scroll->ensureWidgetVisible(f);
+  }
   setUpdatesEnabled(true);
 }
 
@@ -235,7 +243,7 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
       }
     }
   }
-  Signal sig = {.is_little_endian = little_endian};
+  Signal sig = {.is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
     if (msg->sigs.count(sig.name.c_str()) == 0) break;

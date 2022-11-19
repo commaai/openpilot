@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
+#include <QTimer>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -41,7 +42,7 @@ public:
 
 signals:
   void highlight(const Signal *sig);
-  void showChart(const QString &name, const Signal *sig, bool show);
+  void showChart(const QString &name, const Signal *sig, bool show, bool merge);
   void remove(const Signal *sig);
   void save(const Signal *sig, const Signal &new_sig);
   void showFormClicked();
@@ -57,6 +58,7 @@ protected:
   QLabel *icon;
   int form_idx = 0;
   QToolButton *plot_btn;
+  QTimer *save_timer;
 };
 
 class SignalFindDlg : public QDialog {
