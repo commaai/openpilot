@@ -5,7 +5,6 @@
 #include <QGraphicsLineItem>
 #include <QGraphicsProxyWidget>
 #include <QGraphicsTextItem>
-#include <QPushButton>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
