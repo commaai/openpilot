@@ -1,15 +1,15 @@
 #pragma once
 
-#include <map>
-
 #include <QLabel>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
+#include <QGraphicsProxyWidget>
 #include <QGraphicsTextItem>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QWidget>
 #include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
 
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
@@ -20,62 +20,69 @@ class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(const QString &id, const Signal *sig, QWidget *parent = nullptr);
-  void updateSeries(const std::pair<double, double> range);
-  void setRange(double min, double max, bool force_update = false);
-  void updateLineMarker(double current_sec);
-  void updateFromSettings();
+  ChartView(QWidget *parent = nullptr);
+  ~ChartView();
+  void addSeries(const QString &msg_id, const Signal *sig);
+  void removeSeries(const QString &msg_id, const Signal *sig);
+  bool hasSeries(const QString &msg_id, const Signal *sig) const;
+  void updateSeries(const Signal *sig = nullptr);
+  void setEventsRange(const std::pair<double, double> &range);
+  void setDisplayRange(double min, double max);
+
+  struct SigItem {
+    QString msg_id;
+    uint8_t source = 0;
+    uint32_t address = 0;
+    const Signal *sig = nullptr;
+    QLineSeries *series = nullptr;
+    double min_y = 0;
+    double max_y = 0;
+    QVector<QPointF> vals;
+  };
 
 signals:
+  void seriesRemoved(const QString &id, const Signal *sig);
   void zoomIn(double min, double max);
   void zoomReset();
+  void remove();
+
+private slots:
+  void msgRemoved(uint32_t address);
+  void msgUpdated(uint32_t address);
+  void signalUpdated(const Signal *sig);
+  void signalRemoved(const Signal *sig);
 
 private:
+  QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
-  void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void resizeEvent(QResizeEvent *event) override;
   void adjustChartMargins();
   void updateAxisY();
+  void updateTitle();
+  void updateFromSettings();
+  void drawForeground(QPainter *painter, const QRectF &rect) override;
 
+  QValueAxis *axis_x;
+  QValueAxis *axis_y;
+  QGraphicsItemGroup *item_group;
   QGraphicsLineItem *track_line;
   QGraphicsEllipseItem *track_ellipse;
   QGraphicsTextItem *value_text;
-  QGraphicsLineItem *line_marker;
-  QVector<QPointF> vals;
-  QString id;
-  const Signal *signal;
-};
-
-class ChartWidget : public QWidget {
-Q_OBJECT
-
-public:
-  ChartWidget(const QString &id, const Signal *sig, QWidget *parent);
-  void updateTitle();
-  void updateFromSettings();
-
-signals:
-  void remove(const QString &msg_id, const Signal *sig);
-
-public:
-  QString id;
-  const Signal *signal;
-  QWidget *header;
-  QLabel *msg_name_label;
-  QLabel *sig_name_label;
-  QPushButton *remove_btn;
-  ChartView *chart_view = nullptr;
-};
+  QGraphicsProxyWidget *close_btn_proxy;
+  std::pair<double, double> events_range = {0, 0};
+  QList<SigItem> sigs;
+ };
 
 class ChartsWidget : public QWidget {
   Q_OBJECT
 
 public:
   ChartsWidget(QWidget *parent = nullptr);
-  void showChart(const QString &id, const Signal *sig, bool show);
-  void removeChart(ChartWidget *chart);
-  bool isChartOpened(const QString &id, const Signal *sig);
+  void showChart(const QString &id, const Signal *sig, bool show, bool merge);
+  void removeChart(ChartView *chart);
+  inline bool isChartOpened(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
 signals:
   void dock(bool floating);
@@ -88,21 +95,19 @@ private:
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
-  void signalUpdated(const Signal *sig);
-  void updateTitleBar();
-  void removeAll(const Signal *sig = nullptr);
+  void updateToolBar();
+  void removeAll();
   bool eventFilter(QObject *obj, QEvent *event) override;
+  ChartView *findChart(const QString &id, const Signal *sig);
 
-  QWidget *title_bar;
   QLabel *title_label;
   QLabel *range_label;
   bool docking = true;
-  QPushButton *dock_btn;
-  QPushButton *reset_zoom_btn;
-  QPushButton *remove_all_btn;
+  QAction *dock_btn;
+  QAction *reset_zoom_btn;
+  QAction *remove_all_btn;
   QVBoxLayout *charts_layout;
-  QList<ChartWidget *> charts;
-
+  QList<ChartView *> charts;
   bool is_zoomed = false;
   std::pair<double, double> event_range;
   std::pair<double, double> display_range;

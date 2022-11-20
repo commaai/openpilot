@@ -28,12 +28,17 @@ public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const QString &message_id);
   void updateState();
-  Qt::ItemFlags flags(const QModelIndex &index) const;
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
+  inline QModelIndex bitIndex(int bit, bool is_lb) const { return index(bit / 8, is_lb ? (7 - bit % 8) : bit % 8); }
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override {
+    return createIndex(row, column, (void *)&items[row * column_count + column]);
+  }
+  Qt::ItemFlags flags(const QModelIndex &index) const override {
+    return (index.column() == column_count - 1) ? Qt::ItemIsEnabled : Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  }
 
   struct Item {
     QColor bg_color = QColor(Qt::white);
@@ -42,13 +47,13 @@ public:
     QString val = "0";
     QList<const Signal *> sigs;
   };
+  std::vector<Item> items;
 
 private:
   QString msg_id;
-  const Msg *dbc_msg;
+  const DBCMsg *dbc_msg;
   int row_count = 0;
   const int column_count = 9;
-  std::vector<Item> items;
 };
 
 class BinaryView : public QTableView {
@@ -59,24 +64,26 @@ public:
   void setMessage(const QString &message_id);
   void highlight(const Signal *sig);
   QSet<const Signal*> getOverlappingSignals() const;
-  inline const Signal *hoveredSignal() const { return hovered_sig; }
   inline void updateState() { model->updateState(); }
 
 signals:
+  void signalClicked(const Signal *sig);
   void signalHovered(const Signal *sig);
-  void addSignal(int from, int size);
+  void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int size);
 
 private:
+  std::tuple<int, int, bool> getSelection(QModelIndex index);
   void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
-  const Signal *getResizingSignal() const;
 
   QModelIndex anchor_index;
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;
+  const Signal *resize_sig = nullptr;
   const Signal *hovered_sig = nullptr;
+  friend class BinaryItemDelegate;
 };

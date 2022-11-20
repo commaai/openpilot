@@ -34,6 +34,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._EE_THRESH11 = 0.275
     self._EE_THRESH12 = 5.5
     self._EE_MAX_OFFSET1 = 0.06
+    self._EE_MIN_OFFSET1 = 0.025
     self._EE_THRESH21 = 0.01
     self._EE_THRESH22 = 0.35
 
@@ -206,7 +207,7 @@ class DriverStatus():
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.ee1_calibrated:
-      ee1_dist = self.eev1 > min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1) * self.settings._EE_THRESH12
+      ee1_dist = self.eev1 > max(min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1), self.settings._EE_MIN_OFFSET1) * self.settings._EE_THRESH12
     else:
       ee1_dist = self.eev1 > self.settings._EE_THRESH11
     # if self.ee2_calibrated:
