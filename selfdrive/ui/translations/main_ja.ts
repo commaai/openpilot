@@ -1039,11 +1039,11 @@ location set</source>
     </message>
     <message>
         <source>New Driving Visualization</source>
-        <translation>新しい運転視覚画面</translation>
+        <translation>新しい運転画面</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>新しい運転視覚画面では、低速時に広角カメラの映像を表示して曲がる際の道路の視覚情報を向上します。実験段階を表すマークが右上に表示されます。</translation>
+        <translation>新しい運転画面では、低速時に広角カメラの映像を表示することで、曲がる際の道路の視覚を向上します。実験段階を表すマークが右上に表示されます。</translation>
     </message>
 </context>
 <context>
