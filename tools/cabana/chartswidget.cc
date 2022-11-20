@@ -54,9 +54,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
 void ChartsWidget::eventsMerged() {
   if (auto events = can->events(); events && !events->empty()) {
-    auto it = std::find_if(events->begin(), events->end(), [=](const Event *e) { return e->which == cereal::Event::Which::CAN; });
-    event_range.first = it == events->end() ? 0 : (*it)->mono_time / (double)1e9 - can->routeStartTime();
-    event_range.second = it == events->end() ? 0 : events->back()->mono_time / (double)1e9 - can->routeStartTime();
+    event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
+    event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
     updateDisplayRange();
   }
 }
