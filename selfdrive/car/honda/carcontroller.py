@@ -99,6 +99,12 @@ HUDData = namedtuple("HUDData",
                       "lanes_visible", "fcw", "acc_alert", "steer_required"])
 
 
+def rate_limit_steer(new_steer, last_steer):
+  # TODO just hardcoded ramp to min/max in 0.33s for all Honda
+  MAX_DELTA = 3 * DT_CTRL
+  return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
+
+
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
@@ -116,6 +122,7 @@ class CarController:
     self.speed = 0.0
     self.gas = 0.0
     self.brake = 0.0
+    self.last_steer = 0.0
 
   def update(self, CC, CS):
     actuators = CC.actuators
@@ -130,6 +137,10 @@ class CarController:
       accel = 0.0
       gas, brake = 0.0, 0.0
 
+    # *** rate limit steer ***
+    limited_steer = rate_limit_steer(actuators.steer, self.last_steer)
+    self.last_steer = limited_steer
+
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
                                                                            CS.out.vEgo, self.CP.carFingerprint)
@@ -143,7 +154,7 @@ class CarController:
     # **** process the car messages ****
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(interp(-actuators.steer * self.params.STEER_MAX,
+    apply_steer = int(interp(-limited_steer * self.params.STEER_MAX,
                              self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
 
     # Send CAN commands
@@ -250,6 +261,7 @@ class CarController:
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
     new_actuators.brake = self.brake
+    new_actuators.steer = self.last_steer
 
     self.frame += 1
     return new_actuators, can_sends

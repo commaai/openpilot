@@ -17,6 +17,7 @@
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   undo_stack = new QUndoStack(this);
 
+  setMinimumWidth(500);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -64,31 +65,36 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   frame_layout->addWidget(warning_widget);
   main_layout->addWidget(title_frame);
 
-  QWidget *container = new QWidget(this);
-  QVBoxLayout *container_layout = new QVBoxLayout(container);
-  container_layout->setSpacing(0);
-  container_layout->setContentsMargins(0, 0, 0, 0);
-
-  scroll = new QScrollArea(this);
-  scroll->setWidget(container);
-  scroll->setWidgetResizable(true);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
-
+  // msg widget
+  QWidget *msg_widget = new QWidget(this);
+  QVBoxLayout *msg_layout = new QVBoxLayout(msg_widget);
+  msg_layout->setContentsMargins(0, 0, 0, 0);
   // binary view
   binary_view = new BinaryView(this);
-  container_layout->addWidget(binary_view);
-
+  msg_layout->addWidget(binary_view);
   // signals
   signals_layout = new QVBoxLayout();
-  container_layout->addLayout(signals_layout);
+  signals_layout->setSpacing(0);
+  msg_layout->addLayout(signals_layout);
+  msg_layout->addStretch(0);
 
-  // history log
+  scroll = new QScrollArea(this);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setWidget(msg_widget);
+  scroll->setWidgetResizable(true);
+  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  tab_widget = new QTabWidget(this);
+  tab_widget->setTabPosition(QTabWidget::South);
+  tab_widget->addTab(scroll, "Msg");
   history_log = new HistoryLog(this);
-  container_layout->addWidget(history_log);
+  tab_widget->addTab(history_log, "Logs");
+  main_layout->addWidget(tab_widget);
 
+  QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
+  QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &CANMessages::msgsReceived, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
@@ -145,20 +151,21 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    for (auto &[name, sig] : msg->sigs) {
+    for (auto sig : msg->getSignals()) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
         form = new SignalEdit(i);
         QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
         QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
+        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showFormClicked);
         QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
         QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
         QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
         signals_layout->addWidget(form);
         signal_list.push_back(form);
       }
-      form->setSignal(msg_id, &sig);
-      form->setChartOpened(charts->isChartOpened(msg_id, &sig));
+      form->setSignal(msg_id, sig);
+      form->setChartOpened(charts->isChartOpened(msg_id, sig));
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
@@ -176,16 +183,32 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 
   warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
-  QTimer::singleShot(1, [this]() { setUpdatesEnabled(true); });
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if (!msgs->contains(msg_id))
+  if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
     return;
 
-  binary_view->updateState();
-  history_log->updateState();
+  if (tab_widget->currentIndex() == 0)
+    binary_view->updateState();
+  else
+    history_log->updateState();
+}
+
+void DetailWidget::showFormClicked() {
+  auto s = qobject_cast<SignalEdit *>(sender());
+  showForm(s->sig);
+}
+
+void DetailWidget::showForm(const Signal *sig) {
+  setUpdatesEnabled(false);
+  for (auto f : signal_list) {
+    f->updateForm(f->sig == sig && !f->isFormVisible());
+    if (f->sig == sig) scroll->ensureWidgetVisible(f);
+  }
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
@@ -220,7 +243,7 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
       }
     }
   }
-  Signal sig = {.is_little_endian = little_endian};
+  Signal sig = {.is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
     if (msg->sigs.count(sig.name.c_str()) == 0) break;

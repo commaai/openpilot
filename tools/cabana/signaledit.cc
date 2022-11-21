@@ -2,9 +2,9 @@
 
 #include <QDoubleValidator>
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QScrollArea>
-#include <QTimer>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -95,7 +95,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   plot_btn->setAutoRaise(true);
   title_layout->addWidget(plot_btn);
   auto seek_btn = new QToolButton(this);
-  seek_btn->setIcon(QIcon::fromTheme("edit-find"));
+  seek_btn->setText("🔍");
   seek_btn->setAutoRaise(true);
   seek_btn->setToolTip(tr("Find signal values"));
   title_layout->addWidget(seek_btn);
@@ -117,11 +117,18 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
+  save_timer = new QTimer(this);
+  save_timer->setInterval(300);
+  save_timer->setSingleShot(true);
+  save_timer->callOnTimeout(this, &SignalEdit::saveSignal);
+
   QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
-  QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) { emit showChart(msg_id, sig, checked); });
+  QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) {
+    emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
+  });
   QObject::connect(seek_btn, &QToolButton::clicked, [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
   QObject::connect(remove_btn, &QToolButton::clicked,  [this]() { emit remove(sig); });
-  QObject::connect(form, &SignalForm::changed, this, &SignalEdit::saveSignal);
+  QObject::connect(form, &SignalForm::changed, [this]() { save_timer->start(); });
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
@@ -168,14 +175,16 @@ void SignalEdit::saveSignal() {
 }
 
 void SignalEdit::setChartOpened(bool opened) {
-  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot"));
+  plot_btn->setToolTip(opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened chart"));
   plot_btn->setChecked(opened);
 }
 
 void SignalEdit::updateForm(bool visible) {
   if (visible && sig) {
     form->changed_by_user = false;
-    form->name->setText(sig->name.c_str());
+    if (form->name->text() != sig->name.c_str()) {
+      form->name->setText(sig->name.c_str());
+    }
     form->endianness->setCurrentIndex(sig->is_little_endian ? 0 : 1);
     form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
     form->factor->setText(QString::number(sig->factor));
@@ -189,24 +198,9 @@ void SignalEdit::updateForm(bool visible) {
   icon->setText(visible ? "▼ " : "> ");
 }
 
-void SignalEdit::showFormClicked() {
-  parentWidget()->setUpdatesEnabled(false);
-  for (auto &edit : parentWidget()->findChildren<SignalEdit*>())
-    edit->updateForm(edit == this && !form->isVisible());
-  QTimer::singleShot(1, [this]() { parentWidget()->setUpdatesEnabled(true); });
-}
-
 void SignalEdit::signalHovered(const Signal *s) {
-  auto bg_color = sig == s ? hoverColor(getColor(form_idx)) : QColor(getColor(form_idx));
   auto color = sig == s ? "white" : "black";
-  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(bg_color.name()));
-}
-
-void SignalEdit::hideEvent(QHideEvent *event) {
-  msg_id = "";
-  sig = nullptr;
-  updateForm(false);
-  QWidget::hideEvent(event);
+  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(getColor(form_idx)));
 }
 
 void SignalEdit::enterEvent(QEvent *event) {

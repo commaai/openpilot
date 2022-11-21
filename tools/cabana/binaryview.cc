@@ -23,11 +23,13 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   delegate = new BinaryItemDelegate(this);
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  verticalHeader()->setSectionsClickable(false);
   horizontalHeader()->hide();
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
   setFrameShape(QFrame::NoFrame);
+  setShowGrid(false);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   setMouseTracking(true);
 }
@@ -46,46 +48,30 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
     return;
 
   QItemSelection selection;
-  auto [tl, br] = std::minmax(anchor_index, index);
-  if ((resize_sig && resize_sig->is_little_endian) || (!resize_sig && index < anchor_index)) {
-    // little_endian selection
-    if (tl.row() == br.row()) {
-      selection.merge({model->index(tl.row(), tl.column()), model->index(tl.row(), br.column())}, flags);
-    } else {
-      for (int row = tl.row(); row <= br.row(); ++row) {
-        int left_col = (row == br.row()) ? br.column() : 0;
-        int right_col = (row == tl.row()) ? tl.column() : 7;
-        selection.merge({model->index(row, left_col), model->index(row, right_col)}, flags);
-      }
-    }
-  } else {
-    // big endian selection
-    for (int row = tl.row(); row <= br.row(); ++row) {
-      int left_col = (row == tl.row()) ? tl.column() : 0;
-      int right_col = (row == br.row()) ? br.column() : 7;
-      selection.merge({model->index(row, left_col), model->index(row, right_col)}, flags);
-    }
+  auto [start, size, is_lb] = getSelection(index);
+  for (int i = start; i < start + size; ++i) {
+    auto idx = model->bitIndex(i, is_lb);
+    selection.merge({idx, idx}, flags);
   }
   selectionModel()->select(selection, flags);
 }
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
   delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
-  if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8)  {
+  if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8) {
     anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    if (item && item->sigs.size() > 0) {
-      int bit_idx = get_bit_index(anchor_index, true);
-      for (auto s : item->sigs) {
-        if (bit_idx == s->lsb || bit_idx == s->msb) {
-          resize_sig = s;
-          delegate->setSelectionColor(item->bg_color);
-          break;
-        }
+    int bit_idx = get_bit_index(anchor_index, true);
+    for (auto s : item->sigs) {
+      if (bit_idx == s->lsb || bit_idx == s->msb) {
+        anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
+        resize_sig = s;
+        delegate->setSelectionColor(item->bg_color);
+        break;
       }
     }
   }
-  QTableView::mousePressEvent(event);
+  event->accept();
 }
 
 void BinaryView::mouseMoveEvent(QMouseEvent *event) {
@@ -104,28 +90,14 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
 
   auto release_index = indexAt(event->pos());
   if (release_index.isValid() && anchor_index.isValid()) {
-    if (release_index.column() == 8) {
-      release_index = model->index(release_index.row(), 7);
-    }
-    bool little_endian = (resize_sig && resize_sig->is_little_endian) || (!resize_sig && release_index < anchor_index);
-    int release_bit_idx = get_bit_index(release_index, little_endian);
-    int archor_bit_idx = get_bit_index(anchor_index, little_endian);
-    if (resize_sig) {
-      auto [sig_from, sig_to] = getSignalRange(resize_sig);
-      int start_bit, end_bit;
-      if (archor_bit_idx == sig_from) {
-        std::tie(start_bit, end_bit) = std::minmax(release_bit_idx, sig_to);
-        if (start_bit >= sig_from && start_bit <= sig_to)
-          start_bit = std::min(start_bit + 1, sig_to);
-      } else {
-        std::tie(start_bit, end_bit) = std::minmax(release_bit_idx, sig_from);
-        if (end_bit >= sig_from && end_bit <= sig_to)
-          end_bit = std::max(end_bit - 1, sig_from);
-      }
-      emit resizeSignal(resize_sig, start_bit, end_bit - start_bit + 1);
+    if (selectionModel()->hasSelection()) {
+      auto [start_bit, size, is_lb] = getSelection(release_index);
+      resize_sig ? emit resizeSignal(resize_sig, start_bit, size)
+                 : emit addSignal(start_bit, size, is_lb);
     } else {
-      auto [sart_bit, end_bit] = std::minmax(archor_bit_idx, release_bit_idx);
-      emit addSignal(sart_bit, end_bit - sart_bit + 1, little_endian);
+      auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
+      if (item && item->sigs.size() > 0)
+        emit signalClicked(item->sigs.back());
     }
   }
   clearSelection();
@@ -156,6 +128,17 @@ QSet<const Signal *> BinaryView::getOverlappingSignals() const {
   return overlapping;
 }
 
+std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
+  if (index.column() == 8) {
+    index = model->index(index.row(), 7);
+  }
+  bool is_lb = (resize_sig && resize_sig->is_little_endian) || (!resize_sig && index < anchor_index);
+  int cur_bit_idx = get_bit_index(index, is_lb);
+  int anchor_bit_idx = get_bit_index(anchor_index, is_lb);
+  auto [start_bit, end_bit] = std::minmax(cur_bit_idx, anchor_bit_idx);
+  return {start_bit, end_bit - start_bit + 1, is_lb};
+}
+
 // BinaryViewModel
 
 void BinaryViewModel::setMessage(const QString &message_id) {
@@ -166,19 +149,19 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     int i = 0;
-    for (auto &[name, sig] : dbc_msg->sigs) {
-      auto [start, end] = getSignalRange(&sig);
+    for (auto sig : dbc_msg->getSignals()) {
+      auto [start, end] = getSignalRange(sig);
       for (int j = start; j <= end; ++j) {
-        int bit_index = sig.is_little_endian ? bigEndianBitIndex(j) : j;
+        int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
         int idx = column_count * (bit_index / 8) + bit_index % 8;
         if (idx >= items.size()) {
-          qWarning() << "signal " << name << "out of bounds.start_bit:" << sig.start_bit << "size:" << sig.size;
+          qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
           break;
         }
-        if (j == start) sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        if (j == end) sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
+        if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
         items[idx].bg_color = getColor(i);
-        items[idx].sigs.push_back(&sig);
+        items[idx].sigs.push_back(sig);
       }
       ++i;
     }
@@ -203,7 +186,7 @@ void BinaryViewModel::updateState() {
   char hex[3] = {'\0'};
   for (int i = 0; i < std::min(binary.size(), row_count); ++i) {
     for (int j = 0; j < column_count - 1; ++j) {
-      items[i * column_count + j].val = QChar((binary[i] >> (7 - j)) & 1 ? '1' : '0');
+      items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
     }
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
@@ -250,17 +233,16 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   painter->save();
 
   // background
-  bool hover = item->sigs.contains(bin_view->hoveredSignal());
-  QColor bg_color = hover ? hoverColor(item->bg_color) : item->bg_color;
   if (option.state & QStyle::State_Selected) {
-    bg_color = selection_color;
+    painter->fillRect(option.rect, selection_color);
+  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) {
+    painter->fillRect(option.rect, item->bg_color);
   }
-  painter->fillRect(option.rect, bg_color);
 
   // text
   if (index.column() == 8) {  // hex column
     painter->setFont(hex_font);
-  } else if (hover) {
+  } else if (option.state & QStyle::State_Selected || (!bin_view->resize_sig && item->sigs.contains(bin_view->hovered_sig))) {
     painter->setPen(Qt::white);
   }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);

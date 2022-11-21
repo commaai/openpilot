@@ -53,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Regular.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-SemiBold.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Thin.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/JetBrainsMono-Medium.ttf");
 
   // no outline to prevent the focus rectangle
   setStyleSheet(R"(
@@ -64,8 +65,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
 }
 
-void MainWindow::openSettings() {
+void MainWindow::openSettings(int index, const QString &param) {
   main_layout->setCurrentWidget(settingsWindow);
+  settingsWindow->setCurrentPanel(index, param);
 }
 
 void MainWindow::closeSettings() {
