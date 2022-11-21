@@ -95,7 +95,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   plot_btn->setAutoRaise(true);
   title_layout->addWidget(plot_btn);
   auto seek_btn = new QToolButton(this);
-  seek_btn->setIcon(QIcon::fromTheme("edit-find"));
+  seek_btn->setText("🔍");
   seek_btn->setAutoRaise(true);
   seek_btn->setToolTip(tr("Find signal values"));
   title_layout->addWidget(seek_btn);
