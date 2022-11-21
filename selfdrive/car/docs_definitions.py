@@ -174,7 +174,7 @@ class CarInfo:
     return self
 
   def init_make(self, CP: car.CarParams):
-    """CarInfo subclasses can add make-specific logic for footnotes or similar."""
+    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
     pass
 
   def get_detail_sentence(self, CP):
