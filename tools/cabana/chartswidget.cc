@@ -365,10 +365,10 @@ void ChartView::updateAxisY() {
     }
   } else {
     for (auto &s : sigs) {
-      for (int i = 0; i < s.series->count(); ++i) {
-        double y = s.series->at(i).y();
-        if (y < min_y) min_y = y;
-        if (y > max_y) max_y = y;
+      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+      for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
+        if (it->y() < min_y) min_y = it->y();
+        if (it->y() > max_y) max_y = it->y();
       }
     }
   }
