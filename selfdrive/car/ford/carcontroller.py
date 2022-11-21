@@ -71,8 +71,8 @@ class CarController:
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
       can_sends.append(self.ford_can.create_lka_msg(0., 0.))
-      can_sends.append(self.ford_can.create_tja_msg(lca_rq, ramp_type, precision,
-                                                    0., 0., apply_curvature, 0.))
+      can_sends.append(self.ford_can.create_lat_ctl_msg(lca_rq, ramp_type, precision,
+                                                        0., 0., apply_curvature, 0.))
 
       self.apply_curvature_last = apply_curvature
 
