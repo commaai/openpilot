@@ -95,7 +95,6 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   verticalHeader()->setVisible(false);
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  // setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
 }
 
 int HistoryLog::sizeHintForColumn(int column) const {

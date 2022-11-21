@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QStyleFactory>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
