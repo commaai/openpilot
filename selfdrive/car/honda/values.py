@@ -108,10 +108,7 @@ class HondaCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in HONDA_BOSCH:
-      if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-        self.harness = Harness.bosch_b
-      else:
-        self.harness = Harness.bosch_a
+      self.harness = Harness.bosch_b if CP.carFingerprint in HONDA_BOSCH_RADARLESS else Harness.bosch_a
     else:
       self.harness = Harness.nidec
 
