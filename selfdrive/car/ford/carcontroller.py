@@ -1,4 +1,5 @@
 from cereal import car
+from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car.ford.fordcan import FordCAN
 from selfdrive.car.ford.values import CANBUS, CarControllerParams
@@ -47,7 +48,7 @@ class CarController:
       if CC.latActive:
         # use LatCtlCurv_No_Actl to actuate steering
         # TODO: apply rate limits
-        apply_curvature = actuators.curvature
+        apply_curvature = clip(actuators.curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
