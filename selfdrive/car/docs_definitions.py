@@ -170,7 +170,6 @@ class CarInfo:
     self.all_footnotes = all_footnotes
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
-    self.platform = CP.carFingerprint
 
     return self
 
