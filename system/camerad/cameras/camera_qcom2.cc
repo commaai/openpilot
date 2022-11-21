@@ -1110,7 +1110,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
       // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
 
       // Small penalty on changing gain
-      score += std::abs(g - gain_idx) * (score + 1.0) / 10.0;
+      score += (1 + (analog_gain_max_idx - g) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(g - gain_idx) * (score + 1.0) / 10.0;
 
       if (score < best_ev_score) {
         new_t = t;
