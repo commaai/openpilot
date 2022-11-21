@@ -45,13 +45,10 @@ class CarController:
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       if CC.latActive:
-        lca_rq = 1
-
         # use LatCtlCurv_No_Actl to actuate steering
         # TODO: apply rate limits
         apply_curvature = actuators.curvature
       else:
-        lca_rq = 0
         apply_curvature = 0.
 
       angle_steer_des = self.VM.get_steer_from_curvature(-apply_curvature, CS.out.vEgo, 0.0)
@@ -70,8 +67,9 @@ class CarController:
       ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
+      mode = 1 if CC.latActive else 0
       can_sends.append(self.ford_can.create_lka_msg(0., 0.))
-      can_sends.append(self.ford_can.create_lat_ctl_msg(lca_rq, ramp_type, precision,
+      can_sends.append(self.ford_can.create_lat_ctl_msg(mode, ramp_type, precision,
                                                         0., 0., apply_curvature, 0.))
 
       self.apply_curvature_last = apply_curvature
