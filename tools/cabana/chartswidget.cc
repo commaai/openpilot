@@ -367,10 +367,10 @@ void ChartView::updateAxisY() {
     }
   } else {
     for (auto &s : sigs) {
-      for (int i = 0; i < s.series->count(); ++i) {
-        double y = s.series->at(i).y();
-        if (y < min_y) min_y = y;
-        if (y > max_y) max_y = y;
+      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+      for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
+        if (it->y() < min_y) min_y = it->y();
+        if (it->y() > max_y) max_y = it->y();
       }
     }
   }
@@ -422,34 +422,35 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   const auto plot_area = chart()->plotArea();
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
-    double sec = chart()->mapToValue(ev->pos()).x();
     QStringList text_list;
-    QPointF pos = plot_area.bottomRight();
-    double tm = 0.0;
-
+    QPointF pos = {};
+    const double sec = chart()->mapToValue(ev->pos()).x();
     for (auto &s : sigs) {
-      auto value = std::upper_bound(s.vals.begin(), s.vals.end(), sec, [](double x, auto &p) { return x < p.x(); });
-      if (value != s.vals.end()) {
-        text_list.push_back(QString("&nbsp;%1 : %2&nbsp;").arg(sigs.size() > 1 ? s.sig->name.c_str() : "Value").arg(value->y()));
-        tm = value->x();
-        auto y_pos = chart()->mapToPosition(*value);
-        if (y_pos.y() < pos.y()) pos = y_pos;
+      QString value = "--";
+      // use reverse iterator to find last item <= sec.
+      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = QString::number(it->y());
+        auto value_pos = chart()->mapToPosition(*it);
+        if (value_pos.x() > pos.x()) pos = value_pos;
       }
+      text_list.push_back(QString("&nbsp;%1 : %2&nbsp;").arg(sigs.size() > 1 ? s.sig->name.c_str() : "Value").arg(value));
     }
+    if (pos.x() == 0) pos = ev->pos();
 
-    if (!text_list.isEmpty()) {
-      value_text->setHtml("<div style=\"background-color: darkGray;color: white;\">&nbsp;Time: " +
-                          QString::number(tm, 'f', 3) + "&nbsp;<br />" + text_list.join("<br />") + "</div>");
-      track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
-      int text_x = pos.x() + 8;
-      QRectF text_rect = value_text->boundingRect();
-      if ((text_x + text_rect.width()) > plot_area.right()) {
-        text_x = pos.x() - text_rect.width() - 8;
-      }
-      value_text->setPos(text_x, pos.y() - text_rect.height() / 2);
-      track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
+    QString time = QString::number(chart()->mapToValue(pos).x(), 'f', 3);
+    value_text->setHtml(QString("<div style=\"background-color: darkGray;color: white;\">&nbsp;Time: %1 &nbsp;<br />%2</div>")
+                            .arg(time).arg(text_list.join("<br />")));
+
+    QRectF text_rect = value_text->boundingRect();
+    int text_x = pos.x() + 8;
+    if ((text_x + text_rect.width()) > plot_area.right()) {
+      text_x = pos.x() - text_rect.width() - 8;
     }
-    item_group->setVisible(!text_list.isEmpty());
+    value_text->setPos(text_x, pos.y() - text_rect.height() / 2);
+    track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
+    track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
+    item_group->setVisible(true);
   } else {
     item_group->setVisible(false);
   }
