@@ -64,7 +64,6 @@ class CarController:
         ramp_type = 2
       else:
         ramp_type = 3
-      ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
       mode = 1 if CC.latActive else 0
