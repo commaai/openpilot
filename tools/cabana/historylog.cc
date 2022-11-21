@@ -45,6 +45,8 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       return has_signal ? QString::fromStdString(get_signal(dbc_msg, section - 1).name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
+    } else if (role == Qt::ForegroundRole && section > 0 && has_signal) {
+      return QBrush(Qt::black);
     }
   }
   return {};
@@ -78,8 +80,13 @@ QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
 }
 
 void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const {
+  auto bg_role = model()->headerData(logicalIndex, Qt::Horizontal, Qt::BackgroundRole);
+  if (bg_role.isValid()) {
+    QPen pen(model()->headerData(logicalIndex, Qt::Horizontal, Qt::ForegroundRole).value<QBrush>(), 1);
+    painter->setPen(pen);
+    painter->fillRect(rect, bg_role.value<QBrush>());
+  }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->fillRect(rect, model()->headerData(logicalIndex, Qt::Horizontal, Qt::BackgroundRole).value<QBrush>());
   painter->drawText(rect.adjusted(5, 0, 5, 0), defaultAlignment(), text);
 }
 
