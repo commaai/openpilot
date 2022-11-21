@@ -170,8 +170,13 @@ class CarInfo:
     self.all_footnotes = all_footnotes
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
+    self.platform = CP.carFingerprint
 
     return self
+
+  def init_make(self, CP: car.CarParams):
+    """CarInfo subclasses can add make-specific logic for footnotes or similar."""
+    pass
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:

@@ -40,6 +40,7 @@ def get_all_car_info() -> List[CarInfo]:
 
     for _car_info in car_info:
       if not hasattr(_car_info, "row"):
+        _car_info.init_make(CP)
         _car_info.init(CP, footnotes)
       all_car_info.append(_car_info)
 
