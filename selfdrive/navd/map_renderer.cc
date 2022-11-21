@@ -139,7 +139,12 @@ void MapRenderer::sendVipc() {
   uint8_t* dst = (uint8_t*)buf->addr;
   uint8_t* src = cap.bits();
 
-  memcpy(dst, src, buf->len);
+  // RGB to greyscale
+  memset(dst, 128, buf->len);
+  for (int i = 0; i < WIDTH * HEIGHT; i++) {
+    dst[i] = src[i * 3];
+  }
+
   vipc_server->send(buf, &extra);
 
   if (frame_id % 100 == 0) {
@@ -168,7 +173,11 @@ uint8_t* MapRenderer::getImage() {
 
   uint8_t* src = cap.bits();
   uint8_t* dst = new uint8_t[WIDTH * HEIGHT];
-  memcpy(dst, src, WIDTH*HEIGHT*sizeof(uint8_t));
+
+  // RGB to greyscale
+  for (int i = 0; i < WIDTH * HEIGHT; i++) {
+    dst[i] = src[i * 3];
+  }
 
   return dst;
 }
