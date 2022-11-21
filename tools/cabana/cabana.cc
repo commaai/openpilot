@@ -8,7 +8,6 @@
 int main(int argc, char *argv[]) {
   initApp(argc, argv);
   QApplication app(argc, argv);
-  app.setStyle(QStyleFactory::create("Fusion"));
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();

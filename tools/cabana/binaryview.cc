@@ -1,6 +1,5 @@
 #include "tools/cabana/binaryview.h"
 
-#include <QApplication>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
@@ -242,8 +241,12 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   // text
   if (index.column() == 8) {  // hex column
     painter->setFont(hex_font);
-  } else if (option.state & QStyle::State_Selected || (!bin_view->resize_sig && item->sigs.contains(bin_view->hovered_sig))) {
-    painter->setPen(Qt::white);
+  } else if (item->sigs.size() > 0) {
+    if (option.state & QStyle::State_Selected || (!bin_view->resize_sig && item->sigs.contains(bin_view->hovered_sig))) {
+      painter->setPen(QApplication::style()->standardPalette().color(QPalette::BrightText));
+    } else {
+      painter->setPen(Qt::black);
+    }
   }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {

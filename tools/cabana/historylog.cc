@@ -1,6 +1,7 @@
 #include "tools/cabana/historylog.h"
 
 #include <QFontDatabase>
+#include <QPainter>
 
 // HistoryLogModel
 
@@ -76,6 +77,12 @@ QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
   return rect.size() + QSize{10, 5};
 }
 
+void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const {
+  QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
+  painter->fillRect(rect, model()->headerData(logicalIndex, Qt::Horizontal, Qt::BackgroundRole).value<QBrush>());
+  painter->drawText(rect.adjusted(5, 0, 5, 0), defaultAlignment(), text);
+}
+
 // HistoryLog
 
 HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
@@ -88,7 +95,7 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   verticalHeader()->setVisible(false);
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
+  // setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
 }
 
 int HistoryLog::sizeHintForColumn(int column) const {

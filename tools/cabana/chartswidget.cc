@@ -40,6 +40,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   main_layout->addWidget(charts_scroll);
 
+  use_dark_theme = palette().color(QPalette::WindowText).value() > palette().color(QPalette::Background).value();
+
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
@@ -125,6 +127,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     ChartView *chart = merge && charts.size() > 0 ? charts.back() : nullptr;
     if (!chart) {
       chart = new ChartView(this);
+      chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
       chart->setEventsRange(display_range);
       auto range = is_zoomed ? zoomed_range : display_range;
       chart->setDisplayRange(range.first, range.second);
@@ -288,7 +291,6 @@ void ChartView::updateTitle() {
 
 void ChartView::updateFromSettings() {
   setFixedHeight(settings.chart_height);
-  chart()->setTheme(settings.chart_theme == 0 ? QChart::ChartThemeLight : QChart::QChart::ChartThemeDark);
 }
 
 void ChartView::setEventsRange(const std::pair<double, double> &range) {
