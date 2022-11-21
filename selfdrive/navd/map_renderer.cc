@@ -12,7 +12,7 @@
 
 const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
 const int RENDER_HEIGHT = 512, RENDER_WIDTH = 512;
-const int HEIGHT = 256, WIDTH = 256;
+const int HEIGHT = 512, WIDTH = 512;
 const int NUM_VIPC_BUFFERS = 4;
 
 const int EARTH_CIRCUMFERENCE_METERS = 40075000;
@@ -33,7 +33,7 @@ float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
 void downsample(uint8_t *src, uint8_t *dst) {
   for (int r = 0; r < HEIGHT; r++) {
     for (int c = 0; c < WIDTH; c++) {
-      dst[r*WIDTH + c] = src[(r*2*RENDER_WIDTH + c*2) * 3];
+      dst[r*WIDTH + c] = src[(r*RENDER_WIDTH + c) * 3];
     }
   }
 }
@@ -114,9 +114,9 @@ void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
     return;
   }
 
-  // Choose a zoom level that matches the scale of zoom level 13 at latitude 80deg
-  float scale_lat80 = get_meters_per_pixel(80, 13);
-  float zoom = get_zoom_level_for_scale(position.first, scale_lat80);
+  // Choose a scale that ensures above 13 zoom level up to and above 75deg of lat
+  float meters_per_pixel = 2;
+  float zoom = get_zoom_level_for_scale(position.first, meters_per_pixel);
 
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
