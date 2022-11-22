@@ -172,6 +172,9 @@ class CarInfo:
 
     return self
 
+  def init_make(self, CP: car.CarParams):
+    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
+
   def get_detail_sentence(self, CP):
     if not CP.notCar:
       sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
