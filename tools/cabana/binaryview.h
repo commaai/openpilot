@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QApplication>
 #include <QList>
 #include <QSet>
 #include <QStyledItemDelegate>
@@ -41,7 +42,7 @@ public:
   }
 
   struct Item {
-    QColor bg_color = QColor(Qt::white);
+    QColor bg_color = QApplication::style()->standardPalette().color(QPalette::Base);
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "0";
@@ -79,6 +80,7 @@ private:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void highlightPosition(const QPoint &pt);
 
   QModelIndex anchor_index;
   BinaryViewModel *model;

@@ -25,7 +25,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
-  tabbar->setDrawBase(false);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -57,7 +56,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
   warning_hlayout->setContentsMargins(0, 0, 0, 0);
   QLabel *warning_icon = new QLabel(this);
-  warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning));
+  warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning).scaledToWidth(24, Qt::SmoothTransformation));
   warning_hlayout->addWidget(warning_icon, 0, Qt::AlignTop);
   warning_label = new QLabel(this);
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
