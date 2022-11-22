@@ -4,6 +4,7 @@ from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 
 MIN_STEER_SPEED = 0.3
+STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControl(ABC):

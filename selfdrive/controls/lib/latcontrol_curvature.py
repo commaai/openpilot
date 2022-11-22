@@ -1,10 +1,8 @@
 import math
 
 from cereal import log
-from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
+from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED, STEER_ANGLE_SATURATION_THRESHOLD, LatControl
 from selfdrive.controls.lib.pid import PIDController
-
-STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlCurvature(LatControl):
