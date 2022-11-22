@@ -110,7 +110,6 @@ class TestVCruiseHelper(unittest.TestCase):
         should_equal = standstill or pressed
         self.assertEqual(should_equal, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
-
   def test_set_gas_pressed(self):
     """
     Asserts pressing set while enabled with gas pressed sets
@@ -133,8 +132,7 @@ class TestVCruiseHelper(unittest.TestCase):
       # TODO: fix skipping first run due to enabled on rising edge exception
       if v_ego == 0.0:
         continue
-      self.assertAlmostEqual(expected_v_cruise_kph, self.v_cruise_helper.v_cruise_kph, delta=0)
-
+      self.assertEqual(expected_v_cruise_kph, self.v_cruise_helper.v_cruise_kph)
 
   def test_initialize_v_cruise(self):
     """
