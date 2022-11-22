@@ -231,23 +231,18 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
-  // background
-  if (option.state & QStyle::State_Selected) {
+  if (index.column() == 8) {
+    painter->setFont(hex_font);
+  } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
-  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) {
+    painter->setPen(QApplication::style()->standardPalette().color(QPalette::BrightText));
+  } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     painter->fillRect(option.rect, item->bg_color);
+    painter->setPen(item->sigs.contains(bin_view->hovered_sig)
+                        ? QApplication::style()->standardPalette().color(QPalette::BrightText)
+                        : Qt::black);
   }
 
-  // text
-  if (index.column() == 8) {  // hex column
-    painter->setFont(hex_font);
-  } else if (item->sigs.size() > 0) {
-    if (option.state & QStyle::State_Selected || (!bin_view->resize_sig && item->sigs.contains(bin_view->hovered_sig))) {
-      painter->setPen(QApplication::style()->standardPalette().color(QPalette::BrightText));
-    } else {
-      painter->setPen(Qt::black);
-    }
-  }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
