@@ -26,7 +26,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
-  updateToolBar();
 
   // charts
   QWidget *charts_container = new QWidget(this);
@@ -40,6 +39,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   max_chart_range = settings.max_chart_x_range;
   main_layout->addWidget(charts_scroll);
+  updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
