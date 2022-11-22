@@ -3,7 +3,7 @@ import numpy as np
 from parameterized import parameterized_class
 import unittest
 
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN
+from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN, IMPERIAL_INCREMENT
 from cereal import car
 from common.conversions import Conversions as CV
 from common.params import Params
@@ -109,6 +109,30 @@ class TestVCruiseHelper(unittest.TestCase):
         # speed should only update if not at standstill and button falling edge
         should_equal = standstill or pressed
         self.assertEqual(should_equal, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
+
+  def test_set_gas_pressed(self):
+    """
+    Asserts pressing set while enabled with gas pressed sets
+    the speed to the maximum of vEgo and current cruise speed.
+    """
+
+    for v_ego in np.linspace(0, 100, 101):
+      self.reset_cruise_speed_state()
+      self.enable(V_CRUISE_ENABLE_MIN * CV.KPH_TO_MS)
+
+      # first decrement speed, then perform gas pressed logic
+      expected_v_cruise_kph = self.v_cruise_helper.v_cruise_kph - IMPERIAL_INCREMENT
+      expected_v_cruise_kph = max(expected_v_cruise_kph, v_ego * CV.MS_TO_KPH)  # clip to min of vEgo
+      expected_v_cruise_kph = float(np.clip(round(expected_v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX))
+
+      CS = car.CarState(vEgo=float(v_ego), gasPressed=True, cruiseState={"available": True})
+      CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
+      self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
+
+      # TODO: fix skipping first run due to enabled on rising edge exception
+      if v_ego == 0.0:
+        continue
+      self.assertEqual(expected_v_cruise_kph, self.v_cruise_helper.v_cruise_kph)
 
   def test_initialize_v_cruise(self):
     """
