@@ -10,6 +10,7 @@ class HeaderView : public QHeaderView {
 public:
   HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
   QSize sectionSizeFromContents(int logicalIndex) const override;
+  void paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const;
 };
 
 class HistoryLogModel : public QAbstractTableModel {
