@@ -57,12 +57,7 @@ class TestVCruiseHelper(unittest.TestCase):
 
   def enable(self, v_ego, standstill=False):
     # Simulates user pressing set with a current speed
-    # CS = car.CarState(vEgo=v_ego, cruiseState={"available": True, "standstill": standstill})
-    # CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=True)]
-    # self.v_cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": True}), enabled=False, is_metric=False)
     self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego))
-    # CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
-    # self.v_cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": True}), enabled=True, is_metric=False)
 
   def test_adjust_speed(self):
     """
