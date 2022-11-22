@@ -12,7 +12,7 @@ class LatControlCurvature(LatControl):
     super().__init__(CP, CI)
     self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                              (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             k_f=CP.lateralTuning.pid.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
+                             k_f=CP.lateralTuning.pid.kf)
 
   def reset(self):
     super().reset()
