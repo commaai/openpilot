@@ -11,7 +11,7 @@ from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_hysteresis, gen_empty_fingerprint
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_deadzone
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_slack
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
@@ -109,7 +109,7 @@ class CarInterfaceBase(ABC):
   def torque_from_lateral_accel_linear(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction_interp = interp(
-      apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
+      apply_slack(lateral_accel_error, lateral_accel_deadzone),
       [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
       [-torque_params.friction, torque_params.friction]
     )
