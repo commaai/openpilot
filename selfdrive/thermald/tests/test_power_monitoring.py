@@ -124,9 +124,8 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       ignition = False
-      voltage = (VBATT_PAUSE_CHARGING - 1) * 1e3
       for i in range(TEST_TIME):
-        pm.calculate(voltage, ignition)
+        pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
         if i % 10 == 0:
           self.assertEqual(pm.should_shutdown(ignition, True, ssb, True), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
       self.assertTrue(pm.should_shutdown(ignition, True, ssb, True))
