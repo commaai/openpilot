@@ -295,7 +295,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   auto ecef_pos_std = log.getPositionECEF().getStd();
   Vector3d ecef_pos_R_vec = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]);
-  MatrixXdr ecef_pos_R = Vector3d::Constant(pow(ecef_pos_R_vec.norm() * 5, 2)).asDiagonal();
+  MatrixXdr ecef_pos_R = Vector3d::Constant(pow(ecef_pos_R_vec.norm(), 2)).asDiagonal();
 
   auto ecef_vel_v = log.getVelocityECEF().getValue();
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
@@ -314,6 +314,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   ECEF next_ecef = {.x = ecef_pos[0] + ecef_vel[0], .y = ecef_pos[1] + ecef_vel[1], .z = ecef_pos[2] + ecef_vel[2]};
   VectorXd ned_vel = convs.ecef2ned(next_ecef).to_vector();
   double bearing_rad = atan2(ned_vel[1], ned_vel[0]);
+  //LOGE("GNSS bearing: %f", fmod(RAD2DEG(bearing_rad) + 360.0, 360.0))
 
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing_rad);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
@@ -327,14 +328,20 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos[0], ecef_pos[1], ecef_pos[2] }, orientation_ned_gps)));
 
   // TODO: verify these values
-  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
+  /*if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
-  } else if (gps_est_error > 100.0) {
+  } else */if (gps_est_error > 100.0) {
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
+
+  /*LOGE("gnss input: %f %f %f / %f %f %f", ecef_pos[0], ecef_pos[1], ecef_pos[2],
+    ecef_pos_R_vec[0], ecef_pos_R_vec[1], ecef_pos_R_vec[2])
+  LOGE("gnss input: %f %f %f / %f %f %f", ecef_vel[0], ecef_vel[1], ecef_vel[2],
+    ecef_vel_R_vec[0], ecef_vel_R_vec[1], ecef_vel_R_vec[2])
+  */
 
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
