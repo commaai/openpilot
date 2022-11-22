@@ -80,11 +80,5 @@ inline const QString &getColor(int i) {
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
 }
 
-inline QColor hoverColor(const QColor &color) {
-  QColor c = color.convertTo(QColor::Hsv);
-  c.setHsv(color.hue(), 180, 180);
-  return c;
-}
-
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;

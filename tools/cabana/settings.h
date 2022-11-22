@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QByteArray>
 #include <QComboBox>
 #include <QDialog>
 #include <QSpinBox>
@@ -19,6 +20,7 @@ public:
   int chart_theme = 0;
   int max_chart_x_range = 3 * 60; // 3 minutes
   QString last_dir;
+  QByteArray splitter_state;
 
 signals:
   void changed();

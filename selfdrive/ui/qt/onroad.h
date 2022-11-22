@@ -51,6 +51,7 @@ private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   QPixmap engage_img;
+  QPixmap experimental_img;
   QPixmap dm_img;
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;

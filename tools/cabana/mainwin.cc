@@ -55,6 +55,9 @@ MainWindow::MainWindow() : QMainWindow() {
   charts_widget = new ChartsWidget(this);
   detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
+  if (!settings.splitter_state.isEmpty()) {
+    splitter->restoreState(settings.splitter_state);
+  }
   main_layout->addWidget(splitter);
 
   // right widgets
@@ -73,6 +76,7 @@ MainWindow::MainWindow() : QMainWindow() {
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
   r_layout->addWidget(charts_widget, 1);
+  r_layout->addStretch(0);
   main_layout->addWidget(right_container);
 
   setCentralWidget(central_widget);
@@ -217,11 +221,12 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
-    r_layout->addWidget(charts_widget, 1);
+    r_layout->insertWidget(2, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
     floating_window = new QWidget(nullptr);
+    floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->installEventFilter(charts_widget);
@@ -245,6 +250,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
+  settings.splitter_state = splitter->saveState();
   settings.save();
   QWidget::closeEvent(event);
 }
