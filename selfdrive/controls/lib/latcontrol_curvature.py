@@ -42,7 +42,7 @@ class LatControlCurvature(LatControl):
       curvature_log.i = self.pid.i
       curvature_log.d = self.pid.d
       curvature_log.f = self.pid.f
-      curvature_log.output = -output
+      curvature_log.output = output
 
-    actuators.curvature = -output
+    actuators.curvature = output
     return curvature_log
