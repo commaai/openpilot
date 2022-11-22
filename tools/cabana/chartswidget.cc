@@ -3,7 +3,6 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QRubberBand>
-#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QtConcurrent>
@@ -401,7 +400,7 @@ void ChartView::updateAxisY() {
     axis_y->applyNiceNumbers();
   }
 
-  QTimer::singleShot(0, this, &ChartView::adjustChartMargins);
+  adjustChartMargins();
 }
 
 void ChartView::leaveEvent(QEvent *event) {
