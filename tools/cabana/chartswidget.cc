@@ -100,10 +100,12 @@ void ChartsWidget::updateState() {
   }
 
   const auto &range = is_zoomed ? zoomed_range : display_range;
+  setUpdatesEnabled(false);
   for (auto c : charts) {
     c->setDisplayRange(range.first, range.second);
     c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
+  setUpdatesEnabled(true);
 }
 
 void ChartsWidget::showAllData() {
