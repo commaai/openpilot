@@ -47,12 +47,13 @@ class CarController:
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       if CC.latActive:
         # use LatCtlCurv_No_Actl to actuate steering
+        # IMPORTANT! left is positive
         # TODO: apply rate limits
-        apply_curvature = clip(actuators.curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
+        apply_curvature = -clip(actuators.curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
-      angle_steer_des = self.VM.get_steer_from_curvature(-apply_curvature, CS.out.vEgo, 0.0)
+      angle_steer_des = self.VM.get_steer_from_curvature(-actuators.curvature, CS.out.vEgo, 0.0)
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
