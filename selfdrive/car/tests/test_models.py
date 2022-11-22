@@ -19,7 +19,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from tools.lib.route import Route, SegmentName
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -28,22 +28,30 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
-INTERNAL = os.environ.get("INTERNAL", False)
+INTERNAL_SEG_LIST = os.environ.get("INTERNAL", "")
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
   HYUNDAI.GENESIS_G70_2020,
 ]
 
-# build list of test cases
-test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
-if INTERNAL:
-  with open(os.path.join(BASEDIR, "selfdrive/car/tests/test_models_segs.txt"), "r") as f:
+
+def load_test_cases_from_file(file_path):
+  test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
+  with open(os.path.join(BASEDIR, file_path), "r") as f:
     seg_list = f.read().splitlines()
   platforms, segs = seg_list[0::2], seg_list[1::2]
 
   for platform, seg in list(zip(platforms, segs)):
-    test_cases.append((platform[2:], CarTestRoute(seg[:37], platform[2:], segment=int(seg[39:]))))
+    seg = SegmentName(seg)
+    test_cases.append((platform[2:], CarTestRoute(seg[:37], platform[2:], segment=seg.segment_num)))
+  return test_cases
+
+
+# build list of test cases
+test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
+if len(INTERNAL_SEG_LIST):
+  test_cases = load_test_cases_from_file(INTERNAL_SEG_LIST)
 else:
   routes_by_car = defaultdict(set)
   for r in routes:
@@ -84,7 +92,7 @@ class TestCarModelBase(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if INTERNAL:
+        if len(INTERNAL_SEG_LIST):
           lr = LogReader(f"cd:/{cls.test_route.route[:16]}/{cls.test_route.route[17:37]}/{seg}/rlog.bz2")
         elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
