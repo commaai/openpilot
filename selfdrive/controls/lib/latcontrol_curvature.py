@@ -16,7 +16,7 @@ class LatControlCurvature(LatControl):
     super().reset()
     self.pid.reset()
 
-  def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, actuators, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     curvature_log = log.ControlsState.LateralCurvatureState.new_message()
 
     curvature_log.actualCurvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
@@ -44,4 +44,5 @@ class LatControlCurvature(LatControl):
       curvature_log.f = self.pid.f
       curvature_log.output = -output
 
-    return 0, 0, -output, curvature_log
+    actuators.curvature = -output
+    return curvature_log
