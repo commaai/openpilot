@@ -1,6 +1,5 @@
 #include "tools/cabana/binaryview.h"
 
-#include <QApplication>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
@@ -74,14 +73,18 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
   event->accept();
 }
 
-void BinaryView::mouseMoveEvent(QMouseEvent *event) {
-  if (auto index = indexAt(event->pos()); index.isValid()) {
+void BinaryView::highlightPosition(const QPoint &pos) {
+  if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
-    sig ? QToolTip::showText(event->globalPos(), sig->name.c_str(), this, rect())
+    sig ? QToolTip::showText(pos, sig->name.c_str(), this, rect())
         : QToolTip::hideText();
   }
+}
+
+void BinaryView::mouseMoveEvent(QMouseEvent *event) {
+  highlightPosition(event->globalPos());
   QTableView::mouseMoveEvent(event);
 }
 
@@ -116,6 +119,7 @@ void BinaryView::setMessage(const QString &message_id) {
   anchor_index = QModelIndex();
   resize_sig = nullptr;
   hovered_sig = nullptr;
+  highlightPosition(QCursor::pos());
   updateState();
 }
 
@@ -232,19 +236,18 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
-  // background
-  if (option.state & QStyle::State_Selected) {
+  if (index.column() == 8) {
+    painter->setFont(hex_font);
+  } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
-  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) {
+    painter->setPen(QApplication::style()->standardPalette().color(QPalette::BrightText));
+  } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     painter->fillRect(option.rect, item->bg_color);
+    painter->setPen(item->sigs.contains(bin_view->hovered_sig)
+                        ? QApplication::style()->standardPalette().color(QPalette::BrightText)
+                        : Qt::black);
   }
 
-  // text
-  if (index.column() == 8) {  // hex column
-    painter->setFont(hex_font);
-  } else if (option.state & QStyle::State_Selected || (!bin_view->resize_sig && item->sigs.contains(bin_view->hovered_sig))) {
-    painter->setPen(Qt::white);
-  }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
