@@ -73,14 +73,18 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
   event->accept();
 }
 
-void BinaryView::mouseMoveEvent(QMouseEvent *event) {
-  if (auto index = indexAt(event->pos()); index.isValid()) {
+void BinaryView::highlightPosition(const QPoint &pos) {
+  if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
-    sig ? QToolTip::showText(event->globalPos(), sig->name.c_str(), this, rect())
+    sig ? QToolTip::showText(pos, sig->name.c_str(), this, rect())
         : QToolTip::hideText();
   }
+}
+
+void BinaryView::mouseMoveEvent(QMouseEvent *event) {
+  highlightPosition(event->globalPos());
   QTableView::mouseMoveEvent(event);
 }
 
@@ -115,6 +119,7 @@ void BinaryView::setMessage(const QString &message_id) {
   anchor_index = QModelIndex();
   resize_sig = nullptr;
   hovered_sig = nullptr;
+  highlightPosition(QCursor::pos());
   updateState();
 }
 

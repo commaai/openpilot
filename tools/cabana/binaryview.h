@@ -80,6 +80,7 @@ private:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void highlightPosition(const QPoint &pt);
 
   QModelIndex anchor_index;
   BinaryViewModel *model;
