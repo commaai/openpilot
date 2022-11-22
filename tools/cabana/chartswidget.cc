@@ -18,7 +18,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label = new QLabel();
   title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(title_label);
-  show_all_values_btn = toolbar->addAction("All data");
+  show_all_values_btn = toolbar->addAction("");
   toolbar->addWidget(range_label = new QLabel());
   reset_zoom_btn = toolbar->addAction("⟲");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
@@ -112,8 +112,8 @@ void ChartsWidget::showAllData() {
                                        : settings.max_chart_x_range;
   max_chart_range = std::min(max_chart_range, (uint32_t)can->totalSeconds());
 
-  updateState();
   updateToolBar();
+  updateState();
 }
 
 void ChartsWidget::updateToolBar() {
@@ -237,6 +237,7 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
+  updateAxisY();
 }
 
 void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
@@ -271,6 +272,7 @@ void ChartView::signalUpdated(const Signal *sig) {
     updateTitle();
     // TODO: don't update series if only name changed.
     updateSeries(sig);
+    updateAxisY();
   }
 }
 
@@ -366,7 +368,6 @@ void ChartView::updateSeries(const Signal *sig) {
       s.series->replace(s.vals);
     }
   }
-  updateAxisY();
 }
 
 // auto zoom on yaxis
@@ -413,8 +414,8 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
     QRectF rect = rubber->geometry().normalized();
-    double min = chart()->mapToValue(rect.topLeft()).x();
-    double max = chart()->mapToValue(rect.bottomRight()).x();
+    double min = std::floor(chart()->mapToValue(rect.topLeft()).x() * 10.0) / 10.0;
+    double max = std::floor(chart()->mapToValue(rect.bottomRight()).x() * 10.0) / 10.0;
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
