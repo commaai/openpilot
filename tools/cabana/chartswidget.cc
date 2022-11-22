@@ -399,11 +399,39 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y - 1, max_y + 1);
   } else {
     double range = max_y - min_y;
-    axis_y->setRange(min_y - range * 0.05, max_y + range * 0.05);
-    axis_y->applyNiceNumbers();
+    applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
   }
 
   adjustChartMargins();
+}
+
+void ChartView::applyNiceNumbers(qreal min, qreal max) {
+  int tick_count = axis_y->tickCount();
+  qreal range = niceNumber((max - min), true);  // range with ceiling
+  qreal step = niceNumber(range / (tick_count - 1), false);
+  min = qFloor(min / step);
+  max = qCeil(max / step);
+  tick_count = int(max - min) + 1;
+  axis_y->setRange(min * step, max * step);
+  axis_y->setTickCount(tick_count);
+}
+
+//nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
+qreal ChartView::niceNumber(qreal x, bool ceiling) {
+  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal q = x / z; //q<10 && q>=1;
+  if (ceiling) {
+    if (q <= 1.0) q = 1;
+    else if (q <= 2.0) q = 2;
+    else if (q <= 5.0) q = 5;
+    else q = 10;
+  } else {
+    if (q < 1.5) q = 1;
+    else if (q < 3.0) q = 2;
+    else if (q < 7.0) q = 5;
+    else q = 10;
+  }
+  return q * z;
 }
 
 void ChartView::leaveEvent(QEvent *event) {

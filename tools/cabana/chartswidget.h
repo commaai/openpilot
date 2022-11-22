@@ -62,6 +62,8 @@ private:
   void updateTitle();
   void updateFromSettings();
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  void applyNiceNumbers(qreal min, qreal max);
+  qreal niceNumber(qreal x, bool ceiling);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
