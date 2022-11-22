@@ -55,7 +55,7 @@ class TestVCruiseHelper(unittest.TestCase):
     for _ in range(2):
       self.v_cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": False}), enabled=False, is_metric=False)
 
-  def enable(self, v_ego, standstill=False):
+  def enable(self, v_ego):
     # Simulates user pressing set with a current speed
     self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego))
 
