@@ -76,7 +76,7 @@ void HistoryLogModel::updateState() {
 QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
   const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
   const QRect rect = fontMetrics().boundingRect(QRect(0, 0, sectionSize(logicalIndex), 1000), defaultAlignment(), text);
-  return rect.size() + QSize{10, 5};
+  return rect.size() + QSize{10, 6};
 }
 
 void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const {
@@ -87,7 +87,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->drawText(rect.adjusted(5, 0, 5, 0), defaultAlignment(), text);
+  painter->drawText(rect.adjusted(5, 3, 5, 3), defaultAlignment(), text);
 }
 
 // HistoryLog
