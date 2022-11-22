@@ -19,6 +19,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label = new QLabel();
   title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(title_label);
+  show_all_values_btn = toolbar->addAction("All data");
   toolbar->addWidget(range_label = new QLabel());
   reset_zoom_btn = toolbar->addAction("⟲");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
@@ -38,11 +39,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+  max_chart_range = settings.max_chart_x_range;
   main_layout->addWidget(charts_scroll);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
+  QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -68,7 +71,7 @@ void ChartsWidget::updateDisplayRange() {
     display_range.first = current_sec - 5;
   }
   display_range.first = std::max(display_range.first, event_range.first);
-  display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
+  display_range.second = std::min(display_range.first + max_chart_range, event_range.second);
   if (prev_range != display_range) {
     QFutureSynchronizer<void> future_synchronizer;
     for (auto c : charts)
@@ -104,7 +107,22 @@ void ChartsWidget::updateState() {
   }
 }
 
+void ChartsWidget::showAllData() {
+  bool switch_to_show_all = max_chart_range == settings.max_chart_x_range;
+  max_chart_range = switch_to_show_all ? settings.cached_segment_limit * 60
+                                       : settings.max_chart_x_range;
+  max_chart_range = std::min(max_chart_range, (uint32_t)can->totalSeconds());
+
+  updateState();
+  updateToolBar();
+}
+
 void ChartsWidget::updateToolBar() {
+  int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
+  bool displaying_all = max_chart_range != min_range;
+  show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
+  show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));
+  show_all_values_btn->setVisible(!is_zoomed);
   remove_all_btn->setEnabled(!charts.isEmpty());
   reset_zoom_btn->setEnabled(is_zoomed);
   range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
