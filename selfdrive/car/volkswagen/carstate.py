@@ -12,6 +12,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
+    self.esp_hold_confirmation = False
 
   def create_button_events(self, pt_cp, buttons):
     button_events = []

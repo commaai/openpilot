@@ -12,7 +12,11 @@
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // TODO: support SPI here one day...
-  handle = std::make_unique<PandaUsbHandle>(serial);
+  if (serial.find("spi") != std::string::npos) {
+    handle = std::make_unique<PandaSpiHandle>(serial);
+  } else {
+    handle = std::make_unique<PandaUsbHandle>(serial);
+  }
 
   hw_type = get_hw_type();
 
@@ -20,7 +24,8 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
          (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
 
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
-            (hw_type == cereal::PandaState::PandaType::DOS);
+            (hw_type == cereal::PandaState::PandaType::DOS) ||
+            (hw_type == cereal::PandaState::PandaType::TRES);
 
   return;
 }
