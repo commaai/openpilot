@@ -167,7 +167,7 @@ class VWCarInfo(CarInfo):
   harness: Enum = Harness.j533
 
   def init_make(self, CP: car.CarParams):
-    self.footnotes.append(Footnote.VW_EXP_LONG)
+    self.footnotes.insert(0, Footnote.VW_EXP_LONG)
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
