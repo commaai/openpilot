@@ -68,7 +68,7 @@ if __name__ == "__main__":
       CP = None
       for msg in lr:
         if msg.which() == "pandaStates":
-          if msg.pandaStates[0].pandaType not in ('uno', 'blackPanda', 'dos'):
+          if msg.pandaStates[0].pandaType in ('unknown', 'whitePanda', 'greyPanda', 'pedal'):
             print("wrong panda type")
             break
 
