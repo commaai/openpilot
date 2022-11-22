@@ -189,8 +189,8 @@ class Laikad:
       # no new position estimation
       return
 
-    print(f"est: {ecef2geodetic(est_pos)} prev: {ecef2geodetic(prev_est_pos)}")
-    print(f"est: {est_pos} prev: {prev_est_pos} res: {est_pos_residual}")
+    #print(f"est: {ecef2geodetic(est_pos)} prev: {ecef2geodetic(prev_est_pos)}")
+    #print(f"est: {est_pos} prev: {prev_est_pos} res: {est_pos_residual}")
     # calculate velocity out of these two
 
     corrected_measurements = []
