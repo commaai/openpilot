@@ -44,7 +44,6 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
@@ -95,14 +94,9 @@ class Laikad:
 
   def get_est_pos(self, t, processed_measurements):
     prev_pos_fix = self.last_pos_fix
-
-    # only recalculate if first fix or last fix is is older than a 1second
     if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) > 0:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
-
-      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(
-        processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-
+      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(pos_fix) > 0:
         self.last_pos_fix_t = t
         residual_median = np.median(np.abs(pos_fix_residual))
@@ -112,7 +106,6 @@ class Laikad:
           self.last_pos_residual = pos_fix_residual
         else:
           cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
-
     return self.last_pos_fix, prev_pos_fix
 
   def is_good_report(self, gnss_msg):
@@ -218,7 +211,7 @@ class Laikad:
       "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=vel_valid),
       # TODO std is incorrectly the dimension of the measurements and not 3D
       "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
-      "ubloxMonoTime": gnss_mono_time,
+      "measTime": gnss_mono_time,
       "correctedMeasurements": meas_msgs
     }
 
@@ -239,7 +232,6 @@ class Laikad:
         self.init_gnss_localizer(est_pos)
       else:
         return
-
     if len(measurements) > 0:
       kf_add_observations(self.gnss_kf, t, measurements)
     else:
@@ -376,8 +368,7 @@ class EphemerisSourceType(IntEnum):
 
 
 def main(sm=None, pm=None):
-  print("lets get done")
-  use_qcom = True #not Params().get_bool("UbloxAvailable", block=True)
+  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom:
     raw_gnss_socket = "qcomGnss"
   else:
@@ -389,7 +380,7 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   replay = "REPLAY" in os.environ
-  use_internet = True # "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet, use_qcom=use_qcom)
 
   while True:
@@ -408,13 +399,9 @@ def main(sm=None, pm=None):
           # passed to GnssMeasurements's gpsWeek (Int16)
           continue
 
-      if not use_qcom and gnss_msg.which() != "measurementReport":
-        continue
-
       msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
-
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
