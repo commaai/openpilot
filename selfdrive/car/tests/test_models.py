@@ -19,7 +19,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName
+from tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.safety import libpandasafety_py
 from panda.tests.safety.common import package_can_msg
@@ -28,7 +28,7 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
-INTERNAL_SEG_LIST = os.environ.get("INTERNAL", "")
+INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
@@ -43,8 +43,8 @@ def load_test_cases_from_file(file_path):
   platforms, segs = seg_list[0::2], seg_list[1::2]
 
   for platform, seg in list(zip(platforms, segs)):
-    seg = SegmentName(seg)
-    test_cases.append((platform[2:], CarTestRoute(seg[:37], platform[2:], segment=seg.segment_num)))
+    segment_name = SegmentName(seg)
+    test_cases.append((platform[2:], CarTestRoute(segment_name.route_name.canonical_name, platform[2:], segment=segment_name.segment_num)))
   return test_cases
 
 
@@ -93,7 +93,8 @@ class TestCarModelBase(unittest.TestCase):
     for seg in test_segs:
       try:
         if len(INTERNAL_SEG_LIST):
-          lr = LogReader(f"cd:/{cls.test_route.route[:16]}/{cls.test_route.route[17:37]}/{seg}/rlog.bz2")
+          route_name = RouteName(cls.test_route.route)
+          lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
         elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
