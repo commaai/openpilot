@@ -36,12 +36,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  main_layout->addWidget(charts_scroll);
 
   max_chart_range = settings.max_chart_x_range;
-  main_layout->addWidget(charts_scroll);
-  updateToolBar();
-
   use_dark_theme = palette().color(QPalette::WindowText).value() > palette().color(QPalette::Background).value();
+  updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
