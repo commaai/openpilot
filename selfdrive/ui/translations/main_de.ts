@@ -285,11 +285,11 @@
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>EXPERIMENTELLER MODUS AN</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>ENTSPANNTER MODUS AN</translation>
     </message>
 </context>
 <context>
@@ -329,7 +329,7 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>Vorraussichtliche Ankunftszeit</translation>
+        <translation>Ankunft</translation>
     </message>
     <message>
         <source>min</source>
@@ -831,7 +831,7 @@ location set</source>
     <message>
         <source>UNINSTALL</source>
         <translatorcomment>Too long for UI</translatorcomment>
-        <translation type="unfinished">DEINSTALLIEREN</translation>
+        <translation>DEINSTALL</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
@@ -992,7 +992,7 @@ location set</source>
     <message>
         <source>Show Map on Left Side of UI</source>
         <translatorcomment>Too long for UI</translatorcomment>
-        <translation type="unfinished">Zeige die Karte auf der linken Seite der Benutzeroberfläche</translation>
+        <translation>Zeige die Karte auf der linken Seite</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
@@ -1001,55 +1001,55 @@ location set</source>
     <message>
         <source>Show ETA in 24h Format</source>
         <translatorcomment>Too long for UI</translatorcomment>
-        <translation type="unfinished">Zeige die vorraussichtliche Ankunftszeit im 24 Stunden Format</translation>
+        <translation>Zeige die Ankunftszeit im 24 Stunden Format</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Experimenteller Modus</translation>
     </message>
     <message>
         <source>Experimental openpilot Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Experimenteller Openpilot Tempomat</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>WARNUNG: Der Openpilot Tempomat ist für dieses Auto experimentell und deaktiviert den Notbremsassistenten.</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation type="unfinished"></translation>
+        <translation>Bei Gasbetätigung ausschalten</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bei diesem auto wird standardmäßig der im Auto eingebaute adaptive Tempomat anstelle des Openpilot Tempomats benutzt. Aktiviere diesen Schalter, um zum Openpilot Tempomaten zu wechseln. Es ist empfohlen den Experimentellen Modus bei Nutzung des Openpilot Tempomats zu aktivieren.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation type="unfinished"></translation>
+        <translation>Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die Folgenden:</translation>
     </message>
     <message>
         <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 Ende-zu-Ende Tempomat 🌮</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lass das Fahrmodell Gas und Bremse kontrollieren. Openpilot wird so fahren, wie es dies von einem Menschen erwarten würde; inklusive des Anhaltens für Ampeln und Stoppschildern. Da das Fahrmodell entscheidet wie schnell es fährt stellt die gesetzte Geschwindigkeit lediglich das obere Limit dar. Dies ist ein Alpha-level Funktion. Fehler sind zu erwarten.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Neue Fahrvisualisierung</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Fahrvisualisierung wechselt bei niedrigen Geschwindigkeiten zur Straßengewandten Weitwinkelkamera, um manche Kurven besser zu zeigen. Außerdem wird das Experimenteller Modus logo oben rechts angezeigt.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar, da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
     </message>
 </context>
 <context>
