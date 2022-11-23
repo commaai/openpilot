@@ -104,6 +104,9 @@ class TestSensord(unittest.TestCase):
     # make sure gpiochip0 is readable
     HARDWARE.initialize_hardware()
 
+    # enable LSM self test
+    os.environ["LSM_SELF_TEST"] = "1"
+
     # read initial sensor values every test case can use
     os.system("pkill -f ./_sensord")
     try:
@@ -118,6 +121,8 @@ class TestSensord(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     managed_processes["sensord"].stop()
+    if "LSM_SELF_TEST" in os.environ:
+      del os.environ['LSM_SELF_TEST']
 
   def tearDown(self):
     managed_processes["sensord"].stop()

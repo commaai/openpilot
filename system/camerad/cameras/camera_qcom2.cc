@@ -80,30 +80,26 @@ const float sensor_analog_gains_AR0231[] = {
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 const float sensor_analog_gains_OX03C10[] = {
-  1.0, 1.125, 1.25, 1.3125, 1.5625,
-  1.6875, 2.0, 2.25, 2.625, 3.125,
-  3.625, 4.0, 4.5, 5.0, 5.5,
-  6.0, 6.5, 7.0, 7.5, 8.0,
-  8.5, 9.0, 9.5, 10.0, 10.5,
-  11.0, 11.5, 12.0, 12.5, 13.0,
-  13.5, 14.0, 14.5, 15.0, 15.5};
+  1.0, 1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.6875,
+  1.8125, 1.9375, 2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0,
+  3.125, 3.375, 3.625, 3.875, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5,
+  5.75, 6.0, 6.25, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0,
+  10.5, 11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5};
 
 const uint32_t ox03c10_analog_gains_reg[] = {
-  0x100, 0x120, 0x140, 0x150, 0x190,
-  0x1B0, 0x200, 0x240, 0x2A0, 0x320,
-  0x3A0, 0x400, 0x480, 0x500, 0x580,
-  0x600, 0x680, 0x700, 0x780, 0x800,
-  0x880, 0x900, 0x980, 0xA00, 0xA80,
-  0xB00, 0xB80, 0xC00, 0xC80, 0xD00,
-  0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
+  0x100, 0x110, 0x120, 0x130, 0x140, 0x150, 0x160, 0x170, 0x180, 0x190, 0x1B0,
+  0x1D0, 0x1F0, 0x200, 0x220, 0x240, 0x260, 0x280, 0x2A0, 0x2C0, 0x2E0, 0x300,
+  0x320, 0x360, 0x3A0, 0x3E0, 0x400, 0x440, 0x480, 0x4C0, 0x500, 0x540, 0x580,
+  0x5C0, 0x600, 0x640, 0x680, 0x700, 0x780, 0x800, 0x880, 0x900, 0x980, 0xA00,
+  0xA80, 0xB00, 0xB80, 0xC00, 0xC80, 0xD00, 0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
 const int ANALOG_GAIN_MIN_IDX_AR0231 = 0x1; // 0.25x
 const int ANALOG_GAIN_REC_IDX_AR0231 = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX_AR0231 = 0xD; // 4.0x
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x6; // 2x
-const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x22;
+const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x11; // 2.5x
+const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms

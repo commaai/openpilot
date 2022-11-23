@@ -1,5 +1,6 @@
 #include "selfdrive/navd/map_renderer.h"
 
+#include <cmath>
 #include <string>
 #include <QApplication>
 #include <QBuffer>
@@ -10,10 +11,33 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
 const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int WIDTH = 512;
-const int HEIGHT = WIDTH;
-
+const int RENDER_HEIGHT = 512, RENDER_WIDTH = 512;
+const int HEIGHT = 256, WIDTH = 256;
 const int NUM_VIPC_BUFFERS = 4;
+
+const int EARTH_CIRCUMFERENCE_METERS = 40075000;
+const int PIXELS_PER_TILE = 256;
+
+float get_meters_per_pixel(float lat, float zoom) {
+  float num_tiles = pow(2, zoom+1);
+  float meters_per_tile = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / num_tiles;
+  return meters_per_tile / PIXELS_PER_TILE;
+}
+
+float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
+  float meters_per_tile = meters_per_pixel * PIXELS_PER_TILE;
+  float num_tiles = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / meters_per_tile;
+  return log2(num_tiles) - 1;
+}
+
+void downsample(uint8_t *src, uint8_t *dst) {
+  for (int r = 0; r < HEIGHT; r++) {
+    for (int c = 0; c < WIDTH; c++) {
+      dst[r*WIDTH + c] = src[(r*2*RENDER_WIDTH + c*2) * 3];
+    }
+  }
+}
+
 
 MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
@@ -35,7 +59,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   gl_functions->initializeOpenGLFunctions();
 
   QOpenGLFramebufferObjectFormat fbo_format;
-  fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
+  fbo.reset(new QOpenGLFramebufferObject(RENDER_WIDTH, RENDER_HEIGHT, fbo_format));
 
   std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
@@ -45,7 +69,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
-  gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
+  gl_functions->glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
 
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
@@ -85,22 +109,18 @@ void MapRenderer::msgUpdate() {
   }
 }
 
-void MapRenderer::updateZoom(float zoom) {
-  if (m_map.isNull()) {
-    return;
-  }
-
-  m_map->setZoom(zoom);
-  update();
-}
-
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
   }
 
+  // Choose a zoom level that matches the scale of zoom level 13 at latitude 80deg
+  float scale_lat80 = get_meters_per_pixel(80, 13);
+  float zoom = get_zoom_level_for_scale(position.first, scale_lat80);
+
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
+  m_map->setZoom(zoom);
   update();
 }
 
@@ -130,15 +150,13 @@ void MapRenderer::sendVipc() {
     .timestamp_eof = ts,
   };
 
-  assert(cap.sizeInBytes() >= buf->len);
+  assert(cap.sizeInBytes() >= buf->len*4);
   uint8_t* dst = (uint8_t*)buf->addr;
   uint8_t* src = cap.bits();
 
-  // RGB to greyscale
+  // 2x downsample + rgb to grayscale
   memset(dst, 128, buf->len);
-  for (int i = 0; i < WIDTH * HEIGHT; i++) {
-    dst[i] = src[i * 3];
-  }
+  downsample(src, dst);
 
   vipc_server->send(buf, &extra);
 
@@ -169,9 +187,8 @@ uint8_t* MapRenderer::getImage() {
   uint8_t* src = cap.bits();
   uint8_t* dst = new uint8_t[WIDTH * HEIGHT];
 
-  for (int i = 0; i < WIDTH * HEIGHT; i++) {
-    dst[i] = src[i * 3];
-  }
+  // 2x downsample + rgb to grayscale
+  downsample(src, dst);
 
   return dst;
 }
@@ -220,11 +237,6 @@ extern "C" {
     settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
-  }
-
-  void map_renderer_update_zoom(MapRenderer *inst, float zoom) {
-    inst->updateZoom(zoom);
-    QApplication::processEvents();
   }
 
   void map_renderer_update_position(MapRenderer *inst, float lat, float lon, float bearing) {

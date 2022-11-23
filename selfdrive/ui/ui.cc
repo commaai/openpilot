@@ -63,6 +63,8 @@ void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Rea
   right_points.reserve(max_idx + 1);
 
   for (int i = 0; i <= max_idx; i++) {
+    // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
+    if (line_x[i] < 0) continue;
     QPointF left, right;
     bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
     bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
@@ -172,7 +174,6 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
-  s->scene.end_to_end_long = params.getBool("EndToEndLong");
 }
 
 void UIState::updateStatus() {

@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QDir>
 #include <QCommandLineParser>
-#include <QStyleFactory>
 #include <QUuid>
 
 #include "selfdrive/ui/qt/util.h"
@@ -10,7 +9,6 @@
 int main(int argc, char *argv[]) {
   initApp(argc, argv);
   QApplication app(argc, argv);
-  app.setStyle(QStyleFactory::create("Fusion"));
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();

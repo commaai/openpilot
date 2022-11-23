@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <sstream>
 #include <thread>
+#include <utility>
 
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
