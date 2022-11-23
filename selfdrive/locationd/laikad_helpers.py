@@ -3,6 +3,7 @@ import sympy
 
 from laika.constants import EARTH_ROTATION_RATE, SPEED_OF_LIGHT
 from laika.helpers import ConstellationId
+from laika.raw_gnss import prr_residual
 
 
 def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C1C', min_measurements=6):
@@ -87,3 +88,21 @@ def get_posfix_sympy_fun(constellation):
   res = [res] + [sympy.diff(res, v) for v in var]
 
   return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res, modules=["numpy"])
+
+
+def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal='D1C'):
+  '''
+  Calculates gps velocity fix with WLS optimizer
+  returns:
+  0 -> list with velocities
+  1 -> pseudorange_rate errs
+  '''
+  import scipy.optimize as opt  # Only use scipy here
+
+  n = len(measurements)
+  if n < 6:
+    return [], []
+
+  Fx_vel = prr_residual(measurements, est_pos, signal=signal, no_weight=no_weight, no_nans=True)
+  opt_vel = opt.least_squares(Fx_vel, v0).x
+  return opt_vel, Fx_vel(opt_vel, no_weight=True)

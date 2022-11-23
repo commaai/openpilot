@@ -20,7 +20,7 @@ from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun
+from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun, calc_vel_fix
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
@@ -31,8 +31,6 @@ EPHEMERIS_CACHE = 'LaikadEphemeris'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.1
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
-
-from common.transformations.coordinates import ecef2geodetic
 
 
 class Laikad:
@@ -97,10 +95,9 @@ class Laikad:
 
   def get_est_pos(self, t, processed_measurements):
     prev_pos_fix = self.last_pos_fix
-    pos_fix_residual = None
 
     # only recalculate if first fix or last fix is is older than a 1second
-    if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) > 1:
+    if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) > 0:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
 
       pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(
@@ -114,9 +111,9 @@ class Laikad:
           self.last_pos_fix = pos_fix[:3]
           self.last_pos_residual = pos_fix_residual
         else:
-           cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
+          cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
 
-    return self.last_pos_fix, pos_fix_residual, prev_pos_fix
+    return self.last_pos_fix, prev_pos_fix
 
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
@@ -168,6 +165,9 @@ class Laikad:
     if not self.is_good_report(gnss_msg):
       return None
 
+    #if gnss_msg.which() == 'ionoData':
+    # TODO: add this, Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
+
     week, tow, new_meas = self.read_report(gnss_msg)
     if len(new_meas) == 0:
       return None
@@ -184,14 +184,10 @@ class Laikad:
     new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
     processed_measurements = process_measurements(new_meas, self.astro_dog)
 
-    est_pos, est_pos_residual, prev_est_pos = self.get_est_pos(t, processed_measurements)
-    if est_pos == prev_est_pos:
-      # no new position estimation
-      return
-
-    #print(f"est: {ecef2geodetic(est_pos)} prev: {ecef2geodetic(prev_est_pos)}")
-    #print(f"est: {est_pos} prev: {prev_est_pos} res: {est_pos_residual}")
-    # calculate velocity out of these two
+    est_pos, prev_est_pos = self.get_est_pos(t, processed_measurements)
+    if est_pos == prev_est_pos or len(prev_est_pos) == 0:
+      # no new measurement
+      return None
 
     corrected_measurements = []
     if len(est_pos) > 0:
@@ -200,56 +196,33 @@ class Laikad:
     if gnss_mono_time % 10 == 0:
       cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
 
-    # remove GNSSKalman and take velocity from 
-    self.update_localizer(est_pos, t, corrected_measurements)
+    ecef_vel, vel_res = calc_vel_fix(corrected_measurements, est_pos)
+    ecef_vel = ecef_vel[:3]
 
-    kf_valid = all(self.kf_valid(t))
-
-    #ecef_pos = self.gnss_kf.x[GStates.ECEF_POS]
-    #ecef_vel_o = self.gnss_kf.x[GStates.ECEF_VELOCITY]
-    ecef_vel =  [e-p for e, p in zip(est_pos, prev_est_pos)]
-    #print(f"vel: {ecef_vel}")
-
-    p = self.gnss_kf.P.diagonal()
-    # pos_std = np.sqrt(p[GStates.ECEF_POS])
-    vel_std = np.sqrt(p[GStates.ECEF_VELOCITY])
+    vel_std = np.array([np.abs(np.mean(vel_res))]*3)
+    vel_valid = len(ecef_vel) != 0
 
     meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
     dat = messaging.new_message("gnssMeasurements")
     measurement_msg = log.LiveLocationKalman.Measurement.new_message
 
-    #print(f"old msg: {ecef_pos} {est_pos_residual}")
-    # residuals can be empty -> what value to put?
-    #if len(e_info[1]) == 0:
-      #$ rejecting gives even less 
-      #return None
-
-    # convert residual to a meaning full error for the position estimation
-    # locationd processes it as: norm(residual)**2
-    pos_std = np.array([np.sqrt(np.abs(np.mean(est_pos_residual)))/2]*3)
-
-    # this is bad
-    #print(f"vel std: {vel_std} {pos_std.tolist()}")
-    vel_std = pos_std
-    #print(f"vel std: {vel_std}")
+    # process the residual error to get a meaningful accuracy
+    # filter residuals over 400 and calculate the positive mean
+    res = list(filter(lambda x: x < 400, self.last_pos_residual))
+    pos_std = np.array([np.sqrt(np.mean(np.abs(res)))/2]*3)
 
     dat.gnssMeasurements = {
       "gpsWeek": week,
       "gpsTimeOfWeek": tow,
       "positionECEF": measurement_msg(value=est_pos, std=pos_std.tolist(), valid=True),
-      "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std.tolist(), valid=kf_valid),
+      "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=vel_valid),
       # TODO std is incorrectly the dimension of the measurements and not 3D
       "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
       "ubloxMonoTime": gnss_mono_time,
       "correctedMeasurements": meas_msgs
     }
 
-    # fix timing for testing
-    dat.logMonoTime = gnss_mono_time - 31186506
-    return dat#, est_pos_residual
-
-    #elif gnss_msg.which() == 'ionoData':
-    # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
+    return dat
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
