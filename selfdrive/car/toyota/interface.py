@@ -247,8 +247,8 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if ret.cruiseState.standstill and not ret.brakePressed:
-      events.add(EventName.resumeRequired)
+    # if ret.cruiseState.standstill and not ret.brakePressed:
+    #   events.add(EventName.resumeRequired)
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
