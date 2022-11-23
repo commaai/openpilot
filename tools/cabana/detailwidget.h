@@ -29,7 +29,6 @@ public:
 
 private:
   void showForm(const Signal *sig);
-  void showFormClicked();
   void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int size, bool little_endian);

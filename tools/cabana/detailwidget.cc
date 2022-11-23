@@ -153,10 +153,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
     for (auto sig : msg->getSignals()) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
-        form = new SignalEdit(i);
+        form = new SignalEdit(i, this);
         QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
         QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
-        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showFormClicked);
+        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
         QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
         QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
         QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
@@ -196,16 +196,13 @@ void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
     history_log->updateState();
 }
 
-void DetailWidget::showFormClicked() {
-  auto s = qobject_cast<SignalEdit *>(sender());
-  showForm(s->sig);
-}
-
 void DetailWidget::showForm(const Signal *sig) {
   setUpdatesEnabled(false);
   for (auto f : signal_list) {
-    f->updateForm(f->sig == sig && !f->isFormVisible());
-    if (f->sig == sig) scroll->ensureWidgetVisible(f);
+    f->updateForm(f->sig == sig && !f->form->isVisible());
+    if (f->sig == sig && f->form->isVisible()) {
+      QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
+    }
   }
   setUpdatesEnabled(true);
 }
