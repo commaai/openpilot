@@ -37,7 +37,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
   play_btn = new QPushButton("⏸");
-  play_btn->setStyleSheet("font-weight:bold");
+  play_btn->setStyleSheet("font-weight:bold; height:16px");
   control_layout->addWidget(play_btn);
 
   QButtonGroup *group = new QButtonGroup(this);

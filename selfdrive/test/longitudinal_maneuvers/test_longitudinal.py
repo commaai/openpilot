@@ -10,7 +10,7 @@ from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 # TODO: make new FCW tests
 maneuvers = [
   Maneuver(
-    'approach stopped car at 20m/s, initial distance: 120m',
+    'approach stopped car at 25m/s, initial distance: 120m',
     duration=20.,
     initial_speed=25.,
     lead_relevancy=True,
@@ -117,6 +117,13 @@ maneuvers = [
     speed_lead_values=[0., 0., 2.],
     breakpoints=[1., 10., 15.],
     ensure_start=True,
+  ),
+  Maneuver(
+    'cruising at 25 m/s while disabled',
+    duration=20.,
+    initial_speed=25.,
+    lead_relevancy=False,
+    enabled=False,
   ),
 ]
 

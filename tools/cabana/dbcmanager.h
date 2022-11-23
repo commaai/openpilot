@@ -1,8 +1,16 @@
 #pragma once
 
+#include <map>
 #include <QObject>
-
+#include <QString>
 #include "opendbc/can/common_dbc.h"
+
+struct DBCMsg {
+  QString name;
+  uint32_t size;
+  std::map<QString, Signal> sigs;
+  std::vector<const Signal*> getSignals() const;
+};
 
 class DBCManager : public QObject {
   Q_OBJECT
@@ -24,11 +32,11 @@ public:
 
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   void removeMsg(const QString &id);
-  inline const DBC *getDBC() const { return dbc; }
-  inline const Msg *msg(const QString &id) const { return msg(parseId(id).second); }
-  inline const Msg *msg(uint32_t address) const {
-    auto it = msg_map.find(address);
-    return it != msg_map.end() ? it->second : nullptr;
+  inline const std::map<uint32_t, DBCMsg> &messages() const { return msgs; }
+  inline const DBCMsg *msg(const QString &id) const { return msg(parseId(id).second); }
+  inline const DBCMsg *msg(uint32_t address) const {
+    auto it = msgs.find(address);
+    return it != msgs.end() ? &it->second : nullptr;
   }
 
 signals:
@@ -40,13 +48,15 @@ signals:
   void DBCFileChanged();
 
 private:
-  void updateMsgMap();
+  void initMsgMap();
   DBC *dbc = nullptr;
-  std::unordered_map<uint32_t, const Msg *> msg_map;
+  std::map<uint32_t, DBCMsg> msgs;
 };
 
 // TODO: Add helper function in dbc.h
 double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
+bool operator==(const Signal &l, const Signal &r);
+inline bool operator!=(const Signal &l, const Signal &r) { return !(l == r); }
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size);
@@ -54,5 +64,5 @@ std::pair<int, int> getSignalRange(const Signal *s);
 DBCManager *dbc();
 inline QString msgName(const QString &id, const char *def = "untitled") {
   auto msg = dbc()->msg(id);
-  return msg ? msg->name.c_str() : def;
+  return msg ? msg->name : def;
 }

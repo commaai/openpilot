@@ -95,6 +95,7 @@ selfdrive/boardd/panda_comms.h
 selfdrive/boardd/panda_comms.cc
 selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
+selfdrive/boardd/tests/test_boardd_loopback.py
 
 selfdrive/car/__init__.py
 selfdrive/car/docs_definitions.py

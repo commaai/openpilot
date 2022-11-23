@@ -10,6 +10,7 @@ class HeaderView : public QHeaderView {
 public:
   HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
   QSize sectionSizeFromContents(int logicalIndex) const override;
+  void paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const;
 };
 
 class HistoryLogModel : public QAbstractTableModel {
@@ -28,7 +29,7 @@ private:
   QString msg_id;
   int row_count = 0;
   int column_count = 2;
-  const Msg *dbc_msg = nullptr;
+  const DBCMsg *dbc_msg = nullptr;
   std::deque<CanData> messages;
 };
 
