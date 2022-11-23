@@ -169,7 +169,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
 
   //fix.setGpsWeek(this->time.week);
   //fix.setGpsTimeOfWeek(this->time.tow);
-  fix.setUnixTimestampMillis(this->unix_timestamp_millis);
+  //fix.setUnixTimestampMillis(this->unix_timestamp_millis);
 
   double time_since_reset = this->kf->get_filter_time() - this->last_reset_time;
   fix.setTimeSinceReset(time_since_reset);
@@ -290,6 +290,8 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   this->gps_mode = true;
 
+  double sensor_time = log.getMeasTime();
+
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
 
@@ -304,7 +306,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   Vector3d ecef_vel_R_vec = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]);
   MatrixXdr ecef_vel_R = Vector3d::Constant(pow(ecef_vel_R_vec.norm() * 10, 2)).asDiagonal();
 
-  this->unix_timestamp_millis = log.getMeasTime();
+  //this->unix_timestamp_millis = log.getUnixTimestampMillis();
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
@@ -329,14 +331,14 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-    this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {

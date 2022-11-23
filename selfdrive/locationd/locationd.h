@@ -72,7 +72,7 @@ private:
 
   std::unique_ptr<LocalCoord> converter;
 
-  int64_t unix_timestamp_millis = 0;
+  //int64_t unix_timestamp_millis = 0;
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
