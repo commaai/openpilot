@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import json
-import math
 import os
 import time
-from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -21,9 +19,6 @@ from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
 from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun, calc_vel_fix
-from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
-from selfdrive.locationd.models.gnss_kf import GNSSKalman
-from selfdrive.locationd.models.gnss_kf import States as GStates
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
@@ -45,7 +40,6 @@ class Laikad:
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
-    self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
     self.auto_fetch_orbits = auto_fetch_orbits
     self.orbit_fetch_executor: Optional[ProcessPoolExecutor] = None
@@ -217,38 +211,6 @@ class Laikad:
 
     return dat
 
-  def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
-    # Check time and outputs are valid
-    valid = self.kf_valid(t)
-    if not all(valid):
-      if not valid[0]:  # Filter not initialized
-        pass
-      elif not valid[1]:
-        cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
-      elif not valid[2]:
-        cloudlog.error("Gnss kalman filter state is nan")
-      if len(est_pos) > 0:
-        cloudlog.info(f"Reset kalman filter with {est_pos}")
-        self.init_gnss_localizer(est_pos)
-      else:
-        return
-    if len(measurements) > 0:
-      kf_add_observations(self.gnss_kf, t, measurements)
-    else:
-      # Ensure gnss filter is updated even with no new measurements
-      self.gnss_kf.predict(t)
-
-  def kf_valid(self, t: float) -> List[bool]:
-    filter_time = self.gnss_kf.filter.get_filter_time()
-    return [not math.isnan(filter_time),
-            abs(t - filter_time) < MAX_TIME_GAP,
-            all(np.isfinite(self.gnss_kf.x[GStates.ECEF_POS]))]
-
-  def init_gnss_localizer(self, est_pos):
-    x_initial, p_initial_diag = np.copy(GNSSKalman.x_initial), np.copy(np.diagonal(GNSSKalman.P_initial))
-    x_initial[GStates.ECEF_POS] = est_pos
-    p_initial_diag[GStates.ECEF_POS] = 1000 ** 2
-    self.gnss_kf.init_state(x_initial, covs_diag=p_initial_diag)
 
   def fetch_orbits(self, t: GPSTime, block):
     # Download new orbits if 1 hour of orbits data left
@@ -323,21 +285,6 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c.ephemerisSource.gpsWeek = week
   c.ephemerisSource.gpsTimeOfWeek = int(time_of_week)
   return c
-
-
-def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
-  ekf_data = defaultdict(list)
-  for m in measurements:
-    m_arr = m.as_array()
-    if m.constellation_id == ConstellationId.GPS:
-      ekf_data[ObservationKind.PSEUDORANGE_GPS].append(m_arr)
-    elif m.constellation_id == ConstellationId.GLONASS:
-      ekf_data[ObservationKind.PSEUDORANGE_GLONASS].append(m_arr)
-  ekf_data[ObservationKind.PSEUDORANGE_RATE_GPS] = ekf_data[ObservationKind.PSEUDORANGE_GPS]
-  ekf_data[ObservationKind.PSEUDORANGE_RATE_GLONASS] = ekf_data[ObservationKind.PSEUDORANGE_GLONASS]
-  for kind, data in ekf_data.items():
-    if len(data) > 0:
-      gnss_kf.predict_and_observe(t, kind, data)
 
 
 class CacheSerializer(json.JSONEncoder):
