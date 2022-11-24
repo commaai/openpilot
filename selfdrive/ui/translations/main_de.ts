@@ -148,7 +148,7 @@
     </message>
     <message>
         <source>RESET</source>
-        <translation>RÜCKSETZEN</translation>
+        <translation>RESET</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
@@ -160,7 +160,7 @@
     </message>
     <message>
         <source>REVIEW</source>
-        <translation>WIEDERHOLEN</translation>
+        <translation>TRAINING</translation>
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
