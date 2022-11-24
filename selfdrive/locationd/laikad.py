@@ -202,7 +202,7 @@ class Laikad:
       "gpsWeek": week,
       "gpsTimeOfWeek": tow,
       "positionECEF": measurement_msg(value=est_pos, std=pos_std.tolist(), valid=True),
-      "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=vel_valid),
+      "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std.tolist(), valid=vel_valid),
       # TODO std is incorrectly the dimension of the measurements and not 3D
       "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
       "measTime": gnss_mono_time,

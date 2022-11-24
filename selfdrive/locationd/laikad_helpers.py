@@ -4,7 +4,6 @@ import sympy
 from laika.constants import EARTH_ROTATION_RATE, SPEED_OF_LIGHT
 from laika.helpers import ConstellationId
 
-
 def calc_pos_fix_gauss_newton(measurements, posfix_functions, x0=None, signal='C1C', min_measurements=6):
   '''
   Calculates gps fix using gauss newton method
@@ -62,7 +61,7 @@ def get_prr_sympy_func():
   vel_o = sympy.Symbol('vel_o')
 
   loss = sat_pos - est_pos
-  loss /= sympy.sqrt(sum(a**2 for a in loss))
+  loss /= sympy.sqrt(loss.dot(loss))
 
   nv = loss.dot(sat_vel - vel)
   ov = (observables - vel_o)

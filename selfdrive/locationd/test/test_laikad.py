@@ -146,6 +146,7 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(correct_msgs_expected, len(correct_msgs))
     self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
+  @unittest.skip("no kf anymore")
   def test_kf_becomes_valid(self):
     laikad = Laikad(auto_update=False)
     m = self.logs[0]
