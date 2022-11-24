@@ -461,7 +461,7 @@ struct kgsl_device_waittimestamp_ctxtid {
  * other ioctls to determine when the commands have been executed by
  * the GPU.
  *
- * This fucntion is deprecated - consider using IOCTL_KGSL_SUBMIT_COMMANDS
+ * This function is deprecated - consider using IOCTL_KGSL_SUBMIT_COMMANDS
  * instead
  */
 struct kgsl_ringbuffer_issueibcmds {
