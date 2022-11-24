@@ -107,6 +107,46 @@ def get_prr_sympy_func(no_weight):
     res, modules=["numpy"])
 
 
+
+def get_prr_sympy_func_vec(no_weight):
+  # knowns, receiver position, satellite position, satellite velocity
+  est_pos_sym = sympy.MatrixSymbol('est_pos', 3, 1)
+  est_pos = sympy.Matrix(est_pos_sym)
+  sat_pos_sym = sympy.MatrixSymbol('sat_pos', 3, 1)
+  sat_pos = sympy.Matrix(sat_pos_sym)
+  sat_vel_sym = sympy.MatrixSymbol('sat_vel', 3, 1)
+  sat_vel = sympy.Matrix(sat_vel_sym)
+  observables = sympy.Symbol('observables')
+
+  # unknown, receiver velocity
+  vel_sym = sympy.MatrixSymbol('vel', 3, 1)
+  vel = sympy.Matrix(vel_sym)
+  vel_o = sympy.Symbol('vel_o')
+
+  loss = (sat_pos - est_pos)#.normalize()
+
+  # this does not do the same !!!
+  # loss /= sympy.sqrt(loss[0, 0] + loss[1, 0]**2 + loss[2, 0]**2)
+
+  lx, ly, lz = loss
+  loss /= sympy.sqrt(lx**2 + ly**2 + lz**2)
+  nv = sat_vel.dot(loss)
+  ov = (observables - vel_o)
+
+  # TODO: make weight parameter
+  if no_weight:
+    res = (nv - ov)
+  else:
+    res = (nv - ov)/observables
+
+  res = [res] +  [sympy.diff(res, v) for v in [vel, vel_o]]
+
+  return sympy.lambdify([
+      est_pos, sat_pos, sat_vel, observables, vel, vel_o
+    ], res, modules=["numpy"])
+
+
+
 def prr_residual_h(measurements, est_pos, no_weight=False):
   signal='D1C'
 
@@ -134,16 +174,19 @@ def prr_residual_h(measurements, est_pos, no_weight=False):
       vals.append(res)
       '''
 
-      f = get_prr_sympy_func(no_weight)
+      f = get_prr_sympy_func_vec(no_weight)
 
-      val, *gradient = f(est_pos[0], est_pos[1], est_pos[2],
-                         sat_pos[0], sat_pos[1], sat_pos[2],
-                         meas.sat_vel[0], meas.sat_vel[1], meas.sat_vel[2],
+      # print(f"inputs: {est_pos}")
+
+      val, *gradient = f(est_pos, sat_pos, meas.sat_vel,
                          meas.observables[signal],
-                         vel[0], vel[1], vel[2], vel[3])
+                         vel[0:3], vel[3])
       vals.append(val)
-      gradients.append(gradient)
+      gradients.append([gradient[1]]) # TODO: clean up
+
     return np.asarray(vals), np.asarray(gradients)
+
+  # [array([[0], [0], [0]]), 0.01834218405660731]
 
   return Fx_vel
 
