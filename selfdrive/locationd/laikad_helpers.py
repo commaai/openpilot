@@ -148,21 +148,18 @@ def get_posfix_sympy_fun(constellation):
   return sympy.lambdify([x, y, z, bc, bg, pr, sat_x, sat_y, sat_z, weight], res, modules=["numpy"])
 
 
-def calc_vel_fix(measurements, est_pos, v0=None, signal='D1C'):
+def calc_vel_fix(measurements, est_pos):
   '''
   Calculates gps velocity fix with WLS optimizer
   returns:
   0 -> list with velocities
   1 -> pseudorange_rate errs
   '''
-  if v0 is None:
-    v0=[0, 0, 0, 0]
-
   n = len(measurements)
   if n < 6:
     return [], []
 
   Fx_vel = prr_residual(measurements, est_pos)
-  opt_vel = gauss_newton(Fx_vel, v0)
+  opt_vel = gauss_newton(Fx_vel, [0, 0, 0, 0])
   residual, _ = Fx_vel(opt_vel)
   return opt_vel.tolist(), residual.tolist()
