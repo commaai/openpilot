@@ -372,7 +372,6 @@ Export('cereal', 'messaging', 'visionipc')
 
 rednose_deps = [
   "#selfdrive/locationd/models/constants.py",
-  "#selfdrive/locationd/models/gnss_helpers.py",
 ]
 
 rednose_config = {
