@@ -247,7 +247,7 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if ret.cruiseState.standstill and not ret.brakePressed:
+    if ret.cruiseState.standstill and not ret.brakePressed and not self.CP.enableGasInterceptor:
       events.add(EventName.resumeRequired)
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
