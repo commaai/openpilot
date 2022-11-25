@@ -36,8 +36,8 @@ public:
   void setChartOpened(bool opened);
   void signalHovered(const Signal *sig);
   void updateForm(bool show);
-  inline bool isFormVisible() const { return form->isVisible(); }
   const Signal *sig = nullptr;
+  SignalForm *form = nullptr;
   QString msg_id;
 
 signals:
@@ -45,14 +45,13 @@ signals:
   void showChart(const QString &name, const Signal *sig, bool show, bool merge);
   void remove(const Signal *sig);
   void save(const Signal *sig, const Signal &new_sig);
-  void showFormClicked();
+  void showFormClicked(const Signal *sig);
 
 protected:
   void enterEvent(QEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void saveSignal();
 
-  SignalForm *form = nullptr;
   ElidedLabel *title;
   QLabel *color_label;
   QLabel *icon;
