@@ -1,6 +1,7 @@
 #include "tools/cabana/historylog.h"
 
 #include <QFontDatabase>
+#include <QPainter>
 
 // HistoryLogModel
 
@@ -44,6 +45,8 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       return has_signal ? QString::fromStdString(get_signal(dbc_msg, section - 1).name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && has_signal) {
       return QBrush(QColor(getColor(section - 1)));
+    } else if (role == Qt::ForegroundRole && section > 0 && has_signal) {
+      return QBrush(Qt::black);
     }
   }
   return {};
@@ -73,7 +76,18 @@ void HistoryLogModel::updateState() {
 QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
   const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
   const QRect rect = fontMetrics().boundingRect(QRect(0, 0, sectionSize(logicalIndex), 1000), defaultAlignment(), text);
-  return rect.size() + QSize{10, 5};
+  return rect.size() + QSize{10, 6};
+}
+
+void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const {
+  auto bg_role = model()->headerData(logicalIndex, Qt::Horizontal, Qt::BackgroundRole);
+  if (bg_role.isValid()) {
+    QPen pen(model()->headerData(logicalIndex, Qt::Horizontal, Qt::ForegroundRole).value<QBrush>(), 1);
+    painter->setPen(pen);
+    painter->fillRect(rect, bg_role.value<QBrush>());
+  }
+  QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
+  painter->drawText(rect.adjusted(5, 3, 5, 3), defaultAlignment(), text);
 }
 
 // HistoryLog
@@ -88,7 +102,6 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   verticalHeader()->setVisible(false);
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  setStyleSheet("QTableView::item { border:0px; padding-left:5px; padding-right:5px; }");
 }
 
 int HistoryLog::sizeHintForColumn(int column) const {
