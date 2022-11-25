@@ -135,6 +135,16 @@ Find answers to the most commonly asked question on our [FAQ](https://github.com
 
 For openpilot product related common asked questions, visit our [FAQ](https://commasupport.zendesk.com/hc/en-us/sections/360005802534-openpilot) page on our main website. 
 
+SOCIAL
+------
+[GitHub](https://github.com/commaai/)
+[Twitter](https://twitter.com/comma_ai)
+[Instagram](https://www.instagram.com/comma_ai/)
+[YouTube](https://www.youtube.com/commaai)
+[Discord](https://discord.com/invite/avCJxEX)
+
+
+
 Licensing
 ------
 
