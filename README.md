@@ -137,15 +137,12 @@ For openpilot product related common asked questions, visit our [FAQ](https://co
 
 SOCIAL
 ------
-[GitHub](https://github.com/commaai/)
 
-[Twitter](https://twitter.com/comma_ai)
-
-[Instagram](https://www.instagram.com/comma_ai/)
-
-[YouTube](https://www.youtube.com/commaai)
-
-[Discord](https://discord.com/invite/avCJxEX)
+   <a href="https://github.com/commaai/"> <img src="https://cdn-icons-png.flaticon.com/512/1051/1051275.png" width="75" > </a>
+   <a href="https://twitter.com/comma_ai"> <img src="https://cdn-icons-png.flaticon.com/512/3670/3670127.png" width="75"> </a>
+   <a href="https://www.instagram.com/comma_ai/"> <img src="https://cdn-icons-png.flaticon.com/512/3670/3670125.png" width="75"> </a>
+   <a href="https://www.youtube.com/commaai"> <img src="https://cdn-icons-png.flaticon.com/512/3670/3670163.png" width="75"> </a>
+   <a href="https://discord.com/invite/avCJxEX"> <img src="https://cdn-icons-png.flaticon.com/512/3670/3670157.png" width="75"> </a>
 
 
 
