@@ -42,7 +42,6 @@ def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
     "GasRegenFullStopActive": at_full_stop,
     "GasRegenAlwaysOne": 1,
     "GasRegenAlwaysOne2": 1,
-    "GasRegenAlwaysOne3": 1,
   }
 
   dat = packer.make_can_msg("ASCMGasRegenCmd", bus, values)[2]
