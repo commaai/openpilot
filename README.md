@@ -138,9 +138,13 @@ For openpilot product related common asked questions, visit our [FAQ](https://co
 SOCIAL
 ------
 [GitHub](https://github.com/commaai/)
+
 [Twitter](https://twitter.com/comma_ai)
+
 [Instagram](https://www.instagram.com/comma_ai/)
+
 [YouTube](https://www.youtube.com/commaai)
+
 [Discord](https://discord.com/invite/avCJxEX)
 
 
