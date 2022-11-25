@@ -118,7 +118,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   main_layout->addWidget(hline);
 
   save_timer = new QTimer(this);
-  save_timer->setInterval(300);
+  save_timer->setInterval(200);
   save_timer->setSingleShot(true);
   save_timer->callOnTimeout(this, &SignalEdit::saveSignal);
 
@@ -147,29 +147,12 @@ void SignalEdit::saveSignal() {
 
   Signal s = *sig;
   s.name = form->name->text().toStdString();
-  s.size = form->size->text().toInt();
   s.offset = form->offset->text().toDouble();
   s.factor = form->factor->text().toDouble();
   s.is_signed = form->sign->currentIndex() == 0;
-  bool little_endian = form->endianness->currentIndex() == 0;
-  if (little_endian != s.is_little_endian) {
-    int start = std::floor(s.start_bit / 8);
-    if (little_endian) {
-      int end = std::floor((s.start_bit - s.size + 1) / 8);
-      s.start_bit = start == end ? s.start_bit - s.size + 1 : bigEndianStartBitsIndex(s.start_bit);
-    } else {
-      int end = std::floor((s.start_bit + s.size - 1) / 8);
-      s.start_bit = start == end ? s.start_bit + s.size - 1 : bigEndianBitIndex(s.start_bit);
-    }
-    s.is_little_endian = little_endian;
-  }
-  if (s.is_little_endian) {
-    s.lsb = s.start_bit;
-    s.msb = s.start_bit + s.size - 1;
-  } else {
-    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
-    s.msb = s.start_bit;
-  }
+  int start_bit = s.is_little_endian ? s.start_bit : bigEndianBitIndex(s.start_bit);
+  s.is_little_endian = form->endianness->currentIndex() == 0;
+  updateSigSizeParamsFromRange(s, start_bit, form->size->text().toInt());
   if (s != *sig)
     emit save(this->sig, s);
 }
