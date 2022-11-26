@@ -24,8 +24,8 @@ fi
 EOF
 
   # setup now without restarting shell
-  export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH
-  export PYENV_ROOT="\$HOME/.pyenv"
+  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+  export PYENV_ROOT="$HOME/.pyenv"
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
 fi
