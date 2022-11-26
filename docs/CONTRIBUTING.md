@@ -59,6 +59,7 @@ Pull requests should be against the master branch. Welcomed contributions includ
 
 A good pull request has all of the following:
 * a clearly stated purpose
+* Follows mypy convention if in Python
 * every line changed directly contributes to the stated purpose
 * verification, i.e. how did you test your PR?
 * justification
