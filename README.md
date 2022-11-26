@@ -11,7 +11,7 @@ Table of Contents
 * [Safety and Testing](#safety-and-testing)
 * [Directory Structure](#directory-structure)
 * [FAQ](#faq)
-* [SOCIAL](#social)
+* [Social](#social)
 * [Licensing](#licensing)
 
 ---
@@ -136,7 +136,7 @@ Find answers to the most commonly asked question on our [FAQ](https://github.com
 
 For openpilot product related common asked questions, visit our [FAQ](https://commasupport.zendesk.com/hc/en-us/sections/360005802534-openpilot) page on our main website. 
 
-SOCIAL
+Social
 ------
 
    <a href="https://github.com/commaai/"> <img src="https://cdn-icons-png.flaticon.com/512/1051/1051275.png" width="75" > </a>
