@@ -11,6 +11,7 @@ Table of Contents
 * [Safety and Testing](#safety-and-testing)
 * [Directory Structure](#directory-structure)
 * [FAQ](#faq)
+* [SOCIAL](#social)
 * [Licensing](#licensing)
 
 ---
