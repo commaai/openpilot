@@ -1,17 +1,132 @@
 #include "lsm6ds3_accel.h"
 
 #include <cassert>
+#include <cmath>
+#include <cstring>
 
 #include "common/swaglog.h"
 #include "common/timing.h"
+#include "common/util.h"
 
 LSM6DS3_Accel::LSM6DS3_Accel(I2CBus *bus, int gpio_nr, bool shared_gpio) :
   I2CSensor(bus, gpio_nr, shared_gpio) {}
+
+void LSM6DS3_Accel::wait_for_data_ready() {
+  uint8_t drdy = 0;
+  uint8_t buffer[6];
+
+  do {
+    read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
+    drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
+  } while (drdy == 0);
+
+  read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
+}
+
+void LSM6DS3_Accel::read_and_avg_data(float* out_buf) {
+  uint8_t drdy = 0;
+  uint8_t buffer[6];
+
+  float scaling = 0.061f;
+  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
+    scaling = 0.122f;
+  }
+
+  for (int i = 0; i < 5; i++) {
+    do {
+      read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, &drdy, sizeof(drdy));
+      drdy &= LSM6DS3_ACCEL_DRDY_XLDA;
+    } while (drdy == 0);
+
+    int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
+    assert(len == sizeof(buffer));
+
+    for (int j = 0; j < 3; j++) {
+      out_buf[j] += (float)read_16_bit(buffer[j*2], buffer[j*2+1]) * scaling;
+    }
+  }
+
+  for (int i = 0; i < 3; i++) {
+    out_buf[i] /= 5.0f;
+  }
+}
+
+int LSM6DS3_Accel::self_test(int test_type) {
+  float val_st_off[3] = {0};
+  float val_st_on[3] = {0};
+  float test_val[3] = {0};
+  uint8_t ODR_FS_MO = LSM6DS3_ACCEL_ODR_52HZ; // full scale: +-2g, ODR: 52Hz
+
+  // prepare sensor for self-test
+
+  // enable block data update and automatic increment
+  int ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC_BDU);
+  if (ret < 0) {
+    return ret;
+  }
+
+  if (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) {
+    ODR_FS_MO = LSM6DS3_ACCEL_FS_4G | LSM6DS3_ACCEL_ODR_52HZ;
+  }
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, ODR_FS_MO);
+  if (ret < 0) {
+    return ret;
+  }
+
+  // wait for stable output, and discard first values
+  util::sleep_for(100);
+  wait_for_data_ready();
+  read_and_avg_data(val_st_off);
+
+  // enable Self Test positive (or negative)
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, test_type);
+  if (ret < 0) {
+    return ret;
+  }
+
+  // wait for stable output, and discard first values
+  util::sleep_for(100);
+  wait_for_data_ready();
+  read_and_avg_data(val_st_on);
+
+  // disable sensor
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0);
+  if (ret < 0) {
+    return ret;
+  }
+
+  // disable self test
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL5_C, 0);
+  if (ret < 0) {
+    return ret;
+  }
+
+  // calculate the mg values for self test
+  for (int i = 0; i < 3; i++) {
+    test_val[i] = fabs(val_st_on[i] - val_st_off[i]);
+  }
+
+  // verify test result
+  for (int i = 0; i < 3; i++) {
+    if ((LSM6DS3_ACCEL_MIN_ST_LIMIT_mg > test_val[i]) ||
+        (test_val[i] > LSM6DS3_ACCEL_MAX_ST_LIMIT_mg)) {
+      return -1;
+    }
+  }
+
+  return ret;
+}
 
 int LSM6DS3_Accel::init() {
   int ret = 0;
   uint8_t buffer[1];
   uint8_t value = 0;
+  bool do_self_test = false;
+
+  const char* env_lsm_selftest =env_lsm_selftest = std::getenv("LSM_SELF_TEST");
+  if (env_lsm_selftest != nullptr && strncmp(env_lsm_selftest, "1", 1) == 0) {
+    do_self_test = true;
+  }
 
   ret = read_register(LSM6DS3_ACCEL_I2C_REG_ID, buffer, 1);
   if(ret < 0) {
@@ -29,7 +144,25 @@ int LSM6DS3_Accel::init() {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
+  ret = self_test(LSM6DS3_ACCEL_POSITIVE_TEST);
+  if (ret < 0) {
+    LOGE("LSM6DS3 accel positive self-test failed!");
+    if (do_self_test) goto fail;
+  }
+
+  ret = self_test(LSM6DS3_ACCEL_NEGATIVE_TEST);
+  if (ret < 0) {
+    LOGE("LSM6DS3 accel negative self-test failed!");
+    if (do_self_test) goto fail;
+  }
+
   ret = init_gpio();
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // enable continuous update, and automatic increase
+  ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC);
   if (ret < 0) {
     goto fail;
   }
