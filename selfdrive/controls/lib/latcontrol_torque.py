@@ -17,7 +17,8 @@ from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 # friction in the steering wheel that needs to be overcome to
 # move it at all, this is compensated for too.
 
-LOW_SPEED_FACTOR = 200
+LOW_SPEED_X = [0, 10, 20, 30]
+LOW_SPEED_Y = [15, 13, 10, 5]
 
 
 class LatControlTorque(LatControl):
@@ -57,8 +58,9 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      setpoint = desired_lateral_accel + LOW_SPEED_FACTOR * desired_curvature
-      measurement = actual_lateral_accel + LOW_SPEED_FACTOR * actual_curvature
+      low_speed_factor = interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
+      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
+      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       error = setpoint - measurement
       gravity_adjusted_lateral_accel = desired_lateral_accel - params.roll * ACCELERATION_DUE_TO_GRAVITY
       pid_log.error = self.torque_from_lateral_accel(error, self.torque_params, error,

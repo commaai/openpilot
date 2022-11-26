@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 import unittest
+from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
@@ -43,6 +44,16 @@ class TestFwFingerprint(unittest.TestCase):
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
+
+  def test_all_addrs_map_to_one_ecu(self):
+    for brand, cars in VERSIONS.items():
+      addr_to_ecu = defaultdict(set)
+      for ecus in cars.values():
+        for ecu_type, addr, sub_addr in ecus.keys():
+          addr_to_ecu[(addr, sub_addr)].add(ecu_type)
+          ecus_for_addr = addr_to_ecu[(addr, sub_addr)]
+          ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_for_addr])
+          self.assertLessEqual(len(ecus_for_addr), 1, f"{brand} has multiple ECUs that map to one address: {ecu_strings} -> ({hex(addr)}, {sub_addr})")
 
   def test_data_collection_ecus(self):
     # Asserts no extra ECUs are in the fingerprinting database
