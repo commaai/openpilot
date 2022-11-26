@@ -70,8 +70,8 @@ void ChartsWidget::updateDisplayRange() {
     // reached the end, or seeked to a timestamp out of range.
     display_range.first = current_sec - 5;
   }
-  display_range.first = std::max(display_range.first, event_range.first);
-  display_range.second = std::min(display_range.first + max_chart_range, event_range.second);
+  display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
+  display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
   if (prev_range != display_range) {
     QFutureSynchronizer<void> future_synchronizer;
     for (auto c : charts)

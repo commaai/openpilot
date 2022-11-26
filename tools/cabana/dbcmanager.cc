@@ -137,19 +137,18 @@ int bigEndianBitIndex(int index) {
 double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   int64_t val = 0;
 
+  int i = sig.msb / 8;
   int bits = sig.size;
-  const int delta = sig.is_little_endian ? -1 : 1;
-  const int lsb_byte_pos = sig.lsb / 8;
-  const int msb_byte_pos = sig.msb / 8;
-  for (int i = msb_byte_pos; i >= 0 && i < data_size && bits > 0; i += delta) {
-    int lsb = lsb_byte_pos == i ? sig.lsb : i * 8;
-    int msb = msb_byte_pos == i ? sig.msb : (i + 1) * 8 - 1;
+  while (i >= 0 && i < data_size && bits > 0) {
+    int lsb = (int)(sig.lsb / 8) == i ? sig.lsb : i * 8;
+    int msb = (int)(sig.msb / 8) == i ? sig.msb : (i + 1) * 8 - 1;
     int size = msb - lsb + 1;
 
     uint64_t d = (data[i] >> (lsb - (i * 8))) & ((1ULL << size) - 1);
     val |= d << (bits - size);
 
     bits -= size;
+    i = sig.is_little_endian ? i - 1 : i + 1;
   }
   if (sig.is_signed) {
     val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
