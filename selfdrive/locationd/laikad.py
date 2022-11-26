@@ -335,6 +335,7 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c.ephemerisSource.gpsTimeOfWeek = int(time_of_week)
   return c
 
+
 def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
   ekf_data = defaultdict(list)
   for m in measurements:
@@ -348,6 +349,7 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
   for kind, data in ekf_data.items():
     if len(data) > 0:
       gnss_kf.predict_and_observe(t, kind, data)
+
 
 class CacheSerializer(json.JSONEncoder):
 
