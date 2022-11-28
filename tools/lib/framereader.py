@@ -56,6 +56,7 @@ def qcamera_concat(videos):
      "-safe", "0",
      "-f", "concat",
      "-i", tmpfilelist,
+     "-c", "copy",
      outputfileinjuggledir],
   )
   return None
