@@ -290,7 +290,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   this->gps_mode = true;
 
-  double sensor_time = log.getMeasTime();
+  double sensor_time = current_time; //log.getMeasTime();
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
