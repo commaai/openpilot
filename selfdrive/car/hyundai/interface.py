@@ -24,8 +24,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def configure_lateral_params(CP):
     params = CarControllerParams(CP)
-    CP.lateralParams.torqueBP = [0.]
-    CP.lateralParams.torqueV = [params.STEER_MAX]
+    CP.carControlParams.steerMax = params.STEER_MAX
     CP.carControlParams.steerDeltaUp = params.STEER_DELTA_UP
     CP.carControlParams.steerDeltaDown = params.STEER_DELTA_DOWN
 
