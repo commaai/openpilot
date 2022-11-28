@@ -146,7 +146,6 @@ class Cluster():
       "vRel": float(lead_msg.v[0] - v_ego),
       "vLead": float(lead_msg.v[0]),
       "vLeadK": float(lead_msg.v[0]),
-      "aLead": float(lead_msg.a[0]),
       "aLeadK": float(lead_msg.a[0]),
       "aLeadTau": _vision_lead_aTau[lead_index],
       "fcw": False,
