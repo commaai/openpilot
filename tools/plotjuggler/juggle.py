@@ -83,6 +83,8 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, vi
   if route_or_segment_name is not None:
     extra_args += f" --window_title \"{route_or_segment_name}\""
 
+  print(env)
+  print(dir(env))
   cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
@@ -132,6 +134,8 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
       all_data += d
 
   if video:
+    # TODO is default 'w+b' safe for ffmpeg process to write while
+    #   we have it open here?
     tempVideoFile = tempfile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir)
     if not qcamera_concat(tempVideoFile.name, videos):
       video = False
