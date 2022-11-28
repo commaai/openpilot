@@ -44,13 +44,14 @@ class FrameType(IntEnum):
 
 def qcamera_concat(out, videos):
   videos_list = "|".join(videos)
-  cmd = ["ffprobe",
+  cmd = ["ffmpeg",
+         "-y",
          "-protocol_whitelist", "https,concat,tls,tcp",
          "-i", "concat:" + videos_list,
          "-c", "copy",
          out]
 
-  if len(videos < 1):
+  if len(videos) < 1:
     return False
 
   try:

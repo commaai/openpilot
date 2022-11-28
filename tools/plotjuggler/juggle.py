@@ -71,8 +71,8 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, vi
   env["PATH"] = f"{INSTALL_DIR}:{os.getenv('PATH', '')}"
   if dbc:
     env["DBC_NAME"] = dbc
-  if video_path:
-    env["VIDEOPATH"] = video_path
+  if video_path is not None:
+    env["VIDEOPATH"] = video_path.name
     env["VIDEOREFCURVE"] = "/roadCameraState/frameId"
 
   extra_args = ""
@@ -112,12 +112,10 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     r = Route(route_or_segment_name.route_name.canonical_name, route_or_segment_name.data_dir)
     logs = r.qlog_paths() if qlog else r.log_paths()
     videos = r.qcamera_paths() if video else []
-    print(videos)
-    for v in videos:
-      print("file " + v)
 
   segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
+  videos = videos[segment_start:segment_end]
 
   if None in logs:
     resp = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
@@ -135,7 +133,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
 
   if video:
     tempVideoFile = tempfile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir)
-    if not qcamera_concat(tempVideoFile, videos):
+    if not qcamera_concat(tempVideoFile.name, videos):
       video = False
       tempVideoFile.close()
       tempVideoFile = None
