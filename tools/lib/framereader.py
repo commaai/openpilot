@@ -42,6 +42,9 @@ class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 
+def qcamera_concat(videos):
+  #TODO
+  return None
 
 def fingerprint_video(fn):
   with FileReader(fn) as f:
