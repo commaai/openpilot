@@ -43,7 +43,21 @@ class FrameType(IntEnum):
   h265_stream = 2
 
 def qcamera_concat(videos):
-  #TODO
+  #TODO download qcameras
+  #TODO make input file list
+  # or maybe input file list can be lines of 
+  #   "link <link>" instd of "file <file>"
+
+  # with tmpfile for input file list,
+  tmpfilelist = None
+  outputfileinjuggledir = "None.mp4"
+  proc = subprocess.Popen(
+    ["ffmpeg",
+     "-safe", "0",
+     "-f", "concat",
+     "-i", tmpfilelist,
+     outputfileinjuggledir],
+  )
   return None
 
 def fingerprint_video(fn):

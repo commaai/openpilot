@@ -73,7 +73,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, vi
     env["DBC_NAME"] = dbc
   if video_path:
     env["VIDEOPATH"] = video_path
-    env["VIDREFCURVE"] = "/roadCameraState/frameId"
+    env["VIDEOREFCURVE"] = "/roadCameraState/frameId"
 
   extra_args = ""
   if fn is not None:
