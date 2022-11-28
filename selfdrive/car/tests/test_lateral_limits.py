@@ -27,17 +27,17 @@ class TestLateralLimits(unittest.TestCase):
     if CP.dashcamOnly:
       raise unittest.SkipTest("Platform is behind dashcamOnly")
 
-    # TODO: test angle
-    if CP.steerControlType == car.CarParams.SteerControlType.angle:
+    # TODO: only test torque control platforms
+    if CP.lateralTuning.which() != 'torque':
       raise unittest.SkipTest
 
     if CP.notCar:
       raise unittest.SkipTest
 
     # TODO: test Honda
-    # if CP.carName in ("honda",):
-    if CP.carName not in ("hyundai",):
-      raise unittest.SkipTest("No steering safety")
+    # # if CP.carName in ("honda",):
+    # if CP.carName not in ("hyundai",):
+    #   raise unittest.SkipTest("No steering safety")
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
