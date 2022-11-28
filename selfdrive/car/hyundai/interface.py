@@ -23,25 +23,11 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def configure_lateral_params(CP):
-    CP.carControlParams.steerDeltaUp = 3
-    CP.carControlParams.steerDeltaDown = 7
-
-    if CP.carFingerprint in CANFD_CAR:
-      CP.carControlParams.steerMax = 270
-      CP.carControlParams.steerDeltaUp = 2
-      CP.carControlParams.steerDeltaDown = 3
-
-    else:
-      # To determine the limit for your car, find the maximum value that the stock LKAS will request.
-      # If the max stock LKAS request is <384, add your car to this list.
-      if CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.IONIQ,
-                               CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
-                               CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
-        CP.carControlParams.steerMax = 255
-
-      # Default for most HKG
-      else:
-        CP.carControlParams.steerMax = 384
+    params = CarControllerParams(CP)
+    CP.lateralParams.torqueBP = [0.]
+    CP.lateralParams.torqueV = [params.STEER_MAX]
+    CP.carControlParams.steerDeltaUp = params.STEER_DELTA_UP
+    CP.carControlParams.steerDeltaDown = params.STEER_DELTA_DOWN
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value

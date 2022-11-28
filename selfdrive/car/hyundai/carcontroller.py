@@ -45,7 +45,6 @@ class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.params = CarControllerParams(CP)
-    self.params.STEER_MAX = self.CP.carControlParams.steerMax  # TODO: put the rest of the params into CarParams and remove class
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
     self.frame = 0
