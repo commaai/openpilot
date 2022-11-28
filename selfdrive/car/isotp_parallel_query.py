@@ -137,17 +137,17 @@ class IsoTpParallelQuery:
           else:
             response_timeouts[tx_addr] = 0
             request_done[tx_addr] = True
-            cloudlog.warning(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
+            cloudlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 
       cur_time = time.monotonic()
       if cur_time - max(response_timeouts.values()) > 0:
         for tx_addr in msgs:
           if request_counter[tx_addr] > 0 and not request_done[tx_addr]:
-            cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
+            cloudlog.error(f"iso-tp query timeout after receiving response: {tx_addr}")
         break
 
       if cur_time - start_time > total_timeout:
-        cloudlog.warning("iso-tp query timeout while receiving data")
+        cloudlog.error("iso-tp query timeout while receiving data")
         break
 
     return results
