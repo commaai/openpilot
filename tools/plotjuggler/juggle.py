@@ -112,6 +112,9 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     r = Route(route_or_segment_name.route_name.canonical_name, route_or_segment_name.data_dir)
     logs = r.qlog_paths() if qlog else r.log_paths()
     videos = r.qcamera_paths() if video else []
+    print(videos)
+    for v in videos:
+      print("file " + v)
 
   segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
@@ -125,13 +128,17 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
       return
 
   all_data = []
-  all_video_data = None
+  tempVideoFile = None
   with multiprocessing.Pool(24) as pool:
     for d in pool.map(load_segment, logs):
       all_data += d
 
   if video:
-    all_video_data = qcamera_concat(videos)
+    tempVideoFile = tempfile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir)
+    if not qcamera_concat(tempVideoFile, videos):
+      video = False
+      tempVideoFile.close()
+      tempVideoFile = None
 
   if not can:
     all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
@@ -146,13 +153,10 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
         pass
       break
 
-  with tempVideoFile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir) as tmpv, tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
+  with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    #TODO write all_video_data to tmpv
-    del all_video_data
-    video_file = tmpv if video else None
-    start_juggler(tmp.name, dbc, layout, route_or_segment_name, video_file)
+    start_juggler(tmp.name, dbc, layout, route_or_segment_name, tempVideoFile)
 
 
 if __name__ == "__main__":
