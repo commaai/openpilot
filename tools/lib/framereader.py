@@ -42,20 +42,22 @@ class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 
-def qcamera_concat(videos):
-  if len(videos_list < 1):
-    return False
+def qcamera_concat(out, videos):
   videos_list = "|".join(videos)
-  outputfileinjuggledir = "None.mp4"
-  exit_code = 0
-  proc = subprocess.Popen(
-    ["ffmpeg",
-     "-protocol_whitelist", "https,concat,tls,tcp",
-     "-i", "concat:" + videos_list,
-     "-c", "copy",
-     outputfileinjuggledir],
-  )
-  return exit_code == 0
+  cmd = ["ffprobe",
+         "-protocol_whitelist", "https,concat,tls,tcp",
+         "-i", "concat:" + videos_list,
+         "-c", "copy",
+         out]
+
+  if len(videos < 1):
+    return False
+
+  try:
+    subprocess.check_output(cmd)
+    return True
+  except subprocess.CalledProcessError:
+    raise False
 
 def fingerprint_video(fn):
   with FileReader(fn) as f:
