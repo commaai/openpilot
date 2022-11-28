@@ -10,6 +10,7 @@
 #define BMX055_ACCEL_I2C_REG_X_LSB  0x02
 #define BMX055_ACCEL_I2C_REG_TEMP   0x08
 #define BMX055_ACCEL_I2C_REG_BW     0x10
+#define BMX055_ACCEL_I2C_REG_PMU    0x11
 #define BMX055_ACCEL_I2C_REG_HBW    0x13
 #define BMX055_ACCEL_I2C_REG_FIFO   0x3F
 
@@ -18,6 +19,8 @@
 
 #define BMX055_ACCEL_HBW_ENABLE       0b10000000
 #define BMX055_ACCEL_HBW_DISABLE      0b00000000
+#define BMX055_ACCEL_DEEP_SUSPEND     0b00100000
+#define BMX055_ACCEL_NORMAL_MODE      0b00000000
 
 #define BMX055_ACCEL_BW_7_81HZ  0b01000
 #define BMX055_ACCEL_BW_15_63HZ 0b01001
@@ -33,5 +36,6 @@ class BMX055_Accel : public I2CSensor {
 public:
   BMX055_Accel(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(MessageBuilder &msg, uint64_t ts = 0);
+  int shutdown();
 };

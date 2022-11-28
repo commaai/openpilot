@@ -102,6 +102,7 @@ void get_testframe(int index, std::unique_ptr<zdl::DlSystem::ITensor> &input) {
   fread(frame_buffer, length, 1, pFile);
   // std::cout << *(frame_buffer+length/4-1) << std::endl;
   std::copy(frame_buffer, frame_buffer+(length/4), input->begin());
+  fclose(pFile);
 }
 
 void SaveITensor(const std::string& path, const zdl::DlSystem::ITensor* tensor)

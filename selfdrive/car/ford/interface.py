@@ -5,8 +5,7 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
-
-EventName = car.CarEvent.EventName
+CarParams = car.CarParams
 
 
 class CarInterface(CarInterfaceBase):
@@ -19,10 +18,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "ford"
     ret.dashcamOnly = True
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.ford)]
 
     # Angle-based steering
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.steerControlType = CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
     tire_stiffness_factor = 1.0
@@ -43,7 +42,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1350 + STD_CARGO_KG
 
     else:
-      raise ValueError(f"Unsupported car: ${candidate}")
+      raise ValueError(f"Unsupported car: {candidate}")
 
     # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
     found_ecus = [fw.ecu for fw in car_fw]

@@ -1,7 +1,6 @@
 import threading
 from typing import Optional
 
-from cereal import log
 from common.params import Params, put_nonblocking
 from common.realtime import sec_since_boot
 from system.hardware import HARDWARE
@@ -39,12 +38,12 @@ class PowerMonitoring:
     self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
 
   # Calculation tick
-  def calculate(self, peripheralState, ignition):
+  def calculate(self, voltage: Optional[int], ignition: bool):
     try:
       now = sec_since_boot()
 
       # If peripheralState is None, we're probably not in a car, so we don't care
-      if peripheralState is None or peripheralState.pandaType == log.PandaState.PandaType.unknown:
+      if voltage is None:
         with self.integration_lock:
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None
@@ -52,8 +51,8 @@ class PowerMonitoring:
         return
 
       # Low-pass battery voltage
-      self.car_voltage_instant_mV = peripheralState.voltage
-      self.car_voltage_mV = ((peripheralState.voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 - CAR_VOLTAGE_LOW_PASS_K)))
+      self.car_voltage_instant_mV = voltage
+      self.car_voltage_mV = ((voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 - CAR_VOLTAGE_LOW_PASS_K)))
       statlog.gauge("car_voltage", self.car_voltage_mV / 1e3)
 
       # Cap the car battery power and save it in a param every 10-ish seconds

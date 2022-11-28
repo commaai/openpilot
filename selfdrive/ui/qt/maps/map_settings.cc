@@ -115,7 +115,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);
-  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
+  connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
+    stack->setCurrentIndex(prime_type ? 0 : 1);
+  });
 
   QVBoxLayout *wrapper = new QVBoxLayout(this);
   wrapper->addWidget(stack);
@@ -156,6 +158,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
 void MapPanel::showEvent(QShowEvent *event) {
   updateCurrentRoute();
+  refresh();
 }
 
 void MapPanel::clear() {
@@ -184,18 +187,24 @@ void MapPanel::updateCurrentRoute() {
 }
 
 void MapPanel::parseResponse(const QString &response, bool success) {
-  stack->setCurrentIndex((uiState()->prime_type || success) ? 0 : 1);
+  if (!success) return;
 
-  if (!success) {
-    return;
+  cur_destinations = response;
+  if (isVisible()) {
+    refresh();
   }
+}
 
-  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
+void MapPanel::refresh() {
+  if (cur_destinations == prev_destinations) return;
+
+  QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
     return;
   }
 
+  prev_destinations = cur_destinations;
   clear();
 
   bool has_recents = false;

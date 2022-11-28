@@ -1,7 +1,6 @@
 import time
 from collections import defaultdict
 from functools import partial
-from typing import Optional
 
 import cereal.messaging as messaging
 from system.swaglog import cloudlog
@@ -10,24 +9,21 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False, response_pending_timeout=10):
+  def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addrs=None, debug=False, response_pending_timeout=10):
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus
     self.request = request
     self.response = response
+    self.functional_addrs = functional_addrs or []
     self.debug = debug
-    self.functional_addr = functional_addr
     self.response_pending_timeout = response_pending_timeout
 
-    self.real_addrs = []
-    for a in addrs:
-      if isinstance(a, tuple):
-        self.real_addrs.append(a)
-      else:
-        self.real_addrs.append((a, None))
+    real_addrs = [a if isinstance(a, tuple) else (a, None) for a in addrs]
+    for tx_addr, _ in real_addrs:
+      assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
-    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in self.real_addrs}
+    self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
     self.msg_buffer = defaultdict(list)
 
   def rx(self):
@@ -36,13 +32,8 @@ class IsoTpParallelQuery:
 
     for packet in can_packets:
       for msg in packet.can:
-        if msg.src == self.bus:
-          if self.functional_addr:
-            if (0x7E8 <= msg.address <= 0x7EF) or (0x18DAF100 <= msg.address <= 0x18DAF1FF):
-              fn_addr = next(a for a in FUNCTIONAL_ADDRS if msg.address - a <= 32)
-              self.msg_buffer[fn_addr].append((msg.address, msg.busTime, msg.dat, msg.src))
-          elif msg.address in self.msg_addrs.values():
-            self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
+        if msg.src == self.bus and msg.address in self.msg_addrs.values():
+          self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
     """Helper function to send single message"""
@@ -72,6 +63,16 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
+  def _create_isotp_msg(self, tx_addr, sub_addr, rx_addr):
+    can_client = CanClient(self._can_tx, partial(self._can_rx, rx_addr, sub_addr=sub_addr), tx_addr, rx_addr,
+                           self.bus, sub_addr=sub_addr, debug=self.debug)
+
+    max_len = 8 if sub_addr is None else 7
+    # uses iso-tp frame separation time of 10 ms
+    # TODO: use single_frame_mode so ECUs can send as fast as they want,
+    # as well as reduces chances we process messages from previous queries
+    return IsoTpMessage(can_client, timeout=0, separation_time=0.01, debug=self.debug, max_len=max_len)
+
   def get_data(self, timeout, total_timeout=60.):
     self._drain_rx()
 
@@ -80,21 +81,18 @@ class IsoTpParallelQuery:
     request_counter = {}
     request_done = {}
     for tx_addr, rx_addr in self.msg_addrs.items():
-      # rx_addr not set when using functional tx addr
-      id_addr = rx_addr or tx_addr[0]
-      sub_addr = tx_addr[1]
-
-      can_client = CanClient(self._can_tx, partial(self._can_rx, id_addr, sub_addr=sub_addr), tx_addr[0], rx_addr,
-                             self.bus, sub_addr=sub_addr, debug=self.debug)
-
-      max_len = 8 if sub_addr is None else 7
-
-      msg = IsoTpMessage(can_client, timeout=0, max_len=max_len, debug=self.debug)
-      msg.send(self.request[0])
-
-      msgs[tx_addr] = msg
+      msgs[tx_addr] = self._create_isotp_msg(*tx_addr, rx_addr)
       request_counter[tx_addr] = 0
       request_done[tx_addr] = False
+
+    # Send first request to functional addrs, subsequent responses are handled on physical addrs
+    if len(self.functional_addrs):
+      for addr in self.functional_addrs:
+        self._create_isotp_msg(addr, None, -1).send(self.request[0])
+
+    # If querying functional addrs, set up physical IsoTpMessages to send consecutive frames
+    for msg in msgs.values():
+      msg.send(self.request[0], setup_only=len(self.functional_addrs) > 0)
 
     results = {}
     start_time = time.monotonic()
@@ -107,11 +105,14 @@ class IsoTpParallelQuery:
 
       for tx_addr, msg in msgs.items():
         try:
-          dat: Optional[bytes] = msg.recv()
+          dat, updated = msg.recv()
         except Exception:
-          cloudlog.exception("Error processing UDS response")
+          cloudlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
+
+        if updated:
+          response_timeouts[tx_addr] = time.monotonic() + timeout
 
         if not dat:
           continue
@@ -121,12 +122,11 @@ class IsoTpParallelQuery:
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
-          response_timeouts[tx_addr] = time.monotonic() + timeout
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
           else:
-            results[(tx_addr, msg._can_client.rx_addr)] = dat[len(expected_response):]
+            results[tx_addr] = dat[len(expected_response):]
             request_done[tx_addr] = True
         else:
           error_code = dat[2] if len(dat) > 2 else -1

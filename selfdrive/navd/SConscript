@@ -11,6 +11,8 @@ if arch in ['larch64', 'x86_64']:
     rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
     qt_env["RPATH"] += rpath
 
+  style_path = File("style.json").abspath
+  qt_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
   qt_libs = ["qt_widgets", "qt_util", "qmapboxgl"] + base_libs
 
   nav_src = ["main.cc", "map_renderer.cc"]

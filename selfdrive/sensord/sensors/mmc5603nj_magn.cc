@@ -51,8 +51,35 @@ fail:
   return ret;
 }
 
-void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
+int MMC5603NJ_Magn::shutdown() {
+  int ret = 0;
 
+  // disable auto reset of measurements
+  uint8_t value = 0;
+  ret = read_register(MMC5603NJ_I2C_REG_INTERNAL_0, &value, 1);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  value &= ~(MMC5603NJ_CMM_FREQ_EN | MMC5603NJ_AUTO_SR_EN);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, value);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // set ODR to 0 to leave continuous mode
+  ret = set_register(MMC5603NJ_I2C_REG_ODR, 0);
+  if (ret < 0) {
+    goto fail;
+  }
+  return ret;
+
+fail:
+  LOGE("Could not disable mmc5603nj auto set reset")
+  return ret;
+}
+
+bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[9];
   int len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
@@ -63,6 +90,7 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   float y = read_20_bit(buffer[7], buffer[3], buffer[2]) * scale;
   float z = read_20_bit(buffer[8], buffer[5], buffer[4]) * scale;
 
+  auto event = msg.initEvent().initMagnetometer();
   event.setSource(cereal::SensorEventData::SensorSource::MMC5603NJ);
   event.setVersion(1);
   event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);
@@ -74,4 +102,5 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   svec.setV(xyz);
   svec.setStatus(true);
 
+  return true;
 }

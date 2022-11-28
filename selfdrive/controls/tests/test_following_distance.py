@@ -27,7 +27,7 @@ class TestFollowingDistance(unittest.TestCase):
   def test_following_distance(self):
     params = Params()
     for e2e in [False, True]:
-      params.put_bool("EndToEndLong", e2e)
+      params.put_bool("ExperimentalMode", e2e)
       for speed in np.arange(0, 40, 5):
         print(f'Testing {speed} m/s')
         v_lead = float(speed)

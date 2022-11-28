@@ -94,6 +94,9 @@ class TestStartup(unittest.TestCase):
 
     time.sleep(2) # wait for controlsd to be ready
 
+    pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
+    time.sleep(0.1)
+
     msg = messaging.new_message('pandaStates', 1)
     msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno
     pm.send('pandaStates', msg)
