@@ -42,8 +42,8 @@ class Mic:
 
     msg = messaging.new_message('microphone')
     microphone = msg.microphone
-    microphone.noiseLevel = self.filter.x
-    microphone.noiseLevelRaw = noise_level_raw
+    microphone.ambientNoiseLevelRaw = noise_level_raw
+    microphone.filteredAmbientNoiseLevel = self.filter.x
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
