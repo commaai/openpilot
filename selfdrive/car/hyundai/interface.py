@@ -22,8 +22,31 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
+  def configure_lateral_params(CP):
+    CP.carControlParams.steerDeltaUp = 3
+    CP.carControlParams.steerDeltaDown = 7
+
+    if CP.carFingerprint in CANFD_CAR:
+      CP.carControlParams.steerMax = 270
+      CP.carControlParams.steerDeltaUp = 2
+      CP.carControlParams.steerDeltaDown = 3
+
+    else:
+      # To determine the limit for your car, find the maximum value that the stock LKAS will request.
+      # If the max stock LKAS request is <384, add your car to this list.
+      if CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.IONIQ,
+                               CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
+                               CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
+        CP.carControlParams.steerMax = 255
+
+      # Default for most HKG
+      else:
+        CP.carControlParams.steerMax = 384
+
+  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+    CarInterface.configure_lateral_params(ret)
 
     ret.carName = "hyundai"
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
