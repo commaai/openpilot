@@ -59,7 +59,7 @@ void ChartsWidget::eventsMerged() {
   if (auto events = can->events(); events && !events->empty()) {
     event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
     event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
-    updateDisplayRange();
+    updateState();
   }
 }
 
