@@ -43,17 +43,12 @@ class FrameType(IntEnum):
   h265_stream = 2
 
 def qcamera_concat(videos):
+  videos_list = "|".join(videos)
   outputfileinjuggledir = "None.mp4"
-  """
-  ffmpeg -protocol_whitelist https,concat,tls,tcp \
-          -i "concat:https://...|https://..." \
-          -c copy out.mp4
-  """
   proc = subprocess.Popen(
     ["ffmpeg",
-     "-safe", "0",
-     "-f", "concat",
-     "-i", tmpfilelist,
+     "-protocol_whitelist", "https,concat,tls,tcp",
+     "-i", "concat:" + videos_list,
      "-c", "copy",
      outputfileinjuggledir],
   )
