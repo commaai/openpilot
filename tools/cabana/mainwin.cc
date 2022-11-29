@@ -289,7 +289,6 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   QWidget *input_widget = new QWidget;
   QFormLayout *form_layout = new QFormLayout(input_widget);
   title_label = new QLabel;
-  title_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   form_layout->addRow(title_label);
 
   QHBoxLayout *edit_layout = new QHBoxLayout;
@@ -306,6 +305,7 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   stacked_layout->addWidget(input_widget);
 
   loading_label = new QLabel("loading route");
+  loading_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   stacked_layout->addWidget(loading_label);
 
   QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);

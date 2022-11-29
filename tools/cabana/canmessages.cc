@@ -22,9 +22,7 @@ static bool event_filter(const Event *e, void *opaque) {
 }
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
-  if (replay) {
-    pause(true);
-  }
+  is_loaded = false;
   replay.reset(new Replay(route, {"can", "roadEncodeIdx", "carParams"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this));
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
@@ -32,6 +30,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   QObject::connect(replay.get(), &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
     replay->start();
+    is_loaded = true;
     return true;
   }
   return false;
