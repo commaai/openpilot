@@ -115,7 +115,9 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
 
   segment_end = segment_start + segment_count if segment_count else None
   logs = logs[segment_start:segment_end]
-  videos = videos[segment_start:segment_end]
+  # TODO: need to start from 0 instead of segment start for videos
+  #     so roadCameraState frameId matches video start
+  videos = videos[0:segment_end]
 
   if None in logs:
     resp = input(f"{logs.count(None)}/{len(logs)} of the rlogs in this segment are missing, would you like to fall back to the qlogs? (y/n) ")
