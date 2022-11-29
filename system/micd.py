@@ -26,6 +26,8 @@ class Mic:
     self.last_alert_time = 0
 
   def update(self):
+    self.sm.update(0)
+
     if self.sm.updated['controlsState']:
       if self.sm['controlsState'].alertSound > 0:
         self.last_alert_time = time.time()
