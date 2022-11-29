@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -55,7 +55,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.autoResumeSng = ret.minEnableSpeed == -1.
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
     return ret
 
   def _update(self, c):
