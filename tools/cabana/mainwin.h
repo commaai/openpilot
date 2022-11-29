@@ -15,6 +15,29 @@
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
 
+class DownloadProgressBar : public QProgressBar {
+public:
+  DownloadProgressBar(QWidget *parent);
+  void updateProgress(uint64_t cur, uint64_t total, bool success);
+};
+
+class LoadRouteDialog : public QDialog {
+public:
+  LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent);
+  void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  QString route_string;
+  DownloadProgressBar *progress_bar;
+
+protected:
+  void loadClicked();
+  void reject() override;
+
+  QLineEdit *route_edit;
+  QLabel *loading_label;
+  QLabel *title_label;
+  QStackedWidget *stacked_layout;
+};
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -40,7 +63,6 @@ protected:
   void createActions();
   void createStatusBar();
   void closeEvent(QCloseEvent *event) override;
-  void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
 
   VideoWidget *video_widget;
@@ -50,25 +72,9 @@ protected:
   QSplitter *splitter;
   QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
-  QProgressBar *progress_bar;
+  DownloadProgressBar *progress_bar;
   QLabel *fingerprint_label;
   ElidedLabel *route_label;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
-};
-
-class LoadRouteDialog : public QDialog {
-public:
-  LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent);
-  void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
-  QString route_string;
-
-protected:
-  void loadClicked();
-  void reject() override;
-
-  QLineEdit *route_edit;
-  QLabel *loading_label;
-  QLabel *title_label;
-  QStackedWidget *stacked_layout;
 };

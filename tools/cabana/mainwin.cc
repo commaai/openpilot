@@ -105,7 +105,6 @@ MainWindow::MainWindow() : QMainWindow() {
 
   QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
-  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
@@ -153,16 +152,16 @@ void MainWindow::createActions() {
 }
 
 void MainWindow::createStatusBar() {
-  progress_bar = new QProgressBar();
-  progress_bar->setRange(0, 100);
-  progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
+  progress_bar = new DownloadProgressBar(this);
   progress_bar->setVisible(false);
+  progress_bar->setFixedSize({230, 16});
+  QObject::connect(this, &MainWindow::updateProgressBar, progress_bar, &DownloadProgressBar::updateProgress);
   statusBar()->addPermanentWidget(progress_bar);
 }
 
 void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   LoadRouteDialog dlg(route, data_dir, use_qcam, this);
+  QObject::connect(this, &MainWindow::updateProgressBar, dlg.progress_bar, &DownloadProgressBar::updateProgress);
   dlg.exec();
   if (can->isLoaded()) {
     route_label->setText(dlg.route_string);
@@ -224,16 +223,6 @@ void MainWindow::saveDBCToClipboard() {
   QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
 }
 
-void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
-  if (success && cur < total) {
-    progress_bar->setValue((cur / (double)total) * 100);
-    progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
-    progress_bar->show();
-  } else {
-    progress_bar->hide();
-  }
-}
-
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
@@ -276,6 +265,23 @@ void MainWindow::setOption() {
   dlg.exec();
 }
 
+// DownloadProgressBar
+
+DownloadProgressBar::DownloadProgressBar(QWidget *parent) : QProgressBar(parent) {
+  setRange(0, 100);
+  setTextVisible(true);
+}
+
+void DownloadProgressBar::updateProgress(uint64_t cur, uint64_t total, bool success) {
+  if (success && cur < total) {
+    setValue((cur / (double)total) * 100);
+    setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
+    show();
+  } else {
+    hide();
+  }
+}
+
 // LoadRouteDialog
 
 LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
@@ -303,9 +309,15 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
 
   stacked_layout->addWidget(input_widget);
 
+  QWidget *loading_widget = new QWidget (this);
+  QVBoxLayout *loading_layout = new QVBoxLayout(loading_widget);
   loading_label = new QLabel("loading route");
   loading_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-  stacked_layout->addWidget(loading_label);
+  loading_layout->addWidget(loading_label);
+  progress_bar = new DownloadProgressBar(this);
+  loading_layout->addWidget(progress_bar);
+  loading_layout->addStretch(0);
+  stacked_layout->addWidget(loading_widget);
 
   QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &LoadRouteDialog::loadClicked);
