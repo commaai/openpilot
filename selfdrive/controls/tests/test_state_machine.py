@@ -87,11 +87,11 @@ class TestStateMachine(unittest.TestCase):
       self.controlsd.events.clear()
 
   def test_no_entry_pre_enable(self):
-    # preEnabled with preEnabled event
+    # preEnabled with noEntry event
     self.controlsd.state = State.preEnabled
     self.controlsd.events.add(make_event([ET.NO_ENTRY, ET.PRE_ENABLE]))
     self.controlsd.state_transition(self.CS)
-    self.assertEqual(self.controlsd.state, State.disabled)
+    self.assertEqual(self.controlsd.state, State.preEnabled)
 
   def test_maintain_states(self):
     # Given current state's event type, we should maintain state
