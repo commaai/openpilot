@@ -87,6 +87,8 @@ class CarController:
       if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
         addr, bus = 0x730, 5
       can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
+    addr, bus = 0x7b1, 5
+    can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
 
     # >90 degree steering fault prevention
     # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
@@ -117,6 +119,9 @@ class CarController:
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CP, CC.enabled))
+
+      if hda2:
+        can_sends.extend(hyundaicanfd.create_spas_messages(self.packer, self.frame))
 
       if self.CP.openpilotLongitudinalControl:
         if hda2:
