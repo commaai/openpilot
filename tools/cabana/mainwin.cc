@@ -8,7 +8,6 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMenuBar>
@@ -286,30 +285,33 @@ void DownloadProgressBar::updateProgress(uint64_t cur, uint64_t total, bool succ
 LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
     : route_string(route), QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Dialog) {
   setWindowModality(Qt::WindowModal);
-  setWindowTitle(tr("Load Route - Cabana"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  setWindowTitle(tr("Open Route - Cabana"));
+  setLayout(new QVBoxLayout(this));
+
   stacked_layout = new QStackedWidget();
-  main_layout->addWidget(stacked_layout);
+  layout()->addWidget(stacked_layout);
 
   QWidget *input_widget = new QWidget;
-  QFormLayout *form_layout = new QFormLayout(input_widget);
+  QVBoxLayout *form_layout = new QVBoxLayout(input_widget);
   title_label = new QLabel;
-  form_layout->addRow(title_label);
+  title_label->setVisible(false);
+  form_layout->addWidget(title_label);
 
   QHBoxLayout *edit_layout = new QHBoxLayout;
+  edit_layout->addWidget(new QLabel(tr("Route:")));
   route_edit = new QLineEdit(this);
-  route_edit->setPlaceholderText(tr("Enter remote route or click browse to select local route"));
+  route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
   edit_layout->addWidget(route_edit);
   auto file_btn = new QPushButton(tr("Browse..."), this);
   edit_layout->addWidget(file_btn);
-  form_layout->addRow(tr("Route:"), edit_layout);
+  form_layout->addLayout(edit_layout);
 
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   form_layout->addWidget(buttonBox);
 
   stacked_layout->addWidget(input_widget);
 
-  QWidget *loading_widget = new QWidget (this);
+  QWidget *loading_widget = new QWidget(this);
   QVBoxLayout *loading_layout = new QVBoxLayout(loading_widget);
   loading_label = new QLabel("loading route");
   loading_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -365,6 +367,7 @@ void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, b
     QObject::connect(can, &CANMessages::eventsMerged, this, &QDialog::accept);
     return;
   }
+  title_label->setVisible(true);
   title_label->setText(tr("Failed to load route \"%1\".\nmake sure the route name is correct.").arg(route));
   stacked_layout->setCurrentIndex(0);
 }
