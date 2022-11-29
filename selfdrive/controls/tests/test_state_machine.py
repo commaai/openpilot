@@ -79,7 +79,7 @@ class TestStateMachine(unittest.TestCase):
     self.assertEqual(self.controlsd.state, State.disabled)
 
   def test_no_entry(self):
-    # disabled with enable events
+    # Make sure noEntry keeps us disabled
     for et in ENABLE_EVENT_TYPES:
       self.controlsd.events.add(make_event([ET.NO_ENTRY, et]))
       self.controlsd.state_transition(self.CS)
