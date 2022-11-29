@@ -250,7 +250,7 @@ class Controls:
       self.events.add(EventName.pedalPressed)
 
     if CS.brakePressed and CS.standstill:
-      self.events.add(EventName.pedalPressedPreEnable)
+      self.events.add(EventName.preEnableStandstill)
 
     if CS.gasPressed:
       self.events.add(EventName.gasPressedOverride)
