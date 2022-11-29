@@ -44,10 +44,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def get_sound_input_device(self):
-    pass
-
-  @abstractmethod
   def get_imei(self, slot) -> str:
     pass
 

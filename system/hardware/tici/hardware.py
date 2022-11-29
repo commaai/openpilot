@@ -96,9 +96,6 @@ class Tici(HardwareBase):
     return (os.path.isfile('/proc/asound/card0/state') and
             open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
-  def get_sound_input_device(self):
-    return "(hw:0,0)"
-
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
 

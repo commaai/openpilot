@@ -17,9 +17,6 @@ class Pc(HardwareBase):
   def get_sound_card_online(self):
     return True
 
-  def get_sound_input_device(self):
-    return None
-
   def reboot(self, reason=None):
     print("REBOOT!")
 
