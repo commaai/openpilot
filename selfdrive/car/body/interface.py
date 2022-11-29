@@ -2,7 +2,7 @@
 import math
 from cereal import car
 from common.realtime import DT_CTRL
-from selfdrive.car import scale_tire_stiffness, get_safety_config
+from selfdrive.car import get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.body.values import SPEED_FROM_RPM
 
@@ -27,8 +27,6 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = True
     ret.openpilotLongitudinalControl = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
-
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     return ret
 

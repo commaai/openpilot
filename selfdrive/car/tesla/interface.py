@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car.tesla.values import CANBUS, CAR
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -49,8 +49,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.0
     else:
       raise ValueError(f"Unsupported car: {candidate}")
-
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     return ret
 
