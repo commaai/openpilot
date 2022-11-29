@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import time
-
 import sounddevice as sd
 import numpy as np
 
@@ -20,20 +18,14 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.array([])
-    self.filter = FirstOrderFilter(1, 4, DT_MIC)
-    self.muted = False
+    self.filter = FirstOrderFilter(1, 3, DT_MIC)
 
   def update(self):
     self.sm.update(0)
 
-    if self.sm.updated['controlsState']:
-      self.muted = self.sm['controlsState'].alertSound > 0
-
-    if not self.muted and len(self.measurements) > 0:
-      noise_level_raw = float(np.linalg.norm(self.measurements))
+    noise_level_raw = min(float(np.linalg.norm(self.measurements)), 5.)
+    if len(self.measurements) > 0:
       self.filter.update(noise_level_raw)
-    else:
-      noise_level_raw = 0
     self.measurements = np.array([])
 
     msg = messaging.new_message('microphone')
