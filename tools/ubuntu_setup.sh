@@ -61,6 +61,7 @@ function install_ubuntu_common_requirements() {
     qtlocation5-dev \
     qtpositioning5-dev \
     qttools5-dev-tools \
+    libqtav1 \
     libqt5sql5-sqlite \
     libqt5svg5-dev \
     libqt5charts5-dev \
