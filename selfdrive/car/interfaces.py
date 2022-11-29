@@ -88,8 +88,20 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
+  def get_params(candidate: str, fingerprint: Optional[Dict[int, Dict[int, int]]] = None, car_fw: Optional[List[car.CarParams.CarFw]] = None, experimental_long: bool = False):
+    if fingerprint is None:
+      fingerprint = gen_empty_fingerprint()
+    if car_fw is None:
+      car_fw = list()
+
+    ret = CarInterfaceBase.get_std_params(candidate)
+    ret = CarInterfaceBase._get_params(ret, candidate, fingerprint, car_fw, experimental_long)
+
+    return ret
+
+  @staticmethod
   @abstractmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool):
     pass
 
   @staticmethod
@@ -121,7 +133,7 @@ class CarInterfaceBase(ABC):
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate, fingerprint):
+  def get_std_params(candidate):
     ret = car.CarParams.new_message()
     ret.carFingerprint = candidate
 

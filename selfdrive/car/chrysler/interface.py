@@ -8,14 +8,11 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "chrysler"
-
     ret.dashcamOnly = candidate in RAM_HD
 
     ret.radarOffCan = DBC[candidate]['radar'] is None
-
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 

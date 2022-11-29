@@ -28,8 +28,7 @@ class CarInterface(CarInterfaceBase):
     self.yaw_rate_meas = 0.
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.
