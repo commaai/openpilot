@@ -18,17 +18,12 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
-
-  @staticmethod
   def configure_lateral_params(CP):
     params = CarControllerParams(CP)
     CP.carControlParams.steerMax = params.STEER_MAX
     CP.carControlParams.steerDeltaUp = params.STEER_DELTA_UP
     CP.carControlParams.steerDeltaDown = params.STEER_DELTA_DOWN
 
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     CarInterface.configure_lateral_params(ret)
