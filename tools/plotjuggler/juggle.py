@@ -167,7 +167,7 @@ if __name__ == "__main__":
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--ci", action="store_true", help="Download data from openpilot CI bucket")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
-  parser.add_argument("--video", action="store_true", help="Load qcam VideoViewer")
+  parser.add_argument("--video", action="store_true", help="Load qcams into VideoViewer")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
