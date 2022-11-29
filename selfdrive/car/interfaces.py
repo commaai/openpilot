@@ -88,8 +88,13 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
-  @abstractmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
+    ret = CarInterfaceBase._get_params(candidate, fingerprint, car_fw, experimental_long)
+    return ret
+
+  @staticmethod
+  @abstractmethod
+  def _get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
     pass
 
   @staticmethod
@@ -169,6 +174,12 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
+
+  @staticmethod
+  def configure_lateral_params(CP, params):
+    CP.carControlParams.steerMax = params.STEER_MAX
+    CP.carControlParams.steerDeltaUp = params.STEER_DELTA_UP
+    CP.carControlParams.steerDeltaDown = params.STEER_DELTA_DOWN
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:

@@ -18,15 +18,15 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def configure_lateral_params(CP):
-    params = CarControllerParams(CP)
+  def configure_lateral_params(CP, params):
     CP.carControlParams.steerMax = params.STEER_MAX
     CP.carControlParams.steerDeltaUp = params.STEER_DELTA_UP
     CP.carControlParams.steerDeltaDown = params.STEER_DELTA_DOWN
 
+  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-    CarInterface.configure_lateral_params(ret)
+    CarInterface.configure_lateral_params(ret, CarControllerParams(ret))
 
     ret.carName = "hyundai"
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
