@@ -2,7 +2,7 @@
 from cereal import car
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
-from selfdrive.car import gen_empty_fingerprint, get_safety_config
+from selfdrive.car import get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -19,12 +19,10 @@ class CarInterface(CarInterfaceBase):
     self.prev_speed = 0.
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.
-    ret.rotationalInertia = 2500.
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13.  # reasonable

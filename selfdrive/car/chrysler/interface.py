@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "chrysler"
-
     ret.dashcamOnly = candidate in RAM_HD
 
     ret.radarOffCan = DBC[candidate]['radar'] is None
-
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 
@@ -75,9 +72,6 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"Unsupported car: {candidate}")
 
     ret.centerToFront = ret.wheelbase * 0.44
-
-    # starting with reasonable value for civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
