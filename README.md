@@ -127,7 +127,6 @@ Directory Structure
         ├── test            # Unit tests, system tests, and a car simulator
         └── ui              # The UI
 
-
 Licensing
 ------
 
