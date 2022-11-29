@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
-import math
 from cereal import car
 from common.conversions import Conversions as CV
+from common.filter_simple import FirstOrderFilter
+from common.realtime import DT_CTRL
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
+
 # mocked car interface to work with chffrplus
-TS = 0.01  # 100Hz
-YAW_FR = 0.2  # ~0.8s time constant on yaw rate filter
-# low pass gain
-LPG = 2 * math.pi * YAW_FR * TS / (1 + 2 * math.pi * YAW_FR * TS)
-
-
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
@@ -24,8 +20,8 @@ class CarInterface(CarInterfaceBase):
 
     self.speed = 0.
     self.prev_speed = 0.
-    self.yaw_rate = 0.
     self.yaw_rate_meas = 0.
+    self.yaw_rate_filter = FirstOrderFilter(0.0, 0.8, DT_CTRL)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
@@ -37,8 +33,8 @@ class CarInterface(CarInterfaceBase):
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13.  # reasonable
-    ret.tireStiffnessFront = 1e6    # very stiff to neglect slip
-    ret.tireStiffnessRear = 1e6     # very stiff to neglect slip
+    ret.tireStiffnessFront = 1e6  # very stiff to neglect slip
+    ret.tireStiffnessRear = 1e6  # very stiff to neglect slip
 
     return ret
 
@@ -72,8 +68,8 @@ class CarInterface(CarInterfaceBase):
     ret.wheelSpeeds.rl = self.speed
     ret.wheelSpeeds.rr = self.speed
 
-    self.yawRate = LPG * self.yaw_rate_meas + (1. - LPG) * self.yaw_rate
-    curvature = self.yaw_rate / max(self.speed, 1.)
+    self.yaw_rate_filter.update(self.yaw_rate_meas)
+    curvature = self.yaw_rate_filter.x / max(self.speed, 1.)
     ret.steeringAngleDeg = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
     return ret
