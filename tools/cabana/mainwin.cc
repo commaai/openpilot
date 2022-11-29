@@ -199,7 +199,7 @@ void MainWindow::loadDBCFromFingerprint() {
   auto fingerprint = can->carFingerprint();
   fingerprint_label->setText(fingerprint);
   route_label->setText(can->route());
-  if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
+  if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
       loadDBCFromName(dbc_name.toString());
@@ -282,11 +282,14 @@ void MainWindow::setOption() {
 LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
     : QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint) {
   setWindowTitle(tr("Load Route - Cabana"));
-  stacked_layout = new QStackedLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  stacked_layout = new QStackedWidget();
+  main_layout->addWidget(stacked_layout);
 
   QWidget *input_widget = new QWidget;
   QFormLayout *form_layout = new QFormLayout(input_widget);
   title_label = new QLabel;
+  title_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   form_layout->addRow(title_label);
 
   QHBoxLayout *edit_layout = new QHBoxLayout;
@@ -346,11 +349,11 @@ void LoadRouteDialog::loadClicked() {
 
 void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   stacked_layout->setCurrentIndex(1);
-  loading_label->setText("loading route " + route + (data_dir.isEmpty() ? " from " + data_dir : ""));
+  loading_label->setText(tr("Loading route \"%1\" from %2").arg(route).arg(data_dir.isEmpty() ? "server" : data_dir));
   if (can->loadRoute(route, data_dir, false)) {
     QObject::connect(can, &CANMessages::eventsMerged, this, &QDialog::accept);
     return;
   }
-  title_label->setText(tr("Failed to load route %1\n make sure the route name is correct").arg(route));
+  title_label->setText(tr("Failed to load route \"%1\".\nmake sure the route name is correct.").arg(route));
   stacked_layout->setCurrentIndex(0);
 }

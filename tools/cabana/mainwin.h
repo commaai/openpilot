@@ -6,7 +6,7 @@
 #include <QMainWindow>
 #include <QProgressBar>
 #include <QSplitter>
-#include <QStackedLayout>
+#include <QStackedWidget>
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
@@ -68,5 +68,5 @@ protected:
   QLineEdit *route_edit;
   QLabel *loading_label;
   QLabel *title_label;
-  QStackedLayout *stacked_layout;
+  QStackedWidget *stacked_layout;
 };
