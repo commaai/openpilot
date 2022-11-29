@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.nissan.values import CAR
 
@@ -18,6 +18,9 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRatio = 17
 
+    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.radarOffCan = True
+
     if candidate in (CAR.ROGUE, CAR.XTRAIL):
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
@@ -32,13 +35,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1492 + STD_CARGO_KG
       ret.wheelbase = 2.824
       ret.centerToFront = ret.wheelbase * 0.44
-
-    ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.radarOffCan = True
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     return ret
 
