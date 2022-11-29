@@ -14,7 +14,7 @@ from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.framereader import qcamera_concat
+from tools.lib.framereader import ffmpeg_concatenate
 from tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
@@ -95,13 +95,13 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
 
   if route_or_segment_name.startswith(("http://", "https://", "cd:/")) or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
-    videos = [] if video else []
+    videos = []
   elif ci:
     route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
     route = route_or_segment_name.route_name.canonical_name
     segment_start = max(route_or_segment_name.segment_num, 0)
     logs = [get_url(route, i) for i in range(100)]  # Assume there not more than 100 segments
-    videos = [] if video else []
+    videos = []
   else:
     route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)
     segment_start = max(route_or_segment_name.segment_num, 0)
@@ -132,10 +132,8 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
       all_data += d
 
   if video:
-    # TODO is default 'w+b' safe for ffmpeg process to write while
-    #   we have it open here?
     tempVideoFile = tempfile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir)
-    if not qcamera_concat(tempVideoFile.name, videos):
+    if not ffmpeg_concatenate(tempVideoFile.name, videos):
       video = False
       tempVideoFile.close()
       tempVideoFile = None

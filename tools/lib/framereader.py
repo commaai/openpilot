@@ -42,24 +42,6 @@ class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 
-def qcamera_concat(out, videos):
-  videos_list = "|".join(videos)
-  cmd = ["ffmpeg",
-         "-y",
-         "-protocol_whitelist", "https,concat,tls,tcp",
-         "-i", "concat:" + videos_list,
-         "-c", "copy",
-         out]
-
-  if len(videos) < 1:
-    return False
-
-  try:
-    subprocess.check_output(cmd)
-    return True
-  except subprocess.CalledProcessError:
-    raise False
-
 def fingerprint_video(fn):
   with FileReader(fn) as f:
     header = f.read(4)
@@ -91,6 +73,25 @@ def ffprobe(fn, fmt=None):
     raise DataUnreadableError(fn)
 
   return json.loads(ffprobe_output)
+  
+
+def ffmpeg_concatenate(out_filename, videos):
+  videos_list = "|".join(videos)
+  cmd = ["ffmpeg",
+         "-y",
+         "-protocol_whitelist", "https,concat,tls,tcp",
+         "-i", "concat:" + videos_list,
+         "-c", "copy",
+         out_filename]
+
+  if len(videos) < 1:
+    return False
+
+  try:
+    subprocess.check_output(cmd)
+    return True
+  except subprocess.CalledProcessError:
+    raise False
 
 
 def vidindex(fn, typ):
