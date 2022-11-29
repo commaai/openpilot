@@ -274,19 +274,18 @@ DownloadProgressBar::DownloadProgressBar(QWidget *parent) : QProgressBar(parent)
 }
 
 void DownloadProgressBar::updateProgress(uint64_t cur, uint64_t total, bool success) {
-  if (success && cur < total) {
+  setVisible(success && cur < total);
+  if (isVisible()) {
     setValue((cur / (double)total) * 100);
     setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
-    show();
-  } else {
-    hide();
   }
 }
 
 // LoadRouteDialog
 
 LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
-    : route_string(route), QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint) {
+    : route_string(route), QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Dialog) {
+  setWindowModality(Qt::WindowModal);
   setWindowTitle(tr("Load Route - Cabana"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   stacked_layout = new QStackedWidget();
@@ -333,9 +332,8 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   move(pt.x(), pt.y() - 50);
   show();
 
-  if (!route.isEmpty()) {
+  if (!route.isEmpty())
     loadRoute(route, data_dir, use_qcam);
-  }
 }
 
 void LoadRouteDialog::reject() {

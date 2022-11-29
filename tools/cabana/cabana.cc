@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   } else if (!args.empty()) {
     route = args.first();
   }
-  CANMessages p(&app);
+  CANMessages can_messages(&app);
   MainWindow w;
   w.showMaximized();
   w.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"));
