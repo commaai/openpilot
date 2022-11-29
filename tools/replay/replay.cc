@@ -358,6 +358,7 @@ void Replay::publishFrame(const Event *e) {
 
 void Replay::stream() {
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
+  double prev_replay_speed = 1.0;
   std::unique_lock lk(stream_lock_);
 
   while (true) {
@@ -397,10 +398,11 @@ void Replay::stream() {
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
         // if behind_ns is greater than 1 second, it means that an invalid segemnt is skipped by seeking/replaying
-        if (behind_ns >= 1 * 1e9) {
-          // reset start times
+        if (behind_ns >= 1 * 1e9 || speed_ != prev_replay_speed) {
+          // reset event start times
           evt_start_ts = cur_mono_time_;
           loop_start_ts = nanos_since_boot();
+          prev_replay_speed = speed_;
         } else if (behind_ns > 0 && !hasFlag(REPLAY_FLAG_FULL_SPEED)) {
           precise_nano_sleep(behind_ns);
         }

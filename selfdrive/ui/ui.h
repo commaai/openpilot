@@ -87,7 +87,10 @@ const QColor bg_colors [] = {
 
 typedef struct UIScene {
   bool calibration_valid = false;
+  bool calibration_wide_valid  = false;
+  bool wide_cam = true;
   mat3 view_from_calib = DEFAULT_CALIBRATION;
+  mat3 view_from_wide_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
 
   // modelV2
@@ -101,7 +104,7 @@ typedef struct UIScene {
   QPointF lead_vertices[2];
 
   float light_sensor;
-  bool started, ignition, is_metric, map_on_left, longitudinal_control, end_to_end_long;
+  bool started, ignition, is_metric, map_on_left, longitudinal_control;
   uint64_t started_frame;
 } UIScene;
 
@@ -130,7 +133,7 @@ public:
   QString language;
 
   QTransform car_space_transform;
-  bool wide_camera;
+  bool wide_cam_only;
 
 signals:
   void uiUpdate(const UIState &s);
@@ -179,3 +182,8 @@ public slots:
 };
 
 void ui_update_params(UIState *s);
+int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height);
+void update_model(UIState *s, const cereal::ModelDataV2::Reader &model);
+void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line);
+void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+                      float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert);

@@ -61,10 +61,10 @@ class FordCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.ESCAPE_MK4: [
-    FordCarInfo("Ford Escape 2020"),
-    FordCarInfo("Ford Kuga EU", "Driver Assistance Pack"),
+    FordCarInfo("Ford Escape 2020-21"),
+    FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
   ],
-  CAR.EXPLORER_MK6: FordCarInfo("Ford Explorer 2020-21"),
+  CAR.EXPLORER_MK6: FordCarInfo("Ford Explorer 2020-22"),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
 }
 
@@ -87,31 +87,41 @@ FW_QUERY_CONFIG = FwQueryConfig(
 FW_VERSIONS = {
   CAR.ESCAPE_MK4: {
     (Ecu.eps, 0x730, None): [
+      b'LX6C-14D003-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
       b'LX6C-2D053-NS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6C-2D053-NY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6C-2D053-SA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'LJ6T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LJ6T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
+      b'LX6A-14C204-BJV\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'MX6A-14C204-BEF\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.shiftByWire, 0x732, None): [
+      b'LX6P-14G395-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.EXPLORER_MK6: {
     (Ecu.eps, 0x730, None): [
       b'L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'M1MC-14D003-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
       b'L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-BF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'L1MC-2D053-KB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -123,10 +133,12 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7E0, None): [
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'NB5A-14C204-HB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.shiftByWire, 0x732, None): [
       b'L1MP-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'L1MP-14G395-JB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FOCUS_MK4: {

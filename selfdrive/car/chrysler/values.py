@@ -241,6 +241,7 @@ FW_VERSIONS = {
       b'68334977AH',
       b'68504022AB',
       b'68530686AB',
+      b'68504022AC',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672895AB',
