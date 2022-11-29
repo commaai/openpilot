@@ -72,8 +72,8 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, vi
   if dbc:
     env["DBC_NAME"] = dbc
   if video_path is not None:
-    env["VIDEOPATH"] = video_path.name
-    env["VIDEOREFCURVE"] = "/roadCameraState/frameId"
+    env["VIDEO_PATH"] = video_path.name
+    env["VIDEO_REFERENCE_CURVE"] = "/roadCameraState/frameId"
 
   extra_args = ""
   if fn is not None:
@@ -83,8 +83,6 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, vi
   if route_or_segment_name is not None:
     extra_args += f" --window_title \"{route_or_segment_name}\""
 
-  print(env)
-  print(dir(env))
   cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
