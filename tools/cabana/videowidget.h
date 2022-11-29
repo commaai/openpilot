@@ -3,7 +3,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
-#include <QWidget>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/canmessages.h"

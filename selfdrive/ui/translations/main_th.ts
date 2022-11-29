@@ -951,7 +951,7 @@ location set</source>
         <translation>อัปโหลดข้อมูลจากกล้องที่หันหน้าไปทางคนขับ และช่วยปรับปรุงอัลกอริธึมการตรวจสอบผู้ขับขี่</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>ยกเลิกระบบช่วยขับเมื่อเหยียบคันเร่ง</translation>
     </message>
     <message>
@@ -979,7 +979,7 @@ location set</source>
         <translation>🌮 ควบคุมเร่ง/เบรคแบบ End-to-end (อยู่ขั้นพัฒนา) 🌮</translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation>ทดลองใช้ระบบควบคุมการเร่ง/เบรคโดย openpilot</translation>
     </message>
     <message>

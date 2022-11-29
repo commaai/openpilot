@@ -82,11 +82,10 @@ class Camerad:
     self.queue = cl.CommandQueue(self.ctx)
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
-    # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
-      self.krnl = prg.rgb_to_yuv
+      self.krnl = prg.rgb_to_nv12
     self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
 

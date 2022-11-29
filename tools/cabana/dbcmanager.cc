@@ -1,5 +1,6 @@
 #include "tools/cabana/dbcmanager.h"
 
+#include <limits>
 #include <sstream>
 #include <QVector>
 
@@ -8,77 +9,111 @@ DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 DBCManager::~DBCManager() {}
 
 void DBCManager::open(const QString &dbc_file_name) {
-  dbc_name = dbc_file_name;
-  dbc = const_cast<DBC *>(dbc_lookup(dbc_name.toStdString()));
-  msg_map.clear();
-  for (auto &msg : dbc->msgs) {
-    msg_map[msg.address] = &msg;
-  }
-  emit DBCFileChanged();
+  dbc = const_cast<DBC *>(dbc_lookup(dbc_file_name.toStdString()));
+  initMsgMap();
 }
 
 void DBCManager::open(const QString &name, const QString &content) {
-  this->dbc_name = name;
   std::istringstream stream(content.toStdString());
   dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
-  msg_map.clear();
+  initMsgMap();
+}
+
+void DBCManager::initMsgMap() {
+  msgs.clear();
   for (auto &msg : dbc->msgs) {
-    msg_map[msg.address] = &msg;
+    auto &m = msgs[msg.address];
+    m.name = msg.name.c_str();
+    m.size = msg.size;
+    for (auto &s : msg.sigs)
+      m.sigs[QString::fromStdString(s.name)] = s;
   }
   emit DBCFileChanged();
 }
 
-void save(const QString &dbc_file_name) {
-  // TODO: save DBC to file
+QString DBCManager::generateDBC() {
+  if (!dbc) return {};
+
+  QString dbc_string;
+  for (auto &[address, m] : msgs) {
+    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
+    for (auto &[name, sig] : m.sigs) {
+      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
+                        .arg(name)
+                        .arg(sig.start_bit)
+                        .arg(sig.size)
+                        .arg(sig.is_little_endian ? '1' : '0')
+                        .arg(sig.is_signed ? '-' : '+')
+                        .arg(sig.factor, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10);
+    }
+    dbc_string += "\n";
+  }
+  return dbc_string;
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
-  auto m = const_cast<Msg *>(msg(id));
-  if (m) {
-    m->name = name.toStdString();
-    m->size = size;
-  } else {
-    uint32_t address = addressFromId(id);
-    dbc->msgs.push_back({.address = address, .name = name.toStdString(), .size = size});
-    msg_map[address] = &dbc->msgs.back();
-  }
-  emit msgUpdated(id);
+  auto [_, address] = parseId(id);
+  auto &m = msgs[address];
+  m.name = name;
+  m.size = size;
+  emit msgUpdated(address);
+}
+
+void DBCManager::removeMsg(const QString &id) {
+  uint32_t address = parseId(id).second;
+  msgs.erase(address);
+  emit msgRemoved(address);
 }
 
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
-  if (Msg *m = const_cast<Msg *>(msg(id))) {
-    m->sigs.push_back(sig);
-    emit signalAdded(&m->sigs.back());
+  if (auto m = const_cast<DBCMsg *>(msg(id))) {
+    auto &s = m->sigs[sig.name.c_str()];
+    s = sig;
+    emit signalAdded(&s);
   }
 }
 
 void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
-  if (Msg *m = const_cast<Msg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
-    if (it != m->sigs.end()) {
-      *it = sig;
-      emit signalUpdated(&(*it));
-    }
+  if (auto m = const_cast<DBCMsg *>(msg(id))) {
+    // change key name
+    QString new_name = QString::fromStdString(sig.name);
+    auto node = m->sigs.extract(sig_name);
+    node.key() = new_name;
+    auto it = m->sigs.insert(std::move(node));
+    auto &s = m->sigs[new_name];
+    s = sig;
+    emit signalUpdated(&s);
   }
 }
 
 void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
-  if (Msg *m = const_cast<Msg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [=](auto &sig) { return sig_name == sig.name.c_str(); });
+  if (auto m = const_cast<DBCMsg *>(msg(id))) {
+    auto it = m->sigs.find(sig_name);
     if (it != m->sigs.end()) {
-      emit signalRemoved(&(*it));
+      emit signalRemoved(&(it->second));
       m->sigs.erase(it);
     }
   }
 }
 
-uint32_t DBCManager::addressFromId(const QString &id) {
-  return id.mid(id.indexOf(':') + 1).toUInt(nullptr, 16);
+std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
+  const auto list = id.split(':');
+  return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 
 DBCManager *dbc() {
   static DBCManager dbc_manager(nullptr);
   return &dbc_manager;
+}
+
+// DBCMsg
+
+std::vector<const Signal*> DBCMsg::getSignals() const {
+  std::vector<const Signal*> ret;
+  for (auto &[name, sig] : sigs) ret.push_back(&sig);
+  std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
+  return ret;
 }
 
 // helper functions
@@ -122,9 +157,9 @@ double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig) {
   return value;
 }
 
-void updateSigSizeParamsFromRange(Signal &s, int from, int to) {
-  s.start_bit = s.is_little_endian ? from : bigEndianBitIndex(from);
-  s.size = to - from + 1;
+void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size) {
+  s.start_bit = s.is_little_endian ? start_bit : bigEndianBitIndex(start_bit);
+  s.size = size;
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;
@@ -138,4 +173,12 @@ std::pair<int, int> getSignalRange(const Signal *s) {
   int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
   int to = from + s->size - 1;
   return {from, to};
+}
+
+bool operator==(const Signal &l, const Signal &r) {
+  return l.name == r.name && l.size == r.size &&
+         l.start_bit == r.start_bit &&
+         l.msb == r.msb && l.lsb == r.lsb &&
+         l.is_signed == r.is_signed && l.is_little_endian == r.is_little_endian &&
+         l.factor == r.factor && l.offset == r.offset;
 }
