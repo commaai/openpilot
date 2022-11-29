@@ -19,7 +19,7 @@ void Settings::save() {
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
   s.setValue("max_chart_x_range", max_chart_x_range);
-  s.setValue("last_dir", last_dir);
+  s.setValue("last_dbc_dir", last_dbc_dir);
   s.setValue("last_route_dir", last_route_dir);
   s.setValue("splitter_state", splitter_state);
 }
@@ -31,7 +31,7 @@ void Settings::load() {
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   max_chart_x_range = s.value("max_chart_x_range", 3 * 60).toInt();
-  last_dir = s.value("last_dir", QDir::homePath()).toString();
+  last_dbc_dir = s.value("last_dbc_dir", QDir::homePath()).toString();
   last_route_dir = s.value("last_route_dir", QDir::homePath()).toString();
   splitter_state = s.value("splitter_state").toByteArray();
 }

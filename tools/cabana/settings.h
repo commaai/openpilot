@@ -18,7 +18,7 @@ public:
   int cached_segment_limit = 3;
   int chart_height = 200;
   int max_chart_x_range = 3 * 60; // 3 minutes
-  QString last_dir;
+  QString last_dbc_dir;
   QString last_route_dir;
   QByteArray splitter_state;
 
