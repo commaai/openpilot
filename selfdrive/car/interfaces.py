@@ -91,6 +91,7 @@ class CarInterfaceBase(ABC):
   def get_params(cls, candidate: str, fingerprint: Optional[Dict[int, Dict[int, int]]] = None, car_fw: Optional[List[car.CarParams.CarFw]] = None, experimental_long: bool = False):
     if fingerprint is None:
       fingerprint = gen_empty_fingerprint()
+
     if car_fw is None:
       car_fw = list()
 
