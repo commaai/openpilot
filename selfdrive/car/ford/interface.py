@@ -19,7 +19,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
-    tire_stiffness_factor = 1.0
 
     if candidate == CAR.ESCAPE_MK4:
       ret.wheelbase = 2.71
@@ -56,8 +55,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.autoResumeSng = ret.minEnableSpeed == -1.
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
     return ret
 
   def _update(self, c):
