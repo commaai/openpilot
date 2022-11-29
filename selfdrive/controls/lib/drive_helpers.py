@@ -149,7 +149,7 @@ def apply_deadzone(error, deadzone):
   return error
 
 
-def apply_slack(error, deadzone):
+def apply_center_deadzone(error, deadzone):
   if (error > - deadzone) and (error < deadzone):
     error = 0.
   return error
