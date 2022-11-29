@@ -350,6 +350,7 @@ void LoadRouteDialog::loadClicked() {
 void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   stacked_layout->setCurrentIndex(1);
   loading_label->setText(tr("Loading route \"%1\" from %2").arg(route).arg(data_dir.isEmpty() ? "server" : data_dir));
+  repaint();
   if (can->loadRoute(route, data_dir, false)) {
     QObject::connect(can, &CANMessages::eventsMerged, this, &QDialog::accept);
     return;
