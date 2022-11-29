@@ -9,6 +9,7 @@
 #include <QStackedWidget>
 #include <QStatusBar>
 
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
@@ -51,7 +52,7 @@ protected:
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
   QLabel *fingerprint_label;
-  QLabel *route_label;
+  ElidedLabel *route_label;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
 };
@@ -60,6 +61,7 @@ class LoadRouteDialog : public QDialog {
 public:
   LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent);
   void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  QString route_string;
 
 protected:
   void loadClicked();

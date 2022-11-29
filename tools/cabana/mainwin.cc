@@ -1,7 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
 #include <iostream>
-
 #include <QApplication>
 #include <QClipboard>
 #include <QCompleter>
@@ -73,7 +72,7 @@ MainWindow::MainWindow() : QMainWindow() {
   right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
   // TODO: click to select another route.
-  route_label = new QLabel();
+  route_label = new ElidedLabel();
   right_hlayout->addWidget(route_label, 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
 
@@ -164,11 +163,12 @@ void MainWindow::createStatusBar() {
 
 void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   LoadRouteDialog dlg(route, data_dir, use_qcam, this);
-  if (QDialog::Rejected == dlg.exec()) {
-    if (!can->loaded()) {
-      // Close main window and exit cabana
-      QTimer::singleShot(0, [this]() { close(); });
-    }
+  dlg.exec();
+  if (can->isLoaded()) {
+    route_label->setText(dlg.route_string);
+  } else {
+    // Close main window and exit cabana
+    QTimer::singleShot(0, [this]() { close(); });
   }
 }
 
@@ -198,7 +198,6 @@ void MainWindow::loadDBCFromClipboard() {
 void MainWindow::loadDBCFromFingerprint() {
   auto fingerprint = can->carFingerprint();
   fingerprint_label->setText(fingerprint);
-  route_label->setText(can->route());
   if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
@@ -280,7 +279,7 @@ void MainWindow::setOption() {
 // LoadRouteDialog
 
 LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
-    : QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint) {
+    : route_string(route), QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint) {
   setWindowTitle(tr("Load Route - Cabana"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   stacked_layout = new QStackedWidget();
@@ -332,7 +331,7 @@ void LoadRouteDialog::reject() {
 }
 
 void LoadRouteDialog::loadClicked() {
-  QString route_string = route_edit->text();
+  route_string = route_edit->text();
   if (route_string.isEmpty())
     return;
 
