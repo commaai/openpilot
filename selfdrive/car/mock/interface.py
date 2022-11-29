@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from common.conversions import Conversions as CV
-from common.filter_simple import FirstOrderFilter
-from common.realtime import DT_CTRL
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint, get_safety_config
@@ -16,12 +13,10 @@ class CarInterface(CarInterfaceBase):
 
     cloudlog.debug("Using Mock Car Interface")
 
-    self.sm = messaging.SubMaster(['gyroscope', 'gpsLocation', 'gpsLocationExternal'])
+    self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
 
     self.speed = 0.
     self.prev_speed = 0.
-    self.yaw_rate_meas = 0.
-    self.yaw_rate_filter = FirstOrderFilter(0.0, 0.8, DT_CTRL)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
@@ -41,11 +36,6 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     self.sm.update(0)
-
-    # get basic data from phone and gps since CAN isn't connected
-    if self.sm.updated['gyroscope']:
-      self.yaw_rate_meas = -self.sm['gyroscope'].gyroUncalibrated.v[0]
-
     gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
     if self.sm.updated[gps_sock]:
       self.prev_speed = self.speed
@@ -66,10 +56,6 @@ class CarInterface(CarInterfaceBase):
     ret.wheelSpeeds.fr = self.speed
     ret.wheelSpeeds.rl = self.speed
     ret.wheelSpeeds.rr = self.speed
-
-    self.yaw_rate_filter.update(self.yaw_rate_meas)
-    curvature = self.yaw_rate_filter.x / max(self.speed, 1.)
-    ret.steeringAngleDeg = curvature * self.CP.steerRatio * self.CP.wheelbase * CV.RAD_TO_DEG
 
     return ret
 
