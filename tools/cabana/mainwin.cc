@@ -162,11 +162,12 @@ void MainWindow::createStatusBar() {
 void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   LoadRouteDialog dlg(route, data_dir, use_qcam, this);
   QObject::connect(this, &MainWindow::updateProgressBar, dlg.progress_bar, &DownloadProgressBar::updateProgress);
-  dlg.exec();
-  if (can->isLoaded()) {
+  int ret = dlg.exec();
+  if (ret == QDialog::Accepted && can->isLoaded()) {
     route_label->setText(dlg.route_string);
-  } else {
+  } else if (ret == QDialog::Rejected && !can->isLoaded()) {
     // Close main window and exit cabana
+    detail_widget->undo_stack->clear();
     QTimer::singleShot(0, [this]() { close(); });
   }
 }
