@@ -114,7 +114,6 @@ void ChartsWidget::showAllData() {
   max_chart_range = switch_to_show_all ? settings.cached_segment_limit * 60
                                        : settings.max_chart_x_range;
   max_chart_range = std::min(max_chart_range, (uint32_t)can->totalSeconds());
-
   updateToolBar();
   updateState();
 }
