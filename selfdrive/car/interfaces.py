@@ -97,10 +97,10 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = CarInterfaceBase._get_params(ret, candidate, fingerprint, car_fw, experimental_long)
 
-    if ret.rotationalInertia == 0.0:
-      # TODO: get actual value, for now starting with reasonable value for
-      # civic and scaling by mass and wheelbase
-      ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
+    # Set common params using fields set by the car interface
+    # TODO: get actual value, for now starting with reasonable value for
+    # civic and scaling by mass and wheelbase
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     return ret
 

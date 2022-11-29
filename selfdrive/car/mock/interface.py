@@ -32,7 +32,6 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.
-    ret.rotationalInertia = 2500.
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13.  # reasonable
