@@ -42,6 +42,7 @@ class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 
+
 def fingerprint_video(fn):
   with FileReader(fn) as f:
     header = f.read(4)
