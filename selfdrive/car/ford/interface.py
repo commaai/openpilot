@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -55,7 +55,6 @@ class CarInterface(CarInterfaceBase):
     ret.minSteerSpeed = 0.
 
     ret.autoResumeSng = ret.minEnableSpeed == -1.
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.44
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)

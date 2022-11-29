@@ -10,7 +10,7 @@ from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_hysteresis, gen_empty_fingerprint
+from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_deadzone
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -96,6 +96,11 @@ class CarInterfaceBase(ABC):
 
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = CarInterfaceBase._get_params(ret, candidate, fingerprint, car_fw, experimental_long)
+
+    if ret.rotationalInertia == 0.0:
+      # TODO: get actual value, for now starting with reasonable value for
+      # civic and scaling by mass and wheelbase
+      ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     return ret
 
