@@ -60,6 +60,7 @@ class LoadRouteDialog : public QDialog {
 public:
   LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent);
   void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+
 protected:
   void loadClicked();
   void reject() override;

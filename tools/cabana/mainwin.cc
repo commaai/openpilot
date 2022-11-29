@@ -305,10 +305,6 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   loading_label = new QLabel("loading route");
   stacked_layout->addWidget(loading_label);
 
-  setFixedWidth(600);
-  QPoint pt = QGuiApplication::primaryScreen()->geometry().center() - geometry().center();
-  move(pt.x(), pt.y() - 50);
-
   QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
   QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &LoadRouteDialog::loadClicked);
   QObject::connect(file_btn, &QPushButton::clicked, [=]() {
@@ -316,6 +312,11 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
     route_edit->setText(dir);
     settings.last_route_dir = QFileInfo(dir).absolutePath();
   });
+
+  setFixedWidth(600);
+  QPoint pt = QGuiApplication::primaryScreen()->geometry().center() - geometry().center();
+  move(pt.x(), pt.y() - 50);
+  show();
 
   if (!route.isEmpty()) {
     loadRoute(route, data_dir, use_qcam);
