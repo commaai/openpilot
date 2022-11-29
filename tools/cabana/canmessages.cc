@@ -13,7 +13,7 @@ CANMessages::CANMessages(QObject *parent) : QObject(parent) {
 }
 
 CANMessages::~CANMessages() {
-  replay->stop();
+  if (replay) replay->stop();
 }
 
 static bool event_filter(const Event *e, void *opaque) {

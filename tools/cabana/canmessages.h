@@ -45,6 +45,7 @@ public:
   inline bool isPaused() const { return replay->isPaused(); }
   inline void pause(bool pause) { replay->pause(pause); }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
+  inline bool loaded() const { return replay != nullptr; }
 
 signals:
   void streamStarted();
