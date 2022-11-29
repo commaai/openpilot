@@ -518,10 +518,7 @@ class Controls:
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
-          if self.events.any(ET.NO_ENTRY):
-            self.state = State.disabled
-            self.current_alert_types.append(ET.NO_ENTRY)
-          elif not self.events.any(ET.PRE_ENABLE):
+          if not self.events.any(ET.PRE_ENABLE):
             self.state = State.enabled
           else:
             self.current_alert_types.append(ET.PRE_ENABLE)
