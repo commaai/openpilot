@@ -16,16 +16,15 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
-  if (args.empty() && !cmd_parser.isSet("demo")) {
-    cmd_parser.showHelp();
+  QString route;
+  if (cmd_parser.isSet("demo")) {
+    route = DEMO_ROUTE;
+  } else if (!args.empty()) {
+    route = args.first();
   }
-
-  const QString route = args.empty() ? DEMO_ROUTE : args.first();
   CANMessages p(&app);
-  if (!p.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"))) {
-    return 0;
-  }
   MainWindow w;
   w.showMaximized();
+  w.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"));
   return app.exec();
 }

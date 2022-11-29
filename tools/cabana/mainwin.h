@@ -1,10 +1,12 @@
 #pragma once
 
 #include <QComboBox>
+#include <QDialog>
 #include <QJsonDocument>
 #include <QMainWindow>
 #include <QProgressBar>
 #include <QSplitter>
+#include <QStackedLayout>
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
@@ -27,6 +29,7 @@ public slots:
   void loadDBCFromClipboard();
   void saveDBCToFile();
   void saveDBCToClipboard();
+  void loadRoute(const QString &route = {}, const QString &data_dir = {}, bool use_qcam = false);
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -48,6 +51,21 @@ protected:
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
   QLabel *fingerprint_label;
+  QLabel *route_label;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
+};
+
+class LoadRouteDialog : public QDialog {
+public:
+  LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent);
+  void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+protected:
+  void loadClicked();
+  void reject() override;
+
+  QLineEdit *route_edit;
+  QLabel *loading_label;
+  QLabel *title_label;
+  QStackedLayout *stacked_layout;
 };

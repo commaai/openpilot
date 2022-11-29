@@ -1,12 +1,15 @@
 #include "tools/cabana/mainwin.h"
 
 #include <iostream>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QCompleter>
+#include <QDialogButtonBox>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMenuBar>
@@ -70,7 +73,8 @@ MainWindow::MainWindow() : QMainWindow() {
   right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
   // TODO: click to select another route.
-  right_hlayout->addWidget(new QLabel(can->route()), 0, Qt::AlignRight);
+  route_label = new QLabel();
+  right_hlayout->addWidget(route_label, 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
@@ -119,6 +123,8 @@ MainWindow::MainWindow() : QMainWindow() {
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  file_menu->addAction(tr("Open Route..."), [this]() { loadRoute(); });
+  file_menu->addSeparator();
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::loadDBCFromFile);
   file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
   file_menu->addSeparator();
@@ -156,6 +162,11 @@ void MainWindow::createStatusBar() {
   statusBar()->addPermanentWidget(progress_bar);
 }
 
+void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+  LoadRouteDialog dlg(route, data_dir, use_qcam, this);
+  dlg.exec();
+}
+
 void MainWindow::loadDBCFromName(const QString &name) {
   if (name != dbc()->name())
     dbc()->open(name);
@@ -182,6 +193,7 @@ void MainWindow::loadDBCFromClipboard() {
 void MainWindow::loadDBCFromFingerprint() {
   auto fingerprint = can->carFingerprint();
   fingerprint_label->setText(fingerprint);
+  route_label->setText(can->route());
   if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
@@ -258,4 +270,79 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 void MainWindow::setOption() {
   SettingsDlg dlg(this);
   dlg.exec();
+}
+
+// LoadRouteDialog
+
+LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
+    : QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint) {
+  setWindowTitle(tr("Load Route - Cabana"));
+  stacked_layout = new QStackedLayout(this);
+
+  QWidget *input_widget = new QWidget;
+  QFormLayout *form_layout = new QFormLayout(input_widget);
+  title_label = new QLabel;
+  form_layout->addRow(title_label);
+
+  QHBoxLayout *edit_layout = new QHBoxLayout;
+  route_edit = new QLineEdit(this);
+  route_edit->setPlaceholderText(tr("Enter remote route or click browse to select local route"));
+  edit_layout->addWidget(route_edit);
+  auto file_btn = new QPushButton(tr("Browse..."), this);
+  edit_layout->addWidget(file_btn);
+  form_layout->addRow(tr("Route:"), edit_layout);
+
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  form_layout->addWidget(buttonBox);
+
+  stacked_layout->addWidget(input_widget);
+
+  loading_label = new QLabel("loading route");
+  stacked_layout->addWidget(loading_label);
+
+  setFixedWidth(640);
+
+  QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &LoadRouteDialog::loadClicked);
+  QObject::connect(file_btn, &QPushButton::clicked, [=]() {
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
+    route_edit->setText(dir);
+    settings.last_route_dir = QFileInfo(dir).absolutePath();
+  });
+
+  if (!route.isEmpty()) {
+    loadRoute(route, data_dir, use_qcam);
+  }
+}
+
+void LoadRouteDialog::reject() {
+  if (stacked_layout->currentIndex() == 0)
+    done(QDialog::Rejected);
+}
+
+void LoadRouteDialog::loadClicked() {
+  QString route_string = route_edit->text();
+  if (route_string.isEmpty())
+    return;
+
+  if (int idx = route_string.lastIndexOf('/'); idx != -1) {
+    QString basename = route_string.mid(idx + 1);
+    if (int pos = basename.lastIndexOf("--"); pos != -1) {
+      QString route = "0000000000000000|" + basename.mid(0, pos);
+      loadRoute(route, route_string.mid(0, idx), false);
+    }
+  } else {
+    loadRoute(route_string, {}, false);
+  }
+}
+
+void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+  stacked_layout->setCurrentIndex(1);
+  loading_label->setText("loading route " + route + (data_dir.isEmpty() ? " from " + data_dir : ""));
+  if (can->loadRoute(route, data_dir, false)) {
+    QObject::connect(can, &CANMessages::eventsMerged, this, &QDialog::accept);
+    return;
+  }
+  title_label->setText(tr("Failed to load route %1\n make sure the route name is correct").arg(route));
+  stacked_layout->setCurrentIndex(0);
 }

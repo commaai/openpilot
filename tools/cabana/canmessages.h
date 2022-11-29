@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <deque>
+#include <memory>
 #include <mutex>
 
 #include <QColor>
@@ -59,7 +60,7 @@ protected:
   void process(QHash<QString, CanData> *);
   void settingChanged();
 
-  Replay *replay = nullptr;
+  std::unique_ptr<Replay> replay = nullptr;
   std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
   std::atomic<bool> processing = false;
