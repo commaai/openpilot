@@ -9,6 +9,7 @@ from system.swaglog import cloudlog
 
 RATE = 10
 DT_MIC = 1. / RATE
+REFERENCE_SPL = 2 * 10 ** -5  # newtons/m^2
 
 
 class Mic:
@@ -20,6 +21,21 @@ class Mic:
     self.filter = FirstOrderFilter(1, 5, DT_MIC)
 
   def update(self):
+    # n = len(self.measurements)
+    #
+    # sound_pressure_levels = 20 * np.log10(self.measurements / )
+    # average_sound_pressure_level = 10 * np.log10(1 / n * (10 ** (0.1 * sound_pressure_levels)))  # dB
+
+    # self.measurements contains an array of sound amplitudes, 0.0-1.0
+    # Since the microphone is not calibrated, we can only calculate the relative loudness relative to max
+
+
+    # METHOD 1
+    # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
+    sound_pressure = np.sqrt(np.mean(self.measurements ** 2))
+    sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL)  # dB
+    # METHOD 1
+
     noise_level_raw = float(np.linalg.norm(self.measurements))
     if len(self.measurements) > 0:
       self.filter.update(min(noise_level_raw, 5))
