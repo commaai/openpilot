@@ -48,7 +48,7 @@ void Sound::update() {
 
   // scale volume with speed
   if (sm.updated("microphone")) {
-    float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredAmbientNoiseLevel(), 0.7f, 1.4f, 0.f, 1.f);
+    float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredAmbientNoiseLevel(), 0.7f, 2.0f, 0.f, 1.f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     Hardware::set_volume(volume);
   }
