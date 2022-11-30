@@ -70,7 +70,6 @@ MainWindow::MainWindow() : QMainWindow() {
   fingerprint_label = new QLabel(this);
   right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
-  // TODO: click to select another route.
   route_label = new ElidedLabel();
   right_hlayout->addWidget(route_label, 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
