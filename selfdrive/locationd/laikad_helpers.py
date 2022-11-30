@@ -44,7 +44,7 @@ def pr_residual(measurements, posfix_functions, signal='C1C'):
 
 
 def get_prr_sympy_func():
-  # implemting this without sympy.Matrix gives a 2x speedup
+  # implemting this without sympy.Matrix gives a 2x speedup at generation
 
   # knowns, receiver position, satellite position, satellite velocity
   ep_x, ep_y, ep_z = sympy.Symbol('ep_x'), sympy.Symbol('ep_y'), sympy.Symbol('ep_z')
