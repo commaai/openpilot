@@ -14,6 +14,9 @@ MAX_LAT_UP_JERK = 2.5  # m/s^3
 MAX_LAT_UP_JERK_TOLERANCE = 0.5  # m/s^3
 MIN_LAT_DOWN_JERK = 2.0  # m/s^3
 
+MAX_LAT_ACCEL = 3.0  # m/s^2
+MAX_LAT_ACCEL_TOLERANCE = 0.5  # m/s^2
+
 jerks = defaultdict(dict)
 
 
@@ -34,25 +37,23 @@ class TestLateralLimits(unittest.TestCase):
     if CP.notCar:
       raise unittest.SkipTest
 
-    # TODO: test Honda
-    # # if CP.carName in ("honda",):
-    # if CP.carName not in ("hyundai",):
-    #   raise unittest.SkipTest("No steering safety")
+    if CP.carName != "hyundai":
+      raise unittest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
     cls.torque_params = get_torque_params(cls.car_model)
 
-  @classmethod
-  def tearDownClass(cls):
-    for car, _jerks in jerks.items():
-      violation = _jerks['up_jerk'] >= (MAX_LAT_UP_JERK + MAX_LAT_UP_JERK_TOLERANCE)
-      # violation |= _jerks['down_jerk'] <= MIN_LAT_DOWN_JERK
-      violation = ' - VIOLATION' if violation else ''
-      if violation or True:
-        print(f'{car:37} - up jerk: {round(_jerks["up_jerk"], 2)} m/s^3, down jerk: {round(_jerks["down_jerk"], 2)} m/s^3{violation}')
-    print('\n')
-    # print(dict(jerks))
+  # @classmethod
+  # def tearDownClass(cls):
+  #   for car, _jerks in jerks.items():
+  #     violation = _jerks['up_jerk'] >= (MAX_LAT_UP_JERK + MAX_LAT_UP_JERK_TOLERANCE)
+  #     # violation |= _jerks['down_jerk'] <= MIN_LAT_DOWN_JERK
+  #     violation = ' - VIOLATION' if violation else ''
+  #     if violation or True:
+  #       print(f'{car:37} - up jerk: {round(_jerks["up_jerk"], 2)} m/s^3, down jerk: {round(_jerks["down_jerk"], 2)} m/s^3{violation}')
+  #   print('\n')
+  #   # print(dict(jerks))
 
   def _calc_jerk(self):
     steer_step = self.control_params.STEER_STEP
@@ -62,11 +63,15 @@ class TestLateralLimits(unittest.TestCase):
 
     return max_lat_accel / time_to_max, max_lat_accel / time_to_min
 
-  def test_jerk_limits(self):
-    up_jerk, down_jerk = self._calc_jerk()
-    jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLess(up_jerk, MAX_LAT_UP_JERK + MAX_LAT_UP_JERK_TOLERANCE)
-    # self.assertGreater(down_jerk, MIN_LAT_DOWN_JERK)
+  # def test_jerk_limits(self):
+  #   up_jerk, down_jerk = self._calc_jerk()
+  #   jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
+  #   self.assertLess(up_jerk, MAX_LAT_UP_JERK + MAX_LAT_UP_JERK_TOLERANCE)
+  #   # self.assertGreater(down_jerk, MIN_LAT_DOWN_JERK)
+
+  def test_max_lateral_accel(self):
+    self.assertLessEqual(self.torque_params["LAT_ACCEL_FACTOR"], MAX_LAT_ACCEL + MAX_LAT_ACCEL_TOLERANCE)
+    print(self.torque_params)
 
 
 if __name__ == "__main__":

@@ -33,16 +33,21 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 2
       self.STEER_DELTA_DOWN = 3
 
-    # To determine the limit for your car, find the maximum value that the stock LKAS will request.
-    # If the max stock LKAS request is <384, add your car to this list.
-    elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.IONIQ,
-                               CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
-                               CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
-      self.STEER_MAX = 255
-
-    # Default for most HKG
     else:
-      self.STEER_MAX = 384
+      # these cars have significantly more torque than most HKG
+      if CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
+        self.STEER_MAX = 270
+
+      # To determine the limit for your car, find the maximum value that the stock LKAS will request.
+      # If the max stock LKAS request is <384, add your car to this list.
+      elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.IONIQ,
+                                 CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
+                                 CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
+        self.STEER_MAX = 255
+
+      # Default for most HKG
+      else:
+        self.STEER_MAX = 384
 
 
 class HyundaiFlags(IntFlag):
