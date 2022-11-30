@@ -36,9 +36,9 @@ class Mic:
 
     msg = messaging.new_message('microphone')
     # uncalibrated
-    msg.microphone.soundPressure = sound_pressure
-    msg.microphone.soundPressureDb = sound_pressure_level
-    msg.microphone.filteredSoundPressureDb = self.spl_filter.x
+    msg.microphone.soundPressure = float(sound_pressure)
+    msg.microphone.soundPressureDb = float(sound_pressure_level)
+    msg.microphone.filteredSoundPressureDb = float(self.spl_filter.x)
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
