@@ -17,12 +17,12 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.array([])
-    self.filter = FirstOrderFilter(1, 3, DT_MIC)
+    self.filter = FirstOrderFilter(1, 5, DT_MIC)
 
   def update(self):
-    noise_level_raw = min(float(np.linalg.norm(self.measurements)), 5.)
+    noise_level_raw = float(np.linalg.norm(self.measurements))
     if len(self.measurements) > 0:
-      self.filter.update(noise_level_raw)
+      self.filter.update(min(noise_level_raw, 5))
     self.measurements = np.array([])
 
     msg = messaging.new_message('microphone')
