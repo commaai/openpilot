@@ -187,7 +187,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.6
     elif candidate == CAR.KIA_SORENTO_PHEV_4TH_GEN:
       ret.mass = 4095.8 * CV.LB_TO_KG + STD_CARGO_KG # weight from EX and above trims, average of FWD and AWD versions (EX, X-Line EX AWD, SX, SX Pestige, X-Line SX Prestige AWD)
-      ret.wheelbae = 2.81
+      ret.wheelbase = 2.81
       ret.steerRatio = 13.27 # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sorento-phev/2022/specifications
 
     # Genesis
