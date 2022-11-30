@@ -6,8 +6,6 @@
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/boardd/panda.h"
 
-const unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
-
 int random_int(int min, int max) {
   std::random_device dev;
   std::mt19937 rng(dev());

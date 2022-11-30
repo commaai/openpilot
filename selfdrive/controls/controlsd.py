@@ -249,6 +249,9 @@ class Controls:
       (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
 
+    if CS.brakePressed and CS.standstill:
+      self.events.add(EventName.preEnableStandstill)
+
     if CS.gasPressed:
       self.events.add(EventName.gasPressedOverride)
 
@@ -518,10 +521,7 @@ class Controls:
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
-          if self.events.any(ET.NO_ENTRY):
-            self.state = State.disabled
-            self.current_alert_types.append(ET.NO_ENTRY)
-          elif not self.events.any(ET.PRE_ENABLE):
+          if not self.events.any(ET.PRE_ENABLE):
             self.state = State.enabled
           else:
             self.current_alert_types.append(ET.PRE_ENABLE)
@@ -582,7 +582,7 @@ class Controls:
     # Check which actuators can be enabled
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    CS.vEgo > self.CP.minSteerSpeed and not CS.standstill
-    CC.longActive = self.active and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
+    CC.longActive = self.enabled and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
