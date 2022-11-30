@@ -14,32 +14,27 @@ public:
 };
 
 class HistoryLogModel : public QAbstractTableModel {
-  Q_OBJECT
-
 public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const QString &message_id);
   void updateState();
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
 
 private:
   QString msg_id;
-  int row_count = 0;
-  int column_count = 2;
-  const DBCMsg *dbc_msg = nullptr;
   std::deque<CanData> messages;
+  std::vector<const Signal*> sigs;
 };
 
 class HistoryLog : public QTableView {
-  Q_OBJECT
-
 public:
   HistoryLog(QWidget *parent);
   void setMessage(const QString &message_id) { model->setMessage(message_id); }
   void updateState() { model->updateState(); }
+
 private:
   int sizeHintForColumn(int column) const override;
   HistoryLogModel *model;
