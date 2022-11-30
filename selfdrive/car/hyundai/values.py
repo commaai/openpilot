@@ -33,7 +33,7 @@ class CarControllerParams:
       self.STEER_DELTA_DOWN = 3
 
     else:
-      # these cars have significantly more torque than most HKG
+      # these cars have significantly more torque than most HKG; limit to 70% of max
       if CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
         self.STEER_MAX = 270
 
