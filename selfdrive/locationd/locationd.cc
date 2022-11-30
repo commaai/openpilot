@@ -22,6 +22,11 @@ const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
 const double DECAY = 0.99995; // same as reset tracker
 const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
+// TODO: GPS sensor time offsets are empirically calculated
+// They should be replaced with synced time from a real clock
+const double GPS_LOCATION_SENSOR_TIME_OFFSET = 0.630; // s
+const double GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET = 0.095; // s
+
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
@@ -290,7 +295,11 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   this->gps_mode = true;
 
-  double sensor_time = current_time; //log.getMeasTime();
+  double sensor_time = log.getMeasTime() * 1e-9;
+  if (ublox_available)
+    sensor_time -= GPS_LOCATION_SENSOR_TIME_OFFSET;
+  else
+    sensor_time -= GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
@@ -553,6 +562,7 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 int Localizer::locationd_thread() {
+  ublox_available = Params().getBool("UbloxAvailable", true);
 
   const std::initializer_list<const char *> service_list = {
     "gnssMeasurements", "cameraOdometry", "liveCalibration",
