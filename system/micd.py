@@ -26,8 +26,9 @@ class Mic:
     # sound_pressure_levels = 20 * np.log10(self.measurements / )
     # average_sound_pressure_level = 10 * np.log10(1 / n * (10 ** (0.1 * sound_pressure_levels)))  # dB
 
-    # self.measurements contains an array of sound amplitudes, 0.0-1.0
+    # self.measurements contains an array of sound amplitudes, -1.0 to 1.0
     # Since the microphone is not calibrated, we can only calculate the relative loudness relative to max
+    relative_dB = 20 * np.log10(self.measurements)
 
 
     # METHOD 1
@@ -43,8 +44,10 @@ class Mic:
 
     msg = messaging.new_message('microphone')
     microphone = msg.microphone
-    microphone.ambientNoiseLevelRaw = noise_level_raw
-    microphone.filteredAmbientNoiseLevel = self.filter.x
+    microphone.soundPressure = sound_pressure
+    microphone.soundPressureDb = sound_pressure_level
+    # microphone.ambientNoiseLevelRaw = noise_level_raw
+    microphone.filteredSoundPressureDb = self.filter.x
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
