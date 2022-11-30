@@ -41,11 +41,9 @@ public:
   static void set_volume(float volume) {
     volume = util::map_val(volume, 0.f, 1.f, MIN_VOLUME, MAX_VOLUME);
 
-    // "pactl set-sink-volume 1 0.100 &"
-    char *cmd = (char *)malloc(32);
-    snprintf(cmd, 32, "pactl set-sink-volume 1 %.3f &", volume);
-    std::system(cmd);
-    free(cmd);
+    char volume_str[6];
+    snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
+    std::system(("pactl set-sink-volume alsa_output.platform-soc_sound-tavil.stereo-fallback " + std::string(volume_str) + " &").c_str());
   }
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
