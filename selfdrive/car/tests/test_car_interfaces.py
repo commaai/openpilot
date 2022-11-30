@@ -36,6 +36,8 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
+      self.assertGreater(car_params.carControlParams.steerMax, 0)
+
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
         self.assertTrue(not math.isnan(tune.pid.kf) and tune.pid.kf > 0)

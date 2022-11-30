@@ -12,6 +12,9 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
+  def __init__(self, CP):
+    pass
+
   ANGLE_DELTA_BP = [0., 5., 15.]
   ANGLE_DELTA_V = [5., .8, .15]     # windup limit
   ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit

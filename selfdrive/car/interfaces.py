@@ -98,6 +98,12 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long)
 
+    # Set maximum allowed steering torque
+    # TODO: the interfaces should set carControlParams
+    CarControllerParams = get_interface_attr("CarControllerParams")[ret.carName]
+    if CarControllerParams is not None and ret.steerControlType != car.CarParams.SteerControlType.angle:
+      ret.carControlParams.steerMax = CarControllerParams(ret).STEER_MAX
+
     # Set common params using fields set by the car interface
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -193,12 +199,6 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
-
-  @staticmethod
-  def configure_lateral_params(CP, params):
-    CP.carControlParams.steerMax = params.STEER_MAX
-    CP.carControlParams.steerDeltaUp = params.STEER_DELTA_UP
-    CP.carControlParams.steerDeltaDown = params.STEER_DELTA_DOWN
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:

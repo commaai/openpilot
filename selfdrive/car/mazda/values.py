@@ -13,6 +13,9 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 
 class CarControllerParams:
+  def __init__(self, CP):
+    pass
+
   STEER_MAX = 800                # theoretical max_steer 2047
   STEER_DELTA_UP = 10             # torque increase per refresh
   STEER_DELTA_DOWN = 25           # torque decrease per refresh

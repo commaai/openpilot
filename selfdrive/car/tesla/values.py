@@ -104,6 +104,9 @@ BUTTONS = [
 ]
 
 class CarControllerParams:
+  def __init__(self, CP):
+    pass
+
   RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
   RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
   JERK_LIMIT_MAX = 8
