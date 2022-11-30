@@ -198,7 +198,7 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = True
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
-    self.is_metric = cp.vl[cruise_btn_msg]["SET_ME_1"] != 4 if CAR.KIA_SORENTO_PHEV_4TH_GEN else cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
+    self.is_metric = cp.vl[cruise_btn_msg]["DISTANCE_UNIT"] != 1 if CAR.KIA_SORENTO_PHEV_4TH_GEN else cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
       cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
@@ -435,7 +435,6 @@ class CarState(CarStateBase):
 
       ("COUNTER", cruise_btn_msg),
       ("CRUISE_BUTTONS", cruise_btn_msg),
-      ("SET_ME_1", cruise_btn_msg),
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
 
       ("DISTANCE_UNIT", "CLUSTER_INFO"),
@@ -446,6 +445,9 @@ class CarState(CarStateBase):
       ("DRIVER_DOOR_OPEN", "DOORS_SEATBELTS"),
       ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
     ]
+
+    if CP.carFingerprint == CAR.KIA_SORENTO_PHEV_4TH_GEN:
+      signals.append(("DISTANCE_UNIT", cruise_btn_msg))
 
     checks = [
       ("WHEEL_SPEEDS", 100),
