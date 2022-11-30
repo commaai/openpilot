@@ -17,37 +17,28 @@ class Mic:
     self.pm = pm
     self.rk = Ratekeeper(RATE)
 
-    self.measurements = np.array([])
-    self.filter = FirstOrderFilter(1, 5, DT_MIC)
+    self.measurements = np.empty(0)
+    self.spl_filter = FirstOrderFilter(1, 5, DT_MIC)
 
   def update(self):
-    # n = len(self.measurements)
-    #
-    # sound_pressure_levels = 20 * np.log10(self.measurements / )
-    # average_sound_pressure_level = 10 * np.log10(1 / n * (10 ** (0.1 * sound_pressure_levels)))  # dB
-
-    # self.measurements contains an array of sound amplitudes, -1.0 to 1.0
-    # Since the microphone is not calibrated, we can only calculate the relative loudness relative to max
-    relative_dB = 20 * np.log10(self.measurements)
-
-
-    # METHOD 1
-    # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
-    sound_pressure = np.sqrt(np.mean(self.measurements ** 2))
-    sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL)  # dB
-    # METHOD 1
-
-    noise_level_raw = float(np.linalg.norm(self.measurements))
+    # self.measurements contains amplitudes from -1 to 1 which we use to
+    # calculate an uncalibrated sound pressure level
     if len(self.measurements) > 0:
-      self.filter.update(min(noise_level_raw, 5))
-    self.measurements = np.array([])
+      # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
+      sound_pressure = np.sqrt(np.mean(self.measurements ** 2))  # RMS of amplitudes
+      sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL)  # dB
+      self.spl_filter.update(sound_pressure_level)
+    else:
+      sound_pressure = 0
+      sound_pressure_level = 0
+
+    self.measurements = np.empty(0)
 
     msg = messaging.new_message('microphone')
-    microphone = msg.microphone
-    microphone.soundPressure = sound_pressure
-    microphone.soundPressureDb = sound_pressure_level
-    # microphone.ambientNoiseLevelRaw = noise_level_raw
-    microphone.filteredSoundPressureDb = self.filter.x
+    # uncalibrated
+    msg.microphone.soundPressure = sound_pressure
+    msg.microphone.soundPressureDb = sound_pressure_level
+    msg.microphone.filteredSoundPressureDb = self.spl_filter.x
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
