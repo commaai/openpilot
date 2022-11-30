@@ -20,7 +20,6 @@ Sound::Sound(QObject *parent) : sm({"controlsState", "deviceState", "microphone"
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
       assert(s->status() != QSoundEffect::Error);
     });
-    s->setVolume(Hardware::MIN_VOLUME);
     s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
     sounds[alert] = {s, loops};
   }
@@ -51,10 +50,7 @@ void Sound::update() {
   if (sm.updated("microphone")) {
     float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredAmbientNoiseLevel(), 0.7f, 1.4f, 0.f, 1.f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-    volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-    for (auto &[s, loops] : sounds) {
-      s->setVolume(std::round(100 * volume) / 100);
-    }
+    Hardware::set_volume(volume);
   }
 
   setAlert(Alert::get(sm, started_frame));
