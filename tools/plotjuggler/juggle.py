@@ -128,17 +128,17 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
       return
 
   all_data = []
-  tempVideoFile = None
+  temp_video_file = None
   with multiprocessing.Pool(24) as pool:
     for d in pool.map(load_segment, logs):
       all_data += d
 
   if video:
-    tempVideoFile = tempfile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir)
-    if not ffmpeg_concatenate(tempVideoFile.name, videos):
+    temp_video_file = tempfile.NamedTemporaryFile(suffix='.mp4', dir=juggle_dir)
+    if not ffmpeg_concatenate(temp_video_file.name, videos):
       video = False
-      tempVideoFile.close()
-      tempVideoFile = None
+      temp_video_file.close()
+      temp_video_file = None
 
   if not can:
     all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
@@ -156,7 +156,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    start_juggler(tmp.name, dbc, layout, route_or_segment_name, tempVideoFile)
+    start_juggler(tmp.name, dbc, layout, route_or_segment_name, temp_video_file)
 
 
 if __name__ == "__main__":
@@ -167,7 +167,8 @@ if __name__ == "__main__":
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--ci", action="store_true", help="Download data from openpilot CI bucket")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
-  parser.add_argument("--video", action="store_true", help="Load qcams into VideoViewer")
+  if platform.system() == "Linux":
+    parser.add_argument("--video", action="store_true", help="Load qcams into VideoViewer")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
@@ -196,4 +197,5 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.dbc, args.ci, args.video)
+    load_video = args.video if platform.system() == 'Linux' else False
+    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.dbc, args.ci, load_video)
