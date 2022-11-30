@@ -12,17 +12,14 @@ DT_MIC = 1. / RATE
 
 
 class Mic:
-  def __init__(self, pm, sm):
+  def __init__(self, pm):
     self.pm = pm
-    self.sm = sm
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.array([])
     self.filter = FirstOrderFilter(1, 3, DT_MIC)
 
   def update(self):
-    self.sm.update(0)
-
     noise_level_raw = min(float(np.linalg.norm(self.measurements)), 5.)
     if len(self.measurements) > 0:
       self.filter.update(noise_level_raw)
@@ -52,10 +49,8 @@ class Mic:
 def main(pm=None, sm=None):
   if pm is None:
     pm = messaging.PubMaster(['microphone'])
-  if sm is None:
-    sm = messaging.SubMaster(['controlsState'])
 
-  mic = Mic(pm, sm)
+  mic = Mic(pm)
   mic.micd_thread()
 
 
