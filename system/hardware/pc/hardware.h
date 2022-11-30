@@ -1,6 +1,5 @@
 #pragma once
 
-#include "common/util.h"
 #include "system/hardware/base.h"
 
 class HardwarePC : public HardwareNone {
@@ -11,4 +10,12 @@ public:
   static bool PC() { return true; }
   static bool TICI() { return util::getenv("TICI", 0) == 1; }
   static bool AGNOS() { return util::getenv("TICI", 0) == 1; }
+
+  static void set_volume(float volume) {
+    volume = util::map_val(volume, 0.f, 1.f, MIN_VOLUME, MAX_VOLUME);
+
+    char volume_str[6];
+    snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
+    std::system(("pactl set-sink-volume 1 " + std::string(volume_str) + " &").c_str());
+  }
 };

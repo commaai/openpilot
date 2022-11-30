@@ -48,7 +48,9 @@ void Sound::update() {
 
   // scale volume with speed
   if (sm.updated("carState")) {
-    Hardware::set_volume(util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.f));
+    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.f);
+    volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
+    Hardware::set_volume(volume);
   }
 
   setAlert(Alert::get(sm, started_frame));
