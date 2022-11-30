@@ -18,7 +18,7 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.empty(0)
-    self.spl_filter = FirstOrderFilter(40, 3, DT_MIC)
+    self.spl_filter = FirstOrderFilter(0, 3, DT_MIC, initialized=False)
 
   def update(self):
     # self.measurements contains amplitudes from -1 to 1 which we use to
