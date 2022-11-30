@@ -16,6 +16,6 @@ public:
 
     char volume_str[6];
     snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
-    std::system(("pactl set-sink-volume 1 " + std::string(volume_str)).c_str());
+    std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
   }
 };

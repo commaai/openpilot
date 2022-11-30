@@ -43,7 +43,7 @@ public:
 
     char volume_str[6];
     snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
-    std::system(("pactl set-sink-volume alsa_output.platform-soc_sound-tavil.stereo-fallback " + std::string(volume_str)).c_str());
+    std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
   }
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
