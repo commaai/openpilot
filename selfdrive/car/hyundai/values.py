@@ -36,6 +36,7 @@ class CarControllerParams:
       # these cars have significantly more torque than most HKG; limit to 70% of max
       if CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
         self.STEER_MAX = 270
+        self.STEER_DELTA_UP = 2
 
       # To determine the limit for your car, find the maximum value that the stock LKAS will request.
       # If the max stock LKAS request is <384, add your car to this list.
