@@ -1,6 +1,7 @@
 Version 0.9.1 (2022-12-XX)
 ========================
 * New driving model
+* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 
 
 Version 0.9.0 (2022-11-21)
