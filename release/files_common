@@ -71,6 +71,7 @@ selfdrive/rtshield.py
 selfdrive/statsd.py
 
 system/logmessaged.py
+system/micd.py
 system/swaglog.py
 system/version.py
 
@@ -216,6 +217,7 @@ system/hardware/tici/amplifier.py
 system/hardware/tici/updater
 system/hardware/tici/iwlist.py
 system/hardware/pc/__init__.py
+system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
 
 selfdrive/locationd/__init__.py
@@ -484,6 +486,7 @@ cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
+panda/SConscript
 panda/board/**
 panda/certs/**
 panda/crypto/**
