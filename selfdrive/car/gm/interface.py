@@ -59,8 +59,8 @@ class CarInterface(CarInterfaceBase):
     steer_torque_pts = np.arange(-1, 1, 0.01)
     lateral_accel_pts = np.interp(
       steer_torque_pts,
-      [-1, -0.5, 0.5, 1],
-      [torque_params.latAccelFactor * 2, torque_params.latAccelFactor, torque_params.latAccelFactor, torque_params.latAccelFactor * 2]
+      [-1, -0.6, 0.3, 0.3, 0.6, 1],
+      [torque_params.latAccelFactor * x for x in [2, 1.5, 1, 1, 1.5, 2]]
     ) * steer_torque_pts
 
     lateral_accel_value = np.interp(lateral_accel_value, lateral_accel_pts, steer_torque_pts) + friction
@@ -71,7 +71,6 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
