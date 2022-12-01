@@ -7,7 +7,7 @@ from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 from selfdrive.statsd import statlog
 
-CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
+CAR_VOLTAGE_LOW_PASS_K = 0.011 # LPF gain for 45s tau (dt/tau / (dt/tau + 1))
 
 # While driving, a battery charges completely in about 30-60 minutes
 CAR_BATTERY_CAPACITY_uWh = 30e6
