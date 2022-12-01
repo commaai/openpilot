@@ -9,7 +9,6 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
@@ -214,9 +213,8 @@ class TestCarModelBase(unittest.TestCase):
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
       self.CI.update(CC, (can.as_builder().to_bytes(), ))
-      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
-        addr, _, dat, bus = msg
-        to_send = libpanda_py.make_CANPacket(addr, bus, dat)
+      for msg in filter(lambda x: x.src in range(64), can.can):
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False
@@ -224,9 +222,8 @@ class TestCarModelBase(unittest.TestCase):
     checks = defaultdict(lambda: 0)
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
-      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
-        addr, _, dat, bus = msg
-        to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+      for msg in filter(lambda x: x.src in range(64), can.can):
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
