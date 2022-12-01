@@ -99,6 +99,7 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
 
 std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
   const auto list = id.split(':');
+  if (list.size() != 2) return {0, 0};
   return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 
