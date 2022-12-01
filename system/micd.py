@@ -5,6 +5,7 @@ import numpy as np
 from cereal import messaging
 from common.filter_simple import FirstOrderFilter
 from common.realtime import Ratekeeper
+from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
 RATE = 10
@@ -27,7 +28,8 @@ class Mic:
       # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
       sound_pressure = np.sqrt(np.mean(self.measurements ** 2))  # RMS of amplitudes
       sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL) if sound_pressure > 0 else 0  # dB
-      self.spl_filter.update(sound_pressure_level)
+      if not HARDWARE.is_sound_playing():
+        self.spl_filter.update(sound_pressure_level)
     else:
       sound_pressure = 0
       sound_pressure_level = 0
