@@ -71,6 +71,7 @@ selfdrive/rtshield.py
 selfdrive/statsd.py
 
 system/logmessaged.py
+system/micd.py
 system/swaglog.py
 system/version.py
 
