@@ -32,7 +32,7 @@ def test_mypy_coverage(directory, exclude):
             b = os.system("mypy " + f + " --strict")
             if(b == 0):
                 r.num_passed += 1
-        elif(os.path.isdir(f)):
+        elif(os.path.isdir(f) and file not in exclude):
             temp = test_mypy_coverage(f, exclude)
             r.num_passed += temp.num_passed
             r.num_tested += temp.num_tested
