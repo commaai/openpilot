@@ -7,14 +7,13 @@ from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 from selfdrive.statsd import statlog
 
-CAR_VOLTAGE_LOW_PASS_K = 0.091 # LPF gain for 5s tau (dt/tau / (dt/tau + 1))
+CAR_VOLTAGE_LOW_PASS_K = 0.011 # LPF gain for 45s tau (dt/tau / (dt/tau + 1))
 
-# A C2 uses about 1W while idling, and 30h seens like a good shutoff for most cars
 # While driving, a battery charges completely in about 30-60 minutes
 CAR_BATTERY_CAPACITY_uWh = 30e6
 CAR_CHARGING_RATE_W = 45
 
-VBATT_PAUSE_CHARGING = 11.0           # Lower limit on the LPF car battery voltage
+VBATT_PAUSE_CHARGING = 11.8           # Lower limit on the LPF car battery voltage
 VBATT_INSTANT_PAUSE_CHARGING = 7.0    # Lower limit on the instant car battery voltage measurements to avoid triggering on instant power loss
 MAX_TIME_OFFROAD_S = 30*3600
 MIN_ON_TIME_S = 3600
