@@ -1,7 +1,4 @@
 #include "tools/cabana/canmessages.h"
-
-#include <QSettings>
-
 #include "tools/cabana/dbcmanager.h"
 
 CANMessages *can = nullptr;
@@ -25,6 +22,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   replay = new Replay(route, {"can", "roadEncodeIdx", "carParams"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this);
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
+  QObject::connect(replay, &Replay::seekedTo, this, &CANMessages::seekedTo);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
@@ -69,15 +67,10 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
 }
 
 bool CANMessages::eventFilter(const Event *event) {
-  static std::unique_ptr<QHash<QString, CanData>> new_msgs;
+  static std::unique_ptr new_msgs = std::make_unique<QHash<QString, CanData>>();
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
-    if (!new_msgs) {
-      new_msgs.reset(new QHash<QString, CanData>);
-      new_msgs->reserve(1000);
-    }
-
     double current_sec = replay->currentSeconds();
     if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
       counters.clear();
@@ -87,21 +80,13 @@ bool CANMessages::eventFilter(const Event *event) {
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
-
-      std::lock_guard lk(lock);
-      auto &list = received_msgs[id];
-      while (list.size() > settings.can_msg_log_size) {
-        list.pop_back();
-      }
-      CanData &data = list.emplace_front();
+      CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
       data.dat.append((char *)c.getDat().begin(), c.getDat().size());
-
       data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
         data.freq = data.count / delta;
       }
-      (*new_msgs)[id] = data;
     }
 
     double ts = millis_since_boot();
@@ -111,14 +96,11 @@ bool CANMessages::eventFilter(const Event *event) {
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
+      new_msgs.reset(new QHash<QString, CanData>);
+      new_msgs->reserve(100);
     }
   }
   return true;
-}
-
-const std::deque<CanData> CANMessages::messages(const QString &id) {
-  std::lock_guard lk(lock);
-  return received_msgs[id];
 }
 
 void CANMessages::seekTo(double ts) {

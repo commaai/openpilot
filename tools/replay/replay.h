@@ -79,6 +79,7 @@ public:
 signals:
   void streamStarted();
   void segmentsMerged();
+  void seekedTo(double sec);
 
 protected slots:
   void segmentLoadFinished(bool success);

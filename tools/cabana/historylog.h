@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include <QHeaderView>
 #include <QTableView>
 
@@ -15,17 +16,29 @@ public:
 
 class HistoryLogModel : public QAbstractTableModel {
 public:
-  HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
+  HistoryLogModel(QObject *parent);
   void setMessage(const QString &message_id);
   void updateState();
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
+  void fetchMore(const QModelIndex &parent) override;
+  inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
+  inline int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
+  inline int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
+
+  struct Message {
+    uint64_t mono_time = 0;
+    QVector<double> sig_values;
+    QByteArray data;
+  };
 
 private:
+  std::deque<Message> fetchData(uint64_t min_mono_time, uint64_t max_mono_time);
+
   QString msg_id;
-  std::deque<CanData> messages;
+  bool has_more_data = true;
+  const int batch_size = 50;
+  std::deque<Message> messages;
   std::vector<const Signal*> sigs;
 };
 
