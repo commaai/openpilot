@@ -120,15 +120,19 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_car_voltage(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    with pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
+    VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S = 50
+    with pm_patch("VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True), pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       ignition = False
+      start_time = ssb
       for i in range(TEST_TIME):
         pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
         if i % 10 == 0:
-          self.assertEqual(pm.should_shutdown(ignition, True, ssb, True), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
-      self.assertTrue(pm.should_shutdown(ignition, True, ssb, True))
+          self.assertEqual(pm.should_shutdown(ignition, True, start_time, True),
+                           (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3 and
+                            (ssb - start_time) > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S))
+      self.assertTrue(pm.should_shutdown(ignition, True, start_time, True))
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
