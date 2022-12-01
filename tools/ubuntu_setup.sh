@@ -4,23 +4,13 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
-SUDO=""
 
 # NOTE: this is used in a docker build, so do not run any scripts here.
 
-# Use sudo if not root
-if [[ ! $(id -u) -eq 0 ]]; then
-  if [[ -z $(which sudo) ]]; then
-    echo "Please install sudo or run as root"
-    exit 1
-  fi
-  SUDO="sudo"
-fi
-
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
-  $SUDO apt-get update
-  $SUDO apt-get install -y --no-install-recommends \
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     ca-certificates \
@@ -56,7 +46,6 @@ function install_ubuntu_common_requirements() {
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
-    libportaudio2 \
     libssl-dev \
     libsqlite3-dev \
     libusb-1.0-0-dev \
@@ -85,7 +74,7 @@ function install_ubuntu_common_requirements() {
 function install_ubuntu_jammy_requirements() {
   install_ubuntu_common_requirements
 
-  $SUDO apt-get install -y --no-install-recommends \
+  sudo apt-get install -y --no-install-recommends \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -97,7 +86,7 @@ function install_ubuntu_jammy_requirements() {
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
 
-  $SUDO apt-get install -y --no-install-recommends \
+  sudo apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
     python-dev
