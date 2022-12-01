@@ -25,7 +25,7 @@ class Mic:
     # self.measurements contains amplitudes from -1 to 1 which we use to
     # calculate an uncalibrated sound pressure level
     if len(self.measurements) > 0:
-      self.all_measurements = np.concatenate((self.measurements, self.measurements))
+      self.all_measurements = np.concatenate((self.all_measurements, self.measurements))
       np.save('/data/test_recording', self.all_measurements)
       # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
       sound_pressure = np.sqrt(np.mean(self.measurements ** 2))  # RMS of amplitudes
