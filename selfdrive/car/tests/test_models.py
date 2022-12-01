@@ -20,8 +20,7 @@ from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 
-from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import package_can_msg
+from panda.tests.libpanda import libpanda_py
 
 PandaType = log.PandaState.PandaType
 
@@ -118,7 +117,7 @@ class TestCarModelBase(unittest.TestCase):
     assert self.CI
 
     # TODO: check safetyModel is in release panda build
-    self.safety = libpandasafety_py.libpandasafety
+    self.safety = libpanda_py.libpanda
 
     cfg = self.CP.safetyConfigs[-1]
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
@@ -192,7 +191,7 @@ class TestCarModelBase(unittest.TestCase):
         if msg.src >= 64:
           continue
 
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
@@ -216,7 +215,7 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs[:300]:
       self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
-        to_send = package_can_msg(msg)
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False
@@ -225,9 +224,7 @@ class TestCarModelBase(unittest.TestCase):
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
-        msg = list(msg)
-        msg[3] %= 4
-        to_send = package_can_msg(msg)
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
 
