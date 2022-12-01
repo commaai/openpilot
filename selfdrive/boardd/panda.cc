@@ -6,7 +6,6 @@
 #include <stdexcept>
 
 #include "cereal/messaging/messaging.h"
-#include "panda/board/dlc_to_len.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
@@ -24,7 +23,8 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
          (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
 
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
-            (hw_type == cereal::PandaState::PandaType::DOS);
+            (hw_type == cereal::PandaState::PandaType::DOS) ||
+            (hw_type == cereal::PandaState::PandaType::TRES);
 
   return;
 }
@@ -253,8 +253,12 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
     canData.busTime = 0;
     canData.address = header.addr;
     canData.src = header.bus + bus_offset;
-    if (header.rejected) { canData.src += CANPACKET_REJECTED; }
-    if (header.returned) { canData.src += CANPACKET_RETURNED; }
+    if (header.rejected) {
+      canData.src += CAN_REJECTED_BUS_OFFSET;
+    }
+    if (header.returned) {
+      canData.src += CAN_RETURNED_BUS_OFFSET;
+    }
 
     const uint8_t data_len = dlc_to_len[header.data_len_code];
     canData.dat.assign((char *)&data[pos + sizeof(can_header)], data_len);

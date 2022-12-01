@@ -209,16 +209,19 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine],
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps],
       bus=0,
     ),
   ],
@@ -1323,6 +1326,7 @@ FW_VERSIONS = {
       b'\x01F15260R302\x00\x00\x00\x00\x00\x00',
       b'\x01F152642551\x00\x00\x00\x00\x00\x00',
       b'\x01F152642561\x00\x00\x00\x00\x00\x00',
+      b'\x01F152642601\x00\x00\x00\x00\x00\x00',
       b'\x01F152642700\x00\x00\x00\x00\x00\x00',
       b'\x01F152642701\x00\x00\x00\x00\x00\x00',
       b'\x01F152642710\x00\x00\x00\x00\x00\x00',

@@ -112,4 +112,5 @@ private:
   std::pair<double, double> event_range;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
+  bool use_dark_theme = false;
 };
