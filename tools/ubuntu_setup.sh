@@ -56,6 +56,7 @@ function install_ubuntu_common_requirements() {
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
+    libportaudio2 \
     libssl-dev \
     libsqlite3-dev \
     libusb-1.0-0-dev \
