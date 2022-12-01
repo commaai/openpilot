@@ -89,7 +89,7 @@ def prr_residual(measurements, est_pos, no_weight=False, signal='D1C'):
         continue
 
       sat_pos = meas.sat_pos_final if meas.corrected else meas.sat_pos
-      weight = 1 if no_weight else (1 / meas.observables[signal])
+      weight = 1 if no_weight or meas.observables[signal] == 0 else (1 / meas.observables[signal])
 
       val, *gradient = loss_func(est_pos[0], est_pos[1], est_pos[2],
                                  sat_pos[0], sat_pos[1], sat_pos[2],
