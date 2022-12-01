@@ -18,7 +18,6 @@ VBATT_PAUSE_CHARGING = 11.0           # Lower limit on the LPF car battery volta
 VBATT_INSTANT_PAUSE_CHARGING = 7.0    # Lower limit on the instant car battery voltage measurements to avoid triggering on instant power loss
 MAX_TIME_OFFROAD_S = 30*3600
 MIN_ON_TIME_S = 3600
-VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S = 60
 
 class PowerMonitoring:
   def __init__(self):
@@ -115,12 +114,8 @@ class PowerMonitoring:
 
     now = sec_since_boot()
     should_shutdown = False
-    offroad_time = (now - offroad_timestamp)
-    low_voltage_shutdown = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3) and
-                            self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3) and
-                            offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
-    should_shutdown |= offroad_time > MAX_TIME_OFFROAD_S
-    should_shutdown |= low_voltage_shutdown
+    should_shutdown |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
+    should_shutdown |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3)) and (self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3))
     should_shutdown |= (self.car_battery_capacity_uWh <= 0)
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
