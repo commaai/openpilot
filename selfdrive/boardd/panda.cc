@@ -6,7 +6,6 @@
 #include <stdexcept>
 
 #include "cereal/messaging/messaging.h"
-#include "panda/board/dlc_to_len.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
@@ -255,8 +254,12 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
     canData.busTime = 0;
     canData.address = header.addr;
     canData.src = header.bus + bus_offset;
-    if (header.rejected) { canData.src += CANPACKET_REJECTED; }
-    if (header.returned) { canData.src += CANPACKET_RETURNED; }
+    if (header.rejected) {
+      canData.src += CAN_REJECTED_BUS_OFFSET;
+    }
+    if (header.returned) {
+      canData.src += CAN_RETURNED_BUS_OFFSET;
+    }
 
     const uint8_t data_len = dlc_to_len[header.data_len_code];
     canData.dat.assign((char *)&recv_buf[pos + CANPACKET_HEAD_SIZE], data_len);
