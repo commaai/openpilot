@@ -33,7 +33,7 @@ void controls_thread(int loop_cnt) {
   for (int i = 0; i < loop_cnt; ++i) {
     for (auto &[alert, fn, loops] : sound_list) {
       printf("testing %s\n", qPrintable(fn));
-      for (int j = 0; j < 1000 / DT_CTRL; ++j) {
+      for (int j = 0; j < 5000 / DT_CTRL; ++j) {
         MessageBuilder msg;
         auto cs = msg.initEvent().initControlsState();
         cs.setAlertSound(alert);
