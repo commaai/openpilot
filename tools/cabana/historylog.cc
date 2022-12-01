@@ -45,7 +45,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     if (index.column() == 0) {
-      return QString::number(m.mono_time / (double)1e9, 'f', 2);
+      return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
     return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
