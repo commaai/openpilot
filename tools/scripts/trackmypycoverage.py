@@ -5,6 +5,14 @@ class results:
     num_passed = 0
     num_tested = 0
 
+# Generate report file
+report_file = open("./tools/scripts/report.txt","w")
+report_file.write("Mypy Coverage Report\n====================\n\n")
+report_file.write("======================================\n")
+report_file.write("| Module   | Imprecision    | Lines  |\n")
+report_file.write("======================================\n")
+report_file.close()
+
 def parse_mypy_ini():
     config =  configparser.ConfigParser()
     mypy_ini = os.getcwd() + "\\mypy.ini"
@@ -28,8 +36,12 @@ def test_mypy_coverage(directory, exclude):
         if file.endswith(".py"):
             files_total.append(f)
             r.num_tested += 1
-            print(f)
-            b = os.system("mypy " + f + " --strict")
+            b = os.system("mypy " + f + " --strict --txt-report ./tools/scripts")
+            # open both files
+            with open('./tools/scripts/index.txt','r') as indexfile, open('./tools/scripts/report.txt','a') as reportfile:
+                data = indexfile.readlines()
+                # read line 9 of from index.txt file and append line to report.txt file
+                reportfile.write(data[8])
             if(b == 0):
                 r.num_passed += 1
         elif(os.path.isdir(f) and file not in exclude):
@@ -39,8 +51,18 @@ def test_mypy_coverage(directory, exclude):
     return r
 
 def output_file():
-    # TODO Derek and Brandon
-    print() # Placeholder
+    # Add to end of report
+    f = open('./tools/scripts/report.txt','a')
+    if r.num_tested == 0:
+        f.write("\nNo files tested")
+    else:
+        f.write("\nTested: " + str(r.num_tested) + " files\n")
+        f.write("Passed: " + str(r.num_passed))
+        f.write("\nPercentage Covered: " + str(round(float(r.num_passed/r.num_tested * 100),2)) + "%")
+
+    # Delete index.txt
+    if os.path.exists("./tools/scripts/index.txt"):
+        os.remove("./tools/scripts/index.txt")
 
 dirToScan, dirToExclude = parse_mypy_ini()
 
