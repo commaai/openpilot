@@ -102,7 +102,7 @@ def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance
     "ACC_Wunschgeschw_02": set_speed if set_speed < 250 else 327.36,
     "ACC_Gesetzte_Zeitluecke": 3,
     "ACC_Display_Prio": 3,
-    "ACC_Abstandindex": lead_distance,
+    "ACC_Abstandsindex": lead_distance,
   }
 
   return packer.make_can_msg("ACC_02", bus, values)
