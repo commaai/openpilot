@@ -209,7 +209,7 @@ class Laikad:
       # process the residual error to get a meaningful accuracy
       # filter residuals over 400 and calculate the positive mean
       res = list(filter(lambda x: x < 400, self.last_pos_residual))
-      pos_std = np.array([np.sqrt(np.mean(np.abs(res)))]*3)
+      pos_std = np.array([np.mean(np.abs(res))]*3)
       vel_std = np.array([np.mean(np.abs(vel_res))]*3)
 
       dat.gnssMeasurements = {
