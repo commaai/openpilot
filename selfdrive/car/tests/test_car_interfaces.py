@@ -31,6 +31,8 @@ class TestCarInterfaces(unittest.TestCase):
     assert car_interface
 
     self.assertGreater(car_params.mass, 1)
+    self.assertGreater(car_params.wheelbase, 0)
+    self.assertGreater(car_params.centerToFront, 0)
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
