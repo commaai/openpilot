@@ -19,11 +19,14 @@ class Mic:
 
     self.measurements = np.empty(0)
     self.spl_filter = FirstOrderFilter(0, 4, DT_MIC, initialized=False)
+    self.all_measurements = np.empty(0)
 
   def update(self):
     # self.measurements contains amplitudes from -1 to 1 which we use to
     # calculate an uncalibrated sound pressure level
     if len(self.measurements) > 0:
+      self.all_measurements = np.concatenate((self.measurements, self.measurements))
+      np.save('/data/test_recording', self.all_measurements)
       # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
       sound_pressure = np.sqrt(np.mean(self.measurements ** 2))  # RMS of amplitudes
       sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL) if sound_pressure > 0 else 0  # dB
