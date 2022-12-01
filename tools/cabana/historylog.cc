@@ -147,3 +147,7 @@ int HistoryLog::sizeHintForColumn(int column) const {
   // sizeHintForColumn is only called for column 0 (ResizeToContents)
   return itemDelegate()->sizeHint(viewOptions(), model->index(0, 0)).width() + 5;
 }
+
+void HistoryLog::showEvent(QShowEvent *event) {
+  model->setMessage(model->msg_id);
+}

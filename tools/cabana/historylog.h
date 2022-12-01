@@ -32,9 +32,7 @@ public:
     QByteArray data;
   };
 
-private:
   std::deque<Message> fetchData(uint64_t min_mono_time, uint64_t max_mono_time);
-
   QString msg_id;
   bool has_more_data = true;
   const int batch_size = 50;
@@ -50,5 +48,6 @@ public:
 
 private:
   int sizeHintForColumn(int column) const override;
+  void showEvent(QShowEvent *event) override;
   HistoryLogModel *model;
 };
