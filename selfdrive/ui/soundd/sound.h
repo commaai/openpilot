@@ -26,8 +26,11 @@ public:
 protected:
   void update();
   void setAlert(const Alert &alert);
+  void updateVolume(bool ramp_up);
 
   Alert current_alert = {};
+  float current_start_time = 0;
+  float current_volume = 0.5;
   QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
   SubMaster sm;
   uint64_t started_frame;

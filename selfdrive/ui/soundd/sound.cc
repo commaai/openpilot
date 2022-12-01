@@ -46,11 +46,10 @@ void Sound::update() {
     return;
   }
 
-  // scale volume with speed
+  // scale volume with measured sound level
   if (sm.updated("microphone")) {
     float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredSoundPressureDb(), 58.f, 77.f, 0.f, 1.f);
-    volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-    Hardware::set_volume(volume);
+    current_volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
   }
 
   setAlert(Alert::get(sm, started_frame));
@@ -69,9 +68,25 @@ void Sound::setAlert(const Alert &alert) {
 
     // play sound
     if (alert.sound != AudibleAlert::NONE) {
+      current_start_time = millis_since_boot();
+
       auto &[s, loops] = sounds[alert.sound];
+      updateVolume(loops != 0);
       s->setLoopCount(loops);
       s->play();
     }
+  } else if (alert.sound != AudibleAlert::NONE) {
+    auto &[s, loops] = sounds[alert.sound];
+    updateVolume(loops != 0);
+  }
+}
+
+void Sound::updateVolume(bool ramp_up) {
+  if (ramp_up) {
+    float elapsed_time = (millis_since_boot() - current_start_time) / 1000.0f;
+    float volume = util::map_val(elapsed_time, 0.0f, 3.0f, current_volume - 0.4f, current_volume);
+    Hardware::set_volume(volume);
+  } else {
+    Hardware::set_volume(current_volume);
   }
 }
