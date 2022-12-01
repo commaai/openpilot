@@ -26,7 +26,7 @@ class Mic:
     if len(self.measurements) > 0:
       # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
       sound_pressure = np.sqrt(np.mean(self.measurements ** 2))  # RMS of amplitudes
-      sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL)  # dB
+      sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL) if sound_pressure > 0 else 0  # dB
       self.spl_filter.update(sound_pressure_level)
     else:
       sound_pressure = 0
@@ -35,7 +35,6 @@ class Mic:
     self.measurements = np.empty(0)
 
     msg = messaging.new_message('microphone')
-    # uncalibrated
     msg.microphone.soundPressure = float(sound_pressure)
     msg.microphone.soundPressureDb = float(sound_pressure_level)
     msg.microphone.filteredSoundPressureDb = float(self.spl_filter.x)
