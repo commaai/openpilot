@@ -243,7 +243,7 @@ FW_VERSIONS = {
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-X040\x00\x00',
-      b'39990-TVA,A150\x00\x00',
+      b'39990-TVA,A150\x00\x00', # modified firmware
       b'39990-TVE-H130\x00\x00',
     ],
     (Ecu.unknown, 0x18da3af1, None): [
