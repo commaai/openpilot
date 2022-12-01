@@ -409,9 +409,9 @@ if arch != "Darwin":
 
 # build submodules
 SConscript([
+  'panda/SConscript',
   'cereal/SConscript',
   'body/board/SConscript',
-  'panda/SConscript',
   'opendbc/can/SConscript',
 ])
 
