@@ -15,12 +15,13 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
   PubMaster pm({"navModel"});
 
   double last_ts = 0;
+  uint32_t last_frame_id = 0;
   VisionIpcBufExtra extra = {};
 
   while (!do_exit) {
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
-    if (extra.frame_id % 10 != 0) continue;  // Run at 2Hz
+    if (extra.frame_id < last_frame_id + 10) continue;  // Run at 2Hz
 
     double t1 = millis_since_boot();
     NavModelResult *model_res = navmodel_eval_frame(&model, buf);
@@ -31,6 +32,7 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
 
     //printf("navmodel process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last_ts);
     last_ts = t1;
+    last_frame_id = extra.frame_id;
   }
 }
 
