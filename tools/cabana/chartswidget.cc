@@ -251,8 +251,7 @@ void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
 }
 
 bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
-  return it != sigs.end();
+  return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
 QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartView::SigItem>::iterator &it) {
@@ -270,8 +269,7 @@ QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartVie
 }
 
 void ChartView::signalUpdated(const Signal *sig) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; });
-  if (it != sigs.end()) {
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; })) {
     updateTitle();
     // TODO: don't update series if only name changed.
     updateSeries(sig);
@@ -286,8 +284,7 @@ void ChartView::signalRemoved(const Signal *sig) {
 }
 
 void ChartView::msgUpdated(uint32_t address) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; });
-  if (it != sigs.end())
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; }))
     updateTitle();
 }
 
