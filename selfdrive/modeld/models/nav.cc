@@ -8,11 +8,6 @@
 #include "common/timing.h"
 
 
-template<class T, size_t size>
-constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
-  return kj::ArrayPtr(arr.data(), arr.size());
-}
-
 void navmodel_init(NavModelState* s) {
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
