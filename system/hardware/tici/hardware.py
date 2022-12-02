@@ -96,9 +96,6 @@ class Tici(HardwareBase):
     return (os.path.isfile('/proc/asound/card0/state') and
             open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
-  def is_sound_playing(self):
-    return "RUNNING" in subprocess.check_output(["pactl", "list", "short", "sinks"]).decode('utf8')
-
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
 

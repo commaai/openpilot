@@ -44,10 +44,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def is_sound_playing(self):
-    pass
-
-  @abstractmethod
   def get_imei(self, slot) -> str:
     pass
 
