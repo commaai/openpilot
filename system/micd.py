@@ -76,7 +76,6 @@ class Mic:
     Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
 
-    print(self.measurements.size)
     self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
     while self.measurements.size >= FFT_SAMPLES:
