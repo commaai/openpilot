@@ -25,8 +25,11 @@ def calculate_spl(measurements):
 
 
 def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
+  # Generate a Hanning window of the same length as the audio measurements
+  measurements_windowed = measurements * np.hanning(len(measurements))
+
   # Calculate the frequency axis for the signal
-  freqs = np.fft.fftfreq(measurements.size, d=1 / SAMPLE_RATE)
+  freqs = np.fft.fftfreq(measurements_windowed.size, d=1 / SAMPLE_RATE)
 
   # Calculate the A-weighting filter
   # https://en.wikipedia.org/wiki/A-weighting
@@ -34,7 +37,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   A /= np.max(A)  # Normalize the filter
 
   # Apply the A-weighting filter to the signal
-  return np.abs(np.fft.ifft(np.fft.fft(measurements) * A))
+  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * A))
 
 
 class Mic:
