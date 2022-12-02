@@ -336,7 +336,8 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     orientation_error(i) -= M_PI;
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
-
+  
+  
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
@@ -345,7 +346,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
-
+  
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }

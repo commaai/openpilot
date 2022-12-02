@@ -58,9 +58,8 @@ class Laikad:
     self.load_cache()
 
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
-    self.last_pos_fix = []
-    self.last_pos_residual = []
-    self.last_pos_fix_t = None
+    self.last_fix_pos = None
+    self.last_fix_t = None
     self.gps_week = None
     self.use_qcom = use_qcom
 
@@ -92,20 +91,18 @@ class Laikad:
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
 
-  def get_lsq_fix(self, t, processed_measurements):
-    if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) > 0.2:
-      min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
-      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0:
-        self.last_pos_fix_t = t
-        residual_median = np.median(np.abs(pos_fix_residual))
-        if residual_median < POS_FIX_RESIDUAL_THRESHOLD:
-          cloudlog.debug(f"Pos fix is within threshold with median: {residual_median.round()}")
-          self.last_pos_fix = pos_fix[:3]
-          self.last_pos_residual = pos_fix_residual
-        else:
-          cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
-    return self.last_pos_fix
+  def get_lsq_fix(self, t, measurements):
+    if self.last_fix_t is None or abs(self.last_fix_t - t) > 0.2:
+      min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 5
+      position_solution, pr_residuals = calc_pos_fix_gauss_newton(measurements, self.posfix_functions, min_measurements=min_measurements)
+      if len(position_solution) < 3:
+        return None
+      position_estimate = position_solution[:3]
+      position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
+      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate)
+      velocity_estimate = velocity_solution[:3]
+      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(3)
+      return position_estimate, position_std, velocity_estimate, velocity_std
 
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
@@ -153,20 +150,21 @@ class Laikad:
     new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
     processed_measurements = process_measurements(new_meas, self.astro_dog)
 
-    est_pos = self.get_lsq_fix(t, processed_measurements)
-    if len(est_pos) == 0 or len(self.last_pos_residual) == 0:
+    instant_fix = self.get_lsq_fix(t, processed_measurements)
+    if instant_fix is not None:
+      position_estimate, position_std, velocity_estimate, velocity_std = instant_fix
+      if self.last_fix_pos is not None:
+        print(np.array(position_estimate) - np.array(self.last_fix_pos))
+      self.last_fix_t = t
+      self.last_fix_pos = position_estimate
+      self.lat_fix_pos_std = position_std
+    else:
       return None
-
-    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
+    
+    corrected_measurements = correct_measurements(processed_measurements, position_estimate, self.astro_dog)
     if (t*1e9) % 10 == 0:
       cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
-
-    ecef_vel, vel_res = calc_vel_fix(processed_measurements, est_pos)
-    ecef_vel = ecef_vel[:3]
-    if len(ecef_vel) == 0 or len(vel_res) == 0:
-      return None
-
-    return est_pos, corrected_measurements, processed_measurements, (ecef_vel, vel_res)
+    return position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, processed_measurements
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
 
@@ -190,35 +188,28 @@ class Laikad:
       output = self.process_report(new_meas, t)
       if output is None:
         return None
-      est_pos, corrected_measurements, _, (ecef_vel, vel_res) = output
+      position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
-      self.update_localizer(est_pos, t, corrected_measurements)
-
-      #kf_valid = all(self.kf_valid(t))
-      #ecef_pos = self.gnss_kf.x[GStates.ECEF_POS]
-      #ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY]
-
-      #p = self.gnss_kf.P.diagonal()
-      #pos_std = np.sqrt(p[GStates.ECEF_POS])
-      #vel_std = np.sqrt(p[GStates.ECEF_VELOCITY])
-
+      print(position_estimate, position_std)
+      self.update_localizer(position_estimate, t, corrected_measurements)
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
 
-      # process the residual error to get a meaningful accuracy
-      # filter residuals over 400 and calculate the positive mean
-      res = list(filter(lambda x: x < 400, self.last_pos_residual))
-      pos_std = np.array([np.mean(np.abs(res))]*3)
-      vel_std = np.array([np.mean(np.abs(vel_res))]*3)
-
+      P_diag = self.gnss_kf.P.diagonal()
+      kf_valid = all(self.kf_valid(t))
       dat.gnssMeasurements = {
         "gpsWeek": week,
         "gpsTimeOfWeek": tow,
-        "positionECEF": measurement_msg(value=est_pos, std=pos_std.tolist(), valid=True),
-        "velocityECEF": measurement_msg(value=ecef_vel, std=vel_std.tolist(), valid=True),
-        # TODO std is incorrectly the dimension of the measurements and not 3D
-        "positionFixECEF": measurement_msg(value=self.last_pos_fix, std= self.last_pos_residual, valid=self.last_pos_fix_t == t),
+        "kalmanPositionECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
+                                        std=np.sqrt(P_diag[GStates.ECEF_POS]).tolist(),
+                                        valid=kf_valid),
+        "kalmanVelocityECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist(),
+                                        std=np.sqrt(P_diag[GStates.ECEF_VELOCITY]).tolist(),
+                                        valid=kf_valid),
+        "positionECEF": measurement_msg(value=position_estimate, std=position_std.tolist(), valid=bool(self.last_fix_t == t)),
+        "velocityECEF": measurement_msg(value=velocity_estimate, std=velocity_std.tolist(), valid=bool(self.last_fix_t == t)),
+
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
