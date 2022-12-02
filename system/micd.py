@@ -77,15 +77,14 @@ class Mic:
     """
 
     self.measurements = np.concatenate((self.measurements, indata[:, 0]))
-    print(self.measurements.size)
 
     if self.measurements.size >= FFT_SAMPLES:
-      measurements = self.measurements[:FFT_SAMPLES]
+      measurements = self.measurements[-FFT_SAMPLES:]
       self.sound_pressure, _ = calculate_spl(measurements)
       measurements_weighted = apply_a_weighting(measurements)
       self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
 
-      self.measurements = self.measurements[FFT_SAMPLES:]
+      self.measurements = self.measurements[:-FFT_SAMPLES]
 
   def micd_thread(self, device=None):
     if device is None:
