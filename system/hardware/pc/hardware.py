@@ -1,4 +1,5 @@
 import random
+import time
 
 import pulsectl
 
@@ -23,7 +24,11 @@ class Pc(HardwareBase):
     return True
 
   def is_sound_playing(self):
-    return len(self.pulse.sink_input_list()) > 0
+    start_time = time.time()
+    result = any(s.state == 'RUNNING' for s in self.pulse.sink_input_list())
+    duration = time.time() - start_time
+    print(f"is_sound_playing took {duration:.2f}s")
+    return result
 
   def reboot(self, reason=None):
     print("REBOOT!")
