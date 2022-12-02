@@ -85,9 +85,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
-  tab_widget->addTab(scroll, "Msg");
+  tab_widget->addTab(scroll, "&Msg");
   history_log = new HistoryLog(this);
-  tab_widget->addTab(history_log, "Logs");
+  tab_widget->addTab(history_log, "&Logs");
   main_layout->addWidget(tab_widget);
 
   QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
