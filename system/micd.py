@@ -33,6 +33,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   freqs = np.fft.fftfreq(measurements_windowed.size, d=1 / SAMPLE_RATE)
 
   # Calculate the A-weighting filter
+  # https://en.wikipedia.org/wiki/A-weighting
   A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
   A /= np.max(A)  # Normalize the filter
 
