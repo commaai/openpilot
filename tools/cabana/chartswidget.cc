@@ -505,9 +505,7 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
 
 SeriesSelector::SeriesSelector(QWidget *parent) {
   setWindowTitle(tr("Manage Chart Series"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
   QHBoxLayout *contents_layout = new QHBoxLayout();
-  main_layout->addLayout(contents_layout);
 
   QVBoxLayout *left_layout = new QVBoxLayout();
   left_layout->addWidget(new QLabel(tr("Select Signals:")));
@@ -528,6 +526,9 @@ SeriesSelector::SeriesSelector(QWidget *parent) {
   contents_layout->addLayout(right_layout);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addLayout(contents_layout);
   main_layout->addWidget(buttonBox);
 
   for (auto &id : can->can_msgs.keys()) {
@@ -539,7 +540,7 @@ SeriesSelector::SeriesSelector(QWidget *parent) {
 
   QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
   QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  QObject::connect(msgs_combo, SIGNAL(activated(int)), SLOT(msgSelected(int)));
+  QObject::connect(msgs_combo, SIGNAL(currentIndexChanged(int)), SLOT(msgSelected(int)));
   QObject::connect(sig_list, &QListWidget::itemDoubleClicked, this, &SeriesSelector::addSignal);
   QObject::connect(chart_series, &QListWidget::itemDoubleClicked, [](QListWidgetItem *item) { delete item; });
 
