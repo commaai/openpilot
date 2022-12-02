@@ -7,8 +7,6 @@ from enum import IntEnum
 from functools import cached_property
 from pathlib import Path
 
-import pulsectl
-
 from cereal import log
 from common.gpio import gpio_set, gpio_init
 from system.hardware.base import HardwareBase, ThermalConfig
@@ -70,9 +68,6 @@ def affine_irq(val, irq):
 
 
 class Tici(HardwareBase):
-  def __init__(self):
-    self.pulse = pulsectl.Pulse('openpilot')
-
   @cached_property
   def bus(self):
     import dbus  # pylint: disable=import-error
@@ -102,11 +97,7 @@ class Tici(HardwareBase):
             open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
   def is_sound_playing(self):
-    start_time = time.time()
-    result = any(s.state == 'RUNNING' for s in self.pulse.sink_input_list())
-    duration = time.time() - start_time
-    print(f"is_sound_playing took {duration:.2f}s")
-    return result
+    return "RUNNING" in subprocess.check_output(["pactl", "list", "short", "sinks"]).decode('utf8')
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
