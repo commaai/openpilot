@@ -47,7 +47,7 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.empty(0)
-    self.spl_filter_weighted = FirstOrderFilter(0, 4, DT_MIC, initialized=False)
+    self.spl_filter_weighted = FirstOrderFilter(0, 2.5, DT_MIC, initialized=False)
 
   def update(self):
     """
