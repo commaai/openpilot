@@ -102,11 +102,7 @@ class Tici(HardwareBase):
             open('/proc/asound/card0/state').read().strip() == 'ONLINE')
 
   def is_sound_playing(self):
-    start_time = time.time()
-    result = any(s.state == 'RUNNING' for s in self.pulse.sink_input_list())
-    duration = time.time() - start_time
-    print(f"is_sound_playing took {duration:.2f}s")
-    return result
+    return len(self.pulse.sink_input_list()) > 0
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
