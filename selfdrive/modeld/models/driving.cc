@@ -22,11 +22,6 @@ std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
 
 // #define DUMP_YUV
 
-template<class T, size_t size>
-constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
-  return kj::ArrayPtr(arr.data(), arr.size());
-}
-
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
   s->wide_frame = new ModelFrame(device_id, context);

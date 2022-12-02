@@ -5,7 +5,6 @@ import numpy as np
 from cereal import messaging
 from common.filter_simple import FirstOrderFilter
 from common.realtime import Ratekeeper
-from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
 RATE = 10
@@ -55,7 +54,7 @@ class Mic:
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, DT_MIC, initialized=False)
 
   def update(self):
-    if not HARDWARE.is_sound_playing() and self.sound_pressure_level_weighted != 0:
+    if self.sound_pressure_level_weighted != 0:
       self.spl_filter_weighted.update(self.sound_pressure_level_weighted)
 
     msg = messaging.new_message('microphone')
