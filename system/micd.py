@@ -39,7 +39,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   A /= np.max(A)  # Normalize the filter
 
   # Apply the A-weighting filter to the signal
-  return np.fft.ifft(np.fft.fft(measurements_windowed) * A)
+  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * A))
 
 
 class Mic:
