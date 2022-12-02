@@ -1,5 +1,7 @@
 import random
-import subprocess
+import time
+
+import pulsectl
 
 from cereal import log
 from system.hardware.base import HardwareBase, ThermalConfig
@@ -9,6 +11,9 @@ NetworkStrength = log.DeviceState.NetworkStrength
 
 
 class Pc(HardwareBase):
+  def __init__(self):
+    self.pulse = pulsectl.Pulse('openpilot')
+
   def get_os_version(self):
     return None
 
@@ -19,7 +24,11 @@ class Pc(HardwareBase):
     return True
 
   def is_sound_playing(self):
-    return "RUNNING" in subprocess.check_output(["pactl", "list", "short", "sinks"]).decode('utf8')
+    start_time = time.time()
+    result = any(s.state == 'RUNNING' for s in self.pulse.sink_input_list())
+    duration = time.time() - start_time
+    print(f"is_sound_playing took {duration:.2f}s")
+    return result
 
   def reboot(self, reason=None):
     print("REBOOT!")
