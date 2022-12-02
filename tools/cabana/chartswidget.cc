@@ -292,20 +292,23 @@ void ChartView::manageSeries() {
   for (auto &s : sigs) {
     dlg.addSeries(s.msg_id, msgName(s.msg_id), QString::fromStdString(s.sig->name));
   }
-  if (QDialog::Accepted == dlg.exec()) {
+
+  int ret = dlg.exec();
+  if (ret == QDialog::Accepted) {
     QList<QStringList> series_list = dlg.series();
     if (series_list.isEmpty()) {
       emit remove();
     } else {
       for (auto &s : series_list) {
         if (auto m = dbc()->msg(s[0])) {
-          if (auto it = m->sigs.find(s[2]); it != m->sigs.end()) {
+          auto it = m->sigs.find(s[2]);
+          if (it != m->sigs.end() && !hasSeries(s[0], &(it->second))) {
             addSeries(s[0], &(it->second));
           }
         }
       }
       for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-        bool exists = std::any_of(series_list.begin(), series_list.end(), [&](auto &s) {
+        bool exists = std::any_of(series_list.cbegin(), series_list.cend(), [&](auto &s) {
           return s[0] == it->msg_id && s[2] == it->sig->name.c_str();
         });
         it = exists ? ++it : removeSeries(it);
@@ -531,9 +534,9 @@ SeriesSelector::SeriesSelector(QWidget *parent) {
   main_layout->addLayout(contents_layout);
   main_layout->addWidget(buttonBox);
 
-  for (auto &id : can->can_msgs.keys()) {
-    if (auto m = dbc()->msg(id)) {
-      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(id), id);
+  for (auto it = can->can_msgs.cbegin(); it != can->can_msgs.cend(); ++it) {
+    if (auto m = dbc()->msg(it.key())) {
+      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(it.key()), it.key());
     }
   }
   msgs_combo->model()->sort(0);
@@ -554,8 +557,7 @@ void SeriesSelector::msgSelected(int index) {
   sig_list->clear();
   if (auto m = dbc()->msg(msg_id)) {
     for (auto &[name, s] : m->sigs) {
-      QStringList data;
-      data << msg_id << m->name << name;
+      QStringList data({msg_id, m->name, name});
       QListWidgetItem *item = new QListWidgetItem(name, sig_list);
       item->setData(Qt::UserRole, data);
       sig_list->addItem(item);
@@ -569,18 +571,17 @@ void SeriesSelector::addSignal(QListWidgetItem *item) {
 }
 
 void SeriesSelector::addSeries(const QString &id, const QString& msg_name, const QString &sig_name) {
-  QStringList data;
-  data << id << msg_name << sig_name;
+  QStringList data({id, msg_name, sig_name});
   for (int i = 0; i < chart_series->count(); ++i) {
     if (chart_series->item(i)->data(Qt::UserRole).toStringList() == data) {
       return;
     }
   }
   QListWidgetItem *new_item = new QListWidgetItem(chart_series);
-  QLabel *label = new QLabel(QString("%0 <font color=\"gray\">%1 %2</font>").arg(data[2]).arg(data[1]).arg(data[0]));
-  label->setContentsMargins(5, 0, 5, 0);
   new_item->setData(Qt::UserRole, data);
   chart_series->addItem(new_item);
+  QLabel *label = new QLabel(QString("%0 <font color=\"gray\">%1 %2</font>").arg(data[2]).arg(data[1]).arg(data[0]), chart_series);
+  label->setContentsMargins(5, 0, 5, 0);
   new_item->setSizeHint(label->sizeHint());
   chart_series->setItemWidget(new_item, label);
 }
