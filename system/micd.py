@@ -45,8 +45,7 @@ class Mic:
     self.rk = Ratekeeper(RATE)
 
     self.measurements = np.empty(0)
-    self.spl_filter = FirstOrderFilter(0, 4, DT_MIC, initialized=False)
-    self.a_weighted_spl_filter = FirstOrderFilter(0, 4, DT_MIC, initialized=False)
+    self.spl_filter_weighted = FirstOrderFilter(0, 4, DT_MIC, initialized=False)
 
   def update(self):
     """
@@ -57,15 +56,12 @@ class Mic:
     """
 
     if len(self.measurements) > 0:
-      sound_pressure, sound_pressure_level = calculate_spl(self.measurements)
-      self.spl_filter.update(sound_pressure_level)
-
+      sound_pressure, _ = calculate_spl(self.measurements)
       measurements_weighted = apply_a_weighting(self.measurements)
       sound_pressure_weighted, sound_pressure_level_weighted = calculate_spl(measurements_weighted)
-      self.a_weighted_spl_filter.update(sound_pressure_level_weighted)
+      self.spl_filter_weighted.update(sound_pressure_level_weighted)
     else:
       sound_pressure = 0
-      sound_pressure_level = 0
       sound_pressure_weighted = 0
       sound_pressure_level_weighted = 0
 
@@ -73,8 +69,10 @@ class Mic:
 
     msg = messaging.new_message('microphone')
     msg.microphone.soundPressure = float(sound_pressure)
-    msg.microphone.soundPressureDb = float(sound_pressure_level)
-    msg.microphone.filteredSoundPressureDb = float(self.spl_filter.x)
+    msg.microphone.soundPressureWeighted = float(sound_pressure_weighted)
+
+    msg.microphone.soundPressureWeightedDb = float(sound_pressure_level_weighted)
+    msg.microphone.filteredSoundPressureWeightedDb = float(self.spl_filter_weighted.x)
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
