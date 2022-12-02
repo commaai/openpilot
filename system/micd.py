@@ -26,8 +26,7 @@ def calculate_spl(measurements):
 
 def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   # Generate a Hanning window of the same length as the audio measurements
-  hanning_window = np.hanning(len(measurements))
-  measurements_windowed = measurements * hanning_window
+  measurements_windowed = measurements * np.hanning(len(measurements))
 
   # Calculate the frequency axis for the signal
   freqs = np.fft.fftfreq(measurements_windowed.size, d=1 / SAMPLE_RATE)
