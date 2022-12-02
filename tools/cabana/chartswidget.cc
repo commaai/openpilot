@@ -398,8 +398,8 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
     QRectF rect = rubber->geometry().normalized();
-    double min = chart()->mapToValue(rect.topLeft()).x();
-    double max = chart()->mapToValue(rect.bottomRight()).x();
+    double min = std::floor(chart()->mapToValue(rect.topLeft()).x() * 10.0) / 10.0;
+    double max = std::floor(chart()->mapToValue(rect.bottomRight()).x() * 10.0) / 10.0;
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
