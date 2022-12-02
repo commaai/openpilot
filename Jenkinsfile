@@ -115,6 +115,7 @@ pipeline {
               ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
+              ["test manager", "python selfdrive/manager/test/test_manager.py"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
@@ -141,7 +142,6 @@ pipeline {
               ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
               ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
-              ["test manager", "python selfdrive/manager/test/test_manager.py"],
             ])
           }
         }
