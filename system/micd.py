@@ -55,7 +55,7 @@ class Mic:
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, DT_MIC, initialized=False)
 
   def update(self):
-    if not HARDWARE.is_sound_playing():
+    if not HARDWARE.is_sound_playing() and self.sound_pressure_level_weighted != 0:
       self.spl_filter_weighted.update(self.sound_pressure_level_weighted)
 
     msg = messaging.new_message('microphone')
