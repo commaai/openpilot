@@ -80,7 +80,6 @@ class Mic:
     self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
     while self.measurements.size >= FFT_SAMPLES:
-      # Get latest samples first to reduce delay
       measurements = self.measurements[:FFT_SAMPLES]
 
       self.sound_pressure, _ = calculate_spl(measurements)
@@ -88,8 +87,6 @@ class Mic:
       self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
 
       self.measurements = self.measurements[FFT_SAMPLES:]
-
-    self.measurements = np.empty(0)
 
   def micd_thread(self, device=None):
     if device is None:
