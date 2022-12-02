@@ -45,7 +45,6 @@ PROCS = {
   "./ubloxd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
-  "system.micd": 0,
 }
 
 TIMINGS = {
