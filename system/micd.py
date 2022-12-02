@@ -55,26 +55,8 @@ class Mic:
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, DT_MIC, initialized=False)
 
   def update(self):
-    """
-    Using amplitude measurements, calculate an uncalibrated sound pressure and sound pressure level.
-    Then apply A-weighting to the raw amplitudes and run the same calculations again.
-
-    Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
-    """
-
-    # if len(self.measurements) > 0:
-      # sound_pressure, _ = calculate_spl(self.measurements)
-      # measurements_weighted = apply_a_weighting(self.measurements)
-      # sound_pressure_weighted, sound_pressure_level_weighted = calculate_spl(measurements_weighted)
-    print(self.measurements.size, 'update()')
     if not HARDWARE.is_sound_playing():
       self.spl_filter_weighted.update(self.sound_pressure_level_weighted)
-    # else:
-    #   sound_pressure = 0
-    #   sound_pressure_weighted = 0
-    #   sound_pressure_level_weighted = 0
-
-    self.measurements = np.empty(0)
 
     msg = messaging.new_message('microphone')
     msg.microphone.soundPressure = float(self.sound_pressure)
@@ -87,6 +69,13 @@ class Mic:
     self.rk.keep_time()
 
   def callback(self, indata, frames, time, status):
+    """
+    Using amplitude measurements, calculate an uncalibrated sound pressure and sound pressure level.
+    Then apply A-weighting to the raw amplitudes and run the same calculations again.
+
+    Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
+    """
+
     self.measurements = np.concatenate((self.measurements, indata[:, 0]))
     print(self.measurements.size)
 
