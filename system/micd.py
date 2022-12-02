@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sounddevice as sd
 import numpy as np
+import warnings
 
 from cereal import messaging
 from common.filter_simple import FirstOrderFilter
@@ -95,7 +96,9 @@ class Mic:
         self.update()
 
 
-def main(pm=None, sm=None):
+def main(pm=None):
+  warnings.simplefilter('ignore', np.ComplexWarning)
+
   if pm is None:
     pm = messaging.PubMaster(['microphone'])
 
