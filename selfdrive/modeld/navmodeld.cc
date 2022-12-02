@@ -13,10 +13,11 @@ ExitHandler do_exit;
 
 void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
   PubMaster pm({"navModel"});
-  double last = 0;
+
+  double last_ts = 0;
+  VisionIpcBufExtra extra = {};
 
   while (!do_exit) {
-    VisionIpcBufExtra extra = {};
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
     if (extra.frame_id % 10 != 0) continue;  // Run at 2Hz
@@ -28,8 +29,8 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
     // send navmodel packet
     navmodel_publish(pm, extra.frame_id, *model_res, (t2 - t1) / 1000.0);
 
-    //printf("navmodel process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last);
-    last = t1;
+    //printf("navmodel process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last_ts);
+    last_ts = t1;
   }
 }
 

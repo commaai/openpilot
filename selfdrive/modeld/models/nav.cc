@@ -5,9 +5,7 @@
 
 #include "common/mat.h"
 #include "common/modeldata.h"
-#include "common/params.h"
 #include "common/timing.h"
-#include "system/hardware/hw.h"
 
 
 template<class T, size_t size>
@@ -16,11 +14,11 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
 }
 
 void navmodel_init(NavModelState* s) {
-  #ifdef USE_ONNX_MODEL
-    s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
-  #else
-    s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
-  #endif
+#ifdef USE_ONNX_MODEL
+  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+#else
+  s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+#endif
 }
 
 NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
@@ -40,7 +38,7 @@ void fill_plan(cereal::NavModelData::Builder &framed, const NavModelOutputPlan &
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std;
 
-  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+  for (int i=0; i<TRAJECTORY_SIZE; i++) {
     pos_x[i] = plan.mean[i].x;
     pos_y[i] = plan.mean[i].y;
     pos_x_std[i] = exp(plan.std[i].x);
