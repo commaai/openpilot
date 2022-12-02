@@ -230,8 +230,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
-  recv_buf.clear();
-
   if (size < sizeof(uint32_t)) {
     return true;
   }
@@ -239,7 +237,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
   uint32_t magic;
   memcpy(&magic, &data[0], sizeof(uint32_t));
   if (magic != CAN_TRANSACTION_MAGIC) {
-    LOGE("CAN: MALFORMED CAN RECV PACKET");
+    LOGE("CAN recv: buffer didn't start with magic");
     handle->comms_healthy = false;
     return false;
   }
