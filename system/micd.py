@@ -59,14 +59,13 @@ class Mic:
     """
 
     if len(self.measurements) > 0:
-      sound_pressure, sound_pressure_level = calculate_spl(self.measurements)
+      sound_pressure, _ = calculate_spl(self.measurements)
       measurements_weighted = apply_a_weighting(self.measurements)
       sound_pressure_weighted, sound_pressure_level_weighted = calculate_spl(measurements_weighted)
       if not HARDWARE.is_sound_playing():
         self.spl_filter_weighted.update(sound_pressure_level_weighted)
     else:
       sound_pressure = 0
-      sound_pressure_level = 0
       sound_pressure_weighted = 0
       sound_pressure_level_weighted = 0
 
@@ -75,7 +74,6 @@ class Mic:
     msg = messaging.new_message('microphone')
     msg.microphone.soundPressure = float(sound_pressure)
     msg.microphone.soundPressureWeighted = float(sound_pressure_weighted)
-    msg.microphone.soundPressureDb = float(sound_pressure_level)
 
     msg.microphone.soundPressureWeightedDb = float(sound_pressure_level_weighted)
     msg.microphone.filteredSoundPressureWeightedDb = float(self.spl_filter_weighted.x)
