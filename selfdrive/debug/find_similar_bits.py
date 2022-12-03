@@ -66,8 +66,10 @@ for msg in tqdm(all_msgs):
         total_msgs[m.address] += 1
 
         for _y, byt in enumerate(m.dat):
-          bits = list(map(int, bin(byt)[2:].zfill(8)))
-          for _x, bit in enumerate(bits):
+          for _x in range(8):
+            # TODO: this script is in the convention of reading binary left to right, switch?
+            flipped_idx = 7 - _x
+            bit = (byt & (1 << flipped_idx)) >> flipped_idx
             if bit_to_find != bit:
               if len(m.dat) != len(mismatches[m.address]):
                 continue
