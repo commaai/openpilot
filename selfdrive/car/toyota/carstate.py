@@ -85,10 +85,12 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    # steer rate fault, goes to 21 or 25 for 1 frame, then 9 for ~2 seconds
-    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 21, 25)
+    # steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
+    # lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds
+    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 11, 21, 25)
     # 17 is a fault from a prolonged high torque delta between cmd and user
-    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] == 17
+    # 3 is a fault from the lka command message not being received by the EPS
+    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
