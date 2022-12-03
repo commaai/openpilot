@@ -20,6 +20,7 @@ public:
   void mouseMoveEvent(QMouseEvent *e) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
   void paintEvent(QPaintEvent *ev) override;
+  void streamStarted();
   void loadThumbnails();
 
   int slider_x = -1;

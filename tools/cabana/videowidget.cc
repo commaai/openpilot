@@ -99,13 +99,15 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   setMouseTracking(true);
 
   QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
-  QObject::connect(can, &CANMessages::streamStarted, [this]() {
-    abort_load_thumbnail = true;
-    thumnail_future.waitForFinished();
-    abort_load_thumbnail = false;
-    thumbnails.clear();
-    thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
-  });
+  QObject::connect(can, &CANMessages::streamStarted, this, &Slider::streamStarted);
+}
+
+void Slider::streamStarted() {
+  abort_load_thumbnail = true;
+  thumnail_future.waitForFinished();
+  abort_load_thumbnail = false;
+  thumbnails.clear();
+  thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
 }
 
 void Slider::loadThumbnails() {
