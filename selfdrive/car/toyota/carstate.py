@@ -93,10 +93,12 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
+      # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_ALT"]["UI_SET_SPEED"]
     else:
+      ret.accFaulted = cp.vl["PCM_CRUISE_2"]["ACC_FAULTED"] != 0
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
@@ -205,6 +207,7 @@ class CarState(CarStateBase):
     else:
       signals.append(("MAIN_ON", "PCM_CRUISE_2"))
       signals.append(("SET_SPEED", "PCM_CRUISE_2"))
+      signals.append(("ACC_FAULTED", "PCM_CRUISE_2"))
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2"))
       checks.append(("PCM_CRUISE_2", 33))
 
