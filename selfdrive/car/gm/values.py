@@ -102,7 +102,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: [
     GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", "https://youtu.be/xvwzGMUA210"),
-    GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT with Adaptive Cruise Control Package"),
+    GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
   ],
   CAR.SILVERADO: [
     GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II"),
