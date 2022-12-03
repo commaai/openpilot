@@ -60,9 +60,6 @@ class CarController:
 
     # steering torque
     steer = actuators.steer
-    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
-      # these cars have significantly more torque than most HKG; limit to 70% of max
-      steer = clip(steer, -0.7, 0.7)
     new_steer = int(round(steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 

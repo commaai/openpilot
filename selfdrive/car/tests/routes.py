@@ -22,7 +22,6 @@ non_tested_cars = [
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
   GM.EQUINOX,
-  GM.BOLT_EV,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
@@ -51,6 +50,7 @@ routes = [
   CarTestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
   CarTestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
   CarTestRoute("f08912a233c1584f|2022-08-11--18-02-41", GM.BOLT_EUV, segment=1),
+  CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
   CarTestRoute("38aa7da107d5d252|2022-08-15--16-01-12", GM.SILVERADO),
 
   CarTestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
