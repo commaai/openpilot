@@ -1,5 +1,6 @@
 #include "tools/cabana/videowidget.h"
 
+#include <QBuffer>
 #include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
@@ -7,7 +8,9 @@
 #include <QPainter>
 #include <QStyleOptionSlider>
 #include <QTimer>
+#include <QToolTip>
 #include <QVBoxLayout>
+#include <QtConcurrent>
 
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
@@ -92,7 +95,43 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
     timeline = can->getTimeline();
     update();
   });
+  setMouseTracking(true);
+
   QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
+  QObject::connect(can, &CANMessages::streamStarted, [this]() {
+    abort_load_thumbnail = true;
+    thumnail_future.waitForFinished();
+    abort_load_thumbnail = false;
+    thumbnails.clear();
+    thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
+  });
+}
+
+void Slider::loadThumbnails() {
+  const auto &segments = can->route()->segments();
+  for (int i = 0; i < segments.size() && !abort_load_thumbnail; ++i) {
+    std::string qlog = segments.at(i).qlog.toStdString();
+    if (!qlog.empty()) {
+      LogReader log;
+      if (log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL}, true, 0, 3)) {
+        for (auto it = log.events.cbegin(); it != log.events.cend() && !abort_load_thumbnail; ++it) {
+          auto thumb = (*it)->event.getThumbnail();
+          auto data = thumb.getThumbnail();
+          QPixmap pic;
+          if (pic.loadFromData(data.begin(), data.size(), "jpeg")) {
+            pic = pic.scaled({pic.width()/3, pic.height()/3}, Qt::KeepAspectRatio);
+            thumbnail_size = pic.size();
+            QByteArray bytes;
+            QBuffer buffer(&bytes);
+            buffer.open(QIODevice::WriteOnly);
+            pic.save(&buffer, "jpeg");
+            std::lock_guard lk(lock);
+            thumbnails[thumb.getTimestampEof()] = QString("<img src='data:image/jpeg;base64, %0'>").arg(QString(bytes.toBase64()));
+          }
+        }
+      }
+    }
+  }
 }
 
 void Slider::sliderChange(QAbstractSlider::SliderChange change) {
@@ -145,4 +184,28 @@ void Slider::mousePressEvent(QMouseEvent *e) {
     setValue(value);
     emit sliderReleased();
   }
+}
+
+void Slider::mouseMoveEvent(QMouseEvent *e) {
+  QString thumb;
+  {
+    uint64_t ts = ((e->pos().x() * ((maximum() / 1000.0 - minimum() / 1000.0) / (double)width())) + can->routeStartTime()) * 1e9;
+    std::lock_guard lk(lock);
+    auto it = thumbnails.lowerBound(ts);
+    if (it != thumbnails.end()) {
+      thumb = it.value();
+    }
+  }
+  if (!thumb.isEmpty()) {
+    QPoint pt = mapToGlobal({e->pos().x() - thumbnail_size.width() / 2, -thumbnail_size.height() - 26});
+    QToolTip::showText(pt, thumb, this, QRect(), 5000);
+  } else {
+    QToolTip::hideText();
+  }
+  QSlider::mouseMoveEvent(e);
+}
+
+void Slider::leaveEvent(QEvent *event) {
+  QToolTip::hideText();
+  QSlider::leaveEvent(event);
 }

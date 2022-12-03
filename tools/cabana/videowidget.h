@@ -1,6 +1,12 @@
 #pragma once
 
+#include <atomic>
+#include <mutex>
+
+#include <QFuture>
+#include <QPixmap>
 #include <QLabel>
+#include <QList>
 #include <QPushButton>
 #include <QSlider>
 
@@ -13,11 +19,19 @@ class Slider : public QSlider {
 public:
   Slider(QWidget *parent);
   void mousePressEvent(QMouseEvent *e) override;
+  void mouseMoveEvent(QMouseEvent *e) override;
+  void leaveEvent(QEvent *event) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
   void paintEvent(QPaintEvent *ev) override;
+  void loadThumbnails();
 
   int slider_x = -1;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
+  QMap<uint64_t, QString> thumbnails;
+  std::mutex lock;
+  std::atomic<bool> abort_load_thumbnail = false;
+  QFuture<void> thumnail_future;
+  QSize thumbnail_size = {};
 };
 
 class VideoWidget : public QWidget {

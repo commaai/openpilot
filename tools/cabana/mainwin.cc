@@ -71,7 +71,7 @@ MainWindow::MainWindow() : QMainWindow() {
   right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
   // TODO: click to select another route.
-  right_hlayout->addWidget(new QLabel(can->route()), 0, Qt::AlignRight);
+  right_hlayout->addWidget(new QLabel(can->routeName()), 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
