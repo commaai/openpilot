@@ -16,6 +16,8 @@ class Slider : public QSlider {
 
 public:
   Slider(QWidget *parent);
+
+private:
   void mousePressEvent(QMouseEvent *e) override;
   void mouseMoveEvent(QMouseEvent *e) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
