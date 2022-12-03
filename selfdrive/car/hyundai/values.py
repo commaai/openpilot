@@ -39,6 +39,12 @@ class CarControllerParams:
                                CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
       self.STEER_MAX = 255
 
+    # these cars have significantly more torque than most HKG; limit to 70% of max
+    elif CP.flags & HyundaiFlags.ALT_LIMITS:
+      self.STEER_MAX = 270
+      self.STEER_DELTA_UP = 2
+      self.STEER_DELTA_DOWN = 3
+
     # Default for most HKG
     else:
       self.STEER_MAX = 384
@@ -49,6 +55,8 @@ class HyundaiFlags(IntFlag):
   CANFD_ALT_BUTTONS = 2
   CANFD_ALT_GEARS = 4
   CANFD_CAMERA_SCC = 8
+
+  ALT_LIMITS = 16
 
 
 class CAR:
