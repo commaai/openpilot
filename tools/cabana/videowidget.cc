@@ -128,8 +128,9 @@ void Slider::loadThumbnails() {
             QBuffer buffer(&bytes);
             buffer.open(QIODevice::WriteOnly);
             pic.save(&buffer, "png");
+            QString img_str = QString("<img src='data:image/png;base64, %0'>").arg(QString(bytes.toBase64()));
             std::lock_guard lk(thumbnail_lock);
-            thumbnails[thumb.getTimestampEof()] = QString("<img src='data:image/png;base64, %0'>").arg(QString(bytes.toBase64()));
+            thumbnails[thumb.getTimestampEof()] = img_str;
           }
         }
       }
