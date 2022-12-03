@@ -24,6 +24,7 @@ private:
   void paintEvent(QPaintEvent *ev) override;
   void streamStarted();
   void loadThumbnails();
+  QString getThumbnailString(const capnp::Data::Reader &data);
 
   int slider_x = -1;
   std::vector<std::tuple<int, int, TimelineType>> timeline;

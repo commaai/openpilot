@@ -119,23 +119,27 @@ void Slider::loadThumbnails() {
       if (log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL}, true, 0, 3)) {
         for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
           auto thumb = (*ev)->event.getThumbnail();
-          auto data = thumb.getThumbnail();
-          QPixmap pic;
-          if (pic.loadFromData(data.begin(), data.size(), "jpeg")) {
-            pic = pic.scaled({pic.width()/3, pic.height()/3}, Qt::KeepAspectRatio);
-            thumbnail_size = pic.size();
-            QByteArray bytes;
-            QBuffer buffer(&bytes);
-            buffer.open(QIODevice::WriteOnly);
-            pic.save(&buffer, "png");
-            QString img_str = QString("<img src='data:image/png;base64, %0'>").arg(QString(bytes.toBase64()));
-            std::lock_guard lk(thumbnail_lock);
-            thumbnails[thumb.getTimestampEof()] = img_str;
-          }
+          QString str = getThumbnailString(thumb.getThumbnail());
+          std::lock_guard lk(thumbnail_lock);
+          thumbnails[thumb.getTimestampEof()] = str;
         }
       }
     }
   }
+}
+
+QString Slider::getThumbnailString(const capnp::Data::Reader &data) {
+  QPixmap thumb;
+  if (thumb.loadFromData(data.begin(), data.size(), "jpeg")) {
+    thumb = thumb.scaled({thumb.width()/3, thumb.height()/3}, Qt::KeepAspectRatio);
+    thumbnail_size = thumb.size();
+    QByteArray bytes;
+    QBuffer buffer(&bytes);
+    buffer.open(QIODevice::WriteOnly);
+    thumb.save(&buffer, "png");
+    return  QString("<img src='data:image/png;base64, %0'>").arg(QString(bytes.toBase64()));
+  }
+  return {};
 }
 
 void Slider::sliderChange(QAbstractSlider::SliderChange change) {
