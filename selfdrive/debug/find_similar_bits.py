@@ -1,12 +1,14 @@
 import os
 os.environ["FILEREADER_CACHE"] = "1"
+from collections import defaultdict
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 from tools.lib.logreader import MultiLogIterator
 from opendbc.can.parser import CANParser
-import matplotlib.pyplot as plt
-import numpy as np
-from tqdm import tqdm
+
 
 # cp = CANParser("Model3CAN", [
 #   # ('SteeringSpeed129', 'ID129SteeringAngle'),
@@ -15,7 +17,7 @@ from tqdm import tqdm
 # ], bus=6)
 
 # Route, start and end segment
-route = Route("ROUTE_GOES_HERE"), 4, 6  # camry find pcm fault signal
+route = Route("f15e3c37c118e841|2022-12-02--03-32-45"), 4, 6  # camry find pcm fault signal
 lr = MultiLogIterator(route[0].log_paths()[route[1]:route[2]])
 all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
 
@@ -23,8 +25,9 @@ SEARCH_BUS = 0
 MIN_MSGS = 100
 
 bit_to_find = 0
-mismatches = {}
-total_msgs = {}
+# mismatches = {}
+mismatches = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+total_msgs = defaultdict(int)
 enabled = False
 enabled_t = 0
 
@@ -43,30 +46,27 @@ for msg in tqdm(all_msgs):
     # bit_to_find = abs(cp.vl['ID129SteeringAngle']['SteeringSpeed129']) > 4
 
     for m in msg.can:
-      if m.src == SEARCH_BUS:
-        # if m.address == 0x226:
-        #   bit_to_find = int(list(map(int, bin(m.dat[1])[2:].zfill(8)))[6])
+      if m.src != SEARCH_BUS:
+        continue
 
-        if m.address not in mismatches:
-          mismatches[m.address] = [[0 for _ in range(8)] for _ in range(len(m.dat))]
-          total_msgs[m.address] = 0
-        total_msgs[m.address] += 1
+      if m.address in mismatches and len(m.dat) != len(mismatches[m.address]):
+        print(f"WARNING: {hex(m.address)} changed length from {len(mismatches[m.address])} to {len(m.dat)}. Skipping...")
+        continue
 
-        for _y, byt in enumerate(m.dat):
-          for _x in range(8):
-            # TODO: this script is in the convention of reading binary left to right, switch?
-            flipped_idx = 7 - _x
-            bit = (byt & (1 << flipped_idx)) >> flipped_idx
-            if bit_to_find != bit:
-              if len(m.dat) != len(mismatches[m.address]):
-                continue
-              mismatches[m.address][_y][_x] += 1
+      total_msgs[m.address] += 1
+
+      for _y, byt in enumerate(m.dat):
+        for _x in range(8):
+          # TODO: this script is in the convention of reading binary left to right, switch?
+          flipped_idx = 7 - _x
+          bit = (byt & (1 << flipped_idx)) >> flipped_idx
+          mismatches[m.address][_y][_x] += bit_to_find != bit
 
 mismatches_by_count = {}
 print('Mismatches:')
 for msg in mismatches:
-  for byt_idx, byt in enumerate(mismatches[msg]):
-    for bit_idx, bit_mismatches in enumerate(byt):
+  for byt_idx, byt in mismatches[msg].items():
+    for bit_idx, bit_mismatches in byt.items():
       if total_msgs[msg] > MIN_MSGS:
         perc_mismatched = round(bit_mismatches / total_msgs[msg] * 100, 2)
         if perc_mismatched < 50:
