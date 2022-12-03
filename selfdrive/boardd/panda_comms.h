@@ -13,8 +13,6 @@
 #define TIMEOUT 0
 #define SPI_BUF_SIZE 1024
 
-const bool PANDA_NO_RETRY = getenv("PANDA_NO_RETRY");
-
 
 // comms base class
 class PandaCommsHandle {
@@ -52,7 +50,6 @@ public:
 private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
-  std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
 };
 

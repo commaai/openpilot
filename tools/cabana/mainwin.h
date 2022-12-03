@@ -62,6 +62,7 @@ signals:
 protected:
   void createActions();
   void createStatusBar();
+  void createShortcuts();
   void closeEvent(QCloseEvent *event) override;
   void setOption();
 

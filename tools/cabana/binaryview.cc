@@ -23,6 +23,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   verticalHeader()->setSectionsClickable(false);
+  verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   horizontalHeader()->hide();
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

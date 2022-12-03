@@ -12,6 +12,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QShortcut>
 #include <QScreen>
 #include <QToolBar>
 #include <QUndoView>
@@ -83,6 +84,7 @@ MainWindow::MainWindow() : QMainWindow() {
   setCentralWidget(central_widget);
   createActions();
   createStatusBar();
+  createShortcuts();
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
@@ -157,6 +159,12 @@ void MainWindow::createStatusBar() {
   statusBar()->addPermanentWidget(progress_bar);
 }
 
+void MainWindow::createShortcuts() {
+  auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  // TODO: add more shortcuts here.
+}
+
 void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
   LoadRouteDialog dlg(route, data_dir, use_qcam, this);
   QObject::connect(this, &MainWindow::updateProgressBar, dlg.progress_bar, &DownloadProgressBar::updateProgress);
@@ -229,7 +237,8 @@ void MainWindow::dockCharts(bool dock) {
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
-    floating_window = new QWidget(nullptr);
+    floating_window = new QWidget(this);
+    floating_window->setWindowFlags(Qt::Window);
     floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
