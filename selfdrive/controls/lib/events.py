@@ -501,7 +501,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.resumeRequired: {
     ET.WARNING: Alert(
       "STOPPED",
-      "Press Resume to Go",
+      "Press Resume to Exit Standstill",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
   },
@@ -615,9 +615,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
                               visual_alert=VisualAlert.brakePressed),
   },
 
-  EventName.pedalPressedPreEnable: {
+  EventName.preEnableStandstill: {
     ET.PRE_ENABLE: Alert(
-      "Release Pedal to Engage",
+      "Release Brake to Engage",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1, creation_delay=1.),
@@ -914,15 +914,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Harness Relay Malfunction"),
     ET.PERMANENT: NormalPermanentAlert("Harness Relay Malfunction", "Check Hardware"),
     ET.NO_ENTRY: NoEntryAlert("Harness Relay Malfunction"),
-  },
-
-  EventName.noTarget: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "openpilot Canceled",
-      "No close lead car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.HIGH, VisualAlert.none, AudibleAlert.disengage, 3.),
-    ET.NO_ENTRY: NoEntryAlert("No Close Lead Car"),
   },
 
   EventName.speedTooLow: {
