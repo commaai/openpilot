@@ -10,10 +10,8 @@ from tqdm import tqdm
 
 # cp = CANParser("Model3CAN", [
 #   # ('SteeringSpeed129', 'ID129SteeringAngle'),
-#   ('DAS_autopilotHandsOnState', 'ID399DAS_status'),
 # ], checks=[
 #   # ('ID129SteeringAngle', 10),
-#   ('ID399DAS_status', 1),
 # ], bus=6)
 
 # Route, start and end segment
@@ -29,32 +27,21 @@ mismatches = {}
 total_msgs = {}
 enabled = False
 enabled_t = 0
-ever_changed = False
 
 i = 0
 for msg in tqdm(all_msgs):
   if msg.which() == 'pandaStates':
     if msg.pandaStates[0].safetyTxBlocked != 3:
       bit_to_find = 1
-  if msg.which() == 'carState':
+  elif msg.which() == 'carState':
     if not enabled and msg.carState.cruiseState.enabled:
       enabled_t = msg.logMonoTime
-    # bit_to_find = msg.carState.gearShifter == 4
-    # enabled = bool(msg.carState.cruiseState.enabled)
-    # if bit_to_find:
-    #   print(bit_to_find)
   elif msg.which() == 'can':
     # cp.update_string(msg.as_builder().to_bytes())
     # if not cp.can_valid:
     #   continue
     # bit_to_find = abs(cp.vl['ID129SteeringAngle']['SteeringSpeed129']) > 4
-    # if abs(cp.vl['ID129SteeringAngle']['SteeringSpeed129']) > 4:
-    #   ever_changed = True
-    # bit_to_find = int(ever_changed)
-    # bit_to_find = int(cp.vl["ID399DAS_status"]["DAS_autopilotHandsOnState"] == 1)
-    # print(bit_to_find)
-    # if bit_to_find:
-    #   print(bit_to_find)
+
     for m in msg.can:
       if m.src == SEARCH_BUS:
         # if m.address == 0x226:
