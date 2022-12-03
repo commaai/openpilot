@@ -159,6 +159,7 @@ void Replay::buildTimeline() {
         timeline.push_back({toSeconds(e->mono_time), toSeconds(e->mono_time), TimelineType::UserFlag});
       }
     }
+    emit timelineUpdated();
   }
 }
 

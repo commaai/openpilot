@@ -77,6 +77,7 @@ public:
   }
 
 signals:
+  void timelineUpdated();
   void streamStarted();
   void segmentsMerged();
 

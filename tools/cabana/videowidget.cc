@@ -6,7 +6,6 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyleOptionSlider>
-#include <QTimer>
 #include <QVBoxLayout>
 
 inline QString formatTime(int seconds) {
@@ -86,13 +85,12 @@ void VideoWidget::updateState() {
 
 // Slider
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
-  QTimer *timer = new QTimer(this);
-  timer->setInterval(2000);
-  timer->callOnTimeout([this]() {
-    timeline = can->getTimeline();
-    update();
-  });
-  QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
+  QObject::connect(can, &CANMessages::timelineUpdated, this, &Slider::timelineUpdated);
+}
+
+void Slider::timelineUpdated() {
+  timeline = can->getTimeline();
+  update();
 }
 
 void Slider::sliderChange(QAbstractSlider::SliderChange change) {

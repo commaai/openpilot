@@ -48,6 +48,7 @@ public:
   inline bool isLoaded() const { return is_loaded; }
 
 signals:
+  void timelineUpdated();
   void streamStarted();
   void eventsMerged();
   void updated();

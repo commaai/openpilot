@@ -28,6 +28,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay.get(), &Replay::streamStarted, this, &CANMessages::streamStarted);
+  QObject::connect(replay.get(), &Replay::timelineUpdated, this, &CANMessages::timelineUpdated);
   if (replay->load()) {
     replay->start();
     is_loaded = true;

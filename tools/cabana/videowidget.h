@@ -15,6 +15,7 @@ public:
   void mousePressEvent(QMouseEvent *e) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
   void paintEvent(QPaintEvent *ev) override;
+  void timelineUpdated();
 
   int slider_x = -1;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
