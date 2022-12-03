@@ -108,8 +108,8 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
 }
 
 void Slider::loadThumbnails() {
-  const auto &segments = can->route()->segments();
-  for (int i = 0; i < segments.size() && !abort_load_thumbnail; ++i) {
+  const auto segments = can->route()->segments();
+  for (int i = segments.size() - 1; i >= 0 && !abort_load_thumbnail; --i) {
     std::string qlog = segments.at(i).qlog.toStdString();
     if (!qlog.empty()) {
       LogReader log;
@@ -189,9 +189,9 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 void Slider::mouseMoveEvent(QMouseEvent *e) {
   QString thumb;
   {
-    uint64_t ts = ((e->pos().x() * ((maximum() / 1000.0 - minimum() / 1000.0) / (double)width())) + can->routeStartTime()) * 1e9;
+    double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
     std::lock_guard lk(lock);
-    auto it = thumbnails.lowerBound(ts);
+    auto it = thumbnails.lowerBound((seconds + can->routeStartTime()) * 1e9);
     if (it != thumbnails.end()) {
       thumb = it.value();
     }
