@@ -70,8 +70,7 @@ for msg in mismatches:
       if total_msgs[msg] > MIN_MSGS:
         perc_mismatched = round(bit_mismatches / total_msgs[msg] * 100, 2)
         if perc_mismatched < 50:
-          mismatches_by_count[
-            f'{hex(msg)=}, bit_mismatches={bit_mismatches} of {total_msgs[msg]} ({perc_mismatched}%), {byt_idx=}, {bit_idx=}'] = perc_mismatched
+          mismatches_by_count[f'{hex(msg)=}, bit_mismatches={bit_mismatches} of {total_msgs[msg]} ({perc_mismatched}%), {byt_idx=}, {bit_idx=}'] = perc_mismatched
           # print(f'{hex(msg)=}, bit_mismatches={bit_mismatches} of {total_msgs[msg]}, {byt_idx=}, {bit_idx=}')
 
 mismatches_sorted = sorted(mismatches_by_count, key=lambda msg: mismatches_by_count[msg], reverse=True)
