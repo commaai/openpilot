@@ -6,7 +6,7 @@
 #include <QMainWindow>
 #include <QProgressBar>
 #include <QSplitter>
-#include <QStackedWidget>
+#include <QStackedLayout>
 #include <QStatusBar>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -35,7 +35,7 @@ protected:
   QLineEdit *route_edit;
   QLabel *loading_label;
   QLabel *title_label;
-  QStackedWidget *stacked_layout;
+  QStackedLayout *stacked_layout;
 };
 
 class MainWindow : public QMainWindow {

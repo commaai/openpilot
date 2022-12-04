@@ -294,10 +294,7 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
     : route_string(route), QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Dialog) {
   setWindowModality(Qt::WindowModal);
   setWindowTitle(tr("Open Route - Cabana"));
-  setLayout(new QVBoxLayout(this));
-
-  stacked_layout = new QStackedWidget();
-  layout()->addWidget(stacked_layout);
+  stacked_layout = new QStackedLayout(this);
 
   QWidget *input_widget = new QWidget;
   QVBoxLayout *form_layout = new QVBoxLayout(input_widget);
@@ -376,6 +373,6 @@ void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, b
     return;
   }
   title_label->setVisible(true);
-  title_label->setText(tr("Failed to load route \"%1\".\nmake sure the route name is correct.").arg(route));
+  title_label->setText(tr("Failed to load route \"%1\".Please make sure the route name is correct.").arg(route));
   stacked_layout->setCurrentIndex(0);
 }
