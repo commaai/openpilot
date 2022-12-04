@@ -79,7 +79,7 @@ void MapRenderer::msgUpdate() {
     auto orientation = location.getCalibratedOrientationNED();
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid) {
+    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % 10) == 0) {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
     }
   }
