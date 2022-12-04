@@ -20,7 +20,7 @@ def parse_mypy_ini():
   dirToScan = config['mypy']['files'].split(", ")
   dirToExclude = config['mypy']['exclude'].split("/)|(")
     
-  # Remove the extra characters at the begining and end
+  # Remove the extra characters at the beginning and end
   dirToExclude[0] = dirToExclude[0][2:]
   dirToExclude[-1] = dirToExclude[-1][:-2]
     
@@ -68,8 +68,8 @@ dirToScan, dirToExclude = parse_mypy_ini()
 
 r = results()
 
-for dir in dirToScan:
-  temp = test_mypy_coverage("./" + dir, dirToExclude)
+for directory in dirToScan:
+  temp = test_mypy_coverage("./" + directory, dirToExclude)
   r.num_passed += temp.num_passed
   r.num_tested += temp.num_tested
 
