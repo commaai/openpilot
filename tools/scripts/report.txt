@@ -4,7 +4,6 @@ Mypy Coverage Report
 ======================================
 | Module   | Imprecision    | Lines  |
 ======================================
-| common.api |  56.52% imprecise | 46 LOC |
 | common.basedir |   0.00% imprecise | 11 LOC |
 | common.conversions |   0.00% imprecise | 19 LOC |
 | common.dict_helpers |  88.89% imprecise | 9 LOC |
@@ -12,11 +11,6 @@ Mypy Coverage Report
 | common.file_helpers |  50.51% imprecise | 99 LOC |
 | common.filter_simple |  72.22% imprecise | 18 LOC |
 | common.gpio |   0.00% imprecise | 25 LOC |
-| common.kalman.simple_kalman |  66.67% imprecise | 3 LOC |
-| common.kalman.simple_kalman_old |  39.13% imprecise | 23 LOC |
-| common.kalman.tests.test_simple_kalman |  39.08% imprecise | 87 LOC |
-| common.kalman.tests |   0.00% imprecise | 0 LOC |
-| common.kalman |   0.00% imprecise | 0 LOC |
 | common.lazy_property |  50.00% imprecise | 12 LOC |
 | common.logging_extra |  45.75% imprecise | 247 LOC |
 | common.numpy_fast |  78.95% imprecise | 19 LOC |
@@ -26,24 +20,32 @@ Mypy Coverage Report
 | common.realtime |  16.67% imprecise | 96 LOC |
 | common.spinner |  42.31% imprecise | 52 LOC |
 | common.stat_live |  67.12% imprecise | 73 LOC |
-| common.tests.test_file_helpers |  33.33% imprecise | 27 LOC |
-| common.tests.test_numpy_fast |  42.31% imprecise | 26 LOC |
-| common.tests.test_params |  67.57% imprecise | 111 LOC |
-| common.tests |   0.00% imprecise | 0 LOC |
 | common.text_window |  36.51% imprecise | 63 LOC |
 | common.timeout |  44.44% imprecise | 27 LOC |
-| common.transformations.camera |  41.88% imprecise | 160 LOC |
-| common.transformations.coordinates |  42.11% imprecise | 19 LOC |
-| common.transformations.model |  40.17% imprecise | 117 LOC |
-| common.transformations.orientation |  41.51% imprecise | 53 LOC |
-| common.transformations.tests.test_coordinates |  51.38% imprecise | 109 LOC |
-| common.transformations.tests.test_orientation |  41.18% imprecise | 68 LOC |
-| common.transformations.tests |   0.00% imprecise | 0 LOC |
-| common.transformations |   0.00% imprecise | 0 LOC |
 | common.window |  73.77% imprecise | 61 LOC |
 | common.xattr |  67.39% imprecise | 46 LOC |
 | common |   0.00% imprecise | 0 LOC |
+| conf |   1.35% imprecise | 148 LOC |
+| scripts.code_stats |  14.81% imprecise | 54 LOC |
+| scripts.count_cars |   0.00% imprecise | 11 LOC |
+| scripts.disable-powersave |  20.00% imprecise | 5 LOC |
+| scripts.pyqt_demo |  35.71% imprecise | 14 LOC |
+| scripts.waste |  60.61% imprecise | 33 LOC |
+| scripts |   0.00% imprecise | 0 LOC |
+| selfdrive.rtshield |   0.00% imprecise | 21 LOC |
+| selfdrive.sentry |  37.33% imprecise | 75 LOC |
+| selfdrive.statsd |  32.32% imprecise | 164 LOC |
+| selfdrive.tombstoned |  41.18% imprecise | 170 LOC |
+| selfdrive.updated |  14.08% imprecise | 476 LOC |
+| selfdrive |   0.00% imprecise | 0 LOC |
+| system.logmessaged |  40.48% imprecise | 42 LOC |
+| system.micd |  43.40% imprecise | 106 LOC |
+| system.swaglog |  51.64% imprecise | 122 LOC |
+| system.timezoned |  33.71% imprecise | 89 LOC |
+| system.version |  16.08% imprecise | 143 LOC |
+| system |   0.00% imprecise | 0 LOC |
+| tools |   0.00% imprecise | 0 LOC |
 
-Tested: 39 files
-Passed: 10
-Percentage Covered: 25.64%
+Tested: 41 files
+Passed: 9
+Percentage Covered: 21.95%
