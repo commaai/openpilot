@@ -23,6 +23,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
       if candidate in GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
+      elif candidate == CAR.FORESTER_2022:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_FORESTER_2022
 
     ret.steerLimitTimer = 0.4
     ret.steerActuatorDelay = 0.1
@@ -60,7 +62,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
 
-    elif candidate == CAR.FORESTER:
+    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022):
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5

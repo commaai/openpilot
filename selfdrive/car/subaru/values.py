@@ -36,6 +36,7 @@ class CAR:
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
+  FORESTER_2022 = "SUBARU FORESTER 2022"
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
   LEGACY = "SUBARU LEGACY 7TH GEN"
 
@@ -67,6 +68,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
     SubaruCarInfo("Subaru XV 2020-21"),
   ],
   CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
+  CAR.FORESTER_2022: SubaruCarInfo("Subaru Forester 2022", harness=Harness.subaru_c),
   CAR.FORESTER_PREGLOBAL: SubaruCarInfo("Subaru Forester 2017-18"),
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
   CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
@@ -299,6 +301,27 @@ FW_VERSIONS = {
       b'\x1a\xf6b0\x00',
     ],
   },
+  CAR.FORESTER_2022: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa3 !x\x00',
+      b'\xa3 !v\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'-\xc0%0',
+      b'-\xc0\x040',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x04!\x01\x1eD\x07!\x00\x04,'
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xd5"a0\x07',
+      b'\xd5"`0\x07',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\x1d\x86B0\x00',
+      b'\x1d\xf6B0\x00',
+    ],
+  },
   CAR.FORESTER_PREGLOBAL: {
     (Ecu.abs, 0x7b0, None): [
       b'\x7d\x97\x14\x40',
@@ -505,6 +528,7 @@ DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
+  CAR.FORESTER_2022: dbc_dict('subaru_global_2022_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
   CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),

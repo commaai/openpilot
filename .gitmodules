@@ -1,6 +1,7 @@
 [submodule "panda"]
   path = panda
-  url = ../../commaai/panda.git
+  url = ../../martinl/panda.git
+  branch = forester-2022-PR
 [submodule "opendbc"]
   path = opendbc
   url = ../../commaai/opendbc.git
