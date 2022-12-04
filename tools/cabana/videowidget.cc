@@ -1,13 +1,17 @@
 #include "tools/cabana/videowidget.h"
 
+#include <QBuffer>
 #include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPixmap>
 #include <QStyleOptionSlider>
 #include <QTimer>
+#include <QToolTip>
 #include <QVBoxLayout>
+#include <QtConcurrent>
 
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
@@ -92,7 +96,50 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
     timeline = can->getTimeline();
     update();
   });
+  setMouseTracking(true);
+
   QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
+  QObject::connect(can, &CANMessages::streamStarted, this, &Slider::streamStarted);
+}
+
+void Slider::streamStarted() {
+  abort_load_thumbnail = true;
+  thumnail_future.waitForFinished();
+  abort_load_thumbnail = false;
+  thumbnails.clear();
+  thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
+}
+
+void Slider::loadThumbnails() {
+  const auto segments = can->route()->segments();
+  for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
+    std::string qlog = it->second.qlog.toStdString();
+    if (!qlog.empty()) {
+      LogReader log;
+      if (log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL}, true, 0, 3)) {
+        for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
+          auto thumb = (*ev)->event.getThumbnail();
+          QString str = getThumbnailString(thumb.getThumbnail());
+          std::lock_guard lk(thumbnail_lock);
+          thumbnails[thumb.getTimestampEof()] = str;
+        }
+      }
+    }
+  }
+}
+
+QString Slider::getThumbnailString(const capnp::Data::Reader &data) {
+  QPixmap thumb;
+  if (thumb.loadFromData(data.begin(), data.size(), "jpeg")) {
+    thumb = thumb.scaled({thumb.width()/3, thumb.height()/3}, Qt::KeepAspectRatio);
+    thumbnail_size = thumb.size();
+    QByteArray bytes;
+    QBuffer buffer(&bytes);
+    buffer.open(QIODevice::WriteOnly);
+    thumb.save(&buffer, "png");
+    return  QString("<img src='data:image/png;base64, %0'>").arg(QString(bytes.toBase64()));
+  }
+  return {};
 }
 
 void Slider::sliderChange(QAbstractSlider::SliderChange change) {
@@ -145,4 +192,19 @@ void Slider::mousePressEvent(QMouseEvent *e) {
     setValue(value);
     emit sliderReleased();
   }
+}
+
+void Slider::mouseMoveEvent(QMouseEvent *e) {
+  QString thumb;
+  {
+    double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
+    std::lock_guard lk(thumbnail_lock);
+    auto it = thumbnails.lowerBound((seconds + can->routeStartTime()) * 1e9);
+    if (it != thumbnails.end()) {
+      thumb = it.value();
+    }
+  }
+  QPoint pt = mapToGlobal({e->pos().x() - thumbnail_size.width() / 2, -thumbnail_size.height() - 30});
+  QToolTip::showText(pt, thumb, this, rect());
+  QSlider::mouseMoveEvent(e);
 }
