@@ -916,15 +916,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("Harness Relay Malfunction"),
   },
 
-  EventName.noTarget: {
-    ET.IMMEDIATE_DISABLE: Alert(
-      "openpilot Canceled",
-      "No close lead car",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.HIGH, VisualAlert.none, AudibleAlert.disengage, 3.),
-    ET.NO_ENTRY: NoEntryAlert("No Close Lead Car"),
-  },
-
   EventName.speedTooLow: {
     ET.IMMEDIATE_DISABLE: Alert(
       "openpilot Canceled",

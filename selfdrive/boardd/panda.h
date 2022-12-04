@@ -43,7 +43,6 @@ struct can_frame {
 class Panda {
 private:
   std::unique_ptr<PandaCommsHandle> handle;
-  std::vector<uint8_t> recv_buf;
 
 public:
   Panda(std::string serial="", uint32_t bus_offset=0);
