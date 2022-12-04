@@ -18,6 +18,7 @@ public:
   void setFilterString(const QString &string);
   void msgsReceived(const QHash<QString, CanData> *new_msgs = nullptr);
   void sortMessages();
+  void clear();
   QStringList msgs;
 
 private:
@@ -31,11 +32,14 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
+  void streamStarted();
+
 signals:
   void msgSelectionChanged(const QString &message_id);
 
 protected:
   QTableView *table_widget;
   QString current_msg_id;
-  MessageListModel *model;
+  QLineEdit *filter;
+  MessageListModel *model = nullptr;
 };

@@ -43,6 +43,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   use_dark_theme = palette().color(QPalette::WindowText).value() > palette().color(QPalette::Background).value();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
+  QObject::connect(can, &CANMessages::streamStarted, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);

@@ -12,7 +12,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // message filter
-  QLineEdit *filter = new QLineEdit(this);
+  filter = new QLineEdit(this);
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
@@ -34,7 +34,8 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(table_widget);
 
   // signals/slots
-  QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
+  QObject::connect(filter, &QLineEdit::textEdited, model, &MessageListModel::setFilterString);
+  QObject::connect(can, &CANMessages::streamStarted, this, &MessagesWidget::streamStarted);
   QObject::connect(can, &CANMessages::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
@@ -51,6 +52,13 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     if (int row = model->msgs.indexOf(current_msg_id); row != -1)
       table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   });
+}
+
+void MessagesWidget::streamStarted() {
+  filter->setText("");
+  model->clear();
+  current_msg_id = "";
+  emit msgSelectionChanged("");
 }
 
 // MessageListModel
@@ -76,6 +84,15 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
   return {};
+}
+
+void MessageListModel::clear() {
+  beginResetModel();
+  filter_str = "";
+  sort_column = 0;
+  sort_order = Qt::AscendingOrder;
+  msgs.clear();
+  endResetModel();
 }
 
 void MessageListModel::setFilterString(const QString &string) {

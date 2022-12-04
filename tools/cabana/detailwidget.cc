@@ -127,25 +127,29 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
 
 void DetailWidget::setMessage(const QString &message_id) {
   msg_id = message_id;
-  int index = tabbar->count() - 1;
-  for (/**/; index >= 0 && tabbar->tabText(index) != msg_id; --index) { /**/ }
-  if (index == -1) {
-    index = tabbar->addTab(message_id);
-    tabbar->setTabToolTip(index, msgName(message_id));
+  if (!msg_id.isEmpty()) {
+    int index = tabbar->count() - 1;
+    for (/**/; index >= 0 && tabbar->tabText(index) != msg_id; --index) { /**/ }
+    if (index == -1) {
+      index = tabbar->addTab(message_id);
+      tabbar->setTabToolTip(index, msgName(message_id));
+    }
+    tabbar->setCurrentIndex(index);
+  } else {
+    tabbar->blockSignals(true);
+    while (tabbar->count() > 0) {
+      tabbar->removeTab(0);
+    }
+    tabbar->blockSignals(false);
   }
-  tabbar->setCurrentIndex(index);
   dbcMsgChanged();
   scroll->verticalScrollBar()->setValue(0);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
-  if (msg_id.isEmpty()) return;
-
   setUpdatesEnabled(false);
-
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
-
   int i = 0;
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);

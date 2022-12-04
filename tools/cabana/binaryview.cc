@@ -150,34 +150,40 @@ void BinaryViewModel::setMessage(const QString &message_id) {
   beginResetModel();
   msg_id = message_id;
   items.clear();
-  if ((dbc_msg = dbc()->msg(msg_id))) {
-    row_count = dbc_msg->size;
+  row_count = 0;
+  dbc_msg = nullptr;
+
+  if (!msg_id.isEmpty()) {
+    dbc_msg = dbc()->msg(msg_id);
+    row_count = dbc_msg ? dbc_msg->size : can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
-    int i = 0;
-    for (auto sig : dbc_msg->getSignals()) {
-      auto [start, end] = getSignalRange(sig);
-      for (int j = start; j <= end; ++j) {
-        int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
-        int idx = column_count * (bit_index / 8) + bit_index % 8;
-        if (idx >= items.size()) {
-          qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
-          break;
+    if (dbc_msg) {
+      int i = 0;
+      for (auto sig : dbc_msg->getSignals()) {
+        auto [start, end] = getSignalRange(sig);
+        for (int j = start; j <= end; ++j) {
+          int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
+          int idx = column_count * (bit_index / 8) + bit_index % 8;
+          if (idx >= items.size()) {
+            qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
+            break;
+          }
+          if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+          if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
+          items[idx].bg_color = getColor(i);
+          items[idx].sigs.push_back(sig);
         }
-        if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        items[idx].bg_color = getColor(i);
-        items[idx].sigs.push_back(sig);
+        ++i;
       }
-      ++i;
     }
-  } else {
-    row_count = can->lastMessage(msg_id).dat.size();
-    items.resize(row_count * column_count);
   }
   endResetModel();
 }
 
 void BinaryViewModel::updateState() {
+  if (msg_id.isEmpty())
+    return;
+
   auto prev_items = items;
   const auto &binary = can->lastMessage(msg_id).dat;
   // data size may changed.

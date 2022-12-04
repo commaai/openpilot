@@ -34,7 +34,10 @@ public:
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   void removeMsg(const QString &id);
   inline const std::map<uint32_t, DBCMsg> &messages() const { return msgs; }
-  inline const DBCMsg *msg(const QString &id) const { return msg(parseId(id).second); }
+  inline const DBCMsg *msg(const QString &id) const { 
+    if (id.isEmpty()) return nullptr;
+    return msg(parseId(id).second);
+  }
   inline const DBCMsg *msg(uint32_t address) const {
     auto it = msgs.find(address);
     return it != msgs.end() ? &it->second : nullptr;

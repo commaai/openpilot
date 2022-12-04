@@ -1,6 +1,5 @@
 #include "tools/cabana/videowidget.h"
 
-#include <QButtonGroup>
 #include <QDateTime>
 #include <QHBoxLayout>
 #include <QMouseEvent>
@@ -39,14 +38,14 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   play_btn->setStyleSheet("font-weight:bold; height:16px");
   control_layout->addWidget(play_btn);
 
-  QButtonGroup *group = new QButtonGroup(this);
-  group->setExclusive(true);
+  btn_group = new QButtonGroup(this);
+  btn_group->setExclusive(true);
   for (float speed : {0.1, 0.5, 1., 2.}) {
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
     QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
     control_layout->addWidget(btn);
-    group->addButton(btn);
+    btn_group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
   }
   main_layout->addLayout(control_layout);
@@ -58,10 +57,14 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
-  QObject::connect(can, &CANMessages::streamStarted, [this]() {
-    end_time_label->setText(formatTime(can->totalSeconds()));
-    slider->setRange(0, can->totalSeconds() * 1000);
-  });
+  QObject::connect(can, &CANMessages::streamStarted, this, &VideoWidget::streamStarted);
+}
+
+void VideoWidget::streamStarted() {
+  play_btn->setText("⏸");
+  btn_group->buttons()[2]->setChecked(true);
+  end_time_label->setText(formatTime(can->totalSeconds()));
+  slider->setRange(0, can->totalSeconds() * 1000);
 }
 
 void VideoWidget::pause(bool pause) {

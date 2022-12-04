@@ -48,10 +48,11 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 }
 
 void HistoryLogModel::updateState() {
+  if (msg_id.isEmpty())
+    return;
+
   int prev_row_count = messages.size();
-  if (!msg_id.isEmpty()) {
-    messages = can->messages(msg_id);
-  }
+  messages = can->messages(msg_id);
   int delta = messages.size() - prev_row_count;
   if (delta > 0) {
     beginInsertRows({}, prev_row_count, messages.size() - 1);

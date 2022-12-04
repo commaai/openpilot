@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QButtonGroup>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
@@ -16,6 +17,7 @@ public:
   void sliderChange(QAbstractSlider::SliderChange change) override;
   void paintEvent(QPaintEvent *ev) override;
   void timelineUpdated();
+  void streamStarted();
 
   int slider_x = -1;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
@@ -27,12 +29,14 @@ class VideoWidget : public QWidget {
 public:
   VideoWidget(QWidget *parnet = nullptr);
   void rangeChanged(double min, double max, bool is_zommed);
+  void streamStarted();
 
 protected:
   void updateState();
   void pause(bool pause);
 
   CameraWidget *cam_widget;
+  QButtonGroup *btn_group;
   QLabel *end_time_label;
   QPushButton *play_btn;
   Slider *slider;
