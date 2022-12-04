@@ -56,8 +56,8 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
 void MessagesWidget::streamStarted() {
   filter->setText("");
-  model->clear();
   current_msg_id = "";
+  model->clear();
   emit msgSelectionChanged("");
 }
 

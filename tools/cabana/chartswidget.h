@@ -86,7 +86,6 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
   void removeChart(ChartView *chart);
-  void removeAll();
   inline bool isChartOpened(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
 signals:
@@ -102,6 +101,7 @@ private:
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
+  void removeAll();
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 

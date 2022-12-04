@@ -149,31 +149,29 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 void BinaryViewModel::setMessage(const QString &message_id) {
   beginResetModel();
   msg_id = message_id;
+  dbc_msg = nullptr;
   items.clear();
   row_count = 0;
-  dbc_msg = nullptr;
 
   if (!msg_id.isEmpty()) {
     dbc_msg = dbc()->msg(msg_id);
     row_count = dbc_msg ? dbc_msg->size : can->lastMessage(msg_id).dat.size();
+    std::vector<const Signal*> sigs = dbc_msg ? std::vector<const Signal*>{} : dbc_msg->getSignals();
     items.resize(row_count * column_count);
-    if (dbc_msg) {
-      int i = 0;
-      for (auto sig : dbc_msg->getSignals()) {
-        auto [start, end] = getSignalRange(sig);
-        for (int j = start; j <= end; ++j) {
-          int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
-          int idx = column_count * (bit_index / 8) + bit_index % 8;
-          if (idx >= items.size()) {
-            qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
-            break;
-          }
-          if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-          if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-          items[idx].bg_color = getColor(i);
-          items[idx].sigs.push_back(sig);
+    for (int i = 0; i < sigs.size(); ++i) {
+      const Signal *sig = sigs[i];
+      auto [start, end] = getSignalRange(sig);
+      for (int j = start; j <= end; ++j) {
+        int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
+        int idx = column_count * (bit_index / 8) + bit_index % 8;
+        if (idx >= items.size()) {
+          qWarning() << "signal " << sig->name.c_str() << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
+          break;
         }
-        ++i;
+        if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
+        items[idx].bg_color = getColor(i);
+        items[idx].sigs.push_back(sig);
       }
     }
   }

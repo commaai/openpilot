@@ -92,13 +92,9 @@ void VideoWidget::updateState() {
 
 // Slider
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
+  setMouseTracking(true);
   QObject::connect(can, &CANMessages::timelineUpdated, this, &Slider::timelineUpdated);
   QObject::connect(can, &CANMessages::streamStarted, this, &Slider::streamStarted);
-}
-
-void Slider::timelineUpdated() {
-  timeline = can->getTimeline();
-  update();
 }
 
 void Slider::streamStarted() {
@@ -107,7 +103,13 @@ void Slider::streamStarted() {
   abort_load_thumbnail = false;
   thumbnails.clear();
   timeline.clear();
+  update();
   thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
+}
+
+void Slider::timelineUpdated() {
+  timeline = can->getTimeline();
+  update();
 }
 
 void Slider::loadThumbnails() {
