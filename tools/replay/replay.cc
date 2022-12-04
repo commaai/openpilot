@@ -123,9 +123,9 @@ void Replay::buildTimeline() {
   uint64_t alert_begin = 0;
   TimelineType alert_type = TimelineType::None;
 
-  for (int i = 0; i < segments_.size() && !exit_; ++i) {
+  for (auto it = segments_.cbegin(); it != segments_.cend() && !exit_; ++it) {
     LogReader log;
-    if (!log.load(route_->at(i).qlog.toStdString(), &exit_,
+    if (!log.load(route_->at(it->first).qlog.toStdString(), &exit_,
                   {cereal::Event::Which::CONTROLS_STATE, cereal::Event::Which::USER_FLAG},
                   !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
 
