@@ -330,8 +330,10 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &LoadRouteDialog::loadClicked);
   QObject::connect(file_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
-    route_edit->setText(dir);
-    settings.last_route_dir = QFileInfo(dir).absolutePath();
+    if (!dir.isEmpty()) {
+      route_edit->setText(dir);
+      settings.last_route_dir = QFileInfo(dir).absolutePath();
+    }
   });
 
   setFixedWidth(600);
