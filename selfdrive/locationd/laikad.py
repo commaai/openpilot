@@ -98,10 +98,13 @@ class Laikad:
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
-      position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
+      position_std = np.median(np.abs(pr_residuals)) * np.ones(1)
       velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate)
+      if len(velocity_solution) == 0 or len(prr_residuals) == 0:
+        return None
+
       velocity_estimate = velocity_solution[:3]
-      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(3)
+      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(1)
       return position_estimate, position_std, velocity_estimate, velocity_std
 
   def is_good_report(self, gnss_msg):
@@ -151,16 +154,14 @@ class Laikad:
     processed_measurements = process_measurements(new_meas, self.astro_dog)
 
     instant_fix = self.get_lsq_fix(t, processed_measurements)
-    if instant_fix is not None:
+    if instant_fix is None:
+      return None
+    else:
       position_estimate, position_std, velocity_estimate, velocity_std = instant_fix
-      if self.last_fix_pos is not None:
-        print(np.array(position_estimate) - np.array(self.last_fix_pos))
       self.last_fix_t = t
       self.last_fix_pos = position_estimate
       self.lat_fix_pos_std = position_std
-    else:
-      return None
-    
+
     corrected_measurements = correct_measurements(processed_measurements, position_estimate, self.astro_dog)
     if (t*1e9) % 10 == 0:
       cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
@@ -190,7 +191,6 @@ class Laikad:
         return None
       position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
-      print(position_estimate, position_std)
       self.update_localizer(position_estimate, t, corrected_measurements)
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
       dat = messaging.new_message("gnssMeasurements")

@@ -287,7 +287,6 @@ void Localizer::input_fake_gps_observations(double current_time) {
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  // TODO: add more verification steps
   this->gps_valid = log.getPositionECEF().getValid() && log.getVelocityECEF().getValid();
   if (!this->gps_valid) {
     this->determine_gps_mode(current_time);
@@ -305,17 +304,16 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
 
   auto ecef_pos_std = log.getPositionECEF().getStd();
-  Vector3d ecef_pos_R_vec = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]);
-  MatrixXdr ecef_pos_R = Vector3d::Constant(pow(ecef_pos_R_vec.norm(), 2)).asDiagonal();
+  double pos_error = pow(ecef_pos_std[0], 2);
+  MatrixXdr ecef_pos_R = Vector3d::Constant(pos_error).asDiagonal();
 
   auto ecef_vel_v = log.getVelocityECEF().getValue();
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
 
   auto ecef_vel_std = log.getVelocityECEF().getStd();
-  Vector3d ecef_vel_R_vec = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]);
-  MatrixXdr ecef_vel_R = Vector3d::Constant(pow(ecef_vel_R_vec.norm() * 10, 2)).asDiagonal();
+  double vel_error = pow(ecef_vel_std[0]*10, 2);
+  MatrixXdr ecef_vel_R = Vector3d::Constant(vel_error).asDiagonal();
 
-  //this->unix_timestamp_millis = log.getUnixTimestampMillis();
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
@@ -336,17 +334,26 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     orientation_error(i) -= M_PI;
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
-  
-  
-  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
+
+  // accuracy sanity check
+  if (pos_error > 500.) {
+    this->gps_valid = false;
+    this->determine_gps_mode(current_time);
+    return;
+  }
+
+  if ((gps_est_error > 100.0 && pos_error < 30) || this->last_gps_msg == 0) {
+    // always reset on first gps message and if the location is off but the accuracy is high
+    LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
+    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
+  }else if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
-  } else if (gps_est_error > 100.0) {
-    LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
-  
+
+  this->last_gps_msg = current_time;
+
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
@@ -362,7 +369,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
-  
+
   if (!this->is_timestamp_valid(current_time)) {
     this->observation_timings_invalid = true;
     return;
@@ -525,7 +532,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 }
 
 bool Localizer::is_gps_ok() {
-  return this->gps_valid;
+  return this->gps_valid && (this->kf->get_filter_time() - this->last_gps_msg) <  1.0;
 }
 
 bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
