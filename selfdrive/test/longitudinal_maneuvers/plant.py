@@ -4,6 +4,7 @@ import numpy as np
 
 from cereal import log
 import cereal.messaging as messaging
+from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.modeld.constants import T_IDXS
@@ -17,6 +18,7 @@ class Plant:
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
                enabled=True, only_lead2=False, only_radar=False):
     self.rate = 1. / DT_MDL
+    self.params = Params()
 
     if not Plant.messaging_initialized:
       Plant.radar = messaging.pub_sock('radarState')
@@ -109,6 +111,7 @@ class Plant:
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
     control.controlsState.vCruise = float(v_cruise * 3.6)
+    control.controlsState.experimentalMode = self.params.get_bool("ExperimentalMode")
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
 
