@@ -156,7 +156,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
   if (!msg_id.isEmpty()) {
     dbc_msg = dbc()->msg(msg_id);
     row_count = dbc_msg ? dbc_msg->size : can->lastMessage(msg_id).dat.size();
-    std::vector<const Signal*> sigs = dbc_msg ? std::vector<const Signal*>{} : dbc_msg->getSignals();
+    std::vector<const Signal*> sigs = dbc_msg ? dbc_msg->getSignals() : std::vector<const Signal*>{};
     items.resize(row_count * column_count);
     for (int i = 0; i < sigs.size(); ++i) {
       const Signal *sig = sigs[i];

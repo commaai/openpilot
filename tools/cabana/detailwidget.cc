@@ -150,6 +150,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   setUpdatesEnabled(false);
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
+
   int i = 0;
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);
