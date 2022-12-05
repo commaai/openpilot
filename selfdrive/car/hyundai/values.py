@@ -158,10 +158,13 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
   CAR.IONIQ_5: [
-    HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022-23" , "Highway Driving Assist", harness=Harness.hyundai_k),
+    HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022-23", "Highway Driving Assist", harness=Harness.hyundai_k),
     HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022-23", "Highway Driving Assist II", harness=Harness.hyundai_q),
   ],
-  CAR.TUCSON_4TH_GEN: HyundaiCarInfo("Hyundai Tucson 2023", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),  # TODO: packages
+  CAR.TUCSON_4TH_GEN: [
+    # HyundaiCarInfo("Hyundai Tucson 2022", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),  # TODO: verify harness
+    HyundaiCarInfo("Hyundai Tucson 2023", "All", harness=Harness.hyundai_n),
+  ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),
 
