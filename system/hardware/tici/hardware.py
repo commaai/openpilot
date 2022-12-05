@@ -416,6 +416,7 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
+    affine_irq(4, 126)   # SPI goes on boardd core
     affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
     affine_irq(4, 1069)  # xhci-hcd:usb3 goes on the boardd core
     for irq in range(237, 246):
@@ -462,17 +463,6 @@ class Tici(HardwareBase):
     sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
     sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
 
-    # *** unexport GPIO for sensors ***
-    # remove from /userspace/usr/comma/gpio.sh
-    sudo_write(str(GPIO.BMX055_ACCEL_INT), "/sys/class/gpio/unexport")
-    sudo_write(str(GPIO.BMX055_GYRO_INT),  "/sys/class/gpio/unexport")
-    sudo_write(str(GPIO.BMX055_MAGN_INT),  "/sys/class/gpio/unexport")
-    sudo_write(str(GPIO.LSM_INT),          "/sys/class/gpio/unexport")
-
-    # *** set /dev/gpiochip0 rights to make accessible by sensord
-    os.system("sudo chmod +r /dev/gpiochip0")
-
-
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
@@ -491,7 +481,7 @@ class Tici(HardwareBase):
 
     # blue prime config
     if sim_id.startswith('8901410'):
-      os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
 
   def get_networks(self):
     r = {}

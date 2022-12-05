@@ -116,6 +116,7 @@ class CAR:
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
   PASSAT_NMS = "VOLKSWAGEN PASSAT NMS"              # Chassis A3, North America/China/Mideast NMS Passat, incl. facelift
   POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
+  SHARAN_MK2 = "VOLKSWAGEN SHARAN 2ND GEN"          # Chassis 7N, Mk2 Volkswagen Sharan and SEAT Alhambra
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
@@ -135,7 +136,7 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 
-PQ_CARS = {CAR.PASSAT_NMS}
+PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
 
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
@@ -150,71 +151,76 @@ class Footnote(Enum):
   PASSAT = CarFootnote(
     "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  VW_HARNESS = CarFootnote(
-    "Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma " +
-    "store. Before ordering, remove the Lane Assist camera cover and check to see if the connector is black " +
-    "(older design) or light brown (newer design). In the interim, if your car has a J533 connector CAN gateway " +
-    "inside the dashboard, choose \"VW J533 Development\" from the vehicle drop-down for a suitable harness. " +
-    "(Some newer models are also observed to not have a J533 connector.)",
-    Column.MODEL)
-  VW_VARIANT = CarFootnote(
-    "Includes versions with extra rear cargo space (may be called Variant, Estate, SportWagen, Shooting Brake, etc.)",
-    Column.MODEL)
+  VW_EXP_LONG = CarFootnote (
+    "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness " +
+    "are limited to using stock ACC.",
+    Column.LONGITUDINAL)
+  VW_MQB_A0 = CarFootnote(
+    "Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot " +
+    "in software, but doesn't yet have a harness available from the comma store.",
+    Column.HARNESS)
 
 
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  harness: Enum = Harness.vw
+  harness: Enum = Harness.j533
+
+  def init_make(self, CP: car.CarParams):
+    self.footnotes.insert(0, Footnote.VW_EXP_LONG)
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon R 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen CC 2018-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533, video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen CC 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
-    VWCarInfo("Volkswagen Atlas 2018-23", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Atlas Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Teramont 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Teramont Cross Sport 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Teramont X 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Atlas 2018-23"),
+    VWCarInfo("Volkswagen Atlas Cross Sport 2021-22"),
+    VWCarInfo("Volkswagen Teramont 2018-22"),
+    VWCarInfo("Volkswagen Teramont Cross Sport 2021-22"),
+    VWCarInfo("Volkswagen Teramont X 2021-22"),
   ],
   CAR.GOLF_MK7: [
     VWCarInfo("Volkswagen e-Golf 2014-20"),
-    VWCarInfo("Volkswagen Golf 2015-20", footnotes=[Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Golf 2015-20"),
     VWCarInfo("Volkswagen Golf Alltrack 2015-19"),
     VWCarInfo("Volkswagen Golf GTD 2015-20"),
     VWCarInfo("Volkswagen Golf GTE 2015-20"),
     VWCarInfo("Volkswagen Golf GTI 2015-21"),
-    VWCarInfo("Volkswagen Golf R 2015-19", footnotes=[Footnote.VW_VARIANT]),
+    VWCarInfo("Volkswagen Golf R 2015-19"),
     VWCarInfo("Volkswagen Golf SportsVan 2015-20"),
   ],
   CAR.JETTA_MK7: [
-    VWCarInfo("Volkswagen Jetta 2018-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Jetta GLI 2021-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Jetta 2018-22"),
+    VWCarInfo("Volkswagen Jetta GLI 2021-22"),
   ],
   CAR.PASSAT_MK8: [
-    VWCarInfo("Volkswagen Passat 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.PASSAT, Footnote.VW_VARIANT], harness=Harness.j533),
-    VWCarInfo("Volkswagen Passat Alltrack 2015-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Passat GTE 2015-22", footnotes=[Footnote.VW_HARNESS, Footnote.VW_VARIANT], harness=Harness.j533),
+    VWCarInfo("Volkswagen Passat 2015-22", footnotes=[Footnote.PASSAT]),
+    VWCarInfo("Volkswagen Passat Alltrack 2015-22"),
+    VWCarInfo("Volkswagen Passat GTE 2015-22"),
   ],
-  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22", harness=Harness.j533),
+  CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22"),
   CAR.POLO_MK6: [
-    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_MQB_A0]),
   ],
-  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.SHARAN_MK2: [
+    VWCarInfo("Volkswagen Sharan 2018-22"),
+    VWCarInfo("SEAT Alhambra 2018-20"),
+  ],
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022"),
+  CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0]),
+  CAR.TIGUAN_MK2: VWCarInfo("Volkswagen Tiguan 2019-22"),
   CAR.TOURAN_MK2: VWCarInfo("Volkswagen Touran 2017"),
   CAR.TRANSPORTER_T61: [
-    VWCarInfo("Volkswagen Caravelle 2020", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
-    VWCarInfo("Volkswagen California 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+    VWCarInfo("Volkswagen Caravelle 2020"),
+    VWCarInfo("Volkswagen California 2021"),
   ],
-  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_HARNESS], harness=Harness.j533),
+  CAR.TROC_MK1: VWCarInfo("Volkswagen T-Roc 2021", footnotes=[Footnote.VW_MQB_A0]),
   CAR.AUDI_A3_MK3: [
     VWCarInfo("Audi A3 2014-19"),
     VWCarInfo("Audi A3 Sportback e-tron 2017-18"),
@@ -222,19 +228,20 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Audi S3 2015-17"),
   ],
   CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018"),
-  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2020-21"),
+  CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2019-23"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
-  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.KAMIQ]),
-  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21", footnotes=[Footnote.VW_HARNESS]),
+  CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
+  CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
-  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020"),
-  CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-18"),
+  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020", footnotes=[Footnote.VW_MQB_A0]),
+  CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-22"),
   CAR.SKODA_OCTAVIA_MK3: [
     VWCarInfo("Škoda Octavia 2015, 2018-19"),
     VWCarInfo("Škoda Octavia RS 2016"),
   ],
 }
+
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
@@ -273,12 +280,14 @@ FW_VERSIONS = {
   CAR.ARTEON_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x873G0906259F \xf1\x890004',
+      b'\xf1\x873G0906259N \xf1\x890004',
       b'\xf1\x873G0906259P \xf1\x890001',
       b'\xf1\x875NA907115H \xf1\x890002',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158L \xf1\x893611',
       b'\xf1\x870GC300011L \xf1\x891401',
+      b'\xf1\x870GC300014M \xf1\x892802',
       b'\xf1\x870GC300040P \xf1\x891401',
     ],
     (Ecu.srs, 0x715, None): [
@@ -290,8 +299,10 @@ FW_VERSIONS = {
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571B41815A1',
       b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571B00817A1',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567B0020800',
+      b'\xf1\x875WA907145M \xf1\x891051\xf1\x82\x002MB4092M7N',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x875Q0907572J \xf1\x890654',
     ],
@@ -366,6 +377,7 @@ FW_VERSIONS = {
       b'\xf1\x870EA906016Q \xf1\x895993',
       b'\xf1\x870EA906016S \xf1\x897207',
       b'\xf1\x875G0906259  \xf1\x890007',
+      b'\xf1\x875G0906259D \xf1\x890002',
       b'\xf1\x875G0906259J \xf1\x890002',
       b'\xf1\x875G0906259L \xf1\x890002',
       b'\xf1\x875G0906259N \xf1\x890003',
@@ -401,6 +413,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300012  \xf1\x895045',
       b'\xf1\x870D9300014M \xf1\x895004',
       b'\xf1\x870D9300014Q \xf1\x895006',
+      b'\xf1\x870D9300020J \xf1\x894902',
       b'\xf1\x870D9300020Q \xf1\x895201',
       b'\xf1\x870D9300020S \xf1\x895201',
       b'\xf1\x870D9300040A \xf1\x893613',
@@ -448,6 +461,7 @@ FW_VERSIONS = {
       b'\xf1\x873Q0909144F \xf1\x895043\xf1\x82\x0561A01612A0',
       b'\xf1\x873Q0909144H \xf1\x895061\xf1\x82\x0566A0J612A1',
       b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566A00514A1',
+      b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566A01613A1',
       b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566A0J712A1',
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571A0J714A1',
       b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571A0JA15A1',
@@ -549,6 +563,7 @@ FW_VERSIONS = {
       b'\xf1\x8703N906026E \xf1\x892114',
       b'\xf1\x8704E906023AH\xf1\x893379',
       b'\xf1\x8704L906026ET\xf1\x891990',
+      b'\xf1\x8704L906026FP\xf1\x892012',
       b'\xf1\x8704L906026GA\xf1\x892013',
       b'\xf1\x8704L906026KD\xf1\x894798',
       b'\xf1\x873G0906264  \xf1\x890004',
@@ -556,6 +571,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300043H \xf1\x891601',
       b'\xf1\x870CW300048R \xf1\x890610',
+      b'\xf1\x870D9300013A \xf1\x894905',
       b'\xf1\x870D9300014L \xf1\x895002',
       b'\xf1\x870D9300041A \xf1\x894801',
       b'\xf1\x870DD300045T \xf1\x891601',
@@ -573,6 +589,7 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566B00611A1',
+      b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\x0566B00711A1',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0060803',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0080803',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521B00606A1',
@@ -623,6 +640,18 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
+    ],
+  },
+  CAR.SHARAN_MK2: {
+    # TODO: Sharan Mk2 EPS and DQ250 auto trans both require KWP2000 support for fingerprinting
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906016HE\xf1\x894635',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x877N0959655D \xf1\x890016\xf1\x82\x0801100705----10--',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0153',
     ],
   },
   CAR.TAOS_MK1: {
@@ -851,20 +880,24 @@ FW_VERSIONS = {
   CAR.AUDI_Q3_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018N \xf1\x899970',
+      b'\xf1\x8705L906022M \xf1\x890901',
       b'\xf1\x8783A906259  \xf1\x890001',
       b'\xf1\x8783A906259  \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158CN\xf1\x893608',
+      b'\xf1\x870GC300045D \xf1\x892802',
       b'\xf1\x870GC300046F \xf1\x892701',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655BF\xf1\x890403\xf1\x82\x1321211111211200311121232152219321422111',
+      b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111224118A119321532111',
       b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111237116A119321532111',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000300',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000800',
+      b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\x0571G60533A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
@@ -1040,6 +1073,7 @@ FW_VERSIONS = {
   },
   CAR.SKODA_SUPERB_MK3: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906026ET\xf1\x891343',
       b'\xf1\x8704L906026FP\xf1\x891196',
       b'\xf1\x8704L906026KB\xf1\x894071',
       b'\xf1\x8704L906026KD\xf1\x894798',
@@ -1050,9 +1084,11 @@ FW_VERSIONS = {
       b'\xf1\x870CW300042H \xf1\x891601',
       b'\xf1\x870D9300011T \xf1\x894801',
       b'\xf1\x870D9300012  \xf1\x894940',
+      b'\xf1\x870D9300041H \xf1\x894905',
       b'\xf1\x870GC300043  \xf1\x892301',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655AE\xf1\x890130\xf1\x82\x12111200111121001121110012211292221111',
       b'\xf1\x875Q0959655AE\xf1\x890130\xf1\x82\022111200111121001121118112231292221111',
       b'\xf1\x875Q0959655AK\xf1\x890130\xf1\x82\022111200111121001121110012211292221111',
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\02331310031313100313131013141319331413100',

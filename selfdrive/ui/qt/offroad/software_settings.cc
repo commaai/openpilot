@@ -77,7 +77,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   // uninstall button
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), tr("Uninstall"), this)) {
       params.putBool("DoUninstall", true);
     }
   });
@@ -145,11 +145,11 @@ void SoftwarePanel::updateLabels() {
   targetBranchBtn->setValue(QString::fromStdString(params.get("UpdaterTargetBranch")));
 
   // current + new versions
-  versionLbl->setText(QString::fromStdString(params.get("UpdaterCurrentDescription")).left(40));
+  versionLbl->setText(QString::fromStdString(params.get("UpdaterCurrentDescription")));
   versionLbl->setDescription(QString::fromStdString(params.get("UpdaterCurrentReleaseNotes")));
 
   installBtn->setVisible(!is_onroad && params.getBool("UpdateAvailable"));
-  installBtn->setValue(QString::fromStdString(params.get("UpdaterNewDescription")).left(35));
+  installBtn->setValue(QString::fromStdString(params.get("UpdaterNewDescription")));
   installBtn->setDescription(QString::fromStdString(params.get("UpdaterNewReleaseNotes")));
 
   update();

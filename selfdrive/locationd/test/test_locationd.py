@@ -14,13 +14,15 @@ from selfdrive.manager.process_config import managed_processes
 
 class TestLocationdProc(unittest.TestCase):
   MAX_WAITS = 1000
-  LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'sensorEvents', 'liveCalibration']
+  LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'liveCalibration',
+              'accelerometer', 'gyroscope', 'magnetometer']
 
   def setUp(self):
     random.seed(123489234)
 
     self.pm = messaging.PubMaster(self.LLD_MSGS)
 
+    Params().put_bool("UbloxAvailable", True)
     managed_processes['locationd'].prepare()
     managed_processes['locationd'].start()
 
@@ -51,6 +53,7 @@ class TestLocationdProc(unittest.TestCase):
       msg.gpsLocationExternal.vNED = [0.0, 0.0, 0.0]
       msg.gpsLocationExternal.latitude = self.lat
       msg.gpsLocationExternal.longitude = self.lon
+      msg.gpsLocationExternal.unixTimestampMillis = t * 1e6
       msg.gpsLocationExternal.altitude = self.alt
     elif name == 'cameraOdometry':
       msg.cameraOdometry.rot = [0.0, 0.0, 0.0]

@@ -62,47 +62,6 @@ def get_tombstones():
   return files
 
 
-def report_tombstone_android(fn):
-  f_size = os.path.getsize(fn)
-  if f_size > MAX_SIZE:
-    cloudlog.error(f"Tombstone {fn} too big, {f_size}. Skipping...")
-    return
-
-  with open(fn, encoding='ISO-8859-1') as f:
-    contents = f.read()
-
-  message = " ".join(contents.split('\n')[5:7])
-
-  # Cut off pid/tid, since that varies per run
-  name_idx = message.find('name')
-  if name_idx >= 0:
-    message = message[name_idx:]
-
-  executable = ""
-  start_exe_idx = message.find('>>> ')
-  end_exe_idx = message.find(' <<<')
-  if start_exe_idx >= 0 and end_exe_idx >= 0:
-    executable = message[start_exe_idx + 4:end_exe_idx]
-
-  # Cut off fault addr
-  fault_idx = message.find(', fault addr')
-  if fault_idx >= 0:
-    message = message[:fault_idx]
-
-  sentry.report_tombstone(fn, message, contents)
-
-  # Copy crashlog to upload folder
-  clean_path = executable.replace('./', '').replace('/', '_')
-  date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-
-  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
-
-  crashlog_dir = os.path.join(ROOT, "crash")
-  mkdirs_exists_ok(crashlog_dir)
-
-  shutil.copy(fn, os.path.join(crashlog_dir, new_fn))
-
-
 def report_tombstone_apport(fn):
   f_size = os.path.getsize(fn)
   if f_size > MAX_SIZE:
@@ -199,7 +158,7 @@ def main() -> NoReturn:
         if fn.endswith(".crash"):
           report_tombstone_apport(fn)
         else:
-          report_tombstone_android(fn)
+          cloudlog.error(f"unknown crash type: {fn}")
       except Exception:
         cloudlog.exception(f"Error reporting tombstone {fn}")
 
