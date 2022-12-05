@@ -1,5 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
+#include <iostream>
 #include <QApplication>
 #include <QClipboard>
 #include <QCompleter>
@@ -10,14 +11,18 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QShortcut>
 #include <QScreen>
 #include <QToolBar>
+#include <QUndoView>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 
 #include "tools/replay/util.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
   if (main_win) emit main_win->showMessage(msg, 0);
 }
 
@@ -41,9 +46,7 @@ MainWindow::MainWindow() : QMainWindow() {
     dbc_combo->addItem(QString::fromStdString(name));
   }
   dbc_combo->model()->sort(0);
-  dbc_combo->setEditable(true);
   dbc_combo->setInsertPolicy(QComboBox::NoInsert);
-  dbc_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   messages_layout->addWidget(dbc_combo);
 
   messages_widget = new MessagesWidget(this);
@@ -53,6 +56,9 @@ MainWindow::MainWindow() : QMainWindow() {
   charts_widget = new ChartsWidget(this);
   detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
+  if (!settings.splitter_state.isEmpty()) {
+    splitter->restoreState(settings.splitter_state);
+  }
   main_layout->addWidget(splitter);
 
   // right widgets
@@ -65,17 +71,19 @@ MainWindow::MainWindow() : QMainWindow() {
   right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
   // TODO: click to select another route.
-  right_hlayout->addWidget(new QLabel(can->route()), 0, Qt::AlignRight);
+  right_hlayout->addWidget(new QLabel(can->routeName()), 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
-  r_layout->addWidget(charts_widget);
+  r_layout->addWidget(charts_widget, 1);
+  r_layout->addStretch(0);
   main_layout->addWidget(right_container);
 
   setCentralWidget(central_widget);
   createActions();
   createStatusBar();
+  createShortcuts();
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
@@ -102,8 +110,12 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() {
+    detail_widget->undo_stack->clear();
     dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
     setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+  });
+  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
+    setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
   });
 }
 
@@ -116,6 +128,23 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
   file_menu->addSeparator();
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
+
+  QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
+  auto undo_act = detail_widget->undo_stack->createUndoAction(this, tr("&Undo"));
+  undo_act->setShortcuts(QKeySequence::Undo);
+  edit_menu->addAction(undo_act);
+  auto redo_act = detail_widget->undo_stack->createRedoAction(this, tr("&Rndo"));
+  redo_act->setShortcuts(QKeySequence::Redo);
+  edit_menu->addAction(redo_act);
+  edit_menu->addSeparator();
+
+  QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
+  auto undo_view = new QUndoView(detail_widget->undo_stack);
+  undo_view->setWindowTitle(tr("Command List"));
+  QWidgetAction *commands_act = new QWidgetAction(this);
+  commands_act->setDefaultWidget(undo_view);
+  commands_menu->addAction(commands_act);
+
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
@@ -129,14 +158,21 @@ void MainWindow::createStatusBar() {
   statusBar()->addPermanentWidget(progress_bar);
 }
 
+void MainWindow::createShortcuts() {
+  auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  // TODO: add more shortcuts here.
+}
+
 void MainWindow::loadDBCFromName(const QString &name) {
   if (name != dbc()->name())
     dbc()->open(name);
 }
 
 void MainWindow::loadDBCFromFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(), "DBC (*.dbc)");
+  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
   if (!file_name.isEmpty()) {
+    settings.last_dir = QFileInfo(file_name).absolutePath();
     QFile file(file_name);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(file_name).baseName();
@@ -164,11 +200,14 @@ void MainWindow::loadDBCFromFingerprint() {
 
 void MainWindow::saveDBCToFile() {
   QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                                   QDir::homePath() + "/untitled.dbc", tr("DBC (*.dbc)"));
+                                                   QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
   if (!file_name.isEmpty()) {
+    settings.last_dir = QFileInfo(file_name).absolutePath();
     QFile file(file_name);
-    if (file.open(QIODevice::WriteOnly))
+    if (file.open(QIODevice::WriteOnly)) {
       file.write(dbc()->generateDBC().toUtf8());
+      detail_widget->undo_stack->clear();
+    }
   }
 }
 
@@ -190,11 +229,13 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
-    r_layout->addWidget(charts_widget);
+    r_layout->insertWidget(2, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
-    floating_window = new QWidget(nullptr);
+    floating_window = new QWidget(this);
+    floating_window->setWindowFlags(Qt::Window);
+    floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->installEventFilter(charts_widget);
@@ -204,9 +245,22 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  if (detail_widget->undo_stack->index() > 0) {
+    auto ret = QMessageBox::question(this, tr("Unsaved Changes"),
+                                     tr("Are you sure you want to exit without saving?\nAny unsaved changes will be lost."),
+                                     QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::No) {
+      event->ignore();
+      return;
+    }
+  }
+
   main_win = nullptr;
   if (floating_window)
     floating_window->deleteLater();
+
+  settings.splitter_state = splitter->saveState();
+  settings.save();
   QWidget::closeEvent(event);
 }
 

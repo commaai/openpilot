@@ -5,7 +5,10 @@
 #include <cstdint>
 #include <vector>
 
+#include <linux/spi/spidev.h>
+
 #include <libusb-1.0/libusb.h>
+
 
 #define TIMEOUT 0
 #define SPI_BUF_SIZE 1024
@@ -29,7 +32,7 @@ public:
   virtual int bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT) = 0;
 
 protected:
-  std::mutex hw_lock;
+  std::recursive_mutex hw_lock;
 };
 
 class PandaUsbHandle : public PandaCommsHandle {
@@ -47,7 +50,6 @@ public:
 private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
-  std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
 };
 
@@ -65,9 +67,11 @@ public:
 
 private:
   int spi_fd = -1;
-  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
-  int wait_for_ack();
-
   uint8_t tx_buf[SPI_BUF_SIZE];
   uint8_t rx_buf[SPI_BUF_SIZE];
+
+  int wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack);
+  int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len);
+  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
+  int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
 };

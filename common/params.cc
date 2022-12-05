@@ -103,6 +103,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
     {"ExperimentalMode", PERSISTENT},
+    {"ExperimentalModeConfirmed", PERSISTENT},
     {"ExperimentalLongitudinalEnabled", PERSISTENT}, // WARNING: THIS MAY DISABLE AEB
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
