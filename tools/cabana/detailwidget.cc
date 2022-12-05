@@ -91,7 +91,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(tab_widget);
 
   stacked_layout = new QStackedLayout(this);
-  stacked_layout->addWidget(new BlankWidget(this));
+  stacked_layout->addWidget(new WelcomeWidget(this));
   stacked_layout->addWidget(main_widget);
 
   QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
@@ -308,9 +308,9 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
-// BlankWidget
+// WelcomeWidget
 
-BlankWidget::BlankWidget(QWidget *parent) : QWidget(parent) {
+WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addStretch(0);
   QLabel *logo = new QLabel("CABANA");

@@ -19,9 +19,9 @@ public:
   QSpinBox *size_spin;
 };
 
-class BlankWidget : public QWidget {
+class WelcomeWidget : public QWidget {
 public:
-  BlankWidget(QWidget *parent);
+  WelcomeWidget(QWidget *parent);
 };
 
 class DetailWidget : public QWidget {
