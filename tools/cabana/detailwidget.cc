@@ -315,7 +315,7 @@ BlankWidget::BlankWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addStretch(0);
   QLabel *logo = new QLabel("CABANA");
   logo->setAlignment(Qt::AlignCenter);
-  logo->setStyleSheet("font-size:60px;font-weight:bold;");
+  logo->setStyleSheet("font-size:50px;font-weight:bold;");
   main_layout->addWidget(logo);
 
   auto newShortcutRow = [](const QString &title, const QString &key) {
