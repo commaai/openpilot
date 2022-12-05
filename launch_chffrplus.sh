@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-export FINGERPRINT="HYUNDAI TUCSON 4TH GEN"
-
 if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"
 fi
