@@ -2,9 +2,9 @@ Version 0.9.1 (2022-12-XX)
 ========================
 * Adjust alert volume using ambient noise level
 * Removed driver monitoring timer resetting on interaction if face detected and distracted
-* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
 * Hyundai Tucson 2022-23 support
+* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 
 Version 0.9.0 (2022-11-21)
 ========================
