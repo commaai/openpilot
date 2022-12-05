@@ -9,9 +9,10 @@
 BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Accel::init() {
-  if (verify_chip_id(BMX055_ACCEL_I2C_REG_ID, {BMX055_ACCEL_CHIP_ID}) == -1) return -1;
+  int ret = verify_chip_id(BMX055_ACCEL_I2C_REG_ID, {BMX055_ACCEL_CHIP_ID});
+  if (ret == -1) return -1;
 
-  int ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_NORMAL_MODE);
+  ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_NORMAL_MODE);
   if (ret < 0) {
     goto fail;
   }
