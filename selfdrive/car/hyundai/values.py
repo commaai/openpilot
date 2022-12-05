@@ -161,7 +161,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Ioniq 5 (without HDA II) 2022-23" , "Highway Driving Assist", harness=Harness.hyundai_k),
     HyundaiCarInfo("Hyundai Ioniq 5 (with HDA II) 2022-23", "Highway Driving Assist II", harness=Harness.hyundai_q),
   ],
-  CAR.TUCSON_4TH_GEN: HyundaiCarInfo("Hyundai Tucson 2022", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),  # TODO: harness and packages
+  CAR.TUCSON_4TH_GEN: HyundaiCarInfo("Hyundai Tucson 2023", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),  # TODO: packages
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-22", "Smart Cruise Control (SCC)", harness=Harness.hyundai_n),
 
@@ -1439,11 +1439,10 @@ FW_VERSIONS = {
   },
   CAR.TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q',
-      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9220 14K',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9240 14T',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
+      b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
     ],
   },
   CAR.TUCSON_HYBRID_4TH_GEN: {
