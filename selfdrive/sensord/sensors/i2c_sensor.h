@@ -42,9 +42,8 @@ public:
       LOGE("Reading chip ID failed: %d", ret);
       return -1;
     }
-
     for (int i = 0; i < expected_ids.size(); ++i) {
-      if (chip_id == expected_ids[i]) return i;
+      if (chip_id == expected_ids[i]) return chip_id;
     }
     LOGE("Chip ID wrong. Got: %d, Expected %d", chip_id, expected_ids[0]);
     return -1;
