@@ -31,7 +31,7 @@ public:
   QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
-  inline QString route() const { return replay->route()->name(); }
+  inline QString routeName() const { return replay->route()->name(); }
   inline QString carFingerprint() const { return replay->carFingerprint().c_str(); }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
@@ -39,6 +39,7 @@ public:
   const std::deque<CanData> messages(const QString &id);
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
+  inline const Route* route() const { return replay->route(); }
   inline const std::vector<Event *> *events() const { return replay->events(); }
   inline void setSpeed(float speed) { replay->setSpeed(speed); }
   inline bool isPaused() const { return replay->isPaused(); }
