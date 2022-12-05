@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <initializer_list>
 #include <unistd.h>
 #include "cereal/gen/cpp/log.capnp.h"
 
