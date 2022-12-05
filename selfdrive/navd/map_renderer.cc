@@ -1,5 +1,6 @@
 #include "selfdrive/navd/map_renderer.h"
 
+#include <cmath>
 #include <string>
 #include <QApplication>
 #include <QBuffer>
@@ -10,10 +11,18 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
 const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int WIDTH = 512;
-const int HEIGHT = WIDTH;
-
+const int HEIGHT = 512, WIDTH = 512;
 const int NUM_VIPC_BUFFERS = 4;
+
+const int EARTH_CIRCUMFERENCE_METERS = 40075000;
+const int PIXELS_PER_TILE = 256;
+
+float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
+  float meters_per_tile = meters_per_pixel * PIXELS_PER_TILE;
+  float num_tiles = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / meters_per_tile;
+  return log2(num_tiles) - 1;
+}
+
 
 MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
@@ -85,22 +94,18 @@ void MapRenderer::msgUpdate() {
   }
 }
 
-void MapRenderer::updateZoom(float zoom) {
-  if (m_map.isNull()) {
-    return;
-  }
-
-  m_map->setZoom(zoom);
-  update();
-}
-
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
   }
 
+  // Choose a scale that ensures above 13 zoom level up to and above 75deg of lat
+  float meters_per_pixel = 2;
+  float zoom = get_zoom_level_for_scale(position.first, meters_per_pixel);
+
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
+  m_map->setZoom(zoom);
   update();
 }
 
@@ -169,6 +174,7 @@ uint8_t* MapRenderer::getImage() {
   uint8_t* src = cap.bits();
   uint8_t* dst = new uint8_t[WIDTH * HEIGHT];
 
+  // RGB to greyscale
   for (int i = 0; i < WIDTH * HEIGHT; i++) {
     dst[i] = src[i * 3];
   }
@@ -220,11 +226,6 @@ extern "C" {
     settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
-  }
-
-  void map_renderer_update_zoom(MapRenderer *inst, float zoom) {
-    inst->updateZoom(zoom);
-    QApplication::processEvents();
   }
 
   void map_renderer_update_position(MapRenderer *inst, float lat, float lon, float bearing) {

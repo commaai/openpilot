@@ -17,6 +17,7 @@ class Maneuver():
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
     self.ensure_start = kwargs.get("ensure_start", False)
+    self.enabled = kwargs.get("enabled", True)
 
     self.duration = duration
     self.title = title
@@ -26,23 +27,24 @@ class Maneuver():
       lead_relevancy=self.lead_relevancy,
       speed=self.speed,
       distance_lead=self.distance_lead,
+      enabled=self.enabled,
       only_lead2=self.only_lead2,
       only_radar=self.only_radar,
     )
 
     valid = True
     logs = []
-    while plant.current_time() < self.duration:
-      speed_lead = np.interp(plant.current_time(), self.breakpoints, self.speed_lead_values)
-      prob = np.interp(plant.current_time(), self.breakpoints, self.prob_lead_values)
-      cruise = np.interp(plant.current_time(), self.breakpoints, self.cruise_values)
+    while plant.current_time < self.duration:
+      speed_lead = np.interp(plant.current_time, self.breakpoints, self.speed_lead_values)
+      prob = np.interp(plant.current_time, self.breakpoints, self.prob_lead_values)
+      cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
       log = plant.step(speed_lead, prob, cruise)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
-      logs.append(np.array([plant.current_time(),
+      logs.append(np.array([plant.current_time,
                             log['distance'],
                             log['distance_lead'],
                             log['speed'],

@@ -8,10 +8,10 @@
 LSM6DS3_Temp::LSM6DS3_Temp(I2CBus *bus) : I2CSensor(bus) {}
 
 int LSM6DS3_Temp::init() {
-  auto chip = verify_chip_id(LSM6DS3_TEMP_I2C_REG_ID, LSM6DS3_TEMP_CHIP_ID, LSM6DS3TRC_TEMP_CHIP_ID);
-  if (!chip) return -1;
+  int ret = verify_chip_id(LSM6DS3_TEMP_I2C_REG_ID, {LSM6DS3_TEMP_CHIP_ID, LSM6DS3TRC_TEMP_CHIP_ID});
+  if (ret == -1) return -1;
 
-  if (*chip == LSM6DS3TRC_TEMP_CHIP_ID) {
+  if (ret == LSM6DS3TRC_TEMP_CHIP_ID) {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
   return 0;

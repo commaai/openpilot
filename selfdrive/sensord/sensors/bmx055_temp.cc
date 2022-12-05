@@ -9,7 +9,7 @@
 BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Temp::init() {
-  return verify_chip_id(BMX055_ACCEL_I2C_REG_ID, BMX055_ACCEL_CHIP_ID) ? 0 : -1;
+  return verify_chip_id(BMX055_ACCEL_I2C_REG_ID, {BMX055_ACCEL_CHIP_ID}) == -1 ? -1 : 0;
 }
 
 bool BMX055_Temp::get_event(MessageBuilder &msg, uint64_t ts) {

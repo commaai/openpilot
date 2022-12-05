@@ -52,6 +52,7 @@ selfdrive/sensord/_sensord
 system/camerad/camerad
 system/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
+selfdrive/modeld/_navmodeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
 

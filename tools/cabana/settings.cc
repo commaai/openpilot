@@ -1,6 +1,7 @@
 #include "tools/cabana/settings.h"
 
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QFormLayout>
 #include <QSettings>
 
@@ -17,27 +18,27 @@ void Settings::save() {
   s.setValue("log_size", can_msg_log_size);
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
-  s.setValue("chart_theme", chart_theme);
   s.setValue("max_chart_x_range", max_chart_x_range);
-  emit changed();
+  s.setValue("last_dir", last_dir);
+  s.setValue("splitter_state", splitter_state);
 }
 
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  can_msg_log_size = s.value("log_size", 100).toInt();
+  can_msg_log_size = s.value("log_size", 50).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
-  chart_theme = s.value("chart_theme", 0).toInt();
   max_chart_x_range = s.value("max_chart_x_range", 3 * 60).toInt();
+  last_dir = s.value("last_dir", QDir::homePath()).toString();
+  splitter_state = s.value("splitter_state").toByteArray();
 }
 
 // SettingsDlg
 
 SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Settings"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QFormLayout *form_layout = new QFormLayout();
+  QFormLayout *form_layout = new QFormLayout(this);
 
   fps = new QSpinBox(this);
   fps->setRange(10, 100);
@@ -69,15 +70,8 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   chart_height->setValue(settings.chart_height);
   form_layout->addRow(tr("Chart height"), chart_height);
 
-  chart_theme = new QComboBox();
-  chart_theme->addItems({"Light", "Dark"});
-  chart_theme->setCurrentIndex(settings.chart_theme == 1 ? 1 : 0);
-  form_layout->addRow(tr("Chart theme"), chart_theme);
-
-  main_layout->addLayout(form_layout);
-
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  main_layout->addWidget(buttonBox);
+  form_layout->addRow(buttonBox);
 
   setFixedWidth(360);
   connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);
@@ -89,8 +83,8 @@ void SettingsDlg::save() {
   settings.can_msg_log_size = log_size->value();
   settings.cached_segment_limit = cached_segment->value();
   settings.chart_height = chart_height->value();
-  settings.chart_theme = chart_theme->currentIndex();
   settings.max_chart_x_range = max_chart_x_range->value() * 60;
   settings.save();
   accept();
+  emit settings.changed();
 }

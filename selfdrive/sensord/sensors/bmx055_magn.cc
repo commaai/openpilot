@@ -83,8 +83,10 @@ int BMX055_Magn::init() {
   }
   util::sleep_for(5); // wait until the chip is powered on
 
-  // verify chip ID
-  if (!verify_chip_id(BMX055_MAGN_I2C_REG_ID, BMX055_MAGN_CHIP_ID)) return -1;
+  ret = verify_chip_id(BMX055_MAGN_I2C_REG_ID, {BMX055_MAGN_CHIP_ID});
+  if (ret == -1) {
+    goto fail;
+  }
 
   // Load magnetometer trim
   ret = read_register(BMX055_MAGN_I2C_REG_DIG_X1, trim_x1y1, 2);

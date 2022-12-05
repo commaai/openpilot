@@ -1011,7 +1011,7 @@ nie zostało ustawione</translation>
         <translation>Prześlij dane z kamery skierowanej na kierowcę i pomóż poprawiać algorytm monitorowania kierowcy.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>Odłącz poprzez naciśnięcie gazu</translation>
     </message>
     <message>
@@ -1047,7 +1047,7 @@ nie zostało ustawione</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

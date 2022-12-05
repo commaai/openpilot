@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <initializer_list>
 #include <unistd.h>
-#include <optional>
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/i2c.h"
@@ -35,20 +35,18 @@ public:
   virtual bool get_event(MessageBuilder &msg, uint64_t ts = 0) = 0;
   virtual int shutdown() = 0;
 
-  template <class... Args>
-  std::optional<uint8_t> verify_chip_id(uint8_t address, Args... args) {
+  int verify_chip_id(uint8_t address, const std::vector<uint8_t> &expected_ids) {
     uint8_t chip_id = 0;
     int ret = read_register(address, &chip_id, 1);
     if (ret < 0) {
       LOGE("Reading chip ID failed: %d", ret);
-      return std::nullopt;
+      return -1;
     }
 
-    int expected_ids[] = {args...};
-    for (auto id : expected_ids) {
-      if (chip_id == id) return chip_id;
+    for (int i = 0; i < expected_ids.size(); ++i) {
+      if (chip_id == expected_ids[i]) return i;
     }
     LOGE("Chip ID wrong. Got: %d, Expected %d", chip_id, expected_ids[0]);
-    return std::nullopt;
+    return -1;
   }
 };
