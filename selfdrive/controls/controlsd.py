@@ -854,6 +854,7 @@ def main(sm=None, pm=None, logcan=None):
   controls = Controls(sm, pm, logcan)
   controls.controlsd_thread()
 
+#takahashi
 
 if __name__ == "__main__":
   main()
