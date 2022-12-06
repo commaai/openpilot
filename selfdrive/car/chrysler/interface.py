@@ -30,7 +30,7 @@ class CarInterface(CarInterfaceBase):
       for fw in car_fw:
         # Some older EPS firmware allow steering down to ~9 mph.
         # The 6841 prefix is the oldest FW seen on newer cars with the higher limit.
-        if fw.ecu == 'eps' and fw.fwVersion[:4] <= b"6841":
+        if fw.ecu == 'eps' and fw.fwVersion[:4] < b"6841":
           ret.minSteerSpeed = 3.8  # m/s
 
     # Chrysler
