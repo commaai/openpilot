@@ -26,7 +26,8 @@ class CarInterface(CarInterfaceBase):
     ret.minSteerSpeed = 3.8  # m/s
     if candidate not in RAM_CARS:
       new_eps_firmware = any(fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841" for fw in car_fw)
-      if new_eps_firmware or candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019):
+      new_eps_platform = candidate in (CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019)
+      if new_eps_firmware or new_eps_platform:
         ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
 
     # Chrysler
