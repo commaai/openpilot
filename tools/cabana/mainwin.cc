@@ -299,6 +299,7 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   QWidget *input_widget = new QWidget;
   QVBoxLayout *form_layout = new QVBoxLayout(input_widget);
   title_label = new QLabel;
+  title_label->setWordWrap(true);
   title_label->setVisible(false);
   form_layout->addWidget(title_label);
 
