@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 217 Supported Cars
+# 219 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -83,6 +83,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Hyundai|Sonata 2020-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Hyundai|Sonata Hybrid 2020-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai A|
 |Hyundai|Tucson 2021|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
+|Hyundai|Tucson 2022|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
+|Hyundai|Tucson 2023|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Hyundai|Tucson Diesel 2019|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Hyundai|Tucson Hybrid 2022|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai N|
 |Hyundai|Veloster 2019-20|Smart Cruise Control (SCC)|Stock|5 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
@@ -179,10 +181,10 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|Highlander Hybrid 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Highlander Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Mirai 2021|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Prius 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Prius 2017-20|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
+|Toyota|Prius 2017-20|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Prius 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
-|Toyota|Prius Prime 2017-20|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
+|Toyota|Prius Prime 2017-20|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|
 |Toyota|Prius Prime 2021-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|Prius v 2017|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Toyota|
 |Toyota|RAV4 2016|Toyota Safety Sense P|openpilot available[<sup>2</sup>](#footnotes)|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|Toyota|

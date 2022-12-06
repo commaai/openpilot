@@ -181,15 +181,14 @@ void BinaryViewModel::updateState() {
   auto prev_items = items;
   const auto &binary = can->lastMessage(msg_id).dat;
   // data size may changed.
-  if (!dbc_msg && binary.size() != row_count) {
-    beginResetModel();
+  if (binary.size() > row_count) {
+    beginInsertRows({}, row_count, binary.size() - 1);
     row_count = binary.size();
-    items.clear();
     items.resize(row_count * column_count);
-    endResetModel();
+    endInsertRows();
   }
   char hex[3] = {'\0'};
-  for (int i = 0; i < std::min(binary.size(), row_count); ++i) {
+  for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < column_count - 1; ++j) {
       items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
     }
@@ -197,8 +196,13 @@ void BinaryViewModel::updateState() {
     hex[1] = toHex(binary[i] & 0xf);
     items[i * column_count + 8].val = hex;
   }
+  for (int i = binary.size(); i < row_count; ++i) {
+    for (int j = 0; j < column_count; ++j) {
+      items[i * column_count + j].val = "-";
+    }
+  }
 
-  for (int i = 0; i < items.size(); ++i) {
+  for (int i = 0; i < row_count; ++i) {
     if (i >= prev_items.size() || prev_items[i].val != items[i].val) {
       auto idx = index(i / column_count, i % column_count);
       emit dataChanged(idx, idx);
