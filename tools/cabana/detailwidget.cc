@@ -132,7 +132,7 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
 void DetailWidget::setMessage(const QString &message_id) {
   msg_id = message_id;
   if (msg_id.isEmpty()) {
-      tabbar->blockSignals(true);
+    tabbar->blockSignals(true);
     while (tabbar->count() > 0) {
       tabbar->removeTab(0);
     }
