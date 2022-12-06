@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
     # However, the dealer can reflash the EPS in older cars with newer firmware, raising their minimum steering speed with it.
     if candidate not in RAM_CARS:
       for fw in car_fw:
-        if fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6852":
+        if fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841":
           # TODO: allow these cars to steer down to 13 m/s if already engaged.
           ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
 
