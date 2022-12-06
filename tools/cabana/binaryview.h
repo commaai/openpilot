@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QApplication>
 #include <QList>
 #include <QSet>
 #include <QStyledItemDelegate>
@@ -32,6 +33,7 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
+  inline QModelIndex bitIndex(int bit, bool is_lb) const { return index(bit / 8, is_lb ? (7 - bit % 8) : bit % 8); }
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override {
     return createIndex(row, column, (void *)&items[row * column_count + column]);
   }
@@ -40,7 +42,7 @@ public:
   }
 
   struct Item {
-    QColor bg_color = QColor(Qt::white);
+    QColor bg_color = QApplication::style()->standardPalette().color(QPalette::Base);
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "0";
@@ -63,24 +65,27 @@ public:
   void setMessage(const QString &message_id);
   void highlight(const Signal *sig);
   QSet<const Signal*> getOverlappingSignals() const;
-  inline const Signal *hoveredSignal() const { return hovered_sig; }
   inline void updateState() { model->updateState(); }
 
 signals:
+  void signalClicked(const Signal *sig);
   void signalHovered(const Signal *sig);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int size);
 
 private:
+  std::tuple<int, int, bool> getSelection(QModelIndex index);
   void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void leaveEvent(QEvent *event) override;
+  void highlightPosition(const QPoint &pt);
 
   QModelIndex anchor_index;
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;
   const Signal *resize_sig = nullptr;
   const Signal *hovered_sig = nullptr;
+  friend class BinaryItemDelegate;
 };

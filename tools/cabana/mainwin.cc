@@ -1,5 +1,6 @@
 #include "tools/cabana/mainwin.h"
 
+#include <iostream>
 #include <QApplication>
 #include <QClipboard>
 #include <QCompleter>
@@ -10,6 +11,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QShortcut>
 #include <QScreen>
 #include <QToolBar>
 #include <QUndoView>
@@ -20,6 +22,7 @@
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
   if (main_win) emit main_win->showMessage(msg, 0);
 }
 
@@ -53,6 +56,9 @@ MainWindow::MainWindow() : QMainWindow() {
   charts_widget = new ChartsWidget(this);
   detail_widget = new DetailWidget(charts_widget, this);
   splitter->addWidget(detail_widget);
+  if (!settings.splitter_state.isEmpty()) {
+    splitter->restoreState(settings.splitter_state);
+  }
   main_layout->addWidget(splitter);
 
   // right widgets
@@ -65,17 +71,19 @@ MainWindow::MainWindow() : QMainWindow() {
   right_hlayout->addWidget(fingerprint_label, 0, Qt::AlignLeft);
 
   // TODO: click to select another route.
-  right_hlayout->addWidget(new QLabel(can->route()), 0, Qt::AlignRight);
+  right_hlayout->addWidget(new QLabel(can->routeName()), 0, Qt::AlignRight);
   r_layout->addLayout(right_hlayout);
 
   video_widget = new VideoWidget(this);
   r_layout->addWidget(video_widget, 0, Qt::AlignTop);
-  r_layout->addWidget(charts_widget);
+  r_layout->addWidget(charts_widget, 1);
+  r_layout->addStretch(0);
   main_layout->addWidget(right_container);
 
   setCentralWidget(central_widget);
   createActions();
   createStatusBar();
+  createShortcuts();
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
@@ -150,6 +158,12 @@ void MainWindow::createStatusBar() {
   statusBar()->addPermanentWidget(progress_bar);
 }
 
+void MainWindow::createShortcuts() {
+  auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  // TODO: add more shortcuts here.
+}
+
 void MainWindow::loadDBCFromName(const QString &name) {
   if (name != dbc()->name())
     dbc()->open(name);
@@ -190,8 +204,10 @@ void MainWindow::saveDBCToFile() {
   if (!file_name.isEmpty()) {
     settings.last_dir = QFileInfo(file_name).absolutePath();
     QFile file(file_name);
-    if (file.open(QIODevice::WriteOnly))
+    if (file.open(QIODevice::WriteOnly)) {
       file.write(dbc()->generateDBC().toUtf8());
+      detail_widget->undo_stack->clear();
+    }
   }
 }
 
@@ -213,11 +229,13 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
-    r_layout->addWidget(charts_widget);
+    r_layout->insertWidget(2, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
-    floating_window = new QWidget(nullptr);
+    floating_window = new QWidget(this);
+    floating_window->setWindowFlags(Qt::Window);
+    floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->installEventFilter(charts_widget);
@@ -241,6 +259,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
+  settings.splitter_state = splitter->saveState();
   settings.save();
   QWidget::closeEvent(event);
 }
