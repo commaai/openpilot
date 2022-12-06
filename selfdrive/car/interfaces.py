@@ -66,7 +66,6 @@ class CarInterfaceBase(ABC):
     self.low_speed_alert = False
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
-    self.cancel_depressed = False
 
     self.CS = None
     self.can_parsers = []
