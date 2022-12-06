@@ -68,7 +68,7 @@ class Harness(Enum):
   none = "None"
 
 
-CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only"], defaults=(None, False))
+CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
 
 
 class CommonFootnote(Enum):
