@@ -23,14 +23,15 @@ class CarInterface(CarInterfaceBase):
     elif candidate in RAM_DT:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
-    ret.minSteerSpeed = 3.8  # m/s
-    # Traditionally, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE_2019 have newer firmware with higher steering speeds.
-    # However, the dealer can reflash the EPS in older cars with newer firmware, raising their minimum steering speed with it.
+    # Dealers can flash newer EPS firmware on older Chrysler platforms, raising their minimum steering speed.
+    # TODO: allow these cars to steer down to 13 m/s if already engaged.
+    ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged
     if candidate not in RAM_CARS:
       for fw in car_fw:
-        if fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841":
-          # TODO: allow these cars to steer down to 13 m/s if already engaged.
-          ret.minSteerSpeed = 17.5  # m/s 17 on the way up, 13 on the way down once engaged.
+        # Some older EPS firmware allow steering down to ~9 mph.
+        # The 6841 prefix is the oldest FW seen on newer cars with the higher limit.
+        if fw.ecu == 'eps' and fw.fwVersion[:4] <= b"6841":
+          ret.minSteerSpeed = 3.8  # m/s
 
     # Chrysler
     if candidate in (CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID, CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020):
