@@ -22,10 +22,8 @@ static bool event_filter(const Event *e, void *opaque) {
 }
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
-  is_loaded = false;
-  can_msgs.clear();
   counters_begin_sec = 0;
-  processing = false;
+  can_msgs.clear();
   counters.clear();
   received_msgs.clear();
 
@@ -37,7 +35,7 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool 
   QObject::connect(replay.get(), &Replay::timelineUpdated, this, &CANMessages::timelineUpdated);
   if (replay->load()) {
     replay->start();
-    is_loaded = true;
+    processing = false;
     return true;
   }
   return false;

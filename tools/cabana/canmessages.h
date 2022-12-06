@@ -46,7 +46,6 @@ public:
   inline bool isPaused() const { return replay->isPaused(); }
   inline void pause(bool pause) { replay->pause(pause); }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
-  inline bool isLoaded() const { return is_loaded; }
 
 signals:
   void timelineUpdated();
@@ -67,7 +66,6 @@ protected:
   std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
   std::atomic<bool> processing = false;
-  bool is_loaded = false;
   QHash<QString, uint32_t> counters;
   QHash<QString, std::deque<CanData>> received_msgs;
 };

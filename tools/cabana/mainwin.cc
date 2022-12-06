@@ -169,9 +169,9 @@ void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool u
   LoadRouteDialog dlg(route, data_dir, use_qcam, this);
   QObject::connect(this, &MainWindow::updateProgressBar, dlg.progress_bar, &DownloadProgressBar::updateProgress);
   int ret = dlg.exec();
-  if (ret == QDialog::Accepted && can->isLoaded()) {
+  if (ret == QDialog::Accepted) {
     route_label->setText(dlg.route_string);
-  } else if (ret == QDialog::Rejected && !can->isLoaded()) {
+  } else if (ret == QDialog::Rejected && can->events()->empty()) {
     // Close main window and exit cabana
     detail_widget->undo_stack->clear();
     QTimer::singleShot(0, [this]() { close(); });
