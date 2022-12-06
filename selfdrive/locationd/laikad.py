@@ -98,13 +98,13 @@ class Laikad:
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
-      position_std = np.median(np.abs(pr_residuals)) * np.ones(1)
+      position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
       velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate)
       if len(velocity_solution) == 0 or len(prr_residuals) == 0:
         return None
 
       velocity_estimate = velocity_solution[:3]
-      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(1)
+      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(3)
       return position_estimate, position_std, velocity_estimate, velocity_std
 
   def is_good_report(self, gnss_msg):

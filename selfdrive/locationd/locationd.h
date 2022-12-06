@@ -80,5 +80,6 @@ private:
   double last_gps_msg = 0;
   bool observation_timings_invalid = false;
   bool ublox_available = false;
+  double last_gnss_bearing = 0;
   std::map<std::string, double> observation_values_invalid;
 };

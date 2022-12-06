@@ -304,14 +304,14 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
 
   auto ecef_pos_std = log.getPositionECEF().getStd();
-  double pos_error = pow(ecef_pos_std[0], 2);
-  MatrixXdr ecef_pos_R = Vector3d::Constant(pos_error).asDiagonal();
+  double pos_std = pow(ecef_pos_std[0], 2);
+  MatrixXdr ecef_pos_R = Vector3d::Constant(pos_std).asDiagonal();
 
   auto ecef_vel_v = log.getVelocityECEF().getValue();
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
 
   auto ecef_vel_std = log.getVelocityECEF().getStd();
-  double vel_error = pow(ecef_vel_std[0]*10, 2);
+  double vel_error = pow(ecef_vel_std[0]*1000, 2);
   MatrixXdr ecef_vel_R = Vector3d::Constant(vel_error).asDiagonal();
 
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
@@ -323,6 +323,26 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   ECEF next_ecef = {.x = ecef_pos[0] + ecef_vel[0], .y = ecef_pos[1] + ecef_vel[1], .z = ecef_pos[2] + ecef_vel[2]};
   VectorXd ned_vel = convs.ecef2ned(next_ecef).to_vector();
   double bearing_rad = atan2(ned_vel[1], ned_vel[0]);
+
+  // TODO: cleanUp below here
+  if(this->last_gps_msg == 0) {
+    last_gnss_bearing = RAD2DEG(bearing_rad);
+  }
+
+  // calc diff between bearing, and if the diff is higher than a threshold, apply scaling factor
+  // to not confuse KF
+  double diff = fmod(last_gnss_bearing - RAD2DEG(bearing_rad) + 180.0, 360.0) - 180.0;
+  diff = diff < -180.0 ? diff + 360.0 : diff;
+
+  if (abs(diff) > 50) {
+    bearing_rad = DEG2RAD(last_gnss_bearing + diff*0.1);
+    LOGE("GNSS ANGLE DIFF: %f -> %f", diff, diff*0.1)
+  }
+  else {
+    LOGE("GNSS ANGLE DIFF: %f", diff)
+  }
+
+  last_gnss_bearing = RAD2DEG(bearing_rad);
 
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing_rad);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
@@ -336,13 +356,13 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   // accuracy sanity check
-  if (pos_error > 500.) {
+  if (pos_std > 500.) {
     this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
   }
 
-  if ((gps_est_error > 100.0 && pos_error < 30) || this->last_gps_msg == 0) {
+  if ((gps_est_error > 100.0 && pos_std < 30) || this->last_gps_msg == 0) {
     // always reset on first gps message and if the location is off but the accuracy is high
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
