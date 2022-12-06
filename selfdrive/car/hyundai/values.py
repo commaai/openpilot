@@ -1,12 +1,12 @@
-from enum import IntFlag
 from dataclasses import dataclass
+from enum import Enum, IntFlag
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -117,9 +117,20 @@ class CAR:
   GENESIS_G90 = "GENESIS G90 2017"
 
 
+class Footnote(Enum):
+  CANFD = CarFootnote(
+    "Requires a <a href=\"https://comma.ai/shop/panda\" target=\"_blank\">red panda</a> and additional <a href=\"https://comma.ai/shop/harness-box\" target=\"_blank\">harness box</a>. " +
+    "Also requires a USB-A to USB-C adapter and USB-A to USB-A cable.",
+    Column.MODEL, shop_footnote=True)
+
+
 @dataclass
 class HyundaiCarInfo(CarInfo):
   package: str = "Smart Cruise Control (SCC)"
+
+  def init_make(self, CP: car.CarParams):
+    if CP.carFingerprint in CANFD_CAR:
+      self.footnotes.insert(0, Footnote.CANFD)
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
