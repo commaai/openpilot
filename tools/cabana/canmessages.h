@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <deque>
-#include <memory>
 #include <mutex>
 
 #include <QColor>

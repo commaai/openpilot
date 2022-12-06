@@ -155,8 +155,10 @@ void ChartsWidget::removeChart(ChartView *chart) {
 }
 
 void ChartsWidget::removeAll() {
-  for (auto c : charts.toVector())
+  for (auto c : charts.toVector()) {
     removeChart(c);
+  }
+  zoomReset();
 }
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
