@@ -149,17 +149,12 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 void BinaryViewModel::setMessage(const QString &message_id) {
   beginResetModel();
   msg_id = message_id;
-  dbc_msg = nullptr;
   items.clear();
-  row_count = 0;
-
-  if (!msg_id.isEmpty()) {
-    dbc_msg = dbc()->msg(msg_id);
-    row_count = dbc_msg ? dbc_msg->size : can->lastMessage(msg_id).dat.size();
-    std::vector<const Signal*> sigs = dbc_msg ? dbc_msg->getSignals() : std::vector<const Signal*>{};
+  if ((dbc_msg = dbc()->msg(msg_id))) {
+    row_count = dbc_msg->size;
     items.resize(row_count * column_count);
-    for (int i = 0; i < sigs.size(); ++i) {
-      const Signal *sig = sigs[i];
+    int i = 0;
+    for (auto sig : dbc_msg->getSignals()) {
       auto [start, end] = getSignalRange(sig);
       for (int j = start; j <= end; ++j) {
         int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
@@ -173,15 +168,16 @@ void BinaryViewModel::setMessage(const QString &message_id) {
         items[idx].bg_color = getColor(i);
         items[idx].sigs.push_back(sig);
       }
+      ++i;
     }
+  } else {
+    row_count = can->lastMessage(msg_id).dat.size();
+    items.resize(row_count * column_count);
   }
   endResetModel();
 }
 
 void BinaryViewModel::updateState() {
-  if (msg_id.isEmpty())
-    return;
-
   auto prev_items = items;
   const auto &binary = can->lastMessage(msg_id).dat;
   // data size may changed.
