@@ -334,7 +334,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   double diff = fmod(last_gnss_bearing - RAD2DEG(bearing_rad) + 180.0, 360.0) - 180.0;
   diff = diff < -180.0 ? diff + 360.0 : diff;
 
-  if (abs(diff) > 50) {
+  if (std::abs(diff) > 50) {
     bearing_rad = DEG2RAD(last_gnss_bearing + diff*0.1);
     LOGE("GNSS ANGLE DIFF: %f -> %f", diff, diff*0.1)
   }
