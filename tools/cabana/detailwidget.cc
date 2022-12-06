@@ -148,7 +148,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   }
   dbcMsgChanged();
   scroll->verticalScrollBar()->setValue(0);
-  stacked_layout->setCurrentIndex(1);
+  stacked_layout->setCurrentIndex(msg_id.isEmpty() ? 0 : 1);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
