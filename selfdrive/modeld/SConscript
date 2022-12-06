@@ -112,3 +112,8 @@ llenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
   ]+common_model, LIBS=libs + transformations)
+
+lenv.Program('_navmodeld', [
+    "navmodeld.cc",
+    "models/nav.cc",
+  ]+common_model, LIBS=libs + transformations)

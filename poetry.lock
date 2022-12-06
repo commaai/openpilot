@@ -2440,6 +2440,20 @@ typing-extensions = ">=3.6.2.1"
 lint = ["clang-format (==13.0.0)", "flake8", "mypy (==0.782)", "types-protobuf (==3.18.4)"]
 
 [[package]]
+name = "onnx2torch"
+version = "1.5.4"
+description = "Nice Onnx to Pytorch converter"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numpy = ">=1.16.4"
+onnx = ">=1.9.0"
+torch = ">=1.8.0"
+torchvision = ">=0.9.0"
+
+[[package]]
 name = "onnxoptimizer"
 version = "0.3.1"
 description = "Open Neural Network Exchange"
@@ -3697,6 +3711,20 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "sounddevice"
+version = "0.4.5"
+description = "Play and Record Sound with Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+CFFI = ">=1.0"
+
+[package.extras]
+numpy = ["NumPy"]
+
+[[package]]
 name = "soupsieve"
 version = "2.3.2.post1"
 description = "A modern CSS selector implementation for Beautiful Soup."
@@ -4386,7 +4414,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "d2854112975a9d83a9540175b2d430487e40e0292d48a1ba6c591db60a08c136"
+content-hash = "331a7b700c17c618a4f0fa7d0ec3e5b585c1dc467f6f03261c3778f729058f55"
 
 [metadata.files]
 adal = [
@@ -6388,6 +6416,9 @@ onnx = [
     {file = "onnx-1.12.0-cp39-cp39-win_amd64.whl", hash = "sha256:af90427ca04c6b7b8107c2021e1273227a3ef1a7a01f3073039cae7855a59833"},
     {file = "onnx-1.12.0.tar.gz", hash = "sha256:13b3e77d27523b9dbf4f30dfc9c959455859d5e34e921c44f712d69b8369eff9"},
 ]
+onnx2torch = [
+    {file = "onnx2torch-1.5.4-py3-none-any.whl", hash = "sha256:fd1a0fe05072bfb9f3d86d9330299b130b41f11bd4ae634db17078974e711725"},
+]
 onnxoptimizer = [
     {file = "onnxoptimizer-0.3.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:e73a5e2e3ca4db9bff54f7131768749c861677b97ee811a136fcf1a52783cf6e"},
     {file = "onnxoptimizer-0.3.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8bf2bfe0dc43f0776867688e1759122dec049ff4f45f7221931b687fe7e139e"},
@@ -6764,6 +6795,7 @@ pycryptodome = [
     {file = "pycryptodome-3.15.0-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:7c9ed8aa31c146bef65d89a1b655f5f4eab5e1120f55fc297713c89c9e56ff0b"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:5099c9ca345b2f252f0c28e96904643153bae9258647585e5e6f649bb7a1844a"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-manylinux2014_aarch64.whl", hash = "sha256:2ec709b0a58b539a4f9d33fb8508264c3678d7edb33a68b8906ba914f71e8c13"},
+    {file = "pycryptodome-3.15.0-cp27-cp27m-musllinux_1_1_aarch64.whl", hash = "sha256:2ae53125de5b0d2c95194d957db9bb2681da8c24d0fb0fe3b056de2bcaf5d837"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-win32.whl", hash = "sha256:fd2184aae6ee2a944aaa49113e6f5787cdc5e4db1eb8edb1aea914bd75f33a0c"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-win_amd64.whl", hash = "sha256:7e3a8f6ee405b3bd1c4da371b93c31f7027944b2bcce0697022801db93120d83"},
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:b9c5b1a1977491533dfd31e01550ee36ae0249d78aae7f632590db833a5012b8"},
@@ -6771,12 +6803,14 @@ pycryptodome = [
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux2010_i686.whl", hash = "sha256:2aa55aae81f935a08d5a3c2042eb81741a43e044bd8a81ea7239448ad751f763"},
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:c3640deff4197fa064295aaac10ab49a0d55ef3d6a54ae1499c40d646655c89f"},
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux2014_aarch64.whl", hash = "sha256:045d75527241d17e6ef13636d845a12e54660aa82e823b3b3341bcf5af03fa79"},
+    {file = "pycryptodome-3.15.0-cp27-cp27mu-musllinux_1_1_aarch64.whl", hash = "sha256:eb6fce570869e70cc8ebe68eaa1c26bed56d40ad0f93431ee61d400525433c54"},
     {file = "pycryptodome-3.15.0-cp35-abi3-macosx_10_9_x86_64.whl", hash = "sha256:9ee40e2168f1348ae476676a2e938ca80a2f57b14a249d8fe0d3cdf803e5a676"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux1_i686.whl", hash = "sha256:4c3ccad74eeb7b001f3538643c4225eac398c77d617ebb3e57571a897943c667"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux1_x86_64.whl", hash = "sha256:1b22bcd9ec55e9c74927f6b1f69843cb256fb5a465088ce62837f793d9ffea88"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux2010_i686.whl", hash = "sha256:57f565acd2f0cf6fb3e1ba553d0cb1f33405ec1f9c5ded9b9a0a5320f2c0bd3d"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux2010_x86_64.whl", hash = "sha256:4b52cb18b0ad46087caeb37a15e08040f3b4c2d444d58371b6f5d786d95534c2"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux2014_aarch64.whl", hash = "sha256:092a26e78b73f2530b8bd6b3898e7453ab2f36e42fd85097d705d6aba2ec3e5e"},
+    {file = "pycryptodome-3.15.0-cp35-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:50ca7e587b8e541eb6c192acf92449d95377d1f88908c0a32ac5ac2703ebe28b"},
     {file = "pycryptodome-3.15.0-cp35-abi3-win32.whl", hash = "sha256:e244ab85c422260de91cda6379e8e986405b4f13dc97d2876497178707f87fc1"},
     {file = "pycryptodome-3.15.0-cp35-abi3-win_amd64.whl", hash = "sha256:c77126899c4b9c9827ddf50565e93955cb3996813c18900c16b2ea0474e130e9"},
     {file = "pycryptodome-3.15.0-pp27-pypy_73-macosx_10_9_x86_64.whl", hash = "sha256:9eaadc058106344a566dc51d3d3a758ab07f8edde013712bc8d22032a86b264f"},
@@ -7514,6 +7548,13 @@ snowballstemmer = [
 sortedcontainers = [
     {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
     {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
+]
+sounddevice = [
+    {file = "sounddevice-0.4.5-py3-none-any.whl", hash = "sha256:5cea4afd9412e731f50ae09a54d68b10628a604cfd56b42a976c54d424c6c39d"},
+    {file = "sounddevice-0.4.5-py3-none-macosx_10_6_x86_64.macosx_10_6_universal2.whl", hash = "sha256:0875173595a8bd5a66b5a03a3d958e7b89c3b956b8befbe4491a24a3ce7784c0"},
+    {file = "sounddevice-0.4.5-py3-none-win32.whl", hash = "sha256:442adf53850916374a58f902200aaf9412227378181264e60c966da64be47d41"},
+    {file = "sounddevice-0.4.5-py3-none-win_amd64.whl", hash = "sha256:d3216c5d3d678c3301058e9aac7000879e255140c524c9ef98730091b67ea676"},
+    {file = "sounddevice-0.4.5.tar.gz", hash = "sha256:2fe0d41299e4f3037dad2acede4eff0666b34a1fa3da5335e47120373964bef5"},
 ]
 soupsieve = [
     {file = "soupsieve-2.3.2.post1-py3-none-any.whl", hash = "sha256:3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759"},

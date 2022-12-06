@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QStackedLayout>
 #include <QScrollArea>
 #include <QTabWidget>
 #include <QToolBar>
@@ -18,6 +19,11 @@ public:
   QSpinBox *size_spin;
 };
 
+class WelcomeWidget : public QWidget {
+public:
+  WelcomeWidget(QWidget *parent);
+};
+
 class DetailWidget : public QWidget {
   Q_OBJECT
 
@@ -29,7 +35,6 @@ public:
 
 private:
   void showForm(const Signal *sig);
-  void showFormClicked();
   void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int size, bool little_endian);
@@ -52,5 +57,6 @@ private:
   BinaryView *binary_view;
   QScrollArea *scroll;
   ChartsWidget *charts;
+  QStackedLayout *stacked_layout;
   QList<SignalEdit *> signal_list;
 };

@@ -71,6 +71,7 @@ selfdrive/rtshield.py
 selfdrive/statsd.py
 
 system/logmessaged.py
+system/micd.py
 system/swaglog.py
 system/version.py
 
@@ -216,6 +217,7 @@ system/hardware/tici/amplifier.py
 system/hardware/tici/updater
 system/hardware/tici/iwlist.py
 system/hardware/pc/__init__.py
+system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
 
 selfdrive/locationd/__init__.py
@@ -348,19 +350,27 @@ selfdrive/manager/test/test_manager.py
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
+selfdrive/modeld/navmodeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
+selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
 
 selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
+
 selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
+selfdrive/modeld/models/supercombo.onnx
+
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
-selfdrive/modeld/models/supercombo.onnx
 selfdrive/modeld/models/dmonitoring_model_q.dlc
+
+selfdrive/modeld/models/nav.cc
+selfdrive/modeld/models/nav.h
+selfdrive/modeld/models/navmodel_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
 selfdrive/modeld/transforms/loadyuv.h
@@ -484,6 +494,7 @@ cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
+panda/SConscript
 panda/board/**
 panda/certs/**
 panda/crypto/**

@@ -122,7 +122,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   save_timer->setSingleShot(true);
   save_timer->callOnTimeout(this, &SignalEdit::saveSignal);
 
-  QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
+  QObject::connect(title, &ElidedLabel::clicked, [this]() { emit showFormClicked(sig); });
   QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) {
     emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
   });
