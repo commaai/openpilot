@@ -165,6 +165,7 @@ s2sphere = "^0.2.5"
 scikit-image = "^0.19.3"
 scikit-learn = "^1.1.1"
 segmentation-models-pytorch = "==0.2.1"
+shelljob = "^0.6.3"
 simplejson = "^3.17.6"
 SQLAlchemy = "^1.4.39"
 torch = { url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp38-cp38-linux_x86_64.whl" }
