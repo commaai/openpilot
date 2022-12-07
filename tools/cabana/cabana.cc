@@ -1,5 +1,7 @@
 #include <QApplication>
+#include <QDir>
 #include <QCommandLineParser>
+#include <QUuid>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
@@ -22,9 +24,20 @@ int main(int argc, char *argv[]) {
   } else if (!args.empty()) {
     route = args.first();
   }
+
+  QString uuid =  QUuid::createUuid().toString(QUuid::WithoutBraces);
+  QString msgq_path = "/dev/shm/" + uuid;
+
+  QDir dir;
+  dir.mkdir(msgq_path);
+  setenv("OPENPILOT_PREFIX", qPrintable(uuid), 1);
+
   CANMessages can_messages(&app);
   MainWindow w;
   w.showMaximized();
   w.loadRoute(route, cmd_parser.value("data_dir"), cmd_parser.isSet("qcam"));
-  return app.exec();
+  int ret = app.exec();
+
+  dir.rmdir(msgq_path);
+  return ret;
 }
