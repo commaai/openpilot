@@ -27,7 +27,7 @@ class CarController:
     self.last_steer = 0
     self.alert_active = False
     self.last_standstill = False
-    self.standstill_req = False
+    # self.standstill_req = False
     self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
@@ -82,14 +82,17 @@ class CarController:
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
-      self.standstill_req = True
-    if CS.pcm_acc_status != 8:
-      # pcm entered standstill or it's disabled
-      self.standstill_req = False
+    release_standstill = self.CP.carFingerprint in NO_STOP_TIMER_CAR and not self.CP.enableGasInterceptor
+    release_standstill = release_standstill or CC.cruiseControl.resume
+    # if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
+    #   self.standstill_req = True
+    # TODO: understand this, needed?
+    # if CS.pcm_acc_status != 8:
+    #   # pcm entered standstill or it's disabled
+    #   self.standstill_req = False
 
     self.last_steer = apply_steer
-    self.last_standstill = CS.out.standstill
+    # self.last_standstill = CS.out.standstill
 
     can_sends = []
 
@@ -116,10 +119,10 @@ class CarController:
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
-        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
+        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, release_standstill, lead, CS.acc_type))
         self.accel = pcm_accel_cmd
       else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type))
+        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, True, lead, CS.acc_type))
 
     if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
