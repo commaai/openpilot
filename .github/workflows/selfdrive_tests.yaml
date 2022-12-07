@@ -15,6 +15,7 @@ env:
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
+  MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
@@ -294,7 +295,7 @@ jobs:
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 MAPBOX_TOKEN='$MAPBOX_TOKEN' coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 5
