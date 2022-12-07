@@ -120,6 +120,10 @@ class RouteEngine:
     cloudlog.warning(f"Calculating route {self.last_position} -> {destination}")
     self.nav_destination = destination
 
+    lang = self.params.get('LanguageSetting', encoding='utf8')
+    if lang is not None:
+      lang = lang.replace('main_', '')
+
     params = {
       'access_token': self.mapbox_token,
       'annotations': 'maxspeed',
@@ -128,6 +132,7 @@ class RouteEngine:
       'steps': 'true',
       'banner_instructions': 'true',
       'alternatives': 'false',
+      'language': lang,
     }
 
     if self.last_bearing is not None:

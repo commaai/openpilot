@@ -27,6 +27,7 @@ class CarControllerParams:
   NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
   NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
+  NIDEC_GAS_MAX = 198  # 0xc6
   NIDEC_BRAKE_MAX = 1024 // 4
 
   BOSCH_ACCEL_MIN = -3.5  # m/s^2
@@ -105,42 +106,47 @@ class Footnote(Enum):
 @dataclass
 class HondaCarInfo(CarInfo):
   package: str = "Honda Sensing"
-  min_steer_speed: float = 12. * CV.MPH_TO_MS
+
+  def init_make(self, CP: car.CarParams):
+    if CP.carFingerprint in HONDA_BOSCH:
+      self.harness = Harness.bosch_b if CP.carFingerprint in HONDA_BOSCH_RADARLESS else Harness.bosch_a
+    else:
+      self.harness = Harness.nidec
 
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACCORD: [
-    HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+    HondaCarInfo("Honda Accord 2018-22", "All", "https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
-  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec, video_link="https://youtu.be/-IkImTe1NYE"),
+  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
-    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-    HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch_a),
+    HondaCarInfo("Honda Civic 2019-21", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", [Footnote.CIVIC_DIESEL], 2. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
   CAR.CIVIC_2022: [
-    HondaCarInfo("Honda Civic 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
-    HondaCarInfo("Honda Civic Hatchback 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
+    HondaCarInfo("Honda Civic 2022", "All"),
+    HondaCarInfo("Honda Civic Hatchback 2022", "All"),
   ],
-  CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
-  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", harness=Harness.nidec),
-  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", harness=Harness.bosch_a),
+  CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
+  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch_a),
-  CAR.FIT: HondaCarInfo("Honda Fit 2018-20", harness=Harness.nidec),
-  CAR.FREED: HondaCarInfo("Honda Freed 2020", harness=Harness.nidec),
-  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", harness=Harness.nidec),
-  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
+  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20"),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
-  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
-  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.PILOT: HondaCarInfo("Honda Pilot 2016-22", harness=Harness.nidec),
-  CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", harness=Harness.nidec),
-  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-22", harness=Harness.nidec),
-  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.PILOT: HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -237,7 +243,7 @@ FW_VERSIONS = {
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-X040\x00\x00',
-      b'39990-TVA,A150\x00\x00',
+      b'39990-TVA,A150\x00\x00', # modified firmware
       b'39990-TVE-H130\x00\x00',
     ],
     (Ecu.unknown, 0x18da3af1, None): [
@@ -447,7 +453,7 @@ FW_VERSIONS = {
       b'78109-TED-Q510\x00\x00',
       b'78109-TEG-A310\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TBA-A020\x00\x00',
       b'36161-TBA-A030\x00\x00',
       b'36161-TBA-A040\x00\x00',
@@ -965,7 +971,7 @@ FW_VERSIONS = {
       b'77959-THR-A110\x00\x00',
       b'77959-THR-X010\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-THR-A020\x00\x00',
       b'36161-THR-A030\x00\x00',
       b'36161-THR-A110\x00\x00',
@@ -1032,6 +1038,23 @@ FW_VERSIONS = {
       b'54008-THR-A020\x00\x00',
     ],
   },
+  CAR.ODYSSEY_CHN: {
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-T6D-H220\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-T6A-J010\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-T6A-F310\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T6A-P040\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-T6A-P110\x00\x00',
+    ],
+  },
   CAR.PILOT: {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TG7-A520\x00\x00',
@@ -1069,7 +1092,7 @@ FW_VERSIONS = {
       b'39990-TG7-A070\x00\x00',
       b'39990-TGS-A230\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TG7-A310\x00\x00',
       b'36161-TG7-A520\x00\x00',
       b'36161-TG7-A630\x00\x00',
@@ -1177,7 +1200,7 @@ FW_VERSIONS = {
       b'57114-TX5-A220\x00\x00',
       b'57114-TX4-A220\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TX5-A030\x00\x00',
       b'36161-TX4-A030\x00\x00',
     ],
@@ -1274,7 +1297,7 @@ FW_VERSIONS = {
       b'39990-T6Z-A030\x00\x00',
       b'39990-T6Z-A050\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-T6Z-A020\x00\x00',
       b'36161-T6Z-A310\x00\x00',
       b'36161-T6Z-A420\x00\x00',

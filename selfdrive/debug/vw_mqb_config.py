@@ -70,8 +70,8 @@ if __name__ == "__main__":
   coding_variant, current_coding_array, coding_byte, coding_bit = None, None, 0, 0
   coding_length = len(current_coding)
 
-  # EV_SteerAssisMQB covers the majority of MQB racks (EPS_MQB_ZFLS)
-  if odx_file == "EV_SteerAssisMQB\x00":
+  # EV_SteerAssisMQB/MNB cover the majority of MQB racks (EPS_MQB_ZFLS)
+  if odx_file in ("EV_SteerAssisMQB\x00", "EV_SteerAssisMNB\x00"):
     coding_variant = "ZF"
     coding_byte = 0
     coding_bit = 4
@@ -111,7 +111,7 @@ if __name__ == "__main__":
   if args.action in ["enable", "disable"]:
     print("\nAttempting configuration update")
 
-    assert(coding_variant in ("ZF", "APA")) 
+    assert(coding_variant in ("ZF", "APA"))
     # ZF EPS config coding length can be anywhere from 1 to 4 bytes, but the
     # bit we care about is always in the same place in the first byte
     if args.action == "enable":

@@ -8,9 +8,11 @@
 #include <QPainter>
 #include <QScrollBar>
 
+#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
@@ -150,17 +152,16 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Roaming toggle
   const bool roamingEnabled = params.getBool("GsmRoaming");
-  ToggleControl *roamingToggle = new ToggleControl(tr("Enable Roaming"), "", "", roamingEnabled);
-  QObject::connect(roamingToggle, &SshToggle::toggleFlipped, [=](bool state) {
+  roamingToggle = new ToggleControl(tr("Enable Roaming"), "", "", roamingEnabled);
+  QObject::connect(roamingToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     params.putBool("GsmRoaming", state);
-    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")));
+    wifi->updateGsmSettings(state, QString::fromStdString(params.get("GsmApn")), params.getBool("GsmMetered"));
   });
   list->addItem(roamingToggle);
 
   // APN settings
-  ButtonControl *editApnButton = new ButtonControl(tr("APN Setting"), tr("EDIT"));
+  editApnButton = new ButtonControl(tr("APN Setting"), tr("EDIT"));
   connect(editApnButton, &ButtonControl::clicked, [=]() {
-    const bool roamingEnabled = params.getBool("GsmRoaming");
     const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
     QString apn = InputDialog::getText(tr("Enter APN"), this, tr("leave blank for automatic configuration"), false, -1, cur_apn).trimmed();
 
@@ -169,12 +170,28 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     } else {
       params.put("GsmApn", apn.toStdString());
     }
-    wifi->updateGsmSettings(roamingEnabled, apn);
+    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmMetered"));
   });
   list->addItem(editApnButton);
 
+  // Metered toggle
+  const bool metered = params.getBool("GsmMetered");
+  meteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
+  QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
+    params.putBool("GsmMetered", state);
+    wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
+  });
+  list->addItem(meteredToggle);
+
   // Set initial config
-  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")));
+  wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
+
+  connect(uiState(), &UIState::primeTypeChanged, this, [=](int prime_type) {
+    bool gsmVisible = prime_type == PrimeType::NONE || prime_type == PrimeType::LITE;
+    roamingToggle->setVisible(gsmVisible);
+    editApnButton->setVisible(gsmVisible);
+    meteredToggle->setVisible(gsmVisible);
+  });
 
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
@@ -207,9 +224,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
   circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
 
-  QLabel *scanning = new QLabel(tr("Scanning for networks..."));
-  scanning->setStyleSheet("font-size: 65px;");
-  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+  scanningLabel = new QLabel(tr("Scanning for networks..."));
+  scanningLabel->setStyleSheet("font-size: 65px;");
+  main_layout->addWidget(scanningLabel, 0, Qt::AlignCenter);
+
+  list_layout = new QVBoxLayout;
+  main_layout->addLayout(list_layout);
 
   setStyleSheet(R"(
     QScrollBar::handle:vertical {
@@ -257,14 +277,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 
 void WifiUI::refresh() {
   // TODO: don't rebuild this every time
-  clearLayout(main_layout);
+  clearLayout(list_layout);
 
-  if (wifi->seenNetworks.size() == 0) {
-    QLabel *scanning = new QLabel(tr("Scanning for networks..."));
-    scanning->setStyleSheet("font-size: 65px;");
-    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-    return;
-  }
+  bool is_empty = wifi->seenNetworks.isEmpty();
+  scanningLabel->setVisible(is_empty);
+  if (is_empty) return;
+
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
@@ -296,7 +314,7 @@ void WifiUI::refresh() {
       QPushButton *forgetBtn = new QPushButton(tr("FORGET"));
       forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
-        if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"%1\"?").arg(QString::fromUtf8(network.ssid)), this)) {
+        if (ConfirmationDialog::confirm(tr("Forget Wi-Fi Network \"%1\"?").arg(QString::fromUtf8(network.ssid)), tr("Forget"), this)) {
           wifi->forgetConnection(network.ssid);
         }
       });
@@ -327,6 +345,6 @@ void WifiUI::refresh() {
 
     list->addItem(hlayout);
   }
-  main_layout->addWidget(list);
-  main_layout->addStretch(1);
+  list_layout->addWidget(list);
+  list_layout->addStretch(1);
 }

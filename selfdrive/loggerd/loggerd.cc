@@ -55,7 +55,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   int bytes_count = 0;
 
   // extract the message
-  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize()));
+  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
   auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
     ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :

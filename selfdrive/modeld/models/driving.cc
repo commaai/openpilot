@@ -22,11 +22,6 @@ std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
 
 // #define DUMP_YUV
 
-template<class T, size_t size>
-constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
-  return kj::ArrayPtr(arr.data(), arr.size());
-}
-
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
   s->wide_frame = new ModelFrame(device_id, context);
@@ -41,11 +36,11 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
    &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true, false, context);
 
 #ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
+  s->m->addRecurrent(&s->feature_buffer[0], TEMPORAL_SIZE);
 #endif
 
 #ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+  s->m->addDesire(s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
 
 #ifdef TRAFFIC_CONVENTION
@@ -56,18 +51,20 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
                               const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
 #ifdef DESIRE
+  std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
       if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[i] = desire_in[i];
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = desire_in[i];
       } else {
-        s->pulse_desire[i] = 0.0;
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = 0.0;
       }
       s->prev_desire[i] = desire_in[i];
     }
   }
+LOGT("Desire enqueued");
 #endif
 
   int rhd_idx = is_rhd;
@@ -91,6 +88,12 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
 
   s->m->execute();
   LOGT("Execution finished");
+
+  #ifdef TEMPORAL
+    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
+    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+    LOGT("Features enqueued");
+  #endif
 
   return (ModelOutput*)&s->output;
 }
@@ -329,6 +332,17 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
+
+  // temporal pose
+  const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
+  const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
+  const auto &v_std = net_outputs.temporal_pose.velocity_std;
+  const auto &r_std = net_outputs.temporal_pose.rotation_std;
+  auto temporal_pose = framed.initTemporalPose();
+  temporal_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
+  temporal_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
+  temporal_pose.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
@@ -355,14 +369,19 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   const auto &v_mean = net_outputs.pose.velocity_mean;
   const auto &r_mean = net_outputs.pose.rotation_mean;
+  const auto &t_mean = net_outputs.wide_from_device_euler.mean;
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
+  const auto &t_std = net_outputs.wide_from_device_euler.std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+  posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
   posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+  posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

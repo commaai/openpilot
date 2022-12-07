@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE
+from selfdrive.car.toyota.values import ToyotaFlags, DBC, STEER_THRESHOLD, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
 
 class CarState(CarStateBase):
@@ -15,6 +15,8 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
+    self.cluster_min_speed = CV.KPH_TO_MS / 2.
 
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
     # the signal is zeroed to where the steering angle is at start.
@@ -52,6 +54,7 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
     ret.standstill = ret.vEgoRaw == 0
 
@@ -82,16 +85,20 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    # steer rate fault, goes to 21 or 25 for 1 frame, then 9 for ~2 seconds
-    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 21, 25)
+    # steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
+    # lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds
+    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 11, 21, 25)
     # 17 is a fault from a prolonged high torque delta between cmd and user
-    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] == 17
+    # 3 is a fault from the lka command message not being received by the EPS
+    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
-    if self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
+      # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_ALT"]["UI_SET_SPEED"]
     else:
+      ret.accFaulted = cp.vl["PCM_CRUISE_2"]["ACC_FAULTED"] != 0
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
@@ -112,17 +119,12 @@ class CarState(CarStateBase):
     # these cars are identified by an ACC_TYPE value of 2.
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
-    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
+    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR) or \
        (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
-    if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
-      # ignore standstill in hybrid vehicles, since pcm allows to restart without
-      # receiving any special command. Also if interceptor is detected
-      ret.cruiseState.standstill = False
-    else:
-      ret.cruiseState.standstill = self.pcm_acc_status == 7
+    ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
@@ -196,7 +198,7 @@ class CarState(CarStateBase):
       signals.append(("GAS_PEDAL", "GAS_PEDAL"))
       checks.append(("GAS_PEDAL", 33))
 
-    if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       signals.append(("MAIN_ON", "DSU_CRUISE"))
       signals.append(("SET_SPEED", "DSU_CRUISE"))
       signals.append(("UI_SET_SPEED", "PCM_CRUISE_ALT"))
@@ -205,6 +207,7 @@ class CarState(CarStateBase):
     else:
       signals.append(("MAIN_ON", "PCM_CRUISE_2"))
       signals.append(("SET_SPEED", "PCM_CRUISE_2"))
+      signals.append(("ACC_FAULTED", "PCM_CRUISE_2"))
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2"))
       checks.append(("PCM_CRUISE_2", 33))
 

@@ -1,17 +1,28 @@
 #include "selfdrive/navd/map_renderer.h"
 
+#include <cmath>
+#include <string>
 #include <QApplication>
 #include <QBuffer>
 #include <QDebug>
 
+#include "common/util.h"
 #include "common/timing.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
-const float ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int WIDTH = 256;
-const int HEIGHT = WIDTH;
-
+const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
+const int HEIGHT = 512, WIDTH = 512;
 const int NUM_VIPC_BUFFERS = 4;
+
+const int EARTH_CIRCUMFERENCE_METERS = 40075000;
+const int PIXELS_PER_TILE = 256;
+
+float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
+  float meters_per_tile = meters_per_pixel * PIXELS_PER_TILE;
+  float num_tiles = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / meters_per_tile;
+  return log2(num_tiles) - 1;
+}
+
 
 MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
@@ -35,9 +46,10 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   QOpenGLFramebufferObjectFormat fbo_format;
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
+  std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
-  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), ZOOM);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckvmksrpd4n0a14pfdo5heqzr");
+  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
+  m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
 
   m_map->resize(fbo->size());
@@ -67,7 +79,7 @@ void MapRenderer::msgUpdate() {
     auto orientation = location.getCalibratedOrientationNED();
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid) {
+    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % 10) == 0) {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
     }
   }
@@ -87,8 +99,13 @@ void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
     return;
   }
 
+  // Choose a scale that ensures above 13 zoom level up to and above 75deg of lat
+  float meters_per_pixel = 2;
+  float zoom = get_zoom_level_for_scale(position.first, meters_per_pixel);
+
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
+  m_map->setZoom(zoom);
   update();
 }
 
@@ -157,6 +174,7 @@ uint8_t* MapRenderer::getImage() {
   uint8_t* src = cap.bits();
   uint8_t* dst = new uint8_t[WIDTH * HEIGHT];
 
+  // RGB to greyscale
   for (int i = 0; i < WIDTH * HEIGHT; i++) {
     dst[i] = src[i * 3];
   }
@@ -185,7 +203,7 @@ void MapRenderer::initLayers() {
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
-    m_map->setPaintProperty("navLayer", "line-width", 3);
+    m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
 }

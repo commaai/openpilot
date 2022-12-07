@@ -416,6 +416,7 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
+    affine_irq(4, 126)   # SPI goes on boardd core
     affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
     affine_irq(4, 1069)  # xhci-hcd:usb3 goes on the boardd core
     for irq in range(237, 246):
@@ -480,7 +481,7 @@ class Tici(HardwareBase):
 
     # blue prime config
     if sim_id.startswith('8901410'):
-      os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
 
   def get_networks(self):
     r = {}

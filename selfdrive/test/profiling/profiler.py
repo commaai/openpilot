@@ -53,6 +53,7 @@ def profile(proc, func, car='toyota'):
   msgs = list(LogReader(rlog_url)) * int(os.getenv("LOOP", "1"))
 
   os.environ['FINGERPRINT'] = fingerprint
+  os.environ['SKIP_FW_QUERY'] = "1"
   os.environ['REPLAY'] = "1"
 
   def run(sm, pm, can_sock):
