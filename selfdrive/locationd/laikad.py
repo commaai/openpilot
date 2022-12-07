@@ -369,7 +369,7 @@ class EphemerisSourceType(IntEnum):
   qcom = 3
 
 
-def process_msg(laikad, gnss_msg, mono_time, replay=False):
+def process_msg(laikad, gnss_msg, mono_time, block=False):
   # TODO: Understand and use remaining unknown constellations
   if gnss_msg.which() == "drMeasurementReport":
     if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
@@ -380,7 +380,7 @@ def process_msg(laikad, gnss_msg, mono_time, replay=False):
       # passed to GnssMeasurements's gpsWeek (Int16)
       return None
 
-  return laikad.process_gnss_msg(gnss_msg, mono_time, block=replay)
+  return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
 
 
 def main(sm=None, pm=None):

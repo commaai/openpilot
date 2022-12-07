@@ -336,12 +336,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   if (std::abs(diff) > 0.87) { // 49.84deg
     bearing_rad = last_gnss_bearing_rad + diff*0.1;
-    LOGE("GNSS ANGLE DIFF: %f -> %f", RAD2DEG(diff), RAD2DEG(diff*0.1))
   }
-  else {
-    LOGE("GNSS ANGLE DIFF: %f", RAD2DEG(diff))
-  }
-
   last_gnss_bearing_rad = bearing_rad;
 
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing_rad);
