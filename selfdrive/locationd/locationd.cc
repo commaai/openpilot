@@ -326,23 +326,23 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   // TODO: cleanUp below here
   if(this->last_gps_msg == 0) {
-    last_gnss_bearing = RAD2DEG(bearing_rad);
+    last_gnss_bearing_rad = bearing_rad;
   }
 
   // calc diff between bearing, and if the diff is higher than a threshold, apply scaling factor
   // to not confuse KF
-  double diff = fmod(last_gnss_bearing - RAD2DEG(bearing_rad) + 180.0, 360.0) - 180.0;
-  diff = diff < -180.0 ? diff + 360.0 : diff;
+  double diff = fmod(last_gnss_bearing_rad - bearing_rad + M_PI, 2*M_PI) - M_PI;
+  diff = diff < -M_PI ? diff + 2*M_PI : diff;
 
-  if (std::abs(diff) > 50) {
-    bearing_rad = DEG2RAD(last_gnss_bearing + diff*0.1);
-    LOGE("GNSS ANGLE DIFF: %f -> %f", diff, diff*0.1)
+  if (std::abs(diff) > 0.87) { // 49.84deg
+    bearing_rad = last_gnss_bearing_rad + diff*0.1;
+    LOGE("GNSS ANGLE DIFF: %f -> %f", RAD2DEG(diff), RAD2DEG(diff*0.1))
   }
   else {
-    LOGE("GNSS ANGLE DIFF: %f", diff)
+    LOGE("GNSS ANGLE DIFF: %f", RAD2DEG(diff))
   }
 
-  last_gnss_bearing = RAD2DEG(bearing_rad);
+  last_gnss_bearing_rad = bearing_rad;
 
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing_rad);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;

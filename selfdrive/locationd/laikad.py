@@ -369,6 +369,21 @@ class EphemerisSourceType(IntEnum):
   qcom = 3
 
 
+def process_msg(laikad, gnss_msg, mono_time, replay=False):
+  # TODO: Understand and use remaining unknown constellations
+  if gnss_msg.which() == "drMeasurementReport":
+    if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
+      return
+
+    if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
+      # gpsWeek 65535 is received rarely from quectel, this cannot be
+      # passed to GnssMeasurements's gpsWeek (Int16)
+      return
+
+  msg = laikad.process_gnss_msg(gnss_msg, mono_time, block=replay)
+  return msg
+
+
 def main(sm=None, pm=None):
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom:
@@ -391,19 +406,10 @@ def main(sm=None, pm=None):
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
 
-      # TODO: Understand and use remaining unknown constellations
-      if gnss_msg.which() == "drMeasurementReport":
-        if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
-          continue
-
-        if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
-          # gpsWeek 65535 is received rarely from quectel, this cannot be
-          # passed to GnssMeasurements's gpsWeek (Int16)
-          continue
-
-      msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
+      msg = process_msg(laikad, gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
       if msg is not None:
         pm.send('gnssMeasurements', msg)
+
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
