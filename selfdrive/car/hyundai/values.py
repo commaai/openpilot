@@ -31,7 +31,7 @@ class CarControllerParams:
 
       breakpoints = [
         # vEgo, max torque, rate up, rate down
-        #(11., 300, 2, 3),
+        (9., 384, 10, 10),  # 10 seems to be the max before faulting
         (13., 270, 2, 3),
       ]
       idx = len(breakpoints) - 1
