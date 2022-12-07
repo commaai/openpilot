@@ -20,14 +20,15 @@ from system.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
-SEGMENT = 0
+TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
+SEGMENT = 6
 MAX_FRAMES = 100 if PC else 600
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
                "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
+
 def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
 
@@ -37,6 +38,49 @@ def replace_calib(msg, calib):
   if calib is not None:
     msg.liveCalibration.rpyCalib = calib.tolist()
   return msg
+
+
+def nav_model_replay(lr):
+  pm = messaging.PubMaster(['liveLocationKalman', 'navRoute'])
+  sock = messaging.sub_sock('navModel', conflate=False, timeout=1000)
+
+  nav_frames = 20
+
+  log_msgs = []
+  try:
+    managed_processes['mapsd'].start()
+    managed_processes['navmodeld'].start()
+
+    # setup position and route
+    nav = [m for m in lr if m.which() == 'navRoute']
+    llk = [m for m in lr if m.which() == 'liveLocationKalman']
+    assert len(nav) > 0 and len(llk) > 0
+
+    for _ in range(30):
+      for s in (llk, nav):
+        msg = s[0]
+        pm.send(msg.which(), msg.as_builder().to_bytes())
+      if messaging.recv_one(sock) is not None:
+        break
+    else:
+      raise Exception("no navmodeld outputs")
+
+    time.sleep(2)
+    messaging.drain_sock_raw(sock)
+
+    # run replay
+    for _ in range(nav_frames):
+      # 2Hz decimation
+      for _ in range(10):
+        pm.send(llk[0].which(), llk[0].as_builder().to_bytes())
+        time.sleep(0.1)
+      with Timeout(5, "timed out waiting for nav model outputs"):
+        log_msgs.append(messaging.recv_one_retry(sock))
+  finally:
+    managed_processes['mapsd'].stop()
+    managed_processes['navmodeld'].stop()
+
+  return log_msgs[:nav_frames]
 
 
 def model_replay(lr, frs):
@@ -154,8 +198,9 @@ if __name__ == "__main__":
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"), readahead=True)
   }
 
-  # run replay
+  # run replays
   log_msgs = model_replay(lr, frs)
+  log_msgs += nav_model_replay(lr)
 
   # get diff
   failed = False
@@ -190,7 +235,7 @@ if __name__ == "__main__":
       failed = True
 
   # upload new refs
-  if (update or failed) and not PC:
+  if update or failed:
     from selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
@@ -198,10 +243,11 @@ if __name__ == "__main__":
     new_commit = get_commit()
     log_fn = get_log_fn(new_commit, TEST_ROUTE)
     save_log(log_fn, log_msgs)
-    try:
-      upload_file(log_fn, os.path.basename(log_fn))
-    except Exception as e:
-      print("failed to upload", e)
+    if not PC:
+      try:
+        upload_file(log_fn, os.path.basename(log_fn))
+      except Exception as e:
+        print("failed to upload", e)
 
     with open(ref_commit_fn, 'w') as f:
       f.write(str(new_commit))
