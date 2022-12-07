@@ -119,8 +119,8 @@ class CAR:
 
 class Footnote(Enum):
   CANFD = CarFootnote(
-    "Requires a <a href=\"https://comma.ai/shop/panda\" target=\"_blank\">red panda</a> and additional <a href=\"https://comma.ai/shop/harness-box\" target=\"_blank\">harness box</a>. " +
-    "Also requires an extra <a href=\"https://comma.ai/shop/obd-c-cable\" target=\"_blank\">OBD-C cable</a>, USB-A to USB-A cable, and a USB-A to USB-C OTG dongle.",
+    "Requires a <a href=\"https://comma.ai/shop/panda\" target=\"_blank\">red panda</a>, additional <a href=\"https://comma.ai/shop/harness-box\" target=\"_blank\">harness box</a>, " +
+    "additional <a href=\"https://comma.ai/shop/obd-c-cable\" target=\"_blank\">OBD-C cable</a>, USB-A to USB-A cable, and a USB-A to USB-C OTG dongle.",
     Column.MODEL, shop_footnote=True)
 
 
