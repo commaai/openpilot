@@ -373,15 +373,14 @@ def process_msg(laikad, gnss_msg, mono_time, replay=False):
   # TODO: Understand and use remaining unknown constellations
   if gnss_msg.which() == "drMeasurementReport":
     if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
-      return
+      return None
 
     if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
       # gpsWeek 65535 is received rarely from quectel, this cannot be
       # passed to GnssMeasurements's gpsWeek (Int16)
-      return
+      return None
 
-  msg = laikad.process_gnss_msg(gnss_msg, mono_time, block=replay)
-  return msg
+  return laikad.process_gnss_msg(gnss_msg, mono_time, block=replay)
 
 
 def main(sm=None, pm=None):
