@@ -44,7 +44,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.params = CarControllerParams(CP)
+    self.params = CarControllerParams(CP, 0)
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
     self.frame = 0
@@ -58,10 +58,19 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
 
+    self.params = CarControllerParams(self.CP, CS.out.vEgoRaw)
+    #self.params = CarControllerParams(self.CP, 100)
+
     # steering torque
     steer = actuators.steer
-    new_steer = int(round(steer * self.params.STEER_MAX))
-    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+
+    if CS.vEgoRaw < 9.:
+      apply_steer = int(round(steer * 384))
+    else:
+      new_steer = int(round(steer * self.params.STEER_MAX))
+      apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+      apply_steer = clip(apply_steer, -self.params.STEER_MAX, self.params.STEER_MAX)
+    print("apply", apply_steer)
 
     if not CC.latActive:
       apply_steer = 0
@@ -187,6 +196,9 @@ class CarController:
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.accel = accel
+    new_actuators.gas = self.params.STEER_MAX
+    new_actuators.brake = self.params.STEER_DELTA_UP
+    new_actuators.speed = self.params.STEER_DELTA_DOWN
 
     self.frame += 1
     return new_actuators, can_sends

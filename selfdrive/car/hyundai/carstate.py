@@ -41,7 +41,7 @@ class CarState(CarStateBase):
     self.cluster_speed = 0
     self.cluster_speed_counter = CLUSTER_SAMPLE_RATE
 
-    self.params = CarControllerParams(CP)
+    self.params = CarControllerParams(CP, 0)
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:
