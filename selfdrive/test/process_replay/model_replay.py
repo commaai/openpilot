@@ -23,7 +23,9 @@ from tools.lib.logreader import LogReader
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
 MAX_FRAMES = 100 if PC else 600
+NAV_FRAMES = 20
 
+NO_NAV = "NO_NAV" in os.environ  # TODO: make map renderer work in CI
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
@@ -43,8 +45,6 @@ def replace_calib(msg, calib):
 def nav_model_replay(lr):
   pm = messaging.PubMaster(['liveLocationKalman', 'navRoute'])
   sock = messaging.sub_sock('navModel', conflate=False, timeout=1000)
-
-  nav_frames = 20
 
   log_msgs = []
   try:
@@ -69,7 +69,7 @@ def nav_model_replay(lr):
     messaging.drain_sock_raw(sock)
 
     # run replay
-    for _ in range(nav_frames):
+    for _ in range(NAV_FRAMES):
       # 2Hz decimation
       for _ in range(10):
         pm.send(llk[0].which(), llk[0].as_builder().to_bytes())
@@ -80,7 +80,7 @@ def nav_model_replay(lr):
     managed_processes['mapsd'].stop()
     managed_processes['navmodeld'].stop()
 
-  return log_msgs[:nav_frames]
+  return log_msgs
 
 
 def model_replay(lr, frs):
@@ -200,7 +200,8 @@ if __name__ == "__main__":
 
   # run replays
   log_msgs = model_replay(lr, frs)
-  log_msgs += nav_model_replay(lr)
+  if not NO_NAV:
+    log_msgs += nav_model_replay(lr)
 
   # get diff
   failed = False
@@ -209,7 +210,10 @@ if __name__ == "__main__":
       ref_commit = f.read().strip()
     log_fn = get_log_fn(ref_commit, TEST_ROUTE)
     try:
-      cmp_log = list(LogReader(BASE_URL + log_fn))[:2*MAX_FRAMES]
+      expected_msgs = 2*MAX_FRAMES
+      if not NO_NAV:
+        expected_msgs += NAV_FRAMES
+      cmp_log = list(LogReader(BASE_URL + log_fn))[:expected_msgs]
 
       ignore = [
         'logMonoTime',
