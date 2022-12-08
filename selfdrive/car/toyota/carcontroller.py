@@ -8,6 +8,7 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
+from common.op_params import opParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -21,6 +22,7 @@ MAX_USER_TORQUE = 500
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
+    self.op_params = opParams()
     self.CP = CP
     self.torque_rate_limits = CarControllerParams(self.CP)
     self.frame = 0
@@ -112,7 +114,7 @@ class CarController:
     can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
                                               CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
                                               CS.out.steeringTorque,
-                                              apply_steer_req))
+                                              apply_steer_req, self.op_params))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:

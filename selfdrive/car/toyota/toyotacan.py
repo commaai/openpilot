@@ -12,32 +12,32 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req):
+def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req, op_params):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   percentage = interp(abs(driver_torque), [50, 100], [100, 0])
   apply_steer = interp(percentage, [-10, 100], [steer_angle, apply_steer])
   values = {
     # seems to actually be 1. Even 1 on 2023 RAV4 2023 (TODO: check from data)
-    "SETME_X1": 1,
+    "SETME_X1": op_params.get("SETME_X1"),
 
     # On a RAV4 2023, it seems to be always 1
     # But other cars it can change randomly?
     # TODO: figure that out
-    "SETME_X3": 1,
+    "SETME_X3": op_params.get("SETME_X3"),
 
     # 100 when driver not touching wheel, 0 when driver touching wheel. ramps smoothly between
     # TODO: find actual breakpoints and determine how this affects the control
-    "PERCENTAGE": 100,
+    "PERCENTAGE": op_params.get("PERCENTAGE"),
 
     # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
     # but on 2023 RAV4, it was constant 100 on falling edge and BIT was 0
     # TODO: figure out if important. torque wind down? maybe user torque blending?
-    "SETME_X64": 0x64,
+    "SETME_X64": op_params.get("SETME_X64"),
 
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
-    "ANGLE": 0,
+    "ANGLE": op_params.get("ANGLE"),
 
     # seems to just be desired angle cmd
     # TODO: does this have offset on cars where accurate steering angle signal has offset?
@@ -49,7 +49,7 @@ def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, st
 
     # 1 when actively using LTA. 3 when LTA is activated for LKA. 0 when LTA_REQUEST is 0
     # TODO: see if 3 gets us any more torque, or better blending, or SOMETHING. EPS_STATUS doesn't change based on this, so maybe it doesn't do anything
-    "LTA_REQUEST_TYPE": steer_req,
+    "LTA_REQUEST_TYPE": op_params.get("LTA_REQUEST_TYPE") if steer_req else 0,
 
     # 1 when STEER_REQUEST changes state (usually)
     # except not true on 2023 RAV4. TODO: revisit, could it be UI related?
