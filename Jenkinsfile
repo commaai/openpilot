@@ -51,7 +51,6 @@ pipeline {
     MAPBOX_TOKEN = credentials('mapbox_token')
   }
   options {
-    timestamps()
     timeout(time: 3, unit: 'HOURS')
     disableConcurrentBuilds(abortPrevious: env.BRANCH_NAME != 'master')
   }
