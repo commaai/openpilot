@@ -319,25 +319,10 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos[0], ecef_pos[1], ecef_pos[2] }, orientation_ecef);
 
-  LocalCoord convs((ECEF){ .x = ecef_pos_v[0], .y = ecef_pos_v[1], .z = ecef_pos_v[2] });
+  LocalCoord convs((ECEF){ .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
   ECEF next_ecef = {.x = ecef_pos[0] + ecef_vel[0], .y = ecef_pos[1] + ecef_vel[1], .z = ecef_pos[2] + ecef_vel[2]};
   VectorXd ned_vel = convs.ecef2ned(next_ecef).to_vector();
   double bearing_rad = atan2(ned_vel[1], ned_vel[0]);
-
-  // TODO: cleanUp below here
-  if(this->last_gps_msg == 0) {
-    last_gnss_bearing_rad = bearing_rad;
-  }
-
-  // calc diff between bearing, and if the diff is higher than a threshold, apply scaling factor
-  // to not confuse KF
-  double diff = fmod(last_gnss_bearing_rad - bearing_rad + M_PI, 2*M_PI) - M_PI;
-  diff = diff < -M_PI ? diff + 2*M_PI : diff;
-
-  if (std::abs(diff) > 0.87) { // 49.84deg
-    bearing_rad = last_gnss_bearing_rad + diff*0.1;
-  }
-  last_gnss_bearing_rad = bearing_rad;
 
   VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, bearing_rad);
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
@@ -351,7 +336,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   // accuracy sanity check
-  if (pos_std > 500.) {
+  if (pos_std > 500. || vel_error > 10.) {
     this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
@@ -368,7 +353,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
 
   this->last_gps_msg = current_time;
-
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
