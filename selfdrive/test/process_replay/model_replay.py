@@ -220,7 +220,9 @@ if __name__ == "__main__":
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
         'driverStateV2.modelExecutionTime',
-        'driverStateV2.dspExecutionTime'
+        'driverStateV2.dspExecutionTime',
+        'navModel.dspExecutionTime',
+        'navModel.modelExecutionTime',
       ]
       # TODO this tolerance is absurdly large
       tolerance = 2.0 if PC else None
