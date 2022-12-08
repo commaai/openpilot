@@ -112,7 +112,7 @@ class CarController:
     can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
                                               CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
                                               CS.out.steeringTorque,
-                                              apply_steer_req, self.frame))
+                                              apply_steer_req))
 
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
