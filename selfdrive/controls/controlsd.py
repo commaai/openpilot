@@ -47,6 +47,7 @@ PandaType = log.PandaState.PandaType
 Desire = log.LateralPlan.Desire
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
+SteerControlType = car.CarParams.SteerControlType
 EventName = car.CarEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
@@ -156,7 +157,7 @@ class Controls:
     self.VM = VehicleModel(self.CP)
 
     self.LaC: LatControl
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType == SteerControlType.angle:
       self.LaC = LatControlAngle(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP, self.CI)
@@ -559,7 +560,7 @@ class Controls:
     self.VM.update_params(x, sr)
 
     # Update Torque Params
-    if self.CP.lateralTuning.which() == 'torque':
+    if self.CP.steerControlType == SteerControlType.torque and self.CP.lateralTuning.which() == 'torque':
       torque_params = self.sm['liveTorqueParameters']
       if self.sm.all_checks(['liveTorqueParameters']) and torque_params.useParams:
         self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered, torque_params.frictionCoefficientFiltered)
@@ -618,7 +619,8 @@ class Controls:
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and not CS.steeringPressed and self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
+    if (lac_log.active and not CS.steeringPressed and self.CP.steerControlType == SteerControlType.torque and
+        self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode):
       undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
       turning = abs(lac_log.desiredLateralAccel) > 1.0
       good_speed = CS.vEgo > 5
@@ -630,7 +632,7 @@ class Controls:
       if len(dpath_points):
         # Check if we deviated from the path
         # TODO use desired vs actual curvature
-        if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+        if self.CP.steerControlType == SteerControlType.angle:
           steering_value = actuators.steeringAngleDeg
         else:
           steering_value = actuators.steer
@@ -772,7 +774,7 @@ class Controls:
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
-    elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    elif self.CP.steerControlType == SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
