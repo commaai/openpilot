@@ -224,6 +224,15 @@ if __name__ == "__main__":
         'navModel.dspExecutionTime',
         'navModel.modelExecutionTime',
       ]
+      if PC:
+        ignore += [
+          'modelV2.laneLines.0.t',
+          'modelV2.laneLines.1.t',
+          'modelV2.laneLines.2.t',
+          'modelV2.laneLines.3.t',
+          'modelV2.roadEdges.0.t',
+          'modelV2.roadEdges.1.t',
+        ]
       # TODO this tolerance is absurdly large
       tolerance = 2.0 if PC else None
       results: Any = {TEST_ROUTE: {}}
@@ -241,7 +250,7 @@ if __name__ == "__main__":
       failed = True
 
   # upload new refs
-  if update or failed:
+  if (update or failed) and not PC:
     from selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
@@ -249,11 +258,10 @@ if __name__ == "__main__":
     new_commit = get_commit()
     log_fn = get_log_fn(new_commit, TEST_ROUTE)
     save_log(log_fn, log_msgs)
-    if not PC:
-      try:
-        upload_file(log_fn, os.path.basename(log_fn))
-      except Exception as e:
-        print("failed to upload", e)
+    try:
+      upload_file(log_fn, os.path.basename(log_fn))
+    except Exception as e:
+      print("failed to upload", e)
 
     with open(ref_commit_fn, 'w') as f:
       f.write(str(new_commit))
