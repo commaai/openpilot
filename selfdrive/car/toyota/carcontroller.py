@@ -71,12 +71,17 @@ class CarController:
     #  1b. clip to max angle limits (EPS ignores messages outside of these bounds and causes PCS faults)
     # 2. rate limit angle command
     # 3. limit max angle error between cmd and actual to reduce EPS integral windup  # TODO: can we configure this with a signal?
+    apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
     torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
-    apply_angle = clip(actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg, -94.9461, 94.9461)
+
+    percentage = interp(abs(CS.out.steeringTorque), [40, 100], [100, 0])
+    apply_angle = interp(percentage, [-10, 100], [torque_sensor_angle, apply_angle])
+
     apply_angle = clip(apply_angle, self.last_angle - self.params.ANGLE_RATE_MAX, self.last_angle + self.params.ANGLE_RATE_MAX)
-    apply_steer = clip(apply_steer,
-                       torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
-                       torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
+    # apply_steer = clip(apply_steer,
+    #                    torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
+    #                    torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
+    apply_angle = clip(apply_angle, -94.9461, 94.9461)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
@@ -86,7 +91,7 @@ class CarController:
 
     apply_steer_req = 1
     if not lat_active:
-      apply_angle = torque_sensor_angle
+      apply_angle = clip(torque_sensor_angle, -94.9461, 94.9461)
       apply_steer = 0
       apply_steer_req = 0
     elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
@@ -125,7 +130,7 @@ class CarController:
       can_sends.append(create_steer_command(self.packer, 0, 0))
       # On TSS2 cars, the LTA and STEER_TORQUE_SENSOR messages use relative steering angle signals that start
       # at 0 degrees, so we need to offset the commanded angle as well.
-      can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
+      can_sends.append(create_lta_steer_command(self.packer, apply_angle,
                                                 CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
                                                 CS.out.steeringTorque,
                                                 apply_steer_req, self.op_params))
