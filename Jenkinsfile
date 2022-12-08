@@ -11,6 +11,7 @@ export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
+export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 
 source ~/.bash_profile
 if [ -f /TICI ]; then
@@ -47,6 +48,7 @@ pipeline {
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
     AZURE_TOKEN = credentials('azure_token')
+    MAPBOX_TOKEN = credentials('mapbox_token')
   }
   options {
     timeout(time: 4, unit: 'HOURS')
