@@ -130,15 +130,12 @@ class CarController:
       can_sends.append(create_steer_command(self.packer, 0, 0))
       # On TSS2 cars, the LTA and STEER_TORQUE_SENSOR messages use relative steering angle signals that start
       # at 0 degrees, so we need to offset the commanded angle as well.
-      can_sends.append(create_lta_steer_command(self.packer, apply_angle,
-                                                CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
-                                                CS.out.steeringTorque,
-                                                apply_steer_req, self.op_params))
+      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req, self.op_params))
     else:
       apply_angle = 0
       can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
       if TSS2_CAR:
-        can_sends.append(create_lta_steer_command(self.packer, 0, 0, 0, False, self.op_params))
+        can_sends.append(create_lta_steer_command(self.packer, 0, False, self.op_params))
 
     self.last_angle = apply_angle
     self.last_steer = apply_steer
