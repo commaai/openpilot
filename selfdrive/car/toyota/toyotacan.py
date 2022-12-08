@@ -18,15 +18,41 @@ def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, st
   percentage = interp(abs(driver_torque), [50, 100], [100, 0])
   apply_steer = interp(percentage, [-10, 100], [steer_angle, apply_steer])
   values = {
+    # seems to actually be 1. Even 1 on 2023 RAV4 2023 (TODO: check from data)
     "SETME_X1": 1,
-    "SETME_X3": 1,  # usually 1, but sometimes 3 (??)
-    "PERCENTAGE": 100,  # correlated with driver torque
-    "SETME_X64": 0x64,  # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
-    "ANGLE": 0,  # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
-    "STEER_ANGLE_CMD": apply_steer,  # seems to just be desired angle cmd
-    "STEER_REQUEST": steer_req,  # stock system turns off steering after ~20 frames of override, else torque winds up
-    "STEER_REQUEST_2": steer_req,  # duplicate
-    "BIT": 0,  # 1 when STEER_REQUEST changes state (usually)
+
+    # On a RAV4 2023, it seems to be always 1
+    # But other cars it can change randomly?
+    # TODO: figure that out
+    "SETME_X3": 1,
+
+    # 100 when driver not touching wheel, 0 when driver touching wheel. ramps smoothly between
+    # TODO: find actual breakpoints and determine how this affects the control
+    "PERCENTAGE": 100,
+
+    # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
+    # but on 2023 RAV4, it was constant 100 on falling edge and BIT was 0
+    # TODO: figure out if important. torque wind down? maybe user torque blending?
+    "SETME_X64": 0x64,
+
+    # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
+    # TODO: revisit on 2023 RAV4
+    "ANGLE": 0,
+
+    # seems to just be desired angle cmd
+    # TODO: does this have offset on cars where accurate steering angle signal has offset?
+    # some tss2 don't have any offset on the accurate angle signal... (tss2.5)?
+    "STEER_ANGLE_CMD": apply_steer,
+
+    # stock system turns off steering after ~20 frames of override, else torque winds up
+    "STEER_REQUEST": steer_req,
+
+    # duplicate
+    "STEER_REQUEST_2": steer_req,
+
+    # 1 when STEER_REQUEST changes state (usually)
+    # except not true on 2023 RAV4. TODO: revisit, could it be UI related?
+    "BIT": 0,
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
