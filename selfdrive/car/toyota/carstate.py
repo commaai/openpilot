@@ -178,6 +178,7 @@ class CarState(CarStateBase):
       ("STEER_ANGLE_INITIALIZING", "STEER_TORQUE_SENSOR"),
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
+      ("LTA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
     ]
 
