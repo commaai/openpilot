@@ -77,7 +77,12 @@ class CarController:
     percentage = interp(abs(CS.out.steeringTorque), [40, 100], [100, 0])
     apply_angle = interp(percentage, [-10, 100], [torque_sensor_angle, apply_angle])
 
-    apply_angle = clip(apply_angle, self.last_angle - self.params.ANGLE_RATE_MAX, self.last_angle + self.params.ANGLE_RATE_MAX)
+    # Angular rate limit based on speed (from TESLA)
+    steer_up = self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle)
+    rate_limit = self.params.ANGLE_RATE_LIMIT_UP if steer_up else self.params.ANGLE_RATE_LIMIT_DOWN
+    max_angle_diff = interp(CS.out.vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
+    apply_angle = clip(apply_angle, self.last_angle - max_angle_diff, self.last_angle + max_angle_diff)
+
     # apply_steer = clip(apply_steer,
     #                    torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
     #                    torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
