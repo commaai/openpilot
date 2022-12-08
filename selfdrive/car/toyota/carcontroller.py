@@ -10,6 +10,7 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
 from opendbc.can.packer import CANPacker
 from common.op_params import opParams
 
+SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
@@ -24,9 +25,10 @@ class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.op_params = opParams()
     self.CP = CP
-    self.torque_rate_limits = CarControllerParams(self.CP)
+    self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
+    self.last_angle = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -58,11 +60,23 @@ class CarController:
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
-    # steer torque
-    new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
+    # - steer torque
+    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
+
+    # - steer angle
+    # 1a. angle command is in terms of the angle signal in the torque sensor message (may or may not have an offset)
+    #  1b. clip to max angle limits (EPS ignores messages outside of these bounds and causes PCS faults)
+    # 2. rate limit angle command
+    # 3. limit max angle error between cmd and actual to reduce EPS integral windup  # TODO: can we configure this with a signal?
+    torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+    apply_angle = clip(actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg, -94.9461, 94.9461)
+    apply_angle = clip(apply_angle, self.last_angle - self.params.ANGLE_RATE_MAX, self.last_angle + self.params.ANGLE_RATE_MAX)
+    apply_steer = clip(apply_steer,
+                       torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
+                       torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
@@ -72,11 +86,17 @@ class CarController:
 
     apply_steer_req = 1
     if not lat_active:
+      apply_angle = torque_sensor_angle
       apply_steer = 0
       apply_steer_req = 0
     elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
       apply_steer_req = 0
       self.steer_rate_counter = 0
+
+    if self.CP.steerControlType == SteerControlType.angle:
+      apply_steer = 0
+    else:
+      apply_angle = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
@@ -90,9 +110,6 @@ class CarController:
       # pcm entered standstill or it's disabled
       self.standstill_req = False
 
-    self.last_steer = apply_steer
-    self.last_standstill = CS.out.standstill
-
     can_sends = []
 
     # *** control msgs ***
@@ -101,20 +118,26 @@ class CarController:
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    """
-    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
-    if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
-      can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
-    """
 
-    # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
-    can_sends.append(create_steer_command(self.packer, 0, 0))
-    # On TSS2 cars, the LTA and STEER_TORQUE_SENSOR messages use relative steering angle signals that start
-    # at 0 degrees, so we need to offset the commanded angle as well.
-    can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
-                                              CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
-                                              CS.out.steeringTorque,
-                                              apply_steer_req, self.op_params))
+    if self.CP.steerControlType == SteerControlType.angle:
+      apply_steer = 0
+      # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
+      can_sends.append(create_steer_command(self.packer, 0, 0))
+      # On TSS2 cars, the LTA and STEER_TORQUE_SENSOR messages use relative steering angle signals that start
+      # at 0 degrees, so we need to offset the commanded angle as well.
+      can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
+                                                CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg,
+                                                CS.out.steeringTorque,
+                                                apply_steer_req, self.op_params))
+    else:
+      apply_angle = 0
+      can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
+      if TSS2_CAR:
+        can_sends.append(create_lta_steer_command(self.packer, 0, 0, 0, False, self.op_params))
+
+    self.last_angle = apply_angle
+    self.last_steer = apply_steer
+    self.last_standstill = CS.out.standstill
 
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
@@ -165,7 +188,7 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 

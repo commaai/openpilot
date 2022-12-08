@@ -21,6 +21,12 @@ class CarControllerParams:
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
+  # stock LTA is 0 to 0.05 going straight
+  # and 0.1 to 0.4 when turning (max seen is 0.6303)
+  ANGLE_RATE_MAX = 0.5
+  # needs to be within +-3 degrees of current angle to avoid windup
+  ANGLE_DELTA_MAX = 3.0
+
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
       self.STEER_DELTA_UP = 15       # 1.0s time to peak torque

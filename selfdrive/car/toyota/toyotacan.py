@@ -15,8 +15,8 @@ def create_steer_command(packer, steer, steer_req):
 def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, steer_req, op_params):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
-  percentage = interp(abs(driver_torque), [50, 100], [100, 0])
-  apply_steer = interp(percentage, [-10, 100], [steer_angle, apply_steer])
+  # percentage = interp(abs(driver_torque), [40, 100], [100, 0])
+  # apply_steer = interp(percentage, [-10, 100], [steer_angle, apply_steer])
   values = {
     # seems to actually be 1. Even 1 on 2023 RAV4 2023 (TODO: check from data)
     "SETME_X1": op_params.get("SETME_X1"),
