@@ -4,15 +4,10 @@ ENV PYTHONUNBUFFERED 1
 
 ENV OPENPILOT_PATH /home/batman/openpilot/
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
+ENV POETRY_VIRUALENVS_CREATE false
 
 RUN mkdir -p ${OPENPILOT_PATH}
 WORKDIR ${OPENPILOT_PATH}
-
-COPY Pipfile Pipfile.lock $OPENPILOT_PATH
-RUN pip install --no-cache-dir pipenv==2021.5.29 pip==21.3.1 && \
-    pipenv install --system --deploy --dev --clear && \
-    pip uninstall -y pipenv
-
 
 COPY SConstruct ${OPENPILOT_PATH}
 
@@ -30,6 +25,7 @@ COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal
 COPY ./panda ${OPENPILOT_PATH}/panda
 COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
+COPY ./system ${OPENPILOT_PATH}/system
 COPY ./*.md ${OPENPILOT_PATH}/
 
 RUN scons -j$(nproc)

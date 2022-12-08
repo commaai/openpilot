@@ -4,7 +4,7 @@
 
 #include <QStackedLayout>
 
-#include "selfdrive/common/util.h"
+#include "common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class DriverViewScene : public QWidget {
@@ -42,7 +42,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
 
 private:
-  CameraViewWidget *cameraView;
+  CameraWidget *cameraView;
   DriverViewScene *scene;
   QStackedLayout *layout;
 };

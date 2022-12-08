@@ -35,6 +35,21 @@
 #ifndef ACADOS_UTILS_TYPES_H_
 #define ACADOS_UTILS_TYPES_H_
 
+/* Symbol visibility in DLLs */
+#ifndef ACADOS_SYMBOL_EXPORT
+  #if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+    #if defined(STATIC_LINKED)
+      #define ACADOS_SYMBOL_EXPORT
+    #else
+      #define ACADOS_SYMBOL_EXPORT __declspec(dllexport)
+    #endif
+  #elif defined(__GNUC__) && ((__GNUC__ >= 4) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
+    #define ACADOS_SYMBOL_EXPORT __attribute__ ((visibility ("default")))
+  #else
+    #define ACADOS_SYMBOL_EXPORT
+  #endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

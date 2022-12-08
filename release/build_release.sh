@@ -13,16 +13,13 @@ if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"
   RELEASE_BRANCH=release3-staging
   DASHCAM_BRANCH=dashcam3-staging
-elif [ -f /EON ]; then
-  FILES_SRC="release/files_eon"
-  RELEASE_BRANCH=release2-staging
-  DASHCAM_BRANCH=dashcam-staging
 else
   exit 0
 fi
 
 # set git identity
 source $DIR/identity.sh
+export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
@@ -43,9 +40,10 @@ cp -pR --parents $(cat $FILES_SRC) $BUILD_DIR/
 cd $BUILD_DIR
 
 rm -f panda/board/obj/panda.bin.signed
+rm -f panda/board/obj/panda_h7.bin.signed
 
-VERSION=$(cat selfdrive/common/version.h | awk -F[\"-]  '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
+VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
@@ -56,6 +54,7 @@ git branch --set-upstream-to=origin/$RELEASE_BRANCH
 pushd panda/
 CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
+mv board/obj/panda_h7.bin.signed /tmp/panda_h7.bin.signed
 popd
 
 # Build
@@ -79,11 +78,12 @@ find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm models/supercombo.dlc
+rm selfdrive/modeld/models/supercombo.onnx
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
 mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
+mv /tmp/panda_h7.bin.signed panda/board/obj/panda_h7.bin.signed
 
 # Restore third_party
 git checkout third_party/

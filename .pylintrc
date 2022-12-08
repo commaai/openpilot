@@ -3,7 +3,7 @@
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code
-extension-pkg-whitelist=scipy cereal.messaging.messaging_pyx
+extension-pkg-whitelist=scipy,cereal.messaging.messaging_pyx,PyQt5,av
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
@@ -54,7 +54,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=C,R,W0613,W0511,W0212,W0201,W0311,W0106,W0603,W0621,W0703,W1201,W1203,E1136,W1514
+disable=C,R,W0613,W0511,W0212,W0201,W0106,W0603,W0621,W0703,W1201,W1203,E1136,W1514
 
 
 # Enable the message, report, category or checker with the given id(s). You can
@@ -249,13 +249,6 @@ max-line-length=100
 
 # Maximum number of lines in a module
 max-module-lines=1000
-
-# List of optional constructs for which whitespace checking is disabled. `dict-
-# separator` is used to allow tabulation in dicts, etc.: {1  : 1,\n222: 2}.
-# `trailing-comma` allows a space between comma and closing bracket: (a, ).
-# `empty-line` allows space-only lines.
-no-space-check=trailing-comma,
-               dict-separator
 
 # Allow the body of a class to be on the same line as the declaration if body
 # contains single statement.

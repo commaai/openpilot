@@ -33,6 +33,6 @@ def unblock_stdout() -> None:
         pass
 
     # os.wait() returns a tuple with the pid and a 16 bit value
-    # whose low byte is the signal number and whose high byte is the exit satus
+    # whose low byte is the signal number and whose high byte is the exit status
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)

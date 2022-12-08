@@ -3,8 +3,8 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
+#include "common/params.h"
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
@@ -303,7 +303,7 @@ void WifiManager::initConnections() {
     const Connection settings = getConnectionSettings(path);
     if (settings.value("connection").value("type") == "802-11-wireless") {
       knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
-    } else if (path.path() != "/") {
+    } else if (settings.value("connection").value("id") == "lte") {
       lteConnectionPath = path;
     }
   }
@@ -345,7 +345,7 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::updateGsmSettings(bool roaming, QString apn) {
+void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
   if (!lteConnectionPath.path().isEmpty()) {
     bool changes = false;
     bool auto_config = apn.isEmpty();
@@ -365,6 +365,13 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn) {
     if (settings.value("gsm").value("home-only").toBool() == roaming) {
       qWarning() << "Changing gsm.home-only to" << !roaming;
       settings["gsm"]["home-only"] = !roaming;
+      changes = true;
+    }
+
+    int meteredInt = metered ? NM_METERED_UNKNOWN : NM_METERED_NO;
+    if (settings.value("connection").value("metered").toInt() != meteredInt) {
+      qWarning() << "Changing connection.metered to" << meteredInt;
+      settings["connection"]["metered"] = meteredInt;
       changes = true;
     }
 
@@ -408,16 +415,16 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
-    int prime_type = uiState()->prime_type;
-    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+  int prime_type = uiState()->prime_type;
+  int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
 
-    if (!ipv4_forward) {
-      QTimer::singleShot(5000, this, [=] {
-        qWarning() << "net.ipv4.ip_forward = 0";
-        std::system("sudo sysctl net.ipv4.ip_forward=0");
-      });
-    }
-    call->deleteLater();
+  if (!ipv4_forward) {
+    QTimer::singleShot(5000, this, [=] {
+      qWarning() << "net.ipv4.ip_forward = 0";
+      std::system("sudo sysctl net.ipv4.ip_forward=0");
+    });
+  }
+  call->deleteLater();
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {

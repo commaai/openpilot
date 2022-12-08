@@ -161,12 +161,12 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linkedSource>/liveLocationKalman/angularVelocityCalibrated/value/2</linkedSource>
-   <additionalSources>
+   <linked_source>/liveLocationKalman/angularVelocityCalibrated/value/2</linked_source>
+   <additional_sources>
     <v1>/carState/steeringPressed</v1>
     <v2>/carControl/enabled</v2>
     <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
-   </additionalSources>
+   </additional_sources>
   </snippet>
   <snippet name="engaged curvature vehicle model">
    <global>engage_delay = 5
@@ -184,11 +184,11 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linkedSource>/controlsState/curvature</linkedSource>
-   <additionalSources>
+   <linked_source>/controlsState/curvature</linked_source>
+   <additional_sources>
     <v1>/carState/steeringPressed</v1>
     <v2>/carControl/enabled</v2>
-   </additionalSources>
+   </additional_sources>
   </snippet>
   <snippet name="engaged curvature plan">
    <global>engage_delay = 5
@@ -206,11 +206,11 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linkedSource>/lateralPlan/curvatures/0</linkedSource>
-   <additionalSources>
+   <linked_source>/lateralPlan/curvatures/0</linked_source>
+   <additional_sources>
     <v1>/carState/steeringPressed</v1>
     <v2>/carControl/enabled</v2>
-   </additionalSources>
+   </additional_sources>
   </snippet>
   <snippet name="engaged_accel_actual">
    <global>engage_delay = 5
@@ -229,12 +229,12 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linkedSource>/carState/aEgo</linkedSource>
-   <additionalSources>
+   <linked_source>/carState/aEgo</linked_source>
+   <additional_sources>
     <v1>/carState/brakePressed</v1>
     <v2>/carState/gasPressed</v2>
     <v3>/carControl/enabled</v3>
-   </additionalSources>
+   </additional_sources>
   </snippet>
   <snippet name="engaged_accel_plan">
    <global>engage_delay = 5
@@ -253,12 +253,12 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linkedSource>/longitudinalPlan/accels/0</linkedSource>
-   <additionalSources>
+   <linked_source>/longitudinalPlan/accels/0</linked_source>
+   <additional_sources>
     <v1>/carState/brakePressed</v1>
     <v2>/carState/gasPressed</v2>
     <v3>/carControl/enabled</v3>
-   </additionalSources>
+   </additional_sources>
   </snippet>
   <snippet name="engaged_accel_actuator">
    <global>engage_delay = 5
@@ -277,12 +277,12 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linkedSource>/carControl/actuators/accel</linkedSource>
-   <additionalSources>
+   <linked_source>/carControl/actuators/accel</linked_source>
+   <additional_sources>
     <v1>/carState/brakePressed</v1>
     <v2>/carState/gasPressed</v2>
     <v3>/carControl/enabled</v3>
-   </additionalSources>
+   </additional_sources>
   </snippet>
  </customMathEquations>
  <snippets/>

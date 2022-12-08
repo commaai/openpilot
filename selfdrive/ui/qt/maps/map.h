@@ -5,22 +5,22 @@
 #include <QGeoCoordinate>
 #include <QGestureEvent>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QLabel>
+#include <QMap>
 #include <QMapboxGL>
 #include <QMouseEvent>
 #include <QOpenGLWidget>
+#include <QPixmap>
 #include <QScopedPointer>
 #include <QString>
-#include <QtGlobal>
-#include <QTimer>
+#include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QMap>
-#include <QPixmap>
+#include <QtGlobal>
 
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
 #include "cereal/messaging/messaging.h"
+#include "common/params.h"
+#include "common/util.h"
+#include "selfdrive/ui/ui.h"
 
 class MapInstructions : public QWidget {
   Q_OBJECT
@@ -91,8 +91,6 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
 
   bool m_sourceAdded = false;
-  SubMaster *sm;
-  QTimer* timer;
 
   bool loaded_once = false;
   bool allow_open = true;
@@ -100,13 +98,14 @@ private:
   // Panning
   QPointF m_lastPos;
   int pan_counter = 0;
-  int zoom_counter = 0;
+  int zoom_counter = -1;
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
-  bool localizer_valid = false;
+  bool laikad_valid = false;
+  bool locationd_valid = false;
 
   MapInstructions* map_instructions;
   MapETA* map_eta;
@@ -115,7 +114,7 @@ private:
   uint64_t route_rcv_frame = 0;
 
 private slots:
-  void timerUpdate();
+  void updateState(const UIState &s);
 
 public slots:
   void offroadTransition(bool offroad);

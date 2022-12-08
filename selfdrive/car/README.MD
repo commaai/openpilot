@@ -1,5 +1,5 @@
 ## Port structure
-##### interace.py
+##### interface.py
 Generic interface to send and receive messages from CAN (controlsd uses this to communicate with car)
 ##### carcontroller.py
 Builds CAN messages to send to car

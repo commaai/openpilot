@@ -1,10 +1,8 @@
 from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
-from selfdrive.config import RADAR_TO_CAMERA
 
 
-# the longer lead decels, the more likely it will keep decelerating
-# TODO is this a good default?
+# Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
 
 # radar tracks
@@ -13,6 +11,8 @@ SPEED, ACCEL = 0, 1   # Kalman filter states enum
 # stationary qualification parameters
 v_ego_stationary = 4.   # no stationary object flag below this speed
 
+RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
+RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
 class Track():
   def __init__(self, v_lead, kalman_params):
@@ -151,7 +151,8 @@ class Cluster():
 
   def potential_low_speed_lead(self, v_ego):
     # stop for stuff in front of you and low speed, even without model confirmation
-    return abs(self.yRel) < 1.5 and (v_ego < v_ego_stationary) and self.dRel < 25
+    # Radar points closer than 0.75, are almost always glitches on toyota radars
+    return abs(self.yRel) < 1.0 and (v_ego < v_ego_stationary) and (0.75 < self.dRel < 25)
 
   def is_potential_fcw(self, model_prob):
     return model_prob > .9

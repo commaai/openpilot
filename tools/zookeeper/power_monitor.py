@@ -1,30 +1,40 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 import sys
 import time
-from tools.zookeeper import Zookeeper
+import datetime
 
-# Usage: check_consumption.py <averaging_time_sec> <max_average_power_W>
-# Exit code: 0 -> passed
-#	           1 -> failed
+from common.realtime import Ratekeeper
+from common.filter_simple import FirstOrderFilter
+from tools.zookeeper import Zookeeper
 
 if __name__ == "__main__":
   z = Zookeeper()
+  z.set_device_power(True)
+  z.set_device_ignition(False)
 
   duration = None
   if len(sys.argv) > 1:
     duration = int(sys.argv[1])
 
+  rate = 123
+  rk = Ratekeeper(rate, print_delay_threshold=None)
+  fltr = FirstOrderFilter(0, 5, 1. / rate, initialized=False)
+
+  measurements = []
+  start_time = time.monotonic()
+
   try:
-    start_time = time.monotonic()
-    measurements = []
     while duration is None or time.monotonic() - start_time < duration:
-      p = z.read_power()
-      print(round(p, 3), "W")
-      measurements.append(p)
-      time.sleep(0.25)
+      fltr.update(z.read_power())
+      if rk.frame % rate == 0:
+        measurements.append(fltr.x)
+        t = datetime.timedelta(seconds=time.monotonic() - start_time)
+        avg = sum(measurements) / len(measurements)
+        print(f"Now: {fltr.x:.2f} W, Avg: {avg:.2f} W over {t}")
+      rk.keep_time()
   except KeyboardInterrupt:
     pass
-  finally:
-    average_power = sum(measurements)/len(measurements)
-    print(f"Average power: {round(average_power, 4)}W")
+
+  t = datetime.timedelta(seconds=time.monotonic() - start_time)
+  avg = sum(measurements) / len(measurements)
+  print(f"\nAverage power: {avg:.2f}W over {t}")

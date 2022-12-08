@@ -1,6 +1,6 @@
 ## LogReader
 
-Route is a class for conviently accessing all the [logs](/selfdrive/loggerd/) from your routes. The LogReader class reads the non-video logs, i.e. rlog.bz2 and qlog.bz2. There's also a matching FrameReader class for reading the videos.
+Route is a class for conveniently accessing all the [logs](/selfdrive/loggerd/) from your routes. The LogReader class reads the non-video logs, i.e. rlog.bz2 and qlog.bz2. There's also a matching FrameReader class for reading the videos.
 
 ```python
 from tools.lib.route import Route
@@ -27,6 +27,24 @@ for msg in lr:
 lr = LogReader(r.log_paths()[1])
 
 # print all the steering angles values from the log
+for msg in lr:
+  if msg.which() == "carState":
+    print(msg.carState.steeringAngleDeg)
+```
+
+### MultiLogIterator
+
+`MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
+
+```python
+from tools.lib.route import Route
+from tools.lib.logreader import MultiLogIterator
+
+# setup a MultiLogIterator to read all the logs in the route
+r = Route("4cf7a6ad03080c90|2021-09-29--13-46-36")
+lr = MultiLogIterator(r.log_paths())
+
+# print all the steering angles values from all the logs in the route
 for msg in lr:
   if msg.which() == "carState":
     print(msg.carState.steeringAngleDeg)

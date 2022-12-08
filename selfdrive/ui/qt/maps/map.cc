@@ -1,16 +1,18 @@
 #include "selfdrive/ui/qt/maps/map.h"
 
+#include <eigen3/Eigen/Dense>
 #include <cmath>
 
 #include <QDebug>
-#include <QPainterPath>
 #include <QFileInfo>
+#include <QPainterPath>
 
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/util.h"
+#include "common/swaglog.h"
+#include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 
 const int PAN_TIMEOUT = 100;
@@ -22,18 +24,12 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
+const float VALID_POS_STD = 50.0; // m
+
 const QString ICON_SUFFIX = ".png";
 
-MapWindow::MapWindow(const QMapboxGLSettings &settings) :
-  m_settings(settings), velocity_filter(0, 10, 0.05) {
-  sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
-
-  // Connect now, so any navRoutes sent while the map is initializing are not dropped
-  sm->update(0);
-
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(50);
+MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   // Instructions
   map_instructions = new MapInstructions(this);
@@ -105,33 +101,65 @@ void MapWindow::initLayers() {
   }
 }
 
-void MapWindow::timerUpdate() {
+void MapWindow::updateState(const UIState &s) {
   if (!uiState()->scene.started) {
     return;
   }
-
+  const SubMaster &sm = *(s.sm);
   update();
 
-  sm->update(0);
-  if (sm->updated("liveLocationKalman")) {
-    auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
-    auto pos = location.getPositionGeodetic();
-    auto orientation = location.getCalibratedOrientationNED();
+  if (sm.updated("liveLocationKalman")) {
+    auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
+    auto locationd_pos = locationd_location.getPositionGeodetic();
+    auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
+    auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
+    locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
+      locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
 
-    if (localizer_valid) {
-      float velocity = location.getVelocityCalibrated().getValue()[0];
-      float bearing = RAD2DEG(orientation.getValue()[2]);
-      auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
-
-      last_position = coordinate;
-      last_bearing = bearing;
-      velocity_filter.update(velocity);
+    if (locationd_valid) {
+      last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
+      last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
+      velocity_filter.update(locationd_velocity.getValue()[0]);
     }
   }
 
-  if (sm->updated("navRoute")) {
+  if (sm.updated("gnssMeasurements")) {
+    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
+    auto laikad_pos = laikad_location.getPositionECEF();
+    auto laikad_pos_ecef = laikad_pos.getValue();
+    auto laikad_pos_std = laikad_pos.getStd();
+    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
+
+    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
+
+    if (laikad_valid && !locationd_valid) {
+      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
+      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
+      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
+
+      // Compute NED velocity
+      LocalCoord converter(ecef);
+      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
+      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
+
+      float velocity = ned_vel.norm();
+      velocity_filter.update(velocity);
+
+      // Convert NED velocity to angle
+      if (velocity > 1.0) {
+        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
+        if (last_bearing) {
+          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
+          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
+        } else {
+          last_bearing = new_bearing;
+        }
+      }
+    }
+  }
+
+  if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Only open the map on setting destination the first time
@@ -147,15 +175,13 @@ void MapWindow::timerUpdate() {
 
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
-    map_instructions->showError("Map Loading");
+    map_instructions->showError(tr("Map Loading"));
     return;
   }
 
   initLayers();
 
-  if (!localizer_valid) {
-    map_instructions->showError("Waiting for GPS");
-  } else {
+  if (locationd_valid || laikad_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -165,6 +191,8 @@ void MapWindow::timerUpdate() {
     carPosSource["type"] = "geojson";
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
     m_map->updateSource("carPosSource", carPosSource);
+  } else {
+    map_instructions->showError(tr("Waiting for GPS"));
   }
 
   if (pan_counter == 0) {
@@ -176,16 +204,17 @@ void MapWindow::timerUpdate() {
 
   if (zoom_counter == 0) {
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
-  } else {
+    zoom_counter = -1;
+  } else if (zoom_counter > 0) {
     zoom_counter--;
   }
 
-  if (sm->updated("navInstruction")) {
-    if (sm->valid("navInstruction")) {
-      auto i = (*sm)["navInstruction"].getNavInstruction();
+  if (sm.updated("navInstruction")) {
+    if (sm.valid("navInstruction")) {
+      auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (localizer_valid) {
+      if (locationd_valid || laikad_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
@@ -196,9 +225,9 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->rcv_frame("navRoute") != route_rcv_frame) {
+  if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
-    auto route = (*sm)["navRoute"].getNavRoute();
+    auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
@@ -207,7 +236,7 @@ void MapWindow::timerUpdate() {
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
-    route_rcv_frame = sm->rcv_frame("navRoute");
+    route_rcv_frame = sm.rcv_frame("navRoute");
   }
 }
 
@@ -333,7 +362,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
-  is_rhd = Params().getBool("IsRHD");
+  is_rhd = Params().getBool("IsRhdDetected");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
   {
@@ -390,10 +419,10 @@ void MapInstructions::updateDistance(float d) {
   if (uiState()->scene.is_metric) {
     if (d > 500) {
       distance_str.setNum(d / 1000, 'f', 1);
-      distance_str += " km";
+      distance_str += tr(" km");
     } else {
       distance_str.setNum(50 * int(d / 50));
-      distance_str += " m";
+      distance_str += tr(" m");
     }
   } else {
     float miles = d * METER_TO_MILE;
@@ -401,10 +430,10 @@ void MapInstructions::updateDistance(float d) {
 
     if (feet > 500) {
       distance_str.setNum(miles, 'f', 1);
-      distance_str += " mi";
+      distance_str += tr(" mi");
     } else {
       distance_str.setNum(50 * int(feet / 50));
-      distance_str += " ft";
+      distance_str += tr(" ft");
     }
   }
 
@@ -458,9 +487,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     // for rhd, reflect direction and then flip
     if (is_rhd) {
       if (fn.contains("left")) {
-        fn.replace(QString("left"), QString("right"));
+        fn.replace("left", "right");
       } else if (fn.contains("right")) {
-        fn.replace(QString("right"), QString("left"));
+        fn.replace("right", "left");
       }
     }
 
@@ -498,9 +527,12 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "turn_straight";
     }
 
+    if (!active) {
+      fn += "_inactive";
+    }
+
     auto icon = new QLabel;
-    int wh = active ? 125 : 75;
-    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {wh, wh}, Qt::IgnoreAspectRatio));
+    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }
@@ -587,7 +619,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   if (params.getBool("NavSettingTime24h")) {
     eta->setText(eta_time.toString("HH:mm"));
-    eta_unit->setText("eta");
+    eta_unit->setText(tr("eta"));
   } else {
     auto t = eta_time.toString("h:mm a").split(' ');
     eta->setText(t[0]);
@@ -597,11 +629,11 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   // Remaining time
   if (s < 3600) {
     time->setText(QString::number(int(s / 60)));
-    time_unit->setText("min");
+    time_unit->setText(tr("min"));
   } else {
     int hours = int(s) / 3600;
     time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)).rightJustified(2, '0'));
-    time_unit->setText("hr");
+    time_unit->setText(tr("hr"));
   }
 
   QString color;
@@ -621,10 +653,10 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   float num = 0;
   if (uiState()->scene.is_metric) {
     num = d / 1000.0;
-    distance_unit->setText("km");
+    distance_unit->setText(tr("km"));
   } else {
     num = d * METER_TO_MILE;
-    distance_unit->setText("mi");
+    distance_unit->setText(tr("mi"));
   }
 
   distance_str.setNum(num, 'f', num < 100 ? 1 : 0);

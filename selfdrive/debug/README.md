@@ -19,7 +19,7 @@ optional arguments:
 ```
 usage: dump.py [-h] [--pipe] [--raw] [--json] [--dump-json] [--no-print] [--addr ADDR] [--values VALUES] [socket [socket ...]]
 
-Dump communcation sockets. See cereal/services.py for a complete list of available sockets.
+Dump communication sockets. See cereal/services.py for a complete list of available sockets.
 
 positional arguments:
   socket           socket names to dump. defaults to all services defined in cereal
@@ -52,7 +52,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --debug               enable ISO-TP/UDS stack debugging output
 
-This tool is meant to run directly on a vehicle-installed comma two or comma three, with
+This tool is meant to run directly on a vehicle-installed comma three, with
 the openpilot/tmux processes stopped. It should also work on a separate PC with a USB-
 attached comma panda. Vehicle ignition must be on. Recommend engine not be running when
 making changes. Must turn ignition off and on again for any changes to take effect.

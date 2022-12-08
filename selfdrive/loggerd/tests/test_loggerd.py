@@ -15,14 +15,12 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.version import get_version
+from system.version import get_version
 from tools.lib.logreader import LogReader
-from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
-from common.transformations.camera import eon_f_frame_size, tici_f_frame_size, \
-                                          eon_d_frame_size, tici_d_frame_size, tici_e_frame_size
+from cereal.visionipc import VisionIpcServer, VisionStreamType
+from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 
@@ -85,8 +83,10 @@ class TestLoggerd(unittest.TestCase):
       ("GitRemote", "gitRemote", "remote"),
     ]
     params = Params()
+    params.clear_all()
     for k, _, v in fake_params:
       params.put(k, v)
+    params.put("LaikadEphemeris", "abc")
 
     lr = list(LogReader(str(self._gen_bootlog())))
     initData = lr[0].initData
@@ -101,24 +101,30 @@ class TestLoggerd(unittest.TestCase):
       with open("/proc/version") as f:
         self.assertEqual(initData.kernelVersion, f.read())
 
-    for _, k, v in fake_params:
-      self.assertEqual(getattr(initData, k), v)
+    # check params
+    logged_params = {entry.key: entry.value for entry in initData.params.entries}
+    expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemeris'}
+    assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
+    assert logged_params['LaikadEphemeris'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemeris'])}"
+    for param_key, initData_key, v in fake_params:
+      self.assertEqual(getattr(initData, initData_key), v)
+      self.assertEqual(logged_params[param_key].decode(), v)
+
+    params.put("LaikadEphemeris", "")
 
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
-    expected_files = {"rlog.bz2", "qlog.bz2", "qcamera.ts", "fcamera.hevc", "dcamera.hevc"}
-    streams = [(VisionStreamType.VISION_STREAM_ROAD, tici_f_frame_size if TICI else eon_f_frame_size, "roadCameraState"),
-              (VisionStreamType.VISION_STREAM_DRIVER, tici_d_frame_size if TICI else eon_d_frame_size, "driverCameraState")]
-    if TICI:
-      expected_files.add("ecamera.hevc")
-      streams.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, tici_e_frame_size, "wideRoadCameraState"))
+    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
+    streams = [(VisionStreamType.VISION_STREAM_ROAD, (*tici_f_frame_size, 2048*2346, 2048, 2048*1216), "roadCameraState"),
+               (VisionStreamType.VISION_STREAM_DRIVER, (*tici_d_frame_size, 2048*2346, 2048, 2048*1216), "driverCameraState"),
+               (VisionStreamType.VISION_STREAM_WIDE_ROAD, (*tici_e_frame_size, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
 
     pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
     vipc_server = VisionIpcServer("camerad")
-    for stream_type, frame_size, _ in streams:
-      vipc_server.create_buffers(stream_type, 40, False, *(frame_size))
+    for stream_type, frame_spec, _ in streams:
+      vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
     vipc_server.start_listener()
 
     for _ in range(5):
@@ -126,11 +132,12 @@ class TestLoggerd(unittest.TestCase):
       length = random.randint(1, 3)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
       managed_processes["loggerd"].start()
+      managed_processes["encoderd"].start()
 
       fps = 20.0
       for n in range(1, int(num_segs*length*fps)+1):
-        for stream_type, frame_size, state in streams:
-          dat = np.empty(int(frame_size[0]*frame_size[1]*3/2), dtype=np.uint8)
+        for stream_type, frame_spec, state in streams:
+          dat = np.empty(frame_spec[2], dtype=np.uint8)
           vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
 
           camera_state = messaging.new_message(state)
@@ -140,6 +147,7 @@ class TestLoggerd(unittest.TestCase):
         time.sleep(1.0/fps)
 
       managed_processes["loggerd"].stop()
+      managed_processes["encoderd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
@@ -188,7 +196,7 @@ class TestLoggerd(unittest.TestCase):
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
-    # TOOD: fix loggerd bug dropping the msgs from the first poll
+    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
     for s in services:
       while not pm.all_readers_updated(s):
@@ -208,7 +216,7 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(1)
     managed_processes["loggerd"].stop()
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
+    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
     lr = list(LogReader(qlog_path))
 
     # check initData and sentinel
@@ -254,7 +262,7 @@ class TestLoggerd(unittest.TestCase):
     time.sleep(2)
     managed_processes["loggerd"].stop()
 
-    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
+    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
 
     # check initData and sentinel
     self._check_init_data(lr)

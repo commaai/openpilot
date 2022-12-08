@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-
-# Python library to control Zookeeper
-
-import ft4222  # pylint: disable=import-error
-import ft4222.I2CMaster  # pylint: disable=import-error
+import ft4222
+import ft4222.I2CMaster
 
 DEBUG = False
 

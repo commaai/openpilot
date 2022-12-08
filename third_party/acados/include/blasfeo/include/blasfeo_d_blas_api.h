@@ -44,6 +44,30 @@
 
 
 
+#ifdef BLAS_API
+#ifdef CBLAS_API
+#ifndef BLASFEO_CBLAS_ENUM
+#define BLASFEO_CBLAS_ENUM
+#ifdef FORTRAN_BLAS_API
+#ifndef CBLAS_H
+enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};
+enum CBLAS_TRANSPOSE {CblasNoTrans=111, CblasTrans=112, CblasConjTrans=113};
+enum CBLAS_UPLO {CblasUpper=121, CblasLower=122};
+enum CBLAS_DIAG {CblasNonUnit=131, CblasUnit=132};
+enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
+#endif // CBLAS_H
+#else // FORTRAN_BLAS_API
+enum BLASFEO_CBLAS_ORDER {BlasfeoCblasRowMajor=101, BlasfeoCblasColMajor=102};
+enum BLASFEO_CBLAS_TRANSPOSE {BlasfeoCblasNoTrans=111, BlasfeoCblasTrans=112, BlasfeoCblasConjTrans=113};
+enum BLASFEO_CBLAS_UPLO {BlasfeoCblasUpper=121, BlasfeoCblasLower=122};
+enum BLASFEO_CBLAS_DIAG {BlasfeoCblasNonUnit=131, BlasfeoCblasUnit=132};
+enum BLASFEO_CBLAS_SIDE {BlasfeoCblasLeft=141, BlasfeoCblasRight=142};
+#endif // FORTRAN_BLAS_API
+#endif // BLASFEO_CBLAS_ENUM
+#endif // CBLAS_API
+#endif // BLAS_API
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,6 +90,14 @@ void dcopy_(int *n, double *x, int *incx, double *y, int *incy);
 //
 double ddot_(int *n, double *x, int *incx, double *y, int *incy);
 
+// BLAS 2
+//
+void dgemv_(char *tran, int *m, int *n, double *alpha, double *A, int *lda, double *x, int *incx, double *beta, double *y, int *incy);
+//
+void dsymv_(char *uplo, int *n, double *alpha, double *A, int *lda, double *x, int *incx, double *beta, double *y, int *incy);
+//
+void dger_(int *m, int *n, double *alpha, double *x, int *incx, double *y, int *incy, double *A, int *lda);
+
 // BLAS 3
 //
 void dgemm_(char *ta, char *tb, int *m, int *n, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
@@ -75,6 +107,8 @@ void dsyrk_(char *uplo, char *ta, int *m, int *k, double *alpha, double *A, int 
 void dtrmm_(char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
 //
 void dtrsm_(char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
+//
+void dsyr2k_(char *uplo, char *ta, int *m, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
 
 
 
@@ -100,49 +134,125 @@ void dtrtrs_(char *uplo, char *trans, char *diag, int *m, int *n, double *A, int
 
 
 
+// aux
+void dgetr_(int *m, int *n, double *A, int *lda, double *B, int *ldb);
+
+
+
+#ifdef CBLAS_API
+
+
+
+// CBLAS 1
+//
+void cblas_daxpy(const int N, const double alpha, const double *X, const int incX, double *Y, const int incY);
+//
+void cblas_dswap(const int N, double *X, const int incX, double *Y, const int incY);
+//
+void cblas_dcopy(const int N, const double *X, const int incX, double *Y, const int incY);
+
+// CBLAS 3
+//
+void cblas_dgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA, const enum CBLAS_TRANSPOSE TransB, const int M, const int N, const int K, const double alpha, const double *A, const int lda, const double *B, const int ldb, const double beta, double *C, const int ldc);
+//
+void cblas_dsyrk(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo, const enum CBLAS_TRANSPOSE Trans, const int N, const int K, const double alpha, const double *A, const int lda, const double beta, double *C, const int ldc);
+//
+void cblas_dtrmm(const enum CBLAS_ORDER Order, const enum CBLAS_SIDE Side, const enum CBLAS_UPLO Uplo, const enum CBLAS_TRANSPOSE TransA, const enum CBLAS_DIAG Diag, const int M, const int N, const double alpha, const double *A, const int lda, double *B, const int ldb);
+//
+void cblas_dtrsm(const enum CBLAS_ORDER Order, const enum CBLAS_SIDE Side, const enum CBLAS_UPLO Uplo, const enum CBLAS_TRANSPOSE TransA, const enum CBLAS_DIAG Diag, const int M, const int N, const double alpha, const double *A, const int lda, double *B, const int ldb);
+
+
+
+#endif // CBLAS_API
+
+
+
 #else // BLASFEO_API
 
 
 
 // BLAS 1
 //
-void blas_daxpy(int *n, double *alpha, double *x, int *incx, double *y, int *incy);
+void blasfeo_blas_daxpy(int *n, double *alpha, double *x, int *incx, double *y, int *incy);
 //
-double blas_ddot(int *n, double *x, int *incx, double *y, int *incy);
+double blasfeo_blas_ddot(int *n, double *x, int *incx, double *y, int *incy);
 //
-void blas_dcopy(int *n, double *x, int *incx, double *y, int *incy);
+void blasfeo_blas_dcopy(int *n, double *x, int *incx, double *y, int *incy);
+
+// BLAS 2
+//
+void blasfeo_blas_dgemv(char *trans, int *m, int *n, double *alpha, double *A, int *lda, double *x, int *incx, double *beta, double *y, int *incy);
+//
+void blasfeo_blas_dsymv(char *uplo, int *n, double *alpha, double *A, int *lda, double *x, int *incx, double *beta, double *y, int *incy);
+//
+void blasfeo_blas_dger(int *m, int *n, double *alpha, double *x, int *incx, double *y, int *incy, double *A, int *lda);
 
 // BLAS 3
 //
-void blas_dgemm(char *ta, char *tb, int *m, int *n, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
+void blasfeo_blas_dgemm(char *ta, char *tb, int *m, int *n, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
 //
-void blas_dsyrk(char *uplo, char *ta, int *m, int *k, double *alpha, double *A, int *lda, double *beta, double *C, int *ldc);
+void blasfeo_blas_dsyrk(char *uplo, char *ta, int *m, int *k, double *alpha, double *A, int *lda, double *beta, double *C, int *ldc);
 //
-void blas_dtrmm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
+void blasfeo_blas_dtrmm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
 //
-void blas_dtrsm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
+void blasfeo_blas_dtrsm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
+//
+void blasfeo_blas_dsyr2k(char *uplo, char *ta, int *m, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
 
 
 
 // LAPACK
 //
-void blas_dgesv(int *m, int *n, double *A, int *lda, int *ipiv, double *B, int *ldb, int *info);
+void blasfeo_lapack_dgesv(int *m, int *n, double *A, int *lda, int *ipiv, double *B, int *ldb, int *info);
 //
-void blas_dgetrf(int *m, int *n, double *A, int *lda, int *ipiv, int *info);
+void blasfeo_lapack_dgetrf(int *m, int *n, double *A, int *lda, int *ipiv, int *info);
 //
-void blas_dgetrf_np(int *m, int *n, double *A, int *lda, int *info);
+void blasfeo_lapack_dgetrf_np(int *m, int *n, double *A, int *lda, int *info);
 //
-void blas_dgetrs(char *trans, int *m, int *n, double *A, int *lda, int *ipiv, double *B, int *ldb, int *info);
+void blasfeo_lapack_dgetrs(char *trans, int *m, int *n, double *A, int *lda, int *ipiv, double *B, int *ldb, int *info);
 //
-void blas_dlaswp(int *n, double *A, int *lda, int *k1, int *k2, int *ipiv, int *incx);
+void blasfeo_lapack_dlaswp(int *n, double *A, int *lda, int *k1, int *k2, int *ipiv, int *incx);
 //
-void blas_dposv(char *uplo, int *m, int *n, double *A, int *lda, double *B, int *ldb, int *info);
+void blasfeo_lapack_dposv(char *uplo, int *m, int *n, double *A, int *lda, double *B, int *ldb, int *info);
 //
-void blas_dpotrf(char *uplo, int *m, double *A, int *lda, int *info);
+void blasfeo_lapack_dpotrf(char *uplo, int *m, double *A, int *lda, int *info);
 //
-void blas_dpotrs(char *uplo, int *m, int *n, double *A, int *lda, double *B, int *ldb, int *info);
+void blasfeo_lapack_dpotrs(char *uplo, int *m, int *n, double *A, int *lda, double *B, int *ldb, int *info);
 //
-void blas_dtrtrs(char *uplo, char *trans, char *diag, int *m, int *n, double *A, int *lda, double *B, int *ldb, int *info);
+void blasfeo_lapack_dtrtrs(char *uplo, char *trans, char *diag, int *m, int *n, double *A, int *lda, double *B, int *ldb, int *info);
+
+
+
+// aux
+void blasfeo_blas_dgetr(int *m, int *n, double *A, int *lda, double *B, int *ldb);
+
+
+
+#ifdef CBLAS_API
+
+
+
+// CBLAS 1
+//
+void blasfeo_cblas_daxpy(const int N, const double alpha, const double *X, const int incX, double *Y, const int incY);
+//
+void blasfeo_cblas_dswap(const int N, double *X, const int incX, double *Y, const int incY);
+//
+void blasfeo_cblas_dcopy(const int N, const double *X, const int incX, double *Y, const int incY);
+
+// CBLAS 3
+//
+void blasfeo_cblas_dgemm(const enum BLASFEO_CBLAS_ORDER Order, const enum BLASFEO_CBLAS_TRANSPOSE TransA, const enum BLASFEO_CBLAS_TRANSPOSE TransB, const int M, const int N, const int K, const double alpha, const double *A, const int lda, const double *B, const int ldb, const double beta, double *C, const int ldc);
+//
+void blasfeo_cblas_dsyrk(const enum BLASFEO_CBLAS_ORDER Order, const enum BLASFEO_CBLAS_UPLO Uplo, const enum BLASFEO_CBLAS_TRANSPOSE Trans, const int N, const int K, const double alpha, const double *A, const int lda, const double beta, double *C, const int ldc);
+//
+void blasfeo_cblas_dtrmm(const enum BLASFEO_CBLAS_ORDER Order, const enum BLASFEO_CBLAS_SIDE Side, const enum BLASFEO_CBLAS_UPLO Uplo, const enum BLASFEO_CBLAS_TRANSPOSE TransA, const enum BLASFEO_CBLAS_DIAG Diag, const int M, const int N, const double alpha, const double *A, const int lda, double *B, const int ldb);
+//
+void blasfeo_cblas_dtrsm(const enum BLASFEO_CBLAS_ORDER Order, const enum BLASFEO_CBLAS_SIDE Side, const enum BLASFEO_CBLAS_UPLO Uplo, const enum BLASFEO_CBLAS_TRANSPOSE TransA, const enum BLASFEO_CBLAS_DIAG Diag, const int M, const int N, const double alpha, const double *A, const int lda, double *B, const int ldb);
+
+
+
+#endif // CBLAS_API
 
 
 

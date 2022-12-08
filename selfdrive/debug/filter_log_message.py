@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import os
 import argparse
 import json
 
 import cereal.messaging as messaging
-from tools.lib.robust_logreader import RobustLogReader as LogReader
+from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 
 LEVELS = {
@@ -46,7 +47,6 @@ def print_androidlog(t, msg):
 
 
 if __name__ == "__main__":
-
   parser = argparse.ArgumentParser()
   parser.add_argument('--level', default='DEBUG')
   parser.add_argument('--addr', default='127.0.0.1')
@@ -55,8 +55,11 @@ if __name__ == "__main__":
 
   logs = None
   if len(args.route):
-    r = Route(args.route[0])
-    logs = r.log_paths()
+    if os.path.exists(args.route[0]):
+      logs = [args.route[0]]
+    else:
+      r = Route(args.route[0])
+      logs = [q_log if r_log is None else r_log for (q_log, r_log) in zip(r.qlog_paths(), r.log_paths())]
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])
@@ -71,6 +74,8 @@ if __name__ == "__main__":
         for m in lr:
           if m.which() == 'logMessage':
             print_logmessage(m.logMonoTime, m.logMessage, min_level)
+          elif m.which() == 'errorLogMessage' and 'qlog' in log:
+            print_logmessage(m.logMonoTime, m.errorLogMessage, min_level)
           elif m.which() == 'androidLog':
             print_androidlog(m.logMonoTime, m.androidLog)
   else:

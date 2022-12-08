@@ -39,20 +39,20 @@
 /**
  * Flags to indicate the different processor features
  */
-enum
-{
-    // x86-64 CPU features
-    BLASFEO_PROCESSOR_FEATURE_AVX  = 0x0001,    /// AVX instruction set
-    BLASFEO_PROCESSOR_FEATURE_AVX2 = 0x0002,    /// AVX2 instruction set
-    BLASFEO_PROCESSOR_FEATURE_FMA  = 0x0004,    /// FMA instruction set
-    BLASFEO_PROCESSOR_FEATURE_SSE3 = 0x0008,    /// SSE3 instruction set
-
-    // ARM CPU features
-    BLASFEO_PROCESSOR_FEATURE_VFPv3  = 0x0100,  /// VFPv3 instruction set
-    BLASFEO_PROCESSOR_FEATURE_NEON   = 0x0100,  /// NEON instruction set
-    BLASFEO_PROCESSOR_FEATURE_VFPv4  = 0x0100,  /// VFPv4 instruction set
-    BLASFEO_PROCESSOR_FEATURE_NEONv2 = 0x0100,  /// NEONv2 instruction set
-} BLASFEO_PROCESSOR_FEATURES;
+//enum
+//{
+//    // x86-64 CPU features
+//    BLASFEO_PROCESSOR_FEATURE_AVX  = 0x0001,    /// AVX instruction set
+//    BLASFEO_PROCESSOR_FEATURE_AVX2 = 0x0002,    /// AVX2 instruction set
+//    BLASFEO_PROCESSOR_FEATURE_FMA  = 0x0004,    /// FMA instruction set
+//    BLASFEO_PROCESSOR_FEATURE_SSE3 = 0x0008,    /// SSE3 instruction set
+//
+//    // ARM CPU features
+//    BLASFEO_PROCESSOR_FEATURE_VFPv3  = 0x0100,  /// VFPv3 instruction set
+//    BLASFEO_PROCESSOR_FEATURE_NEON   = 0x0100,  /// NEON instruction set
+//    BLASFEO_PROCESSOR_FEATURE_VFPv4  = 0x0100,  /// VFPv4 instruction set
+//    BLASFEO_PROCESSOR_FEATURE_NEONv2 = 0x0100,  /// NEONv2 instruction set
+//} BLASFEO_PROCESSOR_FEATURES;
 
 /**
  * Test the features that this processor provides against what the library was compiled with.

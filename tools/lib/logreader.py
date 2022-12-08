@@ -4,9 +4,12 @@ import sys
 import bz2
 import urllib.parse
 import capnp
+import warnings
 
-from tools.lib.filereader import FileReader
+
 from cereal import log as capnp_log
+from tools.lib.filereader import FileReader
+from tools.lib.route import Route, SegmentName
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:
@@ -66,27 +69,43 @@ class MultiLogIterator:
       self._inc()
     return True
 
+  def reset(self):
+    self.__init__(self._log_paths, sort_by_time=self.sort_by_time)
+
 
 class LogReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False):
-    data_version = None
-    _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
-    with FileReader(fn) as f:
-      dat = f.read()
-
-    if ext == "":
-      # old rlogs weren't bz2 compressed
-      ents = capnp_log.Event.read_multiple_bytes(dat)
-    elif ext == ".bz2":
-      dat = bz2.decompress(dat)
-      ents = capnp_log.Event.read_multiple_bytes(dat)
-    else:
-      raise Exception(f"unknown extension {ext}")
-
-    self._ents = list(sorted(ents, key=lambda x: x.logMonoTime) if sort_by_time else ents)
-    self._ts = [x.logMonoTime for x in self._ents]
-    self.data_version = data_version
+  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
+    self.data_version = None
     self._only_union_types = only_union_types
+
+    ext = None
+    if not dat:
+      _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
+      if ext not in ('', '.bz2'):
+        # old rlogs weren't bz2 compressed
+        raise Exception(f"unknown extension {ext}")
+
+      with FileReader(fn) as f:
+        dat = f.read()
+
+    if ext == ".bz2" or dat.startswith(b'BZh9'):
+      dat = bz2.decompress(dat)
+
+    ents = capnp_log.Event.read_multiple_bytes(dat)
+
+    _ents = []
+    try:
+      for e in ents:
+        _ents.append(e)
+    except capnp.KjException:
+      warnings.warn("Corrupted events detected", RuntimeWarning)
+
+    self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
+    self._ts = [x.logMonoTime for x in self._ents]
+
+  @classmethod
+  def from_bytes(cls, dat):
+    return cls("", dat=dat)
 
   def __iter__(self):
     for ent in self._ents:
@@ -98,6 +117,15 @@ class LogReader:
           pass
       else:
         yield ent
+
+def logreader_from_route_or_segment(r, sort_by_time=False):
+  sn = SegmentName(r, allow_route_name=True)
+  route = Route(sn.route_name.canonical_name)
+  if sn.segment_num < 0:
+    return MultiLogIterator(route.log_paths(), sort_by_time=sort_by_time)
+  else:
+    return LogReader(route.log_paths()[sn.segment_num], sort_by_time=sort_by_time)
+
 
 if __name__ == "__main__":
   import codecs

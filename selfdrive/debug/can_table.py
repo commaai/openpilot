@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
 import argparse
-import pandas as pd  # pylint: disable=import-error
+import pandas as pd
 
 import cereal.messaging as messaging
+
+
+def can_table(dat):
+  rows = []
+  for b in dat:
+    r = list(bin(b).lstrip('0b').zfill(8))
+    r += [hex(b)]
+    rows.append(r)
+
+  df = pd.DataFrame(data=rows)
+  df.columns = [str(n) for n in range(7, -1, -1)] + [' ']
+  table = df.to_markdown(tablefmt='grid')
+  return table
 
 
 if __name__ == "__main__":
@@ -28,12 +41,5 @@ if __name__ == "__main__":
     if latest is None:
       continue
 
-    rows = []
-    for b in latest.dat:
-      r = list(bin(b).lstrip('0b').zfill(8))
-      r += [hex(b)]
-      rows.append(r)
-
-    df = pd.DataFrame(data=rows)
-    table = df.to_markdown(tablefmt='grid')
+    table = can_table(latest.dat)
     print(f"\n\n{hex(addr)} ({addr}) on bus {args.bus}\n{table}")

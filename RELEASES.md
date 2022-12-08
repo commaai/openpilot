@@ -1,11 +1,120 @@
-Version 0.8.14 (2022-0X-XX)
+Version 0.9.1 (2022-12-XX)
 ========================
- * bigmodel!
+* Adjust alert volume using ambient noise level
+* Removed driver monitoring timer resetting on interaction if face detected and distracted
+* Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
+* Hyundai Tucson 2022-23 support
+* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+
+Version 0.9.0 (2022-11-21)
+========================
+* New driving model
+  * Internal feature space information content increased tenfold during training to ~700 bits, which makes the model dramatically more accurate
+  * Less reliance on previous frames makes model more reactive and snappy
+  * Trained in new reprojective simulator
+  * Trained in 36 hours from scratch, compared to one week for previous releases
+  * Training now simulates both lateral and longitudinal behavior, which allows openpilot to slow down for turns, stop at traffic lights, and more in experimental mode
+* Experimental driving mode
+  * End-to-end longitudinal control
+  * Stops for traffic lights and stop signs
+  * Slows down for turns
+  * openpilot defaults to chill mode, enable experimental mode in settings
+* Driver monitoring updates
+  * New bigger model with added end-to-end distracted trigger
+  * Reduced false positives during driver calibration
+* Self-tuning torque controller: learns parameters live for each car
+* Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
+* UI updates
+  * Matched speeds shown on car's dash
+  * Multi-language in navigation
+  * Improved update experience
+  * Border turns grey while overriding steering
+  * Bookmark events while driving; view them in comma connect
+  * New onroad visualization for experimental mode
+* tools: new and improved cabana thanks to deanlee!
+* Experimental longitudinal support for Volkswagen, CAN-FD Hyundai, and new GM models
+* Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
+* Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
+* Kia Sportage 2023 support thanks to sunnyhaibin!
+* Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Stinger 2022 support thanks to sunnyhaibin!
+
+Version 0.8.16 (2022-08-26)
+========================
+* New driving model
+  * Reduced turn cutting
+* Auto-detect right hand drive setting with driver monitoring model
+* Improved fan controller for comma three
+* New translations
+  * Japanese thanks to cydia2020!
+  * Brazilian Portuguese thanks to AlexandreSato!
+* Chevrolet Bolt EUV 2022-23 support thanks to JasonJShuler!
+* Chevrolet Silverado 1500 2020-21 support thanks to JasonJShuler!
+* GMC Sierra 1500 2020-21 support thanks to JasonJShuler!
+* Hyundai Ioniq 5 2022 support thanks to sunnyhaibin!
+* Hyundai Kona Electric 2022 support thanks to sunnyhaibin!
+* Hyundai Tucson Hybrid 2022 support thanks to sunnyhaibin!
+* Subaru Legacy 2020-22 support thanks to martinl!
+* Subaru Outback 2020-22 support
+
+Version 0.8.15 (2022-07-20)
+========================
+* New driving model
+  * Path planning uses end-to-end output instead of lane lines at all times
+  * Reduced ping pong
+  * Improved lane centering
+* New lateral controller based on physical wheel torque model
+  * Much smoother control that's consistent across the speed range
+  * Effective feedforward that uses road roll
+  * Simplified tuning, all car-specific parameters can be derived from data
+  * Used on select Toyota and Hyundai models at first
+  * Significantly improved control on TSS-P Prius
+* New driver monitoring model
+  * Bigger model, covering full interior view from driver camera
+  * Works with a wider variety of mounting angles
+  * 3x more unique comma three training data than previous
+* Navigation improvements
+  * Speed limits shown while navigating
+  * Faster position fix by using raw GPS measurements
+* UI updates
+  * Multilanguage support for settings and home screen
+  * New font
+  * Refreshed max speed design
+  * More consistent camera view perspective across cars
+* Reduced power usage: device runs cooler and fan spins less
+* AGNOS 5
+  * Support VSCode remote SSH target
+  * Support for delta updates to reduce data usage on future OS updates
+* Chrysler ECU firmware fingerprinting thanks to realfast!
+* Honda Civic 2022 support
+* Hyundai Tucson 2021 support thanks to bluesforte!
+* Kia EV6 2022 support
+* Lexus NX Hybrid 2020 support thanks to AlexandreSato!
+* Ram 1500 2019-21 support thanks to realfast!
+
+Version 0.8.14 (2022-06-01)
+========================
+ * New driving model
+   * Bigger model, using both of comma three's road-facing cameras
+   * Better at cut-in detection and tight turns
+ * New driver monitoring model
+   * Tweaked network structure to improve output resolution for DSP
+   * Fixed bug in quantization aware training to reduce quantizing errors
+   * Resulted in 7x less MSE and no more random biases at runtime
+ * Added toggle to disable disengaging on the accelerator pedal
+ * comma body support
+ * Audi RS3 support thanks to jyoung8607!
+ * Hyundai Ioniq Plug-in Hybrid 2019 support thanks to sunnyhaibin!
+ * Hyundai Tucson Diesel 2019 support thanks to sunnyhaibin!
+ * Toyota Alphard Hybrid 2021 support
+ * Toyota Avalon Hybrid 2022 support
+ * Toyota RAV4 2022 support
+ * Toyota RAV4 Hybrid 2022 support
 
 Version 0.8.13 (2022-02-18)
 ========================
  * Improved driver monitoring
-   * Retuned driver pose learner for relaxed driving positions
+   * Re-tuned driver pose learner for relaxed driving positions
    * Added reliance on driving model to be more scene adaptive
    * Matched strictness between comma two and comma three
  * Improved performance in turns by compensating for the road bank angle
@@ -151,7 +260,7 @@ Version 0.8.4 (2021-05-17)
  * Delay controls start until system is ready
  * Fuzzy car identification, enabled with Community Features toggle
  * Localizer optimized for increased precision and less CPU usage
- * Retuned lateral control to be more aggressive when model is confident
+ * Re-tuned lateral control to be more aggressive when model is confident
  * Toyota Mirai 2021 support
  * Lexus NX 300 2020 support thanks to goesreallyfast!
  * Volkswagen Atlas 2018-19 support thanks to jyoung8607!
@@ -316,7 +425,7 @@ Version 0.7 (2019-12-13)
  * Improve GM longitudinal control: proper computations for 15Hz radar
  * Move GM port, Toyota with DSU removed, comma pedal in community features; toggle switch required
  * Remove upload over cellular toggle: only upload qlog and qcamera files if not on wifi
- * Refactor Panda code towards ISO26262 and SIL2 compliancy
+ * Refactor Panda code towards ISO26262 and SIL2 compliance
  * Forward stock FCW for Honda Nidec
  * Volkswagen port now standard: comma Harness intercepts stock camera
 

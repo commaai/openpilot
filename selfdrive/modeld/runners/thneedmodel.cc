@@ -2,12 +2,10 @@
 
 #include <cassert>
 
-ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra) {
-  thneed = new Thneed(true);
-  thneed->record = 0;
+ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra, bool luse_tf8, cl_context context) {
+  thneed = new Thneed(true, context);
   thneed->load(path);
   thneed->clexec();
-  thneed->find_inputs_outputs();
 
   recorded = false;
   output = loutput;
@@ -47,7 +45,7 @@ void* ThneedModel::getExtraBuf() {
 
 void ThneedModel::execute() {
   if (!recorded) {
-    thneed->record = THNEED_RECORD;
+    thneed->record = true;
     if (use_extra) {
       float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
       thneed->copy_inputs(inputs);

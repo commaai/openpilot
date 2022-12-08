@@ -32,6 +32,7 @@
         "cost_W_0": 0,
         "cost_W": 0,
         "cost_W_e": 0,
+        "reset_solver": 0,
         "x_init": 0,
         "u_init": 0
     },

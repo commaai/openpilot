@@ -6,11 +6,12 @@
 
 class ONNXModel : public RunModel {
 public:
-  ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool use_extra = false);
+  ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool use_extra = false, bool _use_tf8 = false, cl_context context = NULL);
 	~ONNXModel();
   void addRecurrent(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
+  void addCalib(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
   void addExtra(float *image_buf, int buf_size);
   void execute();
@@ -26,8 +27,11 @@ private:
   int desire_state_size;
   float *traffic_convention_input_buf = NULL;
   int traffic_convention_size;
+  float *calib_input_buf = NULL;
+  int calib_size;
   float *image_input_buf = NULL;
   int image_buf_size;
+  bool use_tf8;
   float *extra_input_buf = NULL;
   int extra_buf_size;
   bool use_extra;

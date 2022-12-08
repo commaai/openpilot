@@ -118,6 +118,8 @@ int dense_qp_qpoases(void *config, dense_qp_in *qp_in, dense_qp_out *qp_out, voi
 //
 void dense_qp_qpoases_eval_sens(void *config_, void *qp_in, void *qp_out, void *opts_, void *mem_, void *work_);
 //
+void dense_qp_qpoases_memory_reset(void *config_, void *qp_in, void *qp_out, void *opts_, void *mem_, void *work_);
+//
 void dense_qp_qpoases_config_initialize_default(void *config_);
 
 #ifdef __cplusplus

@@ -2,7 +2,7 @@ import sys
 import pygame  # pylint: disable=import-error
 import cv2  # pylint: disable=import-error
 
-class Window():
+class Window:
   def __init__(self, w, h, caption="window", double=False, halve=False):
     self.w = w
     self.h = h
@@ -54,7 +54,7 @@ class Window():
 if __name__ == "__main__":
   import numpy as np
   win = Window(200, 200, double=True)
-  img = np.zeros((200, 200, 3), np.uint8)
+  img: np.ndarray = np.zeros((200, 200, 3), np.uint8)
   while 1:
     print("draw")
     img += 1

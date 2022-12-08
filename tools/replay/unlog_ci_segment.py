@@ -35,7 +35,7 @@ def replay(route, segment, loop):
   frame_idx = {m.roadEncodeIdx.frameId: m.roadEncodeIdx.segmentId for m in msgs if m.which() == 'roadEncodeIdx' and m.roadEncodeIdx.type == 'fullHEVC'}
 
   socks = {}
-  lag = 0
+  lag = 0.0
   i = 0
   max_i = len(msgs) - 2
 
@@ -66,7 +66,7 @@ def replay(route, segment, loop):
     lag += (next_msg.logMonoTime - msg.logMonoTime) / 1e9
     lag -= time.time() - start_time
 
-    dt = max(lag, 0)
+    dt = max(lag, 0.0)
     lag -= dt
     time.sleep(dt)
 

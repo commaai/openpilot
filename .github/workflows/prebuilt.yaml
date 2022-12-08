@@ -2,16 +2,15 @@ name: prebuilt
 on:
   schedule:
     - cron: '0 * * * *'
+  workflow_dispatch:
 
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
 
-  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
-      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
 jobs:
   build_prebuilt:
@@ -23,19 +22,19 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
-      uses: lewagon/wait-on-check-action@v0.2
+      uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
       with:
         ref: master
         wait-interval: 30
         running-workflow-name: 'build prebuilt'
-    - uses: actions/checkout@v2
+        check-regexp: ^((?!.*(build master-ci).*).)*$
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Build Docker image
       run: |
         eval "$BUILD"
-        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
+        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f Dockerfile.openpilot .
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN

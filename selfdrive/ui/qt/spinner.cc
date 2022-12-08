@@ -10,7 +10,7 @@
 #include <QString>
 #include <QTransform>
 
-#include "selfdrive/hardware/hw.h"
+#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
@@ -111,7 +111,7 @@ void Spinner::update(int n) {
 }
 
 int main(int argc, char *argv[]) {
-  initApp();
+  initApp(argc, argv);
   QApplication a(argc, argv);
   Spinner spinner;
   setMainWindow(&spinner);

@@ -2,7 +2,7 @@ import numpy as np
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
 
-class Maneuver():
+class Maneuver:
   def __init__(self, title, duration, **kwargs):
     # Was tempted to make a builder class
     self.distance_lead = kwargs.get("initial_distance_lead", 200.0)
@@ -16,6 +16,9 @@ class Maneuver():
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
+    self.ensure_start = kwargs.get("ensure_start", False)
+    self.enabled = kwargs.get("enabled", True)
+    self.e2e = kwargs.get("e2e", False)
 
     self.duration = duration
     self.title = title
@@ -25,23 +28,25 @@ class Maneuver():
       lead_relevancy=self.lead_relevancy,
       speed=self.speed,
       distance_lead=self.distance_lead,
+      enabled=self.enabled,
       only_lead2=self.only_lead2,
-      only_radar=self.only_radar
+      only_radar=self.only_radar,
+      e2e=self.e2e,
     )
 
     valid = True
     logs = []
-    while plant.current_time() < self.duration:
-      speed_lead = np.interp(plant.current_time(), self.breakpoints, self.speed_lead_values)
-      prob = np.interp(plant.current_time(), self.breakpoints, self.prob_lead_values)
-      cruise = np.interp(plant.current_time(), self.breakpoints, self.cruise_values)
+    while plant.current_time < self.duration:
+      speed_lead = np.interp(plant.current_time, self.breakpoints, self.speed_lead_values)
+      prob = np.interp(plant.current_time, self.breakpoints, self.prob_lead_values)
+      cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
       log = plant.step(speed_lead, prob, cruise)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
-      logs.append(np.array([plant.current_time(),
+      logs.append(np.array([plant.current_time,
                             log['distance'],
                             log['distance_lead'],
                             log['speed'],
@@ -50,6 +55,10 @@ class Maneuver():
 
       if d_rel < .4 and (self.only_radar or prob > 0.5):
         print("Crashed!!!!")
+        valid = False
+
+      if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
+        print('LongitudinalPlanner not starting!')
         valid = False
 
     print("maneuver end", valid)

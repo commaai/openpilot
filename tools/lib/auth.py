@@ -46,8 +46,8 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
       return
 
     query = self.path.split('?', 1)[-1]
-    query = parse_qs(query, keep_blank_values=True)
-    self.server.query_params = query
+    query_parsed = parse_qs(query, keep_blank_values=True)
+    self.server.query_params = query_parsed
 
     self.send_response(200)
     self.send_header('Content-type', 'text/plain')
@@ -86,13 +86,13 @@ def auth_redirect_link(method):
     })
     return 'https://github.com/login/oauth/authorize?' + urlencode(params)
   elif method == 'apple':
-      params.update({
-        'client_id': 'ai.comma.login',
-        'response_type': 'code',
-        'response_mode': 'form_post',
-        'scope': 'name email',
-      })
-      return 'https://appleid.apple.com/auth/authorize?' + urlencode(params)
+    params.update({
+      'client_id': 'ai.comma.login',
+      'response_type': 'code',
+      'response_mode': 'form_post',
+      'scope': 'name email',
+    })
+    return 'https://appleid.apple.com/auth/authorize?' + urlencode(params)
   else:
     raise NotImplementedError(f"no redirect implemented for method {method}")
 

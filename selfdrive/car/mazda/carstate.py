@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
@@ -72,11 +72,14 @@ class CarState(CarStateBase):
         self.lkas_allowed_speed = True
       elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
         self.lkas_allowed_speed = False
+    else:
+      self.lkas_allowed_speed = True
 
     # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
     #       it should be used for carState.cruiseState.nonAdaptive instead
     ret.cruiseState.available = cp.vl["CRZ_CTRL"]["CRZ_AVAILABLE"] == 1
     ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]["CRZ_ACTIVE"] == 1
+    ret.cruiseState.standstill = cp.vl["PEDALS"]["STANDSTILL"] == 1
     ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
     if ret.cruiseState.enabled:
@@ -88,7 +91,7 @@ class CarState(CarStateBase):
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
     # it should be enabled (steer lockout). Don't warn until we actually get lkas active
     # and lose it again, i.e, after initial lkas activation
-    ret.steerWarning = self.lkas_allowed_speed and lkas_blocked
+    ret.steerFaultTemporary = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
 
@@ -98,7 +101,7 @@ class CarState(CarStateBase):
     self.lkas_disabled = cp_cam.vl["CAM_LANEINFO"]["LANE_LINES"] == 0
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
-    ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
+    ret.steerFaultPermanent = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
 

@@ -15,7 +15,7 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
   if (!cacheKey.isEmpty()) {
     prevResp = QString::fromStdString(params.get(cacheKey.toStdString()));
     if (!prevResp.isEmpty()) {
-      QTimer::singleShot(500, [=]() { emit requestDone(prevResp, true); });
+      QTimer::singleShot(500, [=]() { emit requestDone(prevResp, true, QNetworkReply::NoError); });
     }
     QObject::connect(this, &HttpRequest::requestDone, [=](const QString &resp, bool success) {
       if (success && resp != prevResp) {

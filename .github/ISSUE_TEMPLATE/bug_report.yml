@@ -8,6 +8,7 @@ body:
       value: >
         Before creating a **bug report**, please check the following:
           * If the issue likely only affects your car model or make, go back and open a **car bug report** instead.
+          * If the issue is related to the driving or driver monitoring models, you should open a [discussion](https://github.com/commaai/openpilot/discussions/categories/model-feedback) instead.
           * Ensure you're running the latest openpilot release.
           * Ensure you're using officially supported hardware. Issues running on PCs have a different issue template.
           * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
@@ -22,23 +23,11 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: hw
-    attributes:
-      label: What hardware does this issue affect?
-      multiple: true
-      options:
-        - comma three
-        - comma two
-        - EON Gold
-    validations:
-      required: true
-
   - type: input
     id: route
     attributes:
       label: Provide a route where the issue occurs
-      description: Ensure the route is fully uploaded at https://useradmin.comma.ai
+      description: Ensure the route is fully uploaded at https://useradmin.comma.ai. We cannot look into issues without routes, or at least a Dongle ID.
       placeholder: 77611a1fac303767|2020-05-11--16-37-07
     validations:
       required: true

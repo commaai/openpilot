@@ -1,6 +1,6 @@
 //==============================================================================
 //
-//  Copyright (c) 2014-2020 Qualcomm Technologies, Inc.
+//  Copyright (c) 2014-2021 Qualcomm Technologies, Inc.
 //  All Rights Reserved.
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -76,6 +76,8 @@ enum class RuntimeCheckOption_t
    NORMAL_CHECK = 0,
    /// Perform basic runtime available check, may be runtime specific
    BASIC_CHECK = 1,
+   /// Perform unsignedPD runtime available check
+   UNSIGNEDPD_CHECK = 2,
 };
 
 /**
@@ -195,6 +197,36 @@ enum class ImageEncoding_t
    /// endian independent and is always BGR byte order.
    BGR = 6
 };
+
+/**
+ * Enumeration that lists the supported LogLevels that can be set by users.
+ */
+enum class LogLevel_t
+{
+    /// Enumeration variable to be used by user to set logging level to FATAL.
+    LOG_FATAL = 0,
+
+    /// Enumeration variable to be used by user to set logging level to ERROR.
+    LOG_ERROR = 1,
+
+    /// Enumeration variable to be used by user to set logging level to WARN.
+    LOG_WARN = 2,
+
+    /// Enumeration variable to be used by user to set logging level to INFO.
+    LOG_INFO = 3,
+
+    /// Enumeration variable to be used by user to set logging level to VERBOSE.
+    LOG_VERBOSE = 4
+};
+
+typedef enum : int
+{
+   UNSPECIFIED = 0,
+   FLOATING_POINT_32 = 1,
+   FLOATING_POINT_16 = 2,
+   FIXED_POINT_8 =  3,
+   FIXED_POINT_16 = 4
+} IOBufferDataType_t;
 
 }} // namespaces end
 

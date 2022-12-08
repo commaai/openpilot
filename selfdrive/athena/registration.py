@@ -3,6 +3,7 @@ import time
 import json
 import jwt
 from pathlib import Path
+from typing import Optional
 
 from datetime import datetime, timedelta
 from common.api import api_get
@@ -10,8 +11,8 @@ from common.params import Params
 from common.spinner import Spinner
 from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import HARDWARE, PC
-from selfdrive.swaglog import cloudlog
+from system.hardware import HARDWARE, PC
+from system.swaglog import cloudlog
 
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
@@ -22,13 +23,13 @@ def is_registered_device() -> bool:
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
-def register(show_spinner=False) -> str:
+def register(show_spinner=False) -> Optional[str]:
   params = Params()
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
-  dongle_id = params.get("DongleId", encoding='utf8')
+  dongle_id: Optional[str] = params.get("DongleId", encoding='utf8')
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   pubkey = Path(PERSIST+"/comma/id_rsa.pub")
@@ -48,7 +49,8 @@ def register(show_spinner=False) -> str:
     # Block until we get the imei
     serial = HARDWARE.get_serial()
     start_time = time.monotonic()
-    imei1, imei2 = None, None
+    imei1: Optional[str] = None
+    imei2: Optional[str] = None
     while imei1 is None and imei2 is None:
       try:
         imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)

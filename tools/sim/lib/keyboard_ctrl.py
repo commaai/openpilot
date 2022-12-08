@@ -38,7 +38,7 @@ def getch() -> str:
 def keyboard_poll_thread(q: 'Queue[str]'):
   while True:
     c = getch()
-    # print("got %s" % c)
+    print("got %s" % c)
     if c == '1':
       q.put("cruise_up")
     elif c == '2':
@@ -53,6 +53,8 @@ def keyboard_poll_thread(q: 'Queue[str]'):
       q.put("brake_%f" % 1.0)
     elif c == 'd':
       q.put("steer_%f" % -0.15)
+    elif c == 'i':
+      q.put("ignition")
     elif c == 'q':
       q.put("quit")
       break

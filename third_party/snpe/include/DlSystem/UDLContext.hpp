@@ -1,6 +1,6 @@
 //==============================================================================
 //
-// Copyright (c) 2016 Qualcomm Technologies, Inc.
+// Copyright (c) 2016-2021 Qualcomm Technologies, Inc.
 // All Rights Reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
@@ -15,10 +15,10 @@
 #include "ZdlExportDefine.hpp"
 
 namespace zdl { namespace DlSystem {
-/** @addtogroup c_plus_plus_apis C++
-@{ */
 
 /**
+ * NOTE: DEPRECATED, MAY BE REMOVED IN THE FUTURE.
+ *
  * @brief .
  *
  * UDLContext holds the user defined layer context which 
@@ -237,7 +237,6 @@ private:
    size_t      m_Size = 0;
    int32_t     m_Id = -1;
 };
-/** @} */ /* end_addtogroup c_plus_plus_apis C++ */
 
 }}
 

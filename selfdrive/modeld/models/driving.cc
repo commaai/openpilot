@@ -8,9 +8,10 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include "selfdrive/common/clutil.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/timing.h"
+#include "common/clutil.h"
+#include "common/params.h"
+#include "common/timing.h"
+#include "common/swaglog.h"
 
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
@@ -21,73 +22,85 @@ std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
 
 // #define DUMP_YUV
 
-template<class T, size_t size>
-constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
-  return kj::ArrayPtr(arr.data(), arr.size());
-}
-
-void model_init(ModelState* s, cl_device_id device_id, cl_context context, bool use_extra) {
+void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
   s->wide_frame = new ModelFrame(device_id, context);
 
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>(use_extra ? "../../models/big_supercombo.thneed" : "../../models/supercombo.thneed",
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<ThneedModel>("models/supercombo.thneed",
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>(use_extra ? "../../models/big_supercombo.onnx" : "../../models/supercombo.onnx",
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<ONNXModel>("models/supercombo.onnx",
 #else
-  s->m = std::make_unique<SNPEModel>(use_extra ? "../../models/big_supercombo.dlc" : "../../models/supercombo.dlc",
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, use_extra);
+  s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
 #endif
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true, false, context);
 
 #ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
+  s->m->addRecurrent(&s->feature_buffer[0], TEMPORAL_SIZE);
 #endif
 
 #ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+  s->m->addDesire(s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  const int idx = Params().getBool("IsRHD") ? 1 : 0;
-  s->traffic_convention[idx] = 1.0;
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in) {
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
 #ifdef DESIRE
+  std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
       if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[i] = desire_in[i];
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = desire_in[i];
       } else {
-        s->pulse_desire[i] = 0.0;
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = 0.0;
       }
       s->prev_desire[i] = desire_in[i];
     }
   }
+LOGT("Desire enqueued");
 #endif
 
+  int rhd_idx = is_rhd;
+  s->traffic_convention[rhd_idx] = 1.0;
+  s->traffic_convention[1-rhd_idx] = 0.0;
+
   // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
+  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->addImage(net_input_buf, s->frame->buf_size);
+  LOGT("Image added");
 
   if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
+    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
     s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+    LOGT("Extra image added");
   }
+
+  if (prepare_only) {
+    return nullptr;
+  }
+
   s->m->execute();
+  LOGT("Execution finished");
+
+  #ifdef TEMPORAL
+    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
+    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
+    LOGT("Features enqueued");
+  #endif
 
   return (ModelOutput*)&s->output;
 }
 
 void model_free(ModelState* s) {
   delete s->frame;
+  delete s->wide_frame;
 }
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
@@ -193,6 +206,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
   std::array<float, TRAJECTORY_SIZE> rot_x, rot_y, rot_z;
+  std::array<float, TRAJECTORY_SIZE> acc_x, acc_y, acc_z;
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
   for(int i=0; i<TRAJECTORY_SIZE; i++) {
@@ -205,6 +219,9 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
     vel_x[i] = plan.mean[i].velocity.x;
     vel_y[i] = plan.mean[i].velocity.y;
     vel_z[i] = plan.mean[i].velocity.z;
+    acc_x[i] = plan.mean[i].acceleration.x;
+    acc_y[i] = plan.mean[i].acceleration.y;
+    acc_z[i] = plan.mean[i].acceleration.z;
     rot_x[i] = plan.mean[i].rotation.x;
     rot_y[i] = plan.mean[i].rotation.y;
     rot_z[i] = plan.mean[i].rotation.z;
@@ -215,6 +232,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPredic
 
   fill_xyzt(framed.initPosition(), T_IDXS_FLOAT, pos_x, pos_y, pos_z, pos_x_std, pos_y_std, pos_z_std);
   fill_xyzt(framed.initVelocity(), T_IDXS_FLOAT, vel_x, vel_y, vel_z);
+  fill_xyzt(framed.initAcceleration(), T_IDXS_FLOAT, acc_x, acc_y, acc_z);
   fill_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rot_x, rot_y, rot_z);
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }
@@ -314,15 +332,27 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
+
+  // temporal pose
+  const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
+  const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
+  const auto &v_std = net_outputs.temporal_pose.velocity_std;
+  const auto &r_std = net_outputs.temporal_pose.rotation_std;
+  auto temporal_pose = framed.initTemporalPose();
+  temporal_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
+  temporal_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
+  temporal_pose.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
+void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
   framed.setFrameId(vipc_frame_id);
+  framed.setFrameIdExtra(vipc_frame_id_extra);
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
@@ -339,14 +369,19 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   const auto &v_mean = net_outputs.pose.velocity_mean;
   const auto &r_mean = net_outputs.pose.rotation_mean;
+  const auto &t_mean = net_outputs.wide_from_device_euler.mean;
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
+  const auto &t_std = net_outputs.wide_from_device_euler.std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+  posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
   posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+  posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

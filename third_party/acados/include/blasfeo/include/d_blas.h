@@ -61,6 +61,7 @@ void dgemm_(char *ta, char *tb, int *m, int *n, int *k, double *alpha, double *A
 void dsyrk_(char *uplo, char *trans, int *n, int *k, double *alpha, double *A, int *lda, double *beta, double *C, int *ldc);
 void dtrmm_(char *side, char *uplo, char *trans, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
 void dtrsm_(char *side, char *uplo, char *trans, char *diag, int *m, int *n, double *alpha, double *A, int *lda, double *B, int *ldb);
+void dsyr2k_(char *uplo, char *trans, int *n, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
 
 // lapack
 void dpotrf_(char *uplo, int *m, double *A, int *lda, int *info);

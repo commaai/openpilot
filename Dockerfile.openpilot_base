@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED 1
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo tzdata locales && \
+    apt-get install -y --no-install-recommends sudo tzdata locales ssh && \
     rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
@@ -12,21 +12,22 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-ENV PIPENV_SYSTEM=1
+ENV POETRY_VIRTUALENVS_CREATE=false
 ENV PYENV_VERSION=3.8.10
 ENV PYENV_ROOT="/root/.pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
-COPY Pipfile Pipfile.lock .python-version update_requirements.sh /tmp/
+COPY pyproject.toml poetry.lock .python-version update_requirements.sh /tmp/
 COPY tools/ubuntu_setup.sh /tmp/tools/
 RUN cd /tmp && \
     tools/ubuntu_setup.sh && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
     rm -rf /root/.cache && \
-    pip uninstall -y pipenv && \
-
+    pip uninstall -y poetry && \
     # remove unused architectures from gcc for panda
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
+
+RUN sudo git config --global --add safe.directory /tmp/openpilot

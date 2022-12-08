@@ -1,15 +1,18 @@
 import os
+from typing import Dict, List
+
+from cereal import car
 from common.params import Params
 from common.basedir import BASEDIR
-from selfdrive.version import is_comma_remote, is_tested_branch
+from system.version import is_comma_remote, is_tested_branch
+from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-from selfdrive.car.vin import get_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
-from selfdrive.swaglog import cloudlog
+from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
+from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
+from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
-from cereal import car
 EventName = car.CarEvent.EventName
 
 
@@ -57,19 +60,12 @@ def load_interfaces(brand_names):
   return ret
 
 
-def _get_interface_names():
-  # read all the folders in selfdrive/car and return a dict where:
-  # - keys are all the car names that which we have an interface for
-  # - values are lists of spefic car models for a given car
+def _get_interface_names() -> Dict[str, List[str]]:
+  # returns a dict of brand name and its respective models
   brand_names = {}
-  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
-    try:
-      brand_name = car_folder.split('/')[-1]
-      model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR
-      model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
-      brand_names[brand_name] = model_names
-    except (ImportError, OSError):
-      pass
+  for brand_name, model_names in get_interface_attr("CAR").items():
+    model_names = [getattr(model_names, c) for c in model_names.__dict__.keys() if not c.startswith("__")]
+    brand_names[brand_name] = model_names
 
   return brand_names
 
@@ -80,12 +76,13 @@ interfaces = load_interfaces(interface_names)
 
 
 # **** for use live only ****
-def fingerprint(logcan, sendcan):
+def fingerprint(logcan, sendcan, num_pandas):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
+  ecu_rx_addrs = set()
 
-  if not fixed_fingerprint and not skip_fw_query:
-    # Vin query only reliably works thorugh OBDII
+  if not skip_fw_query:
+    # Vin query only reliably works through OBDII
     bus = 1
 
     cached_params = Params().get("CarParamsCache")
@@ -96,27 +93,37 @@ def fingerprint(logcan, sendcan):
 
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
-      vin = cached_params.carVin
+      vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
+      cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      _, vin = get_vin(logcan, sendcan, bus)
-      car_fw = get_fw_versions(logcan, sendcan, bus)
+      vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
+      ecu_rx_addrs = get_present_ecus(logcan, sendcan)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
+      cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
-    vin = VIN_UNKNOWN
+    vin, vin_rx_addr = VIN_UNKNOWN, 0
     exact_fw_match, fw_candidates, car_fw = True, set(), []
+    cached = False
 
+  if not is_valid_vin(vin):
+    cloudlog.event("Malformed VIN", vin=vin, error=True)
+    vin = VIN_UNKNOWN
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
 
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
-  frame_fingerprint = 10  # 0.1s
+  frame_fingerprint = 100  # 1s
   car_fingerprint = None
   done = False
+
+  # drain CAN socket so we always get the latest messages
+  messaging.drain_sock_raw(logcan)
 
   while not done:
     a = get_one_can(logcan)
@@ -161,23 +168,25 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
-                 source=source, fuzzy=not exact_match, fw_count=len(car_fw))
+  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
+                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
-def get_car(logcan, sendcan):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
+def get_car(logcan, sendcan, num_pandas=1):
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
-  CarInterface, CarController, CarState = interfaces[candidate]
-  car_params = CarInterface.get_params(candidate, fingerprints, car_fw)
-  car_params.carVin = vin
-  car_params.carFw = car_fw
-  car_params.fingerprintSource = source
-  car_params.fuzzyFingerprint = not exact_match
+  experimental_long = Params().get_bool("ExperimentalLongitudinalEnabled")
 
-  return CarInterface(car_params, CarController, CarState), car_params
+  CarInterface, CarController, CarState = interfaces[candidate]
+  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long)
+  CP.carVin = vin
+  CP.carFw = car_fw
+  CP.fingerprintSource = source
+  CP.fuzzyFingerprint = not exact_match
+
+  return CarInterface(CP, CarController, CarState), CP

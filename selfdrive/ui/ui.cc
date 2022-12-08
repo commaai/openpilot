@@ -6,11 +6,11 @@
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/watchdog.h"
-#include "selfdrive/hardware/hw.h"
+#include "common/params.h"
+#include "common/swaglog.h"
+#include "common/util.h"
+#include "common/watchdog.h"
+#include "system/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
@@ -23,8 +23,8 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
+  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
@@ -35,7 +35,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   return false;
 }
 
-static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
+int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
   for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
@@ -44,7 +44,7 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
+void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
@@ -54,21 +54,32 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
   }
 }
 
-static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, line_vertices_data *pvd, int max_idx) {
+void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+                      float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPointF *v = &pvd->v[0];
+  QPolygonF left_points, right_points;
+  left_points.reserve(max_idx + 1);
+  right_points.reserve(max_idx + 1);
+
   for (int i = 0; i <= max_idx; i++) {
-    v += calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, v);
+    // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
+    if (line_x[i] < 0) continue;
+    QPointF left, right;
+    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
+    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
+    if (l && r) {
+      // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
+      if (!allow_invert && left_points.size() && left.y() > left_points.back().y()) {
+        continue;
+      }
+      left_points.push_back(left);
+      right_points.push_front(right);
+    }
   }
-  for (int i = max_idx; i >= 0; i--) {
-    v += calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, v);
-  }
-  pvd->cnt = v - pvd->v;
-  assert(pvd->cnt <= std::size(pvd->v));
+  *pvd = left_points + right_points;
 }
 
-static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
+void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
@@ -98,7 +109,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
+  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 static void update_sockets(UIState *s) {
@@ -111,27 +122,27 @@ static void update_state(UIState *s) {
 
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+    auto wfde_list = sm["liveCalibration"].getLiveCalibration().getWideFromDeviceEuler();
     Eigen::Vector3d rpy;
-    rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    Eigen::Vector3d wfde;
+    if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    if (wfde_list.size() == 3) wfde << wfde_list[0], wfde_list[1], wfde_list[2];
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
+    Eigen::Matrix3d wide_from_device = euler2rot(wfde);
     Eigen::Matrix3d view_from_device;
     view_from_device << 0,1,0,
                         0,0,1,
                         1,0,0;
     Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
+    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib ;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
+        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
       }
     }
-  }
-  if (s->worldObjectsVisible()) {
-    if (sm.updated("modelV2")) {
-      update_model(s, sm["modelV2"].getModelV2());
-    }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
-    }
+    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
+    scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
     auto pandaStates = sm["pandaStates"].getPandaStates();
@@ -151,57 +162,30 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (!scene.started && sm.updated("sensorEvents")) {
-    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
-          scene.accel_sensor = accel[2];
-        }
-      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount) {
-          scene.gyro_sensor = gyro[1];
-        }
-      }
-    }
-  }
-  if (!Hardware::TICI() && sm.updated("roadCameraState")) {
-    auto camera_state = sm["roadCameraState"].getRoadCameraState();
-
-    float max_lines = Hardware::EON() ? 5408 : 1904;
-    float max_gain = Hardware::EON() ? 1.0: 10.0;
-    float max_ev = max_lines * max_gain;
-
-    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
-  } else if (Hardware::TICI() && sm.updated("wideRoadCameraState")) {
-    auto camera_state = sm["wideRoadCameraState"].getWideRoadCameraState();
-
-    float max_lines = 1904;
-    float max_gain = 10.0;
-    float max_ev = max_lines * max_gain / 6;
-
-    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
-
-    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
+  if (sm.updated("wideRoadCameraState")) {
+    float scale = (sm["wideRoadCameraState"].getWideRoadCameraState().getSensor() == cereal::FrameData::ImageSensor::AR0321) ? 6.0f : 1.0f;
+    scene.light_sensor = std::max(100.0f - scale * sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent(), 0.0f);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
 void ui_update_params(UIState *s) {
-  s->scene.is_metric = Params().getBool("IsMetric");
+  auto params = Params();
+  s->scene.is_metric = params.getBool("IsMetric");
+  s->scene.map_on_left = params.getBool("NavSettingLeftSide");
 }
 
 void UIState::updateStatus() {
   if (scene.started && sm->updated("controlsState")) {
     auto controls_state = (*sm)["controlsState"].getControlsState();
     auto alert_status = controls_state.getAlertStatus();
+    auto state = controls_state.getState();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       status = STATUS_ALERT;
+    } else if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
+      status = STATUS_OVERRIDE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
@@ -212,24 +196,31 @@ void UIState::updateStatus() {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      scene.end_to_end = Params().getBool("EndToEndToggle");
-      wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      wide_cam_only = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
+  }
+
+  // Handle prime type change
+  if (prime_type != prime_type_prev) {
+    prime_type_prev = prime_type;
+    emit primeTypeChanged(prime_type);
+    Params().put("PrimeType", std::to_string(prime_type));
   }
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
-    "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
-    "wideRoadCameraState",
+    "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
   });
 
   Params params;
-  wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+  wide_cam_only = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
+  language = QString::fromStdString(params.get("LanguageSetting"));
 
   // update timer
   timer = new QTimer(this);
@@ -243,7 +234,7 @@ void UIState::update() {
   updateStatus();
 
   if (sm->frame % UI_FREQ == 0) {
-    watchdog_kick();
+    watchdog_kick(nanos_since_boot());
   }
   emit uiUpdate(*this);
 }
@@ -279,8 +270,7 @@ void Device::resetInteractiveTimout() {
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = BACKLIGHT_OFFROAD;
   if (s.scene.started) {
-    // Scale to 0% to 100%
-    clipped_brightness = 100.0 * s.scene.light_sensor;
+    clipped_brightness = s.scene.light_sensor;
 
     // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
     if (clipped_brightness <= 8) {
@@ -306,24 +296,11 @@ void Device::updateBrightness(const UIState &s) {
   }
 }
 
-bool Device::motionTriggered(const UIState &s) {
-  static float accel_prev = 0;
-  static float gyro_prev = 0;
-
-  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-
-  gyro_prev = s.scene.gyro_sensor;
-  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
-
-  return (!awake && accel_trigger && gyro_trigger);
-}
-
 void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
 
-  if (ignition_just_turned_off || motionTriggered(s)) {
+  if (ignition_just_turned_off) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimout();

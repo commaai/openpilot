@@ -25,12 +25,7 @@ const std::string GIT_URL = get_str("https://github.com/commaai/openpilot.git" "
 const std::string BRANCH_STR = get_str(BRANCH "?                                                                ");
 
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
-
-#ifdef QCOM
-  #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
-#else
-  #define CONTINUE_PATH "/data/continue.sh"
-#endif
+#define CONTINUE_PATH "/data/continue.sh"
 
 const QString CACHE_PATH = "/data/openpilot.cache";
 
@@ -58,7 +53,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
   layout->setContentsMargins(150, 290, 150, 150);
   layout->setSpacing(0);
 
-  QLabel *title = new QLabel("Installing...");
+  QLabel *title = new QLabel(tr("Installing..."));
   title->setStyleSheet("font-size: 90px; font-weight: 600;");
   layout->addWidget(title, 0, Qt::AlignTop);
 
@@ -112,7 +107,7 @@ void Installer::doInstall() {
     qDebug() << "Waiting for valid time";
   }
 
-  // cleanup previous install attemps
+  // cleanup previous install attempts
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
   // do the install
@@ -146,9 +141,9 @@ void Installer::cachedFetch(const QString &cache) {
 void Installer::readProgress() {
   const QVector<QPair<QString, int>> stages = {
     // prefix, weight in percentage
-    {"Receiving objects: ", 91},
-    {"Resolving deltas: ", 2},
-    {"Updating files: ", 7},
+    {tr("Receiving objects: "), 91},
+    {tr("Resolving deltas: "), 2},
+    {tr("Updating files: "), 7},
   };
 
   auto line = QString(proc.readAllStandardError());
@@ -212,16 +207,12 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
-#ifdef QCOM
-  QTimer::singleShot(100, &QCoreApplication::quit);
-#else
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
-#endif
 }
 
 int main(int argc, char *argv[]) {
-  initApp();
+  initApp(argc, argv);
   QApplication a(argc, argv);
   Installer installer;
   setMainWindow(&installer);

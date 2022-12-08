@@ -1,10 +1,11 @@
 import copy
+from collections import deque
 from cereal import car
+from common.conversions import Conversions as CV
 from selfdrive.car.tesla.values import DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.config import Conversions as CV
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -17,6 +18,7 @@ class CarState(CarStateBase):
     self.hands_on_level = 0
     self.steer_warning = None
     self.acc_state = 0
+    self.das_control_counters = deque(maxlen=32)
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -43,8 +45,8 @@ class CarState(CarStateBase):
     ret.steeringRateDeg = -cp.vl["STW_ANGLHP_STAT"]["StW_AnglHP_Spd"] # This is from a different angle sensor, and at different rate
     ret.steeringTorque = -cp.vl["EPAS_sysStatus"]["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
-    ret.steerError = steer_status == "EAC_FAULT"
-    ret.steerWarning = self.steer_warning != "EAC_ERROR_IDLE"
+    ret.steerFaultPermanent = steer_status == "EAC_FAULT"
+    ret.steerFaultTemporary = (self.steer_warning not in ("EAC_ERROR_IDLE", "EAC_ERROR_HANDS_ON"))
 
     # Cruise state
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp.vl["DI_state"]["DI_cruiseState"]), None)
@@ -87,9 +89,13 @@ class CarState(CarStateBase):
 
     # TODO: blindspot
 
+    # AEB
+    ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
+
     # Messages needed by carcontroller
     self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
     self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
+    self.das_control_counters.extend(cp_cam.vl_all["DAS_control"]["DAS_controlCounter"])
 
     return ret
 
@@ -177,6 +183,8 @@ class CarState(CarStateBase):
     signals = [
       # sig_name, sig_address
       ("DAS_accState", "DAS_control"),
+      ("DAS_aebEvent", "DAS_control"),
+      ("DAS_controlCounter", "DAS_control"),
     ]
     checks = [
       # sig_address, frequency

@@ -26,16 +26,16 @@ void Reset::doReset() {
   if (rm == 0 || fmt == 0) {
     std::system("sudo reboot");
   }
-  body->setText("Reset failed. Reboot to try again.");
+  body->setText(tr("Reset failed. Reboot to try again."));
   rebootBtn->show();
 }
 
 void Reset::confirm() {
-  const QString confirm_txt = "Are you sure you want to reset your device?";
+  const QString confirm_txt = tr("Are you sure you want to reset your device?");
   if (body->text() != confirm_txt) {
     body->setText(confirm_txt);
   } else {
-    body->setText("Resetting device...");
+    body->setText(tr("Resetting device..."));
     rejectBtn->hide();
     rebootBtn->hide();
     confirmBtn->hide();
@@ -50,13 +50,13 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   main_layout->setContentsMargins(45, 220, 45, 45);
   main_layout->setSpacing(0);
 
-  QLabel *title = new QLabel("System Reset");
+  QLabel *title = new QLabel(tr("System Reset"));
   title->setStyleSheet("font-size: 90px; font-weight: 600;");
   main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
   main_layout->addSpacing(60);
 
-  body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
+  body = new QLabel(tr("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot."));
   body->setWordWrap(true);
   body->setStyleSheet("font-size: 80px; font-weight: light;");
   main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
@@ -65,11 +65,11 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(blayout);
   blayout->setSpacing(50);
 
-  rejectBtn = new QPushButton("Cancel");
+  rejectBtn = new QPushButton(tr("Cancel"));
   blayout->addWidget(rejectBtn);
   QObject::connect(rejectBtn, &QPushButton::clicked, QCoreApplication::instance(), &QCoreApplication::quit);
 
-  rebootBtn = new QPushButton("Reboot");
+  rebootBtn = new QPushButton(tr("Reboot"));
   blayout->addWidget(rebootBtn);
 #ifdef __aarch64__
   QObject::connect(rebootBtn, &QPushButton::clicked, [=]{
@@ -77,7 +77,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   });
 #endif
 
-  confirmBtn = new QPushButton("Confirm");
+  confirmBtn = new QPushButton(tr("Confirm"));
   confirmBtn->setStyleSheet("background-color: #465BEA;");
   blayout->addWidget(confirmBtn);
   QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
@@ -85,7 +85,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   rejectBtn->setVisible(!recover);
   rebootBtn->setVisible(recover);
   if (recover) {
-    body->setText("Unable to mount data partition. Press confirm to reset your device.");
+    body->setText(tr("Unable to mount data partition. Press confirm to reset your device."));
   }
 
   setStyleSheet(R"(

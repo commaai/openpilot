@@ -3,7 +3,7 @@ from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.config import Conversions as CV
+from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
@@ -44,7 +44,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"] == 0.0 and cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"] == 0.0
 
     if self.CP.carFingerprint == CAR.ALTIMA:
       ret.cruiseState.enabled = bool(cp.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
@@ -74,8 +74,8 @@ class CarState(CarStateBase):
         conversion = CV.MPH_TO_MS if cp.vl["HUD_SETTINGS"]["SPEED_MPH"] else CV.KPH_TO_MS
       else:
         conversion = CV.MPH_TO_MS if cp.vl["HUD"]["SPEED_MPH"] else CV.KPH_TO_MS
-      speed -= 1  # Speed on HUD is always 1 lower than actually sent on can bus
       ret.cruiseState.speed = speed * conversion
+      ret.cruiseState.speedCluster = (speed - 1) * conversion  # Speed on HUD is always 1 lower than actually sent on can bus
 
     if self.CP.carFingerprint == CAR.ALTIMA:
       ret.steeringTorque = cp_cam.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]

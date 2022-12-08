@@ -36,8 +36,8 @@ class TestSimpleKalman(unittest.TestCase):
     self.assertEqual(self.kf.x, [[1.0], [1.0]])
 
   def update_returns_state(self):
-      x = self.kf.update(100)
-      self.assertEqual(x, self.kf.x)
+    x = self.kf.update(100)
+    self.assertEqual(x, self.kf.x)
 
   def test_old_equal_new(self):
     for _ in range(1000):

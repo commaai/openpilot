@@ -70,28 +70,28 @@ class AcadosSimDims:
 
     @nx.setter
     def nx(self, nx):
-        if type(nx) == int and nx > 0:
+        if isinstance(nx, int) and nx > 0:
             self.__nx = nx
         else:
             raise Exception('Invalid nx value, expected positive integer. Exiting.')
 
     @nz.setter
     def nz(self, nz):
-        if type(nz) == int and nz > -1:
+        if isinstance(nz, int) and nz > -1:
             self.__nz = nz
         else:
             raise Exception('Invalid nz value, expected nonnegative integer. Exiting.')
 
     @nu.setter
     def nu(self, nu):
-        if type(nu) == int and nu > -1:
+        if isinstance(nu, int) and nu > -1:
             self.__nu = nu
         else:
             raise Exception('Invalid nu value, expected nonnegative integer. Exiting.')
 
     @np.setter
     def np(self, np):
-        if type(np) == int and np > -1:
+        if isinstance(np, int) and np > -1:
             self.__np = np
         else:
             raise Exception('Invalid np value, expected nonnegative integer. Exiting.')
@@ -294,14 +294,15 @@ class AcadosSim:
         self.solver_options = AcadosSimOpts()
         """Solver Options, type :py:class:`acados_template.acados_sim.AcadosSimOpts`"""
 
-        self.acados_include_path = f'{acados_path}/include'
-        """Path to acados include directors (set automatically), type: `string`"""
-        self.acados_lib_path = f'{acados_path}/lib'
+        self.acados_include_path = os.path.join(acados_path, 'include').replace(os.sep, '/') # the replace part is important on Windows for CMake
+        """Path to acados include directory (set automatically), type: `string`"""
+        self.acados_lib_path = os.path.join(acados_path, 'lib').replace(os.sep, '/') # the replace part is important on Windows for CMake
         """Path to where acados library is located (set automatically), type: `string`"""
 
         self.code_export_directory = 'c_generated_code'
         """Path to where code will be exported. Default: `c_generated_code`."""
 
+        self.cython_include_dirs = ''
         self.__parameter_values = np.array([])
 
     @property

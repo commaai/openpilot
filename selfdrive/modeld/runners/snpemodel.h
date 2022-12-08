@@ -1,4 +1,5 @@
 #pragma once
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
@@ -22,22 +23,24 @@
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false);
+  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false, cl_context context = NULL);
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
+  void addCalib(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
   void addExtra(float *image_buf, int buf_size);
   void execute();
 
 #ifdef USE_THNEED
-  Thneed *thneed = NULL;
+  std::unique_ptr<Thneed> thneed;
+  bool thneed_recorded = false;
 #endif
 
 private:
   std::string model_data;
 
-#if defined(QCOM) || defined(QCOM2)
+#ifdef QCOM2
   zdl::DlSystem::Runtime_t Runtime;
 #endif
 
@@ -49,6 +52,7 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> inputBuffer;
   float *input;
   size_t input_size;
+  bool use_tf8;
 
   // snpe output stuff
   zdl::DlSystem::UserBufferMap outputMap;
@@ -71,4 +75,6 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
   float *desire;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
+  float *calib;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> calibBuffer;
 };

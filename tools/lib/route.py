@@ -3,14 +3,15 @@ import re
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
+from typing import Optional
 
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 from tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog.bz2']
+QLOG_FILENAMES = ['qlog', 'qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
+LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
@@ -196,7 +197,11 @@ class SegmentName:
   # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
   # of this class instead of manually constructing a segment name (use canonical_name prop instead)
   def __init__(self, name_str: str, allow_route_name=False):
-    self._name_str = name_str
+    data_dir_path_separator_index = name_str.rsplit("|", 1)[0].rfind("/")
+    use_data_dir = (data_dir_path_separator_index != -1) and ("|" in name_str)
+    self._name_str = name_str[data_dir_path_separator_index + 1:] if use_data_dir else name_str
+    self._data_dir = name_str[:data_dir_path_separator_index] if use_data_dir else None
+
     seg_num_delim = "--" if self._name_str.count("--") == 2 else "/"
     name_parts = self._name_str.rsplit(seg_num_delim, 1)
     if allow_route_name and len(name_parts) == 1:
@@ -219,5 +224,8 @@ class SegmentName:
 
   @property
   def route_name(self) -> RouteName: return self._route_name
+
+  @property
+  def data_dir(self) -> Optional[str]: return self._data_dir
 
   def __str__(self) -> str: return self._canonical_name

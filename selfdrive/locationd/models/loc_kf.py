@@ -5,33 +5,14 @@ import sys
 import numpy as np
 import sympy as sp
 
-from selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.lst_sq_computer import LstSqComputer
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
+from selfdrive.locationd.models.constants import ObservationKind
+from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
+
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
-
-
-def parse_prr(m):
-  from laika.raw_gnss import GNSSMeasurement
-  sat_pos_vel_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
-                                  m[GNSSMeasurement.SAT_VEL]))
-  R_i = np.atleast_2d(m[GNSSMeasurement.PRR_STD]**2)
-  z_i = m[GNSSMeasurement.PRR]
-  return z_i, R_i, sat_pos_vel_i
-
-
-def parse_pr(m):
-  from laika.raw_gnss import GNSSMeasurement
-  pseudorange = m[GNSSMeasurement.PR]
-  pseudorange_stdev = m[GNSSMeasurement.PR_STD]
-  sat_pos_freq_i = np.concatenate((m[GNSSMeasurement.SAT_POS],
-                                   np.array([m[GNSSMeasurement.GLONASS_FREQ]])))
-  z_i = np.atleast_1d(pseudorange)
-  R_i = np.atleast_2d(pseudorange_stdev**2)
-  return z_i, R_i, sat_pos_freq_i
-
 
 class States():
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
@@ -44,13 +25,15 @@ class States():
   ODO_SCALE_UNUSED = slice(18, 19)  # odometer scale
   ACCELERATION = slice(19, 22)  # Acceleration in device frame in m/s**2
   FOCAL_SCALE_UNUSED = slice(22, 23)  # focal length scale
-  IMU_OFFSET = slice(23, 26)  # imu offset angles in radians
+  IMU_FROM_DEVICE_EULER = slice(23, 26)  # imu offset angles in radians
   GLONASS_BIAS = slice(26, 27)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   GLONASS_FREQ_SLOPE = slice(27, 28)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
   ACCELEROMETER_SCALE_UNUSED = slice(29, 30)  # scale of mems accelerometer
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
-  # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
+  # TODO the offset is likely a translation of the sensor, not a rotation of the camera
+  WIDE_FROM_DEVICE_EULER = slice(33, 36)  # wide camera offset angles in radians (tici only)
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
@@ -64,12 +47,13 @@ class States():
   ODO_SCALE_ERR_UNUSED = slice(17, 18)
   ACCELERATION_ERR = slice(18, 21)
   FOCAL_SCALE_ERR_UNUSED = slice(21, 22)
-  IMU_OFFSET_ERR = slice(22, 25)
+  IMU_FROM_DEVICE_EULER_ERR = slice(22, 25)
   GLONASS_BIAS_ERR = slice(25, 26)
   GLONASS_FREQ_SLOPE_ERR = slice(26, 27)
   CLOCK_ACCELERATION_ERR = slice(27, 28)
   ACCELEROMETER_SCALE_ERR_UNUSED = slice(28, 29)
   ACCELEROMETER_BIAS_ERR = slice(29, 32)
+  WIDE_FROM_DEVICE_EULER_ERR = slice(32, 35)
 
 
 class LocKalman():
@@ -87,6 +71,7 @@ class LocKalman():
                         0, 0,
                         0,
                         1,
+                        0, 0, 0,
                         0, 0, 0], dtype=np.float64)
 
   # state covariance
@@ -99,30 +84,16 @@ class LocKalman():
                        0.02**2,
                        2**2, 2**2, 2**2,
                        0.01**2,
-                       (0.01)**2, (0.01)**2, (0.01)**2,
+                       0.01**2, 0.01**2, 0.01**2,
                        10**2, 1**2,
                        0.2**2,
                        0.05**2,
-                       0.05**2, 0.05**2, 0.05**2])
+                       0.05**2, 0.05**2, 0.05**2,
+                       0.01**2, 0.01**2, 0.01**2])
 
-  # process noise
-  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.0**2, 0.0**2, 0.0**2,
-               0.1**2, 0.1**2, 0.1**2,
-               (.1)**2, (0.0)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.02 / 100)**2,
-               3**2, 3**2, 3**2,
-               0.001**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
-               (.1)**2, (.01)**2,
-               0.005**2,
-               (0.02 / 100)**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2])
 
   # measurements that need to pass mahalanobis distance outlier rejector
-  maha_test_kinds = [ObservationKind.ORB_FEATURES]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
+  maha_test_kinds = [ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
   dim_augment = 7
   dim_augment_err = 6
 
@@ -153,13 +124,15 @@ class LocKalman():
     cd = state[States.CLOCK_DRIFT, :]
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
-    imu_angles = state[States.IMU_OFFSET, :]
-    imu_angles[0, 0] = 0
-    imu_angles[2, 0] = 0
+    imu_from_device_euler = state[States.IMU_FROM_DEVICE_EULER, :]
+    imu_from_device_euler[0, 0] = 0  # not observable enough
+    imu_from_device_euler[2, 0] = 0  # not observable enough
     glonass_bias = state[States.GLONASS_BIAS, :]
     glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
     ca = state[States.CLOCK_ACCELERATION, :]
     accel_bias = state[States.ACCELEROMETER_BIAS, :]
+    wide_from_device_euler = state[States.WIDE_FROM_DEVICE_EULER, :]
+    wide_from_device_euler[0, 0] = 0  # not observable enough
 
     dt = sp.Symbol('dt')
 
@@ -284,15 +257,15 @@ class LocKalman():
                                         los_vector[2] * (sat_vz - vz) +
                                         cd[0]])
 
-    imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = imu_rot * sp.Matrix([vroll + roll_bias,
+    imu_from_device = euler_rotate(*imu_from_device_euler)
+    h_gyro_sym = imu_from_device * sp.Matrix([vroll + roll_bias,
                                       vpitch + pitch_bias,
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
     # add 1 for stability, prevent division by 0
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
-    h_acc_sym = imu_rot * (gravity + acceleration + accel_bias)
+    h_acc_sym = imu_from_device * (gravity + acceleration + accel_bias)
     h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
     h_relative_motion = sp.Matrix(quat_rot.T * v)
@@ -308,22 +281,29 @@ class LocKalman():
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
+    wide_from_device = euler_rotate(*wide_from_device_euler)
     # MSCKF configuration
     if N > 0:
       # experimentally found this is correct value for imx298 with 910 focal length
       # this is a variable so it can change with focus, but we disregard that for now
+      # TODO: this isn't correct for tici
       focal_scale = 1.01
       # Add observation functions for orb feature tracks
       track_epos_sym = sp.MatrixSymbol('track_epos_sym', 3, 1)
       track_x, track_y, track_z = track_epos_sym
       h_track_sym = sp.Matrix(np.zeros(((1 + N) * 2, 1)))
+      h_track_wide_cam_sym = sp.Matrix(np.zeros(((1 + N) * 2, 1)))
+
       track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
       track_pos_rot_sym = quat_rot.T * track_pos_sym
+      track_pos_rot_wide_cam_sym = wide_from_device * track_pos_rot_sym
       h_track_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
-                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
+                                       focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
+      h_track_wide_cam_sym[-2:, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
+                                                focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
 
       h_msckf_test_sym = sp.Matrix(np.zeros(((1 + N) * 3, 1)))
-      h_msckf_test_sym[-3:, :] = sp.Matrix([track_x - x, track_y - y, track_z - z])
+      h_msckf_test_sym[-3:, :] = track_pos_sym
 
       for n in range(N):
         idx = dim_main + n * dim_augment
@@ -333,20 +313,44 @@ class LocKalman():
         quat_rot = quat_rotate(*q)
         track_pos_sym = sp.Matrix([track_x - x, track_y - y, track_z - z])
         track_pos_rot_sym = quat_rot.T * track_pos_sym
+        track_pos_rot_wide_cam_sym = wide_from_device * track_pos_rot_sym
         h_track_sym[n * 2:n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_sym[1] / track_pos_rot_sym[0]),
                                                      focal_scale * (track_pos_rot_sym[2] / track_pos_rot_sym[0])])
-        h_msckf_test_sym[n * 3:n * 3 + 3, :] = sp.Matrix([track_x - x, track_y - y, track_z - z])
+        h_track_wide_cam_sym[n * 2: n * 2 + 2, :] = sp.Matrix([focal_scale * (track_pos_rot_wide_cam_sym[1] / track_pos_rot_wide_cam_sym[0]),
+                                                               focal_scale * (track_pos_rot_wide_cam_sym[2] / track_pos_rot_wide_cam_sym[0])])
+        h_msckf_test_sym[n * 3:n * 3 + 3, :] = track_pos_sym
 
       obs_eqs.append([h_msckf_test_sym, ObservationKind.MSCKF_TEST, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.ORB_FEATURES, track_epos_sym])
+      obs_eqs.append([h_track_wide_cam_sym, ObservationKind.ORB_FEATURES_WIDE, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.FEATURE_TRACK_TEST, track_epos_sym])
-      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES]]
+      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
     else:
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
 
-  def __init__(self, generated_dir, N=4, max_tracks=3000):
+  def __init__(self, generated_dir, N=4, erratic_clock=False):
     name = f"{self.name}_{N}"
+
+
+    # process noise
+    clock_error_drift = 100.0 if erratic_clock else 0.1
+    self.Q = np.diag([0.03**2, 0.03**2, 0.03**2,
+                      0.0**2, 0.0**2, 0.0**2,
+                      0.0**2, 0.0**2, 0.0**2,
+                      0.1**2, 0.1**2, 0.1**2,
+                      (clock_error_drift)**2, (0)**2,
+                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                      (0.02 / 100)**2,
+                      3**2, 3**2, 3**2,
+                      0.001**2,
+                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
+                      (.1)**2, (.01)**2,
+                      0.005**2,
+                      (0.02 / 100)**2,
+                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+
 
     self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
                       ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
@@ -367,7 +371,6 @@ class LocKalman():
     if self.N > 0:
       x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
       self.computer = LstSqComputer(generated_dir, N)
-      self.max_tracks = max_tracks
 
     self.quaternion_idxs = [3, ] + [(self.dim_main + i * self.dim_augment + 3)for i in range(self.N)]
 
@@ -427,7 +430,7 @@ class LocKalman():
       r = self.predict_and_update_pseudorange(data, t, kind)
     elif kind == ObservationKind.PSEUDORANGE_RATE_GPS or kind == ObservationKind.PSEUDORANGE_RATE_GLONASS:
       r = self.predict_and_update_pseudorange_rate(data, t, kind)
-    elif kind == ObservationKind.ORB_FEATURES:
+    elif kind == ObservationKind.ORB_FEATURES or kind == ObservationKind.ORB_FEATURES_WIDE:
       r = self.predict_and_update_orb_features(data, t, kind)
     elif kind == ObservationKind.MSCKF_TEST:
       r = self.predict_and_update_msckf_test(data, t, kind)
@@ -474,14 +477,14 @@ class LocKalman():
     z = trans[:, :3]
     R = np.zeros((len(trans), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(trans[i, 3:]**2)
+      R[i, :, :] = np.diag(trans[i, 3:]**2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_odo_rot(self, rot, t, kind):
     z = rot[:, :3]
     R = np.zeros((len(rot), 3, 3))
     for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(rot[i, 3:]**2)
+      R[i, :, :] = np.diag(rot[i, 3:]**2)
     return self.filter.predict_and_update_batch(t, kind, z, R)
 
   def predict_and_update_orb_features(self, tracks, t, kind):
@@ -492,8 +495,12 @@ class LocKalman():
     ecef_pos[:] = np.nan
     poses = self.x[self.dim_main:].reshape((-1, 7))
     times = tracks.reshape((len(tracks), self.N + 1, 4))[:, :, 0]
-    good_counter = 0
-    if times.any() and np.allclose(times[0, :-1], self.filter.get_augment_times(), rtol=1e-6):
+    if kind==ObservationKind.ORB_FEATURES:
+      pt_std = 0.005
+    else:
+      pt_std = 0.02
+    if times.any():
+      assert np.allclose(times[0, :-1], self.filter.get_augment_times(), atol=1e-7, rtol=0.0)
       for i, track in enumerate(tracks):
         img_positions = track.reshape((self.N + 1, 4))[:, 2:]
 
@@ -502,23 +509,24 @@ class LocKalman():
 
         ecef_pos[i] = self.computer.compute_pos(poses, img_positions[:-1])
         z[i] = img_positions.flatten()
-        R[i, :, :] = np.diag([0.005**2] * (k))
-        if np.isfinite(ecef_pos[i][0]):
-          good_counter += 1
-          if good_counter > self.max_tracks:
-            break
+        R[i, :, :] = np.diag([pt_std**2] * (k))
+
     good_idxs = np.all(np.isfinite(ecef_pos), axis=1)
+
+    # This code relies on wide and narrow orb features being captured at the same time,
+    # and wide features to be processed first.
+    ret = self.filter.predict_and_update_batch(t, kind, z[good_idxs], R[good_idxs], ecef_pos[good_idxs],
+                                               augment=kind==ObservationKind.ORB_FEATURES)
+    if ret is None:
+      return
+
     # have to do some weird stuff here to keep
     # to have the observations input from mesh3d
     # consistent with the outputs of the filter
     # Probably should be replaced, not sure how.
-    ret = self.filter.predict_and_update_batch(t, kind, z[good_idxs], R[good_idxs], ecef_pos[good_idxs], augment=True)
-    if ret is None:
-      return
-
     y_full = np.zeros((z.shape[0], z.shape[1] - 3))
     if sum(good_idxs) > 0:
-        y_full[good_idxs] = np.array(ret[6])
+      y_full[good_idxs] = np.array(ret[6])
     ret = ret[:6] + (y_full, z, ecef_pos)
     return ret
 

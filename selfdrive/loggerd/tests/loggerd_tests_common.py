@@ -8,22 +8,22 @@ import unittest
 import selfdrive.loggerd.uploader as uploader
 
 def create_random_file(file_path, size_mb, lock=False):
-    try:
-      os.mkdir(os.path.dirname(file_path))
-    except OSError:
-      pass
+  try:
+    os.mkdir(os.path.dirname(file_path))
+  except OSError:
+    pass
 
-    lock_path = file_path + ".lock"
-    if lock:
-      os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
+  lock_path = file_path + ".lock"
+  if lock:
+    os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
 
-    chunks = 128
-    chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
-    data = os.urandom(chunk_bytes)
+  chunks = 128
+  chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
+  data = os.urandom(chunk_bytes)
 
-    with open(file_path, 'wb') as f:
-      for _ in range(chunks):
-        f.write(data)
+  with open(file_path, 'wb') as f:
+    for _ in range(chunks):
+      f.write(data)
 
 class MockResponse():
   def __init__(self, text, status_code):

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from selfdrive.hardware import PC
+from system.hardware import PC
 
 BASEDIR = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../"))
 
