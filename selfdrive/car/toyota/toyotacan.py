@@ -45,10 +45,11 @@ def create_lta_steer_command(packer, apply_steer, steer_angle, driver_torque, st
     "STEER_ANGLE_CMD": apply_steer,
 
     # stock system turns off steering after ~20 frames of override, else torque winds up
-    "STEER_REQUEST": steer_req,
+    "LTA_REQUEST": steer_req,
 
-    # duplicate
-    "STEER_REQUEST_2": steer_req,
+    # 1 when actively using LTA. 3 when LTA is activated for LKA. 0 when LTA_REQUEST is 0
+    # TODO: see if 3 gets us any more torque, or better blending, or SOMETHING. EPS_STATUS doesn't change based on this, so maybe it doesn't do anything
+    "LTA_REQUEST_TYPE": steer_req,
 
     # 1 when STEER_REQUEST changes state (usually)
     # except not true on 2023 RAV4. TODO: revisit, could it be UI related?
