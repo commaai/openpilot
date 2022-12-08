@@ -111,7 +111,7 @@ DBCManager *dbc() {
 
 std::vector<const Signal*> DBCMsg::getSignals() const {
   std::vector<const Signal*> ret;
-  for (auto &[name, sig] : sigs) ret.push_back(&sig);
+  for (auto &[_, sig] : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
   return ret;
 }
