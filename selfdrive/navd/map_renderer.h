@@ -25,7 +25,6 @@ public:
   bool loaded();
   ~MapRenderer();
 
-
 private:
   std::unique_ptr<QOpenGLContext> ctx;
   std::unique_ptr<QOffscreenSurface> surface;
