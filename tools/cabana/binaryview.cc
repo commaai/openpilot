@@ -202,7 +202,7 @@ void BinaryViewModel::updateState() {
     }
   }
 
-  for (int i = 0; i < row_count; ++i) {
+  for (int i = 0; i < row_count * column_count; ++i) {
     if (i >= prev_items.size() || prev_items[i].val != items[i].val) {
       auto idx = index(i / column_count, i % column_count);
       emit dataChanged(idx, idx);
