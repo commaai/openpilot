@@ -146,6 +146,7 @@ class RouteEngine:
     # must be <23. mapbox limit is 25
     extra_coords = TB_WAYPOINTS if self.params.get_bool("GoToTacoBell") else []
     coords = [(self.last_position.longitude, self.last_position.latitude), *extra_coords, (destination.longitude, destination.latitude)]
+    params['waypoints'] = f'0;{len(coords)-1}'
     coords_str = ';'.join([f'{lon},{lat}' for lon, lat in coords])
     url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{coords_str}'
     try:
