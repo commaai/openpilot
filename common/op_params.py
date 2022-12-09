@@ -103,7 +103,7 @@ class opParams:
       'PERCENTAGE': Param(100, NUMBER, '100 when not touching wheel, 0 when touching wheel', live=True),
       'SETME_X64': Param(100, NUMBER, 'Unsure', live=True),
       'ANGLE': Param(0, NUMBER, 'Rate limit? Lower is better?', live=True),
-      'LTA_REQUEST_TYPE': Param(1, NUMBER, '1: LTA, 3: LTA for lane keeping', live=True),
+      # 'LKA_REQUEST': Param(1, NUMBER, '1 when using LTA for LKA', live=True),
       'BIT': Param(0, NUMBER, '1: LTA, 2: LTA for lane keeping', live=True),
     }
 

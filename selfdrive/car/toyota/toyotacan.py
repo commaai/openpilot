@@ -16,6 +16,9 @@ def create_lta_steer_command(packer, apply_steer, steer_req, op_params):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
+    "STEER_REQUEST": steer_req,  # STEER_REQUEST seems to be the real bit
+    "STEER_REQUEST_2": steer_req,
+
     # seems to actually be 1. Even 1 on 2023 RAV4 2023 (TODO: check from data)
     "SETME_X1": op_params.get("SETME_X1"),
 
@@ -42,16 +45,12 @@ def create_lta_steer_command(packer, apply_steer, steer_req, op_params):
     # some tss2 don't have any offset on the accurate angle signal... (tss2.5)?
     "STEER_ANGLE_CMD": apply_steer,
 
-    # stock system turns off steering after ~20 frames of override, else torque winds up
-    "LTA_REQUEST": steer_req,
-
-    # 1 when actively using LTA. 3 when LTA is activated for LKA. 0 when LTA_REQUEST is 0
-    # TODO: see if 3 gets us any more torque, or better blending, or SOMETHING. EPS_STATUS doesn't change based on this, so maybe it doesn't do anything
-    "LTA_REQUEST_TYPE": op_params.get("LTA_REQUEST_TYPE") if steer_req else 0,
+    # 1 when camera is using LTA for LKA — no noticeable difference
+    # "LKA_REQUEST": op_params.get("LKA_REQUEST") if steer_req else 0,
 
     # 1 when STEER_REQUEST changes state (usually)
     # except not true on 2023 RAV4. TODO: revisit, could it be UI related?
-    "BIT": 0,
+    "BIT": op_params.get("BIT"),
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
