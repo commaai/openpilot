@@ -76,9 +76,9 @@ class CarController:
       apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
       torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-      # driver torque blending
-      percentage = interp(abs(CS.out.steeringTorque), [40, 100], [100, 0])
-      apply_angle = interp(percentage, [-10, 100], [torque_sensor_angle, apply_angle])
+      # driver torque blending  - NOW HANDLED IN TOYOTACAN
+      # percentage = interp(abs(CS.out.steeringTorque), [40, 100], [100, 0])
+      # apply_angle = interp(percentage, [-10, 100], [torque_sensor_angle, apply_angle])
 
       # limit max angle error between cmd and actual to reduce EPS integral windup
       # TODO: can we configure this with a signal?
@@ -133,7 +133,8 @@ class CarController:
     angle_control = self.CP.steerControlType == SteerControlType.angle
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req and not angle_control))
     if TSS2_CAR:
-      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, self.op_params))
+      limit_torque = CS.out.steeringPressed
+      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque, self.op_params))
 
     self.last_angle = apply_angle
     self.last_steer = apply_steer
