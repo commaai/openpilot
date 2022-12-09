@@ -64,11 +64,11 @@ class TestLateralLimits(unittest.TestCase):
     steer_up_per_frame = (control_params.STEER_DELTA_UP / control_params.STEER_MAX) / steer_step
     steer_down_per_frame = (control_params.STEER_DELTA_DOWN / control_params.STEER_MAX) / steer_step
 
-    up_steer_0_5_sec = steer_up_per_frame * (JERK_MEAS_TIME / DT_CTRL)
-    down_steer_0_5_sec = steer_down_per_frame * (JERK_MEAS_TIME / DT_CTRL)
+    steer_up_0_5_sec = min(steer_up_per_frame * (JERK_MEAS_TIME / DT_CTRL), 1.0)
+    steer_down_0_5_sec = min(steer_down_per_frame * (JERK_MEAS_TIME / DT_CTRL), 1.0)
 
     max_lat_accel = torque_params['MAX_LAT_ACCEL_MEASURED']
-    return up_steer_0_5_sec * max_lat_accel, down_steer_0_5_sec * max_lat_accel
+    return steer_up_0_5_sec * max_lat_accel, steer_down_0_5_sec * max_lat_accel
 
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
