@@ -30,20 +30,20 @@ def create_lat_ctl_msg(packer, mode: int, ramp_type: int, precision: int, path_o
   """
   Creates a CAN message for the Ford TJA/LCA Command.
 
-  This command can apply "Lane Centering" manoeuvres: continuous lane centering for traffic jam
-  assist and highway driving. It is not subject to the PSCM lockout.
+  This command can apply "Lane Centering" manoeuvres: continuous lane centering for traffic jam assist and highway
+  driving. It is not subject to the PSCM lockout.
 
-  Ford lane centering command uses a third order polynomial to describe the road centerline. The
-  polynomial is defined by the following coefficients:
+  Ford lane centering command uses a third order polynomial to describe the road centerline. The polynomial is defined
+  by the following coefficients:
     c0: lateral offset between the vehicle and the centerline (positive is right)
     c1: heading angle between the vehicle and the centerline (positive is right)
     c2: curvature of the centerline (positive is left)
     c3: rate of change of curvature of the centerline
-  As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and
-  speed, the steering angle cannot be easily controlled.
+  As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and speed, the steering
+  angle cannot be easily controlled.
 
-  The PSCM should be configured to accept TJA/LCA commands before these commands will be
-  processed. This can be done using tools such as Forscan.
+  The PSCM should be configured to accept TJA/LCA commands before these commands will be processed. This can be done
+  using tools such as Forscan.
 
   Frequency is 20Hz.
   """
@@ -117,8 +117,7 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
 
 def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
   """
-  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic
-  jam assist status.
+  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam assist status.
 
   Stock functionality is maintained by passing through unmodified signals.
 
