@@ -38,9 +38,9 @@ class FordCAN:
 
     Ford lane centering command uses a third order polynomial to describe the road centerline. The
     polynomial is defined by the following coefficients:
-      c0: lateral offset between the vehicle and the centerline
-      c1: heading angle between the vehicle and the centerline
-      c2: curvature of the centerline
+      c0: lateral offset between the vehicle and the centerline (positive is right)
+      c1: heading angle between the vehicle and the centerline (positive is right)
+      c2: curvature of the centerline (positive is left)
       c3: rate of change of curvature of the centerline
     As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and
     speed, the steering angle cannot be easily controlled.

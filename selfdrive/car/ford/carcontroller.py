@@ -47,7 +47,6 @@ class CarController:
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
       if CC.latActive:
         # use LatCtlCurv_No_Actl to actuate steering
-        # IMPORTANT! left is positive
         # TODO: apply rate limits
         apply_curvature = -clip(actuators.curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
