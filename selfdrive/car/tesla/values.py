@@ -2,14 +2,13 @@ from collections import namedtuple
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
-AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
 
 
 class CAR:
@@ -104,8 +103,8 @@ BUTTONS = [
 ]
 
 class CarControllerParams:
-  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
-  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., .8, .15])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., 3.5, 0.4])
   JERK_LIMIT_MAX = 8
   JERK_LIMIT_MIN = -8
   ACCEL_TO_SPEED_MULTIPLIER = 3
