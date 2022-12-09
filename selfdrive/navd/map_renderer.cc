@@ -46,11 +46,13 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   QOpenGLFramebufferObjectFormat fbo_format;
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
+  m_settings.setMapMode(QMapboxGLSettings::MapMode::Static);
+
   std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
   m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
-  m_map->setStyleJson(style.c_str());
-  m_map->createRenderer();
+  //m_map->setStyleJson(style.c_str());
+  //m_map->createRenderer();
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
@@ -58,6 +60,14 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
+  });
+
+  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
+    LOGE("new state %d", change);
+    if (change == QMapboxGL::MapChangeDidFinishRenderingFrameFullyRendered) {
+      publish(0);
+    }
   });
 
   if (online) {
@@ -84,7 +94,7 @@ void MapRenderer::msgUpdate() {
     auto orientation = location.getCalibratedOrientationNED();
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % 10) == 0) {
+    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % 40) == 0) {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
     }
   }
@@ -122,19 +132,25 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
+  LOGW("start render");
+  //gl_functions->glClear(GL_COLOR_BUFFER_BIT);
+  //gl_functions->glFlush();
+
+  QEventLoop loop;
+  QObject::connect(m_map.data(), &QMapboxGL::staticRenderFinished, [=](const QString &error) {
+    LOGW("finished: %s", error.toStdString().c_str());
+  });
+  QObject::connect(m_map.data(), &QMapboxGL::staticRenderFinished, &loop, &QEventLoop::quit);
   double start_t = millis_since_boot();
-  gl_functions->glClear(GL_COLOR_BUFFER_BIT);
-  m_map->render();
-  gl_functions->glFlush();
+  m_map->startStaticRender();
+  loop.exec();
   double end_t = millis_since_boot();
 
   publish((end_t - start_t) / 1000.0);
 }
 
 void MapRenderer::publish(const double render_time) {
-  if (!vipc_server || !loaded()) {
-    return;
-  }
+  LOGW("publish");
 
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
   uint64_t ts = nanos_since_boot();
@@ -201,6 +217,8 @@ uint8_t* MapRenderer::getImage() {
 
 void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
   if (m_map.isNull()) return;
+  LOGW("updating route");
+
   initLayers();
 
   auto route_points = coordinate_list_to_collection(coordinates);
