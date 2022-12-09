@@ -178,7 +178,7 @@ void MapRenderer::publish(const double render_time) {
   // Send state msg
   MessageBuilder msg;
   auto state = msg.initEvent().initMapRenderState();
-  state.setLlkMonoTime(sm->rcv_time("liveLocationKalman"));
+  state.setLocationMonoTime(sm->rcv_time("liveLocationKalman"));
   state.setRenderTime(render_time);
   pm->send("mapRenderState", msg);
 
