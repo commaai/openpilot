@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
@@ -12,6 +13,7 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
 
+CAR_MODELS = all_known_cars()
 
 # ISO 11270
 MAX_LAT_JERK = 5.0   # m/s^3
@@ -29,7 +31,7 @@ ABOVE_LIMITS_CARS = [
 jerks = defaultdict(dict)
 
 
-@parameterized_class('car_model', [(c,) for c in all_known_cars()])
+@parameterized_class('car_model', [(c,) for c in CAR_MODELS])
 class TestLateralLimits(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -65,7 +67,7 @@ class TestLateralLimits(unittest.TestCase):
   #   # print(dict(jerks))
 
   @staticmethod
-  def _calc_jerk(control_params, torque_params):
+  def calculate_jerk(control_params, torque_params):
     steer_step = control_params.STEER_STEP
     time_to_max = control_params.STEER_MAX / control_params.STEER_DELTA_UP / 100. * steer_step
     time_to_min = control_params.STEER_MAX / control_params.STEER_DELTA_DOWN / 100. * steer_step
@@ -74,14 +76,26 @@ class TestLateralLimits(unittest.TestCase):
     return max_lat_accel / time_to_max, max_lat_accel / time_to_min
 
   def test_jerk_limits(self):
-    up_jerk, down_jerk = self._calc_jerk(self.control_params, self.torque_params)
+    up_jerk, down_jerk = self.calculate_jerk(self.control_params, self.torque_params)
     jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLess(up_jerk, MAX_LAT_JERK)
-    self.assertLess(down_jerk, MAX_LAT_JERK)
+    self.assertLessEqual(up_jerk, 0)#MAX_LAT_JERK)
+    self.assertLessEqual(down_jerk, MAX_LAT_JERK)
 
   def test_max_lateral_accel(self):
     self.assertLessEqual(self.torque_params["LAT_ACCEL_FACTOR"], MAX_LAT_ACCEL)
 
 
 if __name__ == "__main__":
-  unittest.main()
+  result = unittest.main(exit=False)
+
+  print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
+
+  max_car_model_len = max([len(car_model) for car_model in jerks])
+  for car_model, _jerks in sorted(jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
+    violation = any([_jerk >= MAX_LAT_JERK for _jerk in _jerks.values()])
+    violation = " - VIOLATION" if violation else ""
+
+    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2)} m/s^3, down jerk: {round(_jerks['down_jerk'], 2)} m/s^3{violation}")
+
+  # exit with test result
+  sys.exit(not result.result.wasSuccessful())
