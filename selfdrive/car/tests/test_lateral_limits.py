@@ -32,6 +32,8 @@ car_model_jerks = defaultdict(dict)
 
 @parameterized_class('car_model', [(c,) for c in CAR_MODELS])
 class TestLateralLimits(unittest.TestCase):
+  car_model: str
+
   @classmethod
   def setUpClass(cls):
     CarInterface, _, _ = interfaces[cls.car_model]
