@@ -5,7 +5,6 @@ import importlib
 from parameterized import parameterized_class
 import unittest
 
-from cereal import car
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.gm.values import CAR as GM
@@ -55,17 +54,6 @@ class TestLateralLimits(unittest.TestCase):
     cls.control_params = CarControllerParams(CP)
     cls.torque_params = get_torque_params(cls.car_model)
 
-  # @classmethod
-  # def tearDownClass(cls):
-  #   for car, _jerks in jerks.items():
-  #     violation = _jerks['up_jerk'] >= (MAX_LAT_UP_JERK + MAX_LAT_UP_JERK_TOLERANCE)
-  #     # violation |= _jerks['down_jerk'] <= MIN_LAT_DOWN_JERK
-  #     violation = ' - VIOLATION' if violation else ''
-  #     if violation or True:
-  #       print(f'{car:37} - up jerk: {round(_jerks["up_jerk"], 2)} m/s^3, down jerk: {round(_jerks["down_jerk"], 2)} m/s^3{violation}')
-  #   print('\n')
-  #   # print(dict(jerks))
-
   @staticmethod
   def calculate_jerk(control_params, torque_params):
     steer_step = control_params.STEER_STEP
@@ -78,7 +66,7 @@ class TestLateralLimits(unittest.TestCase):
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_jerk(self.control_params, self.torque_params)
     jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLessEqual(up_jerk, 0)#MAX_LAT_JERK)
+    self.assertLessEqual(up_jerk, MAX_LAT_JERK)
     self.assertLessEqual(down_jerk, MAX_LAT_JERK)
 
   def test_max_lateral_accel(self):
@@ -93,9 +81,9 @@ if __name__ == "__main__":
   max_car_model_len = max([len(car_model) for car_model in jerks])
   for car_model, _jerks in sorted(jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
     violation = any([_jerk >= MAX_LAT_JERK for _jerk in _jerks.values()])
-    violation = " - VIOLATION" if violation else ""
+    violation_str = " - VIOLATION" if violation else ""
 
-    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2)} m/s^3, down jerk: {round(_jerks['down_jerk'], 2)} m/s^3{violation}")
+    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
 
   # exit with test result
   sys.exit(not result.result.wasSuccessful())
