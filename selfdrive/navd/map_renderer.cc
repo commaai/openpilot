@@ -56,6 +56,11 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
+  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
+    //LOGD("new state %d", change);
+  });
+
   QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
   });
@@ -86,6 +91,19 @@ void MapRenderer::msgUpdate() {
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
     if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % 10) == 0) {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
+
+      // TODO: use the static rendering mode
+      if (!loaded() && frame_id > 0) {
+        for (int i = 0; i < 5 && !loaded(); i++) {
+          LOGW("map render retry #%d, %d", i+1, m_map.isNull());
+          QApplication::processEvents(QEventLoop::AllEvents, 100);
+          update();
+        }
+
+        if (!loaded()) {
+          LOGE("failed to render map after retry");
+        }
+      }
     }
   }
 
@@ -128,14 +146,12 @@ void MapRenderer::update() {
   gl_functions->glFlush();
   double end_t = millis_since_boot();
 
-  publish((end_t - start_t) / 1000.0);
+  if ((vipc_server != nullptr) && loaded()) {
+    publish((end_t - start_t) / 1000.0);
+  }
 }
 
 void MapRenderer::publish(const double render_time) {
-  if (!vipc_server || !loaded()) {
-    return;
-  }
-
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
