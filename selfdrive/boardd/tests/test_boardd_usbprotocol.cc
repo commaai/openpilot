@@ -48,7 +48,7 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
     can.setAddress(i);
     can.setSrc(random_int(0, 3) + bus_offset);
     can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
-    total_pakets_size += CANPACKET_HEAD_SIZE + dat.size();
+    total_pakets_size += sizeof(can_header) + dat.size();
   }
 
   can_data_list = can_list.asReader();
@@ -58,14 +58,11 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
 void PandaTest::test_can_send() {
   std::vector<uint8_t> unpacked_data;
   this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
-    int size_left = size;
-    for (int i = 0, counter = 0; i < size; i += USBPACKET_MAX_SIZE, counter++) {
-      REQUIRE(chunk[i] == counter);
+    uint32_t magic;
+    memcpy(&magic, &chunk[0], sizeof(uint32_t));
 
-      const int len = std::min(USBPACKET_MAX_SIZE, size_left);
-      unpacked_data.insert(unpacked_data.end(), &chunk[i + 1], &chunk[i + len]);
-      size_left -= len;
-    }
+    REQUIRE(magic == CAN_TRANSACTION_MAGIC);
+    unpacked_data.insert(unpacked_data.end(), &chunk[sizeof(uint32_t)], &chunk[size]);
   });
   REQUIRE(unpacked_data.size() == total_pakets_size);
 
@@ -73,9 +70,9 @@ void PandaTest::test_can_send() {
   INFO("test can message integrity");
   for (int pos = 0, pckt_len = 0; pos < unpacked_data.size(); pos += pckt_len) {
     can_header header;
-    memcpy(&header, &unpacked_data[pos], CANPACKET_HEAD_SIZE);
+    memcpy(&header, &unpacked_data[pos], sizeof(can_header));
     const uint8_t data_len = dlc_to_len[header.data_len_code];
-    pckt_len = CANPACKET_HEAD_SIZE + data_len;
+    pckt_len = sizeof(can_header) + data_len;
 
     REQUIRE(header.addr == cnt);
     REQUIRE(test_data.find(data_len) != test_data.end());

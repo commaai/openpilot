@@ -77,12 +77,12 @@ def create_acc_accel_control(packer, bus, acc_type, enabled, accel, acc_control,
   return commands
 
 
-def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_visible):
+def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance):
   values = {
     "ACA_StaACC": acc_hud_status,
     "ACA_Zeitluecke": 2,
     "ACA_V_Wunsch": set_speed,
-    "ACA_gemZeitl": 8 if lead_visible else 0,
+    "ACA_gemZeitl": lead_distance,
     # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_PrioDisp, ACA_Aend_Zeitluecke
     # display/display-prio handling probably needed to stop confusing the instrument cluster
     # kmh_mph handling probably needed to resolve rounding errors in displayed setpoint

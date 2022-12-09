@@ -27,6 +27,7 @@ class CarControllerParams:
   NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
   NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
+  NIDEC_GAS_MAX = 198  # 0xc6
   NIDEC_BRAKE_MAX = 1024 // 4
 
   BOSCH_ACCEL_MIN = -3.5  # m/s^2
@@ -242,7 +243,7 @@ FW_VERSIONS = {
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-X040\x00\x00',
-      b'39990-TVA,A150\x00\x00',
+      b'39990-TVA,A150\x00\x00', # modified firmware
       b'39990-TVE-H130\x00\x00',
     ],
     (Ecu.unknown, 0x18da3af1, None): [

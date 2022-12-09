@@ -1,3 +1,4 @@
+from enum import IntFlag
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union
@@ -9,6 +10,10 @@ from selfdrive.car.docs_definitions import CarInfo, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
+
+
+class ChryslerFlags(IntFlag):
+  HIGHER_MIN_STEERING_SPEED = 1
 
 
 class CAR:

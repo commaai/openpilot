@@ -320,11 +320,13 @@ FW_VERSIONS = {
       b'\xf1\x8703H906026J \xf1\x899971',
       b'\xf1\x8703H906026S \xf1\x896693',
       b'\xf1\x8703H906026S \xf1\x899970',
+      b'\xf1\x873CN906259  \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158A \xf1\x893387',
       b'\xf1\x8709G927158DR\xf1\x893536',
       b'\xf1\x8709G927158DR\xf1\x893742',
+      b'\xf1\x8709G927158F \xf1\x893489',
       b'\xf1\x8709G927158FT\xf1\x893835',
       b'\xf1\x8709G927158GL\xf1\x893939',
     ],
@@ -338,6 +340,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x712, None): [
       b'\xf1\x873QF909144B \xf1\x891582\xf1\x82\00571B60924A1',
       b'\xf1\x873QF909144B \xf1\x891582\xf1\x82\x0571B6G920A1',
+      b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820528B6080105',
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820528B6090105',
     ],
     (Ecu.fwdRadar, 0x757, None): [

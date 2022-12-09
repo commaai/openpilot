@@ -2,6 +2,7 @@
 import bz2
 import sys
 import math
+import capnp
 import numbers
 import dictdiffer
 from collections import Counter
@@ -30,20 +31,23 @@ def remove_ignored_fields(msg, ignore):
       continue
 
     for k in keys[:-1]:
-      try:
-        attr = getattr(msg, k)
-      except AttributeError:
-        break
-    else:
-      v = getattr(attr, keys[-1])
-      if isinstance(v, bool):
-        val = False
-      elif isinstance(v, numbers.Number):
-        val = 0
+      # indexing into list
+      if k.isdigit():
+        attr = attr[int(k)]
       else:
-        raise NotImplementedError('Error ignoring field')
-      setattr(attr, keys[-1], val)
-  return msg.as_reader()
+        attr = getattr(attr, k)
+
+    v = getattr(attr, keys[-1])
+    if isinstance(v, bool):
+      val = False
+    elif isinstance(v, numbers.Number):
+      val = 0
+    elif isinstance(v, (list, capnp.lib.capnp._DynamicListBuilder)):
+      val = []
+    else:
+      raise NotImplementedError(f"Unknown type: {type(v)}")
+    setattr(attr, keys[-1], val)
+  return msg
 
 
 def get_field_tolerance(diff_field, field_tolerances):
@@ -79,12 +83,12 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
       print(msg1, msg2)
       raise Exception("msgs not aligned between logs")
 
-    msg1_bytes = remove_ignored_fields(msg1, ignore_fields).as_builder().to_bytes()
-    msg2_bytes = remove_ignored_fields(msg2, ignore_fields).as_builder().to_bytes()
+    msg1 = remove_ignored_fields(msg1, ignore_fields)
+    msg2 = remove_ignored_fields(msg2, ignore_fields)
 
-    if msg1_bytes != msg2_bytes:
-      msg1_dict = msg1.to_dict(verbose=True)
-      msg2_dict = msg2.to_dict(verbose=True)
+    if msg1.to_bytes() != msg2.to_bytes():
+      msg1_dict = msg1.as_reader().to_dict(verbose=True)
+      msg2_dict = msg2.as_reader().to_dict(verbose=True)
 
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
