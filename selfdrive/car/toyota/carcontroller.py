@@ -82,9 +82,9 @@ class CarController:
 
       # limit max angle error between cmd and actual to reduce EPS integral windup
       # TODO: can we configure this with a signal?
-      apply_angle = clip(apply_angle,
-                         torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
-                         torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
+      # apply_angle = clip(apply_angle,
+      #                    torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
+      #                    torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
 
       # Angular rate limit based on speed
       apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
