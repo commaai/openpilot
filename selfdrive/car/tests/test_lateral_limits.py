@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-import sys
 from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
+import sys
 import unittest
 
-from selfdrive.car.mazda.values import CAR as MAZDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
+from selfdrive.car.gm.values import CAR as GM
+from selfdrive.car.mazda.values import CAR as MAZDA
+from selfdrive.car.toyota.values import CAR as TOYOTA
 
 CAR_MODELS = all_known_cars()
 
@@ -27,7 +27,7 @@ ABOVE_LIMITS_CARS = [
   TOYOTA.COROLLA,   # 5.2 m/s^3 down
 ]
 
-jerks = defaultdict(dict)
+car_model_jerks = defaultdict(dict)
 
 
 @parameterized_class('car_model', [(c,) for c in CAR_MODELS])
@@ -40,7 +40,7 @@ class TestLateralLimits(unittest.TestCase):
     if CP.dashcamOnly:
       raise unittest.SkipTest("Platform is behind dashcamOnly")
 
-    # TODO: only test torque control platforms
+    # TODO: test all platforms
     if CP.lateralTuning.which() != 'torque':
       raise unittest.SkipTest
 
@@ -65,7 +65,7 @@ class TestLateralLimits(unittest.TestCase):
 
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_jerk(self.control_params, self.torque_params)
-    jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
+    car_model_jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
     self.assertLessEqual(up_jerk, MAX_LAT_JERK)
     self.assertLessEqual(down_jerk, MAX_LAT_JERK)
 
@@ -78,8 +78,8 @@ if __name__ == "__main__":
 
   print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
 
-  max_car_model_len = max([len(car_model) for car_model in jerks])
-  for car_model, _jerks in sorted(jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
+  max_car_model_len = max([len(car_model) for car_model in car_model_jerks])
+  for car_model, _jerks in sorted(car_model_jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
     violation = any([_jerk >= MAX_LAT_JERK for _jerk in _jerks.values()])
     violation_str = " - VIOLATION" if violation else ""
 
