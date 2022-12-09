@@ -175,7 +175,6 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     items.resize(row_count * column_count);
   }
   endResetModel();
-  updateState();
 }
 
 void BinaryViewModel::updateState() {
