@@ -10,7 +10,7 @@ class LatControlAngle(LatControl):
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
-    if not active:
+    if CS.vEgo < MIN_STEER_SPEED or not active:
       angle_log.active = False
       angle_steers_des = float(CS.steeringAngleDeg)
     else:

@@ -23,11 +23,9 @@ class CarControllerParams:
 
   # stock LTA is 0 to 0.05 going straight
   # and 0.1 to 0.4 when turning (max seen is 0.6303)
-
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., .8, .15])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., 3.5, 0.4])
 
-  # ANGLE_RATE_MAX = 2.0
   # needs to be within +-3 degrees of current angle to avoid windup
   ANGLE_DELTA_MAX = 3.0
 
