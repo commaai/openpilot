@@ -1,6 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_interceptor_command, make_can_msg
+from selfdrive.car import apply_std_steer_angle_limits, apply_toyota_steer_torque_limits, \
+                          create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -71,6 +72,8 @@ class CarController:
     #  1b. clip to max angle limits (EPS ignores messages outside of these bounds and causes PCS faults)
     # 2. rate limit angle command
     # 3. limit max angle error between cmd and actual to reduce EPS integral windup  # TODO: can we configure this with a signal?
+
+    # angle command is in terms of the torque sensor angle (may or may not have an offset)
     apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
     torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
@@ -78,14 +81,15 @@ class CarController:
     apply_angle = interp(percentage, [-10, 100], [torque_sensor_angle, apply_angle])
 
     # Angular rate limit based on speed (from TESLA)
-    steer_up = self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle)
-    rate_limit = self.params.ANGLE_RATE_LIMIT_UP if steer_up else self.params.ANGLE_RATE_LIMIT_DOWN
-    max_angle_diff = interp(CS.out.vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
-    apply_angle = clip(apply_angle, self.last_angle - max_angle_diff, self.last_angle + max_angle_diff)
+    apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
+    # limit max angle error between cmd and actual to reduce EPS integral windup
+    # TODO: can we configure this with a signal?
     # apply_steer = clip(apply_steer,
     #                    torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
     #                    torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
+
+    # clip to max angle limits (EPS ignores messages outside of these bounds and causes PCS faults)
     apply_angle = clip(apply_angle, -94.9461, 94.9461)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
