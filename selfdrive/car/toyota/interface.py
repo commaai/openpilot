@@ -15,6 +15,16 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
+  def get_angle_feedforward(desired_angle, v_ego):
+    return desired_angle
+
+  def get_steer_feedforward_function(self):
+    if self.CP.steerControlType == car.CarParams.SteerControlType.torque:
+      return CarInterfaceBase.get_steer_feedforward_default
+    else:
+      return self.get_angle_feedforward
+
+  @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
@@ -211,6 +221,13 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
     if ret.steerControlType == car.CarParams.SteerControlType.angle:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
+
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kiBP = [0.0]
+      ret.lateralTuning.pid.kpBP = [0.0]
+      ret.lateralTuning.pid.kpV = [0.5]
+      ret.lateralTuning.pid.kiV = [0.1]
+      ret.lateralTuning.pid.kf = 1.0
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear

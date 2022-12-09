@@ -1,16 +1,23 @@
 import math
 
-from cereal import log
+from cereal import car, log
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 from selfdrive.controls.lib.pid import PIDController
+
+SteerControlType = car.CarParams.SteerControlType
+STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlPID(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
+    kargs = {}
+    if self.CP.steerControlType == SteerControlType.torque:
+      kargs.update({"pos_limit": self.steer_max, "neg_limit": -self.steer_max})
+
     self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                              (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             k_f=CP.lateralTuning.pid.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
+                             k_f=CP.lateralTuning.pid.kf, **kargs)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def reset(self):
@@ -43,6 +50,15 @@ class LatControlPID(LatControl):
       pid_log.i = self.pid.i
       pid_log.f = self.pid.f
       pid_log.output = output_steer
-      pid_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS, steer_limited)
+
+      if self.CP.steerControlType != SteerControlType.torque:
+        angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
+        pid_log.saturated = self._check_saturation(angle_control_saturated, CS, steer_limited)
+      else:
+        pid_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS, steer_limited)
+
+    if self.CP.steerControlType != SteerControlType.torque:
+      angle_steers_des = output_steer
+      output_steer = 0
 
     return output_steer, angle_steers_des, pid_log

@@ -155,6 +155,7 @@ class CarInterfaceBase(ABC):
 
     # standard ALC params
     ret.steerControlType = car.CarParams.SteerControlType.torque
+    # TODO: set PID gains?
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
 
