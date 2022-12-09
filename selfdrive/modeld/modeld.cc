@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
+#include "selfdrive/modeld/models/nav.h"
 
 
 ExitHandler do_exit;
@@ -60,7 +61,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -72,6 +73,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   mat3 model_transform_main = {};
   mat3 model_transform_extra = {};
   bool live_calib_seen = false;
+  float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
+  float nav_features[NAV_FEATURE_LEN] = {0};
 
   VisionBuf *buf_main = nullptr;
   VisionBuf *buf_extra = nullptr;
@@ -128,6 +131,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       model_transform_extra = update_calibration(device_from_calib_euler, true, true);
       live_calib_seen = true;
     }
+    if (sm.updated("navModel")) {
+      auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
+      for (int i=0; i<NAV_FEATURE_LEN; i++) {
+        nav_features[i] = nav_model_features[i];
+      }
+    }
 
     float vec_desire[DESIRE_LEN] = {0};
     if (desire >= 0 && desire < DESIRE_LEN) {
@@ -151,7 +160,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, prepare_only);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
