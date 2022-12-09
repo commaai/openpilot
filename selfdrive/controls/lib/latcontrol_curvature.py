@@ -1,11 +1,21 @@
 import math
 
 from cereal import log
-from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED, STEER_ANGLE_SATURATION_THRESHOLD
-from selfdrive.controls.lib.latcontrol_pid import LatControlPID
+from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED, STEER_ANGLE_SATURATION_THRESHOLD, LatControl
+from selfdrive.controls.lib.pid import PIDController
 
 
-class LatControlCurvature(LatControlPID):
+class LatControlCurvature(LatControl):
+  def __init__(self, CP, CI):
+    super().__init__(CP, CI)
+    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
+                             k_f=CP.lateralTuning.pid.kf)
+
+  def reset(self):
+    super().reset()
+    self.pid.reset()
+
   def update(self, active, CS, VM, params, actuators, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     curvature_log = log.ControlsState.LateralCurvatureState.new_message()
 
