@@ -5,26 +5,28 @@ from parameterized import parameterized_class
 import sys
 import unittest
 
+from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
-from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.mazda.values import CAR as MAZDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
+from selfdrive.car.hyundai.values import CAR as HYUNDAI
 
 CAR_MODELS = all_known_cars()
 
 # ISO 11270
-MAX_LAT_JERK = 5.0   # m/s^3
-MAX_LAT_ACCEL = 3.0  # m/s^2
+MAX_LAT_JERK = 2.5             # m/s^3
+MAX_LAT_JERK_TOLERANCE = 0.75  # m/s^3
+MAX_LAT_ACCEL = 3.0            # m/s^2
 
-# TODO: fix the lateral limits on this cars and remove from list
+# jerk is measured over half a second
+JERK_MEAS_TIME = 0.5  # seconds
+
+# TODO: update the max measured lateral accel for these cars
 ABOVE_LIMITS_CARS = [
-  GM.SILVERADO,     # 5.4 m/s^3 down
-  GM.BOLT_EUV,      # 5.7 m/s^3 down
-  MAZDA.CX5_2022,   # 5.5 m/s^3 down
-  MAZDA.CX9_2021,   # 5.5 m/s^3 down
-  TOYOTA.COROLLA,   # 5.2 m/s^3 down
+  HYUNDAI.KONA_EV,
+  HYUNDAI.KONA_HEV,
+  HYUNDAI.KONA,
+  HYUNDAI.KONA_EV_2022,
 ]
 
 car_model_jerks = defaultdict(dict)
@@ -49,7 +51,7 @@ class TestLateralLimits(unittest.TestCase):
     if CP.notCar:
       raise unittest.SkipTest
 
-    if CP.carName == "hyundai" or CP.carFingerprint in ABOVE_LIMITS_CARS:
+    if CP.carFingerprint in ABOVE_LIMITS_CARS:
       raise unittest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
@@ -57,22 +59,25 @@ class TestLateralLimits(unittest.TestCase):
     cls.torque_params = get_torque_params(cls.car_model)
 
   @staticmethod
-  def calculate_jerk(control_params, torque_params):
+  def calculate_0_5s_jerk(control_params, torque_params):
     steer_step = control_params.STEER_STEP
-    time_to_max = control_params.STEER_MAX / control_params.STEER_DELTA_UP / 100. * steer_step
-    time_to_min = control_params.STEER_MAX / control_params.STEER_DELTA_DOWN / 100. * steer_step
-    max_lat_accel = torque_params['LAT_ACCEL_FACTOR']
+    steer_up_per_frame = (control_params.STEER_DELTA_UP / control_params.STEER_MAX) / steer_step
+    steer_down_per_frame = (control_params.STEER_DELTA_DOWN / control_params.STEER_MAX) / steer_step
 
-    return max_lat_accel / time_to_max, max_lat_accel / time_to_min
+    up_steer_0_5_sec = steer_up_per_frame * (JERK_MEAS_TIME / DT_CTRL)
+    down_steer_0_5_sec = steer_down_per_frame * (JERK_MEAS_TIME / DT_CTRL)
+
+    max_lat_accel = torque_params['MAX_LAT_ACCEL_MEASURED']
+    return up_steer_0_5_sec * max_lat_accel, down_steer_0_5_sec * max_lat_accel
 
   def test_jerk_limits(self):
-    up_jerk, down_jerk = self.calculate_jerk(self.control_params, self.torque_params)
+    up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
     car_model_jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLessEqual(up_jerk, MAX_LAT_JERK)
-    self.assertLessEqual(down_jerk, MAX_LAT_JERK)
+    self.assertLessEqual(up_jerk, MAX_LAT_JERK + MAX_LAT_JERK_TOLERANCE)
+    self.assertLessEqual(down_jerk, MAX_LAT_JERK + MAX_LAT_JERK_TOLERANCE)
 
   def test_max_lateral_accel(self):
-    self.assertLessEqual(self.torque_params["LAT_ACCEL_FACTOR"], MAX_LAT_ACCEL)
+    self.assertLessEqual(self.torque_params["MAX_LAT_ACCEL_MEASURED"], MAX_LAT_ACCEL)
 
 
 if __name__ == "__main__":
@@ -82,7 +87,7 @@ if __name__ == "__main__":
 
   max_car_model_len = max([len(car_model) for car_model in car_model_jerks])
   for car_model, _jerks in sorted(car_model_jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
-    violation = any([_jerk >= MAX_LAT_JERK for _jerk in _jerks.values()])
+    violation = any([_jerk >= MAX_LAT_JERK + MAX_LAT_JERK_TOLERANCE for _jerk in _jerks.values()])
     violation_str = " - VIOLATION" if violation else ""
 
     print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
