@@ -65,7 +65,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
     vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
     vipc_server->start_listener();
 
-    pm.reset(new PubMaster({"navThumbnail"}));
+    pm.reset(new PubMaster({"navThumbnail", "mapRenderState"}));
     sm.reset(new SubMaster({"liveLocationKalman", "navRoute"}, {"liveLocationKalman"}));
 
     timer = new QTimer(this);
@@ -122,14 +122,16 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
+  double start_t = millis_since_boot();
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
   gl_functions->glFlush();
+  double end_t = millis_since_boot();
 
-  sendVipc();
+  publish((end_t - start_t) / 1000.0);
 }
 
-void MapRenderer::sendVipc() {
+void MapRenderer::publish(const double render_time) {
   if (!vipc_server || !loaded()) {
     return;
   }
@@ -139,7 +141,7 @@ void MapRenderer::sendVipc() {
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
-    .timestamp_sof = ts,
+    .timestamp_sof = sm->rcv_time("liveLocationKalman"),
     .timestamp_eof = ts,
   };
 
@@ -172,6 +174,13 @@ void MapRenderer::sendVipc() {
     thumbnaild.setThumbnail(buffer_kj);
     pm->send("navThumbnail", msg);
   }
+
+  // Send state msg
+  MessageBuilder msg;
+  auto state = msg.initEvent().initMapRenderState();
+  state.setLocationMonoTime(sm->rcv_time("liveLocationKalman"));
+  state.setRenderTime(render_time);
+  pm->send("mapRenderState", msg);
 
   frame_id++;
 }
