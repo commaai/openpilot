@@ -93,10 +93,10 @@ void MapRenderer::msgUpdate() {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
 
       // TODO: use the static rendering mode
-      if (!loaded()) {
+      if (!loaded() && frame_id > 0) {
         for (int i = 0; i < 5 && !loaded(); i++) {
-          LOGW("map render retry #%d", i+1);
-          QApplication::processEvents();
+          LOGW("map render retry #%d, %d", i+1, m_map.isNull());
+          QApplication::processEvents(QEventLoop::AllEvents, 100);
           update();
         }
 
@@ -146,7 +146,7 @@ void MapRenderer::update() {
   gl_functions->glFlush();
   double end_t = millis_since_boot();
 
-  if (!vipc_server || !loaded()) {
+  if ((vipc_server != nullptr) && loaded()) {
     publish((end_t - start_t) / 1000.0);
   }
 }
