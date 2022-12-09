@@ -46,9 +46,9 @@ void Sound::update() {
     return;
   }
 
-  // scale volume with speed
+  // scale volume using ambient noise level
   if (sm.updated("microphone")) {
-    float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredSoundPressureWeightedDb(), 30.f, 52.f, 0.f, 1.f);
+    float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredSoundPressureWeightedDb(), 30.f, 54.f, 0.f, 1.f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     Hardware::set_volume(volume);
   }

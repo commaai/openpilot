@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QStackedLayout>
 #include <QScrollArea>
 #include <QTabWidget>
 #include <QToolBar>
@@ -16,6 +17,11 @@ public:
 
   QLineEdit *name_edit;
   QSpinBox *size_spin;
+};
+
+class WelcomeWidget : public QWidget {
+public:
+  WelcomeWidget(QWidget *parent);
 };
 
 class DetailWidget : public QWidget {
@@ -51,5 +57,6 @@ private:
   BinaryView *binary_view;
   QScrollArea *scroll;
   ChartsWidget *charts;
+  QStackedLayout *stacked_layout;
   QList<SignalEdit *> signal_list;
 };

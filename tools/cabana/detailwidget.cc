@@ -16,9 +16,9 @@
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   undo_stack = new QUndoStack(this);
-
   setMinimumWidth(500);
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QWidget *main_widget = new QWidget(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
@@ -90,6 +90,10 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log, "&Logs");
   main_layout->addWidget(tab_widget);
 
+  stacked_layout = new QStackedLayout(this);
+  stacked_layout->addWidget(new WelcomeWidget(this));
+  stacked_layout->addWidget(main_widget);
+
   QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
@@ -136,6 +140,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   tabbar->setCurrentIndex(index);
   dbcMsgChanged();
   scroll->verticalScrollBar()->setValue(0);
+  stacked_layout->setCurrentIndex(1);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
@@ -302,3 +307,31 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
+
+// WelcomeWidget
+
+WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addStretch(0);
+  QLabel *logo = new QLabel("CABANA");
+  logo->setAlignment(Qt::AlignCenter);
+  logo->setStyleSheet("font-size:50px;font-weight:bold;");
+  main_layout->addWidget(logo);
+
+  auto newShortcutRow = [](const QString &title, const QString &key) {
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    auto btn = new QToolButton();
+    btn->setText(key);
+    btn->setEnabled(false);
+    hlayout->addWidget(new QLabel(title), 0, Qt::AlignRight);
+    hlayout->addWidget(btn, 0, Qt::AlignLeft);
+    return hlayout;
+  };
+
+  main_layout->addLayout(newShortcutRow("Pause", "Space"));
+  main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
+  main_layout->addStretch(0);
+
+  setStyleSheet("QLabel{color:darkGray;}");
+}
+
