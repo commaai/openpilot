@@ -180,6 +180,7 @@ void MapRenderer::publish(const double render_time) {
   auto state = msg.initEvent().initMapRenderState();
   state.setLocationMonoTime(sm->rcv_time("liveLocationKalman"));
   state.setRenderTime(render_time);
+  state.setFrameId(frame_id);
   pm->send("mapRenderState", msg);
 
   frame_id++;
