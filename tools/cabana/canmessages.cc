@@ -21,19 +21,20 @@ static bool event_filter(const Event *e, void *opaque) {
   return c->eventFilter(e);
 }
 
-bool CANMessages::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   counters_begin_sec = 0;
   can_msgs.clear();
   counters.clear();
   received_msgs.clear();
 
-  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "carParams"}, {}, nullptr, use_qcam ? REPLAY_FLAG_QCAMERA : 0, data_dir, this));
+  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay.get(), &Replay::streamStarted, this, &CANMessages::streamStarted);
   QObject::connect(replay.get(), &Replay::timelineUpdated, this, &CANMessages::timelineUpdated);
   if (replay->load()) {
+    emit visionStreamTypeChanged(replay_flags & REPLAY_FLAG_ECAM ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
     replay->start();
     processing = false;
     return true;

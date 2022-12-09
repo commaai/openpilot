@@ -26,7 +26,7 @@ public:
   enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
-  bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   void seekTo(double ts);
   QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
@@ -47,6 +47,7 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void visionStreamTypeChanged(VisionStreamType);
   void timelineUpdated();
   void streamStarted();
   void eventsMerged();
