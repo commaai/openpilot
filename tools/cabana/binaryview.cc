@@ -10,7 +10,7 @@
 
 // BinaryView
 
-const int CELL_HEIGHT = 26;
+// const int CELL_HEIGHT = 26;
 
 inline int get_bit_index(const QModelIndex &index, bool little_endian) {
   return index.row() * 8 + (little_endian ? 7 - index.column() : index.column());
@@ -24,14 +24,13 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   verticalHeader()->setSectionsClickable(false);
   verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+  verticalHeader()->setDefaultSectionSize(40);
   horizontalHeader()->hide();
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
   setFrameShape(QFrame::NoFrame);
   setShowGrid(false);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   setMouseTracking(true);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -214,7 +213,7 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
   if (orientation == Qt::Vertical) {
     switch (role) {
       case Qt::DisplayRole: return section;
-      case Qt::SizeHintRole: return QSize(30, CELL_HEIGHT);
+      case Qt::SizeHintRole: return QSize(30, 0);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
     }
   }
@@ -225,15 +224,10 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
 
 BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   // cache fonts and color
-  small_font.setPointSize(6);
+  small_font.setPixelSize(8);
   hex_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   hex_font.setBold(true);
   selection_color = QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Highlight);
-}
-
-QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QSize sz = QStyledItemDelegate::sizeHint(option, index);
-  return {sz.width(), CELL_HEIGHT};
 }
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {

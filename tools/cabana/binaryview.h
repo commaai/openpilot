@@ -14,7 +14,6 @@ class BinaryItemDelegate : public QStyledItemDelegate {
 public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
 
 private:
