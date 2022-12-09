@@ -77,6 +77,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   }
   main_layout->addWidget(current_widget);
 
+  ParamControl *taco = new ParamControl("GoToTacoBell", tr("Enable Taco"), "", "");
+  main_layout->addWidget(taco);
+
   // Recents
   QLabel *recents_title = new QLabel(tr("Recent Destinations"));
   recents_title->setStyleSheet("font-size: 55px");

@@ -22,6 +22,32 @@ REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 VALID_POS_STD = 50.0
 
+TB_WAYPOINTS = [
+ (32.720214, -117.166506),
+ (32.720914, -117.164761),
+ (32.721382, -117.163859),
+ (32.722167999999996, -117.16386800000001),
+ (32.722757, -117.16328000000001),
+ (32.72265, -117.160436),
+ (32.723848, -117.156823),
+ (32.724226, -117.152976),
+ (32.722242, -117.14945499999999),
+ (32.719218999999995, -117.14837299999999),
+ (32.71454, -117.14805100000001),
+ (32.713451, -117.14658999999999),
+ (32.713099, -117.13917699999999),
+ (32.712708, -117.132689),
+ (32.712351, -117.133137),
+ (32.712214, -117.13378),
+ (32.711095, -117.133842),
+ (32.710575999999996, -117.132057),
+ (32.711545, -117.13022699999999),
+ (32.711653999999996, -117.129685),
+ (32.711671, -117.127432),
+ (32.711503, -117.125819),
+ (32.71148, -117.125433),
+]
+TB_WAYPOINTS = [(x[1], x[0]) for x in TB_WAYPOINTS]
 
 class RouteEngine:
   def __init__(self, sm, pm):
@@ -135,10 +161,14 @@ class RouteEngine:
       'language': lang,
     }
 
-    if self.last_bearing is not None:
-      params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
+    #if self.last_bearing is not None:
+    #  params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
 
-    url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
+    # must be <23. mapbox limit is 25
+    extra_coords = TB_WAYPOINTS if self.params.get_bool("GoToTacoBell") else []
+    coords = [(self.last_position.longitude, self.last_position.latitude), *extra_coords, (destination.longitude, destination.latitude)]
+    coords_str = ';'.join([f'{lon},{lat}' for lon, lat in coords])
+    url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{coords_str}'
     try:
       resp = requests.get(url, params=params, timeout=10)
       resp.raise_for_status()
