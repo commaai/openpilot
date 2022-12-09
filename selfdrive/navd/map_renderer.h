@@ -34,7 +34,7 @@ private:
   std::unique_ptr<VisionIpcServer> vipc_server;
   std::unique_ptr<PubMaster> pm;
   std::unique_ptr<SubMaster> sm;
-  void sendVipc();
+  void publish(const double render_time);
 
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
