@@ -68,9 +68,11 @@ void HistoryLogModel::updateState() {
 // HeaderView
 
 QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
+  int default_size = qMax(100, rect().width() / model()->columnCount());
   const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
-  const QRect rect = fontMetrics().boundingRect(QRect(0, 0, sectionSize(logicalIndex), 1000), defaultAlignment(), text);
-  return rect.size() + QSize{10, 6};
+  const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
+  QSize size = rect.size() + QSize{10, 6};
+  return {qMax(size.width(), default_size), size.height()};
 }
 
 void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const {
@@ -81,7 +83,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->drawText(rect.adjusted(5, 3, 5, 3), defaultAlignment(), text);
+  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text);
 }
 
 // HistoryLog
@@ -90,15 +92,13 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   model = new HistoryLogModel(this);
   setModel(model);
   setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
-  horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
-  horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   verticalHeader()->setVisible(false);
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 }
 
 int HistoryLog::sizeHintForColumn(int column) const {
-  // sizeHintForColumn is only called for column 0 (ResizeToContents)
-  return itemDelegate()->sizeHint(viewOptions(), model->index(0, 0)).width() + 5;
+  return -1;
 }
