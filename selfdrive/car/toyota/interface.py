@@ -228,7 +228,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
       ret.lateralTuning.pid.kpV = [1.0]
-      ret.lateralTuning.pid.kiV = [0.1]
+      ret.lateralTuning.pid.kiV = [0.0]  # this causes huge wind-ups after turns (70 degrees in integral!)
       ret.lateralTuning.pid.kf = 1.0
 
     # we can't use the fingerprint to detect this reliably, since
