@@ -230,6 +230,7 @@ if __name__ == "__main__":
         'driverStateV2.dspExecutionTime',
         'navModel.dspExecutionTime',
         'navModel.modelExecutionTime',
+        'navThumbnail.timestampEof',
       ]
       if PC:
         ignore += [
