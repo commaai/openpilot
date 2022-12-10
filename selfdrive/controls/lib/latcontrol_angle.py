@@ -1,22 +1,14 @@
 import math
 
 from cereal import log
-from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
-from selfdrive.controls.lib.pid import PIDController
+from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED
+from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
-class LatControlAngle(LatControl):
-  def __init__(self, CP, CI):
-    super().__init__(CP, CI)
-    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
-                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             k_f=CP.lateralTuning.pid.kf)
-
-  def reset(self):
-    super().reset()
-    self.pid.reset()
+class LatControlAngle(LatControlPID):
+  steer_max = float('inf')  # output is angle and should be unrestricted
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
