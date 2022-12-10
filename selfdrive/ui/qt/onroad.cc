@@ -84,8 +84,6 @@ void OnroadWindow::replayStarted(const QString &route, const QString &data_dir) 
     replay_controls->deleteLater();
   }
   replay_controls = new ReplayControls(this);
-  replay_controls->resize(rect().width() - 100, 100);
-  replay_controls->move({50, rect().height() - replay_controls->rect().height() - 120});
   replay_controls->start(route, data_dir);
 }
 
@@ -96,8 +94,7 @@ void OnroadWindow::replayStopped() {
 
 void OnroadWindow::resizeEvent(QResizeEvent* event) {
   if (replay_controls) {
-    replay_controls->resize(event->size().width() - 100 , replay_controls->rect().height());
-    replay_controls->move({50, event->size().height() - 120});
+    replay_controls->adjustPosition();
   }
   QWidget::resizeEvent(event);
 }
@@ -672,18 +669,22 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(stop_btn);
   main_layout->addWidget(end_time_label);
   setStyleSheet(R"(
-    QLabel{color:white;font-size:30px}
-    QSlider::sub-page:horizontal{height:30px;}
-    QSlider::add-page:horizontal{height:30px;}
-    QSlider::handle:horizontal{height:30px;}
+    QSlider {height: 60px;}
+    QLabel {color:white;font-size:30px;}
   )");
 
   QObject::connect(play_btn, &QPushButton::clicked, [this]() { replay->pause(!replay->isPaused()); });
   QObject::connect(stop_btn, &QPushButton::clicked, [this]() {
     replay->stop();
     replay.reset(nullptr);
-    deleteLater();
+    emit uiState()->replayStopped();
   });
+  adjustPosition();
+}
+
+void ReplayControls::adjustPosition() {
+  resize(parentWidget()->rect().width() - 100, sizeHint().height());
+  move({50, parentWidget()->rect().height() - rect().height() - bdr_s});
 }
 
 void ReplayControls::start(const QString &route, const QString &data_dir) {

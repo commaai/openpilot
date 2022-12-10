@@ -18,6 +18,7 @@ class ReplayControls : public QWidget {
 public:
   ReplayControls(QWidget *parent);
   void start(const QString &route, const QString &data_dir);
+  void adjustPosition();
 
 protected:
   inline QString formatTime(int seconds) {
