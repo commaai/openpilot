@@ -85,12 +85,14 @@ void OnroadWindow::startReplay(const QString &route, const QString &data_dir) {
       replay_controls->deleteLater();
     }
     replay_controls = new ReplayControls(this);
+    uiState()->replaying = true;
     replay_controls->start(route, data_dir);
   }
 }
 
 void OnroadWindow::stopReplay() {
   if (replay_controls) {
+    uiState()->replaying = false;
     replay_controls->deleteLater();
     replay_controls = nullptr;
   }

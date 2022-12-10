@@ -83,8 +83,26 @@ void ReplayControls::adjustPosition() {
 }
 
 void ReplayControls::start(const QString &route, const QString &data_dir) {
+  QStringList allow = {
+      "modelV2",
+      "controlsState",
+      "liveCalibration",
+      "radarState",
+      "roadCameraState",
+      "roadEncodeIdx",
+      "pandaStates",
+      "carParams",
+      "driverMonitoringState",
+      "carState",
+      "liveLocationKalman",
+      "wideRoadCameraState",
+      "managerState",
+      "navInstruction",
+      "navRoute",
+      "gnssMeasurements",
+  };
   QString route_name = "0000000000000000|" + route;
-  replay.reset(new Replay(route_name, {}, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
+  replay.reset(new Replay(route_name, allow, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
   if (replay->load()) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));
