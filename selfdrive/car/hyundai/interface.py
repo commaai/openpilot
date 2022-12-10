@@ -27,7 +27,6 @@ class CarInterface(CarInterfaceBase):
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
-    canfd_radar_scc = False
     if candidate in CANFD_CAR:
       # detect HDA2 with ADAS Driving ECU
       if Ecu.adas in [fw.ecu for fw in car_fw]:
@@ -39,10 +38,7 @@ class CarInterface(CarInterfaceBase):
         # ICE cars do not have 0x130; GEARS message on 0x40 instead
         if 0x130 not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
-        for fw in car_fw:
-          if fw.ecu == "fwdCamera" and fw.fwVersion == b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.01 99211-GI010 211007':
-            canfd_radar_scc = True
-        if candidate not in CANFD_RADAR_SCC_CAR or not canfd_radar_scc:
+        if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
@@ -221,7 +217,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = (candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR) or not canfd_radar_scc
+      ret.experimentalLongitudinalAvailable = candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
