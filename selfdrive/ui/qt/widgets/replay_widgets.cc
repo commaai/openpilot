@@ -33,11 +33,11 @@ void RouteListWidget::showEvent(QShowEvent *event) {
 }
 
 void RouteListWidget::replayRoute(const QString &route) {
-  emit uiState()->replayStarted(route, QString::fromStdString(Path::log_root()));
+  emit uiState()->startReplay(route, QString::fromStdString(Path::log_root()));
 }
 
 void RouteListWidget::stopReplay() {
-  emit uiState()->replayStopped();
+  emit uiState()->stopReplay();
 }
 
 // class ReplayControls
@@ -69,13 +69,8 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QObject::connect(slider, &QSlider::sliderReleased, [this]() {
     replay->seekTo(slider->value(), true);
   });
+  QObject::connect(stop_btn, &QPushButton::clicked, this, &ReplayControls::stop);
   QObject::connect(play_btn, &QPushButton::clicked, [this]() { replay->pause(!replay->isPaused()); });
-  QObject::connect(stop_btn, &QPushButton::clicked, [this]() {
-    timer->stop();
-    replay->stop();
-    replay.reset(nullptr);
-    emit uiState()->replayStopped();
-  });
   adjustPosition();
 }
 
@@ -95,3 +90,9 @@ void ReplayControls::start(const QString &route, const QString &data_dir) {
   }
 }
 
+void ReplayControls::stop() {
+  timer->stop();
+  replay->stop();
+  replay.reset(nullptr);
+  emit uiState()->stopReplay();
+}

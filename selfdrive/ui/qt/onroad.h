@@ -103,8 +103,8 @@ private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
   void resizeEvent(QResizeEvent* event) override;
-  void replayStarted(const QString &route, const QString &data_dir);
-  void replayStopped();
+  void startReplay(const QString &route, const QString &data_dir);
+  void stopReplay();
 
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
