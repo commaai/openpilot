@@ -200,7 +200,7 @@ class CarState(CarStateBase):
 
     ret.cruiseState.available = True
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
-    distance_unit_msg = cruise_btn_msg if self.CP.carFingerprint == CAR.KIA_SORENTO_PHEV_4TH_GEN else "CLUSTER_INFO"
+    distance_unit_msg = cruise_btn_msg if self.CP.carFingerprint in (CAR.KIA_SORENTO_PHEV_4TH_GEN, CAR.IONIQ_5) else "CLUSTER_INFO"
     self.is_metric = cp.vl[distance_unit_msg]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
