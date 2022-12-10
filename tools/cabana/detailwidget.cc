@@ -154,6 +154,9 @@ void DetailWidget::setMessage(const QString &message_id) {
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
+  if (msg_id.isEmpty())
+    return;
+
   setUpdatesEnabled(false);
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
