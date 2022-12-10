@@ -2,11 +2,24 @@
 
 #include <QStackedLayout>
 #include <QWidget>
+#include <QSlider>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
 
+class ReplayControls : public QWidget {
+  Q_OBJECT
+
+public:
+  ReplayControls(QWidget *parent);
+
+public slots:
+  void replayStarted();
+
+protected:
+  QSlider *slider;
+};
 
 // ***** onroad widgets *****
 class OnroadAlerts : public QWidget {

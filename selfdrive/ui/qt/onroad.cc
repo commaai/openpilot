@@ -629,3 +629,17 @@ void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
   ui_update_params(uiState());
   prev_draw_t = millis_since_boot();
 }
+
+
+// class ReplayControls
+
+ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
+  slider = new QSlider(this);
+  main_layout->addWidget(slider);
+  setVisible(false);
+}
+
+void ReplayControls::replayStarted() {
+  setVisible(true);
+}
