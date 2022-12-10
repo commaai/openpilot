@@ -24,7 +24,7 @@ class LatControlAngle(LatControlPID):
 
       angle_log.error = angle_log.steeringAngleDesiredDeg - CS.steeringAngleDeg
 
-      freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5  # TODO check steer_limited
+      freeze_integrator = steer_limited or CS.steeringPressed or CS.vEgo < 5
       angle_log.output = self.pid.update(angle_log.error,
                                          feedforward=angle_log.steeringAngleDesiredDeg,
                                          speed=CS.vEgo,
@@ -34,6 +34,8 @@ class LatControlAngle(LatControlPID):
       angle_log.p = self.pid.p
       angle_log.i = self.pid.i
       angle_control_saturated = abs(angle_log.steeringAngleDesiredDeg - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
+      # steer_limited may be true due to car controller limits to avoid faults, like a max angle.
+      # we want to log saturation in those cases
       angle_log.saturated = self._check_saturation(angle_control_saturated, CS, False)
 
     return 0, float(angle_log.output), angle_log
