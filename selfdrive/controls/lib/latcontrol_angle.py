@@ -7,10 +7,9 @@ from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
-class LatControlAngle(LatControl):
-  def __init__(self, CP, CI):
-    super().__init__(CP, CI)
-    self.sat_check_min_speed = 5.
+class LatControlAngle(LatControlPID):
+  steer_max = float('inf')  # output is angle and should be unrestricted
+  sat_check_min_speed = 5.
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
