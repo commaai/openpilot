@@ -21,6 +21,9 @@ MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before steer can be cut
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
 
+# EPS ignores commands above this angle and causes PCS faults
+MAX_STEER_ANGLE = 94.9461
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -89,11 +92,11 @@ class CarController:
       # Angular rate limit based on speed
       apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
-      # clip to max angle limits (EPS ignores messages outside of these bounds and causes PCS faults)
-      apply_angle = clip(apply_angle, -94.9461, 94.9461)
+      # Clip to max angle limits
+      apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
       if not lat_active:
-        apply_angle = clip(torque_sensor_angle, -94.9461, 94.9461)
+        apply_angle = clip(torque_sensor_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut steer request bit to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
