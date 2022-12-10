@@ -19,6 +19,7 @@ void RouteListWidget::showEvent(QShowEvent *event) {
         }
       }
     }
+    // TODO: descending sort routes
     for (auto &route : route_names) {
       ButtonControl *c = new ButtonControl(route, tr("replay"));
       QObject::connect(uiState(), &UIState::offroadTransition, c, &ButtonControl::setEnabled);
