@@ -673,8 +673,18 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
     QLabel {color:white;font-size:30px;}
   )");
 
+  timer = new QTimer(this);
+  timer->setInterval(1000);
+  timer->callOnTimeout([this]() {
+    slider->setValue(replay->currentSeconds());
+  });
+
+  QObject::connect(slider, &QSlider::sliderReleased, [this]() {
+    replay->seekTo(slider->value(), true);
+  });
   QObject::connect(play_btn, &QPushButton::clicked, [this]() { replay->pause(!replay->isPaused()); });
   QObject::connect(stop_btn, &QPushButton::clicked, [this]() {
+    timer->stop();
     replay->stop();
     replay.reset(nullptr);
     emit uiState()->replayStopped();
@@ -694,5 +704,6 @@ void ReplayControls::start(const QString &route, const QString &data_dir) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));
     replay->start();
+    timer->start();
   }
 }

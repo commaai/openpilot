@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QStackedLayout>
 #include <QPushButton>
+#include <QTimer>
 #include <QWidget>
 #include <QSlider>
 
@@ -28,6 +29,7 @@ protected:
   QLabel *end_time_label;
   QPushButton *play_btn;
   QPushButton *stop_btn;
+  QTimer *timer;
   std::unique_ptr<Replay> replay;
 };
 
