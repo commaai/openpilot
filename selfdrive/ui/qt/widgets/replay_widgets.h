@@ -17,13 +17,13 @@ public:
   RouteListWidget(QWidget *parent);
 
 public slots:
-  void replayRoute(const QString &route);
-  void stopReplay();
+  void buttonClicked();
 
 protected:
   void showEvent(QShowEvent *event) override;
 
   QSet<QString> route_names;
+  QString current_route;
 };
 
 class ReplayControls : public QWidget {

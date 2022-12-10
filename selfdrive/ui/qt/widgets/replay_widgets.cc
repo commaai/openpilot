@@ -7,8 +7,7 @@
 
 // class RouteListWidget
 
-RouteListWidget::RouteListWidget(QWidget *parent) : ListWidget(parent) {
-}
+RouteListWidget::RouteListWidget(QWidget *parent) : ListWidget(parent) {}
 
 void RouteListWidget::showEvent(QShowEvent *event) {
   if (route_names.isEmpty()) {
@@ -21,23 +20,27 @@ void RouteListWidget::showEvent(QShowEvent *event) {
       }
     }
     for (auto &route : route_names) {
-      ButtonControl *c = new ButtonControl(route, "replay");
+      ButtonControl *c = new ButtonControl(route, tr("replay"));
       QObject::connect(uiState(), &UIState::offroadTransition, c, &ButtonControl::setEnabled);
-      QObject::connect(c, &ButtonControl::clicked, [this, r = route]() {
-        this->replayRoute(r);
-      });
+      QObject::connect(c, &ButtonControl::clicked, this, &RouteListWidget::buttonClicked);
       addItem(c);
     }
   }
   ListWidget::showEvent(event);
 }
 
-void RouteListWidget::replayRoute(const QString &route) {
-  emit uiState()->startReplay(route, QString::fromStdString(Path::log_root()));
-}
-
-void RouteListWidget::stopReplay() {
-  emit uiState()->stopReplay();
+void RouteListWidget::buttonClicked() {
+  ButtonControl *btn = qobject_cast<ButtonControl *>(sender());
+  const QString route = btn->title();
+  if (route == current_route) {
+    current_route = "";
+    emit uiState()->stopReplay();
+    btn->setText(tr("replay"));
+  } else {
+    current_route = route;
+    emit uiState()->startReplay(route, QString::fromStdString(Path::log_root()));
+    btn->setText(tr("stop"));
+  }
 }
 
 // class ReplayControls

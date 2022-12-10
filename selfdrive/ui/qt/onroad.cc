@@ -129,7 +129,6 @@ void OnroadWindow::offroadTransition(bool offroad) {
     }
   }
 #endif
-  stopReplay();
   alerts->updateAlert({}, bg);
 }
 
