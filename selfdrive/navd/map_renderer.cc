@@ -154,6 +154,15 @@ void MapRenderer::update() {
   }
 }
 
+void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf) {
+  MessageBuilder msg;
+  auto thumbnaild = msg.initEvent().initNavThumbnail();
+  thumbnaild.setFrameId(frame_id);
+  thumbnaild.setTimestampEof(ts);
+  thumbnaild.setThumbnail(buf);
+  pm->send("navThumbnail", msg);
+}
+
 void MapRenderer::publish(const double render_time) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
   uint64_t ts = nanos_since_boot();
@@ -176,10 +185,11 @@ void MapRenderer::publish(const double render_time) {
 
   vipc_server->send(buf, &extra);
 
-  kj::Array<capnp::byte> buffer_kj = NULL;
+  // Send thumbnail
   if (TEST_MODE) {
     // Full image in thumbnails in test mode
-    buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)cap.bits(), cap.sizeInBytes());
+    kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)cap.bits(), cap.sizeInBytes());
+    sendThumbnail(ts, buffer_kj);
   } else if (frame_id % 100 == 0) {
     // Write jpeg into buffer
     QByteArray buffer_bytes;
@@ -187,17 +197,8 @@ void MapRenderer::publish(const double render_time) {
     buffer.open(QIODevice::WriteOnly);
     cap.save(&buffer, "JPG", 50);
 
-    buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
-  }
-
-  // Send thumbnail
-  if (buffer_kj) {
-    MessageBuilder msg;
-    auto thumbnaild = msg.initEvent().initNavThumbnail();
-    thumbnaild.setFrameId(frame_id);
-    thumbnaild.setTimestampEof(ts);
-    thumbnaild.setThumbnail(buffer_kj);
-    pm->send("navThumbnail", msg);
+    kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
+    sendThumbnail(ts, buffer_kj);
   }
 
   // Send state msg

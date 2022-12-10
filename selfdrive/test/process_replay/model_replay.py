@@ -206,11 +206,6 @@ if __name__ == "__main__":
   }
 
   # run replays
-  log_msgs = nav_model_replay(lr)
-  save_log('/tmp/rlog', log_msgs)
-  print("all done", len(log_msgs))
-  exit()
-
   log_msgs = model_replay(lr, frs)
   if not NO_NAV:
     log_msgs += nav_model_replay(lr)
@@ -224,7 +219,7 @@ if __name__ == "__main__":
     try:
       expected_msgs = 2*MAX_FRAMES
       if not NO_NAV:
-        expected_msgs += NAV_FRAMES
+        expected_msgs += NAV_FRAMES*2
       cmp_log = list(LogReader(BASE_URL + log_fn))[:expected_msgs]
 
       ignore = [
