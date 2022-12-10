@@ -31,6 +31,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     split->insertWidget(0, arCam);
   }
 
+  if (getenv("MAP_RENDER_VIEW")) {
+    CameraWidget *map_render = new CameraWidget("navd", VISION_STREAM_MAP, false, this);
+    split->insertWidget(0, map_render);
+  }
+
   stacked_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);

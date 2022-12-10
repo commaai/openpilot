@@ -5,6 +5,10 @@ from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED, STEER_ANGLE_SATUR
 
 
 class LatControlAngle(LatControl):
+  def __init__(self, CP, CI):
+    super().__init__(CP, CI)
+    self.sat_check_min_speed = 5.
+
   def update(self, active, CS, VM, params, actuators, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
@@ -17,7 +21,7 @@ class LatControlAngle(LatControl):
       angle_steers_des += params.angleOffsetDeg
 
     angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
-    angle_log.saturated = self._check_saturation(angle_control_saturated, CS, steer_limited)
+    angle_log.saturated = self._check_saturation(angle_control_saturated, CS, False)
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
 

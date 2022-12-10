@@ -10,7 +10,7 @@
 
 // BinaryView
 
-const int CELL_HEIGHT = 26;
+const int CELL_HEIGHT = 36;
 
 inline int get_bit_index(const QModelIndex &index, bool little_endian) {
   return index.row() * 8 + (little_endian ? 7 - index.column() : index.column());
@@ -24,14 +24,13 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   verticalHeader()->setSectionsClickable(false);
   verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+  verticalHeader()->setDefaultSectionSize(CELL_HEIGHT);
   horizontalHeader()->hide();
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
   setFrameShape(QFrame::NoFrame);
   setShowGrid(false);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   setMouseTracking(true);
+  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -57,7 +56,7 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 }
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
-  delegate->setSelectionColor(style()->standardPalette().color(QPalette::Active, QPalette::Highlight));
+  delegate->selection_color = (palette().color(QPalette::Active, QPalette::Highlight));
   if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8) {
     anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
@@ -66,7 +65,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
       if (bit_idx == s->lsb || bit_idx == s->msb) {
         anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
         resize_sig = s;
-        delegate->setSelectionColor(item->bg_color);
+        delegate->selection_color = item->bg_color;
         break;
       }
     }
@@ -79,8 +78,7 @@ void BinaryView::highlightPosition(const QPoint &pos) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
-    sig ? QToolTip::showText(pos, sig->name.c_str(), this, rect())
-        : QToolTip::hideText();
+    QToolTip::showText(pos, sig ? sig->name.c_str() : "", this, rect());
   }
 }
 
@@ -214,7 +212,7 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
   if (orientation == Qt::Vertical) {
     switch (role) {
       case Qt::DisplayRole: return section;
-      case Qt::SizeHintRole: return QSize(30, CELL_HEIGHT);
+      case Qt::SizeHintRole: return QSize(30, 0);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
     }
   }
@@ -224,16 +222,9 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
 // BinaryItemDelegate
 
 BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
-  // cache fonts and color
-  small_font.setPointSize(6);
+  small_font.setPixelSize(8);
   hex_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   hex_font.setBold(true);
-  selection_color = QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Highlight);
-}
-
-QSize BinaryItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QSize sz = QStyledItemDelegate::sizeHint(option, index);
-  return {sz.width(), CELL_HEIGHT};
 }
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -245,12 +236,10 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->setFont(hex_font);
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
-    painter->setPen(QApplication::style()->standardPalette().color(QPalette::BrightText));
+    painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     painter->fillRect(option.rect, item->bg_color);
-    painter->setPen(item->sigs.contains(bin_view->hovered_sig)
-                        ? QApplication::style()->standardPalette().color(QPalette::BrightText)
-                        : Qt::black);
+    painter->setPen(item->sigs.contains(bin_view->hovered_sig) ? option.palette.color(QPalette::BrightText) : Qt::black);
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
@@ -258,6 +247,5 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->setFont(small_font);
     painter->drawText(option.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
   }
-
   painter->restore();
 }

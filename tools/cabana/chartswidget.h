@@ -66,6 +66,8 @@ private:
   void updateTitle();
   void updateFromSettings();
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  void applyNiceNumbers(qreal min, qreal max);
+  qreal niceNumber(qreal x, bool ceiling);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -102,17 +104,20 @@ private:
   void zoomReset();
   void updateToolBar();
   void removeAll();
+  void showAllData();
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
   QLabel *range_label;
   bool docking = true;
+  QAction *show_all_values_btn;
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
   QVBoxLayout *charts_layout;
   QList<ChartView *> charts;
+  uint32_t max_chart_range = 0;
   bool is_zoomed = false;
   std::pair<double, double> event_range;
   std::pair<double, double> display_range;
