@@ -23,7 +23,7 @@ from tools.lib.logreader import LogReader
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
 MAX_FRAMES = 100 if PC else 600
-NAV_FRAMES = 20
+NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ  # TODO: make map renderer work in CI
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
@@ -43,39 +43,46 @@ def replace_calib(msg, calib):
 
 
 def nav_model_replay(lr):
+  sm = messaging.SubMaster(['navModel', 'navThumbnail'])
   pm = messaging.PubMaster(['liveLocationKalman', 'navRoute'])
-  sock = messaging.sub_sock('navModel', conflate=False, timeout=1000)
+
+  nav = [m for m in lr if m.which() == 'navRoute']
+  llk = [m for m in lr if m.which() == 'liveLocationKalman']
+  assert len(nav) > 0 and len(llk) >= NAV_FRAMES
 
   log_msgs = []
   try:
+    assert "MAPBOX_TOKEN" in os.environ
+    os.environ['MAP_RENDER_TEST_MODE'] = '1'
     managed_processes['mapsd'].start()
     managed_processes['navmodeld'].start()
 
     # setup position and route
-    nav = [m for m in lr if m.which() == 'navRoute']
-    llk = [m for m in lr if m.which() == 'liveLocationKalman']
-    assert len(nav) > 0 and len(llk) > 0
-
-    for _ in range(30):
+    for _ in range(10):
       for s in (llk, nav):
-        msg = s[0]
-        pm.send(msg.which(), msg.as_builder().to_bytes())
-      if messaging.recv_one(sock) is not None:
+        pm.send(s[0].which(), s[0].as_builder().to_bytes())
+      sm.update(1000)
+      if sm.updated['navModel']:
         break
-    else:
-      raise Exception("no navmodeld outputs")
+      time.sleep(1)
 
+    if not sm.updated['navModel']:
+      raise Exception("no navmodeld outputs, failed to initialize")
+
+    # drain
     time.sleep(2)
-    messaging.drain_sock_raw(sock)
+    sm.update(0)
 
     # run replay
-    for _ in range(NAV_FRAMES):
-      # 2Hz decimation
-      for _ in range(10):
-        pm.send(llk[0].which(), llk[0].as_builder().to_bytes())
-        time.sleep(0.1)
-      with Timeout(5, "timed out waiting for nav model outputs"):
-        log_msgs.append(messaging.recv_one_retry(sock))
+    for n in range(NAV_FRAMES):
+      pm.send(llk[n].which(), llk[n].as_builder().to_bytes())
+      m = messaging.recv_one(sm.sock['navThumbnail'])
+      assert m is not None, f"no navThumbnail, frame={n}"
+      log_msgs.append(m)
+
+      m = messaging.recv_one(sm.sock['navModel'])
+      assert m is not None, f"no navModel response, frame={n}"
+      log_msgs.append(m)
   finally:
     managed_processes['mapsd'].stop()
     managed_processes['navmodeld'].stop()
@@ -212,7 +219,7 @@ if __name__ == "__main__":
     try:
       expected_msgs = 2*MAX_FRAMES
       if not NO_NAV:
-        expected_msgs += NAV_FRAMES
+        expected_msgs += NAV_FRAMES*2
       cmp_log = list(LogReader(BASE_URL + log_fn))[:expected_msgs]
 
       ignore = [
@@ -223,6 +230,7 @@ if __name__ == "__main__":
         'driverStateV2.dspExecutionTime',
         'navModel.dspExecutionTime',
         'navModel.modelExecutionTime',
+        'navThumbnail.timestampEof',
       ]
       if PC:
         ignore += [
