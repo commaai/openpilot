@@ -20,6 +20,8 @@ class LatControlAngle(LatControl):
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
+
+    angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = float(CS.steeringAngleDeg)
     angle_log.output = float(CS.steeringAngleDeg)
 
