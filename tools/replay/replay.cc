@@ -20,7 +20,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
       uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
       sockets_[which] = it.name;
       if (!allow.empty() || !block.empty()) {
-        qWarning() << it.name;
         allow_list.insert((cereal::Event::Which)which);
       }
       s.push_back(it.name);

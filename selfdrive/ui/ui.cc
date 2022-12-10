@@ -166,7 +166,13 @@ static void update_state(UIState *s) {
     float scale = (sm["wideRoadCameraState"].getWideRoadCameraState().getSensor() == cereal::FrameData::ImageSensor::AR0321) ? 6.0f : 1.0f;
     scene.light_sensor = std::max(100.0f - scale * sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent(), 0.0f);
   }
-  scene.started = s->replaying || (sm["deviceState"].getDeviceState().getStarted() && scene.ignition);
+
+  bool started = (sm["deviceState"].getDeviceState().getStarted() && scene.ignition);
+  if (s->replaying && started) {
+    emit s->stopReplay();
+    assert(s->replaying == false);
+  }
+  scene.started = started || s->replaying;
 }
 
 void ui_update_params(UIState *s) {
