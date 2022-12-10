@@ -59,7 +59,7 @@ print(replay_lib)
 qt_src = ["qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
-          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc", "qt/offroad/replaypanel.cc"]
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc", "qt/widgets/replay_widgets.cc"]
 ui_libs = qt_env.Library(qt_src, LIBS = qt_libs)
 qt_env.Program("_ui", ["main.cc", ui_libs] + [asset_obj], LIBS=qt_libs)
 if GetOption('test'):

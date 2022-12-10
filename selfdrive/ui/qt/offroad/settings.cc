@@ -18,12 +18,12 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/widgets/replay_widgets.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/offroad/replaypanel.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
@@ -361,7 +361,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
-    {tr("Replay"), new ReplayPanel(this)},
+    {tr("Replay"), new RouteListWidget(this)},
   };
 
 #ifdef ENABLE_MAPS
