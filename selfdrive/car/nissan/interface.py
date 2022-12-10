@@ -19,8 +19,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRatio = 17
 
-    ret.steerControlType = car.CarParams.SteerControlType.angle
-    CarInterfaceBase.configure_angle_tune(ret.lateralTuning)
+    CarInterfaceBase.configure_angle_tune(ret)
 
     if candidate in (CAR.ROGUE, CAR.XTRAIL):
       ret.mass = 1610 + STD_CARGO_KG

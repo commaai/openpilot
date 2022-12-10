@@ -16,8 +16,7 @@ class CarInterface(CarInterfaceBase):
     # how openpilot should be, hence dashcamOnly
     ret.dashcamOnly = True
 
-    ret.steerControlType = car.CarParams.SteerControlType.angle
-    CarInterfaceBase.configure_angle_tune(ret.lateralTuning)
+    CarInterfaceBase.configure_angle_tune(ret)
 
     # Set kP and kI to 0 over the whole speed range to have the planner accel as actuator command
     ret.longitudinalTuning.kpBP = [0]

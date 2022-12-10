@@ -16,8 +16,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.ford)]
 
     # Angle-based steering
-    ret.steerControlType = CarParams.SteerControlType.angle
-    CarInterfaceBase.configure_angle_tune(ret.lateralTuning)
+    CarInterfaceBase.configure_angle_tune(ret)
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
 
