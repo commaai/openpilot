@@ -39,7 +39,7 @@ class TestCarInterfaces(unittest.TestCase):
     if car_params.steerControlType == car.CarParams.SteerControlType.angle:
       self.assertEqual(tune.which(), 'pid', 'Angle-based car must init PID lateral tuning')
 
-    if car_params.steerControlType != car.CarParams.SteerControlType.curvature:
+    if car_params.steerControlType != car.CarParams.SteerControlType.curvature and not car_params.notCar:
       if tune.which() == 'pid':
         self.assertTrue(not math.isnan(tune.pid.kf) and tune.pid.kf > 0)
         self.assertTrue(len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP))

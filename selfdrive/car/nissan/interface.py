@@ -12,6 +12,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "nissan"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
     ret.autoResumeSng = False
+    ret.radarOffCan = True
 
     ret.steerLimitTimer = 1.0
 
@@ -19,7 +20,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 17
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.radarOffCan = True
+    CarInterfaceBase.configure_angle_tune(ret.lateralTuning)
 
     if candidate in (CAR.ROGUE, CAR.XTRAIL):
       ret.mass = 1610 + STD_CARGO_KG

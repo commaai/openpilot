@@ -194,6 +194,15 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
+  @staticmethod
+  def configure_angle_tune(tune, kp=0., ki=0.):
+    tune.init('pid')
+    tune.pid.kf = 1.0
+    tune.pid.kpBP = [0.]
+    tune.pid.kiBP = [0.]
+    tune.pid.kpV = [kp]
+    tune.pid.kiV = [ki]
+
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
