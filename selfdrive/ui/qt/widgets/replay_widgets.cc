@@ -100,7 +100,8 @@ void ReplayControls::start(const QString &route, const QString &data_dir) {
       "gnssMeasurements",
   };
   QString route_name = "0000000000000000|" + route;
-  replay.reset(new Replay(route_name, allow, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
+  // TODO: SubMaster is not thread safe.
+  replay.reset(new Replay(route_name, allow, {}, uiState()->sm.get(), REPLAY_FLAG_NONE, data_dir));
   if (replay->load()) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));
