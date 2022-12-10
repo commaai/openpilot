@@ -9,6 +9,7 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 class LatControlAngle(LatControlPID):
   steer_max = float('inf')  # output is angle and should be unrestricted
+  sat_check_min_speed = 5.
 
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
@@ -33,6 +34,6 @@ class LatControlAngle(LatControlPID):
       angle_log.p = self.pid.p
       angle_log.i = self.pid.i
       angle_control_saturated = abs(angle_log.steeringAngleDesiredDeg - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
-      angle_log.saturated = self._check_saturation(angle_control_saturated, CS, steer_limited)
+      angle_log.saturated = self._check_saturation(angle_control_saturated, CS, False)
 
     return 0, float(angle_log.output), angle_log
