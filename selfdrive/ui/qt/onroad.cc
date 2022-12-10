@@ -562,6 +562,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV
 }
 
 void AnnotatedCameraWidget::paintGL() {
+  std::lock_guard sm_lk(uiState()->sm_lock);
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();

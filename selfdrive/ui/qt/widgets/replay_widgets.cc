@@ -83,6 +83,12 @@ void ReplayControls::adjustPosition() {
   move({50, parentWidget()->rect().height() - rect().height() - bdr_s});
 }
 
+static bool event_filter(const char *name, const Event *e, void *opaque) {
+  std::lock_guard lk(uiState()->sm_lock);
+  uiState()->sm->update_msgs(nanos_since_boot(), {{name, e->event}});
+  return true;
+}
+
 void ReplayControls::start(const QString &route, const QString &data_dir) {
   QStringList allow = {
       "modelV2",
@@ -101,8 +107,8 @@ void ReplayControls::start(const QString &route, const QString &data_dir) {
       "gnssMeasurements",
   };
   QString route_name = "0000000000000000|" + route;
-  // TODO: SubMaster is not thread safe.
   replay.reset(new Replay(route_name, allow, {}, uiState()->sm.get(), REPLAY_FLAG_NONE, data_dir));
+  replay->installEventFilter(event_filter, this);
   if (replay->load()) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));

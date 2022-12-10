@@ -325,7 +325,7 @@ void Replay::startStream(const Segment *cur_segment) {
 }
 
 void Replay::publishMessage(const Event *e) {
-  if (event_filter && event_filter(e, filter_opaque)) return;
+  if (event_filter && event_filter(sockets_[e->which], e, filter_opaque)) return;
 
   if (sm == nullptr) {
     auto bytes = e->bytes();

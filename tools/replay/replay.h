@@ -34,7 +34,7 @@ enum class FindFlag {
 };
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
-typedef bool (*replayEventFilter)(const Event *, void *);
+typedef bool (*replayEventFilter)(const char *name, const Event *, void *);
 
 class Replay : public QObject {
   Q_OBJECT

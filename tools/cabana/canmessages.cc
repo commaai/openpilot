@@ -16,7 +16,7 @@ CANMessages::~CANMessages() {
   replay->stop();
 }
 
-static bool event_filter(const Event *e, void *opaque) {
+static bool event_filter(const char *name, const Event *e, void *opaque) {
   CANMessages *c = (CANMessages *)opaque;
   return c->eventFilter(e);
 }
