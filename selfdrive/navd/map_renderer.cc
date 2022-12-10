@@ -17,6 +17,9 @@ const int NUM_VIPC_BUFFERS = 4;
 const int EARTH_CIRCUMFERENCE_METERS = 40075000;
 const int PIXELS_PER_TILE = 256;
 
+const bool TEST_MODE = getenv("MAP_RENDER_TEST_MODE");
+const int LLK_DECIMATION = TEST_MODE ? 1 : 10;
+
 float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
   float meters_per_tile = meters_per_pixel * PIXELS_PER_TILE;
   float num_tiles = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / meters_per_tile;
@@ -89,7 +92,7 @@ void MapRenderer::msgUpdate() {
     auto orientation = location.getCalibratedOrientationNED();
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % 10) == 0) {
+    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
 
       // TODO: use the static rendering mode
@@ -151,6 +154,15 @@ void MapRenderer::update() {
   }
 }
 
+void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf) {
+  MessageBuilder msg;
+  auto thumbnaild = msg.initEvent().initNavThumbnail();
+  thumbnaild.setFrameId(frame_id);
+  thumbnaild.setTimestampEof(ts);
+  thumbnaild.setThumbnail(buf);
+  pm->send("navThumbnail", msg);
+}
+
 void MapRenderer::publish(const double render_time) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
   uint64_t ts = nanos_since_boot();
@@ -173,7 +185,12 @@ void MapRenderer::publish(const double render_time) {
 
   vipc_server->send(buf, &extra);
 
-  if (frame_id % 100 == 0) {
+  // Send thumbnail
+  if (TEST_MODE) {
+    // Full image in thumbnails in test mode
+    kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)cap.bits(), cap.sizeInBytes());
+    sendThumbnail(ts, buffer_kj);
+  } else if (frame_id % 100 == 0) {
     // Write jpeg into buffer
     QByteArray buffer_bytes;
     QBuffer buffer(&buffer_bytes);
@@ -181,14 +198,7 @@ void MapRenderer::publish(const double render_time) {
     cap.save(&buffer, "JPG", 50);
 
     kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
-
-    // Send thumbnail
-    MessageBuilder msg;
-    auto thumbnaild = msg.initEvent().initNavThumbnail();
-    thumbnaild.setFrameId(frame_id);
-    thumbnaild.setTimestampEof(ts);
-    thumbnaild.setThumbnail(buffer_kj);
-    pm->send("navThumbnail", msg);
+    sendThumbnail(ts, buffer_kj);
   }
 
   // Send state msg

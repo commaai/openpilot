@@ -80,7 +80,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   diff = []
   for msg1, msg2 in zip(log1, log2):
     if msg1.which() != msg2.which():
-      print(msg1, msg2)
+      print(msg1.which(), msg2.which())
       raise Exception("msgs not aligned between logs")
 
     msg1 = remove_ignored_fields(msg1, ignore_fields)
