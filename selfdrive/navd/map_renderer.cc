@@ -176,16 +176,22 @@ void MapRenderer::publish(const double render_time) {
 
   vipc_server->send(buf, &extra);
 
-  if (frame_id % 100 == 0) {
+  kj::Array<capnp::byte> buffer_kj = NULL;
+  if (TEST_MODE) {
+    // Full image in thumbnails in test mode
+    buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)cap.bits(), cap.sizeInBytes());
+  } else if (frame_id % 100 == 0) {
     // Write jpeg into buffer
     QByteArray buffer_bytes;
     QBuffer buffer(&buffer_bytes);
     buffer.open(QIODevice::WriteOnly);
     cap.save(&buffer, "JPG", 50);
 
-    kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
+    buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
+  }
 
-    // Send thumbnail
+  // Send thumbnail
+  if (buffer_kj) {
     MessageBuilder msg;
     auto thumbnaild = msg.initEvent().initNavThumbnail();
     thumbnaild.setFrameId(frame_id);

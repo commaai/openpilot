@@ -43,7 +43,7 @@ def replace_calib(msg, calib):
 
 
 def nav_model_replay(lr):
-  sm = messaging.SubMaster(['navModel'])
+  sm = messaging.SubMaster(['navModel', 'navThumbnail'])
   pm = messaging.PubMaster(['liveLocationKalman', 'navRoute'])
 
   nav = [m for m in lr if m.which() == 'navRoute']
@@ -76,6 +76,10 @@ def nav_model_replay(lr):
     # run replay
     for n in range(NAV_FRAMES):
       pm.send(llk[n].which(), llk[n].as_builder().to_bytes())
+      m = messaging.recv_one(sm.sock['navThumbnail'])
+      assert m is not None, f"no navThumbnail, frame={n}"
+      log_msgs.append(m)
+
       m = messaging.recv_one(sm.sock['navModel'])
       assert m is not None, f"no navModel response, frame={n}"
       log_msgs.append(m)
@@ -202,8 +206,9 @@ if __name__ == "__main__":
   }
 
   # run replays
-  print(nav_model_replay(lr))
-  print("all done")
+  log_msgs = nav_model_replay(lr)
+  save_log('/tmp/rlog', log_msgs)
+  print("all done", len(log_msgs))
   exit()
 
   log_msgs = model_replay(lr, frs)
