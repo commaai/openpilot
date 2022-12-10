@@ -370,7 +370,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
 #endif
 
-  const int padding = panels.size() > 3 ? 25 : 35;
+  const int padding = panels.size() > 5 ? 18 : 25;
 
   nav_btns = new QButtonGroup(this);
   for (auto &[name, panel] : panels) {
