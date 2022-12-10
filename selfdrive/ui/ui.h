@@ -140,7 +140,7 @@ signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
   void primeTypeChanged(int prime_type);
-  void replayStarted();
+  void replayStarted(const QString &route, const QString &data_dir);
   void replayStopped();
 
 private slots:

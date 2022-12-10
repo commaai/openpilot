@@ -3,7 +3,6 @@
 #include <QSet>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/replay/replay.h"
 
 class ReplayPanel : public ListWidget {
   Q_OBJECT
@@ -19,5 +18,4 @@ protected:
   void showEvent(QShowEvent *event) override;
 
   QSet<QString> route_names;
-  std::unique_ptr<Replay> replay;
 };

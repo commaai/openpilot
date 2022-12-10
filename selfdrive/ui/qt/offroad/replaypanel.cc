@@ -30,18 +30,9 @@ void ReplayPanel::showEvent(QShowEvent *event) {
 }
 
 void ReplayPanel::replayRoute(const QString &route) {
-  QString route_name = "0000000000000000|" + route;
-  replay.reset(new Replay(route_name, {}, {}, nullptr, REPLAY_FLAG_NONE,
-                          QString::fromStdString(Path::log_root())));
-  if (replay->load()) {
-    replay->start();
-    uiState()->replaying = true;
-    emit uiState()->replayStarted();
-  }
+  emit uiState()->replayStarted(route, QString::fromStdString(Path::log_root()));
 }
 
 void ReplayPanel::stopReplay() {
-  replay.reset(nullptr);
-  uiState()->replaying = false;
   emit uiState()->replayStopped();
 }

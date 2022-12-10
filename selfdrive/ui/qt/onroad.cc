@@ -3,7 +3,6 @@
 #include <cmath>
 
 #include <QDebug>
-#include <QLabel>
 
 #include "common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -80,14 +79,14 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 }
 
-void OnroadWindow::replayStarted() {
+void OnroadWindow::replayStarted(const QString &route, const QString &data_dir) {
   if (replay_controls) {
     replay_controls->deleteLater();
   }
-  qWarning() << "replayStarted";
   replay_controls = new ReplayControls(this);
-  replay_controls->resize(rect().width(), 100);
-  replay_controls->move({0, rect().height() - replay_controls->rect().height() - 150});
+  replay_controls->resize(rect().width() - 100, 100);
+  replay_controls->move({50, rect().height() - replay_controls->rect().height() - 120});
+  replay_controls->start(route, data_dir);
 }
 
 void OnroadWindow::replayStopped() {
@@ -97,8 +96,8 @@ void OnroadWindow::replayStopped() {
 
 void OnroadWindow::resizeEvent(QResizeEvent* event) {
   if (replay_controls) {
-    replay_controls->resize(event->size().width(), replay_controls->rect().height());
-    replay_controls->move({0, event->size().height() - 150});
+    replay_controls->resize(event->size().width() - 100 , replay_controls->rect().height());
+    replay_controls->move({50, event->size().height() - 120});
   }
   QWidget::resizeEvent(event);
 }
@@ -663,13 +662,36 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   QLabel *time_label = new QLabel("00:00");
   main_layout->addWidget(time_label);
+  play_btn = new QPushButton("pause", this);
+  main_layout->addWidget(play_btn);
   slider = new QSlider(Qt::Horizontal, this);
   slider->setSingleStep(0);
   main_layout->addWidget(slider);
-  QLabel *end_time_label = new QLabel("test", this);
+  end_time_label = new QLabel(this);
+  stop_btn = new QPushButton("stop", this);
+  main_layout->addWidget(stop_btn);
   main_layout->addWidget(end_time_label);
-  setStyleSheet("QLabel{color:white;font-size:30px}");
+  setStyleSheet(R"(
+    QLabel{color:white;font-size:30px}
+    QSlider::sub-page:horizontal{height:30px;}
+    QSlider::add-page:horizontal{height:30px;}
+    QSlider::handle:horizontal{height:30px;}
+  )");
+
+  QObject::connect(play_btn, &QPushButton::clicked, [this]() { replay->pause(!replay->isPaused()); });
+  QObject::connect(stop_btn, &QPushButton::clicked, [this]() {
+    replay->stop();
+    replay.reset(nullptr);
+    deleteLater();
+  });
 }
 
-void ReplayControls::replayStarted() {
+void ReplayControls::start(const QString &route, const QString &data_dir) {
+  QString route_name = "0000000000000000|" + route;
+  replay.reset(new Replay(route_name, {}, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
+  if (replay->load()) {
+    slider->setRange(0, replay->totalSeconds());
+    end_time_label->setText(formatTime(replay->totalSeconds()));
+    replay->start();
+  }
 }

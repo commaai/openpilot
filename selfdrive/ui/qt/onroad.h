@@ -1,24 +1,33 @@
 #pragma once
 
+#include <QDateTime>
+#include <QLabel>
 #include <QStackedLayout>
+#include <QPushButton>
 #include <QWidget>
 #include <QSlider>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
+#include "tools/replay/replay.h"
 
 class ReplayControls : public QWidget {
   Q_OBJECT
 
 public:
   ReplayControls(QWidget *parent);
-
-public slots:
-  void replayStarted();
+  void start(const QString &route, const QString &data_dir);
 
 protected:
+  inline QString formatTime(int seconds) {
+    return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  }
   QSlider *slider;
+  QLabel *end_time_label;
+  QPushButton *play_btn;
+  QPushButton *stop_btn;
+  std::unique_ptr<Replay> replay;
 };
 
 // ***** onroad widgets *****
@@ -115,7 +124,7 @@ private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
   void resizeEvent(QResizeEvent* event) override;
-  void replayStarted();
+  void replayStarted(const QString &route, const QString &data_dir);
   void replayStopped();
 
   OnroadAlerts *alerts;
