@@ -3,6 +3,7 @@
 #include <QDir>
 
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/ui.h"
 
 ReplayPanel::ReplayPanel(QWidget *parent) : ListWidget(parent) {
 }
@@ -34,9 +35,13 @@ void ReplayPanel::replayRoute(const QString &route) {
                           QString::fromStdString(Path::log_root())));
   if (replay->load()) {
     replay->start();
+    uiState()->replaying = true;
+    emit uiState()->replayStarted();
   }
 }
 
 void ReplayPanel::stopReplay() {
   replay.reset(nullptr);
+  uiState()->replaying = false;
+  emit uiState()->replayStopped();
 }

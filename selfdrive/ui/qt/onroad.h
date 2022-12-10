@@ -114,11 +114,16 @@ public:
 private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void replayStarted();
+  void replayStopped();
+
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
+  ReplayControls *replay_controls = nullptr;
 
 private slots:
   void offroadTransition(bool offroad);

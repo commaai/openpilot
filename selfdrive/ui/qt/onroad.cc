@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <QDebug>
+#include <QLabel>
 
 #include "common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -48,6 +49,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::replayStarted, this, &OnroadWindow::replayStarted);
+  QObject::connect(uiState(), &UIState::replayStopped, this, &OnroadWindow::replayStopped);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -75,6 +78,29 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+}
+
+void OnroadWindow::replayStarted() {
+  if (replay_controls) {
+    replay_controls->deleteLater();
+  }
+  qWarning() << "replayStarted";
+  replay_controls = new ReplayControls(this);
+  replay_controls->resize(rect().width(), 100);
+  replay_controls->move({0, rect().height() - replay_controls->rect().height() - 150});
+}
+
+void OnroadWindow::replayStopped() {
+  replay_controls->deleteLater();
+  replay_controls = nullptr;
+}
+
+void OnroadWindow::resizeEvent(QResizeEvent* event) {
+  if (replay_controls) {
+    replay_controls->resize(event->size().width(), replay_controls->rect().height());
+    replay_controls->move({0, event->size().height() - 150});
+  }
+  QWidget::resizeEvent(event);
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
@@ -635,11 +661,15 @@ void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
 
 ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-  slider = new QSlider(this);
+  QLabel *time_label = new QLabel("00:00");
+  main_layout->addWidget(time_label);
+  slider = new QSlider(Qt::Horizontal, this);
+  slider->setSingleStep(0);
   main_layout->addWidget(slider);
-  setVisible(false);
+  QLabel *end_time_label = new QLabel("test", this);
+  main_layout->addWidget(end_time_label);
+  setStyleSheet("QLabel{color:white;font-size:30px}");
 }
 
 void ReplayControls::replayStarted() {
-  setVisible(true);
 }
