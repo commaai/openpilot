@@ -613,7 +613,6 @@ class Controls:
           actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
         lac_log.active = self.active
-        lac_log.steeringAngleDeg = CS.steeringAngleDeg
         lac_log.output = actuators.steer
         lac_log.saturated = abs(actuators.steer) >= 0.9
 

@@ -70,9 +70,9 @@ class LatControlINDI(LatControl):
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
 
     indi_log = log.ControlsState.LateralINDIState.new_message()
-    indi_log.steeringAngleDeg = math.degrees(self.x[0])
-    indi_log.steeringRateDeg = math.degrees(self.x[1])
-    indi_log.steeringAccelDeg = math.degrees(self.x[2])
+    indi_log.steeringAngleDegK = math.degrees(self.x[0])
+    indi_log.steeringRateDegK = math.degrees(self.x[1])
+    indi_log.steeringAccelDegK = math.degrees(self.x[2])
 
     steers_des = VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll)
     steers_des += math.radians(params.angleOffsetDeg)
