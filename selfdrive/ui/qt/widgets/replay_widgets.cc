@@ -22,6 +22,7 @@ void RouteListWidget::showEvent(QShowEvent *event) {
     }
     for (auto &route : route_names) {
       ButtonControl *c = new ButtonControl(route, "replay");
+      QObject::connect(uiState(), &UIState::offroadTransition, c, &ButtonControl::setEnabled);
       QObject::connect(c, &ButtonControl::clicked, [this, r = route]() {
         this->replayRoute(r);
       });
