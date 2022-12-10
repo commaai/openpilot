@@ -7,7 +7,7 @@ on:
   pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
+  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -232,6 +232,7 @@ jobs:
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
                         ./tools/replay/tests/test_replay && \
+                        ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
@@ -293,7 +294,7 @@ jobs:
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 5
