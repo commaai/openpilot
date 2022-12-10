@@ -131,7 +131,7 @@ def ui_thread(addr):
     if w == 'lqrStateDEPRECATED':
       angle_steers_k = sm['controlsState'].lateralControlState.lqrStateDEPRECATED.steeringAngleDeg
     elif w == 'indiState':
-      angle_steers_k = sm['controlsState'].lateralControlState.indiState.steeringAngleDegK
+      angle_steers_k = sm['controlsState'].lateralControlState.indiState.steeringAngleDeg
     else:
       angle_steers_k = np.inf
 

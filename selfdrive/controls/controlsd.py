@@ -614,6 +614,7 @@ class Controls:
 
         lac_log.active = self.active
         lac_log.output = actuators.steer
+        lac_log.steeringAngleDeg = CS.steeringAngleDeg
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
     # Send a "steering required alert" if saturation count has reached the limit
