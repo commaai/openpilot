@@ -3,6 +3,7 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
+from typing import DefaultDict, Dict
 import unittest
 
 from common.realtime import DT_CTRL
@@ -29,7 +30,7 @@ ABOVE_LIMITS_CARS = [
   HYUNDAI.KONA_EV_2022,
 ]
 
-car_model_jerks = defaultdict(dict)
+car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
 
 @parameterized_class('car_model', [(c,) for c in CAR_MODELS])
