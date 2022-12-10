@@ -165,8 +165,8 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
-void MainWindow::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
-  LoadRouteDialog dlg(route, data_dir, use_qcam, this);
+void MainWindow::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
+  LoadRouteDialog dlg(route, data_dir, replay_flags, this);
   QObject::connect(this, &MainWindow::updateProgressBar, dlg.progress_bar, &DownloadProgressBar::updateProgress);
   int ret = dlg.exec();
   if (ret == QDialog::Accepted) {
@@ -290,7 +290,7 @@ void DownloadProgressBar::updateProgress(uint64_t cur, uint64_t total, bool succ
 
 // LoadRouteDialog
 
-LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent)
+LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, uint32_t replay_flags, QWidget *parent)
     : route_string(route), QDialog(parent, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Dialog) {
   setWindowModality(Qt::WindowModal);
   setWindowTitle(tr("Open Route - Cabana"));
@@ -343,7 +343,7 @@ LoadRouteDialog::LoadRouteDialog(const QString &route, const QString &data_dir, 
   show();
 
   if (!route.isEmpty())
-    loadRoute(route, data_dir, use_qcam);
+    loadRoute(route, data_dir, replay_flags);
 }
 
 void LoadRouteDialog::reject() {
@@ -367,11 +367,11 @@ void LoadRouteDialog::loadClicked() {
   }
 }
 
-void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, bool use_qcam) {
+void LoadRouteDialog::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   stacked_layout->setCurrentIndex(1);
   loading_label->setText(tr("Loading route \"%1\" from %2").arg(route).arg(data_dir.isEmpty() ? "server" : data_dir));
   repaint();
-  if (can->loadRoute(route, data_dir, false)) {
+  if (can->loadRoute(route, data_dir, replay_flags)) {
     QObject::connect(can, &CANMessages::eventsMerged, this, &QDialog::accept);
     return;
   }

@@ -23,8 +23,8 @@ public:
 
 class LoadRouteDialog : public QDialog {
 public:
-  LoadRouteDialog(const QString &route, const QString &data_dir, bool use_qcam, QWidget *parent);
-  void loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  LoadRouteDialog(const QString &route, const QString &data_dir, uint32_t replay_flags, QWidget *parent);
+  void loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags);
   QString route_string;
   DownloadProgressBar *progress_bar;
 
@@ -53,7 +53,7 @@ public slots:
   void loadDBCFromClipboard();
   void saveDBCToFile();
   void saveDBCToClipboard();
-  void loadRoute(const QString &route = {}, const QString &data_dir = {}, bool use_qcam = false);
+  void loadRoute(const QString &route = {}, const QString &data_dir = {}, uint32_t replay_flags = REPLAY_FLAG_NONE);
 
 signals:
   void showMessage(const QString &msg, int timeout);
