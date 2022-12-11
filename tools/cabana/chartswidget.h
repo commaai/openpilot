@@ -87,7 +87,6 @@ class ChartsWidget : public QWidget {
 public:
   ChartsWidget(QWidget *parent = nullptr);
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
-  void removeChart(ChartView *chart);
   inline bool isChartOpened(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
 signals:
@@ -97,6 +96,7 @@ signals:
   void chartClosed(const QString &id, const Signal *sig);
 
 private:
+  void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
   void updateDisplayRange();

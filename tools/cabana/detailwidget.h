@@ -35,7 +35,6 @@ public:
 
 private:
   void showForm(const Signal *sig);
-  void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int to);
@@ -44,7 +43,13 @@ private:
   void editMsg();
   void removeMsg();
   void updateState(const QHash<QString, CanData> * msgs = nullptr);
+  void updateChartState(const QString &id, const Signal *sig, bool opened);
 
+private slots:
+  void chartSignalRemoved(const QString &id, const Signal *sig);
+  void chartSignalAdded(const QString &id, const Signal *sig);
+
+private:
   QString msg_id;
   QLabel *name_label, *time_label, *warning_label;
   QWidget *warning_widget;

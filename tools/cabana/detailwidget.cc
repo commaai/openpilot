@@ -107,8 +107,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
-  QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
+  QObject::connect(charts, &ChartsWidget::chartOpened, this, &DetailWidget::chartSignalAdded);
+  QObject::connect(charts, &ChartsWidget::chartClosed, this, &DetailWidget::chartSignalRemoved);
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
     if (undo_stack->count() > 0)
       dbcMsgChanged();
@@ -220,6 +220,14 @@ void DetailWidget::showForm(const Signal *sig) {
     }
   }
   setUpdatesEnabled(true);
+}
+
+void DetailWidget::chartSignalRemoved(const QString &id, const Signal *sig) {
+  updateChartState(id, sig, false);
+}
+
+void DetailWidget::chartSignalAdded(const QString &id, const Signal *sig) {
+  updateChartState(id, sig, true);
 }
 
 void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
