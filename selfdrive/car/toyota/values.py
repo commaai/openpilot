@@ -23,11 +23,11 @@ class CarControllerParams:
 
   # stock LTA is 0 to 0.05 going straight
   # and 0.1 to 0.4 when turning (max seen is 0.6303)
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[3.5, 0.8, .15])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[3.5, 3.5, 0.4])
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5, 1.5, 0.5])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5, 2.5, 1.5])
 
   # needs to be within +-3 degrees of current angle to avoid windup
-  ANGLE_DELTA_MAX = 15
+  ANGLE_DELTA_MAX = 5
 
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
