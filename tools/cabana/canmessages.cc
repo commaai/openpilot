@@ -30,11 +30,10 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint3
   replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
-  QObject::connect(replay.get(), &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay.get(), &Replay::streamStarted, this, &CANMessages::streamStarted);
+  QObject::connect(replay.get(), &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay.get(), &Replay::timelineUpdated, this, &CANMessages::timelineUpdated);
   if (replay->load()) {
-    emit visionStreamTypeChanged(replay_flags & REPLAY_FLAG_ECAM ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
     replay->start();
     processing = false;
     return true;

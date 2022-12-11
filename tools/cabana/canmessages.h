@@ -36,6 +36,7 @@ public:
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
+  inline VisionStreamType visionStreamType() const { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
   const std::deque<CanData> messages(const QString &id);
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
@@ -47,7 +48,6 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
-  void visionStreamTypeChanged(VisionStreamType);
   void timelineUpdated();
   void streamStarted();
   void eventsMerged();

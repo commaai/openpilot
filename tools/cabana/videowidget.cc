@@ -62,7 +62,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
   QObject::connect(can, &CANMessages::streamStarted, this, &VideoWidget::streamStarted);
-  QObject::connect(can, &CANMessages::visionStreamTypeChanged, cam_widget, &CameraWidget::setStreamType);
 }
 
 void VideoWidget::streamStarted() {
@@ -70,6 +69,7 @@ void VideoWidget::streamStarted() {
   btn_group->buttons()[2]->setChecked(true);
   end_time_label->setText(formatTime(can->totalSeconds()));
   slider->setRange(0, can->totalSeconds() * 1000);
+  cam_widget->setStreamType(can->visionStreamType());
 }
 
 void VideoWidget::pause(bool pause) {
