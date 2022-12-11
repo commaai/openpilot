@@ -121,9 +121,8 @@ class CarController:
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CP, CC.enabled))
 
       if hda2:
-        import os
-        left_blink = os.path.exists('/tmp/left')
-        right_blink = os.path.exists('/tmp/right')
+        left_blink = False
+        right_blink = False
         can_sends.extend(hyundaicanfd.create_spas_messages(self.packer, self.frame, left_blink, right_blink))
 
       if self.CP.openpilotLongitudinalControl:
