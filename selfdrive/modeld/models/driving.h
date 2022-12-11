@@ -4,7 +4,6 @@
 #define TEMPORAL
 #define DESIRE
 #define TRAFFIC_CONVENTION
-#define DRIVING_STYLE
 
 #include <array>
 #include <memory>
