@@ -73,6 +73,7 @@ bool CANMessages::eventFilter(const Event *event) {
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = replay->currentSeconds();
     if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
+      new_msgs->clear();
       counters.clear();
       counters_begin_sec = current_sec;
     }
@@ -82,7 +83,7 @@ bool CANMessages::eventFilter(const Event *event) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
       CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
-      data.dat.append((char *)c.getDat().begin(), c.getDat().size());
+      data.dat = QByteArray::fromRawData((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
         data.freq = data.count / delta;
@@ -90,7 +91,7 @@ bool CANMessages::eventFilter(const Event *event) {
     }
 
     double ts = millis_since_boot();
-    if ((ts - prev_update_ts) > (1000.0 / settings.fps) && !processing) {
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps) && !processing && !new_msgs->isEmpty()) {
       // delay posting CAN message if UI thread is busy
       processing = true;
       prev_update_ts = ts;
