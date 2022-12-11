@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
     if self.car_fingerprint == CAR.FORESTER_2022:
-      ret.cruiseState.enabled = cp_cam.vl["ES_DashStatus"]['Cruise_Activated'] != 0
+      ret.cruiseState.enabled = cp_cam.vl["ES_Status"]['Cruise_Activated'] != 0
       ret.cruiseState.available = cp_cam.vl["ES_DashStatus"]['Cruise_On'] != 0
     else:
       cp_cruise = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
@@ -109,7 +109,7 @@ class CarState(CarStateBase):
     return signals, checks
 
   @staticmethod
-  def get_global_es_distance_signals():
+  def get_common_global_es_signals():
     signals = [
       ("COUNTER", "ES_Distance"),
       ("Signal1", "ES_Distance"),
@@ -130,9 +130,12 @@ class CarState(CarStateBase):
       ("Cruise_Set", "ES_Distance"),
       ("Cruise_Resume", "ES_Distance"),
       ("Signal6", "ES_Distance"),
+
+      ("Cruise_Activated", "ES_Status"),
     ]
     checks = [
       ("ES_Distance", 20),
+      ("ES_Status", 20),
     ]
 
     return signals, checks
@@ -302,8 +305,8 @@ class CarState(CarStateBase):
       ]
 
       if CP.carFingerprint not in GLOBAL_GEN2:
-        signals += CarState.get_global_es_distance_signals()[0]
-        checks += CarState.get_global_es_distance_signals()[1]
+        signals += CarState.get_common_global_es_signals()[0]
+        checks += CarState.get_common_global_es_signals()[1]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
@@ -311,8 +314,8 @@ class CarState(CarStateBase):
   def get_body_can_parser(CP):
     if CP.carFingerprint in GLOBAL_GEN2:
       signals, checks = CarState.get_common_global_signals()
-      signals += CarState.get_global_es_distance_signals()[0]
-      checks += CarState.get_global_es_distance_signals()[1]
+      signals += CarState.get_common_global_es_signals()[0]
+      checks += CarState.get_common_global_es_signals()[1]
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     return None
