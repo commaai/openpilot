@@ -18,13 +18,6 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
-  const QStringList args = cmd_parser.positionalArguments();
-  QString route;
-  if (cmd_parser.isSet("demo")) {
-    route = DEMO_ROUTE;
-  } else if (!args.empty()) {
-    route = args.first();
-  }
 
   QString uuid =  QUuid::createUuid().toString(QUuid::WithoutBraces);
   QString msgq_path = "/dev/shm/" + uuid;
@@ -33,6 +26,13 @@ int main(int argc, char *argv[]) {
   dir.mkdir(msgq_path);
   setenv("OPENPILOT_PREFIX", qPrintable(uuid), 1);
 
+  QString route;
+  const QStringList args = cmd_parser.positionalArguments();
+  if (!args.empty()) {
+    route = args.first();
+  } else if (cmd_parser.isSet("demo")) {
+    route = DEMO_ROUTE;
+  }
   uint32_t replay_flags = REPLAY_FLAG_NONE;
   if (cmd_parser.isSet("ecam")) {
     replay_flags |= REPLAY_FLAG_ECAM;
