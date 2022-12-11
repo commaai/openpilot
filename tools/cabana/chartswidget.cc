@@ -5,6 +5,7 @@
 #include <QRubberBand>
 #include <QToolBar>
 #include <QToolButton>
+#include <QToolTip>
 #include <QtConcurrent>
 
 // ChartsWidget
@@ -196,15 +197,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->layout()->setContentsMargins(0, 0, 0, 0);
   chart->setMargins(QMargins(20, 11, 11, 11));
 
-  track_line = new QGraphicsLineItem(chart);
-  track_line->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
-  track_ellipse = new QGraphicsEllipseItem(chart);
-  track_ellipse->setBrush(Qt::darkGray);
-  value_text = new QGraphicsTextItem(chart);
-  item_group = scene()->createItemGroup({track_line, track_ellipse, value_text});
-  item_group->setZValue(chart->zValue() + 10);
-
-  // title
   QToolButton *remove_btn = new QToolButton();
   remove_btn->setText("X");
   remove_btn->setAutoRaise(true);
@@ -242,6 +234,7 @@ ChartView::~ChartView() {
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QLineSeries *series = new QLineSeries(this);
+  series->setUseOpenGL(true);
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -454,7 +447,7 @@ void ChartView::applyNiceNumbers(qreal min, qreal max) {
   axis_y->setTickCount(tick_count);
 }
 
-//nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
+// nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
 qreal ChartView::niceNumber(qreal x, bool ceiling) {
   qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
   qreal q = x / z; //q<10 && q>=1;
@@ -473,7 +466,8 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  item_group->setVisible(false);
+  track_pt = {0, 0};
+  scene()->update();
   QChartView::leaveEvent(event);
 }
 
@@ -504,10 +498,9 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
-
+  track_pt = {0, 0};
   if (!is_zooming && plot_area.contains(ev->pos())) {
     QStringList text_list;
-    QPointF pos = {};
     const double sec = chart()->mapToValue(ev->pos()).x();
     for (auto &s : sigs) {
       QString value = "--";
@@ -516,35 +509,35 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       if (it != s.vals.rend() && it->x() >= axis_x->min()) {
         value = QString::number(it->y());
         auto value_pos = chart()->mapToPosition(*it);
-        if (value_pos.x() > pos.x()) pos = value_pos;
+        if (value_pos.x() > track_pt.x()) track_pt = value_pos;
       }
       text_list.push_back(QString("&nbsp;%1 : %2&nbsp;").arg(sigs.size() > 1 ? s.sig->name.c_str() : "Value").arg(value));
     }
-    if (pos.x() == 0) pos = ev->pos();
-
-    QString time = QString::number(chart()->mapToValue(pos).x(), 'f', 3);
-    value_text->setHtml(QString("<div style=\"background-color: darkGray;color: white;\">&nbsp;Time: %1 &nbsp;<br />%2</div>")
-                            .arg(time).arg(text_list.join("<br />")));
-
-    QRectF text_rect = value_text->boundingRect();
-    int text_x = pos.x() + 8;
-    if ((text_x + text_rect.width()) > plot_area.right()) {
-      text_x = pos.x() - text_rect.width() - 8;
-    }
-    value_text->setPos(text_x, pos.y() - text_rect.height() / 2);
-    track_line->setLine(pos.x(), plot_area.top(), pos.x(), plot_area.bottom());
-    track_ellipse->setRect(pos.x() - 5, pos.y() - 5, 10, 10);
-    item_group->setVisible(true);
+    if (track_pt.x() == 0) track_pt = ev->pos();
+    QString text = QString("<div style=\"background-color: darkGray;color: white;\">&nbsp;Time: %1 &nbsp;<br />%2</div>")
+                       .arg(chart()->mapToValue(track_pt).x(), 0, 'f', 3)
+                       .arg(text_list.join("<br />"));
+    QPoint pt((int)track_pt.x() + 20, plot_area.top() - 20);
+    QToolTip::showText(mapToGlobal(pt), text, this, plot_area.toRect());
+    scene()->update();
   } else {
-    item_group->setVisible(false);
+    QToolTip::hideText();
   }
   QChartView::mouseMoveEvent(ev);
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
+  qreal y1 = chart()->plotArea().top() - 2;
+  qreal y2 = chart()->plotArea().bottom() + 2;
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
-  painter->drawLine(QPointF{x, chart()->plotArea().top() - 2}, QPointF{x, chart()->plotArea().bottom() + 2});
+  painter->drawLine(QPointF{x, y1}, QPointF{x, y2});
+  if (!track_pt.isNull()) {
+    painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+    painter->drawLine(QPointF{track_pt.x(), y1}, QPointF{track_pt.x(), y2});
+    painter->setBrush(Qt::darkGray);
+    painter->drawEllipse(track_pt, 5, 5);
+  }
 }
 
 // SeriesSelector
@@ -613,7 +606,7 @@ void SeriesSelector::addSignal(QListWidgetItem *item) {
   addSeries(data[0], data[1], data[2]);
 }
 
-void SeriesSelector::addSeries(const QString &id, const QString& msg_name, const QString &sig_name) {
+void SeriesSelector::addSeries(const QString &id, const QString &msg_name, const QString &sig_name) {
   QStringList data({id, msg_name, sig_name});
   for (int i = 0; i < chart_series->count(); ++i) {
     if (chart_series->item(i)->data(Qt::UserRole).toStringList() == data) {
