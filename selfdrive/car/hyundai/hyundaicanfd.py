@@ -98,9 +98,6 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
 
 
 def create_spas_messages(packer, frame, left_blink, right_blink):
-  # messages needed to car happy after disabling
-  # the ADAS Driving ECU to do longitudinal control
-
   ret = []
 
   values = {
@@ -110,7 +107,7 @@ def create_spas_messages(packer, frame, left_blink, right_blink):
   blink = 0
   if left_blink:
     blink = 3
-  if right_blink:
+  elif right_blink:
     blink = 4
   values = {
     "BLINKER_CONTROL": blink,
