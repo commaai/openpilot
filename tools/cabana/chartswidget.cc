@@ -3,7 +3,6 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QRubberBand>
-#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QtConcurrent>
@@ -19,6 +18,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label = new QLabel();
   title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(title_label);
+  show_all_values_btn = toolbar->addAction("");
   toolbar->addWidget(range_label = new QLabel());
   reset_zoom_btn = toolbar->addAction("⟲");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
@@ -26,7 +26,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
-  updateToolBar();
 
   // charts
   QWidget *charts_container = new QWidget(this);
@@ -37,14 +36,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
   main_layout->addWidget(charts_scroll);
 
+  max_chart_range = settings.max_chart_x_range;
   use_dark_theme = palette().color(QPalette::WindowText).value() > palette().color(QPalette::Background).value();
+  updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
+  QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -58,7 +59,7 @@ void ChartsWidget::eventsMerged() {
   if (auto events = can->events(); events && !events->empty()) {
     event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
     event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
-    updateDisplayRange();
+    updateState();
   }
 }
 
@@ -69,8 +70,8 @@ void ChartsWidget::updateDisplayRange() {
     // reached the end, or seeked to a timestamp out of range.
     display_range.first = current_sec - 5;
   }
-  display_range.first = std::max(display_range.first, event_range.first);
-  display_range.second = std::min(display_range.first + settings.max_chart_x_range, event_range.second);
+  display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
+  display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
   if (prev_range != display_range) {
     QFutureSynchronizer<void> future_synchronizer;
     for (auto c : charts)
@@ -100,13 +101,29 @@ void ChartsWidget::updateState() {
   }
 
   const auto &range = is_zoomed ? zoomed_range : display_range;
+  setUpdatesEnabled(false);
   for (auto c : charts) {
     c->setDisplayRange(range.first, range.second);
     c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
+  setUpdatesEnabled(true);
+}
+
+void ChartsWidget::showAllData() {
+  bool switch_to_show_all = max_chart_range == settings.max_chart_x_range;
+  max_chart_range = switch_to_show_all ? settings.cached_segment_limit * 60
+                                       : settings.max_chart_x_range;
+  max_chart_range = std::min(max_chart_range, (uint32_t)can->totalSeconds());
+  updateToolBar();
+  updateState();
 }
 
 void ChartsWidget::updateToolBar() {
+  int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
+  bool displaying_all = max_chart_range != min_range;
+  show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
+  show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));
+  show_all_values_btn->setVisible(!is_zoomed);
   remove_all_btn->setEnabled(!charts.isEmpty());
   reset_zoom_btn->setEnabled(is_zoomed);
   range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
@@ -232,6 +249,7 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
+  updateAxisY();
 }
 
 void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
@@ -242,8 +260,7 @@ void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
 }
 
 bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
-  return it != sigs.end();
+  return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
 QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartView::SigItem>::iterator &it) {
@@ -261,11 +278,11 @@ QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartVie
 }
 
 void ChartView::signalUpdated(const Signal *sig) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; });
-  if (it != sigs.end()) {
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; })) {
     updateTitle();
     // TODO: don't update series if only name changed.
     updateSeries(sig);
+    updateAxisY();
   }
 }
 
@@ -276,8 +293,7 @@ void ChartView::signalRemoved(const Signal *sig) {
 }
 
 void ChartView::msgUpdated(uint32_t address) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; });
-  if (it != sigs.end())
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; }))
     updateTitle();
 }
 
@@ -392,7 +408,6 @@ void ChartView::updateSeries(const Signal *sig) {
       s.series->replace(s.vals);
     }
   }
-  updateAxisY();
 }
 
 // auto zoom on yaxis
@@ -422,11 +437,39 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y - 1, max_y + 1);
   } else {
     double range = max_y - min_y;
-    axis_y->setRange(min_y - range * 0.05, max_y + range * 0.05);
-    axis_y->applyNiceNumbers();
+    applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
   }
 
-  QTimer::singleShot(0, this, &ChartView::adjustChartMargins);
+  adjustChartMargins();
+}
+
+void ChartView::applyNiceNumbers(qreal min, qreal max) {
+  int tick_count = axis_y->tickCount();
+  qreal range = niceNumber((max - min), true);  // range with ceiling
+  qreal step = niceNumber(range / (tick_count - 1), false);
+  min = qFloor(min / step);
+  max = qCeil(max / step);
+  tick_count = int(max - min) + 1;
+  axis_y->setRange(min * step, max * step);
+  axis_y->setTickCount(tick_count);
+}
+
+//nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
+qreal ChartView::niceNumber(qreal x, bool ceiling) {
+  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal q = x / z; //q<10 && q>=1;
+  if (ceiling) {
+    if (q <= 1.0) q = 1;
+    else if (q <= 2.0) q = 2;
+    else if (q <= 5.0) q = 5;
+    else q = 10;
+  } else {
+    if (q < 1.5) q = 1;
+    else if (q < 3.0) q = 2;
+    else if (q < 7.0) q = 5;
+    else q = 10;
+  }
+  return q * z;
 }
 
 void ChartView::leaveEvent(QEvent *event) {
