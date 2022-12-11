@@ -85,14 +85,13 @@ void OnroadWindow::startReplay(const QString &route, const QString &data_dir) {
       replay_controls->deleteLater();
     }
     replay_controls = new ReplayControls(this);
-    uiState()->replaying = true;
     replay_controls->start(route, data_dir);
   }
 }
 
 void OnroadWindow::stopReplay() {
   if (replay_controls) {
-    uiState()->replaying = false;
+    replay_controls->stop();
     replay_controls->deleteLater();
     replay_controls = nullptr;
   }
@@ -562,7 +561,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV
 }
 
 void AnnotatedCameraWidget::paintGL() {
-  std::lock_guard sm_lk(uiState()->sm_lock);
+  // std::lock_guard sm_lk(uiState()->sm_lock);
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();

@@ -113,9 +113,7 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s) {
-  if (!s->replaying) {
-    s->sm->update(0);
-  }
+  s->sm->update(0);
 }
 
 static void update_state(UIState *s) {
@@ -237,7 +235,6 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 }
 
 void UIState::update() {
-  std::lock_guard lk(sm_lock);
   update_sockets(this);
   update_state(this);
   updateStatus();

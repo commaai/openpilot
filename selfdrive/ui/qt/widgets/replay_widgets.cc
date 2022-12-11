@@ -80,48 +80,56 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   adjustPosition();
 }
 
+ReplayControls::~ReplayControls() {
+
+}
+
 void ReplayControls::adjustPosition() {
   resize(parentWidget()->rect().width() - 100, sizeHint().height());
   move({50, parentWidget()->rect().height() - rect().height() - bdr_s});
 }
 
-static bool event_filter(const char *name, const Event *e, void *opaque) {
-  std::lock_guard lk(uiState()->sm_lock);
-  uiState()->sm->update_msgs(nanos_since_boot(), {{name, e->event}});
-  return true;
-}
+// static bool event_filter(const char *name, const Event *e, void *opaque) {
+//   std::lock_guard lk(uiState()->sm_lock);
+//   uiState()->sm->update_msgs(nanos_since_boot(), {{name, e->event}});
+//   return true;
+// }
 
 void ReplayControls::start(const QString &route, const QString &data_dir) {
   QStringList allow = {
-      "modelV2",
-      "controlsState",
-      "liveCalibration",
-      "radarState",
-      "roadCameraState",
-      "roadEncodeIdx",
-      "carParams",
-      "driverMonitoringState",
-      "carState",
-      "liveLocationKalman",
-      "wideRoadCameraState",
-      "navInstruction",
-      "navRoute",
-      "gnssMeasurements",
+    "modelV2",
+    "controlsState",
+    "liveCalibration",
+    "radarState",
+    "roadCameraState",
+    "roadEncodeIdx",
+    "carParams",
+    "driverMonitoringState",
+    "carState",
+    "liveLocationKalman",
+    "wideRoadCameraState",
+    "navInstruction",
+    "navRoute",
+    "gnssMeasurements",
   };
   QString route_name = "0000000000000000|" + route;
-  replay.reset(new Replay(route_name, allow, {}, uiState()->sm.get(), REPLAY_FLAG_NONE, data_dir));
-  replay->installEventFilter(event_filter, this);
+  replay.reset(new Replay(route_name, allow, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
+  // replay->installEventFilter(event_filter, this);
   if (replay->load()) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));
     replay->start();
-    timer->start();
+    uiState()->replaying = true;
+    // timer->start();
   }
 }
 
 void ReplayControls::stop() {
-  timer->stop();
-  replay->stop();
-  replay.reset(nullptr);
-  emit uiState()->stopReplay();
+  if (replay) {
+    timer->stop();
+    replay->stop();
+    uiState()->replaying = false;
+  }
+  // replay.reset(nullptr);
+  // deleteLater();
 }
