@@ -500,9 +500,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.resumeRequired: {
     ET.WARNING: Alert(
-      "STOPPED",
       "Press Resume to Exit Standstill",
-      AlertStatus.userPrompt, AlertSize.mid,
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
   },
 
