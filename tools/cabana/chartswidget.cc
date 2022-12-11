@@ -152,12 +152,12 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
-      QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::chartClosed);
+      QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
+      QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
     chart->addSeries(id, sig);
-    emit chartOpened(id, sig);
   } else if (ChartView *chart = findChart(id, sig)) {
     chart->removeSeries(id, sig);
   }
@@ -239,8 +239,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 }
 
 ChartView::~ChartView() {
-  for (auto &s : sigs)
-    emit seriesRemoved(s.msg_id, s.sig);
+  for (auto it = sigs.begin(); it != sigs.end(); /**/) {
+    it = removeSeries(it);
+  }
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
@@ -253,6 +254,7 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   updateTitle();
   updateSeries(sig);
   updateAxisY();
+  emit seriesAdded(msg_id, sig);
 }
 
 void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
@@ -269,9 +271,8 @@ bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
 QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartView::SigItem>::iterator &it) {
   chart()->removeSeries(it->series);
   it->series->deleteLater();
-  emit seriesRemoved(it->msg_id, it->sig);
-
   auto ret = sigs.erase(it);
+  emit seriesRemoved(it->msg_id, it->sig);
   if (!sigs.isEmpty()) {
     updateAxisY();
   } else {

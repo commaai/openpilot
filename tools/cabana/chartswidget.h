@@ -44,6 +44,7 @@ public:
 
 signals:
   void seriesRemoved(const QString &id, const Signal *sig);
+  void seriesAdded(const QString &id, const Signal *sig);
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
@@ -87,13 +88,12 @@ class ChartsWidget : public QWidget {
 public:
   ChartsWidget(QWidget *parent = nullptr);
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
-  inline bool isChartOpened(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
+  inline bool hasSignal(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
 signals:
   void dock(bool floating);
   void rangeChanged(double min, double max, bool is_zommed);
-  void chartOpened(const QString &id, const Signal *sig);
-  void chartClosed(const QString &id, const Signal *sig);
+  void seriesChanged();
 
 private:
   void removeChart(ChartView *chart);

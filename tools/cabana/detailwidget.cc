@@ -107,8 +107,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(charts, &ChartsWidget::chartOpened, this, &DetailWidget::chartSignalAdded);
-  QObject::connect(charts, &ChartsWidget::chartClosed, this, &DetailWidget::chartSignalRemoved);
+  QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
     if (undo_stack->count() > 0)
       dbcMsgChanged();
@@ -154,10 +153,10 @@ void DetailWidget::setMessage(const QString &message_id) {
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
-  if (msg_id.isEmpty())
-    return;
+  if (msg_id.isEmpty()) return;
 
   setUpdatesEnabled(false);
+
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
 
@@ -179,7 +178,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signal_list.push_back(form);
       }
       form->setSignal(msg_id, sig);
-      form->setChartOpened(charts->isChartOpened(msg_id, sig));
+      form->setChartOpened(charts->hasSignal(msg_id, sig));
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
@@ -222,17 +221,9 @@ void DetailWidget::showForm(const Signal *sig) {
   setUpdatesEnabled(true);
 }
 
-void DetailWidget::chartSignalRemoved(const QString &id, const Signal *sig) {
-  updateChartState(id, sig, false);
-}
-
-void DetailWidget::chartSignalAdded(const QString &id, const Signal *sig) {
-  updateChartState(id, sig, true);
-}
-
-void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
+void DetailWidget::updateChartState() {
   for (auto f : signal_list)
-    if (f->msg_id == id && f->sig == sig) f->setChartOpened(opened);
+    f->setChartOpened(charts->hasSignal(f->msg_id, f->sig));
 }
 
 void DetailWidget::editMsg() {
