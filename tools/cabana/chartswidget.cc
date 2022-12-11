@@ -40,7 +40,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   max_chart_range = settings.max_chart_x_range;
   use_dark_theme = palette().color(QPalette::WindowText).value() > palette().color(QPalette::Background).value();
-  updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::streamStarted, this, &ChartsWidget::removeAll);
@@ -57,6 +56,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void ChartsWidget::eventsMerged() {
+  updateToolBar();
   if (auto events = can->events(); events && !events->empty()) {
     event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
     event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
