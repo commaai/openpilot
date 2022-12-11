@@ -137,7 +137,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.ELANTRA: [
     HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_b),
     HyundaiCarInfo("Hyundai Elantra GT 2017-19", harness=Harness.hyundai_e),
-    HyundaiCarInfo("Hyundai i30 2017-2019", harness=Harness.hyundai_e),
+    HyundaiCarInfo("Hyundai i30 2017-19", harness=Harness.hyundai_e),
   ],
   CAR.ELANTRA_2021: HyundaiCarInfo("Hyundai Elantra 2021-22", video_link="https://youtu.be/_EdYQtV52-c", harness=Harness.hyundai_k),
   CAR.ELANTRA_HEV_2021: HyundaiCarInfo("Hyundai Elantra Hybrid 2021-23", video_link="https://youtu.be/_EdYQtV52-c", harness=Harness.hyundai_k),
