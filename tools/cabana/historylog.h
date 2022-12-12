@@ -47,7 +47,7 @@ public:
   void updateState() { model->updateState(); }
 
 private:
-  int sizeHintForColumn(int column) const override;
-  void showEvent(QShowEvent *event) override;
+  int sizeHintForColumn(int column) const override { return -1; };
+  void showEvent(QShowEvent *event) override { model->setMessage(model->msg_id); };
   HistoryLogModel *model;
 };

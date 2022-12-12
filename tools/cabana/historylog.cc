@@ -7,9 +7,21 @@
 
 HistoryLogModel::HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {
   QObject::connect(can, &CANMessages::seekedTo, [this]() {
-    // clear logs
     if (!msg_id.isEmpty()) setMessage(msg_id);
   });
+}
+
+QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
+  if (role == Qt::DisplayRole) {
+    const auto &m = messages[index.row()];
+    if (index.column() == 0) {
+      return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
+    }
+    return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
+  } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
+    return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  }
+  return {};
 }
 
 void HistoryLogModel::setMessage(const QString &message_id) {
@@ -31,25 +43,12 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return !sigs.empty() ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : tr("Data");
+      return !sigs.empty() ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && !sigs.empty()) {
       return QBrush(QColor(getColor(section - 1)));
     } else if (role == Qt::ForegroundRole && section > 0 && !sigs.empty()) {
       return QBrush(Qt::black);
     }
-  }
-  return {};
-}
-
-QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
-  if (role == Qt::DisplayRole) {
-    const auto &m = messages[index.row()];
-    if (index.column() == 0) {
-      return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
-    }
-    return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
-  } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
-    return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
   return {};
 }
@@ -87,7 +86,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t min_mon
 
   std::deque<HistoryLogModel::Message> msgs;
   const auto [src, address] = DBCManager::parseId(msg_id);
-  int cnt = 0;
+  uint32_t cnt = 0;
   for (--it; it != events->begin() && (*it)->mono_time > min_mono_time; --it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
@@ -100,9 +99,8 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t min_mon
           for (const Signal *sig : sigs) {
             m.sig_values.push_back(get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig));
           }
-          if (++cnt >= batch_size && min_mono_time == 0) {
+          if (++cnt >= batch_size && min_mono_time == 0)
             return msgs;
-          }
         }
       }
     }
@@ -142,12 +140,4 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   verticalHeader()->setVisible(false);
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-}
-
-int HistoryLog::sizeHintForColumn(int column) const {
-  return -1;
-}
-
-void HistoryLog::showEvent(QShowEvent *event) {
-  model->setMessage(model->msg_id);
 }

@@ -10,7 +10,7 @@
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 
 // one segment uses about 100M of memory
-constexpr int MIN_SEGMENTS_CACHE = 3;
+constexpr int MIN_SEGMENTS_CACHE = 5;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,

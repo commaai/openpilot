@@ -212,7 +212,7 @@ void Replay::queueSegment() {
 
   SegmentMap::iterator begin, cur;
   begin = cur = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  int distance = std::max<int>(segment_cache_limit / 2, segment_cache_limit - std::distance(cur, segments_.end()));
+  int distance = std::max<int>(std::ceil(segment_cache_limit / 2.0) - 1, segment_cache_limit - std::distance(cur, segments_.end()));
   for (int i = 0; begin != segments_.begin() && i < distance; ++i) {
     --begin;
   }
