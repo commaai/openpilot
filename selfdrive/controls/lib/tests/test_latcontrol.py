@@ -4,6 +4,7 @@ import unittest
 from parameterized import parameterized
 
 from cereal import car, log
+from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.toyota.values import CAR as TOYOTA
@@ -20,7 +21,7 @@ class TestLatControl(unittest.TestCase):
   @parameterized.expand([(HONDA.CIVIC, LatControlPID), (TOYOTA.RAV4, LatControlTorque), (TOYOTA.PRIUS, LatControlINDI), (NISSAN.LEAF, LatControlAngle)])
   def test_saturation(self, car_name, controller):
     CarInterface, CarController, CarState = interfaces[car_name]
-    CP = CarInterface.get_params(car_name)
+    CP = CarInterface.get_params(car_name, gen_empty_fingerprint(), [])
     CI = CarInterface(CP, CarController, CarState)
     VM = VehicleModel(CP)
 

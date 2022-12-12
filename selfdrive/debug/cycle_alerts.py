@@ -5,6 +5,7 @@ import random
 from cereal import car, log
 import cereal.messaging as messaging
 from common.realtime import DT_CTRL
+from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.events import ET, Events
 from selfdrive.controls.lib.alertmanager import AlertManager
@@ -51,7 +52,7 @@ def cycle_alerts(duration=200, is_metric=False):
   cameras = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
 
   CS = car.CarState.new_message()
-  CP = CarInterface.get_params("HONDA CIVIC 2016")
+  CP = CarInterface.get_params("HONDA CIVIC 2016", gen_empty_fingerprint(), [])
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
                             'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                             'managerState'] + cameras)

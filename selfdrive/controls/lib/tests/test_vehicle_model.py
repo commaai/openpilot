@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 from control import StateSpace
 
+from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.car.honda.values import CAR
 from selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
@@ -12,7 +13,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, creat
 
 class TestVehicleModel(unittest.TestCase):
   def setUp(self):
-    CP = CarInterface.get_params(CAR.CIVIC)
+    CP = CarInterface.get_params(CAR.CIVIC, gen_empty_fingerprint(), [])
     self.VM = VehicleModel(CP)
 
   def test_round_trip_yaw_rate(self):
