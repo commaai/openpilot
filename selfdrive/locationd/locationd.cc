@@ -172,10 +172,6 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   fix.setExcessiveResets(this->reset_tracker > MAX_RESET_TRACKER);
   this->device_fell = false;
 
-  //fix.setGpsWeek(this->time.week);
-  //fix.setGpsTimeOfWeek(this->time.tow);
-  //fix.setUnixTimestampMillis(this->unix_timestamp_millis);
-
   double time_since_reset = this->kf->get_filter_time() - this->last_reset_time;
   fix.setTimeSinceReset(time_since_reset);
   if (fix_ecef_std.norm() < VALID_POS_STD && this->calibrated && time_since_reset > VALID_TIME_SINCE_RESET) {
@@ -219,7 +215,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   double sensor_time = 1e-9 * log.getTimestamp();
-  
+
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
@@ -311,7 +307,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
 
   auto ecef_vel_std = log.getVelocityECEF().getStd();
-  double vel_error = pow(ecef_vel_std[0]*750, 2);
+  double vel_error = pow(ecef_vel_std[0]*1000, 2);
   MatrixXdr ecef_vel_R = Vector3d::Constant(vel_error).asDiagonal();
 
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
@@ -336,7 +332,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   // accuracy sanity check
-  if (pos_std > 500. || vel_error > 7.5) {
+  if (pos_std > 500. || vel_error > 6.) {
     this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
@@ -371,7 +367,6 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
-
   if (!this->is_timestamp_valid(current_time)) {
     this->observation_timings_invalid = true;
     return;
