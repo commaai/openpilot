@@ -144,7 +144,7 @@ def create_maneuvers(kwargs):
   ]
 
 
-TEST_CASES_KWARGS = [{"e2e": e2e, "force_decel": force_decel} for e2e, force_decel in
+TEST_CASES_KWARGS = [({"e2e": e2e, "force_decel": force_decel},) for e2e, force_decel in
                      itertools.product([True, False], repeat=2)]
 
 
