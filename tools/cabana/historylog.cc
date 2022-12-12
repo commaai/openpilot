@@ -5,14 +5,19 @@
 
 // HistoryLogModel
 
+HistoryLogModel::HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {
+  QObject::connect(can, &CANMessages::seekedTo, [this]() {
+    if (!msg_id.isEmpty()) setMessage(msg_id);
+  });
+}
+
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     if (index.column() == 0) {
-      return QString::number(m.ts, 'f', 2);
+      return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return !sigs.empty() ? QString::number(get_raw_value((uint8_t *)m.dat.data(), m.dat.size(), *sigs[index.column() - 1]))
-                         : toHex(m.dat);
+    return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
@@ -24,6 +29,7 @@ void HistoryLogModel::setMessage(const QString &message_id) {
   msg_id = message_id;
   sigs.clear();
   messages.clear();
+  has_more_data = true;
   if (auto dbc_msg = dbc()->msg(message_id)) {
     sigs = dbc_msg->getSignals();
   }
@@ -48,21 +54,58 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 }
 
 void HistoryLogModel::updateState() {
-  int prev_row_count = messages.size();
   if (!msg_id.isEmpty()) {
-    messages = can->messages(msg_id);
+    uint64_t last_mono_time = messages.empty() ? 0 : messages.front().mono_time;
+    auto new_msgs = fetchData(last_mono_time, (can->currentSec() + can->routeStartTime()) * 1e9);
+    if ((has_more_data = !new_msgs.empty())) {
+      beginInsertRows({}, 0, new_msgs.size() - 1);
+      messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+      endInsertRows();
+    }
   }
-  int delta = messages.size() - prev_row_count;
-  if (delta > 0) {
-    beginInsertRows({}, prev_row_count, messages.size() - 1);
-    endInsertRows();
-  } else if (delta < 0) {
-    beginRemoveRows({}, messages.size(), prev_row_count - 1);
-    endRemoveRows();
-  }
+}
+
+void HistoryLogModel::fetchMore(const QModelIndex &parent) {
   if (!messages.empty()) {
-    emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1), {Qt::DisplayRole});
+    auto new_msgs = fetchData(0, messages.back().mono_time);
+    if ((has_more_data = !new_msgs.empty())) {
+      beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
+      messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+      endInsertRows();
+    }
   }
+}
+
+std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t min_mono_time, uint64_t max_mono_time) {
+  auto events = can->events();
+  auto it = std::lower_bound(events->begin(), events->end(), max_mono_time, [=](auto &e, uint64_t ts) {
+    return e->mono_time < ts;
+  });
+  if (it == events->end() || it == events->begin())
+    return {};
+
+  std::deque<HistoryLogModel::Message> msgs;
+  const auto [src, address] = DBCManager::parseId(msg_id);
+  uint32_t cnt = 0;
+  for (--it; it != events->begin() && (*it)->mono_time > min_mono_time; --it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*it)->event.getCan()) {
+        if (src == c.getSrc() && address == c.getAddress()) {
+          const auto dat = c.getDat();
+          auto &m = msgs.emplace_back();
+          m.mono_time = (*it)->mono_time;
+          m.data.append((char *)dat.begin(), dat.size());
+          m.sig_values.reserve(sigs.size());
+          for (const Signal *sig : sigs) {
+            m.sig_values.push_back(get_raw_value((uint8_t *)dat.begin(), dat.size(), *sig));
+          }
+          if (++cnt >= batch_size && min_mono_time == 0)
+            return msgs;
+        }
+      }
+    }
+  }
+  return msgs;
 }
 
 // HeaderView
@@ -97,8 +140,4 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   verticalHeader()->setVisible(false);
   setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-}
-
-int HistoryLog::sizeHintForColumn(int column) const {
-  return -1;
 }
