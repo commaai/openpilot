@@ -210,13 +210,17 @@ void Replay::segmentLoadFinished(bool success) {
 void Replay::queueSegment() {
   if (segments_.empty()) return;
 
-  const uint32_t cache_segemts_cnt = segment_cache_limit == -1 ? std::numeric_limits<uint32_t>::max()
-                                                          : segment_cache_limit + FORWARD_FETCH_SEGS;
-  SegmentMap::iterator cur, end;
-  cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  for (int i = 0; end != segments_.end() && i <= cache_segemts_cnt; ++i) {
+  SegmentMap::iterator begin, cur;
+  begin = cur = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
+  int distance = std::max<int>(segment_cache_limit / 2, segment_cache_limit - std::distance(cur, segments_.end()));
+  for (int i = 0; begin != segments_.begin() && i < distance; ++i) {
+    --begin;
+  }
+  auto end = begin;
+  for (int i = 0; end != segments_.end() && i < segment_cache_limit; ++i) {
     ++end;
   }
+
   // load one segment at a time
   for (auto it = cur; it != end; ++it) {
     auto &[n, seg] = *it;
@@ -230,17 +234,6 @@ void Replay::queueSegment() {
     }
   }
 
-  const auto &cur_segment = cur->second;
-  // merge the previous adjacent segment if it's loaded
-  auto begin = segments_.find(cur_segment->seg_num - 1);
-  if (begin == segments_.end() || !(begin->second && begin->second->isLoaded())) {
-    begin = cur;
-  }
-
-  if (cache_segemts_cnt == std::numeric_limits<uint32_t>::max()) {
-    begin = segments_.begin();
-    end = segments_.end();
-  }
   mergeSegments(begin, end);
 
   // free segments out of current semgnt window.
@@ -248,6 +241,7 @@ void Replay::queueSegment() {
   std::for_each(end, segments_.end(), [](auto &e) { e.second.reset(nullptr); });
 
   // start stream thread
+  const auto &cur_segment = cur->second;
   if (stream_thread_ == nullptr && cur_segment->isLoaded()) {
     startStream(cur_segment.get());
     emit streamStarted();
@@ -255,12 +249,13 @@ void Replay::queueSegment() {
 }
 
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
-  // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
   size_t new_events_size = 0;
-  for (auto it = begin; it != end && it->second && it->second->isLoaded() && segments_need_merge.size() < segment_cache_limit; ++it) {
-    segments_need_merge.push_back(it->first);
-    new_events_size += it->second->log->events.size();
+  for (auto it = begin; it != end; ++it) {
+    if (it->second && it->second->isLoaded()) {
+      segments_need_merge.push_back(it->first);
+      new_events_size += it->second->log->events.size();
+    }
   }
 
   if (segments_need_merge != segments_merged_) {

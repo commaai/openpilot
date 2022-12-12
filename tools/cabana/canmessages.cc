@@ -20,7 +20,7 @@ static bool event_filter(const Event *e, void *opaque) {
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   replay = new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this);
-  replay->setSegmentCacheLimit(-1);
+  replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::seekedTo, this, &CANMessages::seekedTo);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
