@@ -10,6 +10,7 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 from common.op_params import opParams
+import math
 
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -22,7 +23,8 @@ MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before steer can be cut
 MAX_USER_TORQUE = 500
 
 # EPS ignores commands above this angle and causes PCS faults
-MAX_STEER_ANGLE = 94.9461
+MAX_STEER_ANGLE = 94.9461  # deg
+MAX_ANGLE_LATERAL_ACCEL = 3.0  # m/s^2
 
 
 class CarController:
@@ -37,6 +39,7 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
+    self.VM = VM
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -89,14 +92,19 @@ class CarController:
                          torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
                          torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
 
+      # Clip max angle to acceptable lateral accel limits
+      v_ego = max(CS.out.vEgo, 5.)
+      max_steer_angle = abs(MAX_ANGLE_LATERAL_ACCEL / (self.VM.calc_curvature(math.radians(1), v_ego, 0) * v_ego ** 2))  # TODO: roll
+      apply_angle = clip(apply_angle, -max_steer_angle, max_steer_angle)
+
       # Angular rate limit based on speed
       apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
       # Clip to max angle limits
-      apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+      # apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
       if not lat_active:
-        apply_angle = clip(torque_sensor_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+        apply_angle = clip(torque_sensor_angle, -max_steer_angle, max_steer_angle)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut steer request bit to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
