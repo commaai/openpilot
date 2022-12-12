@@ -331,7 +331,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  // accuracy sanity check
   if (pos_std > 500. || vel_error > 6.) {
     this->gps_valid = false;
     this->determine_gps_mode(current_time);
