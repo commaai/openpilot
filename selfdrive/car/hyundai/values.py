@@ -58,6 +58,8 @@ class HyundaiFlags(IntFlag):
 
   ALT_LIMITS = 16
 
+  ENABLE_BLINKERS = 32
+
 
 class CAR:
   # Hyundai
