@@ -8,20 +8,8 @@
 MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
 int MMC5603NJ_Magn::init() {
-  int ret = 0;
-  uint8_t buffer[1];
-
-  ret = read_register(MMC5603NJ_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
-    goto fail;
-  }
-
-  if(buffer[0] != MMC5603NJ_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], MMC5603NJ_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
+  int ret = verify_chip_id(MMC5603NJ_I2C_REG_ID, {MMC5603NJ_CHIP_ID});
+  if (ret == -1) return -1;
 
   // Set 100 Hz
   ret = set_register(MMC5603NJ_I2C_REG_ODR, 100);
