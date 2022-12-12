@@ -210,9 +210,11 @@ void Replay::segmentLoadFinished(bool success) {
 void Replay::queueSegment() {
   if (segments_.empty()) return;
 
+  const uint32_t cache_segemts_cnt = segment_cache_limit == -1 ? std::numeric_limits<uint32_t>::max()
+                                                          : segment_cache_limit + FORWARD_FETCH_SEGS;
   SegmentMap::iterator cur, end;
   cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  for (int i = 0; end != segments_.end() && i <= segment_cache_limit + FORWARD_FETCH_SEGS; ++i) {
+  for (int i = 0; end != segments_.end() && i <= cache_segemts_cnt; ++i) {
     ++end;
   }
   // load one segment at a time
@@ -233,6 +235,11 @@ void Replay::queueSegment() {
   auto begin = segments_.find(cur_segment->seg_num - 1);
   if (begin == segments_.end() || !(begin->second && begin->second->isLoaded())) {
     begin = cur;
+  }
+
+  if (cache_segemts_cnt == std::numeric_limits<uint32_t>::max()) {
+    begin = segments_.begin();
+    end = segments_.end();
   }
   mergeSegments(begin, end);
 

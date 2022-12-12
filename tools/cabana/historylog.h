@@ -23,8 +23,8 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   void fetchMore(const QModelIndex &parent) override;
   inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
-  inline int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
-  inline int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
 
   struct Message {
     uint64_t mono_time = 0;

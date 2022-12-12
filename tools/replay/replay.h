@@ -58,7 +58,7 @@ public:
     event_filter = filter;
   }
   inline int segmentCacheLimit() const { return segment_cache_limit; }
-  inline void setSegmentCacheLimit(int n) { segment_cache_limit = std::max(3, n); }
+  inline void setSegmentCacheLimit(int n) { segment_cache_limit = n; }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }

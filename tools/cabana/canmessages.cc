@@ -20,7 +20,7 @@ static bool event_filter(const Event *e, void *opaque) {
 
 bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   replay = new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this);
-  replay->setSegmentCacheLimit(settings.cached_segment_limit);
+  replay->setSegmentCacheLimit(-1);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::seekedTo, this, &CANMessages::seekedTo);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
@@ -83,7 +83,7 @@ bool CANMessages::eventFilter(const Event *event) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
       CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
-      data.dat = QByteArray::fromRawData((char *)c.getDat().begin(), c.getDat().size());
+      data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
         data.freq = data.count / delta;
