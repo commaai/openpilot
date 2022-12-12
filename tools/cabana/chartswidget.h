@@ -4,10 +4,7 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QListWidget>
-#include <QGraphicsEllipseItem>
-#include <QGraphicsLineItem>
 #include <QGraphicsProxyWidget>
-#include <QGraphicsTextItem>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -71,10 +68,7 @@ private:
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
-  QGraphicsItemGroup *item_group;
-  QGraphicsLineItem *track_line;
-  QGraphicsEllipseItem *track_ellipse;
-  QGraphicsTextItem *value_text;
+  QPointF track_pt;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   std::pair<double, double> events_range = {0, 0};

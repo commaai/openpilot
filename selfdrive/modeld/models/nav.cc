@@ -9,11 +9,11 @@
 
 
 void navmodel_init(NavModelState* s) {
-#ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
-#else
-  s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
-#endif
+  #ifdef USE_ONNX_MODEL
+    s->m = new ONNXModel("models/navmodel.onnx", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  #else
+    s->m = new SNPEModel("models/navmodel_q.dlc", &s->output[0], NAV_NET_OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  #endif
 }
 
 NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
@@ -56,7 +56,7 @@ void navmodel_publish(PubMaster &pm, uint32_t frame_id, const NavModelResult &mo
   framed.setDspExecutionTime(model_res.dsp_execution_time);
   framed.setFeatures(to_kj_array_ptr(model_res.features.values));
   framed.setDesirePrediction(to_kj_array_ptr(model_res.desire_pred.values));
-  fill_plan(framed, model_res.plans.get_best_prediction());
+  fill_plan(framed, model_res.plan);
 
   pm.send("navModel", msg);
 }
