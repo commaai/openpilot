@@ -579,8 +579,8 @@ class Controls:
 
     # Enable blinkers while lane changing
     if self.sm['lateralPlan'].laneChangeState != LaneChangeState.off:
-      actuators.leftBlinker = self.sm['lateralPlan'].laneChangeDirection == LaneChangeDirection.left
-      actuators.rightBlinker = self.sm['lateralPlan'].laneChangeDirection == LaneChangeDirection.right
+      CC.leftBlinker = self.sm['lateralPlan'].laneChangeDirection == LaneChangeDirection.left
+      CC.rightBlinker = self.sm['lateralPlan'].laneChangeDirection == LaneChangeDirection.right
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
