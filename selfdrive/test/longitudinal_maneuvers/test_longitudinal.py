@@ -164,7 +164,6 @@ class LongitudinalControl(unittest.TestCase):
     params.put_bool("OpenpilotEnabledToggle", True)
 
   def test_maneuver(self):
-    print("MANEUVER_KWARGS", self.maneuver_kwargs)
     for maneuver in create_maneuvers(self.maneuver_kwargs):
       with self.subTest(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
         print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')
