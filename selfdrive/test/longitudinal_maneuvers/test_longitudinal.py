@@ -148,7 +148,7 @@ TEST_CASES_KWARGS = [{"e2e": e2e, "force_decel": force_decel} for e2e, force_dec
                      itertools.product([True, False], repeat=2)]
 
 
-@parameterized_class(("maneuver_kwargs", TEST_CASES_KWARGS))
+@parameterized_class(("maneuver_kwargs",), TEST_CASES_KWARGS)
 class LongitudinalControl(unittest.TestCase):
   maneuver_kwargs: Dict[str, bool]
 
