@@ -14,10 +14,9 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra, bool luse_tf8, cl_context context) {
+SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_tf8, cl_context context) {
   output = loutput;
   output_size = loutput_size;
-  use_extra = luse_extra;
   use_tf8 = luse_tf8;
 #ifdef QCOM2
   if (runtime==USE_GPU_RUNTIME) {
@@ -180,7 +179,7 @@ void SNPEModel::addExtra(float *image_buf, int buf_size) {
 
 std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, int state_size, int idx) {
   // get input and output names
-  const auto real_idx = idx + (use_extra ? 1 : 0);
+  const auto real_idx = idx + 1;
   const auto &strListi_opt = snpe->getInputTensorNames();
   if (!strListi_opt) throw std::runtime_error("Error obtaining Input tensor names");
   const auto &strListi = *strListi_opt;
@@ -198,12 +197,7 @@ std::unique_ptr<zdl::DlSystem::IUserBuffer> SNPEModel::addExtra(float *state, in
 void SNPEModel::execute() {
   bool ret = inputBuffer->setBufferAddress(input);
   assert(ret == true);
-  if (use_extra) {
-    bool extra_ret = extraBuffer->setBufferAddress(extra);
-    assert(extra_ret == true);
-  }
-  if (!snpe->execute(inputMap, outputMap)) {
-    PrintErrorStringAndExit();
-  }
+  bool extra_ret = extraBuffer->setBufferAddress(extra);
+  assert(extra_ret == true);
 }
 

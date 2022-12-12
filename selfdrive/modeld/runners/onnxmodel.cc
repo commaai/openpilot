@@ -14,12 +14,11 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
-ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra, bool _use_tf8, cl_context context) {
+ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
   LOGD("loading model %s", path);
 
   output = _output;
   output_size = _output_size;
-  use_extra = _use_extra;
   use_tf8 = _use_tf8;
 
   int err = pipe(pipein);
