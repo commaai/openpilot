@@ -262,6 +262,7 @@ class CarController:
     new_actuators.gas = self.gas
     new_actuators.brake = self.brake
     new_actuators.steer = self.last_steer
+    new_actuators.steerOutputCan = apply_steer
 
     self.frame += 1
     return new_actuators, can_sends

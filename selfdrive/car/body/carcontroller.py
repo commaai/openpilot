@@ -85,6 +85,7 @@ class CarController:
     new_actuators = CC.actuators.copy()
     new_actuators.accel = torque_l
     new_actuators.steer = torque_r
+    new_actuators.steerOutputCan = torque_r
 
     self.frame += 1
     return new_actuators, can_sends

@@ -192,8 +192,9 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / self.params.STEER_MAX
+    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
     new_actuators.steeringAngleDeg = apply_angle
+    new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 
