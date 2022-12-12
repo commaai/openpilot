@@ -24,7 +24,7 @@ MAX_USER_TORQUE = 500
 
 # EPS ignores commands above this angle and causes PCS faults
 MAX_STEER_ANGLE = 94.9461  # deg
-MAX_ANGLE_LATERAL_ACCEL = 3.25  # m/s^2
+MAX_ANGLE_LATERAL_ACCEL = 3.0  # m/s^2
 
 
 class CarController:
@@ -95,6 +95,7 @@ class CarController:
       # Clip max angle to acceptable lateral accel limits
       v_ego = max(CS.out.vEgo, 5.)
       max_steer_angle = abs(MAX_ANGLE_LATERAL_ACCEL / (self.VM.calc_curvature(math.radians(1), v_ego, 0) * v_ego ** 2))  # TODO: roll
+      max_steer_angle = min(max_steer_angle, MAX_STEER_ANGLE)
       apply_angle = clip(apply_angle, -max_steer_angle, max_steer_angle)
 
       # Angular rate limit based on speed
