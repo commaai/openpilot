@@ -108,6 +108,7 @@ class Plant:
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
     model.modelV2.acceleration = acceleration
 
+    control.controlsState.forceDecel = True
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
     control.controlsState.vCruise = float(v_cruise * 3.6)
     control.controlsState.experimentalMode = self.e2e
