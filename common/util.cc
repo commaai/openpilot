@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <iomanip>
+#include <random>
 #include <sstream>
 
 #ifdef __linux__
@@ -226,6 +227,18 @@ std::string hexdump(const uint8_t* in, const size_t size) {
     ss << std::setw(2) << static_cast<unsigned int>(in[i]);
   }
   return ss.str();
+}
+
+std::string random_string(std::string::size_type length) {
+  const char* chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  std::mt19937 rg{std::random_device{}()};
+  std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+  std::string s;
+  s.reserve(length);
+  while (length--) {
+    s += chrs[pick(rg)];
+  }
+  return s;
 }
 
 std::string dir_name(std::string const &path) {

@@ -15,7 +15,6 @@ Settings::Settings() {
 void Settings::save() {
   QSettings s("settings", QSettings::IniFormat);
   s.setValue("fps", fps);
-  s.setValue("log_size", can_msg_log_size);
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
   s.setValue("max_chart_x_range", max_chart_x_range);
@@ -26,7 +25,6 @@ void Settings::save() {
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  can_msg_log_size = s.value("log_size", 50).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   max_chart_x_range = s.value("max_chart_x_range", 3 * 60).toInt();
@@ -45,12 +43,6 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   fps->setSingleStep(10);
   fps->setValue(settings.fps);
   form_layout->addRow("FPS", fps);
-
-  log_size = new QSpinBox(this);
-  log_size->setRange(50, 500);
-  log_size->setSingleStep(10);
-  log_size->setValue(settings.can_msg_log_size);
-  form_layout->addRow(tr("Signal history log size"), log_size);
 
   cached_segment = new QSpinBox(this);
   cached_segment->setRange(3, 60);
@@ -80,7 +72,6 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
 
 void SettingsDlg::save() {
   settings.fps = fps->value();
-  settings.can_msg_log_size = log_size->value();
   settings.cached_segment_limit = cached_segment->value();
   settings.chart_height = chart_height->value();
   settings.max_chart_x_range = max_chart_x_range->value() * 60;
