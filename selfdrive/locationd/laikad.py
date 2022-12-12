@@ -92,7 +92,7 @@ class Laikad:
       self.last_cached_t = t
 
   def get_lsq_fix(self, t, measurements):
-    if self.last_fix_t is None or abs(self.last_fix_t - t) > 0.2:
+    if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 5
       position_solution, pr_residuals = calc_pos_fix_gauss_newton(measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(position_solution) < 3:

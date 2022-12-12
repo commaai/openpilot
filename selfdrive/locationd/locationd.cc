@@ -311,7 +311,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
 
   auto ecef_vel_std = log.getVelocityECEF().getStd();
-  double vel_error = pow(ecef_vel_std[0]*1000, 2);
+  double vel_error = pow(ecef_vel_std[0]*750, 2);
   MatrixXdr ecef_vel_R = Vector3d::Constant(vel_error).asDiagonal();
 
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
@@ -354,12 +354,15 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   this->last_gps_msg = current_time;
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+  if(!this->standstill) {
+    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+  }
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
   this->car_speed = std::abs(log.getVEgo());
-  if (log.getStandstill()) {
+  this->standstill = log.getStandstill();
+  if (this->standstill) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ACCEL, { Vector3d(0.0, 0.0, 0.0) });
   }
