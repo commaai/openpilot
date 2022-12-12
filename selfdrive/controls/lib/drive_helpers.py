@@ -12,6 +12,7 @@ V_CRUISE_MAX = 145  # kph
 V_CRUISE_MIN = 8  # kph
 V_CRUISE_ENABLE_MIN = 40  # kph
 V_CRUISE_INITIAL = 255  # kph
+IMPERIAL_INCREMENT = 1.6  # should be CV.MPH_TO_KPH, but this causes rounding errors
 
 MIN_SPEED = 1.0
 LAT_MPC_N = 16
@@ -73,8 +74,7 @@ class VCruiseHelper:
     long_press = False
     button_type = None
 
-    # should be CV.MPH_TO_KPH, but this causes rounding errors
-    v_cruise_delta = 1. if is_metric else 1.6
+    v_cruise_delta = 1. if is_metric else IMPERIAL_INCREMENT
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers and not b.pressed:
@@ -145,6 +145,12 @@ def apply_deadzone(error, deadzone):
   elif error < - deadzone:
     error += deadzone
   else:
+    error = 0.
+  return error
+
+
+def apply_center_deadzone(error, deadzone):
+  if (error > - deadzone) and (error < deadzone):
     error = 0.
   return error
 

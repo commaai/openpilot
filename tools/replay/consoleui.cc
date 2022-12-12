@@ -156,13 +156,13 @@ void ConsoleUI::timerEvent(QTimerEvent *ev) {
 }
 
 void ConsoleUI::updateStatus() {
-  auto write_item = [this](int y, int x, const char *key, const std::string &value, const char *unit,
+  auto write_item = [this](int y, int x, const char *key, const std::string &value, const std::string &unit,
                            bool bold = false, Color color = Color::BrightWhite) {
     auto win = w[Win::CarState];
     wmove(win, y, x);
     add_str(win, key);
     add_str(win, value.c_str(), color, bold);
-    add_str(win, unit);
+    add_str(win, unit.c_str());
   };
   static const std::pair<const char *, Color> status_text[] = {
       {"loading...", Color::Red},
@@ -177,9 +177,8 @@ void ConsoleUI::updateStatus() {
   }
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
-  std::string suffix = util::string_format(" / %s [%d/%d]      ", format_seconds(replay->totalSeconds()).c_str(),
-                                           replay->currentSeconds() / 60, replay->route()->segments().size());
-  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()), suffix.c_str(), true);
+  std::string suffix = " / " + format_seconds(replay->totalSeconds());
+  write_item(0, 25, "TIME:  ", format_seconds(replay->currentSeconds()), suffix, true);
 
   auto p = sm["liveParameters"].getLiveParameters();
   write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f %%", p.getStiffnessFactor() * 100), "  ");

@@ -95,7 +95,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   plot_btn->setAutoRaise(true);
   title_layout->addWidget(plot_btn);
   auto seek_btn = new QToolButton(this);
-  seek_btn->setIcon(QIcon::fromTheme("edit-find"));
+  seek_btn->setText("🔍");
   seek_btn->setAutoRaise(true);
   seek_btn->setToolTip(tr("Find signal values"));
   title_layout->addWidget(seek_btn);
@@ -122,7 +122,7 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   save_timer->setSingleShot(true);
   save_timer->callOnTimeout(this, &SignalEdit::saveSignal);
 
-  QObject::connect(title, &ElidedLabel::clicked, this, &SignalEdit::showFormClicked);
+  QObject::connect(title, &ElidedLabel::clicked, [this]() { emit showFormClicked(sig); });
   QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) {
     emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
   });
@@ -137,7 +137,7 @@ void SignalEdit::setSignal(const QString &message_id, const Signal *signal) {
   updateForm(msg_id == message_id && form->isVisible());
   msg_id = message_id;
   color_label->setText(QString::number(form_idx + 1));
-  color_label->setStyleSheet(QString("background-color:%1").arg(getColor(form_idx)));
+  color_label->setStyleSheet(QString("color:black; background-color:%2").arg(getColor(form_idx)));
   title->setText(sig->name.c_str());
   show();
 }
