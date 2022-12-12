@@ -118,8 +118,6 @@ int LSM6DS3_Accel::self_test(int test_type) {
 }
 
 int LSM6DS3_Accel::init() {
-  int ret = 0;
-  uint8_t buffer[1];
   uint8_t value = 0;
   bool do_self_test = false;
 
@@ -128,19 +126,10 @@ int LSM6DS3_Accel::init() {
     do_self_test = true;
   }
 
-  ret = read_register(LSM6DS3_ACCEL_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
-    goto fail;
-  }
+  int ret = verify_chip_id(LSM6DS3_ACCEL_I2C_REG_ID, {LSM6DS3_ACCEL_CHIP_ID, LSM6DS3TRC_ACCEL_CHIP_ID});
+  if (ret == -1) return -1;
 
-  if(buffer[0] != LSM6DS3_ACCEL_CHIP_ID && buffer[0] != LSM6DS3TRC_ACCEL_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], LSM6DS3_ACCEL_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
-
-  if (buffer[0] == LSM6DS3TRC_ACCEL_CHIP_ID) {
+  if (ret == LSM6DS3TRC_ACCEL_CHIP_ID) {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
