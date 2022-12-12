@@ -22,6 +22,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
+  cameraView->stopVipcThread();
   emit done();
 }
 
@@ -35,7 +36,6 @@ void DriverViewScene::showEvent(QShowEvent* event) {
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
-  // TODO: stop vipc thread ?
   params.putBool("IsDriverViewEnabled", false);
 }
 
