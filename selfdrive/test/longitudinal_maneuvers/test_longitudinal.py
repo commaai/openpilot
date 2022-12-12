@@ -2,7 +2,6 @@
 import itertools
 import os
 from parameterized import parameterized_class
-from typing import Dict
 import unittest
 
 from common.params import Params
@@ -144,13 +143,10 @@ def create_maneuvers(kwargs):
   ]
 
 
-TEST_CASES_KWARGS = [({"e2e": e2e, "force_decel": force_decel},) for e2e, force_decel in
-                     itertools.product([True, False], repeat=2)]
-
-
-@parameterized_class(("maneuver_kwargs",), TEST_CASES_KWARGS)
+@parameterized_class(("e2e", "force_decel"), itertools.product([True, False], repeat=2))
 class LongitudinalControl(unittest.TestCase):
-  maneuver_kwargs: Dict[str, bool]
+  e2e: bool
+  force_decel: bool
 
   @classmethod
   def setUpClass(cls):
@@ -164,7 +160,7 @@ class LongitudinalControl(unittest.TestCase):
     params.put_bool("OpenpilotEnabledToggle", True)
 
   def test_maneuver(self):
-    for maneuver in create_maneuvers(self.maneuver_kwargs):
+    for maneuver in create_maneuvers({"e2e": self.e2e, "force_decel": self.force_decel}):
       with self.subTest(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
         print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')
         valid, _ = maneuver.evaluate()
