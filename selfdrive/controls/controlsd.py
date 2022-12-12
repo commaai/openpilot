@@ -21,7 +21,7 @@ from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.longcontrol import LongControl
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
-from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
+from selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
 from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
@@ -577,6 +577,11 @@ class Controls:
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
 
+    # Enable blinkers while lane changing
+    if self.sm['lateralPlan'].laneChangeState != LaneChangeState.off:
+      CC.leftBlinker = self.sm['lateralPlan'].laneChangeDirection == LaneChangeDirection.left
+      CC.rightBlinker = self.sm['lateralPlan'].laneChangeDirection == LaneChangeDirection.right
+
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
 
@@ -722,7 +727,11 @@ class Controls:
       self.last_actuators, can_sends = self.CI.apply(CC)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
-      self.steer_limited = abs(CC.actuators.steer - CC.actuatorsOutput.steer) > 1e-2
+      if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+        self.steer_limited = abs(CC.actuators.steeringAngleDeg - CC.actuatorsOutput.steeringAngleDeg) > \
+                             STEER_ANGLE_SATURATION_THRESHOLD
+      else:
+        self.steer_limited = abs(CC.actuators.steer - CC.actuatorsOutput.steer) > 1e-2
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)

@@ -51,9 +51,9 @@ void Replay::stop() {
     stream_thread_->wait();
     stream_thread_ = nullptr;
   }
-  segments_.clear();
   camera_server_.reset(nullptr);
   timeline_future.waitForFinished();
+  segments_.clear();
   rInfo("shutdown: done");
 }
 
