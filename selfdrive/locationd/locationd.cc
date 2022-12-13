@@ -333,7 +333,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  if (pos_std > 500. || vel_error > 6.) {
+  if (pos_std > 500. || vel_error > 1.) {
     this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
@@ -351,9 +351,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   this->last_gps_msg = current_time;
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
-  if(!this->standstill) {
-    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
-  }
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
