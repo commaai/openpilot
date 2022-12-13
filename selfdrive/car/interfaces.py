@@ -24,6 +24,7 @@ MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
 FRICTION_THRESHOLD = 0.3
+STEERING_PRESSED_MIN_COUNT = 10
 
 TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.yaml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.yaml')
@@ -327,6 +328,7 @@ class CarStateBase(ABC):
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0
     self.right_blinker_cnt = 0
+    self.steering_pressed_cnt = 0
     self.left_blinker_prev = False
     self.right_blinker_prev = False
     self.cluster_speed_hyst_gap = 0.0
@@ -363,6 +365,10 @@ class CarStateBase(ABC):
     self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
     self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
     return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
+
+  def update_steering_pressed(self, steering_pressed):
+    self.steering_pressed_cnt = min(self.steering_pressed_cnt + 1, STEERING_PRESSED_MIN_COUNT) if steering_pressed else 0
+    return self.steering_pressed_cnt >= STEERING_PRESSED_MIN_COUNT
 
   def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
     """Update blinkers from stalk position. When stalk is seen the blinker will be on for at least blinker_time,
