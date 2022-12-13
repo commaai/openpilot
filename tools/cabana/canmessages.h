@@ -1,8 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <deque>
-#include <mutex>
 
 #include <QColor>
 #include <QHash>
@@ -37,7 +35,6 @@ public:
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
-  const std::deque<CanData> messages(const QString &id);
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
   inline const Route* route() const { return replay->route(); }
@@ -48,6 +45,7 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void seekedTo(double sec);
   void streamStarted();
   void eventsMerged();
   void updated();
@@ -62,11 +60,9 @@ protected:
   void settingChanged();
 
   Replay *replay = nullptr;
-  std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
   std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
-  QHash<QString, std::deque<CanData>> received_msgs;
 };
 
 inline QString toHex(const QByteArray &dat) {
