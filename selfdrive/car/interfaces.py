@@ -87,12 +87,12 @@ class CarInterfaceBase(ABC):
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
-  @staticmethod
-  def get_non_essential_params(candidate: str):
+  @classmethod
+  def get_non_essential_params(cls, candidate: str):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
-    return CarInterfaceBase.get_params(candidate, gen_empty_fingerprint(), list(), False)
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False)
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool):
