@@ -24,6 +24,7 @@
 class Localizer {
 public:
   Localizer();
+  Localizer(bool has_ublox);
 
   int locationd_thread();
 

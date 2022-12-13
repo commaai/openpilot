@@ -24,8 +24,8 @@ const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
 // TODO: GPS sensor time offsets are empirically calculated
 // They should be replaced with synced time from a real clock
-const double GPS_LOCATION_SENSOR_TIME_OFFSET = 0.630; // s
-const double GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET = 0.095; // s
+const double GPS_QUECTEL_SENSOR_TIME_OFFSET = 0.630; // s
+const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -75,6 +75,8 @@ Localizer::Localizer() {
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
+
+Localizer::Localizer(bool has_ublox) : Localizer() { ublox_available = has_ublox; }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_state = this->kf->get_x();
@@ -292,9 +294,9 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   double sensor_time = log.getMeasTime() * 1e-9;
   if (ublox_available)
-    sensor_time -= GPS_LOCATION_SENSOR_TIME_OFFSET;
+    sensor_time -= GPS_UBLOX_SENSOR_TIME_OFFSET;
   else
-    sensor_time -= GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET;
+    sensor_time -= GPS_QUECTEL_SENSOR_TIME_OFFSET;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
