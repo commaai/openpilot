@@ -25,7 +25,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     car_fw = []
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
