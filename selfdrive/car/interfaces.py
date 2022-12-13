@@ -90,8 +90,7 @@ class CarInterfaceBase(ABC):
   @staticmethod
   def get_non_essential_params(candidate: str):
     """
-    Solely using the candidate name, returns parameters not essential to driving the car.
-    May be incomplete or wrong without fingerprints or FW versions
+    Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
     return CarInterfaceBase.get_params(candidate, gen_empty_fingerprint(), list())
 
