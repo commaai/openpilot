@@ -367,8 +367,8 @@ class CarStateBase(ABC):
 
   def update_steering_pressed(self, steering_pressed, steering_pressed_min_count):
     self.steering_pressed_cnt += 1 if steering_pressed else -1
-    self.steering_pressed_cnt = clip(steering_pressed_cnt, 0, steering_pressed_min_count)
-    return self.steering_pressed_cnt >= steering_pressed_min_count
+    self.steering_pressed_cnt = clip(steering_pressed_cnt, 0, steering_pressed_min_count + 1)
+    return self.steering_pressed_cnt > steering_pressed_min_count
 
   def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
     """Update blinkers from stalk position. When stalk is seen the blinker will be on for at least blinker_time,
