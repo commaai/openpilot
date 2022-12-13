@@ -26,6 +26,11 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint3
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
+    const auto &segments = replay->route()->segments();
+    if (std::none_of(segments.begin(), segments.end(), [](auto &s) { return s.second.rlog.length() > 0; })) {
+      qWarning() << "no rlogs in route" << route;
+      return false;
+    }
     replay->start();
     return true;
   }
