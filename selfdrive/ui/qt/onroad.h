@@ -25,7 +25,7 @@ private:
 };
 
 // container window for the NVG UI
-class NvgWindow : public CameraViewWidget {
+class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
   Q_PROPERTY(float speed MEMBER speed);
   Q_PROPERTY(QString speedUnit MEMBER speedUnit);
@@ -43,7 +43,7 @@ class NvgWindow : public CameraViewWidget {
   Q_PROPERTY(int status MEMBER status);
 
 public:
-  explicit NvgWindow(VisionStreamType type, QWidget* parent = 0);
+  explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
 
 private:
@@ -51,6 +51,7 @@ private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   QPixmap engage_img;
+  QPixmap experimental_img;
   QPixmap dm_img;
   const int radius = 192;
   const int img_size = (radius / 2) * 1.5;
@@ -68,6 +69,10 @@ private:
   bool has_eu_speed_limit = false;
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
+  std::unique_ptr<PubMaster> pm;
+
+  int skip_frame_count = 0;
+  bool wide_cam_requested = false;
 
 protected:
   void paintGL() override;
@@ -97,7 +102,7 @@ private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
   OnroadAlerts *alerts;
-  NvgWindow *nvg;
+  AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;

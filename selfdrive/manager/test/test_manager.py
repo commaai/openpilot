@@ -4,6 +4,7 @@ import signal
 import time
 import unittest
 
+from common.params import Params
 import selfdrive.manager.manager as manager
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
@@ -12,13 +13,17 @@ from system.hardware import HARDWARE
 os.environ['FAKEUPLOAD'] = "1"
 
 MAX_STARTUP_TIME = 3
-ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['updated', 'pandad'])]
+ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['pandad', ])]
 
 
 class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'
     HARDWARE.set_power_save(False)
+
+    # ensure clean CarParams
+    params = Params()
+    params.clear_all()
 
   def tearDown(self):
     manager.manager_cleanup()
@@ -40,6 +45,7 @@ class TestManager(unittest.TestCase):
       Ensure all processes exit cleanly when stopped.
     """
     HARDWARE.set_power_save(False)
+    manager.manager_init()
     manager.manager_prepare()
     for p in ALL_PROCESSES:
       managed_processes[p].start()

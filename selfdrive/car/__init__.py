@@ -1,15 +1,25 @@
 # functions common among cars
 import capnp
+from collections import namedtuple
 
 from cereal import car
-from common.numpy_fast import clip
-from typing import Dict, List
+from common.numpy_fast import clip, interp
+from typing import Dict
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+AngleRateLimit = namedtuple('AngleRateLimit', ['speed_bp', 'angle_v'])
+
+
+def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
+  if val > val_steady + hyst_gap:
+    val_steady = val - hyst_gap
+  elif val < val_steady - hyst_gap:
+    val_steady = val + hyst_gap
+  return val_steady
 
 
 def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
@@ -22,19 +32,6 @@ def create_button_event(cur_but: int, prev_but: int, buttons_dict: Dict[int, cap
     but = prev_but
   be.type = buttons_dict.get(but, ButtonType.unknown)
   return be
-
-
-def create_button_enable_events(buttonEvents: capnp.lib.capnp._DynamicListBuilder, pcm_cruise: bool = False) -> List[int]:
-  events = []
-  for b in buttonEvents:
-    # do enable on both accel and decel buttons
-    if not pcm_cruise:
-      if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
-        events.append(EventName.buttonEnable)
-    # do disable on button down
-    if b.type == ButtonType.cancel and b.pressed:
-      events.append(EventName.buttonCancel)
-  return events
 
 
 def gen_empty_fingerprint():
@@ -114,6 +111,15 @@ def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torq
                         min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
 
   return int(round(float(apply_torque)))
+
+
+def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
+  # pick angle rate limits based on wind up/down
+  steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
+  rate_limits = LIMITS.ANGLE_RATE_LIMIT_UP if steer_up else LIMITS.ANGLE_RATE_LIMIT_DOWN
+
+  angle_rate_lim = interp(v_ego, rate_limits.speed_bp, rate_limits.angle_v)
+  return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
 def crc8_pedal(data):

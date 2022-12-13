@@ -12,7 +12,7 @@ map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
 
 void Thneed::stop() {
-  printf("Thneed::stop: recorded %lu commands\n", cmds.size());
+  //printf("Thneed::stop: recorded %lu commands\n", cmds.size());
   record = false;
 }
 

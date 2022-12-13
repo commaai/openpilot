@@ -46,7 +46,9 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+bool LogReader::load(const std::string &url, std::atomic<bool> *abort,
+                     const std::set<cereal::Event::Which> &allow,
+                     bool local_cache, int chunk_size, int retries) {
   raw_ = FileReader(local_cache, chunk_size, retries).read(url, abort);
   if (raw_.empty()) return false;
 
@@ -54,18 +56,26 @@ bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool loca
     raw_ = decompressBZ2(raw_, abort);
     if (raw_.empty()) return false;
   }
-  return parse(abort);
+  return parse(allow, abort);
 }
 
 bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
   raw_.assign((const char *)data, size);
-  return parse(abort);
+  return parse({}, abort);
 }
 
-bool LogReader::parse(std::atomic<bool> *abort) {
+bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<bool> *abort) {
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0 && !(abort && *abort)) {
+      if (!allow.empty()) {
+        capnp::FlatArrayMessageReader reader(words);
+        auto which = reader.getRoot<cereal::Event>().which();
+        if (allow.find(which) == allow.end()) {
+          words = kj::arrayPtr(reader.getEnd(), words.end());
+          continue;
+        }
+      }
 
 #ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
