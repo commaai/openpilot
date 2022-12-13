@@ -66,7 +66,9 @@ def create_fcw_command(packer, fcw):
   return packer.make_can_msg("ACC_HUD", 0, values)
 
 
-def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, sws_toggle, sws_sensitivity, sws_buzzer, sws_fld, sws_warning, enabled):
+def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, enabled, lkas_hud):
+  lane_sway_defaults =
+
   values = {
     "TWO_BEEPS": chime,
     "LDA_ALERT": steer,
