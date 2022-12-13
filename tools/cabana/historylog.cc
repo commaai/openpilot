@@ -169,7 +169,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   signals_cb = new QComboBox(this);
   h->addWidget(signals_cb);
   comp_box = new QComboBox();
-  comp_box->addItems({">", "=", "<"});
+  comp_box->addItems({">", "=", "!=", "<"});
   h->addWidget(comp_box);
   value_edit = new QLineEdit(this);
   value_edit->setClearButtonEnabled(true);
@@ -204,12 +204,17 @@ void LogsWidget::setMessage(const QString &message_id) {
   blockSignals(false);
 }
 
+static bool not_equal(double l, double r) {
+  return l != r;
+}
+
 void LogsWidget::setFilter() {
   std::function<bool(double, double)> cmp;
   switch (comp_box->currentIndex()) {
     case 0: cmp = std::greater<double>{}; break;
     case 1: cmp = std::equal_to<double>{}; break;
-    case 2: cmp = std::less<double>{}; break;
+    case 2: cmp = not_equal; break;
+    case 3: cmp = std::less<double>{}; break;
   }
   model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
 }
