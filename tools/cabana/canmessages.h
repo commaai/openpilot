@@ -4,7 +4,6 @@
 
 #include <QColor>
 #include <QHash>
-#include <QList>
 
 #include "opendbc/can/common_dbc.h"
 #include "tools/cabana/settings.h"
@@ -21,12 +20,10 @@ class CANMessages : public QObject {
   Q_OBJECT
 
 public:
-  enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   void seekTo(double ts);
-  QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
   inline QString routeName() const { return replay->route()->name(); }

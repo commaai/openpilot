@@ -26,34 +26,15 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint3
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
+    const auto &segments = replay->route()->segments();
+    if (std::none_of(segments.begin(), segments.end(), [](auto &s) { return s.second.rlog.length() > 0; })) {
+      qWarning() << "no rlogs in route" << route;
+      return false;
+    }
     replay->start();
     return true;
   }
   return false;
-}
-
-QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *signal, double value, FindFlags flag, int max_count) {
-  auto evts = events();
-  if (!evts) return {};
-
-  QList<QPointF> ret;
-  ret.reserve(max_count);
-  auto [bus, address] = DBCManager::parseId(id);
-  for (auto &evt : *evts) {
-    if (evt->which != cereal::Event::Which::CAN) continue;
-
-    for (const auto &c : evt->event.getCan()) {
-      if (bus == c.getSrc() && address == c.getAddress()) {
-        double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
-        if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
-          ret.push_back({(evt->mono_time / (double)1e9) - can->routeStartTime(), val});
-          if (ret.size() >= max_count)
-            return ret;
-        }
-      }
-    }
-  }
-  return ret;
 }
 
 void CANMessages::process(QHash<QString, CanData> *messages) {
