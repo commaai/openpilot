@@ -2,17 +2,24 @@
 
 #include <QFontDatabase>
 #include <QPainter>
+#include <QPushButton>
+#include <QVBoxLayout>
 
 // HistoryLogModel
+
+HistoryLogModel::HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {
+  QObject::connect(can, &CANMessages::seekedTo, [this]() {
+    if (!msg_id.isEmpty()) setMessage(msg_id);
+  });
+}
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     if (index.column() == 0) {
-      return QString::number(m.ts, 'f', 2);
+      return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return !sigs.empty() ? QString::number(get_raw_value((uint8_t *)m.dat.data(), m.dat.size(), *sigs[index.column() - 1]))
-                         : toHex(m.dat);
+    return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : m.data;
   } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   }
@@ -21,14 +28,18 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
 
 void HistoryLogModel::setMessage(const QString &message_id) {
   beginResetModel();
-  msg_id = message_id;
   sigs.clear();
   messages.clear();
+  has_more_data = true;
   if (auto dbc_msg = dbc()->msg(message_id)) {
     sigs = dbc_msg->getSignals();
   }
-  endResetModel();
+  if (msg_id != message_id || sigs.empty()) {
+    filter_cmp = nullptr;
+  }
+  msg_id = message_id;
   updateState();
+  endResetModel();
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -47,22 +58,74 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
   return {};
 }
 
+void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp) {
+  if (sig_idx < sigs.size()) {
+    filter_sig_idx = sig_idx;
+    filter_value = value.toDouble();
+    filter_cmp = value.isEmpty() ? nullptr : cmp;
+    beginResetModel();
+    messages.clear();
+    updateState();
+    endResetModel();
+  }
+}
+
 void HistoryLogModel::updateState() {
-  int prev_row_count = messages.size();
   if (!msg_id.isEmpty()) {
-    messages = can->messages(msg_id);
+    uint64_t last_mono_time = messages.empty() ? 0 : messages.front().mono_time;
+    auto new_msgs = fetchData(last_mono_time, (can->currentSec() + can->routeStartTime()) * 1e9);
+    if ((has_more_data = !new_msgs.empty())) {
+      beginInsertRows({}, 0, new_msgs.size() - 1);
+      messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+      endInsertRows();
+    }
   }
-  int delta = messages.size() - prev_row_count;
-  if (delta > 0) {
-    beginInsertRows({}, prev_row_count, messages.size() - 1);
-    endInsertRows();
-  } else if (delta < 0) {
-    beginRemoveRows({}, messages.size(), prev_row_count - 1);
-    endRemoveRows();
-  }
+}
+
+void HistoryLogModel::fetchMore(const QModelIndex &parent) {
   if (!messages.empty()) {
-    emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1), {Qt::DisplayRole});
+    auto new_msgs = fetchData(0, messages.back().mono_time);
+    if ((has_more_data = !new_msgs.empty())) {
+      beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
+      messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+      endInsertRows();
+    }
   }
+}
+
+std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t min_mono_time, uint64_t max_mono_time) {
+  auto events = can->events();
+  auto it = std::lower_bound(events->begin(), events->end(), max_mono_time, [=](auto &e, uint64_t ts) {
+    return e->mono_time < ts;
+  });
+  if (it == events->end() || it == events->begin())
+    return {};
+
+  std::deque<HistoryLogModel::Message> msgs;
+  const auto [src, address] = DBCManager::parseId(msg_id);
+  uint32_t cnt = 0;
+  QVector<double> values(sigs.size());
+  for (--it; it != events->begin() && (*it)->mono_time > min_mono_time; --it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*it)->event.getCan()) {
+        if (src == c.getSrc() && address == c.getAddress()) {
+          const auto dat = c.getDat();
+          for (int i = 0; i < sigs.size(); ++i) {
+            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *(sigs[i]));
+          }
+          if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
+            auto &m = msgs.emplace_back();
+            m.mono_time = (*it)->mono_time;
+            m.data = toHex(QByteArray((char *)dat.begin(), dat.size()));
+            m.sig_values = values;
+            if (++cnt >= batch_size && min_mono_time == 0)
+              return msgs;
+          }
+        }
+      }
+    }
+  }
+  return msgs;
 }
 
 // HeaderView
@@ -89,16 +152,69 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
 // HistoryLog
 
 HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
-  model = new HistoryLogModel(this);
-  setModel(model);
   setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
   horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   verticalHeader()->setVisible(false);
-  setFrameShape(QFrame::NoFrame);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 }
 
-int HistoryLog::sizeHintForColumn(int column) const {
-  return -1;
+// LogsWidget
+
+LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+
+  filter_container = new QWidget(this);
+  QHBoxLayout *h = new QHBoxLayout(filter_container);
+  signals_cb = new QComboBox(this);
+  h->addWidget(signals_cb);
+  comp_box = new QComboBox();
+  comp_box->addItems({">", "=", "!=", "<"});
+  h->addWidget(comp_box);
+  value_edit = new QLineEdit(this);
+  value_edit->setClearButtonEnabled(true);
+  value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
+  h->addWidget(value_edit);
+  main_layout->addWidget(filter_container);
+
+  model = new HistoryLogModel(this);
+  logs = new HistoryLog(this);
+  logs->setModel(model);
+  main_layout->addWidget(logs);
+
+  QObject::connect(signals_cb, SIGNAL(currentIndexChanged(int)), this, SLOT(setFilter()));
+  QObject::connect(comp_box, SIGNAL(currentIndexChanged(int)), this, SLOT(setFilter()));
+  QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
+}
+
+void LogsWidget::setMessage(const QString &message_id) {
+  blockSignals(true);
+  value_edit->setText("");
+  signals_cb->clear();
+  comp_box->setCurrentIndex(0);
+  sigs.clear();
+  if (auto dbc_msg = dbc()->msg(message_id)) {
+    sigs = dbc_msg->getSignals();
+    for (auto s : sigs) {
+      signals_cb->addItem(s->name.c_str());
+    }
+  }
+  filter_container->setVisible(!sigs.empty());
+  model->setMessage(message_id);
+  blockSignals(false);
+}
+
+static bool not_equal(double l, double r) {
+  return l != r;
+}
+
+void LogsWidget::setFilter() {
+  std::function<bool(double, double)> cmp;
+  switch (comp_box->currentIndex()) {
+    case 0: cmp = std::greater<double>{}; break;
+    case 1: cmp = std::equal_to<double>{}; break;
+    case 2: cmp = not_equal; break;
+    case 3: cmp = std::less<double>{}; break;
+  }
+  model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
 }

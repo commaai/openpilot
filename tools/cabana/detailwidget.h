@@ -35,7 +35,7 @@ public:
 
 private:
   void showForm(const Signal *sig);
-  void updateChartState(const QString &id, const Signal *sig, bool opened);
+  void updateChartState();
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int to);
@@ -53,7 +53,7 @@ private:
   QTabWidget *tab_widget;
   QToolBar *toolbar;
   QAction *remove_msg_act;
-  HistoryLog *history_log;
+  LogsWidget *history_log;
   BinaryView *binary_view;
   QScrollArea *scroll;
   ChartsWidget *charts;

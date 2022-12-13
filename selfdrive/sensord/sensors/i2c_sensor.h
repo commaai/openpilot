@@ -2,12 +2,12 @@
 
 #include <cstdint>
 #include <unistd.h>
-
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "common/i2c.h"
 #include "common/gpio.h"
 
+#include "common/swaglog.h"
 #include "selfdrive/sensord/sensors/constants.h"
 #include "selfdrive/sensord/sensors/sensor.h"
 
@@ -33,4 +33,18 @@ public:
   virtual int init() = 0;
   virtual bool get_event(MessageBuilder &msg, uint64_t ts = 0) = 0;
   virtual int shutdown() = 0;
+
+  int verify_chip_id(uint8_t address, const std::vector<uint8_t> &expected_ids) {
+    uint8_t chip_id = 0;
+    int ret = read_register(address, &chip_id, 1);
+    if (ret < 0) {
+      LOGE("Reading chip ID failed: %d", ret);
+      return -1;
+    }
+    for (int i = 0; i < expected_ids.size(); ++i) {
+      if (chip_id == expected_ids[i]) return chip_id;
+    }
+    LOGE("Chip ID wrong. Got: %d, Expected %d", chip_id, expected_ids[0]);
+    return -1;
+  }
 };

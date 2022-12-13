@@ -4,11 +4,7 @@
 #include <QFormLayout>
 #include <QGuiApplication>
 #include <QHBoxLayout>
-#include <QScrollArea>
-#include <QToolBar>
 #include <QVBoxLayout>
-
-#include "selfdrive/ui/qt/util.h"
 
 // SignalForm
 
@@ -94,11 +90,6 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   plot_btn->setCheckable(true);
   plot_btn->setAutoRaise(true);
   title_layout->addWidget(plot_btn);
-  auto seek_btn = new QToolButton(this);
-  seek_btn->setText("🔍");
-  seek_btn->setAutoRaise(true);
-  seek_btn->setToolTip(tr("Find signal values"));
-  title_layout->addWidget(seek_btn);
   auto remove_btn = new QToolButton(this);
   remove_btn->setAutoRaise(true);
   remove_btn->setText("x");
@@ -126,7 +117,6 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) {
     emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
   });
-  QObject::connect(seek_btn, &QToolButton::clicked, [this]() { SignalFindDlg(msg_id, sig, this).exec(); });
   QObject::connect(remove_btn, &QToolButton::clicked,  [this]() { emit remove(sig); });
   QObject::connect(form, &SignalForm::changed, [this]() { save_timer->start(); });
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -211,69 +201,4 @@ void SignalEdit::enterEvent(QEvent *event) {
 void SignalEdit::leaveEvent(QEvent *event) {
   emit highlight(nullptr);
   QWidget::leaveEvent(event);
-}
-
-// SignalFindDlg
-
-SignalFindDlg::SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Find signal values"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-  QHBoxLayout *h = new QHBoxLayout();
-  h->addWidget(new QLabel(signal->name.c_str()));
-  QComboBox *comp_box = new QComboBox();
-  comp_box->addItems({">", "=", "<"});
-  h->addWidget(comp_box);
-  QLineEdit *value_edit = new QLineEdit("0", this);
-  value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
-  h->addWidget(value_edit, 1);
-  QPushButton *search_btn = new QPushButton(tr("Find"), this);
-  h->addWidget(search_btn);
-  main_layout->addLayout(h);
-
-  QWidget *container = new QWidget(this);
-  QVBoxLayout *signals_layout = new QVBoxLayout(container);
-  QScrollArea *scroll = new QScrollArea(this);
-  scroll->setWidget(container);
-  scroll->setWidgetResizable(true);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(scroll);
-
-  QObject::connect(search_btn, &QPushButton::clicked, [=]() {
-    clearLayout(signals_layout);
-
-    CANMessages::FindFlags comp = CANMessages::EQ;
-    if (comp_box->currentIndex() == 0) {
-      comp = CANMessages::GT;
-    } else if (comp_box->currentIndex() == 2) {
-      comp = CANMessages::LT;
-    }
-    double value = value_edit->text().toDouble();
-
-    const int limit_results = 50;
-    auto values = can->findSignalValues(id, signal, value, comp, limit_results);
-    for (auto &v : values) {
-      QHBoxLayout *item_layout = new QHBoxLayout();
-      item_layout->addWidget(new QLabel(QString::number(v.x(), 'f', 2)));
-      item_layout->addWidget(new QLabel(QString::number(v.y())));
-      item_layout->addStretch(1);
-
-      QPushButton *goto_btn = new QPushButton(tr("Goto"), this);
-      QObject::connect(goto_btn, &QPushButton::clicked, [sec = v.x()]() { can->seekTo(sec); });
-      item_layout->addWidget(goto_btn);
-      signals_layout->addLayout(item_layout);
-    }
-    if (values.size() == limit_results) {
-      QFrame *hline = new QFrame();
-      hline->setFrameShape(QFrame::HLine);
-      hline->setFrameShadow(QFrame::Sunken);
-      signals_layout->addWidget(hline);
-      QLabel *info = new QLabel(tr("Only display the first %1 results").arg(limit_results));
-      info->setAlignment(Qt::AlignCenter);
-      signals_layout->addWidget(info);
-    }
-    if (values.size() * 30 > container->height()) {
-      scroll->setFixedHeight(std::min(values.size() * 30, 300));
-    }
-  });
 }
