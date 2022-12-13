@@ -366,6 +366,7 @@ class CarStateBase(ABC):
     return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
 
   def update_steering_pressed(self, steering_pressed, steering_pressed_min_count):
+    """Applies filtering on steering pressed for noisy driver torque signals."""
     self.steering_pressed_cnt += 1 if steering_pressed else -1
     self.steering_pressed_cnt = clip(self.steering_pressed_cnt, 0, self.steering_pressed_min_count + 1)
     return self.steering_pressed_cnt > steering_pressed_min_count
