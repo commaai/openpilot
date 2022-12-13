@@ -27,7 +27,6 @@
 #define I2C_BUS_IMU 1
 
 ExitHandler do_exit;
-std::mutex pm_mutex;
 uint64_t init_ts = 0;
 
 void interrupt_loop(std::vector<Sensor *>& sensors,

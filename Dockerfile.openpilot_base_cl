@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends\
 
 # Intel OpenCL driver
 ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
-ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
+ARG INTEL_DRIVER_URL=https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
 RUN mkdir -p /tmp/opencl-driver-intel
 WORKDIR /tmp/opencl-driver-intel
 RUN echo INTEL_DRIVER is $INTEL_DRIVER && \

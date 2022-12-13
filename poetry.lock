@@ -2440,6 +2440,20 @@ typing-extensions = ">=3.6.2.1"
 lint = ["clang-format (==13.0.0)", "flake8", "mypy (==0.782)", "types-protobuf (==3.18.4)"]
 
 [[package]]
+name = "onnx2torch"
+version = "1.5.4"
+description = "Nice Onnx to Pytorch converter"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numpy = ">=1.16.4"
+onnx = ">=1.9.0"
+torch = ">=1.8.0"
+torchvision = ">=0.9.0"
+
+[[package]]
 name = "onnxoptimizer"
 version = "0.3.1"
 description = "Open Neural Network Exchange"
@@ -3697,6 +3711,20 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "sounddevice"
+version = "0.4.5"
+description = "Play and Record Sound with Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+CFFI = ">=1.0"
+
+[package.extras]
+numpy = ["NumPy"]
+
+[[package]]
 name = "soupsieve"
 version = "2.3.2.post1"
 description = "A modern CSS selector implementation for Beautiful Soup."
@@ -4386,7 +4414,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "d2854112975a9d83a9540175b2d430487e40e0292d48a1ba6c591db60a08c136"
+content-hash = "82e450801a9a1de9fd98615d7deb3d8f0aa5bd3ccf0cf8b258cd8f6e6e4c5309"
 
 [metadata.files]
 adal = [
@@ -5392,7 +5420,6 @@ gevent = [
     {file = "gevent-22.10.1-cp310-cp310-win_amd64.whl", hash = "sha256:d2ea4ce36c09355379bc038be2bd50118f97d2eb6381b7096de4d05aa4c3e241"},
     {file = "gevent-22.10.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3e73c9f71aa2a6795ecbec9b57282b002375e863e283558feb87b62840c8c1ac"},
     {file = "gevent-22.10.1-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:5bc3758f0dc95007c1780d28a9fd2150416a79c50f308f62a674d78a845ea1b9"},
-    {file = "gevent-22.10.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:03c10ca0beeab0c6be516030471ea630447ddd1f649d3335e5b162097cd4130a"},
     {file = "gevent-22.10.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:fe2c0ff095171c49f78f1d4e6dc89fa58253783c7b6dccab9f1d76e2ee391f10"},
     {file = "gevent-22.10.1-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:d18fcc324f39a3b21795022eb47c7752d6e4f4ed89d8cca41f1cc604553265b3"},
     {file = "gevent-22.10.1-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:06ea39c70ce166c4a1d4386c7fae96cb8d84ad799527b3378406051104d15443"},
@@ -6387,6 +6414,9 @@ onnx = [
     {file = "onnx-1.12.0-cp39-cp39-win32.whl", hash = "sha256:f8800f28c746ab06e51ef8449fd1215621f4ddba91be3ffc264658937d38a2af"},
     {file = "onnx-1.12.0-cp39-cp39-win_amd64.whl", hash = "sha256:af90427ca04c6b7b8107c2021e1273227a3ef1a7a01f3073039cae7855a59833"},
     {file = "onnx-1.12.0.tar.gz", hash = "sha256:13b3e77d27523b9dbf4f30dfc9c959455859d5e34e921c44f712d69b8369eff9"},
+]
+onnx2torch = [
+    {file = "onnx2torch-1.5.4-py3-none-any.whl", hash = "sha256:fd1a0fe05072bfb9f3d86d9330299b130b41f11bd4ae634db17078974e711725"},
 ]
 onnxoptimizer = [
     {file = "onnxoptimizer-0.3.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:e73a5e2e3ca4db9bff54f7131768749c861677b97ee811a136fcf1a52783cf6e"},
@@ -7514,6 +7544,13 @@ snowballstemmer = [
 sortedcontainers = [
     {file = "sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
     {file = "sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
+]
+sounddevice = [
+    {file = "sounddevice-0.4.5-py3-none-any.whl", hash = "sha256:5cea4afd9412e731f50ae09a54d68b10628a604cfd56b42a976c54d424c6c39d"},
+    {file = "sounddevice-0.4.5-py3-none-macosx_10_6_x86_64.macosx_10_6_universal2.whl", hash = "sha256:0875173595a8bd5a66b5a03a3d958e7b89c3b956b8befbe4491a24a3ce7784c0"},
+    {file = "sounddevice-0.4.5-py3-none-win32.whl", hash = "sha256:442adf53850916374a58f902200aaf9412227378181264e60c966da64be47d41"},
+    {file = "sounddevice-0.4.5-py3-none-win_amd64.whl", hash = "sha256:d3216c5d3d678c3301058e9aac7000879e255140c524c9ef98730091b67ea676"},
+    {file = "sounddevice-0.4.5.tar.gz", hash = "sha256:2fe0d41299e4f3037dad2acede4eff0666b34a1fa3da5335e47120373964bef5"},
 ]
 soupsieve = [
     {file = "soupsieve-2.3.2.post1-py3-none-any.whl", hash = "sha256:3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759"},

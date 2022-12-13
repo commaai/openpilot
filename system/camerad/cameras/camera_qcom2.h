@@ -41,6 +41,9 @@ public:
   int analog_gain_min_idx;
   int analog_gain_max_idx;
   int analog_gain_rec_idx;
+  int analog_gain_cost_delta;
+  float analog_gain_cost_low;
+  float analog_gain_cost_high;
 
   float cur_ev[3];
   float min_ev, max_ev;

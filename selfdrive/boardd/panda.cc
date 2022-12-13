@@ -6,7 +6,6 @@
 #include <stdexcept>
 
 #include "cereal/messaging/messaging.h"
-#include "panda/board/dlc_to_len.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
@@ -24,7 +23,8 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
          (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
 
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
-            (hw_type == cereal::PandaState::PandaType::DOS);
+            (hw_type == cereal::PandaState::PandaType::DOS) ||
+            (hw_type == cereal::PandaState::PandaType::TRES);
 
   return;
 }
@@ -169,21 +169,14 @@ static uint8_t len_to_dlc(uint8_t len) {
   }
 }
 
-static void write_packet(uint8_t *dest, int *write_pos, const uint8_t *src, size_t size) {
-  for (int i = 0, &pos = *write_pos; i < size; ++i, ++pos) {
-    // Insert counter every 64 bytes (first byte of 64 bytes USB packet)
-    if (pos % USBPACKET_MAX_SIZE == 0) {
-      dest[pos] = pos / USBPACKET_MAX_SIZE;
-      pos++;
-    }
-    dest[pos] = src[i];
-  }
-}
-
 void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                             std::function<void(uint8_t *, size_t)> write_func) {
   int32_t pos = 0;
   uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
+
+  uint32_t magic = CAN_TRANSACTION_MAGIC;
+  memcpy(&send_buf[0], &magic, sizeof(uint32_t));
+  pos += sizeof(uint32_t);
 
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
@@ -202,16 +195,19 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     header.data_len_code = data_len_code;
     header.bus = bus - bus_offset;
 
-    write_packet(send_buf, &pos, (uint8_t *)&header, sizeof(can_header));
-    write_packet(send_buf, &pos, (uint8_t *)can_data.begin(), can_data.size());
+    memcpy(&send_buf[pos], (uint8_t *)&header, sizeof(can_header));
+    pos += sizeof(can_header);
+    memcpy(&send_buf[pos], (uint8_t *)can_data.begin(), can_data.size());
+    pos += can_data.size();
+
     if (pos >= USB_TX_SOFT_LIMIT) {
       write_func(send_buf, pos);
-      pos = 0;
+      pos = sizeof(uint32_t);
     }
   }
 
   // send remaining packets
-  if (pos > 0) write_func(send_buf, pos);
+  if (pos > sizeof(uint32_t)) write_func(send_buf, pos);
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
@@ -234,33 +230,38 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
-  recv_buf.clear();
-  for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
-    if (data[i] != i / USBPACKET_MAX_SIZE) {
-      LOGE("CAN: MALFORMED USB RECV PACKET");
-      handle->comms_healthy = false;
-      return false;
-    }
-    int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));
-    recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
+  if (size < sizeof(uint32_t)) {
+    return true;
   }
 
-  int pos = 0;
-  while (pos < recv_buf.size()) {
+  uint32_t magic;
+  memcpy(&magic, &data[0], sizeof(uint32_t));
+  if (magic != CAN_TRANSACTION_MAGIC) {
+    LOGE("CAN recv: buffer didn't start with magic");
+    handle->comms_healthy = false;
+    return false;
+  }
+
+  int pos = sizeof(uint32_t);
+  while (pos < size) {
     can_header header;
-    memcpy(&header, &recv_buf[pos], CANPACKET_HEAD_SIZE);
+    memcpy(&header, &data[pos], sizeof(can_header));
 
     can_frame &canData = out_vec.emplace_back();
     canData.busTime = 0;
     canData.address = header.addr;
     canData.src = header.bus + bus_offset;
-    if (header.rejected) { canData.src += CANPACKET_REJECTED; }
-    if (header.returned) { canData.src += CANPACKET_RETURNED; }
+    if (header.rejected) {
+      canData.src += CAN_REJECTED_BUS_OFFSET;
+    }
+    if (header.returned) {
+      canData.src += CAN_RETURNED_BUS_OFFSET;
+    }
 
     const uint8_t data_len = dlc_to_len[header.data_len_code];
-    canData.dat.assign((char *)&recv_buf[pos + CANPACKET_HEAD_SIZE], data_len);
+    canData.dat.assign((char *)&data[pos + sizeof(can_header)], data_len);
 
-    pos += CANPACKET_HEAD_SIZE + data_len;
+    pos += sizeof(can_header) + data_len;
   }
   return true;
 }
