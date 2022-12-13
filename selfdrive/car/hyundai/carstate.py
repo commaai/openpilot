@@ -213,6 +213,7 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
+    self.brake_error = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
@@ -434,6 +435,7 @@ class CarState(CarStateBase):
       ("LKA_FAULT", "MDPS"),
 
       ("DriverBraking", "TCS"),
+      ("ACCEnable", "TCS"),
 
       ("COUNTER", cruise_btn_msg),
       ("CRUISE_BUTTONS", cruise_btn_msg),
