@@ -53,7 +53,7 @@ private:
   QTabWidget *tab_widget;
   QToolBar *toolbar;
   QAction *remove_msg_act;
-  HistoryLog *history_log;
+  LogsWidget *history_log;
   BinaryView *binary_view;
   QScrollArea *scroll;
   ChartsWidget *charts;
