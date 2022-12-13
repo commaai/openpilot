@@ -11,7 +11,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.car.honda.values import CAR
 from selfdrive.controls.lib.vehicle_model import VehicleModel, create_dyn_state_matrices
@@ -21,7 +20,7 @@ T_SIM = 5 * 60  # s
 DT = 0.01
 
 
-CP = CarInterface.get_params(CAR.CIVIC, gen_empty_fingerprint(), [])
+CP = CarInterface.get_non_essential_params(CAR.CIVIC)
 VM = VehicleModel(CP)
 
 x, y = 0, 0  # m, m

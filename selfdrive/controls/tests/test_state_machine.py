@@ -3,7 +3,6 @@ import unittest
 
 from cereal import car, log
 from common.realtime import DT_CTRL
-from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
 from selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
@@ -32,7 +31,7 @@ class TestStateMachine(unittest.TestCase):
 
   def setUp(self):
     CarInterface, CarController, CarState = interfaces["mock"]
-    CP = CarInterface.get_params("mock", gen_empty_fingerprint(), [])
+    CP = CarInterface.get_non_essential_params("mock")
     CI = CarInterface(CP, CarController, CarState)
 
     self.controlsd = Controls(CI=CI)

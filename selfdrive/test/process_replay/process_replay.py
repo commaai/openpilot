@@ -16,7 +16,6 @@ from common.params import Params
 from common.timeout import Timeout
 from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
-from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.manager.process import PythonProcess
@@ -181,7 +180,7 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
 def get_car_params(msgs, fsm, can_sock, fingerprint):
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
-    CP = CarInterface.get_params(fingerprint, gen_empty_fingerprint(), [])
+    CP = CarInterface.get_non_essential_params(fingerprint)
   else:
     can = FakeSocket(wait=False)
     sendcan = FakeSocket(wait=False)

@@ -5,7 +5,6 @@ from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
-from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
@@ -68,7 +67,7 @@ class TestFwFingerprint(unittest.TestCase):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
-        CP = interfaces[car_model][0].get_params(car_model, gen_empty_fingerprint(), [])
+        CP = interfaces[car_model][0].get_non_essential_params(car_model)
         if CP.carName == 'subaru':
           for ecu in ecus.keys():
             self.assertNotIn(ecu[1], blacklisted_addrs, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')

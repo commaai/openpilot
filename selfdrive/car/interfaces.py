@@ -10,7 +10,7 @@ from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_hysteresis, scale_rot_inertia, scale_tire_stiffness
+from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_center_deadzone
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -86,6 +86,14 @@ class CarInterfaceBase(ABC):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
+
+  @staticmethod
+  def get_non_essential_params(candidate: str):
+    """
+    Solely using the candidate name, returns parameters not essential to driving the car.
+    May be incomplete or wrong without fingerprints or FW versions
+    """
+    return CarInterfaceBase.get_params(candidate, gen_empty_fingerprint(), list())
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool = False):
