@@ -7,8 +7,10 @@
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"
 
+const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
+
 // one segment uses about 100M of memory
-constexpr int FORWARD_SEGS = 5;
+constexpr int MIN_SEGMENTS_CACHE = 5;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,
@@ -55,6 +57,8 @@ public:
     filter_opaque = opaque;
     event_filter = filter;
   }
+  inline int segmentCacheLimit() const { return segment_cache_limit; }
+  inline void setSegmentCacheLimit(int n) { segment_cache_limit = std::max(MIN_SEGMENTS_CACHE, n); }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
   inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
@@ -75,6 +79,7 @@ public:
 signals:
   void streamStarted();
   void segmentsMerged();
+  void seekedTo(double sec);
 
 protected slots:
   void segmentLoadFinished(bool success);
@@ -129,4 +134,5 @@ protected:
   float speed_ = 1.0;
   replayEventFilter event_filter = nullptr;
   void *filter_opaque = nullptr;
+  int segment_cache_limit = MIN_SEGMENTS_CACHE;
 };

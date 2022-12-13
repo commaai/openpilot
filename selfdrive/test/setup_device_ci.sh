@@ -29,6 +29,7 @@ sudo abctl --set_success
 
 # patch sshd config
 sudo mount -o rw,remount /
+echo tici-$(cat /proc/cmdline | sed -e 's/^.*androidboot.serialno=//' -e 's/ .*$//') | sudo tee /etc/hostname
 sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
 sudo systemctl daemon-reload
 sudo systemctl restart ssh
@@ -60,6 +61,7 @@ find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -
 git reset --hard $GIT_COMMIT
 git checkout $GIT_COMMIT
 git clean -xdff
+git submodule sync
 git submodule update --init --recursive
 git submodule foreach --recursive "git reset --hard && git clean -xdff"
 

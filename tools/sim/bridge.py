@@ -39,6 +39,8 @@ def parse_args(add_args=None):
   parser.add_argument('--dual_camera', action='store_true')
   parser.add_argument('--town', type=str, default='Town04_Opt')
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
+  parser.add_argument('--host', dest='host', type=str, default='127.0.0.1')
+  parser.add_argument('--port', dest='port', type=int, default=2000)
 
   return parser.parse_args(add_args)
 
@@ -80,11 +82,10 @@ class Camerad:
     self.queue = cl.CommandQueue(self.ctx)
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
-    # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
-      self.krnl = prg.rgb_to_yuv
+      self.krnl = prg.rgb_to_nv12
     self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
 
@@ -233,8 +234,8 @@ def can_function_runner(vs: VehicleState, exit_event: threading.Event):
     i += 1
 
 
-def connect_carla_client():
-  client = carla.Client("127.0.0.1", 2000)
+def connect_carla_client(host: str, port: int):
+  client = carla.Client(host, port)
   client.set_timeout(5)
   return client
 
@@ -291,7 +292,7 @@ class CarlaBridge:
       self.close()
 
   def _run(self, q: Queue):
-    client = connect_carla_client()
+    client = connect_carla_client(self._args.host, self._args.port)
     world = client.load_world(self._args.town)
 
     settings = world.get_settings()

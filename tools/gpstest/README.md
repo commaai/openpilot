@@ -1,20 +1,18 @@
 # GPS test setup
+Testing the GPS receiver using GPS spoofing. At the moment only
+static location relpay is supported.
 
 # Usage
 ```
-# replaying a static location
-./gpstest.sh -e <ephemeris file> -s <static location>
-
-# replaying a prerecorded route (NMEA cvs file)
-./gpstest.sh -e <ephemeris file> -d <dynamic location>
+# on host, start gps signal simulation
+./run_static_lime.py
 ```
 
-If `-e` is not provided the latest ephemeris file will be downloaded from
+`run_static_lime.py` downloads the latest ephemeris file from
 https://cddis.nasa.gov/archive/gnss/data/daily/20xx/brdc/.
-(TODO: add auto downloader)
+
 
 # Hardware Setup
-
 * [LimeSDR USB](https://wiki.myriadrf.org/LimeSDR-USB)
 * Asus AX58BT antenna
 

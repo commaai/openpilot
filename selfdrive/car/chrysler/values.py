@@ -1,3 +1,4 @@
+from enum import IntFlag
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Union
@@ -9,6 +10,10 @@ from selfdrive.car.docs_definitions import CarInfo, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
+
+
+class ChryslerFlags(IntFlag):
+  HIGHER_MIN_STEERING_SPEED = 1
 
 
 class CAR:
@@ -166,14 +171,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
   ],
+  extra_ecus=[
+    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+  ],
 )
 
 FW_VERSIONS = {
-  CAR.PACIFICA_2019_HYBRID: {
-    (Ecu.hcp, 0x7e2, None): [],
-    (Ecu.abs, 0x7e4, None): [],
-  },
-
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294063AH',
@@ -242,6 +246,7 @@ FW_VERSIONS = {
       b'68334977AH',
       b'68504022AB',
       b'68530686AB',
+      b'68504022AC',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672895AB',

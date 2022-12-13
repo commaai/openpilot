@@ -1,31 +1,24 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
 from selfdrive.car.interfaces import CarInterfaceBase
 
-
-EventName = car.CarEvent.EventName
+CarParams = car.CarParams
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    if car_fw is None:
-      car_fw = []
-
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "ford"
     ret.dashcamOnly = True
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.ford)]
 
     # Angle-based steering
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.steerControlType = CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
-    tire_stiffness_factor = 1.0
 
     if candidate == CAR.ESCAPE_MK4:
       ret.wheelbase = 2.71
@@ -43,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1350 + STD_CARGO_KG
 
     else:
-      raise ValueError(f"Unsupported car: ${candidate}")
+      raise ValueError(f"Unsupported car: {candidate}")
 
     # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
     found_ecus = [fw.ecu for fw in car_fw]
@@ -61,10 +54,7 @@ class CarInterface(CarInterfaceBase):
     ret.minSteerSpeed = 0.
 
     ret.autoResumeSng = ret.minEnableSpeed == -1.
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.44
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
     return ret
 
   def _update(self, c):
