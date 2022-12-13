@@ -61,7 +61,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Hyundai|Elantra GT 2017-19|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
 |Hyundai|Elantra Hybrid 2021-23|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Hyundai|Genesis 2015-16|Smart Cruise Control (SCC)|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai J|
-|Hyundai|i30 2019|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Hyundai|i30 2017-19|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
 |Hyundai|Ioniq 5 (with HDA II) 2022-23[<sup>5</sup>](#footnotes)|Highway Driving Assist II|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai Q|
 |Hyundai|Ioniq 5 (without HDA II) 2022-23[<sup>5</sup>](#footnotes)|Highway Driving Assist|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai K|
 |Hyundai|Ioniq Electric 2019|Smart Cruise Control (SCC)|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai C|
