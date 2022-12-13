@@ -107,8 +107,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
-  QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
+  QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
     if (undo_stack->count() > 0)
       dbcMsgChanged();
@@ -169,7 +168,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signal_list.push_back(form);
       }
       form->setSignal(msg_id, sig);
-      form->setChartOpened(charts->isChartOpened(msg_id, sig));
+      form->setChartOpened(charts->hasSignal(msg_id, sig));
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
@@ -212,9 +211,9 @@ void DetailWidget::showForm(const Signal *sig) {
   setUpdatesEnabled(true);
 }
 
-void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
+void DetailWidget::updateChartState() {
   for (auto f : signal_list)
-    if (f->msg_id == id && f->sig == sig) f->setChartOpened(opened);
+    f->setChartOpened(charts->hasSignal(f->msg_id, f->sig));
 }
 
 void DetailWidget::editMsg() {
@@ -334,4 +333,3 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet("QLabel{color:darkGray;}");
 }
-
