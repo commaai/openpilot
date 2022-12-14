@@ -284,7 +284,6 @@ void Localizer::input_fake_gps_observations(double current_time) {
 }
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
-
   this->gps_valid = log.getPositionECEF().getValid() && log.getVelocityECEF().getValid();
   if (!this->gps_valid) {
     this->determine_gps_mode(current_time);
@@ -573,7 +572,7 @@ int Localizer::locationd_thread() {
     "carState", "carParams", "accelerometer", "gyroscope"};
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"carParams", "gnssMeasurements"});
   PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
@@ -585,10 +584,10 @@ int Localizer::locationd_thread() {
 
   while (!do_exit) {
     sm.update();
-    if (filterInitialized){
+    if (filterInitialized) {
       this->observation_timings_invalid_reset();
       for (const char* service : service_list) {
-        if (sm.updated(service) && sm.valid(service)){
+        if (sm.updated(service) && sm.valid(service)) {
           const cereal::Event::Reader log = sm[service];
           this->handle_msg(log);
         }
