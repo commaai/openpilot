@@ -162,5 +162,5 @@ def calc_vel_fix(measurements, est_pos, min_measurements=6):
 
   Fx_vel = prr_residual(measurements, est_pos)
   opt_vel = gauss_newton(Fx_vel, [0, 0, 0, 0])
-  residual, _ = Fx_vel(opt_vel)
+  residual, _ = Fx_vel(opt_vel, no_weight=True)
   return opt_vel.tolist(), residual.tolist()
