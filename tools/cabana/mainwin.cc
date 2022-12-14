@@ -18,8 +18,6 @@
 #include <QVBoxLayout>
 #include <QWidgetAction>
 
-#include "tools/replay/util.h"
-
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
@@ -36,19 +34,13 @@ MainWindow::MainWindow() : QMainWindow() {
   splitter = new QSplitter(Qt::Horizontal, this);
   splitter->setHandleWidth(11);
 
-  // DBC file selector
   QWidget *messages_container = new QWidget(this);
   QVBoxLayout *messages_layout = new QVBoxLayout(messages_container);
   messages_layout->setContentsMargins(0, 0, 0, 0);
-  dbc_combo = new QComboBox(this);
-  auto dbc_names = dbc()->allDBCNames();
-  for (const auto &name : dbc_names) {
-    dbc_combo->addItem(QString::fromStdString(name));
-  }
-  dbc_combo->model()->sort(0);
-  dbc_combo->setInsertPolicy(QComboBox::NoInsert);
-  messages_layout->addWidget(dbc_combo);
 
+  // left panel
+  dbc_combo = createDBCSelector();
+  messages_layout->addWidget(dbc_combo);
   messages_widget = new MessagesWidget(this);
   messages_layout->addWidget(messages_widget);
   splitter->addWidget(messages_container);
@@ -109,11 +101,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() {
-    detail_widget->undo_stack->clear();
-    dbc_combo->setCurrentText(QFileInfo(dbc()->name()).baseName());
-    setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
-  });
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
     setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
   });
@@ -149,6 +137,23 @@ void MainWindow::createActions() {
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
+QComboBox *MainWindow::createDBCSelector() {
+  QComboBox *c = new QComboBox(this);
+  c->setEditable(true);
+  c->lineEdit()->setPlaceholderText(tr("Select from an existing DBC file"));
+  c->setInsertPolicy(QComboBox::NoInsert);
+  c->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  c->completer()->setFilterMode(Qt::MatchContains);
+
+  auto dbc_names = dbc()->allDBCNames();
+  std::sort(dbc_names.begin(), dbc_names.end());
+  for (const auto &name : dbc_names) {
+    c->addItem(QString::fromStdString(name));
+  }
+  c->setCurrentIndex(-1);
+  return c;
+}
+
 void MainWindow::createStatusBar() {
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
@@ -164,9 +169,17 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::DBCFileChanged() {
+  detail_widget->undo_stack->clear();
+  int index = dbc_combo->findText(QFileInfo(dbc()->name()).baseName());
+  dbc_combo->setCurrentIndex(index);
+  setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+}
+
 void MainWindow::loadDBCFromName(const QString &name) {
-  if (name != dbc()->name())
+  if (name != dbc()->name()) {
     dbc()->open(name);
+  }
 }
 
 void MainWindow::loadDBCFromFile() {
@@ -189,13 +202,15 @@ void MainWindow::loadDBCFromClipboard() {
 
 void MainWindow::loadDBCFromFingerprint() {
   auto fingerprint = can->carFingerprint();
-  fingerprint_label->setText(fingerprint);
-  if (!fingerprint.isEmpty() && dbc()->name().isEmpty()) {
+  fingerprint_label->setText(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint);
+  if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
       loadDBCFromName(dbc_name.toString());
+      return;
     }
   }
+  dbc()->open("New_DBC", "");
 }
 
 void MainWindow::saveDBCToFile() {
