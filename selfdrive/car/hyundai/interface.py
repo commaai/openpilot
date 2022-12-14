@@ -176,6 +176,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.9
       ret.steerRatio = 16.
       tire_stiffness_factor = 0.65
+      ret.flags |= HyundaiFlags.ENABLE_BLINKERS.value
     elif candidate == CAR.IONIQ_5:
       ret.mass = 2012 + STD_CARGO_KG
       ret.wheelbase = 3.0
