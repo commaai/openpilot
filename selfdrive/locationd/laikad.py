@@ -99,7 +99,7 @@ class Laikad:
         return None
       position_estimate = position_solution[:3]
       position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
-      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate)
+      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, min_measurements=min_measurements)
       if len(velocity_solution) == 0 or len(prr_residuals) == 0:
         return None
 
