@@ -25,8 +25,8 @@ const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
 // TODO: GPS sensor time offsets are empirically calculated
 // They should be replaced with synced time from a real clock
-const double GPS_LOCATION_SENSOR_TIME_OFFSET = 0.630; // s
-const double GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET = 0.095; // s
+const double GPS_QUECTEL_SENSOR_TIME_OFFSET = 0.630; // s
+const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -359,9 +359,9 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   double sensor_time = log.getMeasTime() * 1e-9;
   if (ublox_available)
-    sensor_time -= GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET;
+    sensor_time -= GPS_UBLOX_SENSOR_TIME_OFFSET;
   else
-    sensor_time -= GPS_LOCATION_SENSOR_TIME_OFFSET;
+    sensor_time -= GPS_QUECTEL_SENSOR_TIME_OFFSET;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
@@ -568,9 +568,9 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   } else if (log.isGyroscope()) {
     this->handle_sensor(t, log.getGyroscope());
   } else if (log.isGpsLocation()) {
-    this->handle_gps(t, log.getGpsLocation(), GPS_LOCATION_SENSOR_TIME_OFFSET);
+    this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
   } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal(), GPS_LOCATION_EXTERNAL_SENSOR_TIME_OFFSET);
+    this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
   //} else if (log.isGnssMeasurements()) {
   //  this->handle_gnss(t, log.getGnssMeasurements());
   } else if (log.isCarState()) {
