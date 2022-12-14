@@ -47,11 +47,11 @@ class CarController:
       if CC.latActive:
         # use LatCtlCurv_No_Actl to actuate steering
         # TODO: apply rate limits
-        apply_curvature = -clip(actuators.curvature, -CCP.CURVATURE_MAX, CCP.CURVATURE_MAX)
+        apply_curvature = clip(actuators.curvature, -CCP.CURVATURE_MAX, CCP.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
-      angle_steer_des = self.VM.get_steer_from_curvature(-actuators.curvature, CS.out.vEgo, 0.0)
+      angle_steer_des = self.VM.get_steer_from_curvature(actuators.curvature, CS.out.vEgo, 0.0)
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
@@ -68,7 +68,7 @@ class CarController:
 
       lca_rq = 1 if CC.latActive else 0
       can_sends.append(create_lka_msg(self.packer))
-      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., apply_curvature, 0.))
+      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., -apply_curvature, 0.))
 
       self.apply_curvature_last = apply_curvature
 
