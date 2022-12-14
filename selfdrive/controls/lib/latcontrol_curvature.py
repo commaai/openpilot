@@ -19,7 +19,7 @@ class LatControlCurvature(LatControlPID):
     curvature_log.desiredCurvature = desired_curvature
     curvature_log.error = desired_curvature - curvature_log.actualCurvature
 
-    angle_steer_des = float(CS.steeringAngleDeg)
+    angle_steer_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll)) + params.angleOffsetDeg
     angle_control_saturated = abs(angle_steer_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
     curvature_log.saturated = self._check_saturation(angle_control_saturated, CS, steer_limited)
 
