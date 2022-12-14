@@ -59,7 +59,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
 
   if car_fingerprint in HONDA_BOSCH_RADARLESS:
     acc_control_values = {
-      "CONTROL_ON": 1 if enabled else 0,
+      "CONTROL_ON": enabled,
       "CONTROL_OFF": 1,  # TODO: not sure this signal is needed
     }
   else:
