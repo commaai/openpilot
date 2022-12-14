@@ -66,7 +66,6 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
       "ACCEL_COMMAND": accel_command,
       "STANDSTILL": standstill,
     }
-    commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
   else:
     acc_control_values = {
       # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
@@ -78,7 +77,6 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
       "STANDSTILL": standstill,
       "STANDSTILL_RELEASE": standstill_release,
     }
-    commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
     acc_control_on_values = {
       "SET_TO_3": 0x03,
       "CONTROL_ON": enabled,
@@ -87,6 +85,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
       "SET_TO_30": 0x30,
     }
     commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
+  commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
   return commands
 
 
