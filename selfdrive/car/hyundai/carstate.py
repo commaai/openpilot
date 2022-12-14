@@ -191,8 +191,8 @@ class CarState(CarStateBase):
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
 
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
-                                                                      cp.vl["BLINKERS"]["RIGHT_LAMP"])
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(200, cp.vl["BLINKER_STALKS"]["LEFT_BLINKER"],
+                                                                      cp.vl["BLINKER_STALKS"]["RIGHT_BLINKER"])
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FL_INDICATOR"] != 0
       ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FR_INDICATOR"] != 0
@@ -441,8 +441,8 @@ class CarState(CarStateBase):
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
       ("DISTANCE_UNIT", "CRUISE_BUTTONS_ALT"),
 
-      ("LEFT_LAMP", "BLINKERS"),
-      ("RIGHT_LAMP", "BLINKERS"),
+      ("LEFT_BLINKER", "BLINKER_STALKS"),
+      ("RIGHT_BLINKER", "BLINKER_STALKS"),
 
       ("DRIVER_DOOR_OPEN", "DOORS_SEATBELTS"),
       ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
@@ -455,7 +455,7 @@ class CarState(CarStateBase):
       ("MDPS", 100),
       ("TCS", 50),
       ("CRUISE_BUTTONS_ALT", 50),
-      ("BLINKERS", 4),
+      ("BLINKER_STALKS", 1),
       ("DOORS_SEATBELTS", 4),
     ]
 
