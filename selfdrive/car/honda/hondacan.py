@@ -119,16 +119,12 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, 
   if CP.openpilotLongitudinalControl:
     acc_hud_values = {
       'CRUISE_SPEED': hud.v_cruise,
+      'ENABLE_MINI_CAR': 1,
       'HUD_DISTANCE': 0,  # max distance setting on display
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
       'SET_ME_X01_2': 1,
     }
-
-    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      acc_hud_values['ENABLE_MINI_CAR'] = 1 if enabled else 0
-    else:
-      acc_hud_values['ENABLE_MINI_CAR'] = 1
 
     if CP.carFingerprint in HONDA_BOSCH:
       acc_hud_values['ACC_ON'] = int(enabled)
