@@ -7,6 +7,8 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
+#define NAV // TODO: This should probably be defined in the sconscript or something
+
 constexpr int NAV_INPUT_SIZE = 256*256;
 constexpr int NAV_FEATURE_LEN = 64;
 constexpr int NAV_DESIRE_LEN = 32;
