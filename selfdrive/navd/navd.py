@@ -116,7 +116,7 @@ class RouteEngine:
       self.recompute_countdown = 2**self.recompute_backoff
       self.recompute_backoff = min(6, self.recompute_backoff + 1)
       self.calculate_route(new_destination)
-      self.recompute_countdown = 0
+      self.reroute_counter = 0
     else:
       self.recompute_countdown = max(0, self.recompute_countdown - 1)
 
