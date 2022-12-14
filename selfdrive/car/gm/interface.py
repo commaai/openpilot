@@ -4,7 +4,7 @@ from math import fabs
 from panda import Panda
 
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -44,8 +44,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
@@ -98,7 +97,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     # Some GMs need some tolerance above 10 kph to avoid a fault
@@ -171,7 +170,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
+    elif candidate == CAR.BOLT_EUV:
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
@@ -194,10 +193,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors

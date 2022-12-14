@@ -16,16 +16,15 @@
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   undo_stack = new QUndoStack(this);
-
   setMinimumWidth(500);
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QWidget *main_widget = new QWidget(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
   // tabbar
   tabbar = new QTabBar(this);
   tabbar->setTabsClosable(true);
-  tabbar->setDrawBase(false);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -57,7 +56,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
   warning_hlayout->setContentsMargins(0, 0, 0, 0);
   QLabel *warning_icon = new QLabel(this);
-  warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning));
+  warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning).scaledToWidth(24, Qt::SmoothTransformation));
   warning_hlayout->addWidget(warning_icon, 0, Qt::AlignTop);
   warning_label = new QLabel(this);
   warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
@@ -86,10 +85,14 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
-  tab_widget->addTab(scroll, "Msg");
-  history_log = new HistoryLog(this);
-  tab_widget->addTab(history_log, "Logs");
+  tab_widget->addTab(scroll, "&Msg");
+  history_log = new LogsWidget(this);
+  tab_widget->addTab(history_log, "&Logs");
   main_layout->addWidget(tab_widget);
+
+  stacked_layout = new QStackedLayout(this);
+  stacked_layout->addWidget(new WelcomeWidget(this));
+  stacked_layout->addWidget(main_widget);
 
   QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
@@ -104,8 +107,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(charts, &ChartsWidget::chartOpened, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, true); });
-  QObject::connect(charts, &ChartsWidget::chartClosed, [this](const QString &id, const Signal *sig) { updateChartState(id, sig, false); });
+  QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
     if (undo_stack->count() > 0)
       dbcMsgChanged();
@@ -137,6 +139,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   tabbar->setCurrentIndex(index);
   dbcMsgChanged();
   scroll->verticalScrollBar()->setValue(0);
+  stacked_layout->setCurrentIndex(1);
 }
 
 void DetailWidget::dbcMsgChanged(int show_form_idx) {
@@ -154,10 +157,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
     for (auto sig : msg->getSignals()) {
       SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
       if (!form) {
-        form = new SignalEdit(i);
+        form = new SignalEdit(i, this);
         QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
         QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
-        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showFormClicked);
+        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
         QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
         QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
         QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
@@ -165,7 +168,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
         signal_list.push_back(form);
       }
       form->setSignal(msg_id, sig);
-      form->setChartOpened(charts->isChartOpened(msg_id, sig));
+      form->setChartOpened(charts->hasSignal(msg_id, sig));
       ++i;
     }
     if (msg->size != can->lastMessage(msg_id).dat.size())
@@ -197,23 +200,20 @@ void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
     history_log->updateState();
 }
 
-void DetailWidget::showFormClicked() {
-  auto s = qobject_cast<SignalEdit *>(sender());
-  showForm(s->sig);
-}
-
 void DetailWidget::showForm(const Signal *sig) {
   setUpdatesEnabled(false);
   for (auto f : signal_list) {
-    f->updateForm(f->sig == sig && !f->isFormVisible());
-    if (f->sig == sig) scroll->ensureWidgetVisible(f);
+    f->updateForm(f->sig == sig && !f->form->isVisible());
+    if (f->sig == sig && f->form->isVisible()) {
+      QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
+    }
   }
   setUpdatesEnabled(true);
 }
 
-void DetailWidget::updateChartState(const QString &id, const Signal *sig, bool opened) {
+void DetailWidget::updateChartState() {
   for (auto f : signal_list)
-    if (f->msg_id == id && f->sig == sig) f->setChartOpened(opened);
+    f->setChartOpened(charts->hasSignal(f->msg_id, f->sig));
 }
 
 void DetailWidget::editMsg() {
@@ -305,4 +305,31 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
 
   connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
   connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+// WelcomeWidget
+
+WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addStretch(0);
+  QLabel *logo = new QLabel("CABANA");
+  logo->setAlignment(Qt::AlignCenter);
+  logo->setStyleSheet("font-size:50px;font-weight:bold;");
+  main_layout->addWidget(logo);
+
+  auto newShortcutRow = [](const QString &title, const QString &key) {
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    auto btn = new QToolButton();
+    btn->setText(key);
+    btn->setEnabled(false);
+    hlayout->addWidget(new QLabel(title), 0, Qt::AlignRight);
+    hlayout->addWidget(btn, 0, Qt::AlignLeft);
+    return hlayout;
+  };
+
+  main_layout->addLayout(newShortcutRow("Pause", "Space"));
+  main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
+  main_layout->addStretch(0);
+
+  setStyleSheet("QLabel{color:darkGray;}");
 }
