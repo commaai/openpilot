@@ -66,9 +66,9 @@ class CarController:
         ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
-      mode = 1 if CC.latActive else 0
+      lca_rq = 1 if CC.latActive else 0
       can_sends.append(create_lka_msg(self.packer))
-      can_sends.append(create_lat_ctl_msg(self.packer, mode, ramp_type, precision, 0., 0., apply_curvature, 0.))
+      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., apply_curvature, 0.))
 
       self.apply_curvature_last = apply_curvature
 

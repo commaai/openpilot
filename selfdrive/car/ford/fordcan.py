@@ -25,7 +25,7 @@ def create_lka_msg(packer):
   return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, values)
 
 
-def create_lat_ctl_msg(packer, mode: int, ramp_type: int, precision: int, path_offset: float, path_angle: float,
+def create_lat_ctl_msg(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float,
                        curvature: float, curvature_rate: float):
   """
   Creates a CAN message for the Ford TJA/LCA Command.
@@ -49,16 +49,16 @@ def create_lat_ctl_msg(packer, mode: int, ramp_type: int, precision: int, path_o
   """
 
   values = {
-    "LatCtlRng_L_Max": 0,                                   # Unknown [0|126] meter
-    "HandsOffCnfm_B_Rq": 0,                                 # Unknown: 0=Inactive, 1=Active [0|1]
-    "LatCtl_D_Rq": mode,                                    # Mode: 0=None, 1=ContinuousPathFollowing,
-                                                            # 2=InterventionLeft, 3=InterventionRight, 4-7=NotUsed [0|7]
-    "LatCtlRampType_D_Rq": ramp_type,                       # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
-    "LatCtlPrecision_D_Rq": precision,                      # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
-    "LatCtlPathOffst_L_Actl": path_offset,                  # Path offset [-5.12|5.11] meter
-    "LatCtlPath_An_Actl": path_angle,                       # Path angle [-0.5|0.5235] radians
-    "LatCtlCurv_NoRate_Actl": curvature_rate,               # Curvature rate [-0.001024|0.00102375] 1/meter^2
-    "LatCtlCurv_No_Actl": curvature,                        # Curvature [-0.02|0.02094] 1/meter
+    "LatCtlRng_L_Max": 0,                       # Unknown [0|126] meter
+    "HandsOffCnfm_B_Rq": 0,                     # Unknown: 0=Inactive, 1=Active [0|1]
+    "LatCtl_D_Rq": lca_rq,                      # Mode: 0=None, 1=ContinuousPathFollowing, 2=InterventionLeft,
+                                                #       3=InterventionRight, 4-7=NotUsed [0|7]
+    "LatCtlRampType_D_Rq": ramp_type,           # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
+    "LatCtlPrecision_D_Rq": precision,          # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
+    "LatCtlPathOffst_L_Actl": path_offset,      # Path offset [-5.12|5.11] meter
+    "LatCtlPath_An_Actl": path_angle,           # Path angle [-0.5|0.5235] radians
+    "LatCtlCurv_NoRate_Actl": curvature_rate,   # Curvature rate [-0.001024|0.00102375] 1/meter^2
+    "LatCtlCurv_No_Actl": curvature,            # Curvature [-0.02|0.02094] 1/meter
   }
   return packer.make_can_msg("LateralMotionControl", CANBUS.main, values)
 
