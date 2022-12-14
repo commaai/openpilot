@@ -70,7 +70,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
-    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
+    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH/2, HEIGHT/2);
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail", "mapRenderState"}));
@@ -177,10 +177,12 @@ void MapRenderer::publish(const double render_time) {
   uint8_t* dst = (uint8_t*)buf->addr;
   uint8_t* src = cap.bits();
 
-  // RGB to greyscale
+  // RGB to greyscale and crop
   memset(dst, 128, buf->len);
-  for (int i = 0; i < WIDTH * HEIGHT; i++) {
-    dst[i] = src[i * 3];
+  for (int r = 0; r < HEIGHT/2; r++) {
+    for (int c = 0; c < WIDTH/2; c++) {
+      dst[r*WIDTH/2 + c] = src[((HEIGHT/4 + r)*WIDTH + (c+WIDTH/4)) * 3];
+    }
   }
 
   vipc_server->send(buf, &extra);

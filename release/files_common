@@ -146,6 +146,7 @@ selfdrive/debug/vw_mqb_config.py
 common/SConscript
 common/version.h
 
+common/prefix.h
 common/swaglog.h
 common/swaglog.cc
 common/statlog.h

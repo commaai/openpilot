@@ -9,23 +9,7 @@
 BMX055_Temp::BMX055_Temp(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Temp::init() {
-  int ret = 0;
-  uint8_t buffer[1];
-
-  ret = read_register(BMX055_ACCEL_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
-    goto fail;
-  }
-
-  if(buffer[0] != BMX055_ACCEL_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], BMX055_ACCEL_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
-
-fail:
-  return ret;
+  return verify_chip_id(BMX055_ACCEL_I2C_REG_ID, {BMX055_ACCEL_CHIP_ID}) == -1 ? -1 : 0;
 }
 
 bool BMX055_Temp::get_event(MessageBuilder &msg, uint64_t ts) {

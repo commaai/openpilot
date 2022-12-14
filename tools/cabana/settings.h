@@ -14,7 +14,6 @@ public:
   void load();
 
   int fps = 10;
-  int can_msg_log_size = 50;
   int cached_segment_limit = 3;
   int chart_height = 200;
   int max_chart_x_range = 3 * 60; // 3 minutes
@@ -32,7 +31,6 @@ public:
   SettingsDlg(QWidget *parent);
   void save();
   QSpinBox *fps;
-  QSpinBox *log_size ;
   QSpinBox *cached_segment;
   QSpinBox *chart_height;
   QSpinBox *max_chart_x_range;
