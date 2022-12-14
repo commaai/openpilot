@@ -32,8 +32,6 @@ void DBCManager::initMsgMap() {
 }
 
 QString DBCManager::generateDBC() {
-  if (!dbc) return {};
-
   QString dbc_string;
   for (auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
