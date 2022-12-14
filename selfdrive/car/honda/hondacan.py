@@ -61,18 +61,14 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
     acc_control_values = {
       "CONTROL_ON": 1 if enabled else 0,
       "CONTROL_OFF": 1,  # TODO: not sure this signal is needed
-      "ACCEL_COMMAND": accel_command,
-      "STANDSTILL": standstill,
     }
   else:
     acc_control_values = {
       # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
       "CONTROL_ON": 5 if enabled else 0,
       "GAS_COMMAND": gas_command,  # used for gas
-      "ACCEL_COMMAND": accel_command,  # used for brakes
       "BRAKE_LIGHTS": braking,
       "BRAKE_REQUEST": braking,
-      "STANDSTILL": standstill,
       "STANDSTILL_RELEASE": standstill_release,
     }
     acc_control_on_values = {
@@ -83,6 +79,9 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
       "SET_TO_30": 0x30,
     }
     commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
+
+  acc_control_values['ACCEL_COMMAND'] = accel_command
+  acc_control_values['STANDSTILL'] = standstill
   commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
   return commands
 
