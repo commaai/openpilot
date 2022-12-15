@@ -13,7 +13,7 @@ Ecu = CarParams.Ecu
 TransmissionType = CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
-AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'angle_rate_points'])
+CurvatureLimit = namedtuple('CurvatureLimit', ['speed_bp', 'curvature_v'])
 
 
 class CarControllerParams:
@@ -28,6 +28,9 @@ class CarControllerParams:
 
   CURVATURE_MAX = 0.02          # Max curvature for steering command, m^-1
   STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold, Nm
+
+  CURVATURE_RATE_LIMIT_UP = CurvatureLimit(speed_bp=[5, 15, 25], curvature_v=[0.005, 0.00056, 0.0002])
+  CURVATURE_RATE_LIMIT_DOWN = CurvatureLimit(speed_bp=[5, 15, 25], curvature_v=[0.008, 0.00089, 0.00032])
 
 
 class CANBUS:

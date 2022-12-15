@@ -1,6 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
+from selfdrive.car import apply_std_curvature_limits
 from selfdrive.car.ford.fordcan import create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CarControllerParams as CCP
 
@@ -45,9 +46,10 @@ class CarController:
     # send steering commands at 20Hz
     if (self.frame % CCP.LKAS_STEER_STEP) == 0:
       if CC.latActive:
-        # use LatCtlCurv_No_Actl to actuate steering
-        # TODO: apply rate limits
-        apply_curvature = clip(actuators.curvature, -CCP.CURVATURE_MAX, CCP.CURVATURE_MAX)
+        # apply limits to curvature
+        apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CCP)
+        # clip to signal range
+        apply_curvature = clip(apply_curvature, -CCP.CURVATURE_MAX, CCP.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 

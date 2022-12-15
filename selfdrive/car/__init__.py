@@ -122,6 +122,16 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
+def apply_std_curvature_limits(apply_curvature, apply_curvature_last, v_ego, LIMITS):
+  # pick curvature rate limits based on wind up/down
+  steer_up = apply_curvature_last * apply_curvature > 0. and abs(apply_curvature) > abs(apply_curvature_last)
+  rate_limits = LIMITS.CURVATURE_RATE_LIMIT_UP if steer_up else LIMITS.CURVATURE_RATE_LIMIT_DOWN
+
+  # apply curvature rate limit
+  curvature_rate_lim = interp(v_ego, rate_limits.speed_bp, rate_limits.curvature_v)
+  return clip(apply_curvature, apply_curvature_last - curvature_rate_lim, apply_curvature_last + curvature_rate_lim)
+
+
 def crc8_pedal(data):
   crc = 0xFF    # standard init value
   poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
