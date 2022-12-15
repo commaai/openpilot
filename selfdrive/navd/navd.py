@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import math
 import os
 import threading
@@ -135,12 +136,27 @@ class RouteEngine:
       'language': lang,
     }
 
-    if self.last_bearing is not None:
-      params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
+    # TODO: move waypoints into NavDestination param?
+    waypoints = self.params.get('NavDestinationWaypoints', encoding='utf8')
+    waypoint_coords = []
+    if waypoints is not None and len(waypoints) > 0:
+      waypoint_coords = json.loads(waypoints)
 
-    url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
+    coords = [
+      (self.last_position.longitude, self.last_position.latitude),
+      *waypoint_coords,
+      (destination.longitude, destination.latitude)
+    ]
+    params['waypoints'] = f'0;{len(coords)-1}'
+    if self.last_bearing is not None:
+      params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90" + (';'*(len(coords)-1))
+
+    coords_str = ';'.join([f'{lon},{lat}' for lon, lat in coords])
+    url = self.mapbox_host + '/directions/v5/mapbox/driving-traffic/' + coords_str
     try:
       resp = requests.get(url, params=params, timeout=10)
+      if resp.status_code != 200:
+        cloudlog.event("API request failed", status_code=resp.status_code, text=resp.text, error=True)
       resp.raise_for_status()
 
       r = resp.json()
