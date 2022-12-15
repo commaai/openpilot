@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 221 Supported Cars
+# 222 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -93,6 +93,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Jeep|Grand Cherokee 2016-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Jeep|Grand Cherokee 2019-21|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|FCA|
 |Kia|Ceed 2019|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai E|
+|Kia|EV6 (Southeast Asia only) 2022-23[<sup>5</sup>](#footnotes)|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai P|
 |Kia|EV6 (with HDA II) 2022[<sup>5</sup>](#footnotes)|Highway Driving Assist II|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai P|
 |Kia|EV6 (without HDA II) 2022[<sup>5</sup>](#footnotes)|Highway Driving Assist|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai L|
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|Hyundai G|
