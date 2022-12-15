@@ -571,9 +571,8 @@ class Controls:
     CC.enabled = self.enabled
 
     # Check which actuators can be enabled
-    min_lat_active_speed = self.CP.minSteerSpeed if self.joystick_mode else max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED)
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                   CS.vEgo > min_lat_active_speed and not CS.standstill
+                   CS.vEgo > max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) and not CS.standstill
     CC.longActive = self.enabled and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
