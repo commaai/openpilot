@@ -22,6 +22,7 @@ from system.swaglog import cloudlog
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 VALID_POS_STD = 50.0
+REROUTE_COUNTER_MIN = 3
 
 
 class RouteEngine:
@@ -47,6 +48,8 @@ class RouteEngine:
     self.recompute_countdown = 0
 
     self.ui_pid = None
+
+    self.reroute_counter = 0
 
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
@@ -114,6 +117,7 @@ class RouteEngine:
       self.recompute_countdown = 2**self.recompute_backoff
       self.recompute_backoff = min(6, self.recompute_backoff + 1)
       self.calculate_route(new_destination)
+      self.reroute_counter = 0
     else:
       self.recompute_countdown = max(0, self.recompute_countdown - 1)
 
@@ -305,8 +309,11 @@ class RouteEngine:
 
       min_d = min(min_d, minimum_distance(a, b, self.last_position))
 
-    return min_d > REROUTE_DISTANCE
-
+    if min_d > REROUTE_DISTANCE:
+      self.reroute_counter += 1
+    else:
+      self.reroute_counter = 0
+    return self.reroute_counter > REROUTE_COUNTER_MIN
     # TODO: Check for going wrong way in segment
 
 
