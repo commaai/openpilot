@@ -98,9 +98,10 @@ class Laikad:
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
+      #TODO median abs residual is decent estimate of std, can be improved with measurements stds and/or DOP
       position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
       velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, min_measurements=min_measurements)
-      if len(velocity_solution) == 0 or len(prr_residuals) == 0:
+      if len(velocity_solution) < 3:
         return None
 
       velocity_estimate = velocity_solution[:3]
