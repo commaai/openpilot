@@ -44,7 +44,7 @@ def pr_residual(measurements, posfix_functions, signal='C1C'):
 
 
 def get_prr_sympy_func():
-  # implemting this without sympy.Matrix gives a 2x speedup at generation
+  # implementing this without sympy.Matrix gives a 2x speedup at generation
 
   # knowns, receiver position, satellite position, satellite velocity
   ep_x, ep_y, ep_z = sympy.Symbol('ep_x'), sympy.Symbol('ep_y'), sympy.Symbol('ep_z')
@@ -89,7 +89,7 @@ def prr_residual(measurements, est_pos, no_weight=False, signal='D1C'):
         continue
 
       sat_pos = meas.sat_pos_final if meas.corrected else meas.sat_pos
-      weight = 1 if no_weight or meas.observables[signal] == 0 else (1 / meas.observables[signal])
+      weight = 1 if no_weight or meas.observables_std[signal] == 0 else (1 / meas.observables_std[signal])
 
       val, *gradient = loss_func(est_pos[0], est_pos[1], est_pos[2],
                                  sat_pos[0], sat_pos[1], sat_pos[2],
