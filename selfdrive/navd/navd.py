@@ -191,6 +191,10 @@ class RouteEngine:
         cloudlog.warning("Got empty route response")
         self.clear_route()
 
+      # clear waypoints to avoid a re-route including past waypoints
+      # TODO: only clear once we're past a waypoint
+      self.params.remove('NavDestinationWaypoints')
+
     except requests.exceptions.RequestException:
       cloudlog.exception("failed to get route")
       self.clear_route()
