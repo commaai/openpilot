@@ -291,7 +291,9 @@ class RouteEngine:
 
     if min_d > REROUTE_DISTANCE:
       self.reroute_counter += 1
-      return self.reroute_counter > REROUTE_COUNTER_MIN
+    else:
+      self.reroute_counter = 0
+    return self.reroute_counter > REROUTE_COUNTER_MIN
     # TODO: Check for going wrong way in segment
 
 
