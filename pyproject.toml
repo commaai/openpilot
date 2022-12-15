@@ -17,6 +17,7 @@ cffi = "^1.15.1"
 crcmod = "^1.7"
 cryptography = "^37.0.4"
 Cython = "^0.29.30"
+flaky = "^3.7.0"
 flake8 = "^4.0.1"
 Flask = "^2.1.2"
 future-fstrings = "^1.2.0"  # for acados
