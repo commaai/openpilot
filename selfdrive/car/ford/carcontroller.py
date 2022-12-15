@@ -51,7 +51,7 @@ class CarController:
       else:
         apply_curvature = 0.
 
-      angle_steer_des = self.VM.get_steer_from_curvature(actuators.curvature, CS.out.vEgo, 0.0)
+      angle_steer_des = -self.VM.get_steer_from_curvature(actuators.curvature, CS.out.vEgo, 0.0)
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
