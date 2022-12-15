@@ -27,13 +27,13 @@ const double MAX_FILTER_REWIND_TIME = 0.8; // s
 // They should be replaced with synced time from a real clock
 const double GPS_QUECTEL_SENSOR_TIME_OFFSET = 0.630; // s
 const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
-const float  GPS_MUL_FACTOR = 10.0
-const float  GPS_POS_STD_THRESHOLD = 50.0
-const float  GPS_VEL_STD_THRESHOLD = 5.0
-const float  GPS_POS_ERROR_RESET_THRESHOLD = 200.0
-const float  GPS_POS_STD_RESET_THRESHOLD = 5.0
-const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5
-const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 5.0
+const float  GPS_MUL_FACTOR = 10.0;
+const float  GPS_POS_STD_THRESHOLD = 50.0;
+const float  GPS_VEL_STD_THRESHOLD = 5.0;
+const float  GPS_POS_ERROR_RESET_THRESHOLD = 200.0;
+const float  GPS_POS_STD_RESET_THRESHOLD = 5.0;
+const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
+const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 5.0;
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
