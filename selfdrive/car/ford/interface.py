@@ -44,7 +44,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.MAVERICK_MK1:
       ret.wheelbase = 3.076
-      ret.steerRatio = 16.2
+      ret.steerRatio = 17.0
       ret.mass = 1650 + STD_CARGO_KG
 
     else:
