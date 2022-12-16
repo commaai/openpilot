@@ -20,7 +20,7 @@ MAX_LAT_JERK_TOLERANCE = 0.75  # m/s^3
 MAX_LAT_ACCEL = 3.0            # m/s^2
 
 # jerk is measured over half a second
-JERK_MEAS_TIME = 0.5  # seconds
+JERK_MEAS_FRAMES = 0.5 / DT_CTRL
 
 # TODO: update the max measured lateral accel for these cars
 ABOVE_LIMITS_CARS = [
@@ -65,8 +65,8 @@ class TestLateralLimits(unittest.TestCase):
     steer_up_per_frame = (control_params.STEER_DELTA_UP / control_params.STEER_MAX) / steer_step
     steer_down_per_frame = (control_params.STEER_DELTA_DOWN / control_params.STEER_MAX) / steer_step
 
-    steer_up_0_5_sec = min(steer_up_per_frame * (JERK_MEAS_TIME / DT_CTRL), 1.0)
-    steer_down_0_5_sec = min(steer_down_per_frame * (JERK_MEAS_TIME / DT_CTRL), 1.0)
+    steer_up_0_5_sec = min(steer_up_per_frame * JERK_MEAS_FRAMES, 1.0)
+    steer_down_0_5_sec = min(steer_down_per_frame * JERK_MEAS_FRAMES, 1.0)
 
     max_lat_accel = torque_params['MAX_LAT_ACCEL_MEASURED']
     return steer_up_0_5_sec * max_lat_accel, steer_down_0_5_sec * max_lat_accel
