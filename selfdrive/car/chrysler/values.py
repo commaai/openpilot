@@ -35,6 +35,7 @@ class CAR:
 
 class CarControllerParams:
   def __init__(self, CP):
+    self.STEER_STEP = 2  # 50 Hz
     self.STEER_ERROR_MAX = 80
     if CP.carFingerprint in RAM_HD:
       self.STEER_DELTA_UP = 14
