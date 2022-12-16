@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-import json
 import os
 import subprocess
-import time
-import threading
 
-from flask import Flask, send_from_directory, Response, request
+from flask import Flask, Response, request
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.uploader import listdir_by_creation
 from tools.lib.route import SegmentName
@@ -14,7 +11,7 @@ def is_valid_segment(segment):
   try:
     segment_to_segment_name(ROOT, segment)
     return True
-  except:
+  except AssertionError:
     return False
 
 def segment_to_segment_name(data_dir, segment):
@@ -26,7 +23,7 @@ def all_segment_names():
   for segment in listdir_by_creation(ROOT):
     try:
       segments.append(segment_to_segment_name(ROOT, segment))
-    except:
+    except AssertionError:
       pass
   return segments
 
@@ -44,17 +41,17 @@ def segments_in_route(route):
 
 app = Flask(__name__,)
 
-@app.route("/<type>/<segment>")
-def fcamera(type, segment):
+@app.route("/<cameratype>/<segment>")
+def fcamera(cameratype, segment):
   if not is_valid_segment(segment):
     return "invalid segment"
 
-  if type in ['fcamera', 'dcamera', 'ecamera']:
+  if cameratype in ['fcamera', 'dcamera', 'ecamera']:
     proc = subprocess.Popen(
       ["ffmpeg",
         "-f", "hevc",
         "-r", "20",
-        "-i", ROOT + "/" + segment + "/" + type + ".hevc",
+        "-i", ROOT + "/" + segment + "/" + cameratype + ".hevc",
         "-c", "copy",
         "-map", "0",
         "-vtag", "hvc1",
@@ -63,7 +60,7 @@ def fcamera(type, segment):
         "-",
       ], stdout=subprocess.PIPE
     )
-  elif type in ['qcamera']:
+  elif cameratype in ['qcamera']:
     proc = subprocess.Popen(
       ["ffmpeg",
         "-r", "20",
