@@ -153,7 +153,7 @@ class FakePubMaster(messaging.PubMaster):
   def wait_for_msg(self, timeout=TIMEOUT, allow_timeout=False):
     wait_for_event(self.send_called, timeout, allow_timeout)
     self.send_called.clear()
-    dat = self.data[self.last_updated]
+    dat = None if self.last_updated is None else self.data[self.last_updated]
     self.get_called.set()
     return dat
 
@@ -528,6 +528,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
       while recv_cnt > 0:
         timeout = TIMEOUT_LAIKAD_RESPONSE if cfg.allow_no_response else TIMEOUT
         m = fpm.wait_for_msg(timeout, cfg.allow_no_response).as_builder()
+        if m is None and cfg.allow_no_response:
+          break
         m.logMonoTime = msg.logMonoTime
         m = m.as_reader()
 
