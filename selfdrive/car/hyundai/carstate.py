@@ -443,7 +443,6 @@ class CarState(CarStateBase):
       ("CRUISE_BUTTONS", cruise_btn_msg),
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
       ("DISTANCE_UNIT", "CRUISE_BUTTONS_ALT"),
-      ("MainMode_ACC", cruise_btn_msg),
 
       ("LEFT_LAMP", "BLINKERS"),
       ("RIGHT_LAMP", "BLINKERS"),
@@ -480,6 +479,7 @@ class CarState(CarStateBase):
         ("ACCMode", "SCC_CONTROL"),
         ("VSetDis", "SCC_CONTROL"),
         ("CRUISE_STANDSTILL", "SCC_CONTROL"),
+        ("MainMode_ACC", "SCC_CONTROL"),
       ]
       checks += [
         ("SCC_CONTROL", 50),
