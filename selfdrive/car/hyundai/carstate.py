@@ -443,6 +443,7 @@ class CarState(CarStateBase):
       ("CRUISE_BUTTONS", cruise_btn_msg),
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
       ("DISTANCE_UNIT", "CRUISE_BUTTONS_ALT"),
+      ("MainMode_ACC", cruise_btn_msg),
 
       ("LEFT_LAMP", "BLINKERS"),
       ("RIGHT_LAMP", "BLINKERS"),
