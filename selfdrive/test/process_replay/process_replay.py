@@ -26,17 +26,17 @@ NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
 # laikad may not return on a gnss message, shorter timeout
-TIMEOUT_LAIKAD_RESPONSE = 1
-# laikad needs longer on first startup due to orbit downloads
-TIMEOUT_LAIKAD_UPDATE = 40
+TIMEOUT_LAIKAD_RESPONSE = 3
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name', "field_tolerances", "allow_no_response"], defaults=({}, {}, "", {}, False))
 
 
-def wait_for_event(evt, timeout=TIMEOUT):
+def wait_for_event(evt, timeout=TIMEOUT, allow_timeout=False):
   if not evt.wait(timeout):
+    if allow_timeout:
+      return
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
       raise Exception(f"Timeout reached. Tested process {os.environ['PROC_NAME']} likely crashed.")
@@ -115,8 +115,8 @@ class FakeSubMaster(messaging.SubMaster):
     wait_for_event(self.update_ready)
     self.update_ready.clear()
 
-  def update_msgs(self, cur_time, msgs, timeout=TIMEOUT):
-    wait_for_event(self.update_called, timeout)
+  def update_msgs(self, cur_time, msgs):
+    wait_for_event(self.update_called)
     self.update_called.clear()
     super().update_msgs(cur_time, msgs)
     self.update_ready.set()
@@ -150,8 +150,8 @@ class FakePubMaster(messaging.PubMaster):
     wait_for_event(self.get_called)
     self.get_called.clear()
 
-  def wait_for_msg(self, timeout=TIMEOUT):
-    wait_for_event(self.send_called, timeout)
+  def wait_for_msg(self, timeout=TIMEOUT, allow_timeout=False):
+    wait_for_event(self.send_called, timeout, allow_timeout)
     self.send_called.clear()
     dat = self.data[self.last_updated]
     self.get_called.set()
@@ -521,22 +521,13 @@ def python_replay_process(cfg, lr, fingerprint=None):
       msg_queue.append(msg.as_builder())
 
     if should_recv:
-      timeout = TIMEOUT_LAIKAD_UPDATE if cfg.allow_no_response else TIMEOUT
-      fsm.update_msgs(msg.logMonoTime / 1e9, msg_queue, timeout)
+      fsm.update_msgs(msg.logMonoTime / 1e9, msg_queue)
       msg_queue = []
 
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
-
-        if cfg.allow_no_response:
-          try:
-            m = fpm.wait_for_msg(TIMEOUT_LAIKAD_RESPONSE).as_builder()
-          except:
-            recv_cnt = 0
-            continue
-        else:
-          m = fpm.wait_for_msg().as_builder()
-
+        timeout = TIMEOUT_LAIKAD_RESPONSE if cfg.allow_no_response else TIMEOUT
+        m = fpm.wait_for_msg(timeout, cfg.allow_no_response).as_builder()
         m.logMonoTime = msg.logMonoTime
         m = m.as_reader()
 
