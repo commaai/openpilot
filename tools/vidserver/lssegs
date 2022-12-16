@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source "common.sh"
+
+ls "/data/media/0/realdata" | get_segments | sort -V
