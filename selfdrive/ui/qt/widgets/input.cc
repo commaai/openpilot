@@ -301,7 +301,6 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringLi
   scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
   main_layout->addWidget(scroll_view);
-  main_layout->addStretch(1);
   main_layout->addSpacing(35);
 
   // cancel + confirm buttons
