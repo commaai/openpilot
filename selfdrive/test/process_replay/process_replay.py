@@ -527,9 +527,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
         timeout = TIMEOUT_LAIKAD_RESPONSE if cfg.allow_no_response else TIMEOUT
-        m = fpm.wait_for_msg(timeout, cfg.allow_no_response).as_builder()
+        m = fpm.wait_for_msg(timeout, cfg.allow_no_response)
         if m is None and cfg.allow_no_response:
           break
+        m = m.as_builder()
         m.logMonoTime = msg.logMonoTime
         m = m.as_reader()
 
