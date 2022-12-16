@@ -9,22 +9,16 @@
 #include "tools/cabana/dbcmanager.h"
 
 class BinaryItemDelegate : public QStyledItemDelegate {
-  Q_OBJECT
-
 public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
 
-private:
   QFont small_font, hex_font;
   QColor selection_color;
 };
 
 class BinaryViewModel : public QAbstractTableModel {
-  Q_OBJECT
-
 public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const QString &message_id);
@@ -52,7 +46,7 @@ public:
 
 private:
   QString msg_id;
-  const DBCMsg *dbc_msg;
+  const DBCMsg *dbc_msg = nullptr;
   int row_count = 0;
   const int column_count = 9;
 };

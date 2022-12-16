@@ -34,9 +34,11 @@ signals:
 
 protected:
   void createActions();
+  QComboBox *createDBCSelector();
   void createStatusBar();
   void createShortcuts();
   void closeEvent(QCloseEvent *event) override;
+  void DBCFileChanged();
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
 

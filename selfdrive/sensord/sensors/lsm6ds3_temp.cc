@@ -8,27 +8,13 @@
 LSM6DS3_Temp::LSM6DS3_Temp(I2CBus *bus) : I2CSensor(bus) {}
 
 int LSM6DS3_Temp::init() {
-  int ret = 0;
-  uint8_t buffer[1];
+  int ret = verify_chip_id(LSM6DS3_TEMP_I2C_REG_ID, {LSM6DS3_TEMP_CHIP_ID, LSM6DS3TRC_TEMP_CHIP_ID});
+  if (ret == -1) return -1;
 
-  ret = read_register(LSM6DS3_TEMP_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
-    goto fail;
-  }
-
-  if(buffer[0] != LSM6DS3_TEMP_CHIP_ID && buffer[0] != LSM6DS3TRC_TEMP_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], LSM6DS3_TEMP_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
-
-  if (buffer[0] == LSM6DS3TRC_TEMP_CHIP_ID) {
+  if (ret == LSM6DS3TRC_TEMP_CHIP_ID) {
     source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
-
-fail:
-  return ret;
+  return 0;
 }
 
 bool LSM6DS3_Temp::get_event(MessageBuilder &msg, uint64_t ts) {

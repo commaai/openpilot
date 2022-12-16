@@ -1,3 +1,5 @@
+import copy
+
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -6,7 +8,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.toyota.values import ToyotaFlags, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
+from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
 
 class CarState(CarStateBase):
@@ -26,6 +28,7 @@ class CarState(CarStateBase):
 
     self.low_speed_lockout = False
     self.acc_type = 1
+    self.lkas_hud = {}
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -140,6 +143,9 @@ class CarState(CarStateBase):
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
 
+    if self.CP.carFingerprint != CAR.PRIUS_V:
+      self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
+
     return ret
 
   @staticmethod
@@ -253,6 +259,18 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = []
     checks = []
+
+    if CP.carFingerprint != CAR.PRIUS_V:
+      signals += [
+        ("LANE_SWAY_FLD", "LKAS_HUD"),
+        ("LANE_SWAY_BUZZER", "LKAS_HUD"),
+        ("LANE_SWAY_WARNING", "LKAS_HUD"),
+        ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
+        ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
+      ]
+      checks += [
+        ("LKAS_HUD", 1),
+      ]
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [

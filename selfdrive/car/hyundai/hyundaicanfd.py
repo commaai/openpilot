@@ -1,7 +1,6 @@
 from common.numpy_fast import clip
 from selfdrive.car.hyundai.values import HyundaiFlags
 
-
 def get_e_can_bus(CP):
   # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
   # have a different harness than the HDA1 and non-HDA variants in order to split
@@ -97,6 +96,25 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
 
   return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
 
+
+def create_spas_messages(packer, frame, left_blink, right_blink):
+  ret = []
+
+  values = {
+  }
+  ret.append(packer.make_can_msg("SPAS1", 5, values))
+
+  blink = 0
+  if left_blink:
+    blink = 3
+  elif right_blink:
+    blink = 4
+  values = {
+    "BLINKER_CONTROL": blink,
+  }
+  ret.append(packer.make_can_msg("SPAS2", 5, values))
+
+  return ret
 
 
 def create_adrv_messages(packer, frame):
