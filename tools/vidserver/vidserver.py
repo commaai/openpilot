@@ -10,13 +10,22 @@ from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.uploader import listdir_by_creation
 from tools.lib.route import SegmentName
 
-def all_segment_names(root=ROOT):
+def is_valid_segment(segment):
+  try:
+    segment_to_segment_name(ROOT, segment)
+    return True
+  except:
+    return False
+
+def segment_to_segment_name(data_dir, segment):
   fake_dongle = "ffffffffffffffff"
+  return SegmentName(str(os.path.join(data_dir, fake_dongle + "|" + segment)))
+
+def all_segment_names():
   segments = []
-  for segment in listdir_by_creation(root):
+  for segment in listdir_by_creation(ROOT):
     try:
-      absolute_path = str(os.path.join(root, fake_dongle + "|" + segment))
-      segments.append(SegmentName(absolute_path))
+      segments.append(segment_to_segment_name(ROOT, segment))
     except:
       pass
   return segments
@@ -33,26 +42,19 @@ def segments_in_route(route):
   segments = [segment_name.time_str + "--" + str(segment_name.segment_num) for segment_name in segment_names]
   return segments
 
-routes = all_routes()
-for route in routes:
-  print(route)
-  print(segments_in_route(route))
-
-exit()
-
-dir_server = "/data/openpilot/tools/vidserver/"
-dir_media = "/data/media/0/realdata/"
-
 app = Flask(__name__,)
 
 @app.route("/<type>/<segment>")
 def fcamera(type, segment):
+  if not is_valid_segment(segment):
+    return "invalid segment"
+
   if type in ['fcamera', 'dcamera', 'ecamera']:
     proc = subprocess.Popen(
       ["ffmpeg",
         "-f", "hevc",
         "-r", "20",
-        "-i", dir_media + segment + "/" + type + ".hevc",
+        "-i", ROOT + "/" + segment + "/" + type + ".hevc",
         "-c", "copy",
         "-map", "0",
         "-vtag", "hvc1",
@@ -65,7 +67,7 @@ def fcamera(type, segment):
     proc = subprocess.Popen(
       ["ffmpeg",
         "-r", "20",
-        "-i", dir_media + segment + "/qcamera.ts",
+        "-i", ROOT + "/" + segment + "/qcamera.ts",
         "-c", "copy",
         "-map", "0",
         "-f", "mp4",
@@ -73,9 +75,9 @@ def fcamera(type, segment):
         "-",
       ], stdout=subprocess.PIPE
     )
-  response = Response(proc.stdout.read(), status=200, mimetype='video/mp4')
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+  else:
+    return "invalid camera type"
+  return Response(proc.stdout.read(), status=200, mimetype='video/mp4')
 
 @app.route("/<route>")
 def route(route):
@@ -91,10 +93,9 @@ def route(route):
 
   links = ""
   segments = ""
-  for segment in get_segments():
-    if route in segment:
-      links += "<a href='"+route+"?"+segment.split("--")[2]+","+query_type+"'>"+segment+"</a><br>"
-      segments += "'"+segment+"',"
+  for segment in segments_in_route(route):
+    links += "<a href='"+route+"?"+segment.split("--")[2]+","+query_type+"'>"+segment+"</a><br>"
+    segments += "'"+segment+"',"
   return """<html>
   <body>
     <video id="video" width="320" height="240" controls autoplay="autoplay" style="background:black">
@@ -106,9 +107,9 @@ def route(route):
     <br><br>
     <a href="\\">back to routes</a>
     <br><br>
-    <a href=\""""+route+"""?0,qcamera\">qcamera</a> - 
-    <a href=\""""+route+"""?0,fcamera\">fcamera</a> - 
-    <a href=\""""+route+"""?0,dcamera\">dcamera</a> - 
+    <a href=\""""+route+"""?0,qcamera\">qcamera</a> -
+    <a href=\""""+route+"""?0,fcamera\">fcamera</a> -
+    <a href=\""""+route+"""?0,dcamera\">dcamera</a> -
     <a href=\""""+route+"""?0,ecamera\">ecamera</a>
     <br><br>
     """+links+"""
@@ -149,7 +150,7 @@ def route(route):
 @app.route("/")
 def index():
   result = ""
-  for route in get_routes():
+  for route in all_routes():
     result += "<a href='"+route+"'>"+route+"</a><br>"
   return result
 
