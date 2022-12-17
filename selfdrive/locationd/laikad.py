@@ -20,7 +20,7 @@ from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun, calc_vel_fix
+from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
@@ -58,6 +58,7 @@ class Laikad:
     self.load_cache()
 
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
+    self.velfix_function = get_velfix_sympy_func()
     self.last_fix_pos = None
     self.last_fix_t = None
     self.gps_week = None
@@ -94,13 +95,14 @@ class Laikad:
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 5
-      position_solution, pr_residuals = calc_pos_fix_gauss_newton(measurements, self.posfix_functions, min_measurements=min_measurements)
+      position_solution, pr_residuals = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
+
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
       #TODO median abs residual is decent estimate of std, can be improved with measurements stds and/or DOP
       position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
-      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, min_measurements=min_measurements)
+      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
       if len(velocity_solution) < 3:
         return None
 
