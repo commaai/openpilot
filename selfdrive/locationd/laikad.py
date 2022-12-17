@@ -171,15 +171,17 @@ class Laikad:
     return position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, processed_measurements
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
+    msg = messaging.new_message("gnssMeasurements")
+    msg.valid = False
 
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
-      return None
+      return msg
     elif self.is_good_report(gnss_msg):
 
       week, tow, new_meas = self.read_report(gnss_msg)
       if len(new_meas) == 0:
-        return None
+        return msg
 
       self.gps_week = week
       t = gnss_mono_time * 1e-9
@@ -191,17 +193,16 @@ class Laikad:
 
       output = self.process_report(new_meas, t)
       if output is None:
-        return None
+        return msg
       position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
       self.update_localizer(position_estimate, t, corrected_measurements)
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
-      dat = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
 
       P_diag = self.gnss_kf.P.diagonal()
       kf_valid = all(self.kf_valid(t))
-      dat.gnssMeasurements = {
+      msg.gnssMeasurements = {
         "gpsWeek": week,
         "gpsTimeOfWeek": tow,
         "kalmanPositionECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
@@ -216,7 +217,8 @@ class Laikad:
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
-      return dat
+      msg.valid = True
+      return msg
 
     #elif gnss_msg.which() == 'ionoData':
     # TODO: add this, Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
@@ -386,9 +388,9 @@ def process_msg(laikad, gnss_msg, mono_time, block=False):
   return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
 
 
-def main(sm=None, pm=None):
+def main(sm=None, pm=None, qc=None):
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
-  if use_qcom:
+  if use_qcom or (qc is not None and qc):
     raw_gnss_socket = "qcomGnss"
   else:
     raw_gnss_socket = "ubloxGnss"
@@ -409,8 +411,11 @@ def main(sm=None, pm=None):
       gnss_msg = sm[raw_gnss_socket]
 
       msg = process_msg(laikad, gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
-      if msg is not None:
-        pm.send('gnssMeasurements', msg)
+      if msg is None:
+        msg = messaging.new_message("gnssMeasurements")
+        msg.valid = False
+
+      pm.send('gnssMeasurements', msg)
 
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
