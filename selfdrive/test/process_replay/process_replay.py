@@ -448,9 +448,6 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
 
-def laikad_preprocessing(pub_msgs, use_qcom):
-  service = "qcomGnss" if use_qcom else "ubloxGnss"
-  return [m for m in pub_msgs if m.which() == service or m.which() == 'clocks']
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -466,8 +463,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  # laikad needs decision between submaster ubloxGnss and qcomGnss
-  # PRIO: given to ubloxGnss
+  # laikad needs decision between submaster ubloxGnss and qcomGnss, prio given to ubloxGnss
   if cfg.proc_name == "laikad":
     args = (*args, not any(m.which() == "ubloxGnss" for m in pub_msgs))
     service = "qcomGnss" if args[2] else "ubloxGnss"
