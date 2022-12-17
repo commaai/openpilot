@@ -57,6 +57,7 @@ def navRoute_to_polyline(nr):
 
 
 def coords_to_polyline(coords):
+  # TODO: where does this factor of 10 come from?
   return polyline.encode([(lat * 10., lon * 10.) for lat, lon in coords])
 
 
