@@ -25,18 +25,14 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
-# laikad may not return on a gnss message, shorter timeout
-TIMEOUT_LAIKAD_RESPONSE = 1
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name', "field_tolerances", "allow_no_response"], defaults=({}, {}, "", {}, False))
+ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster', 'submaster_config', 'environ', 'subtest_name', "field_tolerances"], defaults=({}, {}, "", {}))
 
 
-def wait_for_event(evt, timeout=TIMEOUT, allow_timeout=False):
-  if not evt.wait(timeout):
-    if allow_timeout:
-      return
+def wait_for_event(evt):
+  if not evt.wait(TIMEOUT):
     if threading.currentThread().getName() == "MainThread":
       # tested process likely died. don't let test just hang
       raise Exception(f"Timeout reached. Tested process {os.environ['PROC_NAME']} likely crashed.")
@@ -150,10 +146,10 @@ class FakePubMaster(messaging.PubMaster):
     wait_for_event(self.get_called)
     self.get_called.clear()
 
-  def wait_for_msg(self, timeout=TIMEOUT, allow_timeout=False):
-    wait_for_event(self.send_called, timeout, allow_timeout)
+  def wait_for_msg(self):
+    wait_for_event(self.send_called)
     self.send_called.clear()
-    dat = None if self.last_updated is None else self.data[self.last_updated]
+    dat = self.data[self.last_updated]
     self.get_called.set()
     return dat
 
@@ -255,8 +251,10 @@ def ublox_rcv_callback(msg):
 def laika_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
+  elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
+    return ["gnssMeasurements"], True
   else:
-    return [], True
+    return [], False
 
 
 CONFIGS = [
@@ -368,6 +366,7 @@ CONFIGS = [
     proc_name="laikad",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
+      "qcomGnss": ["gnssMeasurements"],
       "clocks": []
     },
     ignore=["logMonoTime"],
@@ -375,7 +374,6 @@ CONFIGS = [
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
-    allow_no_response=True,
   ),
   ProcessConfig(
     proc_name="torqued",
@@ -465,6 +463,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
+  # laikad needs decision between submaster ubloxGnss and qcomGnss
+  if cfg.proc_name == "laikad":
+    args = (*args, not any(m.which() == "ubloxGnss" for m in pub_msgs))
+
   controlsState = None
   initialized = False
   for msg in lr:
@@ -526,11 +528,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
-        timeout = TIMEOUT_LAIKAD_RESPONSE if cfg.allow_no_response else TIMEOUT
-        m = fpm.wait_for_msg(timeout, cfg.allow_no_response)
-        if m is None and cfg.allow_no_response:
-          break
-        m = m.as_builder()
+        m = fpm.wait_for_msg().as_builder()
         m.logMonoTime = msg.logMonoTime
         m = m.as_reader()
 
