@@ -296,6 +296,8 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringLi
     group->addButton(selectionLabel);
     listLayout->addWidget(selectionLabel);
   }
+  // add stretch to keep buttons spaced correctly
+  listLayout->addStretch(1);
 
   ScrollView *scroll_view = new ScrollView(listWidget, this);
   scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
