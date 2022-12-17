@@ -26,7 +26,7 @@ NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
 # laikad may not return on a gnss message, shorter timeout
-TIMEOUT_LAIKAD_RESPONSE = 2
+TIMEOUT_LAIKAD_RESPONSE = 1
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
