@@ -2756,6 +2756,17 @@ poetry = ">=1.2.0,<2.0.0"
 poetry-core = ">=1.1.0,<2.0.0"
 
 [[package]]
+name = "polyline"
+version = "1.4.0"
+description = "A Python implementation of Google's Encoded Polyline Algorithm Format."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+six = ">=1.8.0"
+
+[[package]]
 name = "portalocker"
 version = "2.6.0"
 description = "Wraps the portalocker recipe for easy usage"
@@ -4414,7 +4425,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "82e450801a9a1de9fd98615d7deb3d8f0aa5bd3ccf0cf8b258cd8f6e6e4c5309"
+content-hash = "d894380c87f5558e032708cc1230aed172ad3e1db9aa112e2e105bebefff4e20"
 
 [metadata.files]
 adal = [
@@ -5420,6 +5431,7 @@ gevent = [
     {file = "gevent-22.10.1-cp310-cp310-win_amd64.whl", hash = "sha256:d2ea4ce36c09355379bc038be2bd50118f97d2eb6381b7096de4d05aa4c3e241"},
     {file = "gevent-22.10.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3e73c9f71aa2a6795ecbec9b57282b002375e863e283558feb87b62840c8c1ac"},
     {file = "gevent-22.10.1-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:5bc3758f0dc95007c1780d28a9fd2150416a79c50f308f62a674d78a845ea1b9"},
+    {file = "gevent-22.10.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:03c10ca0beeab0c6be516030471ea630447ddd1f649d3335e5b162097cd4130a"},
     {file = "gevent-22.10.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:fe2c0ff095171c49f78f1d4e6dc89fa58253783c7b6dccab9f1d76e2ee391f10"},
     {file = "gevent-22.10.1-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:d18fcc324f39a3b21795022eb47c7752d6e4f4ed89d8cca41f1cc604553265b3"},
     {file = "gevent-22.10.1-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:06ea39c70ce166c4a1d4386c7fae96cb8d84ad799527b3378406051104d15443"},
@@ -6665,6 +6677,10 @@ poetry-core = [
 poetry-plugin-export = [
     {file = "poetry-plugin-export-1.1.2.tar.gz", hash = "sha256:5e92525dd63f38ce74a51ed68ea91d753523f21ce5f9ef8d3b793e2a4b2222ef"},
     {file = "poetry_plugin_export-1.1.2-py3-none-any.whl", hash = "sha256:946e3313b3d00c18fb9a50522e9d5e6a7e111beaba8d6ae33297662fc2070ac1"},
+]
+polyline = [
+    {file = "polyline-1.4.0-py2.py3-none-any.whl", hash = "sha256:6559a0d5d37f4d14255744b3c6a648d5ff480d3d5c5f30186effc72a4142fd6c"},
+    {file = "polyline-1.4.0.tar.gz", hash = "sha256:7c7f89d09a09c7b6161bdbfb4fd304b186fc7a2060fa4f31cb3f61c646a5c074"},
 ]
 portalocker = [
     {file = "portalocker-2.6.0-py2.py3-none-any.whl", hash = "sha256:102ed1f2badd8dec9af3d732ef70e94b215b85ba45a8d7ff3c0003f19b442f4e"},
