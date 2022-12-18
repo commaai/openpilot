@@ -37,6 +37,14 @@ GENESIS GV70 1ST GEN: [2.42, 2.42, 0.1]
 KIA SORENTO PLUG-IN HYBRID 4TH GEN: [2.5, 2.5, 0.1]
 GENESIS GV60 ELECTRIC 1ST GEN: [2.5, 2.5, 0.1]
 
+MAZDA 3 2019: [2.6, 3.5, .165]
+MAZDA CX-30: [2.6, 3.5, .165]
+MAZDA CX-50: [2.6, 3.5, .165]
+MAZDA CX-60: [2.6, 3.5, .165]
+MAZDA CX-70: [2.6, 3.5, .165]
+MAZDA CX-80: [2.6, 3.5, .165]
+MAZDA CX-90: [2.6, 3.5, .165]
+
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
 

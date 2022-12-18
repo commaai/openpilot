@@ -13,17 +13,23 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 
 class CarControllerParams:
-  STEER_MAX = 800                # theoretical max_steer 2047
-  STEER_DELTA_UP = 10             # torque increase per refresh
-  STEER_DELTA_DOWN = 25           # torque decrease per refresh
-  STEER_DRIVER_ALLOWANCE = 15     # allowed driver torque before start limiting
-  STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
-  STEER_DRIVER_FACTOR = 1         # from dbc
-  STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
-  STEER_STEP = 1  # 100 Hz
-
   def __init__(self, CP):
-    pass
+    if CP.carFingerprint in GEN1:
+      self.STEER_MAX = 800                # theoretical max_steer 2047
+      self.STEER_DELTA_UP = 10             # torque increase per refresh
+      self.STEER_DELTA_DOWN = 25           # torque decrease per refresh
+      self.STEER_DRIVER_ALLOWANCE = 15     # allowed driver torque before start limiting
+      self.STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
+      self.STEER_DRIVER_FACTOR = 1         # from dbc
+      self.STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
+    if CP.carFingerprint in GEN2:
+      self.STEER_MAX = 8000                 
+      self.STEER_DELTA_UP = 45              # torque increase per refresh
+      self.STEER_DELTA_DOWN = 80            # torque decrease per refresh
+      self.STEER_DRIVER_ALLOWANCE = 1400     # allowed driver torque before start limiting
+      self.STEER_DRIVER_MULTIPLIER = 5      # weight driver torque
+      self.STEER_DRIVER_FACTOR = 1           # from dbc
+      self.STEER_ERROR_MAX = 3500            # max delta between torque cmd and torque motor
 
 
 class CAR:
@@ -33,6 +39,13 @@ class CAR:
   MAZDA6 = "MAZDA 6"
   CX9_2021 = "MAZDA CX-9 2021"
   CX5_2022 = "MAZDA CX-5 2022"
+  MAZDA3_2019 = "MAZDA 3 2019"
+  CX_30 = "MAZDA CX-30"
+  CX_50 = "MAZDA CX-50"
+  CX_60 = "MAZDA CX-60"
+  CX_70 = "MAZDA CX-70"
+  CX_80 = "MAZDA CX-80"
+  CX_90 = "MAZDA CX-90"
 
 
 @dataclass
@@ -46,8 +59,15 @@ CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
   CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-20"),
   CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017-18"),
   CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017-20"),
-  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-23", video_link="https://youtu.be/dA3duO4a0O4"),
+  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-22", video_link="https://youtu.be/dA3duO4a0O4"),
   CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022-23"),
+  CAR.MAZDA3_2019: MazdaCarInfo("Mazda 3 2019-23"),
+  CAR.CX_30: MazdaCarInfo("Mazda CX-30 2019-23"),
+  CAR.CX_50: MazdaCarInfo("Mazda CX-50 2022-23"),
+  CAR.CX_60: MazdaCarInfo("Mazda CX-60 unreleased"),
+  CAR.CX_70: MazdaCarInfo("Mazda CX-70 unreleased"),
+  CAR.CX_80: MazdaCarInfo("Mazda CX-80 unreleased"),
+  CAR.CX_90: MazdaCarInfo("Mazda CX-90 unreleased"),
 }
 
 
@@ -310,8 +330,41 @@ FW_VERSIONS = {
       b'PXM4-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXM6-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-  }
+  },
+  CAR.MAZDA3_2019 : {
+    (Ecu.eps, 0x730, None): [
+      b'BCKA-3216X-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'BDGF-3216X-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'BCKA-3216X-D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'PX06-188K2-N\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PX08-188K2-L\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PX4W-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'B0N2-67XK2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'B0N2-67XK2-D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'BCKA-4300F-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'BCKA-4300F-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'BFVV-4300F-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'BDGF-67WK2-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'BDGF-67WK2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'DFR5-67WK2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'PX01-21PS1-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PX03-21PS1-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PX4K-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+
 }
+
 
 
 DBC = {
@@ -321,7 +374,15 @@ DBC = {
   CAR.MAZDA6: dbc_dict('mazda_2017', None),
   CAR.CX9_2021: dbc_dict('mazda_2017', None),
   CAR.CX5_2022: dbc_dict('mazda_2017', None),
+  CAR.MAZDA3_2019: dbc_dict('mazda_2019', None),
+  CAR.CX_30: dbc_dict('mazda_2019', None),
+  CAR.CX_50: dbc_dict('mazda_2019', None),
+  CAR.CX_60: dbc_dict('mazda_2019', None),
+  CAR.CX_70: dbc_dict('mazda_2019', None),
+  CAR.CX_80: dbc_dict('mazda_2019', None),
+  CAR.CX_90: dbc_dict('mazda_2019', None),
 }
 
 # Gen 1 hardware: same CAN messages and same camera
 GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6, CAR.CX5_2022}
+GEN2 = {CAR.MAZDA3_2019, CAR.CX_30, CAR.CX_50, CAR.CX_60, CAR.CX_70, CAR.CX_80, CAR.CX_90}

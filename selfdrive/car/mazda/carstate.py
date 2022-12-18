@@ -3,7 +3,8 @@ from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
+from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1, GEN2, CarControllerParams
+import copy
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -17,8 +18,67 @@ class CarState(CarStateBase):
     self.low_speed_alert = False
     self.lkas_allowed_speed = False
     self.lkas_disabled = False
+    
+    if CP.carFingerprint in GEN1:
+      self.update = self.update_gen1
+    if CP.carFingerprint in GEN2:
+      self.update = self.update_gen2
+      
+    
+    self.params = CarControllerParams(CP)
+    
+  def update_gen2(self, cp, cp_cam, cp_body):
+    ret = car.CarState.new_message()
+    ret.wheelSpeeds = self.get_wheel_speeds(
+        cp_cam.vl["WHEEL_SPEEDS"]["FL"],
+        cp_cam.vl["WHEEL_SPEEDS"]["FR"],
+        cp_cam.vl["WHEEL_SPEEDS"]["RL"],
+        cp_cam.vl["WHEEL_SPEEDS"]["RR"],
+    )
 
-  def update(self, cp, cp_cam):
+    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(100, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
+                                                                      cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
+
+    ret.steeringAngleDeg = cp_cam.vl["STEER"]["STEER_ANGLE"]
+    ret.steeringTorque = cp_body.vl["EPS_FEEDBACK"]["STEER_TORQUE_SENSOR"]
+    can_gear = int(cp_cam.vl["GEAR"]["GEAR"])
+    ret.gas = cp_cam.vl["ENGINE_DATA"]["PEDAL_GAS"]
+
+    ret.steeringPressed = abs(ret.steeringTorque) > self.params.STEER_DRIVER_ALLOWANCE
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
+    # TODO: this should be from 0 - 1.
+    ret.gasPressed = ret.gas > 0
+    ret.seatbeltUnlatched = False
+    ret.doorOpen = False
+    ret.brakePressed = cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL_PRESSED"] == 1
+    ret.brake = .1
+    ret.steerFaultPermanent = False
+    ret.steerFaultTemporary = False
+    ret.cruiseState.available = True
+    ret.cruiseState.speed = cp.vl["CRUZE_STATE"]["CRZ_SPEED"] * CV.KPH_TO_MS
+    self.cam_lkas = 1
+    self.cam_laneinfo = 1
+    ret.cruiseState.enabled = ( (cp.vl["CRUZE_STATE"]["CRZ_ENABLED"] == 1) or (cp.vl["CRUZE_STATE"]["PRE_ENABLE"] == 1) )
+    self.acc_active_last = ret.cruiseState.enabled
+    self.crz_btns_counter = cp.vl["CRZ_BTNS"]["CTR"]
+
+    speed_kph = cp_cam.vl["SPEED"]["SPEED"] * CV.KPH_TO_MS
+    ret.standstill = speed_kph < .1
+    ret.cruiseState.standstill = ret.standstill
+    self.cp = cp
+    self.cp_cam = cp_cam
+    self.acc = cp.vl["ACC"]
+    
+
+    # end GEN2
+
+    return ret
+    
+
+  def update_gen1(self, cp, cp_cam, _):
 
     ret = car.CarState.new_message()
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -107,29 +167,32 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("LEFT_BLINK", "BLINK_INFO"),
-      ("RIGHT_BLINK", "BLINK_INFO"),
-      ("HIGH_BEAMS", "BLINK_INFO"),
-      ("STEER_ANGLE", "STEER"),
-      ("STEER_ANGLE_RATE", "STEER_RATE"),
-      ("STEER_TORQUE_SENSOR", "STEER_TORQUE"),
-      ("STEER_TORQUE_MOTOR", "STEER_TORQUE"),
-      ("FL", "WHEEL_SPEEDS"),
-      ("FR", "WHEEL_SPEEDS"),
-      ("RL", "WHEEL_SPEEDS"),
-      ("RR", "WHEEL_SPEEDS"),
-    ]
+    signals = []
+    checks = []
+    if CP.carFingerprint not in GEN2:
+      signals = [
+        # sig_name, sig_address
+        ("LEFT_BLINK", "BLINK_INFO"),
+        ("RIGHT_BLINK", "BLINK_INFO"),
+        ("HIGH_BEAMS", "BLINK_INFO"),
+        ("STEER_ANGLE", "STEER"),
+        ("STEER_ANGLE_RATE", "STEER_RATE"),
+        ("STEER_TORQUE_SENSOR", "STEER_TORQUE"),
+        ("STEER_TORQUE_MOTOR", "STEER_TORQUE"),
+        ("FL", "WHEEL_SPEEDS"),
+        ("FR", "WHEEL_SPEEDS"),
+        ("RL", "WHEEL_SPEEDS"),
+        ("RR", "WHEEL_SPEEDS"),
+      ]
 
-    checks = [
-      # sig_address, frequency
-      ("BLINK_INFO", 10),
-      ("STEER", 67),
-      ("STEER_RATE", 83),
-      ("STEER_TORQUE", 83),
-      ("WHEEL_SPEEDS", 100),
-    ]
+      checks = [
+        # sig_address, frequency
+        ("BLINK_INFO", 10),
+        ("STEER", 67),
+        ("STEER_RATE", 83),
+        ("STEER_TORQUE", 83),
+        ("WHEEL_SPEEDS", 100),
+      ]
 
     if CP.carFingerprint in GEN1:
       signals += [
@@ -168,6 +231,55 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
+    if CP.carFingerprint in GEN2:
+      signals += [
+        ("CRZ_SPEED", "CRUZE_STATE", 0),
+        ("CRZ_ENABLED", "CRUZE_STATE", 0),
+        ("PRE_ENABLE", "CRUZE_STATE", 0),
+        ("BRAKE_PEDAL_PRESSED", "BRAKE_PEDAL", 0),
+        ("SET_P", "CRZ_BTNS",0),
+        ("SET_M", "CRZ_BTNS",0),
+        ("RES", "CRZ_BTNS",0),
+        ("CAN", "CRZ_BTNS",0),
+        ("MODE_ACC", "CRZ_BTNS",0),
+        ("MODE_LKAS", "CRZ_BTNS",0),
+        ("DISTANCE_P", "CRZ_BTNS",0),
+        ("DISTANCE_M", "CRZ_BTNS",0),
+        ("STATIC_0", "CRZ_BTNS",0),
+        ("STATIC_1", "CRZ_BTNS",0),
+        ("STATIC_2", "CRZ_BTNS",0),
+        ("CTR", "CRZ_BTNS", 0),
+        ("LEFT_BLINK", "BLINK_INFO", 0),
+        ("RIGHT_BLINK", "BLINK_INFO", 0),
+        ("ACCEL_CMD", "ACC", 0),
+        ("HOLD", "ACC", 0),
+        ("RESUME", "ACC", 0),
+        ("NEW_SIGNAL_1", "ACC", 0),
+        ("NEW_SIGNAL_2", "ACC", 0),
+        ("NEW_SIGNAL_3", "ACC", 0),
+        ("NEW_SIGNAL_4", "ACC", 0),
+        ("NEW_SIGNAL_5", "ACC", 0),
+        ("NEW_SIGNAL_6", "ACC", 0),
+        ("NEW_SIGNAL_7", "ACC", 0),
+        ("NEW_SIGNAL_8", "ACC", 0),
+        ("NEW_SIGNAL_9", "ACC", 0),
+        ("NEW_SIGNAL_10", "ACC", 0),
+        ("NEW_SIGNAL_11", "ACC", 0),
+        ("NEW_SIGNAL_12", "ACC", 0),
+        ("NEW_SIGNAL_13", "ACC", 0),
+        ("ACC_ENABLED", "ACC", 0),
+        ("ACC_ENABLED_2", "ACC", 0),
+        ("CHECKSUM", "ACC", 0), 
+      ]
+
+      checks += [
+        ("BRAKE_PEDAL", 20),
+        ("CRUZE_STATE", 10),
+        ("BLINK_INFO", 10),
+        ("ACC", 50),
+        ("CRZ_BTNS", 10),
+      ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
@@ -187,7 +299,6 @@ class CarState(CarStateBase):
         ("STEERING_ANGLE", "CAM_LKAS"),
         ("ANGLE_ENABLED", "CAM_LKAS"),
         ("CHKSUM", "CAM_LKAS"),
-
         ("LINE_VISIBLE", "CAM_LANEINFO"),
         ("LINE_NOT_VISIBLE", "CAM_LANEINFO"),
         ("LANE_LINES", "CAM_LANEINFO"),
@@ -205,4 +316,39 @@ class CarState(CarStateBase):
         ("CAM_LKAS", 16),
       ]
 
+    if CP.carFingerprint in GEN2:
+      signals += [
+        ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
+        ("GEAR", "GEAR", 0),
+        ("PEDAL_GAS", "ENGINE_DATA", 0),
+        ("FL", "WHEEL_SPEEDS", 0),
+        ("FR", "WHEEL_SPEEDS", 0),
+        ("RL", "WHEEL_SPEEDS", 0),
+        ("RR", "WHEEL_SPEEDS", 0),
+        ("STEER_ANGLE", "STEER", 0),
+        ("SPEED", "SPEED", 0),
+      ]
+      checks += [
+        ("ENGINE_DATA", 100),
+        ("STEER_TORQUE", 100),
+        ("GEAR", 40),
+        ("WHEEL_SPEEDS", 100),
+        ("STEER", 100),
+        ("SPEED", 50),
+      ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+
+  @staticmethod
+  def get_body_can_parser(CP):
+    signals = []
+    checks = []
+    if CP.carFingerprint in GEN2:
+      signals += [
+        ("STEER_TORQUE_SENSOR", "EPS_FEEDBACK", 0),
+      ]
+      checks += [
+        ("EPS_FEEDBACK", 50),
+      ]
+      
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
