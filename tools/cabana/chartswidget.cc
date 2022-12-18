@@ -1,5 +1,7 @@
 #include "tools/cabana/chartswidget.h"
 
+#include <QCompleter>
+#include <QLineEdit>
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QRubberBand>
@@ -550,7 +552,14 @@ SeriesSelector::SeriesSelector(QWidget *parent) {
 
   QVBoxLayout *left_layout = new QVBoxLayout();
   left_layout->addWidget(new QLabel(tr("Select Signals:")));
+
   msgs_combo = new QComboBox(this);
+  msgs_combo->setEditable(true);
+  msgs_combo->lineEdit()->setPlaceholderText(tr("Select Msg"));
+  msgs_combo->setInsertPolicy(QComboBox::NoInsert);
+  msgs_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  msgs_combo->completer()->setFilterMode(Qt::MatchContains);
+
   left_layout->addWidget(msgs_combo);
   sig_list = new QListWidget(this);
   sig_list->setSortingEnabled(true);
