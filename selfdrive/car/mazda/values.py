@@ -14,6 +14,7 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   def __init__(self, CP):
+    self.STEER_STEP = 1 # 100 Hz
     if CP.carFingerprint in GEN1:
       self.STEER_MAX = 800                # theoretical max_steer 2047
       self.STEER_DELTA_UP = 10             # torque increase per refresh
