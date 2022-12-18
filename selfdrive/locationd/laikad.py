@@ -171,17 +171,14 @@ class Laikad:
     return position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, processed_measurements
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
-    msg = messaging.new_message("gnssMeasurements")
-    msg.valid = False
-
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
-      return msg
+      return None
     elif self.is_good_report(gnss_msg):
 
       week, tow, new_meas = self.read_report(gnss_msg)
       if len(new_meas) == 0:
-        return msg
+        return None
 
       self.gps_week = week
       t = gnss_mono_time * 1e-9
@@ -193,11 +190,12 @@ class Laikad:
 
       output = self.process_report(new_meas, t)
       if output is None:
-        return msg
+        return None
       position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
       self.update_localizer(position_estimate, t, corrected_measurements)
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
+      msg = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
 
       P_diag = self.gnss_kf.P.diagonal()
@@ -217,7 +215,6 @@ class Laikad:
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
-      msg.valid = True
       return msg
 
     #elif gnss_msg.which() == 'ionoData':
