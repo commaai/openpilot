@@ -82,15 +82,11 @@ class CarController:
       apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
       torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-      # driver torque blending  - NOW HANDLED IN TOYOTACAN
-      # percentage = interp(abs(CS.out.steeringTorque), [40, 100], [100, 0])
-      # apply_angle = interp(percentage, [-10, 100], [torque_sensor_angle, apply_angle])
-
       # limit max angle error between cmd and actual to reduce EPS integral windup
       # TODO: can we configure this with a signal?
-      # apply_angle = clip(apply_angle,
-      #                    torque_sensor_angle - self.params.ANGLE_DELTA_MAX,
-      #                    torque_sensor_angle + self.params.ANGLE_DELTA_MAX)
+      apply_angle = clip(apply_angle,
+                         -abs(torque_sensor_angle) - self.params.ANGLE_DELTA_MAX,
+                         abs(torque_sensor_angle) + self.params.ANGLE_DELTA_MAX)
 
       # Clip max angle to acceptable lateral accel limits
       v_ego = max(CS.out.vEgo, 5.)
