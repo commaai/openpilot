@@ -1,5 +1,6 @@
 from common.numpy_fast import clip
 from selfdrive.car.hyundai.values import HyundaiFlags
+from common.realtime import ControlsTimer as Timer
 
 def get_e_can_bus(CP):
   # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
@@ -97,7 +98,7 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
   return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
 
 
-def create_spas_messages(packer, frame, left_blink, right_blink):
+def create_spas_messages(packer, left_blink, right_blink):
   ret = []
 
   values = {
@@ -117,7 +118,7 @@ def create_spas_messages(packer, frame, left_blink, right_blink):
   return ret
 
 
-def create_adrv_messages(packer, frame):
+def create_adrv_messages(packer):
   # messages needed to car happy after disabling
   # the ADAS Driving ECU to do longitudinal control
 
@@ -127,7 +128,7 @@ def create_adrv_messages(packer, frame):
   }
   ret.append(packer.make_can_msg("ADRV_0x51", 4, values))
 
-  if frame % 2 == 0:
+  if Timer.interval(2):
     values = {
       'AEB_SETTING': 0x1,  # show AEB disabled icon
       'SET_ME_2': 0x2,
@@ -137,7 +138,7 @@ def create_adrv_messages(packer, frame):
     }
     ret.append(packer.make_can_msg("ADRV_0x160", 5, values))
 
-  if frame % 5 == 0:
+  if Timer.interval(5):
     values = {
       'SET_ME_1C': 0x1c,
       'SET_ME_FF': 0xff,
@@ -152,13 +153,13 @@ def create_adrv_messages(packer, frame):
     }
     ret.append(packer.make_can_msg("ADRV_0x200", 5, values))
 
-  if frame % 20 == 0:
+  if Timer.interval(20):
     values = {
       'SET_ME_15': 0x15,
     }
     ret.append(packer.make_can_msg("ADRV_0x345", 5, values))
 
-  if frame % 100 == 0:
+  if Timer.interval(100):
     values = {
       'SET_ME_22': 0x22,
       'SET_ME_41': 0x41,

@@ -1,9 +1,10 @@
 import copy
 
 from selfdrive.car.mazda.values import GEN1, Buttons
+from common.realtime import ControlsTimer as Timer
 
 
-def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
+def create_steering_control(packer, car_fingerprint, apply_steer, lkas):
 
   tmp = apply_steer + 2048
 
@@ -28,7 +29,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   amd = (amd >> 4) | (( amd & 0xF) << 4)
   alo = (tmp & 0x3) << 2
 
-  ctr = frame % 16
+  ctr = Timer.frame % 16
   # bytes:     [    1  ] [ 2 ] [             3               ]  [           4         ]
   csum = 249 - ctr - hi - lo - (lnv << 3) - er1 - (ldw << 7) - ( er2 << 4) - (b1 << 5)
 

@@ -94,3 +94,88 @@ class Ratekeeper:
     self._frame += 1
     self._remaining = remaining
     return lagged
+  
+class DurationTimer:
+  def __init__(self, duration=0, step=DT_CTRL) -> None:
+    self.step = step
+    self.duration = duration
+    self.was_reset = False
+    self.timer = 0
+    self.min = float("-inf") # type: float
+    self.max = float("inf") # type: float
+
+  def tick_obj(self) -> None:
+    self.timer += self.step
+    # reset on overflow
+    self.reset() if (self.timer == (self.max or self.min)) else None
+
+  def reset(self) -> None:
+    """Resets this objects timer"""
+    self.timer = 0
+    self.was_reset = True
+
+  def active(self) -> bool:
+    """Returns true if time since last reset is less than duration"""
+    return bool(round(self.timer,2) < self.duration)
+
+  def adjust(self, duration) -> None:
+    """Adjusts the duration of the timer"""
+    self.duration = duration
+
+  def once_after_reset(self) -> bool: 
+    """Returns true only one time after calling reset()"""
+    ret = self.was_reset
+    self.was_reset = False
+    return ret
+
+  @staticmethod
+  def interval_obj(rate, frame) -> bool:
+    if frame % rate == 0: # Highlighting shows "frame" in white
+      return True
+    return False
+
+class ModelTimer(DurationTimer):
+  frame = 0 # type: int
+  objects = [] # type: List[DurationTimer]
+  def __init__(self, duration=0) -> None:
+    self.step = DT_MDL
+    super().__init__(duration, self.step)
+    self.__class__.objects.append(self)
+
+  @classmethod
+  def tick(cls) -> None:
+    cls.frame += 1
+    for obj in cls.objects:
+      ModelTimer.tick_obj(obj)
+
+  @classmethod
+  def reset_all(cls) -> None:
+    for obj in cls.objects:
+      obj.reset()
+
+  @classmethod
+  def interval(cls, rate) -> bool:
+    return ModelTimer.interval_obj(rate, cls.frame)
+
+class ControlsTimer(DurationTimer):
+  frame = 0
+  objects = [] # type: List[DurationTimer]
+  def __init__(self, duration=0) -> None:
+    self.step = DT_CTRL
+    super().__init__(duration=duration, step=self.step)
+    self.__class__.objects.append(self)
+
+  @classmethod
+  def tick(cls) -> None:
+    cls.frame += 1
+    for obj in cls.objects:
+      ControlsTimer.tick_obj(obj)
+
+  @classmethod
+  def reset_all(cls) -> None:
+    for obj in cls.objects:
+      obj.reset()
+
+  @classmethod
+  def interval(cls, rate) -> bool:
+    return ControlsTimer.interval_obj(rate, cls.frame)
