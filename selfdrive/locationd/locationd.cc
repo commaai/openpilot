@@ -84,6 +84,8 @@ Localizer::Localizer() {
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
 
+Localizer::Localizer(bool has_ublox) : Localizer() { ublox_available = has_ublox; }
+
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_state = this->kf->get_x();
   MatrixXdr predicted_cov = this->kf->get_P();
@@ -227,7 +229,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   double sensor_time = 1e-9 * log.getTimestamp();
-  
+
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
@@ -437,7 +439,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
-  
+
   if (!this->is_timestamp_valid(current_time)) {
     this->observation_timings_invalid = true;
     return;
@@ -574,12 +576,12 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_sensor(t, log.getAccelerometer());
   } else if (log.isGyroscope()) {
     this->handle_sensor(t, log.getGyroscope());
-  } else if (log.isGpsLocation()) {
-    this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
-  } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
-  //} else if (log.isGnssMeasurements()) {
-  //  this->handle_gnss(t, log.getGnssMeasurements());
+  //} else if (log.isGpsLocation()) {
+  //  this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
+  //} else if (log.isGpsLocationExternal()) {
+  //  this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
+  } else if (log.isGnssMeasurements()) {
+    this->handle_gnss(t, log.getGnssMeasurements());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -616,7 +618,7 @@ bool Localizer::critical_services_valid(std::map<std::string, double> critical_s
   return true;
 }
 
-bool Localizer::is_timestamp_valid(double current_time) {  
+bool Localizer::is_timestamp_valid(double current_time) {
   double filter_time = this->kf->get_filter_time();
   if (!std::isnan(filter_time) && ((filter_time - current_time) > MAX_FILTER_REWIND_TIME)) {
     LOGE("Observation timestamp is older than the max rewind threshold of the filter");
@@ -643,19 +645,12 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
-
-  const char* gps_location_socket;
-  if (ublox_available) {
-    gps_location_socket = "gpsLocationExternal";
-  } else {
-    gps_location_socket = "gpsLocation";
-  }
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration", 
+  const std::initializer_list<const char *> service_list = {"gnssMeasurements", "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
-  PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"carParams"});
+  PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
