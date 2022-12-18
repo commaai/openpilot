@@ -70,7 +70,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = ret.standstill
     self.cp = cp
     self.cp_cam = cp_cam
-    self.acc = cp.vl["ACC"]
+    self.acc = copy.copy(cp.vl["ACC"])
     
 
     # end GEN2
