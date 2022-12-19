@@ -13,9 +13,6 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
-# Number of frames to skip before showing the STOPPED message after standstill
-STOCK_DELAY_STOPPED_FRAMES = 400
-
 
 def compute_gb_honda_bosch(accel, speed):
   # TODO returns 0s, is unused
@@ -138,7 +135,7 @@ class CarController:
       hud_v_cruise = hud_control.setSpeed * conversion if hud_control.speedVisible else 255
       if CC.longActive and actuators.longControlState == LongCtrlState.stopping:
         self.stopping_counter += 1
-        if self.stopping_counter > STOCK_DELAY_STOPPED_FRAMES:
+        if self.stopping_counter > 400:
           hud_v_cruise = 252
       else:
         self.stopping_counter = 0
