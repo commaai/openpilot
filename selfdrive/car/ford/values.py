@@ -17,7 +17,7 @@ AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_p
 
 class CarControllerParams:
   # Messages: Lane_Assist_Data1, LateralMotionControl
-  LKAS_STEER_STEP = 5
+  STEER_STEP = 5
   # Message: IPMA_Data
   LKAS_UI_STEP = 100
   # Message: ACCDATA_3
@@ -31,6 +31,9 @@ class CarControllerParams:
 
   RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
   RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+
+  def __init__(self, CP):
+    pass
 
 
 class CANBUS:
