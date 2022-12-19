@@ -41,7 +41,7 @@ class LatControlPID(LatControl):
       self.pid.reset()
     else:
       # offset does not contribute to resistive torque
-      steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
+      steer_feedforward = self.get_steer_feedforward(angle_steers_des, CS.vEgo)
 
       output_steer = self.pid.update(error, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo)
