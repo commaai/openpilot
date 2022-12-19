@@ -117,7 +117,7 @@ class CarController:
     self.brake_last = 0.
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
-    self.last_stopping_frame = 0
+    self.stopping_counter = 0
 
     self.accel = 0.0
     self.speed = 0.0
@@ -129,17 +129,17 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
 
+    hud_v_cruise = hud_control.setSpeed * CV.MS_TO_MPH if hud_control.speedVisible else 255
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      hud_v_cruise = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH) if hud_control.speedVisible else 255
-      if CC.longActive and (actuators.longControlState == LongCtrlState.stopping):
-        if self.last_stopping_frame == 0:
-          self.last_stopping_frame = self.frame
-        if self.frame - self.last_stopping_frame > 400:
+      conversion = CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH
+      hud_v_cruise = hud_control.setSpeed * conversion if hud_control.speedVisible else 255
+      if CC.longActive and actuators.longControlState == LongCtrlState.stopping:
+        self.stopping_counter += 1
+        if self.stopping_counter > 400:
           hud_v_cruise = 252
       else:
-        self.last_stopping_frame = 0
-    else:
-      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_MPH if hud_control.speedVisible else 255
+        self.stopping_counter = 0
+
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
