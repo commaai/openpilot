@@ -1,5 +1,7 @@
 #include "tools/cabana/chartswidget.h"
 
+#include <QCompleter>
+#include <QLineEdit>
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QRubberBand>
@@ -152,12 +154,12 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
-      QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::chartClosed);
+      QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
+      QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
     chart->addSeries(id, sig);
-    emit chartOpened(id, sig);
   } else if (ChartView *chart = findChart(id, sig)) {
     chart->removeSeries(id, sig);
   }
@@ -169,11 +171,16 @@ void ChartsWidget::removeChart(ChartView *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
   updateToolBar();
+  emit seriesChanged();
 }
 
 void ChartsWidget::removeAll() {
-  for (auto c : charts.toVector())
-    removeChart(c);
+  for (auto c : charts) {
+    c->deleteLater();
+  }
+  charts.clear();
+  updateToolBar();
+  emit seriesChanged();
 }
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
@@ -227,11 +234,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(manage_btn, &QToolButton::clicked, this, &ChartView::manageSeries);
 }
 
-ChartView::~ChartView() {
-  for (auto &s : sigs)
-    emit seriesRemoved(s.msg_id, s.sig);
-}
-
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QLineSeries *series = new QLineSeries(this);
   series->setUseOpenGL(true);
@@ -243,6 +245,7 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   updateTitle();
   updateSeries(sig);
   updateAxisY();
+  emit seriesAdded(msg_id, sig);
 }
 
 void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
@@ -259,9 +262,10 @@ bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
 QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartView::SigItem>::iterator &it) {
   chart()->removeSeries(it->series);
   it->series->deleteLater();
-  emit seriesRemoved(it->msg_id, it->sig);
-
+  QString msg_id = it->msg_id;
+  const Signal *sig = it->sig;
   auto ret = sigs.erase(it);
+  emit seriesRemoved(msg_id, sig);
   if (!sigs.isEmpty()) {
     updateAxisY();
   } else {
@@ -548,7 +552,14 @@ SeriesSelector::SeriesSelector(QWidget *parent) {
 
   QVBoxLayout *left_layout = new QVBoxLayout();
   left_layout->addWidget(new QLabel(tr("Select Signals:")));
+
   msgs_combo = new QComboBox(this);
+  msgs_combo->setEditable(true);
+  msgs_combo->lineEdit()->setPlaceholderText(tr("Select Msg"));
+  msgs_combo->setInsertPolicy(QComboBox::NoInsert);
+  msgs_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  msgs_combo->completer()->setFilterMode(Qt::MatchContains);
+
   left_layout->addWidget(msgs_combo);
   sig_list = new QListWidget(this);
   sig_list->setSortingEnabled(true);

@@ -1,7 +1,4 @@
 #include "tools/cabana/canmessages.h"
-
-#include <QSettings>
-
 #include "tools/cabana/dbcmanager.h"
 
 CANMessages *can = nullptr;
@@ -25,37 +22,19 @@ bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint3
   replay = new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this);
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
   replay->installEventFilter(event_filter, this);
+  QObject::connect(replay, &Replay::seekedTo, this, &CANMessages::seekedTo);
   QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
   QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
   if (replay->load()) {
+    const auto &segments = replay->route()->segments();
+    if (std::none_of(segments.begin(), segments.end(), [](auto &s) { return s.second.rlog.length() > 0; })) {
+      qWarning() << "no rlogs in route" << route;
+      return false;
+    }
     replay->start();
     return true;
   }
   return false;
-}
-
-QList<QPointF> CANMessages::findSignalValues(const QString &id, const Signal *signal, double value, FindFlags flag, int max_count) {
-  auto evts = events();
-  if (!evts) return {};
-
-  QList<QPointF> ret;
-  ret.reserve(max_count);
-  auto [bus, address] = DBCManager::parseId(id);
-  for (auto &evt : *evts) {
-    if (evt->which != cereal::Event::Which::CAN) continue;
-
-    for (const auto &c : evt->event.getCan()) {
-      if (bus == c.getSrc() && address == c.getAddress()) {
-        double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *signal);
-        if ((flag == EQ && val == value) || (flag == LT && val < value) || (flag == GT && val > value)) {
-          ret.push_back({(evt->mono_time / (double)1e9) - can->routeStartTime(), val});
-          if (ret.size() >= max_count)
-            return ret;
-        }
-      }
-    }
-  }
-  return ret;
 }
 
 void CANMessages::process(QHash<QString, CanData> *messages) {
@@ -69,17 +48,13 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
 }
 
 bool CANMessages::eventFilter(const Event *event) {
-  static std::unique_ptr<QHash<QString, CanData>> new_msgs;
+  static std::unique_ptr new_msgs = std::make_unique<QHash<QString, CanData>>();
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
-    if (!new_msgs) {
-      new_msgs.reset(new QHash<QString, CanData>);
-      new_msgs->reserve(1000);
-    }
-
     double current_sec = replay->currentSeconds();
     if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
+      new_msgs->clear();
       counters.clear();
       counters_begin_sec = current_sec;
     }
@@ -87,38 +62,27 @@ bool CANMessages::eventFilter(const Event *event) {
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
-
-      std::lock_guard lk(lock);
-      auto &list = received_msgs[id];
-      while (list.size() > settings.can_msg_log_size) {
-        list.pop_back();
-      }
-      CanData &data = list.emplace_front();
+      CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
-      data.dat.append((char *)c.getDat().begin(), c.getDat().size());
-
+      data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
         data.freq = data.count / delta;
       }
-      (*new_msgs)[id] = data;
     }
 
     double ts = millis_since_boot();
-    if ((ts - prev_update_ts) > (1000.0 / settings.fps) && !processing) {
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps) && !processing && !new_msgs->isEmpty()) {
       // delay posting CAN message if UI thread is busy
       processing = true;
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
+      new_msgs.reset(new QHash<QString, CanData>);
+      new_msgs->reserve(100);
     }
   }
   return true;
-}
-
-const std::deque<CanData> CANMessages::messages(const QString &id) {
-  std::lock_guard lk(lock);
-  return received_msgs[id];
 }
 
 void CANMessages::seekTo(double ts) {

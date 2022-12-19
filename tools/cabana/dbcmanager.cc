@@ -32,8 +32,6 @@ void DBCManager::initMsgMap() {
 }
 
 QString DBCManager::generateDBC() {
-  if (!dbc) return {};
-
   QString dbc_string;
   for (auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
@@ -99,6 +97,7 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
 
 std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
   const auto list = id.split(':');
+  if (list.size() != 2) return {0, 0};
   return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 

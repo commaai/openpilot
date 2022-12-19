@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QComboBox>
-#include <QDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
@@ -9,7 +8,6 @@
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-
 #include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
 
@@ -58,9 +56,4 @@ protected:
   int form_idx = 0;
   QToolButton *plot_btn;
   QTimer *save_timer;
-};
-
-class SignalFindDlg : public QDialog {
-public:
-  SignalFindDlg(const QString &id, const Signal *signal, QWidget *parent);
 };
