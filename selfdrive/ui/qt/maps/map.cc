@@ -210,8 +210,8 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.updated("navInstruction")) {
-    if (sm.valid("navInstruction")) {
-      auto i = sm["navInstruction"].getNavInstruction();
+    auto i = sm["navInstruction"].getNavInstruction();
+    if (i.getValid()) {
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (locationd_valid || laikad_valid) {
