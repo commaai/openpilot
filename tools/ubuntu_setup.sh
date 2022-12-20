@@ -111,7 +111,7 @@ if [ -f "/etc/os-release" ]; then
       install_ubuntu_lts_latest_requirements
       ;;
     "kinetic")
-      install_ubuntu_jammy_kinetic_requirements
+      install_ubuntu_lts_latest_requirements
       ;;
     "focal")
       install_ubuntu_focal_requirements
