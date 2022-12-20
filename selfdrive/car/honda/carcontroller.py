@@ -128,10 +128,8 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
 
-    if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      hud_v_cruise = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH) if hud_control.speedVisible else 255
-    else:
-      hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH if hud_control.speedVisible else 255
+    conversion = (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH) if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS else CV.MS_TO_KPH
+    hud_v_cruise = hud_control.setSpeed * conversion if hud_control.speedVisible else 255
 
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
