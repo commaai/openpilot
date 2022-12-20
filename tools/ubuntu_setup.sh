@@ -108,7 +108,7 @@ if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
     "jammy")
-      install_ubuntu_jammy_kinetic_requirements
+      install_ubuntu_lts_latest_requirements
       ;;
     "kinetic")
       install_ubuntu_jammy_kinetic_requirements
