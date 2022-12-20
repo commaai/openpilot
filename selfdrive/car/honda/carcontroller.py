@@ -117,7 +117,6 @@ class CarController:
     self.brake_last = 0.
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
-    self.stopping_counter = 0
 
     self.accel = 0.0
     self.speed = 0.0
