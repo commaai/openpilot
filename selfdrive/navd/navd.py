@@ -209,7 +209,7 @@ class RouteEngine:
     msg = messaging.new_message('navInstruction')
 
     if self.step_idx is None:
-      msg.valid = False
+      msg.valid = True
       self.pm.send('navInstruction', msg)
       return
 
