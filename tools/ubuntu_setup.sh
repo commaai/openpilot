@@ -81,8 +81,8 @@ function install_ubuntu_common_requirements() {
     valgrind
 }
 
-# Install Ubuntu 22.04 LTS and Ubuntu 22.10 packages
-function install_ubuntu_jammy_kinetic_requirements() {
+# Install Ubuntu 22.04 LTS packages
+function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
   $SUDO apt-get install -y --no-install-recommends \
