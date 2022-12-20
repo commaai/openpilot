@@ -124,7 +124,7 @@ if [ -f "/etc/os-release" ]; then
         exit 1
       fi
       if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
-        install_ubuntu_jammy_kinetic_requirements
+        install_ubuntu_lts_latest_requirements
       else
         install_ubuntu_focal_requirements
       fi
