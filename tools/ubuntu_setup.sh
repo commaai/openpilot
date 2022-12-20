@@ -108,7 +108,10 @@ if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
     "jammy")
-      install_ubuntu_jammy_requirements
+      install_ubuntu_jammy_kinetic_requirements
+      ;;
+    "kinetic")
+      install_ubuntu_jammy_kinetic_requirements
       ;;
     "focal")
       install_ubuntu_focal_requirements
@@ -120,7 +123,7 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ] || ["$UBUNTU_CODENAME" = "kinetic"]; then
+      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
         install_ubuntu_jammy_kinetic_requirements
       else
         install_ubuntu_focal_requirements
