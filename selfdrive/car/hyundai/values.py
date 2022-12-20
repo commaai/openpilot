@@ -23,6 +23,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
     self.STEER_THRESHOLD = 150
+    self.STEER_STEP = 1  # 100 Hz
 
     if CP.carFingerprint in CANFD_CAR:
       self.STEER_MAX = 270
@@ -215,6 +216,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.KIA_STINGER_2022: HyundaiCarInfo("Kia Stinger 2022", "All", harness=Harness.hyundai_k),
   CAR.KIA_CEED: HyundaiCarInfo("Kia Ceed 2019", harness=Harness.hyundai_e),
   CAR.KIA_EV6: [
+    HyundaiCarInfo("Kia EV6 (Southeast Asia only) 2022-23", "All", harness=Harness.hyundai_p),
     HyundaiCarInfo("Kia EV6 (without HDA II) 2022", "Highway Driving Assist", harness=Harness.hyundai_l),
     HyundaiCarInfo("Kia EV6 (with HDA II) 2022", "Highway Driving Assist II", harness=Harness.hyundai_p)
   ],
@@ -1454,6 +1456,7 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.06 99210-CV000 220328',
+      b'\xf1\x00CV1 MFC  AT EUR RHD 1.00 1.00 99210-CV100 220630',
     ],
   },
   CAR.IONIQ_5: {
