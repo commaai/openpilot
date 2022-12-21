@@ -15,6 +15,7 @@ class CarController:
     self.last_lkas_falling_edge = 0
     self.lkas_control_bit_prev = False
     self.last_button_frame = 0
+    self.under_threshold_speed = False
 
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
@@ -49,14 +50,16 @@ class CarController:
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
-      if CS.out.vEgo > self.CP.minSteerSpeed:
-        lkas_control_bit = True
-      elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
+
+      # logic for fault avoidance in steer to zero (10kph) rams
+      if not self.under_threshold_speed:
+        if CS.out.vEgo < 14:
+          self.under_threshold_speed = True
+          lkas_control_bit = True
+        elif CS.out.vEgo < 14.5:
           lkas_control_bit = False
-      elif self.CP.carFingerprint in RAM_CARS:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
-          lkas_control_bit = False
+        else:
+          lkas_control_bit = True
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame - self.last_lkas_falling_edge > 200)
