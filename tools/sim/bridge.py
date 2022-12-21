@@ -55,6 +55,9 @@ class VehicleState:
 
 class TrottleBrakeSteer:
   def __init__(self, throttle=0, brake=0, steer=0):
+    self.reset(throttle=0, brake=0, steer=0)
+
+  def reset(self, throttle=0, brake=0, steer=0):
     self.throttle = throttle
     self.brake = brake
     self.steer = steer
@@ -455,7 +458,7 @@ class CarlaBridge:
       # 3. Send current carstate to op via can
 
       cruise_button = 0
-      manual.__init__()
+      manual.reset()
       # --------------Step 1-------------------------------
       if not q.empty():
         message = q.get()
