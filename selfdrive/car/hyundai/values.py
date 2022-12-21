@@ -61,6 +61,8 @@ class HyundaiFlags(IntFlag):
 
   ENABLE_BLINKERS = 32
 
+  CANFD_ALT_GEARS_2 = 64
+
 
 class CAR:
   # Hyundai
