@@ -17,7 +17,6 @@ import cereal.messaging as messaging
 from cereal import log
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.basedir import BASEDIR
-from common.numpy_fast import clip
 from common.params import Params
 from common.realtime import DT_DMON, Ratekeeper
 from selfdrive.car.honda.values import CruiseButtons
@@ -54,67 +53,28 @@ class VehicleState:
     self.ignition = True
 
 
-"""
-https://github.com/commaai/cereal/blob/master/car.capnp#L334
-
-                  ┌──────────────────┐
-                  │ OpenPilot/Manual │
-                  └──────┬───────────┘
-(Throttle, Brake, Steer) │
-                         │
-                         │
-  ┌──────┐               │  TBS_scale_clamp()
-  │      │               │
-  │ ┌────▼────┐       ┌──▼──┐
-  │ │old(prev)│       │ new │
-  │ └────┬────┘       └──┬──┘
-  │      │               │
-  │      └──────────────►│  TBS_rate_limit()
-  │                      │
-  │                   ┌──▼──┐
-  └───────────────────┤ out │
-                      └──┬──┘
-                         │  vehicle.apply_control
-                         │
-                  ┌──────▼───────┐
-                  │    CARLA     │
-                  └──────────────┘
-
-new, old and out are objects of type TBS (TrottleBrakeSteer)
-
-https://carla.readthedocs.io/en/latest/python_api/#carlavehiclecontrol
-
-throttle (float)
-A scalar value to control the vehicle throttle [0.0, 1.0]. Default is 0.0.
-brake (float)
-A scalar value to control the vehicle brake [0.0, 1.0]. Default is 0.0. 
-steer (float)
-A scalar value to control the vehicle steering [-1.0, 1.0]. Default is 0.0.
-"""
-
-
 class TrottleBrakeSteer:
-    def __init__(self, throttle=0, brake=0, steer=0):
-      self.throttle = throttle
-      self.brake = brake
-      self.steer = steer
+  def __init__(self, throttle=0, brake=0, steer=0):
+    self.throttle = throttle
+    self.brake = brake
+    self.steer = steer
 
-    def __repr__(self):
-      return "[T:%.4f B:%.4f S:%.4f]" % (self.throttle, self.brake, self.steer)
+  def __repr__(self):
+    return "[T:%.4f B:%.4f S:%.4f]" % (self.throttle, self.brake, self.steer)
 
-    def __eq__(self, other):
-        return (self.throttle, self.brake, self.steer) == (other.throttle, other.brake, other.steer)
+  def __eq__(self, other):
+    return (self.throttle, self.brake, self.steer) == (other.throttle, other.brake, other.steer)
 
 
 def clamp(num, bound2, bound1):
   if bound2 < bound1:
-	  return max(min(num, bound1), bound2)
+    return max(min(num, bound1), bound2)
   else:
     return max(min(num, bound2), bound1)
 
 
 def normalize(values, actual_bounds, desired_bounds):
-    return desired_bounds[0] + (clamp(values, actual_bounds[0], actual_bounds[1]) - actual_bounds[0]) * (desired_bounds[1] - desired_bounds[0]) / (actual_bounds[1] - actual_bounds[0])
+  return desired_bounds[0] + (clamp(values, actual_bounds[0], actual_bounds[1]) - actual_bounds[0]) * (desired_bounds[1] - desired_bounds[0]) / (actual_bounds[1] - actual_bounds[0])
 
 
 def rate_limit(old, new, limit):

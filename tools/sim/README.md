@@ -58,3 +58,43 @@ All inputs:
 
 The following resources contain more details and troubleshooting tips.
 * [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA)
+
+
+* [Carla python aPI](https://carla.readthedocs.io/en/latest/python_api/#carlavehiclecontrol)
+
+```
+throttle (float)
+A scalar value to control the vehicle throttle [0.0, 1.0]. Default is 0.0.
+brake (float)
+A scalar value to control the vehicle brake [0.0, 1.0]. Default is 0.0. 
+steer (float)
+A scalar value to control the vehicle steering [-1.0, 1.0]. Default is 0.0.
+```
+* [car.capnp](https://github.com/commaai/cereal/blob/master/car.capnp#L334)
+
+```
+                  ┌──────────────────┐
+                  │ OpenPilot/Manual │
+                  └──────┬───────────┘
+(Throttle, Brake, Steer) │
+                         │
+                         │
+  ┌──────┐               │  TBS_scale_clamp()
+  │      │               │
+  │ ┌────▼────┐       ┌──▼──┐
+  │ │old(prev)│       │ new │
+  │ └────┬────┘       └──┬──┘
+  │      │               │
+  │      └──────────────►│  TBS_rate_limit()
+  │                      │
+  │                   ┌──▼──┐
+  └───────────────────┤ out │
+                      └──┬──┘
+                         │  vehicle.apply_control
+                         │
+                  ┌──────▼───────┐
+                  │    CARLA     │
+                  └──────────────┘
+
+new, old and out are objects of type TBS (TrottleBrakeSteer)
+```
