@@ -55,12 +55,14 @@ class VehicleState:
 
 class TrottleBrakeSteer:
   def __init__(self, throttle=0, brake=0, steer=0):
-    self.reset(throttle=0, brake=0, steer=0)
-
-  def reset(self, throttle=0, brake=0, steer=0):
     self.throttle = throttle
     self.brake = brake
     self.steer = steer
+
+  def reset(self):
+    self.throttle = 0
+    self.brake = 0
+    self.steer = 0
 
   def __repr__(self):
     return "[T:%.4f B:%.4f S:%.4f]" % (self.throttle, self.brake, self.steer)
