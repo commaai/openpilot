@@ -25,9 +25,7 @@ from selfdrive.test.helpers import set_params_enabled
 from tools.sim.lib.can import can_function
 
 W, H = 1928, 1208
-REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
-STEER_RATIO = 15.
 
 pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'accelerometer', 'gyroscope', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl', 'controlsState'])
@@ -56,15 +54,109 @@ class VehicleState:
     self.ignition = True
 
 
-def steer_rate_limit(old, new):
-  # Rate limiting to 0.5 degrees per step
-  limit = 0.5
-  if new > old + limit:
-    return old + limit
-  elif new < old - limit:
-    return old - limit
+"""
+https://github.com/commaai/cereal/blob/master/car.capnp#L334
+
+                  ┌──────────────────┐
+                  │ OpenPilot/Manual │
+                  └──────┬───────────┘
+(Throttle, Brake, Steer) │
+                         │
+                         │
+  ┌──────┐               │  TBS_scale_clamp()
+  │      │               │
+  │ ┌────▼────┐       ┌──▼──┐
+  │ │old(prev)│       │ new │
+  │ └────┬────┘       └──┬──┘
+  │      │               │
+  │      └──────────────►│  TBS_rate_limit()
+  │                      │
+  │                   ┌──▼──┐
+  └───────────────────┤ out │
+                      └──┬──┘
+                         │  vehicle.apply_control
+                         │
+                  ┌──────▼───────┐
+                  │    CARLA     │
+                  └──────────────┘
+
+new, old and out are objects of type TBS (TrottleBrakeSteer)
+
+https://carla.readthedocs.io/en/latest/python_api/#carlavehiclecontrol
+
+throttle (float)
+A scalar value to control the vehicle throttle [0.0, 1.0]. Default is 0.0.
+brake (float)
+A scalar value to control the vehicle brake [0.0, 1.0]. Default is 0.0. 
+steer (float)
+A scalar value to control the vehicle steering [-1.0, 1.0]. Default is 0.0.
+"""
+
+
+class TrottleBrakeSteer:
+    def __init__(self, throttle=0, brake=0, steer=0):
+      self.throttle = throttle
+      self.brake = brake
+      self.steer = steer
+
+    def __repr__(self):
+      return "[T:%.4f B:%.4f S:%.4f]" % (self.throttle, self.brake, self.steer)
+
+    def __eq__(self, other):
+        return (self.throttle, self.brake, self.steer) == (other.throttle, other.brake, other.steer)
+
+
+def clamp(num, bound2, bound1):
+  if bound2 < bound1:
+	  return max(min(num, bound1), bound2)
   else:
-    return new
+    return max(min(num, bound2), bound1)
+
+
+def normalize(values, actual_bounds, desired_bounds):
+    return desired_bounds[0] + (clamp(values, actual_bounds[0], actual_bounds[1]) - actual_bounds[0]) * (desired_bounds[1] - desired_bounds[0]) / (actual_bounds[1] - actual_bounds[0])
+
+
+def rate_limit(old, new, limit):
+  if new > old + limit:
+    result = old + limit
+  elif new < old - limit:
+    result = old - limit
+  else:
+    result = new
+  return result
+
+
+def TBS_scale_clamp(tbs, scalingtype):
+  if scalingtype == 'openpilot2carla':
+    tbs.throttle = normalize(tbs.throttle, (0, 1), (0, 1))
+    tbs.brake = normalize(tbs.brake, (0, 1), (0, 0.25))
+    # tbs.steer / (-1000) # normalize(tbs.steer, (-100, 100), (0.1, -0.1) )      <- Exceed OP steering limit
+    tbs.steer = normalize(tbs.steer, (-100, 100), (0.1, -0.1))
+  else:  # manual2carla
+    tbs.throttle = normalize(tbs.throttle, (0, 1), (0, 1))
+    tbs.brake = normalize(tbs.brake, (0, 1), (0, 0.7))
+    tbs.steer = normalize(tbs.steer, (-1, 1), (1, -1))
+  return tbs  # no scaling
+
+
+def TBS_rate_limit(old, new, mode):
+  if mode == 'openpilot':
+    Tlimit = 0.001
+    Blimit = 1
+    Slimit = 0.0002
+  else:  # manual
+    # Make mnual loosing loss throttle gradually
+    if new.throttle == 0:
+      Tlimit = 0.001
+    else:
+      Tlimit = 1
+    if new.brake == 0:
+      Blimit = 0.1
+    else:
+      Blimit = 1
+    Slimit = 1
+  return TrottleBrakeSteer(throttle=rate_limit(old.throttle, new.throttle, Tlimit), brake=rate_limit(old.brake, new.brake, Blimit), steer=rate_limit(old.steer, new.steer, Slimit))
 
 
 class Camerad:
@@ -128,7 +220,7 @@ def imu_callback(imu, vehicle_state):
     vehicle_state.bearing_deg = math.degrees(imu.compass)
     dat = messaging.new_message('accelerometer')
     dat.accelerometer.sensor = 4
-    dat.accelerometer.type = 0x1
+    dat.accelerometer.type = 0x10
     dat.accelerometer.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
     dat.accelerometer.init('acceleration')
     dat.accelerometer.acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
@@ -322,7 +414,7 @@ class CarlaBridge:
     spawn_point = spawn_points[self._args.num_selected_spawn_point]
     vehicle = world.spawn_actor(vehicle_bp, spawn_point)
     self._carla_objects.append(vehicle)
-    max_steer_angle = vehicle.get_physics_control().wheels[0].max_steer_angle
+    # max_steer_angle = vehicle.get_physics_control().wheels[0].max_steer_angle
 
     # make tires less slippery
     # wheel_control = carla.WheelPhysicsControl(tire_friction=5)
@@ -377,22 +469,18 @@ class CarlaBridge:
     for t in self._threads:
       t.start()
 
-    # init
-    throttle_ease_out_counter = REPEAT_COUNTER
-    brake_ease_out_counter = REPEAT_COUNTER
-    steer_ease_out_counter = REPEAT_COUNTER
 
     vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
 
     is_openpilot_engaged = False
-    throttle_out = steer_out = brake_out = 0.
-    throttle_op = steer_op = brake_op = 0.
-    throttle_manual = steer_manual = brake_manual = 0.
 
-    old_steer = old_brake = old_throttle = 0.
-    throttle_manual_multiplier = 0.7  # keyboard signal is always 1
-    brake_manual_multiplier = 0.7  # keyboard signal is always 1
-    steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
+    # input
+    op= TrottleBrakeSteer()
+    manual= TrottleBrakeSteer()
+    # result
+    out= TrottleBrakeSteer()
+    # keeping previous state for change rate limit
+    old = TrottleBrakeSteer()
 
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(20):
@@ -407,22 +495,19 @@ class CarlaBridge:
       # 3. Send current carstate to op via can
 
       cruise_button = 0
-      throttle_out = steer_out = brake_out = 0.0
-      throttle_op = steer_op = brake_op = 0.0
-      throttle_manual = steer_manual = brake_manual = 0.0
-
+      manual.__init__()
       # --------------Step 1-------------------------------
       if not q.empty():
         message = q.get()
         m = message.split('_')
         if m[0] == "steer":
-          steer_manual = float(m[1])
+          manual.steer = float(m[1])
           is_openpilot_engaged = False
         elif m[0] == "throttle":
-          throttle_manual = float(m[1])
+          manual.throttle = float(m[1])
           is_openpilot_engaged = False
         elif m[0] == "brake":
-          brake_manual = float(m[1])
+          manual.brake = float(m[1])
           is_openpilot_engaged = False
         elif m[0] == "reverse":
           cruise_button = CruiseButtons.CANCEL
@@ -442,64 +527,29 @@ class CarlaBridge:
         elif m[0] == "quit":
           break
 
-        throttle_out = throttle_manual * throttle_manual_multiplier
-        steer_out = steer_manual * steer_manual_multiplier
-        brake_out = brake_manual * brake_manual_multiplier
-
-        old_steer = steer_out
-        old_throttle = throttle_out
-        old_brake = brake_out
-
       if is_openpilot_engaged:
         sm.update(0)
 
         # TODO gas and brake is deprecated
-        throttle_op = clip(sm['carControl'].actuators.accel / 1.6, 0.0, 1.0)
-        brake_op = clip(-sm['carControl'].actuators.accel / 4.0, 0.0, 1.0)
-        steer_op = sm['carControl'].actuators.steeringAngleDeg
-
-        throttle_out = throttle_op
-        steer_out = steer_op
-        brake_out = brake_op
-
-        steer_out = steer_rate_limit(old_steer, steer_out)
-        old_steer = steer_out
-
+        op.throttle = sm['carControl'].actuators.accel
+        op.brake = sm['carControl'].actuators.accel * -1
+        op.steer = sm['carControl'].actuators.steeringAngleDeg
+        new = TBS_scale_clamp(op, 'openpilot2carla')
+        out = TBS_rate_limit(old, new, 'openpilot')
+        old = out
       else:
-        if throttle_out == 0 and old_throttle > 0:
-          if throttle_ease_out_counter > 0:
-            throttle_out = old_throttle
-            throttle_ease_out_counter += -1
-          else:
-            throttle_ease_out_counter = REPEAT_COUNTER
-            old_throttle = 0
+        new = TBS_scale_clamp(manual, 'manual2carla')
+        out = TBS_rate_limit(old, new, 'manual')
+        old = out
 
-        if brake_out == 0 and old_brake > 0:
-          if brake_ease_out_counter > 0:
-            brake_out = old_brake
-            brake_ease_out_counter += -1
-          else:
-            brake_ease_out_counter = REPEAT_COUNTER
-            old_brake = 0
-
-        if steer_out == 0 and old_steer != 0:
-          if steer_ease_out_counter > 0:
-            steer_out = old_steer
-            steer_ease_out_counter += -1
-          else:
-            steer_ease_out_counter = REPEAT_COUNTER
-            old_steer = 0
+      # print("prev:", old, "op:", op, "manual:", manual, "new:", new, "out", out)
 
       # --------------Step 2-------------------------------
-      steer_carla = steer_out / (max_steer_angle * STEER_RATIO * -1)
+      
+      vc.throttle = out.throttle
+      vc.brake = out.brake
+      vc.steer = out.steer
 
-      steer_carla = np.clip(steer_carla, -1, 1)
-      steer_out = steer_carla * (max_steer_angle * STEER_RATIO * -1)
-      old_steer = steer_carla * (max_steer_angle * STEER_RATIO * -1)
-
-      vc.throttle = throttle_out / 0.6
-      vc.steer = steer_carla
-      vc.brake = brake_out
       vehicle.apply_control(vc)
 
       # --------------Step 3-------------------------------
@@ -507,13 +557,13 @@ class CarlaBridge:
       speed = math.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)  # in m/s
       vehicle_state.speed = speed
       vehicle_state.vel = vel
-      vehicle_state.angle = steer_out
+      vehicle_state.angle = out.steer
       vehicle_state.cruise_button = cruise_button
       vehicle_state.is_engaged = is_openpilot_engaged
 
       if rk.frame % PRINT_DECIMATION == 0:
         print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(vc.throttle, 3), "; steer(c/deg): ",
-              round(vc.steer, 3), round(steer_out, 3), "; brake: ", round(vc.brake, 3))
+              round(vc.steer, 3), round(out.steer, 3), "; brake: ", round(vc.brake, 3))
 
       if rk.frame % 5 == 0:
         world.tick()
@@ -562,3 +612,4 @@ if __name__ == "__main__":
     # Try cleaning up the wide camera param
     # in case users want to use replay after
     Params().remove("WideCameraOnly")
+
