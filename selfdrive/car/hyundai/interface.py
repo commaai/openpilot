@@ -37,9 +37,10 @@ class CarInterface(CarInterfaceBase):
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
         # ICE cars do not have 0x130; GEARS message on 0x40 instead
         if 0x130 not in fingerprint[4]:
-          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
-        elif 0x40 not in fingerprint[4]:
-          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
+          if 0x40 not in fingerprint[4]:
+            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
+          else:
+            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
 
