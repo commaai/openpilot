@@ -109,7 +109,7 @@ def TBS_rate_limit(old, new, mode):
     Blimit = 1
     Slimit = 0.0002
   else:  # manual
-    # Make mnual loosing loss throttle gradually
+    # Make manual losing throttle gradually
     if new.throttle == 0:
       Tlimit = 0.001
     else:
