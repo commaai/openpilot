@@ -24,7 +24,7 @@ MAX_USER_TORQUE = 500
 
 # EPS ignores commands above this angle and causes PCS faults
 MAX_STEER_ANGLE = 94.9461  # deg
-MAX_ANGLE_LATERAL_ACCEL = 3.0  # m/s^2
+MAX_ANGLE_LATERAL_ACCEL = 3.5  # m/s^2
 
 
 class CarController:
