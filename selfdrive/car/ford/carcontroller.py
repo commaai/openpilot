@@ -66,7 +66,7 @@ class CarController:
       apply_angle = 0.
 
     # send steering commands at 20Hz
-    if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
+    if (self.frame % CarControllerParams.STEER_STEP) == 0:
       # use LatCtlPath_An_Actl to actuate steering
       path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
 

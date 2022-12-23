@@ -4,7 +4,7 @@ from enum import Enum
 
 from cereal import car
 from panda.python import uds
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -12,11 +12,13 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  ANGLE_DELTA_BP = [0., 5., 15.]
-  ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-  ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., .8, .15])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., 3.5, 0.4])
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
+
+  def __init__(self, CP):
+    pass
 
 
 class CAR:
