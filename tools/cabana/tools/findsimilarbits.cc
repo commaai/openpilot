@@ -11,6 +11,7 @@
 #include "tools/cabana/dbcmanager.h"
 
 FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
+  setWindowTitle(tr("Find similar bits"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QHBoxLayout *form_layout = new QHBoxLayout();
