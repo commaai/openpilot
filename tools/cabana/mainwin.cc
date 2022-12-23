@@ -133,6 +133,9 @@ void MainWindow::createActions() {
   commands_act->setDefaultWidget(undo_view);
   commands_menu->addAction(commands_act);
 
+  QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
+  tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
+
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
@@ -281,5 +284,10 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 void MainWindow::setOption() {
   SettingsDlg dlg(this);
+  dlg.exec();
+}
+
+void MainWindow::findSimilarBits() {
+  FindSimilarBitsDlg dlg(this);
   dlg.exec();
 }
