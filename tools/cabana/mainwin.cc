@@ -110,10 +110,10 @@ MainWindow::MainWindow() : QMainWindow() {
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::loadDBCFromFile);
-  file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
+  file_menu->addAction(tr("Open DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
   file_menu->addSeparator();
   file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveDBCToFile);
-  file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
+  file_menu->addAction(tr("Save DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
   file_menu->addSeparator();
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
 
