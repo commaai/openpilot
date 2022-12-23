@@ -22,6 +22,8 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : m.data;
   } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  } else if (role == Qt::ToolTipRole && index.column() > 0 && !sigs.empty()) {
+    return tr("double click to open the chart");
   }
   return {};
 }
@@ -182,6 +184,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   logs->setModel(model);
   main_layout->addWidget(logs);
 
+  QObject::connect(logs, &QTableView::doubleClicked, this, &LogsWidget::doubleClicked);
   QObject::connect(signals_cb, SIGNAL(currentIndexChanged(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(currentIndexChanged(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
@@ -217,4 +220,13 @@ void LogsWidget::setFilter() {
     case 3: cmp = std::less<double>{}; break;
   }
   model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
+}
+
+void LogsWidget::doubleClicked(const QModelIndex &index) {
+  if (index.isValid()) {
+    if (model->sigs.size() > 0 && index.column() > 0) {
+      emit openChart(model->msg_id, model->sigs[index.column()-1]);
+    }
+    can->seekTo(model->messages[index.row()].mono_time / (double)1e9 - can->routeStartTime());
+  }
 }
