@@ -18,7 +18,7 @@ class CarInterface(CarInterfaceBase):
       
     if candidate in GEN2:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda2019)]
-      ret.openpilotLongitudinalControl = True
+      ret.openpilotLongitudinalControl = False
       ret.stopAccel = 0.0
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
@@ -64,7 +64,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
 
-    if candidate not in (CAR.CX5_2022, GEN2):
+    if candidate not in (CAR.CX5_2022, CAR.MAZDA3_2019):
       ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
 
     ret.centerToFront = ret.wheelbase * 0.41
