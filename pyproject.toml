@@ -58,6 +58,8 @@ urllib3 = "^1.26.10"
 utm = "^0.7.0"
 websocket_client = "^1.3.3"
 polyline = "^1.4.0"
+aiortc = "^1.3.2"
+aiohttp = "^3.8.3"
 
 
 [tool.poetry.group.dev.dependencies]
