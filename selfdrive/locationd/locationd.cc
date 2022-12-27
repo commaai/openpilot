@@ -649,7 +649,7 @@ int Localizer::locationd_thread() {
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"carParams"});
+  SubMaster sm(service_list, {}, nullptr, {"gnssMeasurements", "carParams"});
   PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
