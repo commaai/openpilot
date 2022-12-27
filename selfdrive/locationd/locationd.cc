@@ -310,7 +310,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   }
 
   if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
-    this->gps_valid = false;
+    //this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
   }
@@ -318,7 +318,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   double sensor_time = current_time - sensor_time_offset;
 
   // Process message
-  this->gps_valid = true;
+  //this->gps_valid = true;
   this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
@@ -359,8 +359,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  this->gps_valid = log.getPositionECEF().getValid() && log.getVelocityECEF().getValid();
-  if (!this->gps_valid) {
+  if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
     this->determine_gps_mode(current_time);
     return;
   }
@@ -408,7 +407,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
-    this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
   }
@@ -606,7 +604,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 }
 
 bool Localizer::is_gps_ok() {
-  return this->gps_valid && (this->kf->get_filter_time() - this->last_gps_msg) < 1.0;
+  return (this->kf->get_filter_time() - this->last_gps_msg) < 1.0;
 }
 
 bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
