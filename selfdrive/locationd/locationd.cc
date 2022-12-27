@@ -33,8 +33,7 @@ const float  GPS_VEL_STD_THRESHOLD = 5.0;
 const float  GPS_POS_ERROR_RESET_THRESHOLD = 200.0;
 const float  GPS_POS_STD_RESET_THRESHOLD = 5.0;
 const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
-// 3.0 is ~180deg orientation error
-const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 2.5;
+const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 3.1;
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
