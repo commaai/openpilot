@@ -409,11 +409,8 @@ def main(sm=None, pm=None, qc=None):
 
       msg = process_msg(laikad, gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
       if msg is None:
-        # TODO: beautify this, locationd needs a valid message, otherwise engagement
-        # will not be allowed, either send nothing or a valid msg
-        # check this with replay tests
+        # TODO: beautify this, locationd needs a valid message
         msg = messaging.new_message("gnssMeasurements")
-        msg.valid = True
 
       pm.send('gnssMeasurements', msg)
 
