@@ -411,14 +411,26 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     return;
   }
 
+  // prevent jumping gnss measurements (covered lots, standstill...)
+  bool orientation_reset = ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD;
+  orientation_reset &= orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD;
+  orientation_reset &= !this->standstill;
+  if (orientation_reset) {
+    this->orientation_reset_count++;
+  }
+  else {
+    this->orientation_reset_count = 0;
+  }
+
   if ((gps_est_error > GPS_POS_ERROR_RESET_THRESHOLD && ecef_pos_std < GPS_POS_STD_RESET_THRESHOLD) || this->last_gps_msg == 0) {
     // always reset on first gps message and if the location is off but the accuracy is high
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-  } else if (ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD && orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD && !this->standstill) {
+  } else if (orientation_reset_count > 5) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+    this->orientation_reset_count = 0;
   }
 
   this->last_gps_msg = sensor_time;

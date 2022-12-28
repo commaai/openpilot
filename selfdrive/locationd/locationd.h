@@ -83,4 +83,5 @@ private:
   bool observation_timings_invalid = false;
   std::map<std::string, double> observation_values_invalid;
   bool standstill = true;
+  int32_t orientation_reset_count = 0;
 };
