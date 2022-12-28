@@ -82,4 +82,5 @@ private:
   bool ublox_available = true;
   bool observation_timings_invalid = false;
   std::map<std::string, double> observation_values_invalid;
+  bool standstill = true;
 };

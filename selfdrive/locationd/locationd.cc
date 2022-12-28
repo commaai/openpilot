@@ -33,7 +33,7 @@ const float  GPS_VEL_STD_THRESHOLD = 5.0;
 const float  GPS_POS_ERROR_RESET_THRESHOLD = 200.0;
 const float  GPS_POS_STD_RESET_THRESHOLD = 5.0;
 const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
-const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 3.1;
+const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 2.0;
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -415,7 +415,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     // always reset on first gps message and if the location is off but the accuracy is high
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-  } else if (ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD && orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD) {
+  } else if (ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD && orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD && !this->standstill) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
@@ -428,7 +428,8 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
   this->car_speed = std::abs(log.getVEgo());
-  if (log.getStandstill()) {
+  this->standstill = log.getStandstill();
+  if (this->standstill) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ACCEL, { Vector3d(0.0, 0.0, 0.0) });
   }
