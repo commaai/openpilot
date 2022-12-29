@@ -1,5 +1,6 @@
 #include "tools/cabana/chartswidget.h"
 
+#include <QApplication>
 #include <QCompleter>
 #include <QLineEdit>
 #include <QFutureSynchronizer>
@@ -42,7 +43,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(charts_scroll);
 
   max_chart_range = settings.max_chart_x_range;
-  use_dark_theme = palette().color(QPalette::WindowText).value() > palette().color(QPalette::Background).value();
+  use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                   QApplication::style()->standardPalette().color(QPalette::Background).value();
   updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);

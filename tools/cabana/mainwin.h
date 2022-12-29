@@ -1,10 +1,10 @@
 #pragma once
 
 #include <QComboBox>
+#include <QDockWidget>
 #include <QJsonDocument>
 #include <QMainWindow>
 #include <QProgressBar>
-#include <QSplitter>
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
@@ -35,6 +35,7 @@ signals:
 
 protected:
   void createActions();
+  void createDockWindows();
   QComboBox *createDBCSelector();
   void createStatusBar();
   void createShortcuts();
@@ -45,14 +46,13 @@ protected:
   void findSimilarBits();
 
   VideoWidget *video_widget;
+  QDockWidget *video_dock;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
-  QSplitter *splitter;
   QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
   QProgressBar *progress_bar;
-  QLabel *fingerprint_label;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
 };
