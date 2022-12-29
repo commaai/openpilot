@@ -11,6 +11,7 @@
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
+#include "tools/cabana/tools/findsimilarbits.h"
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -41,6 +42,7 @@ protected:
   void DBCFileChanged();
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
+  void findSimilarBits();
 
   VideoWidget *video_widget;
   MessagesWidget *messages_widget;
