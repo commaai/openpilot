@@ -156,6 +156,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
       QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
       QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
+      QObject::connect(chart, &ChartView::axisYUpdated, this, &ChartsWidget::alignCharts);
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
@@ -171,6 +172,7 @@ void ChartsWidget::removeChart(ChartView *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
   updateToolBar();
+  alignCharts();
   emit seriesChanged();
 }
 
@@ -181,6 +183,16 @@ void ChartsWidget::removeAll() {
   charts.clear();
   updateToolBar();
   emit seriesChanged();
+}
+
+void ChartsWidget::alignCharts() {
+  int plot_left = 0;
+  for (auto c : charts) {
+    plot_left = qMax((qreal)plot_left, c->getYAsixLabelWidth());
+  }
+  for (auto c : charts) {
+    c->setPlotAreaLeftPosition(plot_left);
+  }
 }
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
@@ -202,7 +214,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->setShowToolTips(true);
   chart->layout()->setContentsMargins(0, 0, 0, 0);
-  chart->setMargins(QMargins(20, 11, 11, 11));
 
   QToolButton *remove_btn = new QToolButton();
   remove_btn->setText("X");
@@ -232,6 +243,19 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(&settings, &Settings::changed, this, &ChartView::updateFromSettings);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
   QObject::connect(manage_btn, &QToolButton::clicked, this, &ChartView::manageSeries);
+}
+
+qreal ChartView::getYAsixLabelWidth() const {
+  QFontMetrics fm(axis_y->labelsFont());
+  int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
+  return qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;
+}
+
+void ChartView::setPlotAreaLeftPosition(int pos) {
+  if (std::ceil(chart()->plotArea().left()) != pos) {
+    const float left_margin = chart()->margins().left() + pos - chart()->plotArea().left();
+    chart()->setMargins(QMargins(left_margin, 11, 11, 11));
+  }
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
@@ -361,16 +385,6 @@ void ChartView::setDisplayRange(double min, double max) {
   }
 }
 
-void ChartView::adjustChartMargins() {
-  // TODO: Remove hardcoded aligned_pos
-  const int aligned_pos = 60;
-  if ((int)chart()->plotArea().left() != aligned_pos) {
-    const float left_margin = chart()->margins().left() + aligned_pos - chart()->plotArea().left();
-    chart()->setMargins(QMargins(left_margin, 11, 11, 11));
-    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
-  }
-}
-
 void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
   if (!events || sigs.isEmpty()) return;
@@ -436,8 +450,7 @@ void ChartView::updateAxisY() {
     double range = max_y - min_y;
     applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
   }
-
-  adjustChartMargins();
+  QTimer::singleShot(0, this, &ChartView::axisYUpdated);
 }
 
 void ChartView::applyNiceNumbers(qreal min, qreal max) {
