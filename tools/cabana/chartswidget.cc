@@ -145,8 +145,9 @@ ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
 
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
   setUpdatesEnabled(false);
-  if (show) {
-    ChartView *chart = merge && charts.size() > 0 ? charts.back() : nullptr;
+  ChartView *chart = findChart(id, sig);
+  if (show && !chart) {
+    chart = merge && charts.size() > 0 ? charts.back() : nullptr;
     if (!chart) {
       chart = new ChartView(this);
       chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
@@ -163,7 +164,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       charts.push_back(chart);
     }
     chart->addSeries(id, sig);
-  } else if (ChartView *chart = findChart(id, sig)) {
+  } else if (!show && chart) {
     chart->removeSeries(id, sig);
   }
   updateToolBar();
