@@ -71,10 +71,14 @@ public:
   void setMessage(const QString &message_id);
   void updateState();
 
+signals:
+  void openChart(const QString &msg_id, const Signal *sig);
+
 private slots:
   void setFilter();
 
 private:
+  void doubleClicked(const QModelIndex &index);
   void showEvent(QShowEvent *event) override;
 
   HistoryLog *logs;
