@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
 #include <QLineEdit>
@@ -17,8 +18,10 @@ public:
 };
 
 class HistoryLogModel : public QAbstractTableModel {
+  Q_OBJECT
+
 public:
-  HistoryLogModel(QObject *parent);
+  HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const QString &message_id);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
@@ -28,6 +31,9 @@ public:
   inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
+  void setDynamicMode(int state);
+  void segmentsMerged();
+  void refresh();
 
   struct Message {
     uint64_t mono_time = 0;
@@ -35,15 +41,20 @@ public:
     QString data;
   };
 
-  std::deque<Message> fetchData(uint64_t min_mono_time, uint64_t max_mono_time);
+  template <class InputIt>
+  std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
+  std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
+
   QString msg_id;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
   double filter_value = 0;
+  uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
   std::vector<const Signal*> sigs;
+  bool dynamic_mode = false;
 };
 
 class HistoryLog : public QTableView {
@@ -58,7 +69,7 @@ class LogsWidget : public QWidget {
 public:
   LogsWidget(QWidget *parent);
   void setMessage(const QString &message_id);
-  void updateState() { model->updateState(); }
+  void updateState();
 
 signals:
   void openChart(const QString &msg_id, const Signal *sig);
@@ -68,12 +79,12 @@ private slots:
 
 private:
   void doubleClicked(const QModelIndex &index);
-  void showEvent(QShowEvent *event) override { model->setMessage(model->msg_id); };
+  void showEvent(QShowEvent *event) override;
 
   HistoryLog *logs;
   HistoryLogModel *model;
-  QWidget *filter_container;
+  QCheckBox *dynamic_mode;
   QComboBox *signals_cb, *comp_box;
   QLineEdit *value_edit;
-  std::vector<const Signal*> sigs;
+  QString cur_filter_text;
 };
