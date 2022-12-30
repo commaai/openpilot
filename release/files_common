@@ -233,7 +233,6 @@ selfdrive/locationd/generated/gps.cpp
 selfdrive/locationd/generated/gps.h
 
 selfdrive/locationd/laikad.py
-selfdrive/locationd/laikad_helpers.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
