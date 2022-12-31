@@ -351,18 +351,35 @@ void CameraWidget::vipcFrameReceived() {
 }
 
 void CameraWidget::vipcThread() {
-  VisionStreamType cur_stream = requested_stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || cur_stream != requested_stream_type) {
-      clearFrames();
-      qDebug() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
-      cur_stream = requested_stream_type;
-      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
+    if (!vipc_client || !vipc_client->connected) {
+      available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
+      if (available_streams.empty()) {
+        QThread::msleep(100);
+        continue;
+      }
     }
-    active_stream_type = cur_stream;
+
+    if (available_streams.count(requested_stream_type) == 0) {
+      if (available_streams.count(VISION_STREAM_ROAD)) {
+        requested_stream_type = VISION_STREAM_ROAD;
+      } else if (available_streams.count(VISION_STREAM_WIDE_ROAD)) {
+        requested_stream_type = VISION_STREAM_WIDE_ROAD;
+      } else {
+        qDebug() << "no valid vipc stream";
+        continue;
+      }
+    }
+
+    if (!vipc_client || vipc_client->type != requested_stream_type) {
+      qDebug() << "connecting to stream " << requested_stream_type << ", was connected to " << (vipc_client ? vipc_client->type : -1);
+      clearFrames();
+      vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, false));
+    }
+    active_stream_type = vipc_client->type;
 
     if (!vipc_client->connected) {
       clearFrames();

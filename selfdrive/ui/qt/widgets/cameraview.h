@@ -88,4 +88,7 @@ protected:
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
   void vipcFrameReceived();
+
+private:
+  std::set<VisionStreamType> available_streams;
 };
