@@ -331,7 +331,7 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "gnssMeasurements": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
