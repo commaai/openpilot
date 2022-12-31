@@ -131,7 +131,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
   CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-23"),
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
-  CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-22"),
+  CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
   CAR.PRIUS: [
     ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", "https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
@@ -1023,11 +1023,13 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7a1, None): [
       b'8965B48241\x00\x00\x00\x00\x00\x00',
       b'8965B48310\x00\x00\x00\x00\x00\x00',
+      b'8965B48400\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264872300\x00\x00\x00\x00',
       b'\x01F15264872400\x00\x00\x00\x00',
       b'\x01F15264872500\x00\x00\x00\x00',
+      b'\x01F15264872600\x00\x00\x00\x00',
       b'\x01F15264873500\x00\x00\x00\x00',
       b'\x01F152648C6300\x00\x00\x00\x00',
       b'\x01F152648J4000\x00\x00\x00\x00',
@@ -1041,6 +1043,7 @@ FW_VERSIONS = {
       b'\x01896630EE4100\x00\x00\x00\x00',
       b'\x01896630EE5000\x00\x00\x00\x00',
       b'\x01896630EE6000\x00\x00\x00\x00',
+      b'\x01896630EF8000\x00\x00\x00\x00',
       b'\x02896630E66000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630E66100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x01896630EA1000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
@@ -1056,6 +1059,7 @@ FW_VERSIONS = {
       b'\x028646F0E02100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F4803000\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F4803000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
+      b'\x028646F4803200\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_IS: {
