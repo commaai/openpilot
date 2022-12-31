@@ -6,12 +6,15 @@ import logging
 import os
 import platform
 import ssl
+from typing import OrderedDict
 
 from aiohttp import web
 
-from aiortc import RTCPeerConnection, RTCSessionDescription
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCRtpCodecCapability
 from aiortc.contrib.media import MediaPlayer, MediaRelay
 from aiortc.rtcrtpsender import RTCRtpSender
+from compressed_vipc_track import VisionIpcTrack
+from cereal.visionipc.visionipc_pyx import VisionStreamType # pylint: disable=no-name-in-module, import-error
 
 ROOT = os.path.dirname(__file__)
 
@@ -27,28 +30,27 @@ def create_local_tracks(play_from, decode):
         player = MediaPlayer(play_from, decode=decode)
         return player.audio, player.video
     else:
-        options = {"framerate": "30", "video_size": "640x480"}
         if relay is None:
-            if platform.system() == "Darwin":
-                webcam = MediaPlayer(
-                    "default:none", format="avfoundation", options=options
-                )
-            elif platform.system() == "Windows":
-                webcam = MediaPlayer(
-                    "video=Integrated Camera", format="dshow", options=options
-                )
-            else:
-                webcam = MediaPlayer("/dev/video0", format="v4l2", options=options)
-            relay = MediaRelay()
-        return None, relay.subscribe(webcam.video)
+            track = VisionIpcTrack("roadEncodeData", "192.168.88.249")
+        return None, track
 
 
-def force_codec(pc, sender, forced_codec):
-    kind = forced_codec.split("/")[0]
-    codecs = RTCRtpSender.getCapabilities(kind).codecs
+def force_codec(pc, sender):
+    # kind = forced_codec.split("/")[0]
+    # codecs = RTCRtpSender.getCapabilities(kind).codecs
     transceiver = next(t for t in pc.getTransceivers() if t.sender == sender)
     transceiver.setCodecPreferences(
-        [codec for codec in codecs if codec.mimeType == forced_codec]
+        # [codec for codec in codecs if codec.mimeType == forced_codec]
+        [RTCRtpCodecCapability(
+                        mimeType="video/H264",
+                        clockRate=90000,
+                        channels=None,
+                        parameters=OrderedDict([
+                        ("packetization-mode", "1"),
+                        ("level-asymmetry-allowed", "1"),
+                        ("profile-level-id", "42001f"),
+                        ])
+                    )]
     )
 
 
@@ -90,10 +92,11 @@ async def offer(request):
 
     if video:
         video_sender = pc.addTrack(video)
-        if args.video_codec:
-            force_codec(pc, video_sender, args.video_codec)
-        elif args.play_without_decoding:
-            raise Exception("You must specify the video codec using --video-codec")
+        # if args.video_codec:
+            # force_codec(pc, video_sender, args.video_codec)
+        force_codec(pc, video_sender)
+        # elif args.play_without_decoding:
+            # raise Exception("You must specify the video codec using --video-codec")
 
     await pc.setRemoteDescription(offer)
 
