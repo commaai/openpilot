@@ -41,6 +41,7 @@ signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived();
+  void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
 protected:
   void paintGL() override;
@@ -71,6 +72,7 @@ protected:
   int stream_stride = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
+  std::set<VisionStreamType> available_streams;
   QThread *vipc_thread = nullptr;
 
   // Calibration
@@ -87,8 +89,6 @@ protected:
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
+  void availableStreamsUpdated(std::set<VisionStreamType> streams);
   void vipcFrameReceived();
-
-private:
-  std::set<VisionStreamType> available_streams;
 };

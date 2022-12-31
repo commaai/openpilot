@@ -95,8 +95,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                           stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
+  qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
+  QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::BlockingQueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
 }
 
@@ -350,28 +352,22 @@ void CameraWidget::vipcFrameReceived() {
   update();
 }
 
+void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
+  available_streams = streams;
+}
+
 void CameraWidget::vipcThread() {
   std::unique_ptr<VisionIpcClient> vipc_client;
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || !vipc_client->connected) {
-      available_streams = VisionIpcClient::getAvailableStreams(stream_name, false);
-      if (available_streams.empty()) {
+      auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
+      if (streams.empty()) {
         QThread::msleep(100);
         continue;
       }
-    }
-
-    if (available_streams.count(requested_stream_type) == 0) {
-      if (available_streams.count(VISION_STREAM_ROAD)) {
-        requested_stream_type = VISION_STREAM_ROAD;
-      } else if (available_streams.count(VISION_STREAM_WIDE_ROAD)) {
-        requested_stream_type = VISION_STREAM_WIDE_ROAD;
-      } else {
-        qDebug() << "no valid vipc stream";
-        continue;
-      }
+      emit vipcAvailableStreamsUpdated(streams);
     }
 
     if (!vipc_client || vipc_client->type != requested_stream_type) {

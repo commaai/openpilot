@@ -208,6 +208,27 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     v_ego = sm["carState"].getCarState().getVEgoCluster();
     v_ego_cluster_seen = true;
   }
+  // Wide or narrow cam dependent on speed
+  bool wide_cam_only = available_streams.size() == 1 && available_streams.count(VISION_STREAM_WIDE_ROAD);
+  if ((v_ego < 10) || wide_cam_only) {
+    wide_cam_requested = true;
+  } else if (v_ego > 15) {
+    wide_cam_requested = false;
+  }
+  wide_cam_requested = wide_cam_requested && available_streams.count(VISION_STREAM_WIDE_ROAD);
+  wide_cam_requested = wide_cam_requested && cs.getExperimentalMode();
+  // for replay of old routes, never go to widecam
+  wide_cam_requested = wide_cam_requested && s.scene.calibration_wide_valid;
+  CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+
+  uiState()->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
+  if (s.scene.calibration_valid) {
+    auto calib = s.scene.wide_cam ? s.scene.view_from_wide_calib : s.scene.view_from_calib;
+    CameraWidget::updateCalibration(calib);
+  } else {
+    CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
+  }
+
   float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
   cur_speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
@@ -541,35 +562,8 @@ void AnnotatedCameraWidget::paintGL() {
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
 
   // draw camera frame
-  {
-    std::lock_guard lk(frame_lock);
-
-    if (frames.empty()) {
-      if (skip_frame_count > 0) {
-        skip_frame_count--;
-        qDebug() << "skipping frame, not ready";
-        return;
-      }
-    } else {
-      // skip drawing up to this many frames if we're
-      // missing camera frames. this smooths out the
-      // transitions from the narrow and wide cameras
-      skip_frame_count = 5;
-    }
-
-    // Wide or narrow cam dependent on speed
-    float v_ego = sm["carState"].getCarState().getVEgo();
-    CameraWidget::setStreamType(v_ego < 15 ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
-    if (s->scene.calibration_valid) {
-      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
-      CameraWidget::updateCalibration(calib);
-    } else {
-      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-    }
-    CameraWidget::setFrameId(model.getFrameId());
-    CameraWidget::paintGL();
-  }
+  CameraWidget::setFrameId(model.getFrameId());
+  CameraWidget::paintGL();
 
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
