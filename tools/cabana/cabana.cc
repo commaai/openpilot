@@ -6,6 +6,8 @@
 #include "tools/cabana/mainwin.h"
 
 int main(int argc, char *argv[]) {
+  QCoreApplication::setApplicationName("Cabana");
+  QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   initApp(argc, argv);
   QApplication app(argc, argv);
 
@@ -36,7 +38,7 @@ int main(int argc, char *argv[]) {
   int ret = 0;
   if (p.loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
     MainWindow w;
-    w.showMaximized();
+    w.show();
     ret = app.exec();
   }
   return ret;

@@ -411,7 +411,6 @@ def main(sm=None, pm=None, qc=None):
       if msg is None:
         # TODO: beautify this, locationd needs a valid message
         msg = messaging.new_message("gnssMeasurements")
-
       pm.send('gnssMeasurements', msg)
 
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
