@@ -31,7 +31,7 @@ class CarController:
 
     # **** Steering Controls ************************************************ #
 
-    if self.frame % self.CCP.HCA_STEP == 0:
+    if self.frame % self.CCP.STEER_STEP == 0:
       # Logic to avoid HCA state 4 "refused":
       #   * Don't steer unless HCA is in state 3 "ready" or 5 "active"
       #   * Don't steer at standstill
@@ -50,14 +50,14 @@ class CarController:
           self.hcaEnabledFrameCount = 0
         else:
           self.hcaEnabledFrameCount += 1
-          if self.hcaEnabledFrameCount >= 118 * (100 / self.CCP.HCA_STEP):  # 118s
+          if self.hcaEnabledFrameCount >= 118 * (100 / self.CCP.STEER_STEP):  # 118s
             hcaEnabled = False
             self.hcaEnabledFrameCount = 0
           else:
             hcaEnabled = True
             if self.apply_steer_last == apply_steer:
               self.hcaSameTorqueCount += 1
-              if self.hcaSameTorqueCount > 1.9 * (100 / self.CCP.HCA_STEP):  # 1.9s
+              if self.hcaSameTorqueCount > 1.9 * (100 / self.CCP.STEER_STEP):  # 1.9s
                 apply_steer -= (1, -1)[apply_steer < 0]
                 self.hcaSameTorqueCount = 0
             else:

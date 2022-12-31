@@ -1,12 +1,13 @@
 #include <QApplication>
-#include <QDir>
 #include <QCommandLineParser>
-#include <QUuid>
 
+#include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 
 int main(int argc, char *argv[]) {
+  QCoreApplication::setApplicationName("Cabana");
+  QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   initApp(argc, argv);
   QApplication app(argc, argv);
 
@@ -19,12 +20,6 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
 
-  QString uuid =  QUuid::createUuid().toString(QUuid::WithoutBraces);
-  QString msgq_path = "/dev/shm/" + uuid;
-
-  QDir dir;
-  dir.mkdir(msgq_path);
-  setenv("OPENPILOT_PREFIX", qPrintable(uuid), 1);
 
   QString route;
   const QStringList args = cmd_parser.positionalArguments();
@@ -40,12 +35,10 @@ int main(int argc, char *argv[]) {
     replay_flags |= REPLAY_FLAG_QCAMERA;
   }
 
+  OpenpilotPrefix op_prefix;
   CANMessages can_messages(&app);
   MainWindow w;
   w.showMaximized();
   w.loadRoute(route, cmd_parser.value("data_dir"), replay_flags);
-  int ret = app.exec();
-
-  dir.rmdir(msgq_path);
-  return ret;
+  return app.exec();
 }

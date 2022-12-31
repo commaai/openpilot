@@ -2,6 +2,7 @@
 
 #include <QComboBox>
 #include <QDialog>
+#include <QDockWidget>
 #include <QJsonDocument>
 #include <QMainWindow>
 #include <QProgressBar>
@@ -14,6 +15,7 @@
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
+#include "tools/cabana/tools/findsimilarbits.h"
 
 class DownloadProgressBar : public QProgressBar {
 public:
@@ -61,21 +63,23 @@ signals:
 
 protected:
   void createActions();
+  void createDockWindows();
+  QComboBox *createDBCSelector();
   void createStatusBar();
   void createShortcuts();
   void closeEvent(QCloseEvent *event) override;
+  void DBCFileChanged();
   void setOption();
+  void findSimilarBits();
 
   VideoWidget *video_widget;
+  QDockWidget *video_dock;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
-  QSplitter *splitter;
   QWidget *floating_window = nullptr;
   QVBoxLayout *r_layout;
   DownloadProgressBar *progress_bar;
-  QLabel *fingerprint_label;
-  ElidedLabel *route_label;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
 };

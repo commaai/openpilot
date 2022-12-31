@@ -4,10 +4,7 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QListWidget>
-#include <QGraphicsEllipseItem>
-#include <QGraphicsLineItem>
 #include <QGraphicsProxyWidget>
-#include <QGraphicsTextItem>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -23,13 +20,14 @@ class ChartView : public QChartView {
 
 public:
   ChartView(QWidget *parent = nullptr);
-  ~ChartView();
   void addSeries(const QString &msg_id, const Signal *sig);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
+  void setPlotAreaLeftPosition(int pos);
+  qreal getYAsixLabelWidth() const;
 
   struct SigItem {
     QString msg_id;
@@ -48,6 +46,7 @@ signals:
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
+  void axisYUpdated();
 
 private slots:
   void msgRemoved(uint32_t address);
@@ -62,7 +61,6 @@ private:
   void mouseMoveEvent(QMouseEvent *ev) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
-  void adjustChartMargins();
   void updateAxisY();
   void updateTitle();
   void updateFromSettings();
@@ -72,10 +70,7 @@ private:
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
-  QGraphicsItemGroup *item_group;
-  QGraphicsLineItem *track_line;
-  QGraphicsEllipseItem *track_ellipse;
-  QGraphicsTextItem *value_text;
+  QPointF track_pt;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   std::pair<double, double> events_range = {0, 0};
@@ -96,6 +91,7 @@ signals:
   void seriesChanged();
 
 private:
+  void alignCharts();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();

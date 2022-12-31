@@ -86,7 +86,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
   tab_widget->addTab(scroll, "&Msg");
-  history_log = new HistoryLog(this);
+  history_log = new LogsWidget(this);
   tab_widget->addTab(history_log, "&Logs");
   main_layout->addWidget(tab_widget);
 
@@ -108,6 +108,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
+  QObject::connect(history_log, &LogsWidget::openChart, [this](const QString &id, const Signal *sig) {
+    this->charts->showChart(id, sig, true, false);
+  });
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
     if (undo_stack->count() > 0)
       dbcMsgChanged();
@@ -343,4 +346,3 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
 
   setStyleSheet("QLabel{color:darkGray;}");
 }
-

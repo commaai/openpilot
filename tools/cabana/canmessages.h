@@ -1,12 +1,9 @@
 #pragma once
 
 #include <atomic>
-#include <deque>
-#include <mutex>
 
 #include <QColor>
 #include <QHash>
-#include <QList>
 
 #include "opendbc/can/common_dbc.h"
 #include "tools/cabana/settings.h"
@@ -23,21 +20,18 @@ class CANMessages : public QObject {
   Q_OBJECT
 
 public:
-  enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   void seekTo(double ts);
-  QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
   inline QString routeName() const { return replay->route()->name(); }
   inline QString carFingerprint() const { return replay->carFingerprint().c_str(); }
+  inline VisionStreamType visionStreamType() const { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
-  inline VisionStreamType visionStreamType() const { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
-  const std::deque<CanData> messages(const QString &id);
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
   inline const Route* route() const { return replay->route(); }
@@ -49,6 +43,7 @@ public:
 
 signals:
   void timelineUpdated();
+  void seekedTo(double sec);
   void streamStarted();
   void eventsMerged();
   void updated();
@@ -63,11 +58,9 @@ protected:
   void settingChanged();
 
   std::unique_ptr<Replay> replay = nullptr;
-  std::mutex lock;
   std::atomic<double> counters_begin_sec = 0;
   std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
-  QHash<QString, std::deque<CanData>> received_msgs;
 };
 
 inline QString toHex(const QByteArray &dat) {
