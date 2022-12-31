@@ -125,9 +125,7 @@ void ChartsWidget::showAllData() {
 }
 
 void ChartsWidget::updateToolBar() {
-  // TODO: 
-  // int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
-  int min_range = settings.max_chart_x_range;
+  int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
   bool displaying_all = max_chart_range != min_range;
   show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
   show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));

@@ -29,7 +29,7 @@ public:
   inline QString routeName() const { return replay->route()->name(); }
   inline QString carFingerprint() const { return replay->carFingerprint().c_str(); }
   inline VisionStreamType visionStreamType() const { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
-  inline double totalSeconds() const { return replay->totalSeconds(); }
+  inline double totalSeconds() const { return replay ? replay->totalSeconds() : 0; }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
