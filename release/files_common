@@ -435,6 +435,7 @@ third_party/snpe/dsp**
 third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
+third_party/acados/acados_template/**
 
 third_party/qt5/larch64/bin/**
 
