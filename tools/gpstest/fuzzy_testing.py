@@ -69,7 +69,7 @@ rc_p: Any = None
 def exec_remote_checker(lat, lon, duration, ip_addr):
   global rc_p
   # TODO: good enough for testing
-  remote_cmd =  "export PYTHONPATH=/data/pythonpath:/data/pythonpath/pyextra && "
+  remote_cmd =  "export PYTHONPATH=/data/pythonpath && "
   remote_cmd += "cd /data/openpilot && "
   remote_cmd += f"timeout {duration} /usr/local/pyenv/shims/python tools/gpstest/remote_checker.py "
   remote_cmd += f"{lat} {lon}"
