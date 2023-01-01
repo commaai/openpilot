@@ -408,6 +408,7 @@ selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
+third_party/.gitignore
 third_party/SConscript
 
 third_party/cluster/*
@@ -439,9 +440,6 @@ third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
-
-pyextra/.gitignore
-pyextra/acados_template/**
 
 rednose/.gitignore
 rednose/**
