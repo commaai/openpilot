@@ -326,7 +326,6 @@ system/camerad/SConscript
 system/camerad/main.cc
 
 system/camerad/snapshot/*
-system/camerad/include/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
