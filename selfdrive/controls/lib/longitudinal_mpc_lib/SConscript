@@ -51,7 +51,7 @@ generated_files = [
 ] + build_files
 
 acados_dir = '#third_party/acados'
-acados_templates_dir = '#pyextra/acados_template/c_templates_tera'
+acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
 
 source_list = ['long_mpc.py',
   f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
@@ -77,8 +77,8 @@ lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])
 
 # generate cython stuff
-acados_ocp_solver_pyx = File("#pyextra/acados_template/acados_ocp_solver_pyx.pyx")
-acados_ocp_solver_common = File("#pyextra/acados_template/acados_solver_common.pxd")
+acados_ocp_solver_pyx = File("#third_party/acados/acados_template/acados_ocp_solver_pyx.pyx")
+acados_ocp_solver_common = File("#third_party/acados/acados_template/acados_solver_common.pxd")
 libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
 libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
