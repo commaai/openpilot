@@ -98,7 +98,7 @@ CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool 
   qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
-  QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::BlockingQueuedConnection);
+  QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::QueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
 }
 
@@ -361,23 +361,21 @@ void CameraWidget::vipcThread() {
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || !vipc_client->connected) {
+    if (!vipc_client || vipc_client->type != requested_stream_type) {
+      clearFrames();
+      qDebug() << "connecting to stream " << requested_stream_type << ", was connected to " << (vipc_client ? vipc_client->type : -1);
+      vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, false));
+      active_stream_type = vipc_client->type;
+    }
+
+    if (!vipc_client->connected) {
       auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
       if (streams.empty()) {
         QThread::msleep(100);
         continue;
       }
       emit vipcAvailableStreamsUpdated(streams);
-    }
 
-    if (!vipc_client || vipc_client->type != requested_stream_type) {
-      qDebug() << "connecting to stream " << requested_stream_type << ", was connected to " << (vipc_client ? vipc_client->type : -1);
-      clearFrames();
-      vipc_client.reset(new VisionIpcClient(stream_name, requested_stream_type, false));
-    }
-    active_stream_type = vipc_client->type;
-
-    if (!vipc_client->connected) {
       clearFrames();
       if (!vipc_client->connect(false)) {
         QThread::msleep(100);
