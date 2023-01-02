@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from smbus2 import SMBus
 from collections import namedtuple
 
