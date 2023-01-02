@@ -26,6 +26,8 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
             (hw_type == cereal::PandaState::PandaType::DOS) ||
             (hw_type == cereal::PandaState::PandaType::TRES);
 
+  can_reset_communications();
+
   return;
 }
 
@@ -228,6 +230,10 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   receive_buffer_size += recv;
 
   return (recv <= 0) ? true : unpack_can_buffer(receive_buffer, receive_buffer_size, out_vec);
+}
+
+void Panda::can_reset_communications() {
+  handle->control_write(0xc0, 0, 0);
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_frame> &out_vec) {

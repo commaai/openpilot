@@ -81,6 +81,7 @@ public:
   void set_canfd_non_iso(uint16_t bus, bool non_iso);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
+  void can_reset_communications();
 
 protected:
   // for unit tests
