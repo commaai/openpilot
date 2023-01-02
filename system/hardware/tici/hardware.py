@@ -90,6 +90,7 @@ class Tici(HardwareBase):
     with open("/sys/firmware/devicetree/base/model") as f:
       model = f.read().strip('\x00')
     model = model.split('comma ')[-1]
+    # TODO: remove this with AGNOS 7+
     if model.startswith('Qualcomm'):
       model = 'tici'
     return model
