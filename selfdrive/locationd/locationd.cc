@@ -13,7 +13,6 @@ const double ACCEL_SANITY_CHECK = 100.0;  // m/s^2
 const double ROTATION_SANITY_CHECK = 10.0;  // rad/s
 const double TRANS_SANITY_CHECK = 200.0;  // m/s
 const double CALIB_RPY_SANITY_CHECK = 0.5; // rad (+- 30 deg)
-const double ALTITUDE_SANITY_CHECK = 10000; // m
 const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
