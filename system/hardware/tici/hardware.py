@@ -88,7 +88,7 @@ class Tici(HardwareBase):
   @cached_property
   def model(self):
     with open("/sys/firmware/devicetree/base/model") as f:
-      model = f.read().strip()
+      model = f.read().strip('\x00')
     model = model.split('comma ')[-1]
     if model.startswith('Qualcomm'):
       model = 'tici'
