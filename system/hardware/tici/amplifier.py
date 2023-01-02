@@ -122,13 +122,13 @@ class Amplifier:
   def set_global_shutdown(self, amp_disabled):
     self.set_config(AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000))
 
-  def initialize_configuration(self, platform):
+  def initialize_configuration(self, model):
     self.set_global_shutdown(amp_disabled=True)
 
     for config in BASE_CONFIG:
       self.set_config(config)
 
-    for config in CONFIGS[platform]:
+    for config in CONFIGS[model]:
       self.set_config(config)
 
     self.set_global_shutdown(amp_disabled=False)
