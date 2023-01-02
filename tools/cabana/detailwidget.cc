@@ -258,10 +258,10 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
 void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
   Signal s = *sig;
   updateSigSizeParamsFromRange(s, start_bit, size);
-  saveSignal(sig, s, "");
+  saveSignal(sig, s, std::nullopt);
 }
 
-void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig, const QString &val_desc) {
+void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig, std::optional<QString> val_desc) {
   auto msg = dbc()->msg(msg_id);
   if (new_sig.name != sig->name) {
     auto it = msg->sigs.find(new_sig.name.c_str());
@@ -278,7 +278,7 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig, const QS
     return;
   }
 
-  undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
+  undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig, val_desc));
 }
 
 void DetailWidget::removeSignal(const Signal *sig) {

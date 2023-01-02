@@ -66,10 +66,11 @@ void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name.c_str()); }
 
 // EditSignalCommand
 
-EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
-    : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
+EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, std::optional<QString> val_desc, QUndoCommand *parent)
+    : id(id), old_signal(*sig), new_signal(new_sig), new_val_desc(val_desc), QUndoCommand(parent) {
+  old_val_desc = dbc()->valDescription(sig);
   setText(QObject::tr("Edit signal %1").arg(old_signal.name.c_str()));
 }
 
-void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name.c_str(), old_signal); }
-void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name.c_str(), new_signal); }
+void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name.c_str(), old_signal, old_val_desc); }
+void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name.c_str(), new_signal, new_val_desc); }

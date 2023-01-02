@@ -39,7 +39,7 @@ private:
   void showTabBarContextMenu(const QPoint &pt);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int to);
-  void saveSignal(const Signal *sig, const Signal &new_sig, const QString &val_desc);
+  void saveSignal(const Signal *sig, const Signal &new_sig, std::optional<QString> val_desc);
   void removeSignal(const Signal *sig);
   void editMsg();
   void removeMsg();

@@ -52,7 +52,7 @@ private:
 
 class EditSignalCommand : public QUndoCommand {
 public:
-  EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent = nullptr);
+  EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, std::optional<QString> val_desc, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
@@ -60,4 +60,5 @@ private:
   const QString id;
   Signal old_signal = {};
   Signal new_signal = {};
+  std::optional<QString> old_val_desc, new_val_desc;
 };
