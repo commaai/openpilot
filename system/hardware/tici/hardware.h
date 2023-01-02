@@ -30,7 +30,7 @@ public:
 
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()) {
-      brightness_control << (percent * (int)(max/100.)) << "\n";
+      brightness_control << (int)(percent * (max/100.)) << "\n";
       brightness_control.close();
     }
   };
