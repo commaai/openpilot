@@ -283,6 +283,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cach
   start_time = time.monotonic()
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
+    print("NIKU: done parsing orbits")
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
     cloudlog.debug(f"Downloaded orbits ({sum([len(v) for v in astro_dog.orbits])}): {list(astro_dog.orbits.keys())}" +
                    f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in astro_dog.orbit_fetched_times._ranges]}")
@@ -385,7 +386,21 @@ def process_msg(laikad, gnss_msg, mono_time, block=False):
   return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
 
 
+def debug_log_cache():
+  def walk_through_files(path):
+    for (dirpath, _, filenames) in os.walk(path):
+      for filename in filenames:
+        yield os.path.join(dirpath, filename)
+
+  cloudlog.debug("dirwalk: /tmp/comma_download_cache")
+  for fname in walk_through_files("/tmp/comma_download_cache"):
+    cloudlog.debug(fname)
+
+
 def main(sm=None, pm=None, qc=None):
+  # TODO: remove when not needed anymore
+  debug_log_cache()
+
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom or (qc is not None and qc):
     raw_gnss_socket = "qcomGnss"
