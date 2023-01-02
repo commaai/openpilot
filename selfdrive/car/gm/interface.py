@@ -4,7 +4,7 @@ from math import fabs
 from panda import Panda
 
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -44,8 +44,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
@@ -98,7 +97,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     # Some GMs need some tolerance above 10 kph to avoid a fault
@@ -171,7 +170,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
+    elif candidate == CAR.BOLT_EUV:
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
@@ -195,10 +194,6 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
@@ -211,17 +206,20 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      be = create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)
+      buttonEvents = [create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)]
+      # Handle ACCButtons changing buttons mid-press
+      if self.CS.cruise_buttons != CruiseButtons.UNPRESS and self.CS.prev_cruise_buttons != CruiseButtons.UNPRESS:
+        buttonEvents.append(create_button_event(CruiseButtons.UNPRESS, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS))
 
-      # Suppress resume button if we're resuming from stop so we don't adjust speed.
-      if be.type == ButtonType.accelCruise and (ret.cruiseState.enabled and ret.standstill):
-        be.type = ButtonType.unknown
+      ret.buttonEvents = buttonEvents
 
-      ret.buttonEvents = [be]
-
+    # The ECM allows enabling on falling edge of set, but only rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
-                                       pcm_enable=self.CP.pcmCruise)
+                                       pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
+    if not self.CP.pcmCruise:
+      if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
+        events.add(EventName.buttonEnable)
 
     # Enabling at a standstill with brake is allowed
     # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs

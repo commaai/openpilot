@@ -6,7 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import HyundaiFlags, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -32,7 +32,6 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
 
     self.is_metric = False
-    self.brake_error = False
     self.buttons_counter = 0
 
     self.cruise_info = {}
@@ -72,8 +71,10 @@ class CarState(CarStateBase):
       self.cluster_speed = cp.vl["CLU15"]["CF_Clu_VehicleSpeed"]
       self.cluster_speed_counter = 0
 
-      # mimic how dash converts to imperial
-      if not self.is_metric:
+      # Mimic how dash converts to imperial.
+      # Sorento is the only platform where CF_Clu_VehicleSpeed is already imperial when not is_metric
+      # TODO: CGW_USM1->CF_Gway_DrLockSoundRValue may describe this
+      if not self.is_metric and self.CP.carFingerprint not in (CAR.KIA_SORENTO,):
         self.cluster_speed = math.floor(self.cluster_speed * CV.KPH_TO_MPH + CV.KPH_TO_MPH)
 
     ret.vEgoCluster = self.cluster_speed * speed_conv
@@ -103,8 +104,9 @@ class CarState(CarStateBase):
     # TODO: Find brake pressure
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
-    ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
+    ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2  # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
+    ret.accFaulted = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if self.CP.carFingerprint in HYBRID_CAR:
@@ -145,7 +147,6 @@ class CarState(CarStateBase):
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
-    self.brake_error = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
     self.prev_cruise_buttons = self.cruise_buttons[-1]
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
@@ -187,7 +188,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["STEERING_SENSORS"]["STEERING_ANGLE"] * -1
     ret.steeringTorque = cp.vl["MDPS"]["STEERING_COL_TORQUE"]
     ret.steeringTorqueEps = cp.vl["MDPS"]["STEERING_OUT_TORQUE"]
-    ret.steeringPressed = abs(ret.steeringTorque) > self.params.STEER_THRESHOLD
+    ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
@@ -197,10 +198,10 @@ class CarState(CarStateBase):
       ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FR_INDICATOR"] != 0
 
     ret.cruiseState.available = True
-    self.is_metric = cp.vl["CLUSTER_INFO"]["DISTANCE_UNIT"] != 1
+    self.is_metric = cp.vl["CRUISE_BUTTONS_ALT"]["DISTANCE_UNIT"] != 1
     if not self.CP.openpilotLongitudinalControl:
       speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
-      cp_cruise_info = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+      cp_cruise_info = cp_cam if self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC else cp
       ret.cruiseState.speed = cp_cruise_info.vl["SCC_CONTROL"]["VSetDis"] * speed_factor
       ret.cruiseState.standstill = cp_cruise_info.vl["SCC_CONTROL"]["CRUISE_STANDSTILL"] == 1
       ret.cruiseState.enabled = cp_cruise_info.vl["SCC_CONTROL"]["ACCMode"] in (1, 2)
@@ -211,6 +212,7 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all[cruise_btn_msg]["CRUISE_BUTTONS"])
     self.main_buttons.extend(cp.vl_all[cruise_btn_msg]["ADAPTIVE_CRUISE_MAIN_BTN"])
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
+    ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
@@ -432,12 +434,12 @@ class CarState(CarStateBase):
       ("LKA_FAULT", "MDPS"),
 
       ("DriverBraking", "TCS"),
+      ("ACCEnable", "TCS"),
 
       ("COUNTER", cruise_btn_msg),
       ("CRUISE_BUTTONS", cruise_btn_msg),
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
-
-      ("DISTANCE_UNIT", "CLUSTER_INFO"),
+      ("DISTANCE_UNIT", "CRUISE_BUTTONS_ALT"),
 
       ("LEFT_LAMP", "BLINKERS"),
       ("RIGHT_LAMP", "BLINKERS"),
@@ -452,11 +454,13 @@ class CarState(CarStateBase):
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("TCS", 50),
-      (cruise_btn_msg, 50),
-      ("CLUSTER_INFO", 4),
+      ("CRUISE_BUTTONS_ALT", 50),
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
+
+    if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
+      checks.append(("CRUISE_BUTTONS", 50))
 
     if CP.enableBsm:
       signals += [
@@ -467,7 +471,7 @@ class CarState(CarStateBase):
         ("BLINDSPOTS_REAR_CORNERS", 20),
       ]
 
-    if CP.flags & HyundaiFlags.CANFD_HDA2 and not CP.openpilotLongitudinalControl:
+    if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and not CP.openpilotLongitudinalControl:
       signals += [
         ("ACCMode", "SCC_CONTROL"),
         ("VSetDis", "SCC_CONTROL"),
@@ -504,11 +508,13 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
+    signals = []
+    checks = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
-      signals = [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
-      checks = [("CAM_0x2a4", 20)]
-    else:
-      signals = [
+      signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks += [("CAM_0x2a4", 20)]
+    elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
+      signals += [
         ("COUNTER", "SCC_CONTROL"),
         ("NEW_SIGNAL_1", "SCC_CONTROL"),
         ("MainMode_ACC", "SCC_CONTROL"),
@@ -521,7 +527,7 @@ class CarState(CarStateBase):
         ("VSetDis", "SCC_CONTROL"),
       ]
 
-      checks = [
+      checks += [
         ("SCC_CONTROL", 50),
       ]
 

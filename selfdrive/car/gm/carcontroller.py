@@ -53,7 +53,7 @@ class CarController:
     init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
     steer_step = self.params.INACTIVE_STEER_STEP
     if CC.latActive or init_lka_counter:
-      steer_step = self.params.ACTIVE_STEER_STEP
+      steer_step = self.params.STEER_STEP
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
@@ -158,6 +158,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
+    new_actuators.steerOutputCan = self.apply_steer_last
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake
 

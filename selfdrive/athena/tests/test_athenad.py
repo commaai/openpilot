@@ -8,6 +8,7 @@ import time
 import threading
 import queue
 import unittest
+from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -226,7 +227,7 @@ class TestAthenadMethods(unittest.TestCase):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
-    item_no_retry = item._replace(retry_count=MAX_RETRY_COUNT)
+    item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
@@ -296,7 +297,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(len(items), 0)
 
   @with_http_server
-  def test_listUploadQueueCurrent(self, host):
+  def test_listUploadQueueCurrent(self, host: str):
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
@@ -321,7 +322,7 @@ class TestAthenadMethods(unittest.TestCase):
 
     items = dispatcher["listUploadQueue"]()
     self.assertEqual(len(items), 1)
-    self.assertDictEqual(items[0], item._asdict())
+    self.assertDictEqual(items[0], asdict(item))
     self.assertFalse(items[0]['current'])
 
     athenad.cancelled_uploads.add(item.id)
@@ -346,7 +347,7 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.UploadQueueCache.initialize(athenad.upload_queue)
 
     self.assertEqual(athenad.upload_queue.qsize(), 1)
-    self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item1._asdict())
+    self.assertDictEqual(asdict(athenad.upload_queue.queue[-1]), asdict(item1))
 
   @mock.patch('selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
@@ -416,6 +417,7 @@ class TestAthenadMethods(unittest.TestCase):
     # ensure the list is all logs except most recent
     sl = athenad.get_logs_to_send_sorted()
     self.assertListEqual(sl, fl[:-1])
+
 
 if __name__ == '__main__':
   unittest.main()

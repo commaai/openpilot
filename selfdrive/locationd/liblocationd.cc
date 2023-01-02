@@ -26,4 +26,16 @@ extern "C" {
     memcpy(std_buff, stdev.data(), sizeof(double) * stdev.size());
   }
 
+  bool is_gps_ok(Localizer *localizer){
+    return localizer->is_gps_ok();
+  }
+
+  bool are_inputs_ok(Localizer *localizer){
+    return localizer->are_inputs_ok();
+  }
+
+  void observation_timings_invalid_reset(Localizer *localizer){
+    localizer->observation_timings_invalid_reset();
+  }
+
 }

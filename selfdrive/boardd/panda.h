@@ -11,20 +11,16 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
+#include "panda/board/can_definitions.h"
 #include "selfdrive/boardd/panda_comms.h"
-
-
-#define PANDA_CAN_CNT 3
-#define PANDA_BUS_CNT 4
 
 #define USB_TX_SOFT_LIMIT   (0x100U)
 #define USBPACKET_MAX_SIZE  (0x40)
 
 #define RECV_SIZE (0x4000U)
-#define CANPACKET_HEAD_SIZE 5U
-#define CANPACKET_MAX_SIZE  72U
-#define CANPACKET_REJECTED  (0xC0U)
-#define CANPACKET_RETURNED  (0x80U)
+
+#define CAN_REJECTED_BUS_OFFSET   0xC0U
+#define CAN_RETURNED_BUS_OFFSET 0x80U
 
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
@@ -47,7 +43,6 @@ struct can_frame {
 class Panda {
 private:
   std::unique_ptr<PandaCommsHandle> handle;
-  std::vector<uint8_t> recv_buf;
 
 public:
   Panda(std::string serial="", uint32_t bus_offset=0);

@@ -20,7 +20,7 @@ from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad_helpers import calc_pos_fix_gauss_newton, get_posfix_sympy_fun
+from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates
@@ -58,9 +58,9 @@ class Laikad:
     self.load_cache()
 
     self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
-    self.last_pos_fix = []
-    self.last_pos_residual = []
-    self.last_pos_fix_t = None
+    self.velfix_function = get_velfix_sympy_func()
+    self.last_fix_pos = None
+    self.last_fix_t = None
     self.gps_week = None
     self.use_qcom = use_qcom
 
@@ -92,20 +92,23 @@ class Laikad:
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
 
-  def get_est_pos(self, t, processed_measurements):
-    if self.last_pos_fix_t is None or abs(self.last_pos_fix_t - t) >= 2:
-      min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in processed_measurements) else 5
-      pos_fix, pos_fix_residual = calc_pos_fix_gauss_newton(processed_measurements, self.posfix_functions, min_measurements=min_measurements)
-      if len(pos_fix) > 0:
-        self.last_pos_fix_t = t
-        residual_median = np.median(np.abs(pos_fix_residual))
-        if np.median(np.abs(pos_fix_residual)) < POS_FIX_RESIDUAL_THRESHOLD:
-          cloudlog.debug(f"Pos fix is within threshold with median: {residual_median.round()}")
-          self.last_pos_fix = pos_fix[:3]
-          self.last_pos_residual = pos_fix_residual
-        else:
-          cloudlog.debug(f"Pos fix failed with median: {residual_median.round()}. All residuals: {np.round(pos_fix_residual)}")
-    return self.last_pos_fix
+  def get_lsq_fix(self, t, measurements):
+    if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
+      min_measurements = 6 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 5
+      position_solution, pr_residuals = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
+
+      if len(position_solution) < 3:
+        return None
+      position_estimate = position_solution[:3]
+      #TODO median abs residual is decent estimate of std, can be improved with measurements stds and/or DOP
+      position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
+      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
+      if len(velocity_solution) < 3:
+        return None
+
+      velocity_estimate = velocity_solution[:3]
+      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(3)
+      return position_estimate, position_std, velocity_estimate, velocity_std
 
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
@@ -148,11 +151,36 @@ class Laikad:
     self.astro_dog.add_navs({ephem.prn: [ephem]})
     self.cache_ephemeris(t=ephem.epoch)
 
-  def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
-    if self.is_good_report(gnss_msg):
-      week, tow, new_meas = self.read_report(gnss_msg)
-      self.gps_week = week
+  def process_report(self, new_meas, t):
+    # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
+    new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
+    processed_measurements = process_measurements(new_meas, self.astro_dog)
 
+    instant_fix = self.get_lsq_fix(t, processed_measurements)
+    if instant_fix is None:
+      return None
+    else:
+      position_estimate, position_std, velocity_estimate, velocity_std = instant_fix
+      self.last_fix_t = t
+      self.last_fix_pos = position_estimate
+      self.lat_fix_pos_std = position_std
+
+    corrected_measurements = correct_measurements(processed_measurements, position_estimate, self.astro_dog)
+    if (t*1e9) % 10 == 0:
+      cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
+    return position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, processed_measurements
+
+  def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
+    if self.is_ephemeris(gnss_msg):
+      self.read_ephemeris(gnss_msg)
+      return None
+    elif self.is_good_report(gnss_msg):
+
+      week, tow, new_meas = self.read_report(gnss_msg)
+      if len(new_meas) == 0:
+        return None
+
+      self.gps_week = week
       t = gnss_mono_time * 1e-9
       if week > 0:
         self.got_first_gnss_msg = True
@@ -160,43 +188,38 @@ class Laikad:
         if self.auto_fetch_orbits:
           self.fetch_orbits(latest_msg_t, block)
 
-      # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
-      new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
+      output = self.process_report(new_meas, t)
+      if output is None:
+        return None
+      position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
-      processed_measurements = process_measurements(new_meas, self.astro_dog)
-      est_pos = self.get_est_pos(t, processed_measurements)
-
-      corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog) if len(est_pos) > 0 else []
-      if gnss_mono_time % 10 == 0:
-        cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
-
-      self.update_localizer(est_pos, t, corrected_measurements)
-      kf_valid = all(self.kf_valid(t))
-      ecef_pos = self.gnss_kf.x[GStates.ECEF_POS]
-      ecef_vel = self.gnss_kf.x[GStates.ECEF_VELOCITY]
-
-      p = self.gnss_kf.P.diagonal()
-      pos_std = np.sqrt(p[GStates.ECEF_POS])
-      vel_std = np.sqrt(p[GStates.ECEF_VELOCITY])
-
+      self.update_localizer(position_estimate, t, corrected_measurements)
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
-      dat = messaging.new_message("gnssMeasurements")
+      msg = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
-      dat.gnssMeasurements = {
+
+      P_diag = self.gnss_kf.P.diagonal()
+      kf_valid = all(self.kf_valid(t))
+      msg.gnssMeasurements = {
         "gpsWeek": week,
         "gpsTimeOfWeek": tow,
-        "positionECEF": measurement_msg(value=ecef_pos.tolist(), std=pos_std.tolist(), valid=kf_valid),
-        "velocityECEF": measurement_msg(value=ecef_vel.tolist(), std=vel_std.tolist(), valid=kf_valid),
-        "positionFixECEF": measurement_msg(value=self.last_pos_fix, std=self.last_pos_residual, valid=self.last_pos_fix_t == t),
-        "ubloxMonoTime": gnss_mono_time,
+        "kalmanPositionECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
+                                        std=np.sqrt(P_diag[GStates.ECEF_POS]).tolist(),
+                                        valid=kf_valid),
+        "kalmanVelocityECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist(),
+                                        std=np.sqrt(P_diag[GStates.ECEF_VELOCITY]).tolist(),
+                                        valid=kf_valid),
+        "positionECEF": measurement_msg(value=position_estimate, std=position_std.tolist(), valid=bool(self.last_fix_t == t)),
+        "velocityECEF": measurement_msg(value=velocity_estimate, std=velocity_std.tolist(), valid=bool(self.last_fix_t == t)),
+
+        "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
-      return dat
-    elif self.is_ephemeris(gnss_msg):
-      self.read_ephemeris(gnss_msg)
+      return msg
 
     #elif gnss_msg.which() == 'ionoData':
-    # todo add this. Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
+    # TODO: add this, Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
+
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
@@ -348,9 +371,23 @@ class EphemerisSourceType(IntEnum):
   qcom = 3
 
 
-def main(sm=None, pm=None):
+def process_msg(laikad, gnss_msg, mono_time, block=False):
+  # TODO: Understand and use remaining unknown constellations
+  if gnss_msg.which() == "drMeasurementReport":
+    if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
+      return None
+
+    if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
+      # gpsWeek 65535 is received rarely from quectel, this cannot be
+      # passed to GnssMeasurements's gpsWeek (Int16)
+      return None
+
+  return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
+
+
+def main(sm=None, pm=None, qc=None):
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
-  if use_qcom:
+  if use_qcom or (qc is not None and qc):
     raw_gnss_socket = "qcomGnss"
   else:
     raw_gnss_socket = "ubloxGnss"
@@ -370,19 +407,13 @@ def main(sm=None, pm=None):
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
 
-      # TODO: Understand and use remaining unknown constellations
-      if gnss_msg.which() == "drMeasurementReport":
-        if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
-          continue
+      msg = process_msg(laikad, gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
+      if msg is None:
+        msg = messaging.new_message("gnssMeasurements")
+        msg.valid = False
 
-        if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
-          # gpsWeek 65535 is received rarely from quectel, this cannot be
-          # passed to GnssMeasurements's gpsWeek (Int16)
-          continue
+      pm.send('gnssMeasurements', msg)
 
-      msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], block=replay)
-      if msg is not None:
-        pm.send('gnssMeasurements', msg)
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
