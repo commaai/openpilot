@@ -395,15 +395,22 @@ class Tici(HardwareBase):
 
   def set_screen_brightness(self, percentage):
     try:
+      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+        max_brightness = float(f.read().strip())
+
+      val = int(percentage * (max_brightness / 100.))
       with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
-        f.write(str(int(percentage * 10.23)))
+        f.write(str(val))
     except Exception:
       pass
 
   def get_screen_brightness(self):
     try:
+      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+        max_brightness = float(f.read().strip())
+
       with open("/sys/class/backlight/panel0-backlight/brightness") as f:
-        return int(float(f.read()) / 10.23)
+        return int(float(f.read()) / (max_brightness / 100.))
     except Exception:
       return 0
 
