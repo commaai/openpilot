@@ -51,10 +51,9 @@ signals:
 
 private:
   void initMsgMap();
-  void afterOpen();
   DBC *dbc = nullptr;
   std::map<uint32_t, DBCMsg> msgs;
-  std::unordered_map<const Signal*, QString> val_map;
+  std::unordered_map<const Signal*, QString> val_desc_map;
 };
 
 // TODO: Add helper function in dbc.h

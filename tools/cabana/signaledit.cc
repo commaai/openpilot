@@ -57,6 +57,7 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   QObject::connect(name, &QLineEdit::textEdited, this, &SignalForm::changed);
   QObject::connect(factor, &QLineEdit::textEdited, this, &SignalForm::changed);
   QObject::connect(offset, &QLineEdit::textEdited, this, &SignalForm::changed);
+  QObject::connect(val_desc, &QLineEdit::textEdited, this, &SignalForm::changed);
   QObject::connect(sign, SIGNAL(activated(int)), SIGNAL(changed()));
   QObject::connect(endianness, SIGNAL(activated(int)), SIGNAL(changed()));
   QObject::connect(size, SIGNAL(valueChanged(int)), SIGNAL(changed()));
@@ -160,8 +161,9 @@ void SignalEdit::saveSignal() {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-  if (s != *sig)
+  if (s != *sig || form->val_desc->text() != dbc()->valDescription(sig)) {
     emit save(this->sig, s, form->val_desc->text());
+  }
 }
 
 void SignalEdit::setChartOpened(bool opened) {

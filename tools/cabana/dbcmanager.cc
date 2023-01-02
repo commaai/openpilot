@@ -28,15 +28,16 @@ void DBCManager::initMsgMap() {
     for (auto &s : msg.sigs)
       m.sigs[QString::fromStdString(s.name)] = s;
   }
-  val_map.clear();
-  for (auto &val : dbc->vals) {
-    if (auto m = msg(val.address)) {
-      auto it = m->sigs.find(QString::fromStdString(val.name));
+
+  val_desc_map.clear();
+  for (auto &val_desc : dbc->vals) {
+    if (auto m = msg(val_desc.address)) {
+      auto it = m->sigs.find(QString::fromStdString(val_desc.name));
       if (it != m->sigs.end()) {
-        QStringList list = QString::fromStdString(val.def_val).split(' ');
+        QStringList list = QString::fromStdString(val_desc.def_val).split(' ');
         for (int i = 1; i < list.size(); i += 2)
           list[i] = '"' + list[i].replace('_', ' ').toLower() + '"';
-        val_map[&(it->second)] = list.join(' ');
+        val_desc_map[&(it->second)] = list.join(' ');
       }
     }
   }
@@ -57,7 +58,7 @@ QString DBCManager::generateDBC() {
                         .arg(sig.factor, 0, 'g', std::numeric_limits<double>::digits10)
                         .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10);
 
-      if (auto it = val_map.find(&sig); it != val_map.end()) {
+      if (auto it = val_desc_map.find(&sig); it != val_desc_map.end()) {
         val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig.name.c_str()).arg(it->second);
       }
     }
@@ -98,6 +99,7 @@ void DBCManager::updateSignal(const QString &id, const QString &sig_name, const 
     auto &s = m->sigs[new_name];
     s = sig;
     if (val_desc) {
+      val_desc_map[&s] = *val_desc;
     }
     emit signalUpdated(&s);
   }
@@ -114,8 +116,8 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
 }
 
 QString DBCManager::valDescription(const Signal *sig) {
-  auto it = val_map.find(sig);
-  return it != val_map.end() ? it->second : "";
+  auto it = val_desc_map.find(sig);
+  return it != val_desc_map.end() ? it->second : "";
 }
 
 std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
