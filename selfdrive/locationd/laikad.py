@@ -392,7 +392,7 @@ def debug_log_cache():
       for filename in filenames:
         yield os.path.join(dirpath, filename)
 
-  cloudlog.debug("dirwalk: /tmp/comma_download_cache")
+  cloudlog.debug("CacheFolder: /tmp/comma_download_cache")
   for fname in walk_through_files("/tmp/comma_download_cache"):
     cloudlog.debug(fname)
 
