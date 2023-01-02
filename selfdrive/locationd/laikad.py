@@ -416,6 +416,8 @@ def main(sm=None, pm=None, qc=None):
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_orbits=use_internet, use_qcom=use_qcom)
 
+  log_done = False
+
   while True:
     sm.update()
 
@@ -433,6 +435,10 @@ def main(sm=None, pm=None, qc=None):
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
       if laikad.auto_fetch_orbits:
         laikad.fetch_orbits(t, block=replay)
+
+    if log_done:
+      debug_log_cache()
+      log_done = True
 
 
 if __name__ == "__main__":
