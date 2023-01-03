@@ -31,6 +31,7 @@ bool Route::load() {
     rInfo("invalid route format");
     return false;
   }
+  date_time_ = QDateTime::fromString(route_.timestamp, "yyyy-MM-dd--HH-mm-ss");
   return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
 }
 
