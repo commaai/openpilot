@@ -283,7 +283,6 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cach
   start_time = time.monotonic()
   try:
     astro_dog.get_orbit_data(t, only_predictions=True)
-    print("NIKU: done parsing orbits")
     cloudlog.info(f"Done parsing orbits. Took {time.monotonic() - start_time:.1f}s")
     cloudlog.debug(f"Downloaded orbits ({sum([len(v) for v in astro_dog.orbits])}): {list(astro_dog.orbits.keys())}" +
                    f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in astro_dog.orbit_fetched_times._ranges]}")
