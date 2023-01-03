@@ -13,6 +13,7 @@ const double ACCEL_SANITY_CHECK = 100.0;  // m/s^2
 const double ROTATION_SANITY_CHECK = 10.0;  // rad/s
 const double TRANS_SANITY_CHECK = 200.0;  // m/s
 const double CALIB_RPY_SANITY_CHECK = 0.5; // rad (+- 30 deg)
+const double ALTITUDE_SANITY_CHECK = 10000; // m
 const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
@@ -294,6 +295,68 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
+void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset) {
+  // ignore the message if the fix is invalid
+  bool gps_invalid_flag = (log.getFlags() % 2 == 0);
+  bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
+  bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
+  bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
+  bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
+
+  // quectel gps verticalAccuracy is clipped to 500
+  bool gps_accuracy_insane_quectel = false;
+  if (!ublox_available) {
+    gps_accuracy_insane_quectel = log.getVerticalAccuracy() == 500;
+  }
+
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
+    //this->gps_valid = false;
+    this->determine_gps_mode(current_time);
+    return;
+  }
+
+  double sensor_time = current_time - sensor_time_offset;
+
+  // Process message
+  //this->gps_valid = true;
+  this->gps_mode = true;
+  Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
+  this->converter = std::make_unique<LocalCoord>(geodetic);
+
+  VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
+  VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
+  MatrixXdr ecef_pos_R = Vector3d::Constant(std::pow(GPS_MUL_FACTOR * log.getAccuracy(),2) + std::pow(GPS_MUL_FACTOR * log.getVerticalAccuracy(),2)).asDiagonal();
+  MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(GPS_MUL_FACTOR * log.getSpeedAccuracy(), 2)).asDiagonal();
+
+  this->unix_timestamp_millis = log.getUnixTimestampMillis();
+  double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
+
+  VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
+  VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
+  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
+  VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
+  for (int i = 0; i < orientation_error.size(); i++) {
+    orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
+    if (orientation_error(i) < 0.0) {
+      orientation_error(i) += 2.0 * M_PI;
+    }
+    orientation_error(i) -= M_PI;
+  }
+  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
+
+  if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
+    LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
+    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
+    this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+  } else if (gps_est_error > 100.0) {
+    LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
+    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
+  }
+
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
+  this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+}
+
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
   if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
@@ -524,6 +587,10 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_sensor(t, log.getAccelerometer());
   } else if (log.isGyroscope()) {
     this->handle_sensor(t, log.getGyroscope());
+  //} else if (log.isGpsLocation()) {
+  //  this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
+  //} else if (log.isGpsLocationExternal()) {
+  //  this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
   } else if (log.isGnssMeasurements()) {
     this->handle_gnss(t, log.getGnssMeasurements());
   } else if (log.isCarState()) {
