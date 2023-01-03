@@ -122,6 +122,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
     ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+    ToyotaCarInfo("Toyota Corolla Hatchback 6MT 2019-22", video_link="https://youtu.be/ITxknEpp9R8"),
   ],
   CAR.COROLLAH_TSS2: [
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
@@ -750,6 +751,7 @@ FW_VERSIONS = {
       b'\x018966312S7000\x00\x00\x00\x00',
       b'\x018966312W3000\x00\x00\x00\x00',
       b'\x018966312W9000\x00\x00\x00\x00',
+      b'\x018966312X0000\x00\x00\x00\x00',
       b'\x01896637644000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
