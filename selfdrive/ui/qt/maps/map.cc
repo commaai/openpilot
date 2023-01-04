@@ -221,7 +221,6 @@ void MapWindow::updateState(const UIState &s) {
         emit instructionsChanged(i);
       }
     } else {
-      m_map->setPitch(MIN_PITCH);
       clearRoute();
     }
   }
@@ -276,6 +275,7 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
+    update_destination_marker();
   }
 
   map_instructions->hideIfNoError();
