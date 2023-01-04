@@ -122,7 +122,6 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
     ToyotaCarInfo("Toyota Corolla Cross (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
-    ToyotaCarInfo("Toyota Corolla Hatchback 6MT 2019-22", video_link="https://youtu.be/ITxknEpp9R8"),
   ],
   CAR.COROLLAH_TSS2: [
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
