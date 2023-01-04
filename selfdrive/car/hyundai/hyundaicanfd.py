@@ -83,6 +83,7 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
     "aReqRaw": a_raw,
     "VSetDis": set_speed,
     "JerkLowerLimit": jerk if enabled else 1,
+    "JerkUpperLimit": 3.0,
 
     "ACC_ObjDist": 1,
     "ObjValid": 0,
@@ -90,7 +91,6 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
     "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
-    "NEW_SIGNAL_10": 4,
     "DISTANCE_SETTING": 4,
   }
 
