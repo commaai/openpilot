@@ -6,6 +6,7 @@ Version 0.9.1 (2022-12-XX)
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
 * Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support
+* Kia Sorento 2022-23 support thanks to sunnyhaibin!
 * Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
 
 Version 0.9.0 (2022-11-21)
