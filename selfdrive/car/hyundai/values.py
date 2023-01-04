@@ -212,7 +212,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Sorento 2019", video_link="https://www.youtube.com/watch?v=Fkh3s6WHJz8", harness=Harness.hyundai_e),
   ],
   CAR.KIA_SORENTO_4TH_GEN: [
-    HyundaiCarInfo("Kia Sorento 2022-23", harness=Harness.hyundai_n),
+    HyundaiCarInfo("Kia Sorento 2022-23", harness=Harness.hyundai_k),
   ],
   CAR.KIA_SORENTO_PHEV_4TH_GEN: HyundaiCarInfo("Kia Sorento Plug-in Hybrid 2022-23", "Smart Cruise Control (SCC)", harness=Harness.hyundai_a),
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: HyundaiCarInfo("Kia Sportage Hybrid 2023", harness=Harness.hyundai_n),
