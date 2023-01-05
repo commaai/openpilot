@@ -512,6 +512,7 @@ FW_VERSIONS = {
       b'HM6M1_0a0_G20',
       b'HM6M2_0a0_BD0',
       b'\xf1\x8739110-2S278\xf1\x82DNDVD5GMCCXXXL5B',
+      b'\xf1\x8739110-2S041\xf1\x81HM6M1_0a0_M00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
