@@ -51,7 +51,6 @@ private:
   QVBoxLayout *signals_layout;
   QTabBar *tabbar;
   QTabWidget *tab_widget;
-  QToolBar *toolbar;
   QAction *remove_msg_act;
   LogsWidget *history_log;
   BinaryView *binary_view;

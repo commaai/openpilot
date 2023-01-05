@@ -35,7 +35,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   title_frame->setFrameShape(QFrame::StyledPanel);
 
   // message title
-  toolbar = new QToolBar(this);
+  QToolBar *toolbar = new QToolBar(this);
   toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -48,7 +48,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   toolbar->addAction("🖍", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
   remove_msg_act = toolbar->addAction("X", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
-  toolbar->setVisible(false);
   frame_layout->addWidget(toolbar);
 
   // warning
@@ -190,7 +189,6 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   for (/**/; i < signal_list.size(); ++i)
     signal_list[i]->hide();
 
-  toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
