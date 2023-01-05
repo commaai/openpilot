@@ -24478,7 +24478,7 @@ typedef struct
    ((INSTANCE) == TIM23)   || \
    ((INSTANCE) == TIM24))
 
-/****************** TIM Instances : supporting internal trigger inputs(ITRX) *******/
+/****************** TIM Instances : supporting internal trigger inputstr(ITRX) *******/
 #define IS_TIM_CLOCKSOURCE_ITRX_INSTANCE(INSTANCE)\
   (((INSTANCE) == TIM1)    || \
    ((INSTANCE) == TIM2)    || \

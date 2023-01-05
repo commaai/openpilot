@@ -27,6 +27,7 @@
 #define FAULT_INTERRUPT_RATE_TICK           (1U << 21)
 #define FAULT_INTERRUPT_RATE_EXTI           (1U << 22)
 #define FAULT_INTERRUPT_RATE_SPI            (1U << 23)
+#define FAULT_INTERRUPT_RATE_UART_7         (1U << 24)
 
 // Permanent faults
 #define PERMANENT_FAULTS 0U
@@ -37,10 +38,10 @@ uint32_t faults = 0U;
 void fault_occurred(uint32_t fault) {
   faults |= fault;
   if((PERMANENT_FAULTS & fault) != 0U){
-    puts("Permanent fault occurred: 0x"); puth(fault); puts("\n");
+    print("Permanent fault occurred: 0x"); puth(fault); print("\n");
     fault_status = FAULT_STATUS_PERMANENT;
   } else {
-    puts("Temporary fault occurred: 0x"); puth(fault); puts("\n");
+    print("Temporary fault occurred: 0x"); puth(fault); print("\n");
     fault_status = FAULT_STATUS_TEMPORARY;
   }
 }
@@ -49,6 +50,6 @@ void fault_recovered(uint32_t fault) {
   if((PERMANENT_FAULTS & fault) == 0U){
     faults &= ~fault;
   } else {
-    puts("Cannot recover from a permanent fault!\n");
+    print("Cannot recover from a permanent fault!\n");
   }
 }

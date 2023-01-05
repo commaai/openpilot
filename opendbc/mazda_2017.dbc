@@ -352,12 +352,10 @@ BO_ 130 STEER: 8 XXX
  SG_ CHKSUM_MAYBE : 39|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 120 BRAKE: 8 XXX
- SG_ NEW_SIGNAL_1 : 7|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_2 : 15|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_3 : 23|8@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 31|8@0+ (1,0) [0|255] "" XXX
  SG_ CTR : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ BRAKE_PRESSURE : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ VEHICLE_ACC_X : 5|13@0+ (0.01,-40) [-40|40] "m/s^2" XXX
+ SG_ VEHICLE_ACC_Y : 8|13@0+ (0.001,-4.096) [-4.096|4.096] "m/s^2" XXX
 
 BO_ 304 GEAR_RELATED: 8 XXX
  SG_ NEW_SIGNAL_1 : 55|8@0+ (1,0) [0|255] "" XXX
@@ -765,6 +763,8 @@ CM_ SG_ 1157 LANEE_DEPARTURE_ALERT "1 off, 2 on";
 CM_ SG_ 1157 WARNING "1 Rare, 0 often";
 CM_ SG_ 1088 LANE_LINES "0 LKAS disabled, 1 no lines, 2 two lines, 3 left line, 4 right line";
 CM_ SG_ 1045 ABS_MALFUNCTION "off: 0, solid: 1, slow blink: 2, fast blink: 3";
+CM_ SG_ 120 VEHICLE_ACC_X "Vehicle acceleration of X-axis wrt. NED frame.";
+CM_ SG_ 120 VEHICLE_ACC_Y "Vehicle acceleration of Y-axis wrt. NED frame.";
 CM_ SG_ 157 CAN_OFF "Disengage Cruise if enabled, if already disabled  TURN it OFF ";
 CM_ SG_ 552 MORE_GEAR "";
 CM_ SG_ 552 GEAR "0 Shifting, 1 P, 2 R, 3 N, 4 D";

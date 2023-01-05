@@ -14,10 +14,6 @@ void unused_set_phone_power(bool enabled) {
   UNUSED(enabled);
 }
 
-void unused_set_clock_source_mode(uint8_t mode) {
-  UNUSED(mode);
-}
-
 void unused_set_siren(bool enabled) {
   UNUSED(enabled);
 }

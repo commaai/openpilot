@@ -320,9 +320,11 @@ int msgq_msg_ready(msgq_queue_t * q){
 
   uint32_t read_cycles, read_pointer;
   UNPACK64(read_cycles, read_pointer, *q->read_pointers[id]);
+  UNUSED(read_cycles);
 
   uint32_t write_cycles, write_pointer;
   UNPACK64(write_cycles, write_pointer, *q->write_pointer);
+  UNUSED(write_cycles);
 
   // Check if new message is available
   return (read_pointer != write_pointer);
@@ -350,6 +352,7 @@ int msgq_msg_recv(msgq_msg_t * msg, msgq_queue_t * q){
 
   uint32_t write_cycles, write_pointer;
   UNPACK64(write_cycles, write_pointer, *q->write_pointer);
+  UNUSED(write_cycles);
 
   char * p = q->data + read_pointer;
 

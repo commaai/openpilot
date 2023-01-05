@@ -226,8 +226,7 @@ static int chrysler_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int chrysler_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
-  UNUSED(longitudinal_allowed);
+static int chrysler_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);

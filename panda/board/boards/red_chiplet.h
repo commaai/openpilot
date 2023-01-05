@@ -35,14 +35,14 @@ void red_chiplet_enable_can_transceivers(bool enabled) {
   }
 }
 
-void red_chiplet_set_usb_load_switch(bool enabled) {
+void red_chiplet_set_fan_or_usb_load_switch(bool enabled) {
   set_gpio_output(GPIOD, 3, enabled);
 }
 
 void red_chiplet_init(void) {
   common_init_gpio();
 
-  //A8, A9 : OBD_SBU1_RELAY, OBD_SBU2_RELAY
+  // A8, A9: OBD_SBU1_RELAY, OBD_SBU2_RELAY
   set_gpio_output_type(GPIOA, 8, OUTPUT_TYPE_OPEN_DRAIN);
   set_gpio_pullup(GPIOA, 8, PULL_NONE);
   set_gpio_mode(GPIOA, 8, MODE_OUTPUT);
@@ -75,7 +75,7 @@ void red_chiplet_init(void) {
   set_gpio_mode(GPIOB, 0, MODE_ANALOG);
 
   // Turn on USB load switch.
-  red_chiplet_set_usb_load_switch(true);
+  red_chiplet_set_fan_or_usb_load_switch(true);
 
   // Initialize harness
   harness_init();

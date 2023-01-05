@@ -106,7 +106,7 @@ BO_ 180 SPEED: 8 XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 295 GEAR_PACKET_HYBRID: 8 XXX
- SG_ CAR_MOVEMENT : 39|8@0- (1,0) [0|255] "" XXX
+ SG_ CAR_MOVEMENT : 25|10@0- (1,0) [0|255] "" XXX
  SG_ COUNTER : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ GEAR : 47|4@0+ (1,0) [0|15] "" XXX
@@ -128,9 +128,10 @@ BO_ 466 PCM_CRUISE: 8 XXX
 
 BO_ 467 PCM_CRUISE_2: 8 XXX
  SG_ PCM_FOLLOW_DISTANCE : 12|2@0+ (1,0) [0|3] "" XXX
- SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ LOW_SPEED_LOCKOUT : 14|2@0+ (1,0) [0|3] "" XXX
+ SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_SPEED : 23|8@0+ (1,0) [0|255] "km/h" XXX
+ SG_ ACC_FAULTED : 47|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 552 ACCELEROMETER: 8 XXX
@@ -209,8 +210,9 @@ BO_ 836 PRE_COLLISION_2: 8 DSU
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|0] "" XXX
 
 BO_ 865 CLUTCH: 8 XXX
- SG_ CLUTCH_RELEASED : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_FAULTED : 32|1@0+ (1,0) [0|1] "" XXX
  SG_ GAS_PEDAL_ALT : 23|8@0+ (0.005,0) [0|1] "" XXX
+ SG_ CLUTCH_RELEASED : 38|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 869 DSU_CRUISE : 7 DSU
  SG_ RES_BTN : 3|1@0+ (1,0) [0|0] "" XXX
@@ -225,6 +227,7 @@ BO_ 921 PCM_CRUISE_SM: 8 XXX
  SG_ MAIN_ON : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ CRUISE_CONTROL_STATE : 11|4@0+ (1,0) [0|15] "" XXX
  SG_ DISTANCE_LINES : 14|2@0+ (1,0) [0|3] "" XXX
+ SG_ TEMP_ACC_FAULTED : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ UI_SET_SPEED : 31|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 951 ESP_CONTROL: 8 ESP
@@ -377,8 +380,7 @@ BO_ 1552 BODY_CONTROL_STATE_2: 8 XXX
 
 BO_ 1553 UI_SETTING: 8 XXX
  SG_ UNITS : 26|2@0+ (1,0) [0|3] "" XXX
- SG_ ODOMETER : 43|20@0+ (1,0) [0|1048575] "" XXX
-
+ SG_ ODOMETER : 39|32@0+ (1,0) [0|1048575] "" XXX
 BO_ 1556 BLINKERS_STATE: 8 XXX
  SG_ TURN_SIGNALS : 29|2@0+ (1,0) [0|3] "" XXX
  SG_ HAZARD_LIGHT : 27|1@0+ (1,0) [0|1] "" XXX
@@ -416,6 +418,7 @@ CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; n
 CM_ SG_ 37 STEER_RATE "factor is tbd";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
 CM_ SG_ 466 CRUISE_STATE "Active state is 8, if standstill is requested will switch to state 11(3 sec timer), after timer is elapsed will switch into state 7(standstill). If plus button was pressed - status 9, minus button pressed - status 10";
+CM_ SG_ 467 ACC_FAULTED "1 when ACC is faulted and the PCM disallows engagement";
 CM_ SG_ 467 SET_SPEED "43 km/h are shown as 28 mph, so conversion isn't perfect";
 CM_ SG_ 467 LOW_SPEED_LOCKOUT "in low speed lockout, system would always disengage below 28mph";
 CM_ SG_ 560 BRAKE_PRESSED "another brake pressed?";
@@ -437,7 +440,9 @@ CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
 CM_ SG_ 865 GAS_PEDAL_ALT "copy of main GAS_PEDAL. Both use 8 bits. Might indicate that this message is for pedals.";
 CM_ SG_ 865 CLUTCH_RELEASED "boolean of clutch for 6MT.";
+CM_ SG_ 865 ACC_FAULTED "1 when ACC is faulted and the PCM disallows engagement";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in the vehicle's UI with the vehicle's unit";
+CM_ SG_ 921 TEMP_ACC_FAULTED "1 when the UI is displaying or playing fault-related alerts or sounds. Also 1 when pressing main on.";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
 CM_ SG_ 956 GEAR "on 6MT, only R shows.";
 CM_ SG_ 1009 UI_SET_SPEED "units seem to be whatever the car is set to";

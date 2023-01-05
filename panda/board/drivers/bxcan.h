@@ -27,9 +27,9 @@ void can_set_gmlan(uint8_t bus) {
       switch (prev_bus) {
         case 1:
         case 2:
-          puts("Disable GMLAN on CAN");
+          print("Disable GMLAN on CAN");
           puth(prev_bus + 1U);
-          puts("\n");
+          print("\n");
           current_board->set_can_mode(CAN_MODE_NORMAL);
           bus_config[prev_bus].bus_lookup = prev_bus;
           bus_config[prev_bus].can_num_lookup = prev_bus;
@@ -47,9 +47,9 @@ void can_set_gmlan(uint8_t bus) {
     switch (bus) {
       case 1:
       case 2:
-        puts("Enable GMLAN on CAN");
+        print("Enable GMLAN on CAN");
         puth(bus + 1U);
-        puts("\n");
+        print("\n");
         current_board->set_can_mode((bus == 1U) ? CAN_MODE_GMLAN_CAN2 : CAN_MODE_GMLAN_CAN3);
         bus_config[bus].bus_lookup = 3;
         bus_config[bus].can_num_lookup = -1;
@@ -60,11 +60,11 @@ void can_set_gmlan(uint8_t bus) {
       case 0xFF:  //-1 unsigned
         break;
       default:
-        puts("GMLAN can only be set on CAN2 or CAN3\n");
+        print("GMLAN can only be set on CAN2 or CAN3\n");
         break;
     }
   } else {
-    puts("GMLAN not available on black panda\n");
+    print("GMLAN not available on black panda\n");
   }
 }
 

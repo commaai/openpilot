@@ -227,8 +227,9 @@ class GLONASSEphemeris(Ephemeris):
 
 class PolyEphemeris(Ephemeris):
   def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
-               file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0):
-    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=SECS_IN_HR, file_epoch=file_epoch, file_name=file_name)
+               file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0,
+               max_time_diff: int=SECS_IN_HR):
+    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
     self.tgd = tgd
     self.to_json()
 
@@ -553,4 +554,4 @@ def parse_qcom_ephem(qcom_poly, current_week):
   poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
   poly_data['deg'] = 3
   poly_data['deg_t'] = 3
-  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY)
+  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY, max_time_diff=180)

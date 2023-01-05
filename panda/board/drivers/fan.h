@@ -27,7 +27,7 @@ void fan_tick(void){
     current_board->set_fan_enabled(fan_state.target_rpm > 0U);
 
     // Stall detection
-    if(fan_state.power > 0U) {
+    if (fan_state.power > 0U) {
       if (fan_rpm_fast == 0U) {
         fan_state.stall_counter = MIN(fan_state.stall_counter + 1U, 255U);
       } else {

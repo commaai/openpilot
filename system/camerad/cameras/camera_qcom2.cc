@@ -96,10 +96,16 @@ const uint32_t ox03c10_analog_gains_reg[] = {
 const int ANALOG_GAIN_MIN_IDX_AR0231 = 0x1; // 0.25x
 const int ANALOG_GAIN_REC_IDX_AR0231 = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX_AR0231 = 0xD; // 4.0x
+const int ANALOG_GAIN_COST_DELTA_AR0231 = 0;
+const float ANALOG_GAIN_COST_LOW_AR0231 = 0.1;
+const float ANALOG_GAIN_COST_HIGH_AR0231 = 5.0;
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
 const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x11; // 2.5x
 const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
+const int ANALOG_GAIN_COST_DELTA_OX03C10 = -1;
+const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.05;
+const float ANALOG_GAIN_COST_HIGH_OX03C10 = 0.8;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
@@ -532,6 +538,9 @@ void CameraState::camera_set_parameters() {
     analog_gain_min_idx = ANALOG_GAIN_MIN_IDX_AR0231;
     analog_gain_rec_idx = ANALOG_GAIN_REC_IDX_AR0231;
     analog_gain_max_idx = ANALOG_GAIN_MAX_IDX_AR0231;
+    analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_AR0231;
+    analog_gain_cost_low = ANALOG_GAIN_COST_LOW_AR0231;
+    analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_AR0231;
     for (int i=0; i<=analog_gain_max_idx; i++) {
       sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
     }
@@ -548,6 +557,9 @@ void CameraState::camera_set_parameters() {
     analog_gain_min_idx = ANALOG_GAIN_MIN_IDX_OX03C10;
     analog_gain_rec_idx = ANALOG_GAIN_REC_IDX_OX03C10;
     analog_gain_max_idx = ANALOG_GAIN_MAX_IDX_OX03C10;
+    analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_OX03C10;
+    analog_gain_cost_low = ANALOG_GAIN_COST_LOW_OX03C10;
+    analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_OX03C10;
     for (int i=0; i<=analog_gain_max_idx; i++) {
       sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
     }
@@ -1104,13 +1116,13 @@ void CameraState::set_camera_exposure(float grey_frac) {
       float score = std::abs(desired_ev - (t * gain)) * 10;
 
       // Going below recommended gain needs lower penalty to not overexpose
-      float m = g > analog_gain_rec_idx ? 5.0 : 0.1;
+      float m = g > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
       score += std::abs(g - (int)analog_gain_rec_idx) * m;
 
       // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
 
       // Small penalty on changing gain
-      score += std::abs(g - gain_idx) * (score + 1.0) / 10.0;
+      score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (g - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(g - gain_idx) * (score + 1.0) / 10.0;
 
       if (score < best_ev_score) {
         new_t = t;

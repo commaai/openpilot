@@ -17,7 +17,7 @@ void dos_enable_can_transceiver(uint8_t transceiver, bool enabled) {
       set_gpio_output(GPIOB, 10, !enabled);
       break;
     default:
-      puts("Invalid CAN transceiver ("); puth(transceiver); puts("): enabling failed\n");
+      print("Invalid CAN transceiver ("); puth(transceiver); print("): enabling failed\n");
       break;
   }
 }
@@ -88,7 +88,7 @@ void dos_set_can_mode(uint8_t mode){
       }
       break;
     default:
-      puts("Tried to set unsupported CAN mode: "); puth(mode); puts("\n");
+      print("Tried to set unsupported CAN mode: "); puth(mode); print("\n");
       break;
   }
 }
@@ -108,10 +108,6 @@ void dos_set_ir_power(uint8_t percentage){
 
 void dos_set_fan_enabled(bool enabled){
   set_gpio_output(GPIOA, 1, enabled);
-}
-
-void dos_set_clock_source_mode(uint8_t mode){
-  clock_source_init(mode);
 }
 
 void dos_set_siren(bool enabled){
@@ -156,10 +152,6 @@ void dos_init(void) {
   pwm_init(TIM4, 2);
   dos_set_ir_power(0U);
 
-  // Initialize fan and set to 0%
-  fan_init();
-  dos_set_fan_enabled(false);
-
   // Initialize harness
   harness_init();
 
@@ -186,7 +178,7 @@ void dos_init(void) {
   }
 
   // Init clock source (camera strobe) using PWM
-  dos_set_clock_source_mode(CLOCK_SOURCE_MODE_PWM);
+  clock_source_init();
 }
 
 const harness_configuration dos_harness_config = {
@@ -230,6 +222,5 @@ const board board_dos = {
   .set_fan_enabled = dos_set_fan_enabled,
   .set_ir_power = dos_set_ir_power,
   .set_phone_power = unused_set_phone_power,
-  .set_clock_source_mode = dos_set_clock_source_mode,
   .set_siren = dos_set_siren
 };

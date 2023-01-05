@@ -36,7 +36,7 @@ void rtc_init(void){
 
   // Initialize RTC module and clock if not done already.
   if((RCC->BDCR & bdcr_mask) != bdcr_opts){
-    puts("Initializing RTC\n");
+    print("Initializing RTC\n");
     // Reset backup domain
     register_set_bits(&(RCC->BDCR), RCC_BDCR_BDRST);
 
@@ -55,7 +55,7 @@ void rtc_init(void){
 }
 
 void rtc_set_time(timestamp_t time){
-  puts("Setting RTC time\n");
+  print("Setting RTC time\n");
 
   // Disable write protection
   disable_bdomain_protection();

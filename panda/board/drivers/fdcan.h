@@ -29,7 +29,7 @@ bool can_set_speed(uint8_t can_number) {
 
 void can_set_gmlan(uint8_t bus) {
   UNUSED(bus);
-  puts("GMLAN not available on red panda\n");
+  print("GMLAN not available on red panda\n");
 }
 
 // ***************************** CAN *****************************

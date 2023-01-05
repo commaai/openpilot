@@ -16,9 +16,22 @@ const CanMsg HONDA_BOSCH_LONG_TX_MSGS[] = {{0xE4, 1, 5}, {0x1DF, 1, 8}, {0x1EF, 
 // Threshold calculated from DBC gains: round(((83.3 / 0.253984064) + (83.3 / 0.126992032)) / 2) = 492
 const int HONDA_GAS_INTERCEPTOR_THRESHOLD = 492;
 #define HONDA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U)  // avg between 2 tracks
-const int HONDA_BOSCH_NO_GAS_VALUE = -30000; // value sent when not requesting gas
-const int HONDA_BOSCH_GAS_MAX = 2000;
-const int HONDA_BOSCH_ACCEL_MIN = -350; // max braking == -3.5m/s2
+
+const LongitudinalLimits HONDA_BOSCH_LONG_LIMITS = {
+  .max_accel = 200,   // accel is used for brakes
+  .min_accel = -350,
+
+  .max_gas = 2000,
+  .min_gas = -30000,
+  .inactive_gas = -30000,
+};
+
+const LongitudinalLimits HONDA_NIDEC_LONG_LIMITS = {
+  .max_gas = 198,  // 0xc6
+  .max_brake = 255,
+
+  .inactive_speed = 0,
+};
 
 // Nidec and bosch radarless has the powertrain bus on bus 0
 AddrCheckStruct honda_common_addr_checks[] = {
@@ -247,7 +260,7 @@ static int honda_rx_hook(CANPacket_t *to_push) {
 // else
 //     block all commands that produce actuation
 
-static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
+static int honda_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
@@ -270,22 +283,19 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   if ((addr == 0x30C) && (bus == bus_pt)) {
     int pcm_speed = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
     int pcm_gas = GET_BYTE(to_send, 2);
-    if (!longitudinal_allowed) {
-      if ((pcm_speed != 0) || (pcm_gas != 0)) {
-        tx = 0;
-      }
+
+    bool violation = false;
+    violation |= longitudinal_speed_checks(pcm_speed, HONDA_NIDEC_LONG_LIMITS);
+    violation |= longitudinal_gas_checks(pcm_gas, HONDA_NIDEC_LONG_LIMITS);
+    if (violation) {
+      tx = 0;
     }
   }
 
   // BRAKE: safety check (nidec)
   if ((addr == 0x1FA) && (bus == bus_pt)) {
     honda_brake = (GET_BYTE(to_send, 0) << 2) + ((GET_BYTE(to_send, 1) >> 6) & 0x3U);
-    if (!longitudinal_allowed) {
-      if (honda_brake != 0) {
-        tx = 0;
-      }
-    }
-    if (honda_brake > 255) {
+    if (longitudinal_brake_checks(honda_brake, HONDA_NIDEC_LONG_LIMITS)) {
       tx = 0;
     }
     if (honda_fwd_brake) {
@@ -297,23 +307,14 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   if ((addr == 0x1DF) && (bus == bus_pt)) {
     int accel = (GET_BYTE(to_send, 3) << 3) | ((GET_BYTE(to_send, 4) >> 5) & 0x7U);
     accel = to_signed(accel, 11);
-    if (!longitudinal_allowed) {
-      if (accel != 0) {
-        tx = 0;
-      }
-    }
-    if (accel < HONDA_BOSCH_ACCEL_MIN) {
-      tx = 0;
-    }
 
     int gas = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
     gas = to_signed(gas, 16);
-    if (!longitudinal_allowed) {
-      if (gas != HONDA_BOSCH_NO_GAS_VALUE) {
-        tx = 0;
-      }
-    }
-    if (gas > HONDA_BOSCH_GAS_MAX) {
+
+    bool violation = false;
+    violation |= longitudinal_accel_checks(accel, HONDA_BOSCH_LONG_LIMITS);
+    violation |= longitudinal_gas_checks(gas, HONDA_BOSCH_LONG_LIMITS);
+    if (violation) {
       tx = 0;
     }
   }
@@ -337,10 +338,8 @@ static int honda_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
 
   // GAS: safety check (interceptor)
   if (addr == 0x200) {
-    if (!longitudinal_allowed) {
-      if (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1)) {
-        tx = 0;
-      }
+    if (longitudinal_interceptor_checks(to_send)) {
+      tx = 0;
     }
   }
 

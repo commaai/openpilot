@@ -1,5 +1,5 @@
 // ******************** Prototypes ********************
-void puts(const char *a);
+void print(const char *a);
 void puth(unsigned int i);
 void puth2(unsigned int i);
 void puth4(unsigned int i);
@@ -14,7 +14,6 @@ void pwm_set(TIM_TypeDef *TIM, uint8_t channel, uint8_t percentage);
 uint8_t hw_type = 0;
 const board *current_board;
 uint32_t uptime_cnt = 0;
-bool green_led_enabled = false;
 
 // heartbeat state
 uint32_t heartbeat_counter = 0;

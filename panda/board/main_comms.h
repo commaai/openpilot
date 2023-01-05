@@ -47,115 +47,11 @@ int get_rtc_pkt(void *dat) {
   return sizeof(t);
 }
 
-typedef struct {
-  uint32_t ptr;
-  uint32_t tail_size;
-  uint8_t data[72];
-  uint8_t counter;
-} asm_buffer;
-
-asm_buffer can_read_buffer = {.ptr = 0U, .tail_size = 0U, .counter = 0U};
-uint32_t total_rx_size = 0U;
-
-int comms_can_read(uint8_t *data, uint32_t max_len) {
-  uint32_t pos = 1;
-  data[0] = can_read_buffer.counter;
-  // Send tail of previous message if it is in buffer
-  if (can_read_buffer.ptr > 0U) {
-    if (can_read_buffer.ptr <= 63U) {
-      (void)memcpy(&data[pos], can_read_buffer.data, can_read_buffer.ptr);
-      pos += can_read_buffer.ptr;
-      can_read_buffer.ptr = 0U;
-    } else {
-      (void)memcpy(&data[pos], can_read_buffer.data, 63U);
-      can_read_buffer.ptr = can_read_buffer.ptr - 63U;
-      (void)memcpy(can_read_buffer.data, &can_read_buffer.data[63], can_read_buffer.ptr);
-      pos += 63U;
-    }
-  }
-
-  if (total_rx_size > MAX_EP1_CHUNK_PER_BULK_TRANSFER) {
-    total_rx_size = 0U;
-    can_read_buffer.counter = 0U;
-  } else {
-    CANPacket_t can_packet;
-    while ((pos < max_len) && can_pop(&can_rx_q, &can_packet)) {
-      uint32_t pckt_len = CANPACKET_HEAD_SIZE + dlc_to_len[can_packet.data_len_code];
-      if ((pos + pckt_len) <= max_len) {
-        (void)memcpy(&data[pos], &can_packet, pckt_len);
-        pos += pckt_len;
-      } else {
-        (void)memcpy(&data[pos], &can_packet, max_len - pos);
-        can_read_buffer.ptr = pckt_len - (max_len - pos);
-        // cppcheck-suppress objectIndex
-        (void)memcpy(can_read_buffer.data, &((uint8_t*)&can_packet)[(max_len - pos)], can_read_buffer.ptr);
-        pos = max_len;
-      }
-    }
-    can_read_buffer.counter++;
-    total_rx_size += pos;
-  }
-  if (pos != max_len) {
-    can_read_buffer.counter = 0U;
-    total_rx_size = 0U;
-  }
-  if (pos <= 1U) { pos = 0U; }
-  return pos;
-}
-
-asm_buffer can_write_buffer = {.ptr = 0U, .tail_size = 0U, .counter = 0U};
-
-// send on CAN
-void comms_can_write(uint8_t *data, uint32_t len) {
-  // Got first packet from a stream, resetting buffer and counter
-  if (data[0] == 0U) {
-    can_write_buffer.counter = 0U;
-    can_write_buffer.ptr = 0U;
-    can_write_buffer.tail_size = 0U;
-  }
-  // Assembling can message with data from buffer
-  if (data[0] == can_write_buffer.counter) {
-    uint32_t pos = 1U;
-    can_write_buffer.counter++;
-    if (can_write_buffer.ptr != 0U) {
-      if (can_write_buffer.tail_size <= 63U) {
-        CANPacket_t to_push;
-        (void)memcpy(&can_write_buffer.data[can_write_buffer.ptr], &data[pos], can_write_buffer.tail_size);
-        (void)memcpy(&to_push, can_write_buffer.data, can_write_buffer.ptr + can_write_buffer.tail_size);
-        can_send(&to_push, to_push.bus, false);
-        pos += can_write_buffer.tail_size;
-        can_write_buffer.ptr = 0U;
-        can_write_buffer.tail_size = 0U;
-      } else {
-        (void)memcpy(&can_write_buffer.data[can_write_buffer.ptr], &data[pos], len - pos);
-        can_write_buffer.tail_size -= 63U;
-        can_write_buffer.ptr += 63U;
-        pos += 63U;
-      }
-    }
-
-    while (pos < len) {
-      uint32_t pckt_len = CANPACKET_HEAD_SIZE + dlc_to_len[(data[pos] >> 4U)];
-      if ((pos + pckt_len) <= len) {
-        CANPacket_t to_push;
-        (void)memcpy(&to_push, &data[pos], pckt_len);
-        can_send(&to_push, to_push.bus, false);
-        pos += pckt_len;
-      } else {
-        (void)memcpy(can_write_buffer.data, &data[pos], len - pos);
-        can_write_buffer.ptr = len - pos;
-        can_write_buffer.tail_size = pckt_len - can_write_buffer.ptr;
-        pos += can_write_buffer.ptr;
-      }
-    }
-  }
-}
-
 // send on serial, first byte to select the ring
 void comms_endpoint2_write(uint8_t *data, uint32_t len) {
   uart_ring *ur = get_ring_by_number(data[0]);
   if ((len != 0U) && (ur != NULL)) {
-    if ((data[0] < 2U) || safety_tx_lin_hook(data[0] - 2U, &data[1], len - 1U)) {
+    if ((data[0] < 2U) || (data[0] >= 4U) || safety_tx_lin_hook(data[0] - 2U, &data[1], len - 1U)) {
       for (uint32_t i = 1; i < len; i++) {
         while (!putc(ur, data[i])) {
           // wait
@@ -165,23 +61,16 @@ void comms_endpoint2_write(uint8_t *data, uint32_t len) {
   }
 }
 
-// TODO: make this more general!
-void usb_cb_ep3_out_complete(void) {
-  if (can_tx_check_min_slots_free(MAX_CAN_MSGS_PER_BULK_TRANSFER)) {
-    usb_outep3_resume_if_paused();
-  }
-}
-
 int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
   timestamp_t t;
 
 #ifdef DEBUG_COMMS
-  puts("raw control request: "); hexdump(req, sizeof(ControlPacket_t)); puts("\n");
-  puts("- request "); puth(req->request); puts("\n");
-  puts("- param1 "); puth(req->param1); puts("\n");
-  puts("- param2 "); puth(req->param2); puts("\n");
+  print("raw control request: "); hexdump(req, sizeof(ControlPacket_t)); print("\n");
+  print("- request "); puth(req->request); print("\n");
+  print("- param1 "); puth(req->param1); print("\n");
+  print("- param2 "); puth(req->param2); print("\n");
 #endif
 
   switch (req->request) {
@@ -284,18 +173,18 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         case 0:
           // only allow bootloader entry on debug builds
           #ifdef ALLOW_DEBUG
-            puts("-> entering bootloader\n");
+            print("-> entering bootloader\n");
             enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
             NVIC_SystemReset();
           #endif
           break;
         case 1:
-          puts("-> entering softloader\n");
+          print("-> entering softloader\n");
           enter_bootloader_mode = ENTER_SOFTLOADER_MAGIC;
           NVIC_SystemReset();
           break;
         default:
-          puts("Bootloader mode invalid\n");
+          print("Bootloader mode invalid\n");
           break;
       }
       break;
@@ -371,7 +260,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
           } else if (req->param2 == 2U) {
             can_set_gmlan(2);
           } else {
-            puts("Invalid bus num for GMLAN CAN set\n");
+            print("Invalid bus num for GMLAN CAN set\n");
           }
         } else {
           can_set_gmlan(-1);
@@ -392,7 +281,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xde: set can bitrate
     case 0xde:
-      if ((req->param1 < BUS_CNT) && is_speed_valid(req->param2, speeds, sizeof(speeds)/sizeof(speeds[0]))) {
+      if ((req->param1 < PANDA_BUS_CNT) && is_speed_valid(req->param2, speeds, sizeof(speeds)/sizeof(speeds[0]))) {
         bus_config[req->param1].can_speed = req->param2;
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(req->param1));
         UNUSED(ret);
@@ -486,13 +375,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     // **** 0xf1: Clear CAN ring buffer.
     case 0xf1:
       if (req->param1 == 0xFFFFU) {
-        puts("Clearing CAN Rx queue\n");
+        print("Clearing CAN Rx queue\n");
         can_clear(&can_rx_q);
-      } else if (req->param1 < BUS_CNT) {
-        puts("Clearing CAN Tx queue\n");
+      } else if (req->param1 < PANDA_BUS_CNT) {
+        print("Clearing CAN Tx queue\n");
         can_clear(can_queues[req->param1]);
       } else {
-        puts("Clearing CAN CAN ring buffer failed: wrong bus number\n");
+        print("Clearing CAN CAN ring buffer failed: wrong bus number\n");
       }
       break;
     // **** 0xf2: Clear UART ring buffer.
@@ -500,7 +389,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       {
         uart_ring * rb = get_ring_by_number(req->param1);
         if (rb != NULL) {
-          puts("Clearing UART queue.\n");
+          print("Clearing UART queue.\n");
           clear_uart_buff(rb);
         }
         break;
@@ -525,17 +414,9 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         }
       }
       break;
-    // **** 0xf5: set clock source mode
-    case 0xf5:
-      current_board->set_clock_source_mode(req->param1);
-      break;
     // **** 0xf6: set siren enabled
     case 0xf6:
       siren_enabled = (req->param1 != 0U);
-      break;
-    // **** 0xf7: set green led enabled
-    case 0xf7:
-      green_led_enabled = (req->param1 != 0U);
       break;
     // **** 0xf8: disable heartbeat checks
     case 0xf8:
@@ -545,7 +426,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xf9: set CAN FD data bitrate
     case 0xf9:
-      if ((req->param1 < CAN_CNT) &&
+      if ((req->param1 < PANDA_CAN_CNT) &&
            current_board->has_canfd &&
            is_speed_valid(req->param2, data_speeds, sizeof(data_speeds)/sizeof(data_speeds[0]))) {
         bus_config[req->param1].can_data_speed = req->param2;
@@ -561,16 +442,16 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xfc: set CAN FD non-ISO mode
     case 0xfc:
-      if ((req->param1 < CAN_CNT) && current_board->has_canfd) {
+      if ((req->param1 < PANDA_CAN_CNT) && current_board->has_canfd) {
         bus_config[req->param1].canfd_non_iso = (req->param2 != 0U);
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(req->param1));
         UNUSED(ret);
       }
       break;
     default:
-      puts("NO HANDLER ");
+      print("NO HANDLER ");
       puth(req->request);
-      puts("\n");
+      print("\n");
       break;
   }
   return resp_len;

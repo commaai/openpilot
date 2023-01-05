@@ -1,4 +1,4 @@
-#define SW_I2C_WAIT_TIME  22	
+#define SW_I2C_WAIT_TIME  22
 
 #define I2C_READ       0x01
 #define READ_CMD       1
@@ -7,14 +7,14 @@
 
 void SW_I2C_init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 
   GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-  
+
   GPIO_InitStructure.Pin = SW_I2C1_SCL_PIN;
   HAL_GPIO_Init(SW_I2C1_SCL_GPIO, &GPIO_InitStructure);
-  GPIO_InitStructure.Pin   = SW_I2C1_SDA_PIN;
+  GPIO_InitStructure.Pin = SW_I2C1_SDA_PIN;
   HAL_GPIO_Init(SW_I2C1_SDA_GPIO, &GPIO_InitStructure);
 }
 
@@ -24,7 +24,7 @@ uint8_t SW_I2C_ReadVal_SDA(void)
   ret = (uint16_t)HAL_GPIO_ReadPin(SW_I2C1_SDA_GPIO, SW_I2C1_SDA_PIN);
   return ret;
 }
-  
+
 void sda_high(void)
 {
   HAL_GPIO_WritePin(SW_I2C1_SDA_GPIO, SW_I2C1_SDA_PIN, GPIO_PIN_SET);
@@ -59,23 +59,23 @@ void sda_out(uint8_t out)
 
 void sda_in_mode(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 
-  GPIO_InitStructure.Speed=GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStructure.Mode=GPIO_MODE_INPUT;
-  
-  GPIO_InitStructure.Pin   = SW_I2C1_SDA_PIN;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
+
+  GPIO_InitStructure.Pin = SW_I2C1_SDA_PIN;
   HAL_GPIO_Init(SW_I2C1_SDA_GPIO, &GPIO_InitStructure);
 }
 
 void sda_out_mode(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 
-  GPIO_InitStructure.Speed=GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStructure.Mode=GPIO_MODE_OUTPUT_OD;
-  
-  GPIO_InitStructure.Pin   = SW_I2C1_SDA_PIN;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_OD;
+
+  GPIO_InitStructure.Pin = SW_I2C1_SDA_PIN;
   HAL_GPIO_Init(SW_I2C1_SDA_GPIO, &GPIO_InitStructure);
 }
 
@@ -129,15 +129,15 @@ uint8_t i2c_check_ack(void)
   delay(SW_I2C_WAIT_TIME);
 
   for (i = 10; i > 0; i--) {
-    temp = !(SW_I2C_ReadVal_SDA());	
-    if (temp)	
+    temp = !(SW_I2C_ReadVal_SDA());
+    if (temp)
     {
       ack = 1;
       break;
     }
   }
   scl_low();
-  sda_out_mode();	
+  sda_out_mode();
 
   delay(SW_I2C_WAIT_TIME);
   return ack;

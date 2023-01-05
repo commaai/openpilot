@@ -175,22 +175,6 @@ void poweroff(void) {
   }
 }
 
-void poweroffPressCheck(void) {
-  if(HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {
-    uint16_t cnt_press = 0;
-    while(HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {
-      HAL_Delay(10);
-      cnt_press++;
-      if (cnt_press == (2 * 100)) { poweroff(); }
-    }
-    if (cnt_press > 8) {
-      ignition = !ignition;
-      out_enable(IGNITION, ignition);
-      beepShort(5);
-    }
-  }
-}
-
 #define PULL_EFFECTIVE_DELAY 4096
 uint8_t detect_with_pull(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t mode) {
   GPIO_InitTypeDef GPIO_InitStruct;

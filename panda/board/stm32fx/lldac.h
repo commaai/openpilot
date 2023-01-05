@@ -11,6 +11,6 @@ void dac_set(int channel, uint32_t value) {
   } else if (channel == 1) {
     register_set(&(DAC->DHR12R2), value, 0xFFFU);
   } else {
-    puts("Failed to set DAC: invalid channel value: 0x"); puth(value); puts("\n");
+    print("Failed to set DAC: invalid channel value: 0x"); puth(value); print("\n");
   }
 }

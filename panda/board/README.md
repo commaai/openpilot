@@ -1,20 +1,3 @@
-Dependencies
---------
-
-**Mac**
-
-```
-xcode-select --install
-./get_sdk_mac.sh
-```
-
-**Debian / Ubuntu**
-
-```
-./get_sdk.sh
-```
-
-
 Programming
 ----
 

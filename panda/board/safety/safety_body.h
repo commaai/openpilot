@@ -16,8 +16,7 @@ static int body_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int body_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
-  UNUSED(longitudinal_allowed);
+static int body_tx_hook(CANPacket_t *to_send) {
 
   int tx = 0;
   int addr = GET_ADDR(to_send);
@@ -30,8 +29,8 @@ static int body_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
   if (msg_allowed(to_send, BODY_TX_MSGS, sizeof(BODY_TX_MSGS)/sizeof(BODY_TX_MSGS[0])) && controls_allowed) {
     tx = 1;
   }
-  
-  // Allow going into CAN flashing mode even if controls are not allowed 
+
+  // Allow going into CAN flashing mode even if controls are not allowed
   if (!controls_allowed && ((uint32_t)GET_BYTES_04(to_send) == 0xdeadfaceU) && ((uint32_t)GET_BYTES_48(to_send) == 0x0ab00b1eU)) {
     tx = 1;
   }

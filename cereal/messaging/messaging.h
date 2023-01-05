@@ -3,6 +3,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <time.h>
+
 #include <capnp/serialize.h>
 #include "../gen/cpp/log.capnp.h"
 

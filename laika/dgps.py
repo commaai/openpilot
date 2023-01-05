@@ -5,6 +5,7 @@ from datetime import datetime
 from .gps_time import GPSTime
 from .constants import SECS_IN_YEAR
 from . import raw_gnss as raw
+from . import opt
 from .rinex_file import RINEXFile
 from .downloader import download_cors_coords
 from .helpers import get_constellation
@@ -107,8 +108,9 @@ def parse_dgps(station_id, station_obs_file_path, dog, max_distance=100000, requ
     station_delays[signal] = {}
     for i, proc_measurement in enumerate(proc_measurements):
       times.append(proc_measurement[0].recv_time)
-      Fx_pos = raw.pr_residual(proc_measurement, signal=signal)
-      residual = -np.array(Fx_pos(list(station_pos) + [0, 0]))
+      Fx_pos = opt.pr_residual(proc_measurement, signal=signal)
+      residual, _ = Fx_pos(list(station_pos) + [0,0])
+      residual = -np.array(residual)
       for j, m in enumerate(proc_measurement):
         prn = m.prn
         if prn not in station_delays[signal]:
