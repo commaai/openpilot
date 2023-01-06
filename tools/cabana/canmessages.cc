@@ -63,6 +63,7 @@ bool CANMessages::eventFilter(const Event *event) {
       new_msgs->clear();
       counters.clear();
       counters_begin_sec = current_sec;
+      prev_update_ts = 0;
     }
 
     auto can_events = event->event.getCan();
@@ -94,7 +95,6 @@ bool CANMessages::eventFilter(const Event *event) {
 void CANMessages::seekTo(double ts) {
   replay->seekTo(std::max(double(0), ts), false);
   counters_begin_sec = 0;
-  emit updated();
 }
 
 void CANMessages::settingChanged() {
