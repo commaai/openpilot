@@ -2,7 +2,8 @@ from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_curvature_limits
-from selfdrive.car.ford.fordcan import create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, create_lka_msg, create_lkas_ui_msg
+from selfdrive.car.ford.fordcan import create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, create_lka_msg, \
+  create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -48,7 +49,8 @@ class CarController:
     if (self.frame % self.CCP.STEER_STEP) == 0:
       if CC.latActive:
         # apply limits to curvature
-        apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, self.CCP)
+        apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo,
+                                                     self.CCP)
         # clip to signal range
         apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
       else:
