@@ -6,11 +6,9 @@
 #include <QJsonDocument>
 #include <QMainWindow>
 #include <QProgressBar>
-#include <QSplitter>
 #include <QStackedLayout>
 #include <QStatusBar>
 
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
