@@ -3,7 +3,7 @@ from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_curvature_limits
 from selfdrive.car.ford.fordcan import create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, create_lka_msg, create_lkas_ui_msg
-from selfdrive.car.ford.values import CANBUS, CarControllerParams as CCP
+from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -11,6 +11,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.CCP = CarControllerParams(CP)
     self.VM = VM
     self.frame = 0
     self.packer = CANPacker(dbc_name)
@@ -33,23 +34,23 @@ class CarController:
     if CC.cruiseControl.cancel:
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, cancel=True))
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, cancel=True, bus=CANBUS.main))
-    elif CC.cruiseControl.resume and (self.frame % CCP.BUTTONS_STEP) == 0:
+    elif CC.cruiseControl.resume and (self.frame % self.CCP.BUTTONS_STEP) == 0:
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, resume=True))
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, resume=True, bus=CANBUS.main))
     # if stock lane centering isn't off, send a button press to toggle it off
     # the stock system checks for steering pressed, and eventually disengages cruise control
-    elif CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0 and (self.frame % CCP.ACC_UI_STEP) == 0:
+    elif CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0 and (self.frame % self.CCP.ACC_UI_STEP) == 0:
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, tja_toggle=True))
 
 
     ### lateral control ###
     # send steering commands at 20Hz
-    if (self.frame % CCP.LKAS_STEER_STEP) == 0:
+    if (self.frame % self.CCP.STEER_STEP) == 0:
       if CC.latActive:
         # apply limits to curvature
-        apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CCP)
+        apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, self.CCP)
         # clip to signal range
-        apply_curvature = clip(apply_curvature, -CCP.CURVATURE_MAX, CCP.CURVATURE_MAX)
+        apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
@@ -80,12 +81,12 @@ class CarController:
               (self.steer_alert_last != steer_alert)
 
     # send lkas ui command at 1Hz or if ui state changes
-    if (self.frame % CCP.LKAS_UI_STEP) == 0 or send_ui:
+    if (self.frame % self.CCP.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control,
                                           CS.lkas_status_stock_values))
 
     # send acc ui command at 20Hz or if ui state changes
-    if (self.frame % CCP.ACC_UI_STEP) == 0 or send_ui:
+    if (self.frame % self.CCP.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, hud_control,
                                          CS.acc_tja_status_stock_values))
 

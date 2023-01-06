@@ -7,7 +7,7 @@ repos:
     rev: v4.1.0
     hooks:
     -   id: check-ast
-        exclude: '^(pyextra)/'
+        exclude: '^(third_party)/'
     -   id: check-json
     -   id: check-xml
     -   id: check-yaml
@@ -19,7 +19,7 @@ repos:
     rev: v2.2.1
     hooks:
     -   id: codespell
-        exclude: '^(pyextra/)|(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(include/)|(selfdrive/ui/translations/.*.ts)|(selfdrive/controls/lib/cluster)'
+        exclude: '^(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/ui/translations/.*.ts)'
         args:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup
@@ -31,12 +31,12 @@ repos:
         entry: mypy
         language: system
         types: [python]
-        exclude: '^(pyextra/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
+        exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
     -   id: flake8
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(selfdrive/debug/)/'
+        exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(selfdrive/debug/)/'
         additional_dependencies: ['flake8-no-implicit-concat']
         args:
         - --indent-size=2
@@ -51,7 +51,7 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: '^(pyextra/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
+        exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
         args:
         - -j0
         - -rn
@@ -64,7 +64,7 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(third_party/)|(pyextra/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)'
+        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)'
         args:
         - --error-exitcode=1
         - --language=c++
