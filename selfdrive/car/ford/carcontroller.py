@@ -13,9 +13,9 @@ class CarController:
     self.CP = CP
     self.CCP = CarControllerParams(CP)
     self.VM = VM
-    self.frame = 0
     self.packer = CANPacker(dbc_name)
 
+    self.frame = 0
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
