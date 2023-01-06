@@ -17,7 +17,7 @@ class CarInterface(CarInterfaceBase):
     # curvature steering
     ret.steerControlType = CarParams.SteerControlType.curvature
     ret.steerActuatorDelay = 0.15
-    ret.steerLimitTimer = 0.4
+    ret.steerLimitTimer = 1.0
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.008], [0.]]
     ret.lateralTuning.pid.kf = 1.
