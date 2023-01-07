@@ -38,9 +38,9 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     # Longitudinal sanity checks
-    self.assertEqual(len(car_params.longitudinalTuning.kpV), len(car_params.longitudinalTuning.kpBP), (car_params.longitudinalTuning.kpV, car_params.longitudinalTuning.kpBP))
-    self.assertEqual(len(car_params.longitudinalTuning.kiV), len(car_params.longitudinalTuning.kiBP), (car_params.longitudinalTuning.kiV, car_params.longitudinalTuning.kiBP))
-    self.assertEqual(len(car_params.longitudinalTuning.deadzoneV), len(car_params.longitudinalTuning.deadzoneBP), (car_params.longitudinalTuning.deadzoneV, car_params.longitudinalTuning.deadzoneBP))
+    self.assertEqual(len(car_params.longitudinalTuning.kpV), len(car_params.longitudinalTuning.kpBP))
+    self.assertEqual(len(car_params.longitudinalTuning.kiV), len(car_params.longitudinalTuning.kiBP))
+    self.assertEqual(len(car_params.longitudinalTuning.deadzoneV), len(car_params.longitudinalTuning.deadzoneBP))
 
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
