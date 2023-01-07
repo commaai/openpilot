@@ -30,10 +30,12 @@ const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
 const float  GPS_MUL_FACTOR = 10.0;
 const float  GPS_POS_STD_THRESHOLD = 50.0;
 const float  GPS_VEL_STD_THRESHOLD = 5.0;
-const float  GPS_POS_ERROR_RESET_THRESHOLD = 200.0;
-const float  GPS_POS_STD_RESET_THRESHOLD = 5.0;
+const float  GPS_POS_STD_DROP = 0.4;
+const float  GPS_POS_ERROR_RESET_THRESHOLD = 300.0;
+const float  GPS_POS_STD_RESET_THRESHOLD = 2.0;
 const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
-const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 2.0;
+const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 1.0;
+const int    GPS_ORIENTATION_ERROR_RESET_CNT = 3;
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -406,7 +408,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
+  if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD || ecef_pos_std < GPS_POS_STD_DROP) {
     this->determine_gps_mode(current_time);
     return;
   }
@@ -426,7 +428,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     // always reset on first gps message and if the location is off but the accuracy is high
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-  } else if (orientation_reset_count > 5) {
+  } else if (orientation_reset_count > GPS_ORIENTATION_ERROR_RESET_CNT) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
