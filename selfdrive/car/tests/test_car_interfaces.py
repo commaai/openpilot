@@ -14,8 +14,6 @@ class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
   def test_car_interfaces(self, car_name):
-    #if 'BOLT' not in car_name:
-    #  return
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
