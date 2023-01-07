@@ -126,28 +126,28 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
 
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
 
-  scc14_values = {
-    "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
-    "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
-    "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
-    "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
-    "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 2 if lead_visible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
-  }
-  commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
+  #scc14_values = {
+  #  "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
+  #  "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
+  #  "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
+  #  "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
+  #  "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
+  #  "ObjGap": 2 if lead_visible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
+  #}
+  #commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
   # note that some vehicles most likely have an alternate checksum/counter definition
   # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
-  fca11_values = {
-    "CR_FCA_Alive": idx % 0xF,
-    "PAINT1_Status": 1,
-    "FCA_DrvSetStatus": 1,
-    "FCA_Status": 2, # AEB disabled
-    "FCA_TimetoCollision": 2540.,
-  }
-  fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
-  fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
-  commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
+  #fca11_values = {
+  #  "CR_FCA_Alive": idx % 0xF,
+  #  "PAINT1_Status": 1,
+  #  "FCA_DrvSetStatus": 1,
+  #  "FCA_Status": 2, # AEB disabled
+  #  "FCA_TimetoCollision": 2540.,
+  #}
+  #fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
+  #fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
+  #commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
 
   return commands
 
@@ -161,11 +161,11 @@ def create_acc_opt(packer):
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
-  fca12_values = {
-    "FCA_DrvSetState": 2,
-    "FCA_USM": 3, # AEB disabled
-  }
-  commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
+  #fca12_values = {
+  #  "FCA_DrvSetState": 2,
+  #  "FCA_USM": 3, # AEB disabled
+  #}
+  #commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 
   return commands
 
