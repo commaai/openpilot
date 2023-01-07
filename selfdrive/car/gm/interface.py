@@ -81,6 +81,9 @@ class CarInterface(CarInterfaceBase):
         ret.vEgoStopping = 0.25
         ret.vEgoStarting = 0.25
         ret.longitudinalActuatorDelayUpperBound = 0.5
+      else:
+        ret.longitudinalTuning.kpV = [2.4, 1.5]
+        ret.longitudinalTuning.kiV = [0.36]
 
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
