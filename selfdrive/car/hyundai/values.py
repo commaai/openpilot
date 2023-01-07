@@ -122,10 +122,11 @@ class CAR:
 
 
 class Footnote(Enum):
+  # footnotes which mention "red panda" will be replaced with the CAN FD panda kit on the shop page
   CANFD = CarFootnote(
     "Requires a <a href=\"https://comma.ai/shop/panda\" target=\"_blank\">red panda</a> for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\">CAN FD</a>. " +
     "All the hardware needed is sold in the <a href=\"https://comma.ai/shop/can-fd-panda-kit\">CAN FD kit</a>.",
-    Column.MODEL, docs_only=True)
+    Column.MODEL, shop_footnote=True)
 
 
 @dataclass
