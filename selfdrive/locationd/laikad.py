@@ -435,7 +435,7 @@ def main(sm=None, pm=None, qc=None):
       if laikad.auto_fetch_orbits:
         laikad.fetch_orbits(t, block=replay)
 
-    if log_done:
+    if not log_done:
       debug_log_cache()
       log_done = True
 
