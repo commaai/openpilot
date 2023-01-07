@@ -14,6 +14,8 @@ class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
   def test_car_interfaces(self, car_name):
+    #if 'BOLT' not in car_name:
+    #  return
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
@@ -35,6 +37,12 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertGreater(car_params.centerToFront, 0)
     self.assertGreater(car_params.maxLateralAccel, 0)
 
+    # Longitudinal sanity checks
+    self.assertEqual(len(car_params.longitudinalTuning.kpV), len(car_params.longitudinalTuning.kpBP), (car_params.longitudinalTuning.kpV, car_params.longitudinalTuning.kpBP))
+    self.assertEqual(len(car_params.longitudinalTuning.kiV), len(car_params.longitudinalTuning.kiBP), (car_params.longitudinalTuning.kiV, car_params.longitudinalTuning.kiBP))
+    self.assertEqual(len(car_params.longitudinalTuning.deadzoneV), len(car_params.longitudinalTuning.deadzoneBP), (car_params.longitudinalTuning.deadzoneV, car_params.longitudinalTuning.deadzoneBP))
+
+    # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
