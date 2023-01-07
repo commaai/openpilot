@@ -225,7 +225,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR)
+      ret.experimentalLongitudinalAvailable = candidate not in CAMERA_SCC_CAR
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -255,11 +255,7 @@ class CarInterface(CarInterfaceBase):
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
     else:
-      if candidate in LEGACY_SAFETY_MODE_CAR:
-        # these cars require a special panda safety mode due to missing counters and checksums in the messages
-        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
-      else:
-        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
 
       if candidate in CAMERA_SCC_CAR:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC

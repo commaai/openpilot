@@ -118,6 +118,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "aReqRaw": accel,
     "aReqValue": accel,  # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
+    "CF_VSM_ConfMode": 1,
+    "AEB_Status": 2,
   }
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
@@ -140,7 +142,8 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "CR_FCA_Alive": idx % 0xF,
     "PAINT1_Status": 1,
     "FCA_DrvSetStatus": 1,
-    "FCA_Status": 1, # AEB disabled
+    "FCA_Status": 2, # AEB disabled
+    "FCA_TimetoCollision": 2540.,
   }
   fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
   fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
@@ -152,15 +155,15 @@ def create_acc_opt(packer):
   commands = []
 
   scc13_values = {
-    "SCCDrvModeRValue": 2,
+    "SCCDrvModeRValue": 1,
     "SCC_Equip": 1,
-    "Lead_Veh_Dep_Alert_USM": 2,
+    "Lead_Veh_Dep_Alert_USM": 0,
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
   fca12_values = {
     "FCA_DrvSetState": 2,
-    "FCA_USM": 1, # AEB disabled
+    "FCA_USM": 3, # AEB disabled
   }
   commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 
