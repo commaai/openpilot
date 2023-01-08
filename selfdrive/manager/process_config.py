@@ -40,6 +40,7 @@ procs = [
   NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"], offroad=True),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"]),
   NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], enabled=False),
+  NativeProcess("bridge", "cereal/messaging/bridge", ["./bridge"], enabled=True),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
   PythonProcess("torqued", "selfdrive.locationd.torqued"),
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
@@ -58,6 +59,7 @@ procs = [
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, onroad=False, offroad=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
   PythonProcess("statsd", "selfdrive.statsd", offroad=True),
+  
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),

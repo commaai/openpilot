@@ -1,4 +1,5 @@
 from cereal import car
+import statistics
 from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
@@ -12,20 +13,20 @@ class CarState(CarStateBase):
 
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR"]["GEAR"]
-
+    self.cam_lkas = 0
+    self.cam_laneinfo = 0
+    self.lkas_disabled = False
     self.crz_btns_counter = 0
     self.acc_active_last = False
     self.low_speed_alert = False
     self.lkas_allowed_speed = False
-    self.lkas_disabled = False
+    self.params = CarControllerParams(CP)
     
     if CP.carFingerprint in GEN1:
       self.update = self.update_gen1
     if CP.carFingerprint in GEN2:
       self.update = self.update_gen2
-      
-    
-    self.params = CarControllerParams(CP)
+
     
   def update_gen2(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -37,42 +38,39 @@ class CarState(CarStateBase):
     )
 
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw) # Doesn't match cluster speed exactly
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(100, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
                                                                       cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
 
     ret.steeringAngleDeg = cp_cam.vl["STEER"]["STEER_ANGLE"]
-    ret.steeringTorque = cp_body.vl["EPS_FEEDBACK"]["STEER_TORQUE_SENSOR"]
+    driver_torque = statistics.median([cp_body.vl["EPS_FEEDBACK"]["STEER_TORQUE_SENSOR"], # this is done to reduce noise/distortion and remove outliers due to a system faiure
+                                       cp_body.vl["EPS_FEEDBACK2"]["HALL2"], 
+                                       cp_body.vl["EPS_FEEDBACK2"]["HALL3"], 
+                                       cp_body.vl["EPS_FEEDBACK2"]["HALL4"]])
+    ret.steeringTorque = driver_torque
     can_gear = int(cp_cam.vl["GEAR"]["GEAR"])
     ret.gas = cp_cam.vl["ENGINE_DATA"]["PEDAL_GAS"]
 
     ret.steeringPressed = abs(ret.steeringTorque) > self.params.STEER_DRIVER_ALLOWANCE
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
-    # TODO: this should be from 0 - 1.
     ret.gasPressed = ret.gas > 0
-    ret.seatbeltUnlatched = False
-    ret.doorOpen = False
+    ret.seatbeltUnlatched = False # Cruise will not engage if seatbelt is unlatched (handled by car)
+    ret.doorOpen = False # Cruise will not engage if door is open (handled by car)
     ret.brakePressed = cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL_PRESSED"] == 1
     ret.brake = .1
-    ret.steerFaultPermanent = False
-    ret.steerFaultTemporary = False
-    ret.cruiseState.available = True
-    ret.cruiseState.speed = cp.vl["CRUZE_STATE"]["CRZ_SPEED"] * CV.KPH_TO_MS
-    self.cam_lkas = 1
-    self.cam_laneinfo = 1
+    ret.steerFaultPermanent = False # TODO locate signal. Car shows light on dash if there is a fault
+    ret.steerFaultTemporary = False # TODO locate signal. Car shows light on dash if there is a fault
+    ret.cruiseState.available = True # TODO locate signal.
+    ret.cruiseState.speed = cp.vl["CRUZE_STATE"]["CRZ_SPEED"] * CV.KPH_TO_MS 
     ret.cruiseState.enabled = ( (cp.vl["CRUZE_STATE"]["CRZ_ENABLED"] == 1) or (cp.vl["CRUZE_STATE"]["PRE_ENABLE"] == 1) )
-    self.acc_active_last = ret.cruiseState.enabled
-    self.crz_btns_counter = cp.vl["CRZ_BTNS"]["CTR"]
 
-    speed_kph = cp_cam.vl["SPEED"]["SPEED"] * CV.KPH_TO_MS
+    speed_kph = cp_cam.vl["SPEED"]["SPEED"] * CV.KPH_TO_MS 
     ret.standstill = speed_kph < .1
     ret.cruiseState.standstill = ret.standstill
     self.cp = cp
     self.cp_cam = cp_cam
     self.acc = copy.copy(cp.vl["ACC"])
-    
-
     # end GEN2
 
     return ret
@@ -346,9 +344,13 @@ class CarState(CarStateBase):
     if CP.carFingerprint in GEN2:
       signals += [
         ("STEER_TORQUE_SENSOR", "EPS_FEEDBACK", 0),
+        ("HALL2", "EPS_FEEDBACK2", 0),
+        ("HALL3", "EPS_FEEDBACK2", 0),
+        ("HALL4", "EPS_FEEDBACK2", 0),
       ]
       checks += [
         ("EPS_FEEDBACK", 50),
+        ("EPS_FEEDBACK2", 50),
       ]
       
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)

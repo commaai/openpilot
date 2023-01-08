@@ -25,7 +25,7 @@ FACTOR_SANITY = 0.3
 FRICTION_SANITY = 0.5
 STEER_MIN_THRESHOLD = 0.02
 MIN_FILTER_DECAY = 50
-MAX_FILTER_DECAY = 250
+MAX_FILTER_DECAY = 1000
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
@@ -34,7 +34,7 @@ MAX_INVALID_THRESHOLD = 10
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
-ALLOWED_CARS = ['toyota', 'hyundai']
+ALLOWED_CARS = ['toyota', 'hyundai', 'mazda']
 
 
 def slope2rot(slope):
