@@ -62,6 +62,7 @@ tools/lib/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h
+tools/replay/SConscript
 
 selfdrive/__init__.py
 selfdrive/sentry.py

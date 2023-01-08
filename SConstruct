@@ -428,15 +428,13 @@ SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 SConscript(['selfdrive/boardd/SConscript'])
 
 SConscript(['selfdrive/loggerd/SConscript'])
-
+SConscript(['tools/replay/SConscript'])
 SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 
 if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
-  SConscript(['tools/replay/SConscript'])
-
   opendbc = abspath([File('opendbc/can/libdbc.so')])
   Export('opendbc')
   SConscript(['tools/cabana/SConscript'])

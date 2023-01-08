@@ -285,6 +285,7 @@ def thermald_thread(end_event, hw_queue):
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
                                                params.get_bool("Passive")
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
+    startup_conditions["not_replaying"] = not params.get_bool("IsReplaying")
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60

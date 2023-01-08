@@ -5,6 +5,7 @@
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "selfdrive/ui/qt/widgets/replay_widgets.h"
 #include "selfdrive/ui/ui.h"
 
 
@@ -101,11 +102,16 @@ public:
 private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void startReplay(const QString &route, const QString &data_dir);
+  void stopReplay();
+
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
+  ReplayControls *replay_controls = nullptr;
 
 private slots:
   void offroadTransition(bool offroad);

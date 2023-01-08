@@ -48,6 +48,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::startReplay, this, &OnroadWindow::startReplay);
+  QObject::connect(uiState(), &UIState::stopReplay, this, &OnroadWindow::stopReplay);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -75,6 +77,31 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+}
+
+void OnroadWindow::startReplay(const QString &route, const QString &data_dir) {
+  if (!uiState()->engaged()) {
+    if (replay_controls) {
+      replay_controls->deleteLater();
+    }
+    replay_controls = new ReplayControls(this);
+    replay_controls->start(route, data_dir);
+  }
+}
+
+void OnroadWindow::stopReplay() {
+  if (replay_controls) {
+    replay_controls->stop();
+    replay_controls->deleteLater();
+    replay_controls = nullptr;
+  }
+}
+
+void OnroadWindow::resizeEvent(QResizeEvent* event) {
+  if (replay_controls) {
+    replay_controls->adjustPosition();
+  }
+  QWidget::resizeEvent(event);
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {

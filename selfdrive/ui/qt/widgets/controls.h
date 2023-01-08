@@ -45,6 +45,7 @@ public:
   void setTitle(const QString &title) {
     title_label->setText(title);
   }
+  QString title() const { return title_label->text(); }
 
   void setValue(const QString &val) {
     value->setText(val);
