@@ -23,8 +23,8 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
+  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
@@ -35,7 +35,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   return false;
 }
 
-static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
+int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
   for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
@@ -44,7 +44,7 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
+void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
@@ -54,15 +54,16 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
   }
 }
 
-static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
-                             float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
+void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+                      float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-
   QPolygonF left_points, right_points;
   left_points.reserve(max_idx + 1);
   right_points.reserve(max_idx + 1);
 
   for (int i = 0; i <= max_idx; i++) {
+    // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
+    if (line_x[i] < 0) continue;
     QPointF left, right;
     bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
     bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
@@ -78,7 +79,7 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   *pvd = left_points + right_points;
 }
 
-static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
+void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
@@ -121,28 +122,27 @@ static void update_state(UIState *s) {
 
   if (sm.updated("liveCalibration")) {
     auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
+    auto wfde_list = sm["liveCalibration"].getLiveCalibration().getWideFromDeviceEuler();
     Eigen::Vector3d rpy;
-    rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    Eigen::Vector3d wfde;
+    if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
+    if (wfde_list.size() == 3) wfde << wfde_list[0], wfde_list[1], wfde_list[2];
     Eigen::Matrix3d device_from_calib = euler2rot(rpy);
+    Eigen::Matrix3d wide_from_device = euler2rot(wfde);
     Eigen::Matrix3d view_from_device;
     view_from_device << 0,1,0,
                         0,0,1,
                         1,0,0;
     Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
+    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib ;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
+        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
       }
     }
     scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
-  }
-  if (s->worldObjectsVisible()) {
-    if (sm.updated("modelV2")) {
-      update_model(s, sm["modelV2"].getModelV2());
-    }
-    if (sm.updated("radarState") && sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
-    }
+    scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
     auto pandaStates = sm["pandaStates"].getPandaStates();
@@ -173,7 +173,6 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
-  s->scene.end_to_end_long = params.getBool("EndToEndLong");
 }
 
 void UIState::updateStatus() {
@@ -197,7 +196,7 @@ void UIState::updateStatus() {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      wide_camera = Params().getBool("WideCameraOnly");
+      wide_cam_only = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
@@ -219,7 +218,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   });
 
   Params params;
-  wide_camera = params.getBool("WideCameraOnly");
+  wide_cam_only = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
 

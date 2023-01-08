@@ -1,97 +1,233 @@
 #include "tools/cabana/mainwin.h"
 
-#include <QApplication>
-#include <QHBoxLayout>
-#include <QScreen>
-#include <QSplitter>
+#include <iostream>
+#include <QClipboard>
+#include <QCompleter>
+#include <QDesktopWidget>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QShortcut>
+#include <QUndoView>
 #include <QVBoxLayout>
-
-#include "tools/replay/util.h"
+#include <QWidgetAction>
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  if (main_win) main_win->showStatusMessage(msg);
+  if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
+  if (main_win) emit main_win->showMessage(msg, 0);
 }
 
-MainWindow::MainWindow() : QWidget() {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(11, 11, 11, 5);
-  main_layout->setSpacing(0);
+MainWindow::MainWindow() : QMainWindow() {
+  createDockWindows();
+  detail_widget = new DetailWidget(charts_widget, this);
+  detail_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+  setCentralWidget(detail_widget);
+  createActions();
+  createStatusBar();
+  createShortcuts();
 
-  QHBoxLayout *h_layout = new QHBoxLayout();
-  h_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->addLayout(h_layout);
-
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
-  messages_widget = new MessagesWidget(this);
-  splitter->addWidget(messages_widget);
-
-  detail_widget = new DetailWidget(this);
-  splitter->addWidget(detail_widget);
-
-  splitter->setSizes({100, 500});
-  h_layout->addWidget(splitter);
-
-  // right widgets
-  QWidget *right_container = new QWidget(this);
-  right_container->setFixedWidth(640);
-  r_layout = new QVBoxLayout(right_container);
-  r_layout->setContentsMargins(11, 0, 0, 0);
-  QHBoxLayout *right_hlayout = new QHBoxLayout();
-  QLabel *fingerprint_label = new QLabel(this);
-  right_hlayout->addWidget(fingerprint_label);
-
-  // TODO: click to select another route.
-  right_hlayout->addWidget(new QLabel(can->route()));
-  QPushButton *settings_btn = new QPushButton("Settings");
-  right_hlayout->addWidget(settings_btn, 0, Qt::AlignRight);
-
-  r_layout->addLayout(right_hlayout);
-
-  video_widget = new VideoWidget(this);
-  r_layout->addWidget(video_widget, 0, Qt::AlignTop);
-
-  charts_widget = new ChartsWidget(this);
-  r_layout->addWidget(charts_widget);
-
-  h_layout->addWidget(right_container);
-
-  // status bar
-  status_bar = new QStatusBar(this);
-  status_bar->setContentsMargins(0, 0, 0, 0);
-  status_bar->setSizeGripEnabled(true);
-  progress_bar = new QProgressBar();
-  progress_bar->setRange(0, 100);
-  progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
-  progress_bar->setVisible(false);
-  status_bar->addPermanentWidget(progress_bar);
-  main_layout->addWidget(status_bar);
+  restoreGeometry(settings.geometry);
+  if (isMaximized()) {
+    setGeometry(QApplication::desktop()->availableGeometry(this));
+  }
+  restoreState(settings.window_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit logMessageFromReplay(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 3000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
   });
 
-  QObject::connect(this, &MainWindow::logMessageFromReplay, status_bar, &QStatusBar::showMessage);
-  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
-  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
-  QObject::connect(detail_widget, &DetailWidget::showChart, charts_widget, &ChartsWidget::addChart);
-  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
-  QObject::connect(settings_btn, &QPushButton::clicked, this, &MainWindow::setOption);
-  QObject::connect(can, &CANMessages::eventsMerged, [=]() { fingerprint_label->setText(can->carFingerprint() ); });
-
   main_win = this;
   qInstallMessageHandler(qLogMessageHandler);
+  QFile json_file("./car_fingerprint_to_dbc.json");
+  if (json_file.open(QIODevice::ReadOnly)) {
+    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+  }
+
+  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
+  QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
+  QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
+  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
+  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
+  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
+  QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
+  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
+    setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
+  });
+}
+
+void MainWindow::createActions() {
+  QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::loadDBCFromFile);
+  file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
+  file_menu->addSeparator();
+  file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveDBCToFile);
+  file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
+  file_menu->addSeparator();
+  file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
+
+  QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
+  auto undo_act = detail_widget->undo_stack->createUndoAction(this, tr("&Undo"));
+  undo_act->setShortcuts(QKeySequence::Undo);
+  edit_menu->addAction(undo_act);
+  auto redo_act = detail_widget->undo_stack->createRedoAction(this, tr("&Rndo"));
+  redo_act->setShortcuts(QKeySequence::Redo);
+  edit_menu->addAction(redo_act);
+  edit_menu->addSeparator();
+
+  QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
+  auto undo_view = new QUndoView(detail_widget->undo_stack);
+  undo_view->setWindowTitle(tr("Command List"));
+  QWidgetAction *commands_act = new QWidgetAction(this);
+  commands_act->setDefaultWidget(undo_view);
+  commands_menu->addAction(commands_act);
+
+  QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
+  tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
+
+  QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
+  help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
+}
+
+void MainWindow::createDockWindows() {
+  // left panel
+  QWidget *messages_container = new QWidget(this);
+  QVBoxLayout *messages_layout = new QVBoxLayout(messages_container);
+  dbc_combo = createDBCSelector();
+  messages_layout->addWidget(dbc_combo);
+  messages_widget = new MessagesWidget(this);
+  messages_layout->addWidget(messages_widget);
+
+  QDockWidget *dock = new QDockWidget(tr("MESSAGES"), this);
+  dock->setObjectName("MessagesPanel");
+  dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+  dock->setWidget(messages_container);
+  addDockWidget(Qt::LeftDockWidgetArea, dock);
+
+  // right panel
+  QWidget *right_container = new QWidget(this);
+  r_layout = new QVBoxLayout(right_container);
+  charts_widget = new ChartsWidget(this);
+  video_widget = new VideoWidget(this);
+  r_layout->addWidget(video_widget, 0, Qt::AlignTop);
+  r_layout->addWidget(charts_widget, 1);
+  r_layout->addStretch(0);
+
+  video_dock = new QDockWidget(can->routeName(), this);
+  video_dock->setObjectName(tr("VideoPanel"));
+  video_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  video_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+  video_dock->setWidget(right_container);
+  addDockWidget(Qt::RightDockWidgetArea, video_dock);
+}
+
+QComboBox *MainWindow::createDBCSelector() {
+  QComboBox *c = new QComboBox(this);
+  c->setEditable(true);
+  c->lineEdit()->setPlaceholderText(tr("Select from an existing DBC file"));
+  c->setInsertPolicy(QComboBox::NoInsert);
+  c->completer()->setCompletionMode(QCompleter::PopupCompletion);
+  c->completer()->setFilterMode(Qt::MatchContains);
+
+  auto dbc_names = dbc()->allDBCNames();
+  std::sort(dbc_names.begin(), dbc_names.end());
+  for (const auto &name : dbc_names) {
+    c->addItem(QString::fromStdString(name));
+  }
+  c->setCurrentIndex(-1);
+  return c;
+}
+
+void MainWindow::createStatusBar() {
+  progress_bar = new QProgressBar();
+  progress_bar->setRange(0, 100);
+  progress_bar->setTextVisible(true);
+  progress_bar->setFixedSize({230, 16});
+  progress_bar->setVisible(false);
+  statusBar()->addPermanentWidget(progress_bar);
+}
+
+void MainWindow::createShortcuts() {
+  auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  // TODO: add more shortcuts here.
+}
+
+void MainWindow::DBCFileChanged() {
+  detail_widget->undo_stack->clear();
+  int index = dbc_combo->findText(QFileInfo(dbc()->name()).baseName());
+  dbc_combo->setCurrentIndex(index);
+  setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+}
+
+void MainWindow::loadDBCFromName(const QString &name) {
+  if (name != dbc()->name()) {
+    dbc()->open(name);
+  }
+}
+
+void MainWindow::loadDBCFromFile() {
+  QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+  if (!file_name.isEmpty()) {
+    settings.last_dir = QFileInfo(file_name).absolutePath();
+    QFile file(file_name);
+    if (file.open(QIODevice::ReadOnly)) {
+      auto dbc_name = QFileInfo(file_name).baseName();
+      dbc()->open(dbc_name, file.readAll());
+    }
+  }
+}
+
+void MainWindow::loadDBCFromClipboard() {
+  QString dbc_str = QGuiApplication::clipboard()->text();
+  dbc()->open("From Clipboard", dbc_str);
+  QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
+}
+
+void MainWindow::loadDBCFromFingerprint() {
+  auto fingerprint = can->carFingerprint();
+  video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  if (!fingerprint.isEmpty()) {
+    auto dbc_name = fingerprint_to_dbc[fingerprint];
+    if (dbc_name != QJsonValue::Undefined) {
+      loadDBCFromName(dbc_name.toString());
+      return;
+    }
+  }
+  dbc()->open("New_DBC", "");
+}
+
+void MainWindow::saveDBCToFile() {
+  QString file_name = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                   QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
+  if (!file_name.isEmpty()) {
+    settings.last_dir = QFileInfo(file_name).absolutePath();
+    QFile file(file_name);
+    if (file.open(QIODevice::WriteOnly)) {
+      file.write(dbc()->generateDBC().toUtf8());
+      detail_widget->undo_stack->clear();
+    }
+  }
+}
+
+void MainWindow::saveDBCToClipboard() {
+  QGuiApplication::clipboard()->setText(dbc()->generateDBC());
+  QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
-   if (success && cur < total) {
+  if (success && cur < total) {
     progress_bar->setValue((cur / (double)total) * 100);
     progress_bar->setFormat(tr("Downloading %p% (%1)").arg(formattedDataSize(total).c_str()));
     progress_bar->show();
@@ -100,31 +236,50 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   }
 }
 
-
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
-    r_layout->addWidget(charts_widget);
+    r_layout->insertWidget(2, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
-    floating_window = new QWidget(nullptr);
+    floating_window = new QWidget(this);
+    floating_window->setWindowFlags(Qt::Window);
+    floating_window->setWindowTitle("Charts - Cabana");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
     floating_window->installEventFilter(charts_widget);
-    floating_window->setMinimumSize(QGuiApplication::primaryScreen()->size() / 2);
     floating_window->showMaximized();
   }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  if (detail_widget->undo_stack->index() > 0) {
+    auto ret = QMessageBox::question(this, tr("Unsaved Changes"),
+                                     tr("Are you sure you want to exit without saving?\nAny unsaved changes will be lost."),
+                                     QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::No) {
+      event->ignore();
+      return;
+    }
+  }
+
   main_win = nullptr;
   if (floating_window)
     floating_window->deleteLater();
+
+  settings.geometry = saveGeometry();
+  settings.window_state = saveState();
+  settings.save();
   QWidget::closeEvent(event);
 }
 
 void MainWindow::setOption() {
   SettingsDlg dlg(this);
+  dlg.exec();
+}
+
+void MainWindow::findSimilarBits() {
+  FindSimilarBitsDlg dlg(this);
   dlg.exec();
 }

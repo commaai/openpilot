@@ -68,7 +68,17 @@ class Harness(Enum):
   none = "None"
 
 
-CarFootnote = namedtuple("CarFootnote", ["text", "column"], defaults=[None])
+CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
+
+
+class CommonFootnote(Enum):
+  EXP_LONG_AVAIL = CarFootnote(
+    "Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `master-ci`. ",
+    Column.LONGITUDINAL, docs_only=True)
+  EXP_LONG_DSU = CarFootnote(
+    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace " +
+    "stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
+    Column.LONGITUDINAL)
 
 
 def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
@@ -128,11 +138,22 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
+
+    op_long = "Stock"
+    if CP.openpilotLongitudinalControl and not CP.enableDsu:
+      op_long = "openpilot"
+    elif CP.experimentalLongitudinalAvailable or CP.enableDsu:
+      op_long = "openpilot available"
+      if CP.enableDsu:
+        self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
+      else:
+        self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: "openpilot" if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable else "Stock",
+      Column.LONGITUDINAL: op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
@@ -150,6 +171,9 @@ class CarInfo:
     self.detail_sentence = self.get_detail_sentence(CP)
 
     return self
+
+  def init_make(self, CP: car.CarParams):
+    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:

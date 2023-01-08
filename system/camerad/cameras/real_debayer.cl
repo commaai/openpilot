@@ -72,7 +72,7 @@ float4 val4_from_12(uchar8 pvs, float gain) {
   float4 pv = {ox03c10_lut[parsed.s0], ox03c10_lut[parsed.s1], ox03c10_lut[parsed.s2], ox03c10_lut[parsed.s3]};
 
   // it's a 24 bit signal, center in the middle 8 bits
-  return pv*256.0;
+  return clamp(pv*gain*256.0, 0.0, 1.0);
   #else // AR
   // normalize and scale
   float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);

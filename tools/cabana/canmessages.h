@@ -1,12 +1,9 @@
 #pragma once
 
 #include <atomic>
-#include <deque>
-#include <map>
 
 #include <QColor>
 #include <QHash>
-#include <QList>
 
 #include "opendbc/can/common_dbc.h"
 #include "tools/cabana/settings.h"
@@ -16,7 +13,6 @@ struct CanData {
   double ts = 0.;
   uint32_t count = 0;
   uint32_t freq = 0;
-  uint16_t bus_time = 0;
   QByteArray dat;
 };
 
@@ -24,26 +20,21 @@ class CANMessages : public QObject {
   Q_OBJECT
 
 public:
-  enum FindFlags{ EQ, LT, GT };
   CANMessages(QObject *parent);
   ~CANMessages();
-  bool loadRoute(const QString &route, const QString &data_dir, bool use_qcam);
+  bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   void seekTo(double ts);
-  void resetRange();
-  void setRange(double min, double max);
-  QList<QPointF> findSignalValues(const QString&id, const Signal* signal, double value, FindFlags flag, int max_count);
   bool eventFilter(const Event *event);
 
-  inline std::pair<double, double> range() const { return {begin_sec, end_sec}; }
-  inline QString route() const { return routeName; }
+  inline QString routeName() const { return replay->route()->name(); }
   inline QString carFingerprint() const { return replay->carFingerprint().c_str(); }
+  inline VisionStreamType visionStreamType() const { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
-  inline double currentSec() const { return current_sec; }
-  inline bool isZoomed() const { return is_zoomed; }
-  inline const std::deque<CanData> &messages(const QString &id) { return can_msgs[id]; }
-  inline const CanData &lastMessage(const QString &id) { return can_msgs[id].front(); }
+  inline double currentSec() const { return replay->currentSeconds(); }
+  inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
+  inline const Route* route() const { return replay->route(); }
   inline const std::vector<Event *> *events() const { return replay->events(); }
   inline void setSpeed(float speed) { replay->setSpeed(speed); }
   inline bool isPaused() const { return replay->isPaused(); }
@@ -51,32 +42,23 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void seekedTo(double sec);
+  void streamStarted();
   void eventsMerged();
-  void rangeChanged(double min, double max);
   void updated();
-  void received(QHash<QString, std::deque<CanData>> *);
+  void msgsReceived(const QHash<QString, CanData> *);
+  void received(QHash<QString, CanData> *);
 
 public:
-  QMap<QString, std::deque<CanData>> can_msgs;
-  std::unique_ptr<QHash<QString, std::deque<CanData>>> received_msgs = nullptr;
+  QMap<QString, CanData> can_msgs;
 
 protected:
-  void process(QHash<QString, std::deque<CanData>> *);
-  void segmentsMerged();
+  void process(QHash<QString, CanData> *);
   void settingChanged();
 
-  std::atomic<double> current_sec = 0.;
-  std::atomic<bool> seeking = false;
-
-  double begin_sec = 0;
-  double end_sec = 0;
-  double event_begin_sec = 0;
-  double event_end_sec = 0;
-  bool is_zoomed = false;
-  QString routeName;
   Replay *replay = nullptr;
-
-  double counters_begin_sec = std::numeric_limits<double>::max();
+  std::atomic<double> counters_begin_sec = 0;
+  std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
 };
 
@@ -91,12 +73,6 @@ inline const QString &getColor(int i) {
   // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
-}
-
-inline QColor hoverColor(const QColor &color) {
-  QColor c = color.convertTo(QColor::Hsv);
-  c.setHsv(color.hue(), 180, 180);
-  return c;
 }
 
 // A global pointer referring to the unique CANMessages object
