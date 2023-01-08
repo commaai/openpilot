@@ -19,7 +19,8 @@ void Settings::save() {
   s.setValue("chart_height", chart_height);
   s.setValue("max_chart_x_range", max_chart_x_range);
   s.setValue("last_dir", last_dir);
-  s.setValue("splitter_state", splitter_state);
+  s.setValue("window_state", window_state);
+  s.setValue("geometry", geometry);
 }
 
 void Settings::load() {
@@ -29,7 +30,8 @@ void Settings::load() {
   chart_height = s.value("chart_height", 200).toInt();
   max_chart_x_range = s.value("max_chart_x_range", 3 * 60).toInt();
   last_dir = s.value("last_dir", QDir::homePath()).toString();
-  splitter_state = s.value("splitter_state").toByteArray();
+  window_state = s.value("window_state").toByteArray();
+  geometry = s.value("geometry").toByteArray();
 }
 
 // SettingsDlg

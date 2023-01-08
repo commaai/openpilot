@@ -43,12 +43,12 @@ def replace_calib(msg, calib):
 
 
 def nav_model_replay(lr):
-  sm = messaging.SubMaster(['navModel', 'navThumbnail'])
+  sm = messaging.SubMaster(['navModel', 'navThumbnail', 'mapRenderState'])
   pm = messaging.PubMaster(['liveLocationKalman', 'navRoute'])
 
   nav = [m for m in lr if m.which() == 'navRoute']
   llk = [m for m in lr if m.which() == 'liveLocationKalman']
-  assert len(nav) > 0 and len(llk) >= NAV_FRAMES
+  assert len(nav) > 0 and len(llk) >= NAV_FRAMES and nav[0].logMonoTime < llk[-NAV_FRAMES].logMonoTime
 
   log_msgs = []
   try:
@@ -59,8 +59,8 @@ def nav_model_replay(lr):
 
     # setup position and route
     for _ in range(10):
-      for s in (llk, nav):
-        pm.send(s[0].which(), s[0].as_builder().to_bytes())
+      for s in (llk[-NAV_FRAMES], nav[0]):
+        pm.send(s.which(), s.as_builder().to_bytes())
       sm.update(1000)
       if sm.updated['navModel']:
         break
@@ -74,10 +74,14 @@ def nav_model_replay(lr):
     sm.update(0)
 
     # run replay
-    for n in range(NAV_FRAMES):
+    for n in range(len(llk) - NAV_FRAMES, len(llk)):
       pm.send(llk[n].which(), llk[n].as_builder().to_bytes())
       m = messaging.recv_one(sm.sock['navThumbnail'])
       assert m is not None, f"no navThumbnail, frame={n}"
+      log_msgs.append(m)
+
+      m = messaging.recv_one(sm.sock['mapRenderState'])
+      assert m is not None, f"no mapRenderState, frame={n}"
       log_msgs.append(m)
 
       m = messaging.recv_one(sm.sock['navModel'])
@@ -231,6 +235,8 @@ if __name__ == "__main__":
         'navModel.dspExecutionTime',
         'navModel.modelExecutionTime',
         'navThumbnail.timestampEof',
+        'mapRenderState.locationMonoTime',
+        'mapRenderState.renderTime',
       ]
       if PC:
         ignore += [
