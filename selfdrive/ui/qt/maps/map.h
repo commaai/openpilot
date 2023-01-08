@@ -112,7 +112,7 @@ private:
   MapETA* map_eta;
 
   void clearRoute();
-  void update_destination_marker();
+  void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;
 
 private slots:

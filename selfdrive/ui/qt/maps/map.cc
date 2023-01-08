@@ -237,7 +237,7 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
-    update_destination_marker();
+    updateDestinationMarker();
   }
 }
 
@@ -275,7 +275,7 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
-    update_destination_marker();
+    updateDestinationMarker();
   }
 
   map_instructions->hideIfNoError();
@@ -363,7 +363,7 @@ void MapWindow::offroadTransition(bool offroad) {
   last_bearing = {};
 }
 
-void MapWindow::update_destination_marker() {
+void MapWindow::updateDestinationMarker() {
   if (marker_id != -1) {
     m_map->removeAnnotation(marker_id);
     marker_id = -1;
