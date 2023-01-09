@@ -33,7 +33,9 @@ int main(int argc, char *argv[]) {
     replay_flags |= REPLAY_FLAG_QCAMERA;
   }
 
+#ifndef __APPLE__
   OpenpilotPrefix op_prefix;
+#endif
   CANMessages p(&app);
   int ret = 0;
   if (p.loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
