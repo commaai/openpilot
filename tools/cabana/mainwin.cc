@@ -373,7 +373,7 @@ void LoadRouteDialog::loadClicked() {
   if (int idx = route_string.lastIndexOf('/'); idx != -1) {
     QString basename = route_string.mid(idx + 1);
     if (int pos = basename.lastIndexOf("--"); pos != -1) {
-      QString route = "0000000000000000|" + basename.mid(0, pos);
+      QString route = basename.mid(0, pos);
       loadRoute(route, route_string.mid(0, idx), false);
     }
   } else {
