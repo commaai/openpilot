@@ -64,6 +64,7 @@ public:
   inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
   inline const Route* route() const { return route_.get(); }
   inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline QDateTime currentDateTime() const { return route_->datetime().addSecs(currentSeconds()); }
   inline uint64_t routeStartTime() const { return route_start_ts_; }
   inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
   inline int totalSeconds() const { return segments_.size() * 60; }
