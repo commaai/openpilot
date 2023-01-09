@@ -86,7 +86,7 @@ void ReplayControls::start(const QString &route, const QString &data_dir) {
   const QStringList allow = {"modelV2", "controlsState", "liveCalibration", "radarState", "roadCameraState",
                              "roadEncodeIdx", "carParams", "driverMonitoringState", "carState", "liveLocationKalman",
                              "wideRoadCameraState", "navInstruction", "navRoute", "gnssMeasurements"};
-  replay.reset(new Replay("0000000000000000|" + route, allow, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
+  replay.reset(new Replay(route, allow, {}, nullptr, REPLAY_FLAG_NONE, data_dir));
   if (replay->load()) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));
