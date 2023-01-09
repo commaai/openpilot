@@ -149,13 +149,9 @@ class CarInfo:
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
-    video_link = ''
-    if self.video_link is not None:
-      video_link = f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
-
     self.row = {
       Column.MAKE: self.make,
-      Column.MODEL: self.model + video_link,
+      Column.MODEL: self.model,
       Column.PACKAGE: self.package,
       Column.LONGITUDINAL: op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
@@ -210,8 +206,11 @@ class CarInfo:
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
-    elif column == Column.MODEL and len(self.years):
-      item += f" {self.years}"
+    elif column == Column.MODEL:
+      if len(self.years):
+        item += f" {self.years}"
+      if self.video_link is not None:
+        item += f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
