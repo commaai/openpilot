@@ -30,7 +30,6 @@ const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
 const float  GPS_MUL_FACTOR = 10.0;
 const float  GPS_POS_STD_THRESHOLD = 50.0;
 const float  GPS_VEL_STD_THRESHOLD = 5.0;
-const float  GPS_POS_STD_DROP = 0.4;
 const float  GPS_POS_ERROR_RESET_THRESHOLD = 300.0;
 const float  GPS_POS_STD_RESET_THRESHOLD = 2.0;
 const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
@@ -408,7 +407,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
-  if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD || ecef_pos_std < GPS_POS_STD_DROP) {
+  if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
     this->determine_gps_mode(current_time);
     return;
   }
