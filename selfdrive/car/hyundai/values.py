@@ -799,6 +799,7 @@ FW_VERSIONS = {
       b'\xf1\x00CK__ SCC F_CUP      1.00 1.01 96400-J5100         ',
       b'\xf1\x00CK__ SCC F_CUP      1.00 1.03 96400-J5100         ',
       b'\xf1\x00CK__ SCC F_CUP      1.00 1.01 96400-J5000         ',
+      b'\xf1\x00CK__ SCC F_CUP      1.00 1.02 96400-J5100         ',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81606DE051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -806,6 +807,7 @@ FW_VERSIONS = {
       b'\xf1\x82CKJN3TMSDE0B\x00\x00\x00\x00',
       b'\xf1\x82CKKN3TMD_H0A\x00\x00\x00\x00',
       b'\xe0\x19\xff\xe7\xe7g\x01\xa2\x00\x0f\x00\x9e\x00\x06\x00\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff\xff\xff\x00\x00\x0f\x0e\x0f\x0f\x0e\r\x00\x00\x7f\x02.\xff\x00\x00~p\x00\x00\x00\x00u\xff\xf9\xff\x00\x00\x00\x00V\t\xd5\x01\xc0\x00\x00\x00\x007\xfb\xfc\x0b\x8d\x00',
+      b'\xf1\x81640H0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00CK  MDPS R 1.00 1.04 57700-J5200 4C2CL104',
@@ -813,6 +815,7 @@ FW_VERSIONS = {
       b'\xf1\x00CK  MDPS R 1.00 1.04 57700-J5420 4C4VL104',
       b'\xf1\x00CK  MDPS R 1.00 1.06 57700-J5420 4C4VL106',
       b'\xf1\x00CK  MDPS R 1.00 1.07 57700-J5220 4C2VL107',
+      b'\xf1\x00CK  MDPS R 1.00 1.06 57700-J5220 4C2VL106',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CK  MFC  AT USA LHD 1.00 1.03 95740-J5000 170822',
@@ -820,6 +823,7 @@ FW_VERSIONS = {
       b'\xf1\x00CK  MFC  AT EUR LHD 1.00 1.03 95740-J5000 170822',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SCK0T33NB2\xb3\xee\xba\xdc',
       b'\xf1\x87VCJLE17622572DK0vd6D\x99\x98y\x97vwVffUfvfC%CuT&Dx\x87o\xff{\x1c\xf1\x81E21\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E21\x00\x00\x00\x00\x00\x00\x00SCK0T33NB0\x88\xa2\xe6\xf0',
       b'\xf1\x87VDHLG17000192DK2xdFffT\xa5VUD$DwT\x86wveVeeD&T\x99\xba\x8f\xff\xcc\x99\xf1\x81E21\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E21\x00\x00\x00\x00\x00\x00\x00SCK0T33NB0\x88\xa2\xe6\xf0',
       b'\xf1\x87VDHLG17000192DK2xdFffT\xa5VUD$DwT\x86wveVeeD&T\x99\xba\x8f\xff\xcc\x99\xf1\x89E21\x00\x00\x00\x00\x00\x00\x00\xf1\x82SCK0T33NB0',
