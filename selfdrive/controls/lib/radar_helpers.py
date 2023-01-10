@@ -130,7 +130,7 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, lead_index, v_ego):
+  def get_RadarState_from_vision(self, lead_msg, v_ego):
     return {
       "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
