@@ -11,7 +11,7 @@ from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 # TODO: make new FCW tests
 def create_maneuvers(kwargs):
-  return [
+  maneuvers = [
     Maneuver(
       'approach stopped car at 25m/s, initial distance: 120m',
       duration=20.,
@@ -120,18 +120,6 @@ def create_maneuvers(kwargs):
       cruise_values=[float("nan"), 15., 15.],
       **kwargs,
     ),
-    # controls relies on planner commanding to move for stock-ACC resume spamming
-    Maneuver(
-      "resume from a stop",
-      duration=20.,
-      initial_speed=0.,
-      lead_relevancy=True,
-      initial_distance_lead=STOP_DISTANCE,
-      speed_lead_values=[0., 0., 2.],
-      breakpoints=[1., 10., 15.],
-      ensure_start=True,
-      **kwargs,
-    ),
     Maneuver(
       'cruising at 25 m/s while disabled',
       duration=20.,
@@ -141,6 +129,20 @@ def create_maneuvers(kwargs):
       **kwargs,
     ),
   ]
+  if not kwargs['force_decel']:
+    # controls relies on planner commanding to move for stock-ACC resume spamming
+    maneuvers.append(Maneuver(
+      "resume from a stop",
+      duration=20.,
+      initial_speed=0.,
+      lead_relevancy=True,
+      initial_distance_lead=STOP_DISTANCE,
+      speed_lead_values=[0., 0., 2.],
+      breakpoints=[1., 10., 15.],
+      ensure_start=True,
+      **kwargs,
+    ))
+  return maneuvers
 
 
 @parameterized_class(("e2e", "force_decel"), itertools.product([True, False], repeat=2))

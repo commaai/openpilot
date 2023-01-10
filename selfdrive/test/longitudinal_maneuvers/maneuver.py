@@ -62,6 +62,10 @@ class Maneuver:
       if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
         print('LongitudinalPlanner not starting!')
         valid = False
+    if self.force_decel and log['speed'] > 1e-1 and log['acceleration'] > -0.04:
+      print('Not stopping with force decel')
+      valid = False
+
 
     print("maneuver end", valid)
     return valid, np.array(logs)
