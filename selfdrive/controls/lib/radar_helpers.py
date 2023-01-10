@@ -5,9 +5,6 @@ from common.kalman.simple_kalman import KF1D
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
 
-# Hack to maintain vision lead state
-_vision_lead_aTau = {0: _LEAD_ACCEL_TAU, 1: _LEAD_ACCEL_TAU}
-
 # radar tracks
 SPEED, ACCEL = 0, 1   # Kalman filter states enum
 
@@ -134,12 +131,6 @@ class Cluster():
     }
 
   def get_RadarState_from_vision(self, lead_msg, lead_index, v_ego):
-    # Learn if constant acceleration
-    if abs(float(lead_msg.a[0])) < 0.5:
-      _vision_lead_aTau[lead_index] = _LEAD_ACCEL_TAU
-    else:
-      _vision_lead_aTau[lead_index] *= 0.9
-
     return {
       "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
@@ -147,7 +138,7 @@ class Cluster():
       "vLead": float(lead_msg.v[0]),
       "vLeadK": float(lead_msg.v[0]),
       "aLeadK": float(lead_msg.a[0]),
-      "aLeadTau": _vision_lead_aTau[lead_index],
+      "aLeadTau": 0.3,  # FIXME: make this a separate named constant
       "fcw": False,
       "modelProb": float(lead_msg.prob),
       "radar": False,
