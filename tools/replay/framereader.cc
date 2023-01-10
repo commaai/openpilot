@@ -223,20 +223,18 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 
 bool FrameReader::copyBuffers(AVFrame *f, VisionBuf *buf) {
   assert(f != nullptr && buf != nullptr);
-  uint8_t *y = (uint8_t*)buf->addr;
-  uint8_t *uv = y + buf->uv_offset;
   if (hw_pix_fmt == HW_PIX_FMT) {
     for (int i = 0; i < height/2; i++) {
-      memcpy(y + (i*2 + 0)*buf->stride, f->data[0] + (i*2 + 0)*f->linesize[0], width);
-      memcpy(y + (i*2 + 1)*buf->stride, f->data[0] + (i*2 + 1)*f->linesize[0], width);
-      memcpy(uv + i*buf->stride, f->data[1] + i*f->linesize[1], width);
+      memcpy(buf->y + (i*2 + 0)*buf->stride, f->data[0] + (i*2 + 0)*f->linesize[0], width);
+      memcpy(buf->y + (i*2 + 1)*buf->stride, f->data[0] + (i*2 + 1)*f->linesize[0], width);
+      memcpy(buf->uv + i*buf->stride, f->data[1] + i*f->linesize[1], width);
     }
   } else {
     libyuv::I420ToNV12(f->data[0], f->linesize[0],
                        f->data[1], f->linesize[1],
                        f->data[2], f->linesize[2],
-                       y, buf->stride,
-                       uv, buf->stride,
+                       buf->y, buf->stride,
+                       buf->uv, buf->stride,
                        width, height);
   }
   return true;

@@ -4,6 +4,15 @@
 
 #include <cassert>
 
+std::tuple<size_t, size_t, size_t> get_nv12_info(int width, int height) {
+  int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, width);
+  int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, height);
+  assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, width));
+  assert(nv12_height / 2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, height));
+  size_t nv12_buffer_size = 2346 * nv12_width;  // comes from v4l2_format.fmt.pix_mp.plane_fmt[0].sizeimage
+  return {nv12_width, nv12_height, nv12_buffer_size};
+}
+
 CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
   for (int i = 0; i < MAX_CAMERAS; ++i) {
     std::tie(cameras_[i].width, cameras_[i].height) = camera_size[i];
@@ -26,14 +35,9 @@ void CameraServer::startVipcServer() {
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       rInfo("camera[%d] frame size %dx%d", cam.type, cam.width, cam.height);
-      int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, cam.width);
-      int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, cam.height);
-      assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, cam.width));
-      assert(nv12_height / 2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, cam.height));
-      size_t nv12_size = 2346 * nv12_width;  // comes from v4l2_format.fmt.pix_mp.plane_fmt[0].sizeimage
-      size_t nv12_uv_offset = nv12_width * nv12_height;
+      auto [nv12_width, nv12_height, nv12_buffer_size] = get_nv12_info(cam.width, cam.height);
       vipc_server_->create_buffers_with_sizes(cam.stream_type, YUV_BUFFER_COUNT, false, cam.width, cam.height,
-                                              nv12_size, nv12_width, nv12_uv_offset);
+                                              nv12_buffer_size, nv12_width, nv12_width * nv12_height);
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
       }
