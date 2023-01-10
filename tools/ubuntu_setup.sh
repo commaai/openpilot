@@ -82,7 +82,7 @@ function install_ubuntu_common_requirements() {
 }
 
 # Install Ubuntu 22.04 LTS packages
-function install_ubuntu_jammy_requirements() {
+function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
   $SUDO apt-get install -y --no-install-recommends \
@@ -108,7 +108,10 @@ if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
     "jammy")
-      install_ubuntu_jammy_requirements
+      install_ubuntu_lts_latest_requirements
+      ;;
+    "kinetic")
+      install_ubuntu_lts_latest_requirements
       ;;
     "focal")
       install_ubuntu_focal_requirements
@@ -120,8 +123,8 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ]; then
-        install_ubuntu_jammy_requirements
+      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
+        install_ubuntu_lts_latest_requirements
       else
         install_ubuntu_focal_requirements
       fi

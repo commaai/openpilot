@@ -51,12 +51,14 @@ six = "^1.16.0"
 smbus2 = "^0.4.2"
 sounddevice = "^0.4.5"
 spidev = { version = "^3.6", platform = "linux" }
+spidev2 = { version = "^0.9.0", platform = "linux" }
 sympy = "^1.10.1"
 timezonefinder = "^6.0.1"
 tqdm = "^4.64.0"
 urllib3 = "^1.26.10"
 utm = "^0.7.0"
 websocket_client = "^1.3.3"
+polyline = "^1.4.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -169,6 +171,7 @@ torchvision = { url = "https://download.pytorch.org/whl/cu113/torchvision-0.12.0
 triton = "^1.1.1"
 Werkzeug = "^2.1.2"
 zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "master" }
+omegaconf = "^2.3.0"
 
 
 [build-system]
