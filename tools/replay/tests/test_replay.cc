@@ -102,11 +102,6 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
       if (cam == RoadCam || cam == WideRoadCam) {
         REQUIRE(fr->getFrameCount() == 1200);
       }
-      VisionStreamType type;
-      if (cam == RoadCam) type = VISION_STREAM_ROAD;
-      else if (cam == DriverCam) type = VISION_STREAM_DRIVER;
-      else if (cam == WideRoadCam) type = VISION_STREAM_WIDE_ROAD;
-
       auto [nv12_width, nv12_height, nv12_buffer_size] = get_nv12_info(fr->width, fr->height);
       VisionBuf buf;
       buf.allocate(nv12_buffer_size);
