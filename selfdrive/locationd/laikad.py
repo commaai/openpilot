@@ -95,7 +95,6 @@ class Laikad:
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 7 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 6
       position_solution, pr_residuals = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
-
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
@@ -259,7 +258,7 @@ class Laikad:
 
   def fetch_navs(self, t: GPSTime, block):
     # Download new navs if 1 hour of navs data left
-    if t + SECS_IN_HR not in self.astro_dog.orbit_fetched_times and (self.last_fetch_navs_t is None or abs(t - self.last_fetch_navs_t) > SECS_IN_MIN):
+    if t + SECS_IN_HR not in self.astro_dog.navs_fetched_times and (self.last_fetch_navs_t is None or abs(t - self.last_fetch_navs_t) > SECS_IN_MIN):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types, self.astro_dog.cache_dir
       ret = None
 
@@ -276,7 +275,7 @@ class Laikad:
         if ret[0] is None:
           self.last_fetch_navs_t = ret[2]
         else:
-          self.astro_dog.navs, self.astro_dog.orbit_fetched_times, self.last_fetch_navs_t = ret
+          self.astro_dog.navs, self.astro_dog.navs_fetched_times, self.last_fetch_navs_t = ret
           self.cache_ephemeris(t=t)
 
 
