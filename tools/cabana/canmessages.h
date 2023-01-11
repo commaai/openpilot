@@ -38,10 +38,12 @@ public:
   inline const std::vector<Event *> *events() const { return replay->events(); }
   inline void setSpeed(float speed) { replay->setSpeed(speed); }
   inline bool isPaused() const { return replay->isPaused(); }
-  inline void pause(bool pause) { replay->pause(pause); }
+  void pause(bool pause);
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return replay->getTimeline(); }
 
 signals:
+  void paused();
+  void resume();
   void seekedTo(double sec);
   void streamStarted();
   void eventsMerged();
