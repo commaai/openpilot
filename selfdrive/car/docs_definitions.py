@@ -21,6 +21,7 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
+  VIDEO = "Video"
 
 
 class Star(Enum):
@@ -159,6 +160,7 @@ class CarInfo:
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: self.harness.value,
+      Column.VIDEO: f'<a href="{self.video_link}" target="_blank"><img src="assets/icon-youtube.svg"></img></a>' if self.video_link is not None else "",
     }
 
     # Set steering torque star from max lateral acceleration
@@ -209,9 +211,9 @@ class CarInfo:
     elif column == Column.MODEL:
       if len(self.years):
         item += f" {self.years}"
-      if self.video_link is not None:
-        # item += f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
-        item += f' <a href="{self.video_link}" target="_blank">{video_icon}</a>'
+      # if self.video_link is not None:
+      #   # item += f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
+      #   item += f' <a href="{self.video_link}" target="_blank">{video_icon}</a>'
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
