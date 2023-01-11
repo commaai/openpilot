@@ -25,14 +25,28 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
   }
   bus_combo->model()->sort(0);
   bus_combo->setCurrentIndex(0);
+
+  msg_cb = new QComboBox(this);
+  for (auto &[address, msg] : dbc()->messages()) {
+    msg_cb->addItem(msg.name, address);
+  }
+  msg_cb->model()->sort(0);
+  msg_cb->setCurrentIndex(0);
+
+  byte_idx_sb = new QSpinBox(this);
+  byte_idx_sb->setRange(0, 63);
+
+  bit_idx_sb = new QSpinBox(this);
+  bit_idx_sb->setRange(0, 7);
+
   form_layout->addWidget(new QLabel("Bus"));
   form_layout->addWidget(bus_combo);
+  form_layout->addWidget(msg_cb);
+  form_layout->addWidget(new QLabel("Byte Index"));
+  form_layout->addWidget(byte_idx_sb);
+  form_layout->addWidget(new QLabel("Bit Index"));
+  form_layout->addWidget(bit_idx_sb);
 
-  bit_combo = new QComboBox(this);
-  bit_combo->addItems({"0", "1"});
-  bit_combo->setCurrentIndex(1);
-  form_layout->addWidget(new QLabel("Bit"));
-  form_layout->addWidget(bit_combo);
 
   min_msgs = new QLineEdit(this);
   min_msgs->setValidator(new QIntValidator(this));
@@ -56,7 +70,8 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
 void FindSimilarBitsDlg::find() {
   search_btn->setEnabled(false);
   table->clear();
-  auto msg_mismatched = calcBits(bus_combo->currentText().toUInt(), bit_combo->currentIndex(), min_msgs->text().toInt());
+  uint32_t selected_address = msg_cb->currentData().toUInt();
+  auto msg_mismatched = calcBits(bus_combo->currentText().toUInt(), selected_address, byte_idx_sb->value(), bit_idx_sb->value(), min_msgs->text().toInt());
   table->setRowCount(msg_mismatched.size());
   table->setColumnCount(6);
   table->setHorizontalHeaderLabels({"address", "byte idx", "bit idx", "mismatches", "total", "perc%"});
@@ -72,18 +87,25 @@ void FindSimilarBitsDlg::find() {
   search_btn->setEnabled(true);
 }
 
-QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, int bit_to_find, int min_msgs_cnt) {
+QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx, int bit_idx, int min_msgs_cnt) {
   QHash<uint32_t, QVector<uint32_t>> mismatches;
   QHash<uint32_t, uint32_t> msg_count;
   auto events = can->events();
+  qDebug() << bus << selected_address << byte_idx << bit_idx;
+  int bit_to_find = -1;
   for (auto e : *events) {
     if (e->which == cereal::Event::Which::CAN) {
       for (const auto &c : e->event.getCan()) {
         if (c.getSrc() == bus) {
-          uint32_t address = c.getAddress();
-          ++msg_count[address];
-          auto &mismatched = mismatches[address];
           const auto dat = c.getDat();
+          uint32_t address = c.getAddress();
+          if (address == selected_address && dat.size() > byte_idx) {
+            bit_to_find = ((dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
+          }
+          ++msg_count[address];
+          if (bit_to_find == -1) continue;
+
+          auto &mismatched = mismatches[address];
           if (mismatched.size() < dat.size() * 8) {
             mismatched.resize(dat.size() * 8);
           }
