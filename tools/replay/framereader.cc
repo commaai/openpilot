@@ -33,18 +33,20 @@ int readPacket(void *opaque, uint8_t *buf, int buf_size) {
   return buf_size;
 }
 
-enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
-  enum AVPixelFormat *hw_pix_fmt = reinterpret_cast<enum AVPixelFormat *>(ctx->opaque);
-  for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
-    if (*p == *hw_pix_fmt) return *p;
+}  // namespace
+
+
+enum AVPixelFormat FrameReader::get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
+  FrameReader *fr = reinterpret_cast<FrameReader *>(ctx->opaque);
+  for (const enum AVPixelFormat *p = pix_fmts; *p != AV_PIX_FMT_NONE; p++) {
+    if (*p == fr->hw_pix_fmt) return *p;
   }
   rWarning("Please run replay with the --no-hw-decoder flag!");
   // fallback to YUV420p
-  *hw_pix_fmt = AV_PIX_FMT_NONE;
+  fr->hw_pix_fmt = AV_PIX_FMT_NONE;
+  fr->has_hw_decoder = false;
   return AV_PIX_FMT_YUV420P;
 }
-
-}  // namespace
 
 FrameReader::FrameReader() {
   av_log_set_level(AV_LOG_QUIET);
@@ -120,6 +122,12 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, s
     }
   }
 
+  if (decoder_ctx->codec->capabilities & AV_CODEC_CAP_FRAME_THREADS) {
+    decoder_ctx->thread_type = FF_THREAD_FRAME;
+  } else if (decoder_ctx->codec->capabilities & AV_CODEC_CAP_SLICE_THREADS) {
+    decoder_ctx->thread_type = FF_THREAD_SLICE;
+  }
+
   ret = avcodec_open2(decoder_ctx, decoder, nullptr);
   if (ret < 0) return false;
 
@@ -163,8 +171,8 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   }
 
   decoder_ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
-  decoder_ctx->opaque = &hw_pix_fmt;
-  decoder_ctx->get_format = get_hw_format;
+  decoder_ctx->opaque = this;
+  decoder_ctx->get_format = &FrameReader::get_hw_format;
   return true;
 }
 
@@ -202,13 +210,17 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
   int ret = avcodec_send_packet(decoder_ctx, pkt);
   if (ret < 0) {
     rError("Error sending a packet for decoding: %d", ret);
+    assert(0);
     return nullptr;
   }
 
   av_frame_.reset(av_frame_alloc());
-  ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
+  do {
+    ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
+  } while (ret == AVERROR(EAGAIN));
+
   if (ret != 0) {
-    rError("avcodec_receive_frame error: %d", ret);
+    printf("avcodec_receive_frame error: %d", ret);
     return nullptr;
   }
 
