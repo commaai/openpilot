@@ -68,19 +68,19 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
 
+      # Tuning for experimental long
+      ret.longitudinalTuning.kpV = [2.0, 1.5]
+      ret.longitudinalTuning.kiV = [0.72]
+      ret.stopAccel = -2.0
+      ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
+      ret.vEgoStopping = 0.25
+      ret.vEgoStarting = 0.25
+      ret.longitudinalActuatorDelayUpperBound = 0.5
+
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
-
-        # Tuning
-        ret.longitudinalTuning.kpV = [2.0, 1.5]
-        ret.longitudinalTuning.kiV = [0.72]
-        ret.stopAccel = -2.0
-        ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
-        ret.longitudinalActuatorDelayUpperBound = 0.5
 
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
