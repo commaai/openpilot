@@ -63,20 +63,17 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   }
   main_layout->addLayout(control_layout);
 
-  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
-  QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
-  QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
+  QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
+  QObject::connect(can, &CANMessages::paused, [this]() { play_btn->setText("▶"); });
+  QObject::connect(can, &CANMessages::resume, [this]() { play_btn->setText("⏸"); });
   QObject::connect(can, &CANMessages::streamStarted, [this]() {
     end_time_label->setText(formatTime(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
-}
-
-void VideoWidget::pause(bool pause) {
-  play_btn->setText(!pause ? "⏸" : "▶");
-  can->pause(pause);
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
