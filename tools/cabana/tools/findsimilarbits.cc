@@ -126,7 +126,7 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
     if (auto cnt = msg_count[it.key()]; cnt > min_msgs_cnt) {
       auto &mismatched = it.value();
       for (int i = 0; i < mismatched.size(); ++i) {
-        if (uint32_t perc = (mismatched[i] / (double)cnt) * 100; perc < 50) {
+        if (float perc = (mismatched[i] / (double)cnt) * 100; perc < 50) {
           result.push_back({it.key(), (uint32_t)i / 8, (uint32_t)i % 8, mismatched[i], cnt, perc});
         }
       }
