@@ -1177,10 +1177,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
     uint32_t lcg_time = std::max(((dc_gain_max_weight - dc_gain_weight) * exposure_time / dc_gain_max_weight), 0);
     // uint32_t spd_time = std::max(hcg_time / 16, (uint32_t)exposure_time_min);
     uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 128, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
-    uint32_t spd_time = vs_time;
+    uint32_t spd_time = hcg_time + lcg_time;
 
     uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
-    uint32_t min_gain = ox03c10_analog_gains_reg[0];
+    uint32_t min_gain = real_gain; //ox03c10_analog_gains_reg[0];
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
