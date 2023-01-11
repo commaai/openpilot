@@ -390,7 +390,7 @@ if arch != "larch64":
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, [], rednose_deps),
+    'lane': ('#../pipeline/lib/ekf/lane_kf.py', True, [], rednose_deps),
   })
 
 Export('rednose_config')
