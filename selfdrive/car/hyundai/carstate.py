@@ -442,6 +442,7 @@ class CarState(CarStateBase):
 
       ("DriverBraking", "TCS"),
       ("ACCEnable", "TCS"),
+      ("ACC_REQ", "TCS"),
 
       ("COUNTER", cruise_btn_msg),
       ("CRUISE_BUTTONS", cruise_btn_msg),
@@ -483,6 +484,7 @@ class CarState(CarStateBase):
         ("ACCMode", "SCC_CONTROL"),
         ("VSetDis", "SCC_CONTROL"),
         ("CRUISE_STANDSTILL", "SCC_CONTROL"),
+        ("MainMode_ACC", "SCC_CONTROL"),
       ]
       checks += [
         ("SCC_CONTROL", 50),
