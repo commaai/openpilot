@@ -202,7 +202,7 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
@@ -210,7 +210,8 @@ class CarInfo:
       if len(self.years):
         item += f" {self.years}"
       if self.video_link is not None:
-        item += f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
+        # item += f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
+        item += f' <a href="{self.video_link}" target="_blank">{video_icon}</a>'
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
