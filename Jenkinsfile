@@ -90,7 +90,8 @@ pipeline {
             }
           }
           steps {
-            sh "git config --global --add safe.directory ${WORKSPACE}"
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
             sh "git lfs pull"
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
