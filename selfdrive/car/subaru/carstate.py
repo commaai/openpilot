@@ -32,9 +32,8 @@ class CarState(CarStateBase):
       cp_wheels.vl["Wheel_Speeds"]["RR"],
     )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    # Kalman filter, even though Subaru raw wheel speed is heaviliy filtered by default
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = ret.vEgoRaw == 0
 
     # continuous blinker signals for assisted lane change
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
@@ -50,7 +49,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
-    
+
     steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 80
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
@@ -58,9 +57,6 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
     ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
-
-    if self.car_fingerprint not in PREGLOBAL_CARS:
-      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
 
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
        (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
@@ -79,6 +75,8 @@ class CarState(CarStateBase):
     else:
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
+      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
+      ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam

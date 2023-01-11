@@ -79,6 +79,7 @@ private:
 
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
+  QMapbox::AnnotationID marker_id = -1;
 
   void initLayers();
 
@@ -98,7 +99,7 @@ private:
   // Panning
   QPointF m_lastPos;
   int pan_counter = 0;
-  int zoom_counter = 0;
+  int zoom_counter = -1;
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
@@ -111,6 +112,7 @@ private:
   MapETA* map_eta;
 
   void clearRoute();
+  void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;
 
 private slots:

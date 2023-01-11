@@ -277,7 +277,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(primeAd);
+  mainLayout->setCurrentWidget(uiState()->prime_type ? (QWidget*)primeUser : (QWidget*)primeAd);
 
   setFixedWidth(750);
   setStyleSheet(R"(
@@ -299,11 +299,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &SetupWidget::replyFinished);
   }
-  hide(); // Only show when first request comes back
 }
 
 void SetupWidget::replyFinished(const QString &response, bool success) {
-  show();
   if (!success) return;
 
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
@@ -314,11 +312,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
 
   QJsonObject json = doc.object();
   int prime_type = json["prime_type"].toInt();
-
-  if (uiState()->prime_type != prime_type) {
-    uiState()->prime_type = prime_type;
-    Params().put("PrimeType", std::to_string(prime_type));
-  }
+  uiState()->prime_type = prime_type;
 
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);

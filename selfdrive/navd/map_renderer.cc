@@ -1,17 +1,31 @@
 #include "selfdrive/navd/map_renderer.h"
 
+#include <cmath>
+#include <string>
 #include <QApplication>
 #include <QBuffer>
-#include <QDebug>
 
+#include "common/util.h"
 #include "common/timing.h"
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
-const float ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int WIDTH = 256;
-const int HEIGHT = WIDTH;
-
+const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
+const int HEIGHT = 512, WIDTH = 512;
 const int NUM_VIPC_BUFFERS = 4;
+
+const int EARTH_CIRCUMFERENCE_METERS = 40075000;
+const int PIXELS_PER_TILE = 256;
+
+const bool TEST_MODE = getenv("MAP_RENDER_TEST_MODE");
+const int LLK_DECIMATION = TEST_MODE ? 1 : 10;
+
+float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
+  float meters_per_tile = meters_per_pixel * PIXELS_PER_TILE;
+  float num_tiles = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / meters_per_tile;
+  return log2(num_tiles) - 1;
+}
+
 
 MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
@@ -35,31 +49,42 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   QOpenGLFramebufferObjectFormat fbo_format;
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
+  std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
-  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), ZOOM);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckvmksrpd4n0a14pfdo5heqzr");
+  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
+  m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
+  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
+    //LOGD("new state %d", change);
+  });
+
+  QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
+    LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
+  });
+
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
-    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
+    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH/2, HEIGHT/2);
     vipc_server->start_listener();
 
-    pm.reset(new PubMaster({"navThumbnail"}));
-    sm.reset(new SubMaster({"liveLocationKalman", "navRoute"}));
+    pm.reset(new PubMaster({"navThumbnail", "mapRenderState"}));
+    sm.reset(new SubMaster({"liveLocationKalman", "navRoute"}, {"liveLocationKalman"}));
 
     timer = new QTimer(this);
+    timer->setSingleShot(true);
     QObject::connect(timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
-    timer->start(50);
+    timer->start(0);
   }
 }
 
 void MapRenderer::msgUpdate() {
-  sm->update(0);
+  sm->update(1000);
 
   if (sm->updated("liveLocationKalman")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
@@ -67,8 +92,21 @@ void MapRenderer::msgUpdate() {
     auto orientation = location.getCalibratedOrientationNED();
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid) {
+    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
       updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
+
+      // TODO: use the static rendering mode
+      if (!loaded() && frame_id > 0) {
+        for (int i = 0; i < 5 && !loaded(); i++) {
+          LOGW("map render retry #%d, %d", i+1, m_map.isNull());
+          QApplication::processEvents(QEventLoop::AllEvents, 100);
+          update();
+        }
+
+        if (!loaded()) {
+          LOGE("failed to render map after retry");
+        }
+      }
     }
   }
 
@@ -80,6 +118,9 @@ void MapRenderer::msgUpdate() {
     }
     updateRoute(route);
   }
+
+  // schedule next update
+  timer->start(0);
 }
 
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
@@ -87,8 +128,13 @@ void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
     return;
   }
 
+  // Choose a scale that ensures above 13 zoom level up to and above 75deg of lat
+  float meters_per_pixel = 2;
+  float zoom = get_zoom_level_for_scale(position.first, meters_per_pixel);
+
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
+  m_map->setZoom(zoom);
   update();
 }
 
@@ -97,24 +143,33 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
+  double start_t = millis_since_boot();
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
   gl_functions->glFlush();
+  double end_t = millis_since_boot();
 
-  sendVipc();
+  if ((vipc_server != nullptr) && loaded()) {
+    publish((end_t - start_t) / 1000.0);
+  }
 }
 
-void MapRenderer::sendVipc() {
-  if (!vipc_server || !loaded()) {
-    return;
-  }
+void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf) {
+  MessageBuilder msg;
+  auto thumbnaild = msg.initEvent().initNavThumbnail();
+  thumbnaild.setFrameId(frame_id);
+  thumbnaild.setTimestampEof(ts);
+  thumbnaild.setThumbnail(buf);
+  pm->send("navThumbnail", msg);
+}
 
+void MapRenderer::publish(const double render_time) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
-    .timestamp_sof = ts,
+    .timestamp_sof = (*sm)["liveLocationKalman"].getLogMonoTime(),
     .timestamp_eof = ts,
   };
 
@@ -122,15 +177,22 @@ void MapRenderer::sendVipc() {
   uint8_t* dst = (uint8_t*)buf->addr;
   uint8_t* src = cap.bits();
 
-  // RGB to greyscale
+  // RGB to greyscale and crop
   memset(dst, 128, buf->len);
-  for (int i = 0; i < WIDTH * HEIGHT; i++) {
-    dst[i] = src[i * 3];
+  for (int r = 0; r < HEIGHT/2; r++) {
+    for (int c = 0; c < WIDTH/2; c++) {
+      dst[r*WIDTH/2 + c] = src[((HEIGHT/4 + r)*WIDTH + (c+WIDTH/4)) * 3];
+    }
   }
 
   vipc_server->send(buf, &extra);
 
-  if (frame_id % 100 == 0) {
+  // Send thumbnail
+  if (TEST_MODE) {
+    // Full image in thumbnails in test mode
+    kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)cap.bits(), cap.sizeInBytes());
+    sendThumbnail(ts, buffer_kj);
+  } else if (frame_id % 100 == 0) {
     // Write jpeg into buffer
     QByteArray buffer_bytes;
     QBuffer buffer(&buffer_bytes);
@@ -138,15 +200,16 @@ void MapRenderer::sendVipc() {
     cap.save(&buffer, "JPG", 50);
 
     kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
-
-    // Send thumbnail
-    MessageBuilder msg;
-    auto thumbnaild = msg.initEvent().initNavThumbnail();
-    thumbnaild.setFrameId(frame_id);
-    thumbnaild.setTimestampEof(ts);
-    thumbnaild.setThumbnail(buffer_kj);
-    pm->send("navThumbnail", msg);
+    sendThumbnail(ts, buffer_kj);
   }
+
+  // Send state msg
+  MessageBuilder msg;
+  auto state = msg.initEvent().initMapRenderState();
+  state.setLocationMonoTime((*sm)["liveLocationKalman"].getLogMonoTime());
+  state.setRenderTime(render_time);
+  state.setFrameId(frame_id);
+  pm->send("mapRenderState", msg);
 
   frame_id++;
 }
@@ -157,6 +220,7 @@ uint8_t* MapRenderer::getImage() {
   uint8_t* src = cap.bits();
   uint8_t* dst = new uint8_t[WIDTH * HEIGHT];
 
+  // RGB to greyscale
   for (int i = 0; i < WIDTH * HEIGHT; i++) {
     dst[i] = src[i * 3];
   }
@@ -185,7 +249,7 @@ void MapRenderer::initLayers() {
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
-    m_map->setPaintProperty("navLayer", "line-width", 3);
+    m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
 }

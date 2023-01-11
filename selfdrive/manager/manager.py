@@ -23,8 +23,6 @@ from system.version import is_dirty, get_commit, get_version, get_origin, get_sh
                               terms_version, training_version, is_tested_branch
 
 
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
-
 
 def manager_init() -> None:
   # update system time from panda
@@ -39,6 +37,7 @@ def manager_init() -> None:
   default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "1"),
+    ("GsmMetered", "1"),
     ("HasAcceptedTerms", "0"),
     ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),

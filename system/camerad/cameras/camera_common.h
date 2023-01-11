@@ -75,21 +75,16 @@ typedef struct FrameMetadata {
 } FrameMetadata;
 
 struct MultiCameraState;
-struct CameraState;
+class CameraState;
 class Debayer;
 
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
-  CameraState *camera_state;
   Debayer *debayer = nullptr;
-
   VisionStreamType yuv_type;
-
   int cur_buf_idx;
-
   SafeQueue<int> safe_queue;
-
   int frame_buf_count;
 
 public:
@@ -107,13 +102,12 @@ public:
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
   bool acquire();
-  void release();
   void queue(size_t buf_idx);
 };
 
 typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
@@ -122,7 +116,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);
 void camerad_thread();
 
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);

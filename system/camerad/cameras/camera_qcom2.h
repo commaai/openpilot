@@ -12,6 +12,7 @@
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
+#define ANALOG_GAIN_MAX_CNT 55
 
 class CameraState {
 public:
@@ -31,20 +32,25 @@ public:
   int exposure_time_max;
 
   float dc_gain_factor;
+  int dc_gain_min_weight;
   int dc_gain_max_weight;
   float dc_gain_on_grey;
   float dc_gain_off_grey;
 
-  float sensor_analog_gains[16];
+  float sensor_analog_gains[ANALOG_GAIN_MAX_CNT];
   int analog_gain_min_idx;
   int analog_gain_max_idx;
   int analog_gain_rec_idx;
+  int analog_gain_cost_delta;
+  float analog_gain_cost_low;
+  float analog_gain_cost_high;
 
   float cur_ev[3];
   float min_ev, max_ev;
 
   float measured_grey_fraction;
   float target_grey_fraction;
+  float target_grey_factor;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;

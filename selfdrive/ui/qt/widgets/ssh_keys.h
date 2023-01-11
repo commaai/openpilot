@@ -27,8 +27,6 @@ public:
 private:
   Params params;
 
-  QLabel username_label;
-
   void refresh();
   void getUserKeys(const QString &username);
 };

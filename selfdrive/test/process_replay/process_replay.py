@@ -229,6 +229,15 @@ def calibration_rcv_callback(msg, CP, cfg, fsm):
   return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
 
 
+def torqued_rcv_callback(msg, CP, cfg, fsm):
+  # should_recv always true to increment frame
+  recv_socks = []
+  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
+  if msg.which() == 'liveLocationKalman' and (frame % 5) == 0:
+    recv_socks = ["liveTorqueParameters"]
+  return recv_socks, fsm.frame == 0 or msg.which() == 'liveLocationKalman'
+
+
 def ublox_rcv_callback(msg):
   msg_class, msg_id = msg.ubloxRaw[2:4]
   if (msg_class, msg_id) in {(1, 7 * 16)}:
@@ -242,8 +251,10 @@ def ublox_rcv_callback(msg):
 def laika_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
+  elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
+    return ["gnssMeasurements"], True
   else:
-    return [], True
+    return [], False
 
 
 CONFIGS = [
@@ -251,8 +262,10 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [], "testJoystick": [],
+      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [],
+      "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [],
+      "testJoystick": [], "liveTorqueParameters": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     init_callback=fingerprint,
@@ -317,7 +330,8 @@ CONFIGS = [
     proc_name="locationd",
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
-      "sensorEvents": [], "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "accelerometer": [], "gyroscope": [],
+      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -350,9 +364,9 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="laikad",
-    subtest_name="Offline",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
+      "qcomGnss": ["gnssMeasurements"],
       "clocks": []
     },
     ignore=["logMonoTime"],
@@ -360,17 +374,16 @@ CONFIGS = [
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
-    environ={"LAIKAD_NO_INTERNET": "1"},
   ),
   ProcessConfig(
-    proc_name="laikad",
+    proc_name="torqued",
     pub_sub={
-      "ubloxGnss": ["gnssMeasurements"],
-      "clocks": []
+      "liveLocationKalman": ["liveTorqueParameters"],
+      "carState": [], "controlsState": [],
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
-    should_recv_callback=laika_rcv_callback,
+    should_recv_callback=torqued_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
@@ -393,6 +406,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
+  params.put_bool("UbloxAvailable", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
@@ -431,6 +445,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
       os.environ['SKIP_FW_QUERY'] = "1"
       os.environ['FINGERPRINT'] = CP.carFingerprint
 
+    if CP.openpilotLongitudinalControl:
+      params.put_bool("ExperimentalLongitudinalEnabled", True)
+
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -445,6 +462,12 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+
+  # laikad needs decision between submaster ubloxGnss and qcomGnss, prio given to ubloxGnss
+  if cfg.proc_name == "laikad":
+    args = (*args, not any(m.which() == "ubloxGnss" for m in pub_msgs))
+    service = "qcomGnss" if args[2] else "ubloxGnss"
+    pub_msgs = [m for m in pub_msgs if m.which() == service or m.which() == 'clocks']
 
   controlsState = None
   initialized = False

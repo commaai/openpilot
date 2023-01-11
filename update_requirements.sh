@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -22,8 +22,13 @@ if [ -z "\$PYENV_ROOT" ]; then
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
+
+  # setup now without restarting shell
+  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+  export PYENV_ROOT="$HOME/.pyenv"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
 fi
-source $RC_FILE
 
 export MAKEFLAGS="-j$(nproc)"
 
@@ -40,32 +45,37 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==21.3.1
-pip install pipenv==2021.11.23
+pip install pip==22.3.1
+pip install poetry==1.2.2
 
-if [ -d "./xx" ]; then
-  echo "WARNING: using xx Pipfile ******"
-  export PIPENV_SYSTEM=1
-  export PIPENV_PIPFILE=./xx/Pipfile
-fi
+poetry config virtualenvs.prefer-active-python true --local
 
-if [ -z "$PIPENV_SYSTEM" ]; then
-  echo "PYTHONPATH=${PWD}" > .env
-  RUN="pipenv run"
-else
-  RUN=""
+POETRY_INSTALL_ARGS=""
+if [ -d "./xx" ] || [ -n "$XX" ]; then
+  echo "WARNING: using xx dependency group, installing globally"
+  poetry config virtualenvs.create false --local
+  POETRY_INSTALL_ARGS="--with xx --sync"
 fi
 
 echo "pip packages install..."
-pipenv sync --dev
-pipenv --clear
+poetry install --no-cache --no-root $POETRY_INSTALL_ARGS
 pyenv rehash
 
-echo "pre-commit hooks install..."
-shopt -s nullglob
-for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-  cd $DIR/$(dirname $f)
-  if [ -e ".git" ]; then
-    $RUN pre-commit install
-  fi
-done
+if [ -d "./xx" ] || [ -n "$POETRY_VIRTUALENVS_CREATE" ]; then
+  RUN=""
+else
+  echo "PYTHONPATH=${PWD}" > .env
+  poetry self add poetry-dotenv-plugin@^0.1.0
+  RUN="poetry run"
+fi
+
+if [ "$(uname)" != "Darwin" ]; then
+  echo "pre-commit hooks install..."
+  shopt -s nullglob
+  for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
+    cd $DIR/$(dirname $f)
+    if [ -e ".git" ]; then
+      $RUN pre-commit install
+    fi
+  done
+fi
