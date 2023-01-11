@@ -74,15 +74,15 @@ void FindSimilarBitsDlg::find() {
   auto msg_mismatched = calcBits(bus_combo->currentText().toUInt(), selected_address, byte_idx_sb->value(), bit_idx_sb->value(), min_msgs->text().toInt());
   table->setRowCount(msg_mismatched.size());
   table->setColumnCount(6);
-  table->setHorizontalHeaderLabels({"address", "mismatches", "total msgs", "% mismatched", "byte idx", "bit idx"});
+  table->setHorizontalHeaderLabels({"address", "byte idx", "bit idx", "mismatches", "total", "perc%"});
   for (int i = 0; i < msg_mismatched.size(); ++i) {
     auto &m = msg_mismatched[i];
     table->setItem(i, 0, new QTableWidgetItem(QString("%1").arg(m.address, 1, 16)));
-    table->setItem(i, 3, new QTableWidgetItem(QString::number(m.mismatches)));
-    table->setItem(i, 4, new QTableWidgetItem(QString::number(m.total_msgs)));
-    table->setItem(i, 5, new QTableWidgetItem(QString::number(m.perc)));
     table->setItem(i, 1, new QTableWidgetItem(QString::number(m.byte_idx)));
     table->setItem(i, 2, new QTableWidgetItem(QString::number(m.bit_idx)));
+    table->setItem(i, 3, new QTableWidgetItem(QString::number(m.mismatches)));
+    table->setItem(i, 4, new QTableWidgetItem(QString::number(m.total)));
+    table->setItem(i, 5, new QTableWidgetItem(QString::number(m.perc)));
   }
   search_btn->setEnabled(true);
 }
@@ -127,11 +127,11 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
       auto &mismatched = it.value();
       for (int i = 0; i < mismatched.size(); ++i) {
         if (uint32_t perc = (mismatched[i] / (double)cnt) * 100; perc < 50) {
-          result.push_back({it.key(), mismatched[i], cnt, perc, (uint32_t)i / 8, (uint32_t)i % 8});
+          result.push_back({it.key(), (uint32_t)i / 8, (uint32_t)i % 8, mismatched[i], cnt, perc});
         }
       }
     }
   }
-  std::sort(result.begin(), result.end(), [](auto &l, auto &r) { return l.perc < r.perc; });
+  std::sort(result.begin(), result.end(), [](auto &l, auto &r) { return l.perc > r.perc; });
   return result;
 }

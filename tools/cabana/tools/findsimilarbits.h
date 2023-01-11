@@ -12,7 +12,7 @@ public:
 
 private:
   struct mismatched_struct {
-    uint32_t address, mismatches, total_msgs, perc, byte_idx, bit_idx;
+    uint32_t address, byte_idx, bit_idx, mismatches, total, perc;
   };
   QList<mismatched_struct> calcBits(uint8_t bus, uint32_t selected_address, int byte_idx, int bit_idx, int min_msgs_cnt);
   void find();
