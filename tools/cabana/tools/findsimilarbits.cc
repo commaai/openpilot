@@ -74,7 +74,7 @@ void FindSimilarBitsDlg::find() {
   auto msg_mismatched = calcBits(bus_combo->currentText().toUInt(), selected_address, byte_idx_sb->value(), bit_idx_sb->value(), min_msgs->text().toInt());
   table->setRowCount(msg_mismatched.size());
   table->setColumnCount(6);
-  table->setHorizontalHeaderLabels({"address", "byte idx", "bit idx", "mismatches", "total", "perc%"});
+  table->setHorizontalHeaderLabels({"address", "byte idx", "bit idx", "mismatches", "total msgs", "% mismatched"});
   for (int i = 0; i < msg_mismatched.size(); ++i) {
     auto &m = msg_mismatched[i];
     table->setItem(i, 0, new QTableWidgetItem(QString("%1").arg(m.address, 1, 16)));
@@ -132,6 +132,6 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
       }
     }
   }
-  std::sort(result.begin(), result.end(), [](auto &l, auto &r) { return l.perc > r.perc; });
+  std::sort(result.begin(), result.end(), [](auto &l, auto &r) { return l.perc < r.perc; });
   return result;
 }
