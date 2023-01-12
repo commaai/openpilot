@@ -18,7 +18,7 @@ if [ -f /TICI ]; then
   source /etc/profile
 fi
 
-ln -snf ${env.TEST_DIR} /data/pythonpath
+ln -snf ${env.TEST_DIR} /data/openpilotpath
 
 cd ${env.TEST_DIR} || true
 ${cmd}

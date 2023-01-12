@@ -73,7 +73,7 @@ function launch {
   fi
 
   # handle pythonpath
-  ln -sfn $(pwd) /data/pythonpath
+  ln -sfn $(pwd) /data/openpilotpath
   export PYTHONPATH="$PWD/pythonpath"
 
   # hardware specific init

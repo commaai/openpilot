@@ -256,7 +256,7 @@ SHARED = False
 # TODO: this can probably be removed
 def abspath(x):
   if arch == 'aarch64':
-    pth = os.path.join("/data/pythonpath", x[0].path)
+    pth = os.path.join("/data/openpilotpath", x[0].path)
     env.Depends(pth, x)
     return File(pth)
   else:
