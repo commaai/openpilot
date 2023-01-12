@@ -235,9 +235,9 @@ A supported vehicle is one that just works when you install a comma three. All s
 <a id="footnotes"></a>
 <sup>1</sup>Experimental openpilot longitudinal control is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `master-ci`.  <br />
 <sup>2</sup>By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
-<sup>3</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
+<sup>3</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware" target="_blank">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>4</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
-<sup>5</sup>Requires a <a href="https://comma.ai/shop/panda" target="_blank">red panda</a> for this <a href="https://en.wikipedia.org/wiki/CAN_FD">CAN FD car</a>. All the hardware needed is sold in the <a href="https://comma.ai/shop/can-fd-panda-kit">CAN FD kit</a>. <br />
+<sup>5</sup>Requires a <a href="https://comma.ai/shop/panda" target="_blank">red panda</a> for this <a href="https://en.wikipedia.org/wiki/CAN_FD" target="_blank">CAN FD car</a>. All the hardware needed is sold in the <a href="https://comma.ai/shop/can-fd-panda-kit" target="_blank">CAN FD kit</a>. <br />
 <sup>6</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>7</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>8</sup>Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets. <br />
