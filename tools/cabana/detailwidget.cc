@@ -36,10 +36,10 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   toolbar = new QToolBar(this);
-  toolbar->addWidget(new QLabel("time:"));
-  time_label = new QLabel(this);
+  time_label = new ElidedLabel(this);
   time_label->setStyleSheet("font-weight:bold");
-  toolbar->addWidget(time_label);
+  time_label->setToolTip(tr("click to edit time"));
+  time_label_action = toolbar->addWidget(time_label);
   name_label = new QLabel(this);
   name_label->setStyleSheet("font-weight:bold;");
   name_label->setAlignment(Qt::AlignCenter);
@@ -99,6 +99,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &CANMessages::msgsReceived, this, &DetailWidget::updateState);
+  QObject::connect(time_label, &ElidedLabel::clicked, this, &DetailWidget::timeLabelClicked);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
@@ -193,7 +194,7 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
 }
 
 void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
-  time_label->setText(QString::number(can->currentSec(), 'f', 3));
+  time_label->setText(can->currentDateTime().toString("hh:mm:ss.zzz"));
   if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
     return;
 
@@ -283,6 +284,25 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
 
 void DetailWidget::removeSignal(const Signal *sig) {
   undo_stack->push(new RemoveSigCommand(msg_id, sig));
+}
+
+void DetailWidget::timeLabelClicked() {
+  auto time_edit = new QTimeEdit(this);
+  auto init_date_time = can->currentDateTime();
+  time_edit->setDateTime(init_date_time);
+  time_edit->setDisplayFormat("hh:mm:ss");
+  time_label_action->setVisible(false);
+  QAction *time_edit_action = toolbar->insertWidget(time_label_action, time_edit);
+  QObject::connect(time_edit, &QTimeEdit::editingFinished, [=]() {
+    if (time_edit->dateTime() != init_date_time) {
+      int seconds = can->route()->datetime().secsTo(time_edit->dateTime());
+      can->seekTo(seconds);
+    }
+    toolbar->removeAction(time_edit_action);
+    time_edit_action->deleteLater();
+    time_label_action->setVisible(true);
+  });
+  QTimer::singleShot(0, [=]() { time_edit->setFocus(); });
 }
 
 // EditMessageDialog

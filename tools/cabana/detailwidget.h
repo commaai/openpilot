@@ -3,9 +3,11 @@
 #include <QStackedLayout>
 #include <QScrollArea>
 #include <QTabWidget>
+#include <QTimeEdit>
 #include <QToolBar>
 #include <QUndoStack>
 
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/historylog.h"
@@ -43,10 +45,13 @@ private:
   void removeSignal(const Signal *sig);
   void editMsg();
   void removeMsg();
+  void timeLabelClicked();
   void updateState(const QHash<QString, CanData> * msgs = nullptr);
 
   QString msg_id;
-  QLabel *name_label, *time_label, *warning_label;
+  ElidedLabel *time_label;
+  QAction *time_label_action;
+  QLabel *name_label, *warning_label;
   QWidget *warning_widget;
   QVBoxLayout *signals_layout;
   QTabBar *tabbar;
