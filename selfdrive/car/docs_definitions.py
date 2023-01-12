@@ -160,7 +160,7 @@ class CarInfo:
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: self.harness.value,
-      Column.VIDEO: f'<a href="{self.video_link}" target="_blank"><img src="assets/icon-youtube-2.svg"></img></a>' if self.video_link is not None else "",
+      Column.VIDEO: f'<a href="{self.video_link}" target="_blank"><img width="30px" src="assets/icon-youtube-2.svg"></img></a>' if self.video_link is not None else "",
     }
 
     # Set steering torque star from max lateral acceleration
