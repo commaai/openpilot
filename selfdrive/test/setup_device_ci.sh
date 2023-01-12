@@ -53,7 +53,6 @@ if [ ! -d "$SOURCE_DIR" ]; then
   git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
 cd $SOURCE_DIR
-export PYTHONPATH=$SOURCE_DIR/pythonpath:$PYTHONPATH
 
 rm -f .git/index.lock
 git reset --hard
