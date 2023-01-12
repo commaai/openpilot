@@ -78,7 +78,7 @@ class TestUpdated(unittest.TestCase):
       subprocess.check_output(c, cwd=cwd, shell=True)
 
   def _get_updated_proc(self):
-    os.environ["PYTHONPATH"] = self.basedir
+    os.environ["PYTHONPATH"] = self.basedir + '/pythonpath'
     os.environ["GIT_AUTHOR_NAME"] = "testy tester"
     os.environ["GIT_COMMITTER_NAME"] = "testy tester"
     os.environ["GIT_AUTHOR_EMAIL"] = "testy@tester.test"

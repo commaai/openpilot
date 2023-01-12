@@ -1,7 +1,7 @@
 FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
+ENV PYTHONPATH /tmp/openpilot/pythonpath:${PYTHONPATH}
 
 # Install opencv
 ENV OPENCV_VERSION '4.2.0'

@@ -58,7 +58,7 @@ mv board/obj/panda_h7.bin.signed /tmp/panda_h7.bin.signed
 popd
 
 # Build
-export PYTHONPATH="$BUILD_DIR"
+export PYTHONPATH="$BUILD_DIR/pythonpath"
 scons -j$(nproc)
 
 # Ensure no submodules in release

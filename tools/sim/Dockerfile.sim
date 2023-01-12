@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN cd $HOME && \
     curl -O https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
-ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
+ENV PYTHONPATH $HOME/openpilot/pythonpath:${PYTHONPATH}
 RUN mkdir -p $HOME/openpilot
 
 COPY SConstruct $HOME/openpilot/

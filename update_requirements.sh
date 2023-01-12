@@ -64,7 +64,7 @@ pyenv rehash
 if [ -d "./xx" ] || [ -n "$POETRY_VIRTUALENVS_CREATE" ]; then
   RUN=""
 else
-  echo "PYTHONPATH=${PWD}" > .env
+  echo "PYTHONPATH=${PWD}/pythonpath" > .env
   poetry self add poetry-dotenv-plugin@^0.1.0
   RUN="poetry run"
 fi
