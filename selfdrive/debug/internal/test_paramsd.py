@@ -20,7 +20,7 @@ T_SIM = 5 * 60  # s
 DT = 0.01
 
 
-CP = CarInterface.get_non_essential_params(CAR.CIVIC)
+CP = CarInterface.get_params(CAR.CIVIC)
 VM = VehicleModel(CP)
 
 x, y = 0, 0  # m, m
