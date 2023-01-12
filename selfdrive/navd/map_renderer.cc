@@ -169,7 +169,7 @@ void MapRenderer::publish(const double render_time) {
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
-    .timestamp_sof = sm->rcv_time("liveLocationKalman"),
+    .timestamp_sof = (*sm)["liveLocationKalman"].getLogMonoTime(),
     .timestamp_eof = ts,
   };
 
@@ -206,7 +206,7 @@ void MapRenderer::publish(const double render_time) {
   // Send state msg
   MessageBuilder msg;
   auto state = msg.initEvent().initMapRenderState();
-  state.setLocationMonoTime(sm->rcv_time("liveLocationKalman"));
+  state.setLocationMonoTime((*sm)["liveLocationKalman"].getLogMonoTime());
   state.setRenderTime(render_time);
   state.setFrameId(frame_id);
   pm->send("mapRenderState", msg);

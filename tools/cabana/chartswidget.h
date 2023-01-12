@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -26,6 +27,8 @@ public:
   void updateSeries(const Signal *sig = nullptr);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
+  void setPlotAreaLeftPosition(int pos);
+  qreal getYAsixLabelWidth() const;
 
   struct SigItem {
     QString msg_id;
@@ -44,6 +47,7 @@ signals:
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
+  void axisYUpdated();
 
 private slots:
   void msgRemoved(uint32_t address);
@@ -58,7 +62,6 @@ private:
   void mouseMoveEvent(QMouseEvent *ev) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
-  void adjustChartMargins();
   void updateAxisY();
   void updateTitle();
   void updateFromSettings();
@@ -89,6 +92,7 @@ signals:
   void seriesChanged();
 
 private:
+  void alignCharts();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
@@ -108,6 +112,7 @@ private:
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
+  QTimer *align_charts_timer;
   QVBoxLayout *charts_layout;
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
