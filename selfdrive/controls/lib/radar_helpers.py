@@ -132,12 +132,10 @@ class Cluster():
 
   def get_RadarState_from_vision(self, lead_msg, v_ego, vision_v_ego):
     # Learn vision model velocity error to correct vlead
+    corrected_v_lead = lead_msg.v[0]
     if v_ego > 0 and vision_v_ego > 0:
       vision_velocity_factor = v_ego / vision_v_ego
       corrected_v_lead = lead_msg.v[0] * vision_velocity_factor
-      #if no v_ego or vision_v_ego set, fallback to uncalibrated values
-    else: 
-      corrected_v_lead = lead_msg.v[0]
     return {
       "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
