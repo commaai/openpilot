@@ -15,6 +15,7 @@ COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
 COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo
 COPY ./rednose_repo ${OPENPILOT_PATH}/rednose_repo
+COPY ./rednose ${OPENPILOT_PATH}/rednose
 COPY ./tools ${OPENPILOT_PATH}/tools
 COPY ./release ${OPENPILOT_PATH}/release
 COPY ./common ${OPENPILOT_PATH}/common
