@@ -74,13 +74,16 @@ class Laikad:
 
     try:
       cache = json.loads(cache, object_hook=deserialize_hook)
-      self.astro_dog.add_navs(cache['navs'])
-      self.last_fetch_navs_t = cache['last_fetch_navs_t']
+      if 'navs' in cache:
+        self.astro_dog.add_navs(cache['navs'])
+        self.last_fetch_navs_t = cache['last_fetch_navs_t']
+      else:
+        cache['navs'] = {}
     except json.decoder.JSONDecodeError:
       cloudlog.exception("Error parsing cache")
     timestamp = self.last_fetch_navs_t.as_datetime() if self.last_fetch_navs_t is not None else 'Nan'
     cloudlog.debug(
-      f"Loaded nav ({sum([len(v) for v in cache['nav']])}) and navs ({sum([len(v) for v in cache['navs']])}) cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['navs'].keys())} {list(cache['nav'].keys())} " +
+      f"Loaded navs ({sum([len(v) for v in cache['navs']])}) cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['navs'].keys())} " +
       f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in self.astro_dog.navs_fetched_times._ranges]}")
 
   def cache_ephemeris(self, t: GPSTime):
