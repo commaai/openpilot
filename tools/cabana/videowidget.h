@@ -47,7 +47,6 @@ public:
 
 protected:
   void updateState();
-  void pause(bool pause);
 
   CameraWidget *cam_widget;
   QButtonGroup *btn_group;

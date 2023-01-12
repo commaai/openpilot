@@ -97,6 +97,11 @@ void CANMessages::seekTo(double ts) {
   counters_begin_sec = 0;
 }
 
+void CANMessages::pause(bool pause) { 
+  replay->pause(pause); 
+  emit (pause ? paused() : resume());
+}
+
 void CANMessages::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
 }
