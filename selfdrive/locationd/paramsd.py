@@ -36,7 +36,6 @@ class ParamsLearner:
     self.yaw_rate = 0.0
     self.yaw_rate_std = 0.0
     self.roll = 0.0
-    self.steering_pressed = False
     self.steering_angle = 0.0
 
     self.valid = True
@@ -88,7 +87,6 @@ class ParamsLearner:
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
-      self.steering_pressed = msg.steeringPressed
       self.speed = msg.vEgo
 
       in_linear_region = abs(self.steering_angle) < 45
