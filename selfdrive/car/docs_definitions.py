@@ -208,12 +208,10 @@ class CarInfo:
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
-    elif column == Column.MODEL:
-      if len(self.years):
-        item += f" {self.years}"
-    elif column == Column.VIDEO:
-      if len(item) > 0:
-        item = video_icon.format(item)
+    elif column == Column.MODEL and len(self.years):
+      item += f" {self.years}"
+    elif column == Column.VIDEO and len(item) > 0:
+      item = video_icon.format(item)
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
