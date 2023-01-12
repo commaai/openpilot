@@ -1115,21 +1115,40 @@ void CameraState::set_camera_exposure(float grey_frac) {
       // Compute error to desired ev
       float score = std::abs(desired_ev - (t * gain)) * 10;
 
+      if (camera_num==1) {
+        printf("diff ev score:%.1f \n", score);
+      }
+
       // Going below recommended gain needs lower penalty to not overexpose
       float m = g > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
-      score += std::abs(g - (int)analog_gain_rec_idx) * m;
+      float nt1 = std::abs(g - (int)analog_gain_rec_idx) * m;
+      if (camera_num==1) {
+        printf("low gain score:%.1f \n", nt1);
+      }
+      score += nt1;
 
       // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
 
       // Small penalty on changing gain
-      score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (g - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(g - gain_idx) * (score + 1.0) / 10.0;
+      float nt2 = ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (g - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(g - gain_idx) * (score + 1.0) / 10.0;
+      if (camera_num==1) {
+        printf("delta gain score:%.1f \n", nt2);
+      }
+      score += nt2;
 
+      if (camera_num==1) {
+        printf("gain: %.2f, expo: %d, score:%.1f \n", gain, t, score);
+      }
       if (score < best_ev_score) {
         new_t = t;
         new_g = g;
         best_ev_score = score;
       }
     }
+  }
+
+  if (camera_num==1) {
+    printf("BEST score:%1f \n", best_ev_score);
   }
 
   exp_lock.lock();
