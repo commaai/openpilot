@@ -49,7 +49,7 @@ class Plant:
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
 
-    self.planner = LongitudinalPlanner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
+    self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
 
   @property
   def current_time(self):
