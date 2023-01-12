@@ -1052,10 +1052,10 @@ void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_i
     // Cost of changing gain
     score += std::abs(exp_g_idx - gain_idx) * (score + 1.0) / 10.0;
   } else if (camera_id == CAMERA_ID_OX03C10) {
-    score = std::abs(desired_ev - (exp_t * exp_gain)) * 10;
+    score = std::abs(desired_ev - (exp_t * exp_gain));
     float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
     score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
-    score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx) * (score + 1.0) / 10.0;
+    score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx);
   }
 
   if (score < best_ev_score) {
