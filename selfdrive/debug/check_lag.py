@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from typing import Dict
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import service_list
 
 TO_CHECK = ['carState']

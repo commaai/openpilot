@@ -6,7 +6,7 @@ from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 
 TRAJECTORY_SIZE = 33

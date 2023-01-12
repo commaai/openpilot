@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error

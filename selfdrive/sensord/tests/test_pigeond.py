@@ -2,7 +2,7 @@
 import time
 import unittest
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import service_list
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes

@@ -5,7 +5,7 @@ from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from openpilot.selfdrive.controls.lib.lateral_planner import LateralPlanner
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 
 def plannerd_thread(sm=None, pm=None):

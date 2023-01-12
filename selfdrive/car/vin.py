@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.selfdrive.car.fw_query_definitions import StdQueries

@@ -5,7 +5,7 @@ import unittest
 import time
 import capnp
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import service_list
 from openpilot.common.params import Params
 

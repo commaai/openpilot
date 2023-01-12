@@ -3,7 +3,7 @@ import time
 import threading
 from flask import Flask
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 app = Flask(__name__)
 pm = messaging.PubMaster(['testJoystick'])

@@ -4,7 +4,7 @@ import time
 import unittest
 import subprocess
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.manager.process_config import managed_processes
 

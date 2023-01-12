@@ -5,7 +5,7 @@ import time
 import unittest
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import car
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner

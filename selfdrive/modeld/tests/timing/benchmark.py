@@ -6,7 +6,7 @@ import os
 import time
 import numpy as np
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 

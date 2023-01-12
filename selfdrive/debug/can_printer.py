@@ -3,7 +3,7 @@ import argparse
 import binascii
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import sec_since_boot
 
 

@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from typing import DefaultDict, Deque, MutableSequence
 
 from openpilot.common.realtime import sec_since_boot
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 
 if __name__ == "__main__":

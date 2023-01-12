@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Any
 from itertools import zip_longest
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.spinner import Spinner
 from openpilot.common.timeout import Timeout

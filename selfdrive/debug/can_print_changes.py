@@ -4,7 +4,7 @@ import binascii
 import time
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table
 from tools.lib.logreader import logreader_from_route_or_segment
 

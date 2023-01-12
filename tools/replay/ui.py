@@ -7,7 +7,7 @@ import cv2  # pylint: disable=import-error
 import numpy as np
 import pygame  # pylint: disable=import-error
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.numpy_fast import clip
 from openpilot.common.basedir import BASEDIR
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, UP,

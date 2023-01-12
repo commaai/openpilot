@@ -13,7 +13,7 @@ import numpy as np
 from typing import List, NoReturn, Optional
 
 from openpilot.cereal import log
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params, put_nonblocking
 from openpilot.common.realtime import set_realtime_priority

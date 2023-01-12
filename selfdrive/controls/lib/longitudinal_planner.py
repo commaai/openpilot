@@ -3,7 +3,7 @@ import math
 import numpy as np
 from openpilot.common.numpy_fast import clip, interp
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL

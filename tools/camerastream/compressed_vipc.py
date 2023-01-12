@@ -7,7 +7,7 @@ import numpy as np
 import multiprocessing
 import time
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 
 W, H = 1928, 1208

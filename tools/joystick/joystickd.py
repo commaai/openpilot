@@ -4,7 +4,7 @@ import argparse
 import threading
 from inputs import get_gamepad
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params

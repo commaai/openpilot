@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from PIL import ImageFont, ImageDraw, Image
 
 font = ImageFont.truetype("arial", size=72)

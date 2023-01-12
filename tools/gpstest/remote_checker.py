@@ -4,7 +4,7 @@ import time
 from typing import List
 
 from openpilot.common.params import Params
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 DELTA = 0.001

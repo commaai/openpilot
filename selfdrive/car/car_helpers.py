@@ -10,7 +10,7 @@ from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, al
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
 from openpilot.system.swaglog import cloudlog
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.car import gen_empty_fingerprint
 
 EventName = car.CarEvent.EventName

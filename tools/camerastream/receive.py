@@ -5,7 +5,7 @@ import numpy as np
 os.environ['ZMQ'] = '1'
 
 from openpilot.common.window import Window
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 # start camerad with 'SEND_ROAD=1 SEND_DRIVER=1 SEND_WIDE_ROAD=1 XMIN=771 XMAX=1156 YMIN=483 YMAX=724 ./camerad'
 # also start bridge

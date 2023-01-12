@@ -12,7 +12,7 @@ if "CI" in os.environ:
 else:
   from tqdm import tqdm   # type: ignore
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from collections import namedtuple
 from tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.openpilotci import get_url

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 
 if __name__ == "__main__":

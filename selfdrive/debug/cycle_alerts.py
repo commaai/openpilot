@@ -3,7 +3,7 @@ import time
 import random
 
 from openpilot.cereal import car, log
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.controls.lib.events import ET, Events

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from typing import Optional
 
 if __name__ == "__main__":

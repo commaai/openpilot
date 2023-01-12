@@ -6,7 +6,7 @@ import numpy as np
 from typing import DefaultDict, MutableSequence
 from collections import defaultdict, deque
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 socks = {s: messaging.sub_sock(s, conflate=False) for s in sys.argv[1:]}
 ts: DefaultDict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))

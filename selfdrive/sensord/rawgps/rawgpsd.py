@@ -10,7 +10,7 @@ from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
 from openpilot.cereal import log
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from laika.gps_time import GPSTime
 from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv

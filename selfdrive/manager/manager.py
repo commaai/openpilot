@@ -7,7 +7,7 @@ import sys
 import traceback
 from typing import List, Tuple, Union
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 import selfdrive.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, ParamKeyType

@@ -38,7 +38,7 @@ def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, com_cont_req=b'\x28\x83\x01'
 
 if __name__ == "__main__":
   import time
-  import cereal.messaging as messaging
+  import openpilot.cereal.messaging as messaging
   sendcan = messaging.pub_sock('sendcan')
   logcan = messaging.sub_sock('can')
   time.sleep(1)

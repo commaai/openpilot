@@ -3,7 +3,7 @@ import capnp
 import time
 from typing import Optional, Set, Tuple
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import make_can_msg
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp

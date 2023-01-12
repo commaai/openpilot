@@ -11,7 +11,7 @@ import traceback
 from pathlib import Path
 
 from openpilot.cereal import log
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity

@@ -4,7 +4,7 @@ from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
 
 from openpilot.cereal import log, car
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER

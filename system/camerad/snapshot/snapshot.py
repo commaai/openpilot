@@ -5,7 +5,7 @@ import time
 import numpy as np
 from PIL import Image
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL

@@ -9,7 +9,7 @@ from collections import namedtuple
 
 import capnp
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import car, log
 from openpilot.cereal.services import service_list
 from openpilot.common.params import Params

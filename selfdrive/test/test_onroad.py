@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from openpilot.cereal import car
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal.services import service_list
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout

@@ -4,7 +4,7 @@ import time
 import unittest
 
 from openpilot.cereal import log, car
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 # TODO: rewrite for unittest
 from openpilot.common.realtime import DT_CTRL

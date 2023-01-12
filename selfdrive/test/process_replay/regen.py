@@ -8,7 +8,7 @@ from tqdm import tqdm
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import car
 from openpilot.cereal.services import service_list
 from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType

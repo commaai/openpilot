@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # type: ignore
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 
 all_sockets = ['roadCameraState', 'driverCameraState', 'wideRoadCameraState']
 prev_id = [None,None,None]

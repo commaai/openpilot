@@ -3,7 +3,7 @@ import os
 import argparse
 import json
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 

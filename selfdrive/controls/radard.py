@@ -3,7 +3,7 @@ import importlib
 import math
 from collections import defaultdict, deque
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params

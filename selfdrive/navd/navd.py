@@ -7,7 +7,7 @@ import threading
 import requests
 import numpy as np
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.api import Api
 from openpilot.common.params import Params

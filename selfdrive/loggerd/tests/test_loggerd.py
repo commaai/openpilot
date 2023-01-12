@@ -9,7 +9,7 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-import cereal.messaging as messaging
+import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.cereal.services import service_list
 from openpilot.common.basedir import BASEDIR
