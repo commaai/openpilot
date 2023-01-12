@@ -1041,6 +1041,40 @@ void CameraState::handle_camera_event(void *evdat) {
   }
 }
 
+void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
+  float score = std::abs(desired_ev - (exp_t * exp_gain)) * 10;
+
+  if (camera_num==1) {
+    printf("diff ev score:%.1f \n", score);
+  }
+
+  // Going below recommended gain needs lower penalty to not overexpose
+  float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
+
+  float nt1 = std::abs(g - (int)analog_gain_rec_idx) * m;
+  if (camera_num==1) {
+    printf("low gain score:%.1f \n", nt1);
+  }
+  score += nt1;
+
+  // Small penalty on changing gain
+  float nt2 = ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx) * (score + 1.0) / 10.0;
+  if (camera_num==1) {
+    printf("delta gain score:%.1f \n", nt2);
+  }
+  score += nt2;
+
+  if (camera_num==1) {
+    printf("gain: %.2f, expo: %d, score:%.1f \n", exp_gain, exp_t, score);
+  }
+
+  if (score < best_ev_score) {
+    new_exp_t = exp_t;
+    new_exp_g = exp_g_idx;
+    best_ev_score = score;
+  }
+}
+
 void CameraState::set_camera_exposure(float grey_frac) {
   if (!enabled) return;
   const float dt = 0.05;
@@ -1066,9 +1100,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
-  float best_ev_score = 1e6;
-  int new_g = 0;
-  int new_t = 0;
+  best_ev_score = 1e6;
+  new_exp_g = 0;
+  new_exp_t = 0;
 
   // Hysteresis around high conversion gain
   // We usually want this on since it results in lower noise, but turn off in very bright day scenes
@@ -1095,8 +1129,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
     gain_idx = std::stoi(gain_bytes);
     exposure_time = std::stoi(time_bytes);
 
-    new_g = gain_idx;
-    new_t = exposure_time;
+    new_exp_g = gain_idx;
+    new_exp_t = exposure_time;
     enable_dc_gain = false;
   } else {
     // Simple brute force optimizer to choose sensor parameters
@@ -1112,38 +1146,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
         continue;
       }
 
-      // Compute error to desired ev
-      float score = std::abs(desired_ev - (t * gain)) * 10;
-
-      if (camera_num==1) {
-        printf("diff ev score:%.1f \n", score);
-      }
-
-      // Going below recommended gain needs lower penalty to not overexpose
-      float m = g > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
-      float nt1 = std::abs(g - (int)analog_gain_rec_idx) * m;
-      if (camera_num==1) {
-        printf("low gain score:%.1f \n", nt1);
-      }
-      score += nt1;
-
-      // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
-
-      // Small penalty on changing gain
-      float nt2 = ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (g - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(g - gain_idx) * (score + 1.0) / 10.0;
-      if (camera_num==1) {
-        printf("delta gain score:%.1f \n", nt2);
-      }
-      score += nt2;
-
-      if (camera_num==1) {
-        printf("gain: %.2f, expo: %d, score:%.1f \n", gain, t, score);
-      }
-      if (score < best_ev_score) {
-        new_t = t;
-        new_g = g;
-        best_ev_score = score;
-      }
+      update_exposure_score(desired_ev, t, g, gain);
     }
   }
 
@@ -1156,9 +1159,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
   measured_grey_fraction = grey_frac;
   target_grey_fraction = target_grey;
 
-  analog_gain_frac = sensor_analog_gains[new_g];
-  gain_idx = new_g;
-  exposure_time = new_t;
+  analog_gain_frac = sensor_analog_gains[new_exp_g];
+  gain_idx = new_exp_g;
+  exposure_time = new_exp_t;
   dc_gain_enabled = enable_dc_gain;
 
   float gain = analog_gain_frac * (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight);
@@ -1175,7 +1178,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
   if (camera_id == CAMERA_ID_AR0231) {
-    uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
+    uint16_t analog_gain_reg = 0xFF00 | (new_exp_g << 4) | new_exp_g;
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3366, analog_gain_reg},
       {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
@@ -1190,7 +1193,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 128, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
     uint32_t spd_time = vs_time;
 
-    uint32_t real_gain = ox03c10_analog_gains_reg[new_g];
+    uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
     uint32_t min_gain = ox03c10_analog_gains_reg[0];
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
