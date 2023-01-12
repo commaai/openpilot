@@ -5,7 +5,7 @@ import struct
 
 from openpilot.common.params import Params
 import openpilot.cereal.messaging as messaging
-import selfdrive.sensord.pigeond as pd
+from openpilot.selfdrive.sensord.pigeond as pd
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import with_processes
 

@@ -7,7 +7,7 @@ import logging
 import json
 
 from openpilot.system.swaglog import cloudlog
-import selfdrive.loggerd.uploader as uploader
+from openpilot.selfdrive.loggerd.uploader as uploader
 
 from openpilot.selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 

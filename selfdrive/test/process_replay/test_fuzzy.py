@@ -8,7 +8,7 @@ from hypothesis import given, settings, note
 
 from openpilot.cereal import log
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
-import selfdrive.test.process_replay.process_replay as pr
+from openpilot.selfdrive.test.process_replay.process_replay as pr
 
 
 def get_process_config(process):
