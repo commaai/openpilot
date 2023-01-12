@@ -47,7 +47,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->setVisible(false);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
-  if (last_gps_position) {
+  if (last_gps_position.has_value()) {
     last_position = *last_gps_position;
   }
 
@@ -82,6 +82,7 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
+    m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
@@ -220,7 +221,6 @@ void MapWindow::updateState(const UIState &s) {
         emit instructionsChanged(i);
       }
     } else {
-      m_map->setPitch(MIN_PITCH);
       clearRoute();
     }
   }
@@ -237,6 +237,7 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
+    updateDestinationMarker();
   }
 }
 
@@ -274,6 +275,7 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
+    updateDestinationMarker();
   }
 
   map_instructions->hideIfNoError();
@@ -359,6 +361,19 @@ void MapWindow::offroadTransition(bool offroad) {
     setVisible(dest.has_value());
   }
   last_bearing = {};
+}
+
+void MapWindow::updateDestinationMarker() {
+  if (marker_id != -1) {
+    m_map->removeAnnotation(marker_id);
+    marker_id = -1;
+  }
+
+  auto nav_dest = coordinate_from_param("NavDestination");
+  if (nav_dest.has_value()) {
+    auto ano = QMapbox::SymbolAnnotation {*nav_dest, "default_marker"};
+    marker_id = m_map->addAnnotation(QVariant::fromValue<QMapbox::SymbolAnnotation>(ano));
+  }
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
