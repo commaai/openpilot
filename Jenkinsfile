@@ -12,7 +12,7 @@ export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
-export PYTHONPATH='${env.SOURCE_DIR}/pythonpath:${env.PYTHONPATH}'
+export PYTHONPATH='${env.TEST_DIR}pythonpath'
 
 source ~/.bash_profile
 if [ -f /TICI ]; then
