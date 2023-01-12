@@ -16,11 +16,11 @@ from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from panda.python import Panda
-from selfdrive.car.toyota.values import EPS_SCALE
-from selfdrive.manager.process import ensure_running
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
-from selfdrive.test.update_ci_routes import upload_route
+from openpilot.selfdrive.car.toyota.values import EPS_SCALE
+from openpilot.selfdrive.manager.process import ensure_running
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
+from openpilot.selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader

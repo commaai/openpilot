@@ -3,10 +3,10 @@ from collections import defaultdict
 import re
 import unittest
 
-from selfdrive.car.car_helpers import interfaces, get_interface_attr
-from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import Column, Harness, Star
-from selfdrive.car.honda.values import CAR as HONDA
+from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
+from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
+from openpilot.selfdrive.car.docs_definitions import Column, Harness, Star
+from openpilot.selfdrive.car.honda.values import CAR as HONDA
 
 
 class TestCarDocs(unittest.TestCase):

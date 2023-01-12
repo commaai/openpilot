@@ -4,7 +4,7 @@ from enum import Enum
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from common.params import Params
-from selfdrive.athena.registration import is_registered_device
+from openpilot.selfdrive.athena.registration import is_registered_device
 from system.hardware import HARDWARE, PC
 from system.swaglog import cloudlog
 from system.version import get_branch, get_commit, get_origin, get_version, \

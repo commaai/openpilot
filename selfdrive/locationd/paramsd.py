@@ -8,8 +8,8 @@ from cereal import car
 from common.params import Params, put_nonblocking
 from common.realtime import config_realtime_process, DT_MDL
 from common.numpy_fast import clip
-from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
-from selfdrive.locationd.models.constants import GENERATED_DIR
+from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
+from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
 from system.swaglog import cloudlog
 
 

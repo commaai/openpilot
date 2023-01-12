@@ -3,7 +3,7 @@ import time
 import unittest
 import numpy as np
 
-from selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.test.helpers import with_processes
 from system.camerad.snapshot.snapshot import get_snapshots
 
 from system.hardware import TICI

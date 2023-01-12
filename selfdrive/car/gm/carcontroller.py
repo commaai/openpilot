@@ -3,9 +3,9 @@ from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
+from openpilot.selfdrive.car import apply_std_steer_torque_limits
+from openpilot.selfdrive.car.gm import gmcan
+from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation

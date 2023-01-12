@@ -6,7 +6,7 @@ import subprocess as sp
 from common.params import Params
 from system.hardware import TICI
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 def exec_mmcli(cmd):

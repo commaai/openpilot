@@ -13,7 +13,7 @@ from common.api import Api
 from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.coordinates import ecef2geodetic
-from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
+from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
                                     parse_banner_instructions)

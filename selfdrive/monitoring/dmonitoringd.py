@@ -5,9 +5,9 @@ import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_bool_nonblocking
 from common.realtime import set_realtime_priority
-from selfdrive.controls.lib.events import Events
-from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.monitoring.driver_monitor import DriverStatus
+from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.locationd.calibrationd import Calibration
+from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus
 
 
 def dmonitoringd_thread(sm=None, pm=None):

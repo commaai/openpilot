@@ -16,10 +16,10 @@ from common.params import Params
 from common.timeout import Timeout
 from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
-from selfdrive.car.car_helpers import get_car, interfaces
-from selfdrive.test.process_replay.helpers import OpenpilotPrefix
-from selfdrive.manager.process import PythonProcess
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.car.car_helpers import get_car, interfaces
+from openpilot.selfdrive.test.process_replay.helpers import OpenpilotPrefix
+from openpilot.selfdrive.manager.process import PythonProcess
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7

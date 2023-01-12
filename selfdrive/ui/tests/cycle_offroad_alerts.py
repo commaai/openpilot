@@ -6,7 +6,7 @@ import json
 
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 if __name__ == "__main__":
   params = Params()

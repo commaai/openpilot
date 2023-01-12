@@ -3,7 +3,7 @@ import os
 from cereal import car
 from common.params import Params
 from system.hardware import PC, TICI
-from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 

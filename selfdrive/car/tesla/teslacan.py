@@ -2,7 +2,7 @@ import copy
 import crcmod
 
 from common.conversions import Conversions as CV
-from selfdrive.car.tesla.values import CANBUS, CarControllerParams
+from openpilot.selfdrive.car.tesla.values import CANBUS, CarControllerParams
 
 
 class TeslaCAN:

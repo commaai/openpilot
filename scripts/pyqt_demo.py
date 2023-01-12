@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from PyQt5.QtWidgets import QApplication, QLabel  # pylint: disable=no-name-in-module, import-error
-from selfdrive.ui.qt.python_helpers import set_main_window
+from openpilot.selfdrive.ui.qt.python_helpers import set_main_window
 
 
 if __name__ == "__main__":

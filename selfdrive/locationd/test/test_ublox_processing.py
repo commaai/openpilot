@@ -6,7 +6,7 @@ from laika import AstroDog
 from laika.helpers import ConstellationId
 from laika.raw_gnss import correct_measurements, process_measurements, read_raw_ublox
 from laika.opt import calc_pos_fix
-from selfdrive.test.openpilotci import get_url
+from openpilot.selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
 

@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.transformations.camera import tici_f_frame_size
 from common.realtime import DT_MDL
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,

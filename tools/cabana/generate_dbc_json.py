@@ -2,7 +2,7 @@
 import argparse
 import json
 
-from selfdrive.car.car_helpers import get_interface_attr
+from openpilot.selfdrive.car.car_helpers import get_interface_attr
 
 
 def generate_dbc_json() -> str:

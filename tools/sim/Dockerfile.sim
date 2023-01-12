@@ -29,4 +29,4 @@ COPY ./tools $HOME/openpilot/tools
 WORKDIR $HOME/openpilot
 RUN scons --cache-readonly -j12
 
-RUN python -c "from selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
+RUN python -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"

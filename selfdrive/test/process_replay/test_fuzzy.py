@@ -7,7 +7,7 @@ import numpy as np
 from hypothesis import given, settings, note
 
 from cereal import log
-from selfdrive.car.toyota.values import CAR as TOYOTA
+from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 import selfdrive.test.process_replay.process_replay as pr
 
 

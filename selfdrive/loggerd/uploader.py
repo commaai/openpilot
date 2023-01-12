@@ -16,8 +16,8 @@ from common.api import Api
 from common.params import Params
 from common.realtime import set_core_affinity
 from system.hardware import TICI
-from selfdrive.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.loggerd.config import ROOT
+from openpilot.selfdrive.loggerd.xattr_cache import getxattr, setxattr
+from openpilot.selfdrive.loggerd.config import ROOT
 from system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType

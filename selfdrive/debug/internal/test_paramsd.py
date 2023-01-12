@@ -11,10 +11,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-from selfdrive.car.honda.interface import CarInterface
-from selfdrive.car.honda.values import CAR
-from selfdrive.controls.lib.vehicle_model import VehicleModel, create_dyn_state_matrices
-from selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
+from openpilot.selfdrive.car.honda.interface import CarInterface
+from openpilot.selfdrive.car.honda.values import CAR
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, create_dyn_state_matrices
+from openpilot.selfdrive.locationd.kalman.models.car_kf import CarKalman, ObservationKind, States
 
 T_SIM = 5 * 60  # s
 DT = 0.01

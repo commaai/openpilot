@@ -5,9 +5,9 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from panda.python import uds
 from common.conversions import Conversions as CV
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 

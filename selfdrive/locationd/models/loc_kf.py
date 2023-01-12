@@ -9,8 +9,8 @@ from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.lst_sq_computer import LstSqComputer
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
-from selfdrive.locationd.models.constants import ObservationKind
-from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
+from openpilot.selfdrive.locationd.models.constants import ObservationKind
+from openpilot.selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
 

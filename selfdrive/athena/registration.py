@@ -10,7 +10,7 @@ from common.api import api_get
 from common.params import Params
 from common.spinner import Spinner
 from common.basedir import PERSIST
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, PC
 from system.swaglog import cloudlog
 

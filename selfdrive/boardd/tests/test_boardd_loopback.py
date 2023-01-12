@@ -10,10 +10,10 @@ from cereal import car
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout
-from selfdrive.boardd.boardd import can_list_to_can_capnp
-from selfdrive.car import make_can_msg
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.selfdrive.car import make_can_msg
 from system.hardware import TICI
-from selfdrive.test.helpers import phone_only, with_processes
+from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
 class TestBoardd(unittest.TestCase):

@@ -6,7 +6,7 @@ from collections import defaultdict
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from system.hardware import TICI
 
 TEST_TIMESPAN = 30

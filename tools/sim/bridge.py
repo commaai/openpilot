@@ -20,8 +20,8 @@ from common.basedir import BASEDIR
 from common.numpy_fast import clip
 from common.params import Params
 from common.realtime import DT_DMON, Ratekeeper
-from selfdrive.car.honda.values import CruiseButtons
-from selfdrive.test.helpers import set_params_enabled
+from openpilot.selfdrive.car.honda.values import CruiseButtons
+from openpilot.selfdrive.test.helpers import set_params_enabled
 from tools.sim.lib.can import can_function
 
 W, H = 1928, 1208

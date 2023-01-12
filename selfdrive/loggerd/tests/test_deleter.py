@@ -7,7 +7,7 @@ from collections import namedtuple
 
 from common.timeout import Timeout, TimeoutException
 import selfdrive.loggerd.deleter as deleter
-from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 

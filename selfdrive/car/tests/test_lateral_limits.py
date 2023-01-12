@@ -7,10 +7,10 @@ from typing import DefaultDict, Dict
 import unittest
 
 from common.realtime import DT_CTRL
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.interfaces import get_torque_params
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.interfaces import get_torque_params
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 
 CAR_MODELS = all_known_cars()
 

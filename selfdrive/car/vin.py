@@ -3,8 +3,8 @@ import re
 
 import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.car.fw_query_definitions import StdQueries
+from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from openpilot.selfdrive.car.fw_query_definitions import StdQueries
 from system.swaglog import cloudlog
 
 VIN_UNKNOWN = "0" * 17

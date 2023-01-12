@@ -4,8 +4,8 @@ import sys
 from typing import List, Tuple
 import unittest
 
-from selfdrive.car.tests.routes import CarTestRoute
-from selfdrive.car.tests.test_models import TestCarModel
+from openpilot.selfdrive.car.tests.routes import CarTestRoute
+from openpilot.selfdrive.car.tests.test_models import TestCarModel
 
 
 def create_test_models_suite(routes: List[Tuple[str, CarTestRoute]], ci=False) -> unittest.TestSuite:

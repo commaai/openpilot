@@ -2,9 +2,9 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from panda import Panda
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, CarControllerParams, NO_STOP_TIMER_CAR
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, CarControllerParams, NO_STOP_TIMER_CAR
+from openpilot.selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
 

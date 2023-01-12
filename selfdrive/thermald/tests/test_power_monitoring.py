@@ -14,7 +14,7 @@ def mock_sec_since_boot():
 
 with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
   with patch("common.params.put_nonblocking", new=params.put):
-    from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
+    from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                     CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
 
 TEST_DURATION_S = 50

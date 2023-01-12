@@ -5,7 +5,7 @@ from cereal import log
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from selfdrive.controls.lib.latcontrol import LatControl
+from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 
 
 class LatControlINDI(LatControl):

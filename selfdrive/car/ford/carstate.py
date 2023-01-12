@@ -2,8 +2,8 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.ford.values import CANBUS, DBC, CarControllerParams
+from openpilot.selfdrive.car.interfaces import CarStateBase
+from openpilot.selfdrive.car.ford.values import CANBUS, DBC, CarControllerParams
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType

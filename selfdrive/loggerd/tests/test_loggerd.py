@@ -15,8 +15,8 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.loggerd.config import ROOT
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.loggerd.config import ROOT
+from openpilot.selfdrive.manager.process_config import managed_processes
 from system.version import get_version
 from tools.lib.logreader import LogReader
 from cereal.visionipc import VisionIpcServer, VisionStreamType

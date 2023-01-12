@@ -4,8 +4,8 @@ import numpy as np
 
 from cereal import car, log
 from common.realtime import DT_DMON
-from selfdrive.controls.lib.events import Events
-from selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
+from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
 
 EventName = car.CarEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()

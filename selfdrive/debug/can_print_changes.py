@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from selfdrive.debug.can_table import can_table
+from openpilot.selfdrive.debug.can_table import can_table
 from tools.lib.logreader import logreader_from_route_or_segment
 
 RED = '\033[91m'

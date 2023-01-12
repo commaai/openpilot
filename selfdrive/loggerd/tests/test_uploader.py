@@ -9,7 +9,7 @@ import json
 from system.swaglog import cloudlog
 import selfdrive.loggerd.uploader as uploader
 
-from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from openpilot.selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 
 class TestLogHandler(logging.Handler):

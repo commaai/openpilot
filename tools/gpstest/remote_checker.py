@@ -5,7 +5,7 @@ from typing import List
 
 from common.params import Params
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 DELTA = 0.001
 # assume running openpilot for now

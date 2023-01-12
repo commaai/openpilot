@@ -5,8 +5,8 @@ import requests
 import xml.etree.ElementTree as ET
 
 from common.basedir import BASEDIR
-from selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG
-from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
+from openpilot.selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG
+from openpilot.selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 
 TRANSLATION_TAG = "<translation"
 BADGE_HEIGHT = 20 + 8

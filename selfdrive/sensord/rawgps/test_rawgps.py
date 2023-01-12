@@ -6,7 +6,7 @@ import subprocess
 
 import cereal.messaging as messaging
 from system.hardware import TICI
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 class TestRawgpsd(unittest.TestCase):

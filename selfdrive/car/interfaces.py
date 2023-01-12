@@ -10,10 +10,10 @@ from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_center_deadzone
-from selfdrive.controls.lib.events import Events
-from selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_center_deadzone
+from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter

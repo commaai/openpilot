@@ -1,6 +1,6 @@
 import copy
 import crcmod
-from selfdrive.car.nissan.values import CAR
+from openpilot.selfdrive.car.nissan.values import CAR
 
 # TODO: add this checksum to the CANPacker
 nissan_checksum = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)

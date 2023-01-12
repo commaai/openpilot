@@ -21,9 +21,9 @@ from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
 from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
-from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
-from selfdrive.locationd.models.gnss_kf import GNSSKalman
-from selfdrive.locationd.models.gnss_kf import States as GStates
+from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
+from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
+from openpilot.selfdrive.locationd.models.gnss_kf import States as GStates
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10

@@ -4,8 +4,8 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from openpilot.selfdrive.car import dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 Ecu = car.CarParams.Ecu
 
 

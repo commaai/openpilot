@@ -2,8 +2,8 @@
 
 import argparse
 
-from selfdrive.test.process_replay.compare_logs import save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
+from openpilot.selfdrive.test.process_replay.compare_logs import save_log
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 

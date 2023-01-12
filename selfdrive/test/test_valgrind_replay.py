@@ -15,7 +15,7 @@ else:
 import cereal.messaging as messaging
 from collections import namedtuple
 from tools.lib.logreader import LogReader
-from selfdrive.test.openpilotci import get_url
+from openpilot.selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])

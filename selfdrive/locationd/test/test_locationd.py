@@ -9,7 +9,7 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 from common.params import Params
 
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 
 class TestLocationdProc(unittest.TestCase):

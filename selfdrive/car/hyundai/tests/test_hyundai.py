@@ -2,9 +2,9 @@
 import unittest
 
 from cereal import car
-from selfdrive.car.car_helpers import get_interface_attr
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS
-from selfdrive.car.hyundai.values import CANFD_CAR
+from openpilot.selfdrive.car.car_helpers import get_interface_attr
+from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS
+from openpilot.selfdrive.car.hyundai.values import CANFD_CAR
 
 Ecu = car.CarParams.Ecu
 

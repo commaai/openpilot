@@ -3,10 +3,10 @@ import numpy as np
 from parameterized import parameterized_class
 import unittest
 
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN, IMPERIAL_INCREMENT
+from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN, IMPERIAL_INCREMENT
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
+from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type

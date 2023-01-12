@@ -9,7 +9,7 @@ import multiprocessing
 import numpy as np
 from tqdm import tqdm
 
-from selfdrive.locationd.paramsd import ParamsLearner, States
+from openpilot.selfdrive.locationd.paramsd import ParamsLearner, States
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 

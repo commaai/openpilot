@@ -13,8 +13,8 @@ from laika.ephemeris import EphemerisType, GPSEphemeris
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, TimeRangeHolder
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
-from selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisSourceType, Laikad, create_measurement_msg
-from selfdrive.test.openpilotci import get_url
+from openpilot.selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisSourceType, Laikad, create_measurement_msg
+from openpilot.selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
 

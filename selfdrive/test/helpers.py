@@ -3,7 +3,7 @@ import time
 from functools import wraps
 
 from system.hardware import PC
-from selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from system.version import training_version, terms_version
 
 

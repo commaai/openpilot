@@ -12,10 +12,10 @@ from common.spinner import Spinner
 from common.timeout import Timeout
 from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.openpilotci import BASE_URL, get_url
-from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.test_processes import format_diff
+from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
+from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, save_log
+from openpilot.selfdrive.test.process_replay.test_processes import format_diff
 from system.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -265,7 +265,7 @@ if __name__ == "__main__":
 
   # upload new refs
   if (update or failed) and not PC:
-    from selfdrive.test.openpilotci import upload_file
+    from openpilot.selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
 

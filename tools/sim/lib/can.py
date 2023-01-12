@@ -2,8 +2,8 @@
 import cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
-from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
-from selfdrive.car import crc8_pedal
+from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
+from openpilot.selfdrive.car import crc8_pedal
 
 packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")

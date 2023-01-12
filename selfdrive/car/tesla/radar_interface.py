@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.tesla.values import DBC, CANBUS
-from selfdrive.car.interfaces import RadarInterfaceBase
+from openpilot.selfdrive.car.tesla.values import DBC, CANBUS
+from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
 RADAR_MSGS_A = list(range(0x310, 0x36E, 3))
 RADAR_MSGS_B = list(range(0x311, 0x36F, 3))

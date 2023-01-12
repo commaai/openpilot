@@ -3,8 +3,8 @@ import os
 import shutil
 import threading
 from system.swaglog import cloudlog
-from selfdrive.loggerd.config import ROOT, get_available_bytes, get_available_percent
-from selfdrive.loggerd.uploader import listdir_by_creation
+from openpilot.selfdrive.loggerd.config import ROOT, get_available_bytes, get_available_percent
+from openpilot.selfdrive.loggerd.uploader import listdir_by_creation
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10
