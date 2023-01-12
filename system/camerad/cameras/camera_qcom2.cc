@@ -1051,7 +1051,7 @@ void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_i
   // Going below recommended gain needs lower penalty to not overexpose
   float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
 
-  float nt1 = std::abs(g - (int)analog_gain_rec_idx) * m;
+  float nt1 = std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
   if (camera_num==1) {
     printf("low gain score:%.1f \n", nt1);
   }
