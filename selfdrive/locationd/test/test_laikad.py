@@ -15,7 +15,7 @@ from laika.helpers import ConstellationId, TimeRangeHolder
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
 from openpilot.selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisSourceType, Laikad, create_measurement_msg
 from openpilot.selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader
 
 
 def get_log(segs=range(0)):

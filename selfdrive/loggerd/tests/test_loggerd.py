@@ -18,7 +18,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.version import get_version
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader
 from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 

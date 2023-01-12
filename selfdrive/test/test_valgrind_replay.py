@@ -14,7 +14,7 @@ else:
 
 import openpilot.cereal.messaging as messaging
 from collections import namedtuple
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.openpilotci import get_url
 from openpilot.common.basedir import BASEDIR
 

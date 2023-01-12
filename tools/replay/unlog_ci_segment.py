@@ -11,8 +11,8 @@ import tty
 from collections import defaultdict
 
 import openpilot.cereal.messaging as messaging
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.openpilotci import get_url
 
 IGNORE = ['initData', 'sentinel']

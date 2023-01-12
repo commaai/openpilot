@@ -4,8 +4,8 @@ import argparse
 
 from openpilot.selfdrive.test.process_replay.compare_logs import save_log
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
-from tools.lib.logreader import MultiLogIterator
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import MultiLogIterator
+from openpilot.tools.lib.route import Route
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Run process on route and create new logs",

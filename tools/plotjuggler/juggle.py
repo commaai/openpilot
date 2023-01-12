@@ -13,8 +13,8 @@ import argparse
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.test.process_replay.compare_logs import save_log
 from openpilot.selfdrive.test.openpilotci import get_url
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route, SegmentName
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))

@@ -10,8 +10,8 @@ import numpy as np
 from tqdm import tqdm
 
 from openpilot.selfdrive.locationd.paramsd import ParamsLearner, States
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 
 ROUTE = "b2f1615665781088|2021-03-14--17-27-47"
 PLOT = True

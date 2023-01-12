@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import logreader_from_route_or_segment
 
 RED = '\033[91m'
 CLEAR = '\033[0m'

@@ -8,8 +8,8 @@ from multiprocessing import Queue
 from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.manager.helpers import unblock_stdout
-from tools.sim import bridge
-from tools.sim.bridge import CarlaBridge
+from openpilot.tools.sim import bridge
+from openpilot.tools.sim.bridge import CarlaBridge
 
 CI = "CI" in os.environ
 

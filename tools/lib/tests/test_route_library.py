@@ -2,7 +2,7 @@
 import unittest
 from collections import namedtuple
 
-from tools.lib.route import SegmentName
+from openpilot.tools.lib.route import SegmentName
 
 class TestRouteLibrary(unittest.TestCase):
   def test_segment_name_formats(self):

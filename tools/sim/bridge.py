@@ -22,7 +22,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import DT_DMON, Ratekeeper
 from openpilot.selfdrive.car.honda.values import CruiseButtons
 from openpilot.selfdrive.test.helpers import set_params_enabled
-from tools.sim.lib.can import can_function
+from openpilot.tools.sim.lib.can import can_function
 
 W, H = 1928, 1208
 REPEAT_COUNTER = 5
@@ -548,12 +548,12 @@ if __name__ == "__main__":
 
     if args.joystick:
       # start input poll for joystick
-      from tools.sim.lib.manual_ctrl import wheel_poll_thread
+      from openpilot.tools.sim.lib.manual_ctrl import wheel_poll_thread
 
       wheel_poll_thread(q)
     else:
       # start input poll for keyboard
-      from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+      from openpilot.tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
       keyboard_poll_thread(q)
     p.join()

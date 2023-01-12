@@ -17,7 +17,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import EVENTS, ET
 from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {

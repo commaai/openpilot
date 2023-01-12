@@ -6,8 +6,8 @@ import argparse
 import os
 import traceback
 from tqdm import tqdm
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car

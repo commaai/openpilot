@@ -5,7 +5,7 @@ import datetime
 
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.filter_simple import FirstOrderFilter
-from tools.zookeeper import Zookeeper
+from openpilot.tools.zookeeper import Zookeeper
 
 if __name__ == "__main__":
   z = Zookeeper()

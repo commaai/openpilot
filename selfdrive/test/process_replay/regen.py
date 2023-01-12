@@ -21,9 +21,9 @@ from openpilot.selfdrive.manager.process import ensure_running
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
 from openpilot.selfdrive.test.update_ci_routes import upload_route
-from tools.lib.route import Route
-from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.logreader import LogReader
 
 def replay_panda_states(s, msgs):
   pm = messaging.PubMaster([s, 'peripheralState'])

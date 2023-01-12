@@ -12,8 +12,8 @@ from openpilot.selfdrive.test.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
 from openpilot.system.version import get_commit
-from tools.lib.filereader import FileReader
-from tools.lib.logreader import LogReader
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.logreader import LogReader
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY

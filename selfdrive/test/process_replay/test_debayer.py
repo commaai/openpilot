@@ -11,8 +11,8 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
 from openpilot.system.version import get_commit
 from openpilot.system.camerad.snapshot.snapshot import yuv_to_rgb
-from tools.lib.logreader import LogReader
-from tools.lib.filereader import FileReader
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.filereader import FileReader
 
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33"
 SEGMENT = 0
