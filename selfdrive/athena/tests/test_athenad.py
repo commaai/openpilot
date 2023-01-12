@@ -18,7 +18,7 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from system import swaglog
+from openpilot.system import swaglog
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server

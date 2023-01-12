@@ -7,7 +7,7 @@ import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import make_can_msg
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 
 def make_tester_present_msg(addr, bus, subaddr=None):

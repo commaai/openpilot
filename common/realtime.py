@@ -8,7 +8,7 @@ from typing import Optional, List, Union
 from setproctitle import getproctitle  # pylint: disable=no-name-in-module
 
 from openpilot.common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
-from system.hardware import PC
+from openpilot.system.hardware import PC
 
 
 # time step for each process

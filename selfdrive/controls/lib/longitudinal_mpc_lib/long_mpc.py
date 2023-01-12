@@ -4,12 +4,12 @@ import numpy as np
 
 from openpilot.common.realtime import sec_since_boot
 from openpilot.common.numpy_fast import clip
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.modeld.constants import index_function
 from openpilot.selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 if __name__ == '__main__':  # generating code
-  from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+  from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
   from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
 

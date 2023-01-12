@@ -17,13 +17,13 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_TRML, sec_since_boot
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from system.hardware import HARDWARE, TICI, AGNOS
+from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.selfdrive.loggerd.config import get_available_percent
 from openpilot.selfdrive.statsd import statlog
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
-from system.version import terms_version, training_version
+from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType

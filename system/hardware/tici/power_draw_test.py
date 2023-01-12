@@ -2,8 +2,8 @@
 import os
 import time
 import numpy as np
-from system.hardware.tici.hardware import Tici
-from system.hardware.tici.pins import GPIO
+from openpilot.system.hardware.tici.hardware import Tici
+from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.common.gpio import gpio_init, gpio_set
 
 def read_power():

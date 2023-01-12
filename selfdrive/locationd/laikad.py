@@ -24,7 +24,7 @@ from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velf
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
 from openpilot.selfdrive.locationd.models.gnss_kf import States as GStates
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'

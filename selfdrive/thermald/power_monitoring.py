@@ -3,8 +3,8 @@ from typing import Optional
 
 from openpilot.common.params import Params, put_nonblocking
 from openpilot.common.realtime import sec_since_boot
-from system.hardware import HARDWARE
-from system.swaglog import cloudlog
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.statsd import statlog
 
 CAR_VOLTAGE_LOW_PASS_K = 0.011 # LPF gain for 45s tau (dt/tau / (dt/tau + 1))

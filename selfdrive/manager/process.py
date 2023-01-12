@@ -16,8 +16,8 @@ from openpilot.cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import sec_since_boot
-from system.swaglog import cloudlog
-from system.hardware import HARDWARE
+from openpilot.system.swaglog import cloudlog
+from openpilot.system.hardware import HARDWARE
 from openpilot.cereal import log
 
 WATCHDOG_FN = "/dev/shm/wd_"

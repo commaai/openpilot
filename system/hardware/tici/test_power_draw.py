@@ -4,8 +4,8 @@ import time
 import math
 from dataclasses import dataclass
 
-from system.hardware import HARDWARE, TICI
-from system.hardware.tici.power_monitor import get_power
+from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.manager.manager import manager_cleanup
 

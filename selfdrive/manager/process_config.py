@@ -2,7 +2,7 @@ import os
 
 from openpilot.cereal import car
 from openpilot.common.params import Params
-from system.hardware import PC, TICI
+from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None

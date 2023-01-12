@@ -9,8 +9,8 @@ import requests
 from timezonefinder import TimezoneFinder
 
 from openpilot.common.params import Params
-from system.hardware import AGNOS
-from system.swaglog import cloudlog
+from openpilot.system.hardware import AGNOS
+from openpilot.system.swaglog import cloudlog
 
 
 def set_timezone(valid_timezones, timezone):

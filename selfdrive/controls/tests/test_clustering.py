@@ -7,8 +7,8 @@ from fastcluster import linkage_vector
 from scipy.cluster import _hierarchy
 from scipy.spatial.distance import pdist
 
-from third_party.cluster.fastcluster_py import hclust, ffi
-from third_party.cluster.fastcluster_py import cluster_points_centroid
+from openpilot.third_party.cluster.fastcluster_py import hclust, ffi
+from openpilot.third_party.cluster.fastcluster_py import cluster_points_centroid
 
 
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):

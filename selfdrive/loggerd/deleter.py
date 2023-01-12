@@ -2,7 +2,7 @@
 import os
 import shutil
 import threading
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.loggerd.config import ROOT, get_available_bytes, get_available_percent
 from openpilot.selfdrive.loggerd.uploader import listdir_by_creation
 

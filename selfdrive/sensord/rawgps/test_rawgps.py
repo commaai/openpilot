@@ -5,7 +5,7 @@ import unittest
 import subprocess
 
 import cereal.messaging as messaging
-from system.hardware import TICI
+from openpilot.system.hardware import TICI
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 

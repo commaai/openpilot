@@ -4,9 +4,9 @@ import unittest
 import numpy as np
 
 from openpilot.selfdrive.test.helpers import with_processes
-from system.camerad.snapshot.snapshot import get_snapshots
+from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 
-from system.hardware import TICI
+from openpilot.system.hardware import TICI
 
 TEST_TIME = 45
 REPEAT = 5

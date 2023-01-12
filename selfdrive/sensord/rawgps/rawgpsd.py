@@ -12,7 +12,7 @@ from struct import unpack_from, calcsize, pack
 from openpilot.cereal import log
 import cereal.messaging as messaging
 from laika.gps_time import GPSTime
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 from openpilot.selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from openpilot.selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,

@@ -5,7 +5,7 @@ import numpy as np
 from openpilot.cereal import messaging
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import Ratekeeper
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 RATE = 10
 FFT_SAMPLES = 4096

@@ -13,13 +13,13 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
 from openpilot.selfdrive.boardd.set_time import set_time
-from system.hardware import HARDWARE, PC
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.selfdrive.manager.helpers import unblock_stdout
 from openpilot.selfdrive.manager.process import ensure_running
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from system.swaglog import cloudlog, add_file_handler
-from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
+from openpilot.system.swaglog import cloudlog, add_file_handler
+from openpilot.system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                               terms_version, training_version, is_tested_branch
 
 

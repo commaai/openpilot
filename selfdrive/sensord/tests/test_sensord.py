@@ -7,7 +7,7 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from openpilot.cereal import log
-from system.hardware import TICI, HARDWARE
+from openpilot.system.hardware import TICI, HARDWARE
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 BMX = {

@@ -4,7 +4,7 @@ from typing import NoReturn
 
 import cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
-from system.swaglog import get_file_handler
+from openpilot.system.swaglog import get_file_handler
 
 
 def main() -> NoReturn:

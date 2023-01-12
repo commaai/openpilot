@@ -2,9 +2,9 @@ import os
 import time
 from functools import wraps
 
-from system.hardware import PC
+from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
-from system.version import training_version, terms_version
+from openpilot.system.version import training_version, terms_version
 
 
 def set_params_enabled():

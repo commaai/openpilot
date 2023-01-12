@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 # TODO: rewrite for unittest
 from openpilot.common.realtime import DT_CTRL
-from system.hardware import HARDWARE
+from openpilot.system.hardware import HARDWARE
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 

@@ -15,10 +15,10 @@ import cereal.messaging as messaging
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
-from system.hardware import TICI
+from openpilot.system.hardware import TICI
 from openpilot.selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.loggerd.config import ROOT
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'

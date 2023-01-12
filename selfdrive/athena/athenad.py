@@ -35,12 +35,12 @@ from openpilot.common.basedir import PERSIST
 from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import sec_since_boot, set_core_affinity
-from system.hardware import HARDWARE, PC, AGNOS
+from openpilot.system.hardware import HARDWARE, PC, AGNOS
 from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.statsd import STATS_DIR
-from system.swaglog import SWAGLOG_DIR, cloudlog
-from system.version import get_commit, get_origin, get_short_branch, get_version
+from openpilot.system.swaglog import SWAGLOG_DIR, cloudlog
+from openpilot.system.version import get_commit, get_origin, get_short_branch, get_version
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -540,7 +540,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> Optional[Union[str, Dict[str, str]]]:
-  from system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):

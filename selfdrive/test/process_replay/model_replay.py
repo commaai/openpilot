@@ -11,12 +11,12 @@ from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.spinner import Spinner
 from openpilot.common.timeout import Timeout
 from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size
-from system.hardware import PC
+from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from openpilot.selfdrive.test.process_replay.test_processes import format_diff
-from system.version import get_commit
+from openpilot.system.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 

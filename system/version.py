@@ -5,7 +5,7 @@ from typing import List, Optional
 from functools import lru_cache
 
 from openpilot.common.basedir import BASEDIR
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 RELEASE_BRANCHES = ['release3-staging', 'dashcam3-staging', 'release3', 'dashcam3']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']

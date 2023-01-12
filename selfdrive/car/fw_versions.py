@@ -9,7 +9,7 @@ from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from system.swaglog import cloudlog
+from openpilot.system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]

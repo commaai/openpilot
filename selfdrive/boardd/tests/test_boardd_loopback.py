@@ -12,7 +12,7 @@ from openpilot.common.spinner import Spinner
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car import make_can_msg
-from system.hardware import TICI
+from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
