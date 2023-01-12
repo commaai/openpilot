@@ -34,7 +34,7 @@ POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
 
 class Laikad:
-  def __init__(self, valid_const=("GPS"), auto_fetch_navs=True, auto_update=False,
+  def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_navs=True, auto_update=False,
                valid_ephem_types=(EphemerisType.NAV,),
                save_ephemeris=False, use_qcom=False):
     """
@@ -57,7 +57,7 @@ class Laikad:
     self.save_ephemeris = save_ephemeris
     self.load_cache()
 
-    self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS)}
+    self.posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
     self.velfix_function = get_velfix_sympy_func()
     self.last_fix_pos = None
     self.last_fix_t = None
@@ -93,7 +93,7 @@ class Laikad:
 
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
-      min_measurements = 6
+      min_measurements = 7 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 6
       position_solution, pr_residuals = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(position_solution) < 3:
         return None
