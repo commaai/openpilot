@@ -98,7 +98,6 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
   QHash<uint32_t, QVector<uint32_t>> mismatches;
   QHash<uint32_t, uint32_t> msg_count;
   auto events = can->events();
-  qDebug() << bus << selected_address << byte_idx << bit_idx;
   int bit_to_find = -1;
   for (auto e : *events) {
     if (e->which == cereal::Event::Which::CAN) {
