@@ -17,9 +17,16 @@ inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 
-VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
+  setFrameShape(QFrame::StyledPanel);
+  setFrameShadow(QFrame::Sunken);
+  QHBoxLayout *containter_layout = new QHBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout();
   main_layout->setContentsMargins(0, 0, 0, 0);
+
+  containter_layout->addStretch(1);
+  containter_layout->addLayout(main_layout);
+  containter_layout->addStretch(1);
 
   cam_widget = new CameraWidget("camerad", can->visionStreamType(), false, this);
   cam_widget->setFixedSize(parent->width(), parent->width() / 1.596);
@@ -56,22 +63,17 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   }
   main_layout->addLayout(control_layout);
 
-  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
-  QObject::connect(cam_widget, &CameraWidget::clicked, [this]() { pause(!can->isPaused()); });
-  QObject::connect(play_btn, &QPushButton::clicked, [=]() { pause(!can->isPaused()); });
+  QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
+  QObject::connect(can, &CANMessages::paused, [this]() { play_btn->setText("▶"); });
+  QObject::connect(can, &CANMessages::resume, [this]() { play_btn->setText("⏸"); });
   QObject::connect(can, &CANMessages::streamStarted, [this]() {
     end_time_label->setText(formatTime(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
-}
-
-void VideoWidget::pause(bool pause) {
-  play_btn->setText(!pause ? "⏸" : "▶");
-  can->pause(pause);
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {

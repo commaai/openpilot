@@ -108,6 +108,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
+  QObject::connect(history_log, &LogsWidget::openChart, [this](const QString &id, const Signal *sig) {
+    this->charts->showChart(id, sig, true, false);
+  });
   QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
     if (undo_stack->count() > 0)
       dbcMsgChanged();

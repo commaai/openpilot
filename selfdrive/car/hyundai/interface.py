@@ -185,10 +185,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1767. + STD_CARGO_KG  # SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
-    elif candidate == CAR.KIA_SORENTO_PHEV_4TH_GEN:
-      ret.mass = 4095.8 * CV.LB_TO_KG + STD_CARGO_KG # weight from EX and above trims, average of FWD and AWD versions (EX, X-Line EX AWD, SX, SX Pestige, X-Line SX Prestige AWD)
+    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
       ret.wheelbase = 2.81
-      ret.steerRatio = 13.27 # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sorento-phev/2022/specifications
+      ret.steerRatio = 13.5  # average of the platforms
+      if candidate == CAR.KIA_SORENTO_4TH_GEN:
+        ret.mass = 3957 * CV.LB_TO_KG + STD_CARGO_KG
+      else:
+        ret.mass = 4537 * CV.LB_TO_KG + STD_CARGO_KG
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
@@ -232,7 +235,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.vEgoStarting = 0.1
-    ret.startAccel = 2.0
+    ret.startAccel = 1.0
     ret.longitudinalActuatorDelayLowerBound = 0.5
     ret.longitudinalActuatorDelayUpperBound = 0.5
 

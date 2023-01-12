@@ -71,10 +71,10 @@ if arch == "aarch64" and AGNOS:
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+  "PYTHONPATH": Dir("#").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
+  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
@@ -422,7 +422,6 @@ SConscript(['common/transformations/SConscript'])
 
 SConscript(['selfdrive/modeld/SConscript'])
 
-SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 

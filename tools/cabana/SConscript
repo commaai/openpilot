@@ -18,7 +18,7 @@ cabana_env = qt_env.Clone()
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
-                            'canmessages.cc', 'commands.cc', 'messageswidget.cc', 'settings.cc', 'detailwidget.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+                            'canmessages.cc', 'commands.cc', 'messageswidget.cc', 'settings.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('test'):

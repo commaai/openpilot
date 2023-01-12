@@ -4,7 +4,8 @@ import numpy as np
 
 from laika import AstroDog
 from laika.helpers import ConstellationId
-from laika.raw_gnss import calc_pos_fix, correct_measurements, process_measurements, read_raw_ublox
+from laika.raw_gnss import correct_measurements, process_measurements, read_raw_ublox
+from laika.opt import calc_pos_fix
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 
@@ -54,14 +55,14 @@ class TestUbloxProcessing(unittest.TestCase):
       processed_meas = process_measurements(measurements, dog)
       count_processed_measurements += len(processed_meas)
       pos_fix = calc_pos_fix(processed_meas)
-      if len(pos_fix) > 0 and all(pos_fix[0] != 0):
+      if len(pos_fix) > 0 and all(p != 0 for p in pos_fix[0]):
         position_fix_found += 1
 
         corrected_meas = correct_measurements(processed_meas, pos_fix[0][:3], dog)
         count_corrected_measurements += len(corrected_meas)
 
         pos_fix = calc_pos_fix(corrected_meas)
-        if len(pos_fix) > 0 and all(pos_fix[0] != 0):
+        if len(pos_fix) > 0 and all(p != 0 for p in pos_fix[0]):
           pos_ests.append(pos_fix[0])
           position_fix_found_after_correcting += 1
 

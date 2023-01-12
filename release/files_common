@@ -192,8 +192,6 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 
-selfdrive/controls/lib/cluster/*
-
 selfdrive/controls/lib/lateral_mpc_lib/.gitignore
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
@@ -233,7 +231,6 @@ selfdrive/locationd/generated/gps.cpp
 selfdrive/locationd/generated/gps.h
 
 selfdrive/locationd/laikad.py
-selfdrive/locationd/laikad_helpers.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
@@ -329,7 +326,6 @@ system/camerad/SConscript
 system/camerad/main.cc
 
 system/camerad/snapshot/*
-system/camerad/include/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
@@ -385,7 +381,6 @@ selfdrive/modeld/thneed/thneed.h
 selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
-selfdrive/modeld/thneed/include/*
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
@@ -413,7 +408,10 @@ selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
+third_party/.gitignore
 third_party/SConscript
+
+third_party/cluster/*
 
 third_party/linux/**
 third_party/opencl/**
@@ -437,14 +435,12 @@ third_party/snpe/dsp**
 third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
+third_party/acados/acados_template/**
 
 third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
-
-pyextra/.gitignore
-pyextra/acados_template/**
 
 rednose/.gitignore
 rednose/**
