@@ -1140,10 +1140,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
     }
   }
 
-  if (camera_num==1) {
-    printf("BEST score:%1f \n", best_ev_score);
-  }
-
   exp_lock.lock();
 
   measured_grey_fraction = grey_frac;
