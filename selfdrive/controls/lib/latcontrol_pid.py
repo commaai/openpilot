@@ -1,6 +1,6 @@
 import math
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.pid import PIDController
 

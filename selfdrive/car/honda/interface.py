@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp

@@ -17,7 +17,7 @@ from typing import Tuple
 import numpy as np
 from numpy.linalg import solve
 
-from cereal import car
+from openpilot.cereal import car
 
 ACCELERATION_DUE_TO_GRAVITY = 9.8
 

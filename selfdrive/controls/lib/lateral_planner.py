@@ -7,7 +7,7 @@ from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MP
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
-from cereal import log
+from openpilot.cereal import log
 
 TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.04

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from openpilot.selfdrive.car import get_safety_config

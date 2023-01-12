@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from collections import namedtuple
 from typing import Dict
 
-from cereal import log
+from openpilot.cereal import log
 
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
 NetworkType = log.DeviceState.NetworkType

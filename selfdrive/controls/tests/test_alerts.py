@@ -5,7 +5,7 @@ import unittest
 import random
 from PIL import Image, ImageDraw, ImageFont
 
-from cereal import log, car
+from openpilot.cereal import log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import Alert, EVENTS, ET

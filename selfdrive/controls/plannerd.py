@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.params import Params
 from openpilot.common.realtime import Priority, config_realtime_process
 from system.swaglog import cloudlog

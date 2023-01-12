@@ -4,7 +4,7 @@ import math
 from collections import defaultdict, deque
 
 import cereal.messaging as messaging
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.car.car_helpers import get_interface_attr
 from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.hyundai.values import CANFD_CAR

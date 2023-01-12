@@ -9,9 +9,9 @@ from tqdm import tqdm
 os.environ["USE_WEBCAM"] = "1"
 
 import cereal.messaging as messaging
-from cereal import car
-from cereal.services import service_list
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal import car
+from openpilot.cereal.services import service_list
+from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
 from openpilot.common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
-from cereal import car, log
+from openpilot.cereal import car, log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME

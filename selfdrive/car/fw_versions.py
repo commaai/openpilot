@@ -4,7 +4,7 @@ from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS

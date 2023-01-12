@@ -1,4 +1,4 @@
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.realtime import DT_MDL
 

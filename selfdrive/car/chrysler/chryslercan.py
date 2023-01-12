@@ -1,4 +1,4 @@
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.car.chrysler.values import RAM_CARS
 
 GearShifter = car.CarState.GearShifter

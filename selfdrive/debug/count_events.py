@@ -7,7 +7,7 @@ from pprint import pprint
 from tqdm import tqdm
 from typing import cast
 
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 

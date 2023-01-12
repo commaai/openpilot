@@ -3,7 +3,7 @@ import subprocess
 import time
 import unittest
 
-from cereal import log, car
+from openpilot.cereal import log, car
 import cereal.messaging as messaging
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 # TODO: rewrite for unittest

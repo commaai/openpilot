@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from math import fabs
 from panda import Panda
 

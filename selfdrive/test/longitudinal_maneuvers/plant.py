@@ -2,7 +2,7 @@
 import time
 import numpy as np
 
-from cereal import log
+from openpilot.cereal import log
 import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState

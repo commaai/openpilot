@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import NoReturn, Union, List, Dict
 
 from openpilot.common.params import Params
-from cereal.messaging import SubMaster
+from openpilot.cereal.messaging import SubMaster
 from system.swaglog import cloudlog
 from system.hardware import HARDWARE
 from openpilot.common.file_helpers import atomic_write_in_dir

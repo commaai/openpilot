@@ -1,6 +1,6 @@
 from math import atan2
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter

@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.params import Params
 from openpilot.common.basedir import BASEDIR
 from system.version import is_comma_remote, is_tested_branch

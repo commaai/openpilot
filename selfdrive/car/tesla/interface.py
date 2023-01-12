@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from panda import Panda
 from openpilot.selfdrive.car.tesla.values import CANBUS, CAR
 from openpilot.selfdrive.car import STD_CARGO_KG, get_safety_config

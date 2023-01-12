@@ -7,9 +7,9 @@ from hexdump import hexdump
 import codecs
 codecs.register_error("strict", codecs.backslashreplace_errors)
 
-from cereal import log
+from openpilot.cereal import log
 import cereal.messaging as messaging
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 
 if __name__ == "__main__":
 

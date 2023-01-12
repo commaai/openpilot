@@ -10,7 +10,7 @@ import time
 import traceback
 from pathlib import Path
 
-from cereal import log
+from openpilot.cereal import log
 import cereal.messaging as messaging
 from openpilot.common.api import Api
 from openpilot.common.params import Params

@@ -11,7 +11,7 @@ from typing import List, Optional
 
 import numpy as np
 
-from cereal import log, messaging
+from openpilot.cereal import log, messaging
 from openpilot.common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN

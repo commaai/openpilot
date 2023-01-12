@@ -22,7 +22,7 @@ from system import swaglog
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
-from cereal import messaging
+from openpilot.cereal import messaging
 
 
 class TestAthenadMethods(unittest.TestCase):

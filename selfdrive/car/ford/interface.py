@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import STD_CARGO_KG, get_safety_config
 from openpilot.selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter

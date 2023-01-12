@@ -2,7 +2,7 @@
 import capnp
 from collections import namedtuple
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from typing import Dict
 

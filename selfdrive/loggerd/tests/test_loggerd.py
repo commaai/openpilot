@@ -10,8 +10,8 @@ from collections import defaultdict
 from pathlib import Path
 
 import cereal.messaging as messaging
-from cereal import log
-from cereal.services import service_list
+from openpilot.cereal import log
+from openpilot.cereal.services import service_list
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
@@ -19,7 +19,7 @@ from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.manager.process_config import managed_processes
 from system.version import get_version
 from tools.lib.logreader import LogReader
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType

@@ -6,7 +6,7 @@ import unittest
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.params import Params
 from openpilot.common.spinner import Spinner
 from openpilot.common.timeout import Timeout

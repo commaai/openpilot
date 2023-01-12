@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL

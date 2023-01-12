@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from math import cos, sin
-from cereal import car
+from openpilot.cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.values import CANBUS, DBC, RADAR

@@ -14,8 +14,8 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 
 import cereal.messaging as messaging
-from cereal import log
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal import log
+from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.numpy_fast import clip
 from openpilot.common.params import Params

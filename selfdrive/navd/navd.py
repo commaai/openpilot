@@ -8,7 +8,7 @@ import requests
 import numpy as np
 
 import cereal.messaging as messaging
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper

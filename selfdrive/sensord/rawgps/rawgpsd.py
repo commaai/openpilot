@@ -9,7 +9,7 @@ import subprocess
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
-from cereal import log
+from openpilot.cereal import log
 import cereal.messaging as messaging
 from laika.gps_time import GPSTime
 from system.swaglog import cloudlog

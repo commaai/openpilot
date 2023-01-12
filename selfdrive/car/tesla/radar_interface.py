@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from openpilot.cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.tesla.values import DBC, CANBUS
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase

@@ -7,7 +7,7 @@ import capnp
 import warnings
 
 
-from cereal import log as capnp_log
+from openpilot.cereal import log as capnp_log
 from tools.lib.filereader import FileReader
 from tools.lib.route import Route, SegmentName
 

@@ -9,7 +9,7 @@ import urllib.parse
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.common.params import Params
 from system.swaglog import cloudlog
 from system.hardware import TICI

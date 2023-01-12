@@ -8,9 +8,9 @@ import unittest
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from cereal import car
+from openpilot.cereal import car
 import cereal.messaging as messaging
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params

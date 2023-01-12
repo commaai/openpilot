@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL

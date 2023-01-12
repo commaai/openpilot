@@ -5,7 +5,7 @@ from collections import defaultdict
 
 import matplotlib.pyplot as plt
 
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 

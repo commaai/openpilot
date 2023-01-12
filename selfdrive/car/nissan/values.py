@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 from enum import Enum
 
-from cereal import car
+from openpilot.cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarInfo, Harness

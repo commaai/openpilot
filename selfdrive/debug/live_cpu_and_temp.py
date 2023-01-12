@@ -3,7 +3,7 @@ import argparse
 import capnp
 from collections import defaultdict
 
-from cereal.messaging import SubMaster
+from openpilot.cereal.messaging import SubMaster
 from openpilot.common.numpy_fast import mean
 from typing import Optional, Dict
 

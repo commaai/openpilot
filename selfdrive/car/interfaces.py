@@ -4,7 +4,7 @@ import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.kalman.simple_kalman import KF1D

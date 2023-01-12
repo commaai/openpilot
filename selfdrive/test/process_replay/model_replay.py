@@ -7,7 +7,7 @@ from typing import Any
 from itertools import zip_longest
 
 import cereal.messaging as messaging
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.spinner import Spinner
 from openpilot.common.timeout import Timeout
 from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size

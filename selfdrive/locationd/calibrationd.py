@@ -12,7 +12,7 @@ import capnp
 import numpy as np
 from typing import List, NoReturn, Optional
 
-from cereal import log
+from openpilot.cereal import log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params, put_nonblocking

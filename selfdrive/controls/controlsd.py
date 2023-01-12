@@ -3,7 +3,7 @@ import os
 import math
 from typing import SupportsFloat
 
-from cereal import car, log
+from openpilot.cereal import car, log
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.profiler import Profiler

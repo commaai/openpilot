@@ -6,7 +6,7 @@ import time
 import capnp
 
 import cereal.messaging as messaging
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 from openpilot.common.params import Params
 
 from openpilot.selfdrive.manager.process_config import managed_processes

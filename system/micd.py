@@ -2,7 +2,7 @@
 import sounddevice as sd
 import numpy as np
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import Ratekeeper
 from system.swaglog import cloudlog

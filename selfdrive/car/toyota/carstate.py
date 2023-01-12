@@ -1,6 +1,6 @@
 import copy
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
 from openpilot.common.filter_simple import FirstOrderFilter

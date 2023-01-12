@@ -8,7 +8,7 @@ import unittest
 from cffi import FFI
 
 import cereal.messaging as messaging
-from cereal import log
+from openpilot.cereal import log
 
 SENSOR_DECIMATION = 1
 VISION_DECIMATION = 1

@@ -10,8 +10,8 @@ from collections import namedtuple
 import capnp
 
 import cereal.messaging as messaging
-from cereal import car, log
-from cereal.services import service_list
+from openpilot.cereal import car, log
+from openpilot.cereal.services import service_list
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL

@@ -3,7 +3,7 @@
 import time
 import atexit
 
-from cereal import messaging
+from openpilot.cereal import messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 TIMEOUT = 10*60

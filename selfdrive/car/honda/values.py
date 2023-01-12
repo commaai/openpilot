@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Dict, List, Optional, Union
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness

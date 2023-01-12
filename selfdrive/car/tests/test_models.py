@@ -7,7 +7,7 @@ from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
-from cereal import log, car
+from openpilot.cereal import log, car
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import interfaces

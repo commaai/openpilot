@@ -4,7 +4,7 @@ import unittest
 import importlib
 from parameterized import parameterized
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import interfaces

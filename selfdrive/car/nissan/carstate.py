@@ -1,6 +1,6 @@
 import copy
 from collections import deque
-from cereal import car
+from openpilot.cereal import car
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.common.conversions import Conversions as CV

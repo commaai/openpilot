@@ -1,4 +1,4 @@
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car import apply_toyota_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from openpilot.selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \

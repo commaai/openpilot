@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 import cereal.messaging as messaging
 import capnp
 

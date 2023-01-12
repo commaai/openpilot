@@ -5,7 +5,7 @@ import numpy as np
 import random
 
 import cereal.messaging as messaging
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import tici_f_frame_size
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.manager.process_config import managed_processes

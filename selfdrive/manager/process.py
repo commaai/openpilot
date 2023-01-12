@@ -12,13 +12,13 @@ from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 import cereal.messaging as messaging
 import selfdrive.sentry as sentry
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import sec_since_boot
 from system.swaglog import cloudlog
 from system.hardware import HARDWARE
-from cereal import log
+from openpilot.cereal import log
 
 WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None

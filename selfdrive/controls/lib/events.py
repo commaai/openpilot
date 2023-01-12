@@ -3,7 +3,7 @@ import os
 from enum import IntEnum
 from typing import Dict, Union, Callable, List, Optional
 
-from cereal import log, car
+from openpilot.cereal import log, car
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.realtime import DT_CTRL

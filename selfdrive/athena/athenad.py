@@ -28,8 +28,8 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
                        create_connection)
 
 import cereal.messaging as messaging
-from cereal import log
-from cereal.services import service_list
+from openpilot.cereal import log
+from openpilot.cereal.services import service_list
 from openpilot.common.api import Api
 from openpilot.common.basedir import PERSIST
 from openpilot.common.file_helpers import CallbackReader

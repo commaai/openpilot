@@ -4,7 +4,7 @@ import unittest
 from collections import defaultdict
 from parameterized import parameterized
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.car.car_helpers import get_interface_attr, interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car

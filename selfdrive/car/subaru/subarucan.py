@@ -1,5 +1,5 @@
 import copy
-from cereal import car
+from openpilot.cereal import car
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 

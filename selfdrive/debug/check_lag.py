@@ -2,7 +2,7 @@
 from typing import Dict
 
 import cereal.messaging as messaging
-from cereal.services import service_list
+from openpilot.cereal.services import service_list
 
 TO_CHECK = ['carState']
 

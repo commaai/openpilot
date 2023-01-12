@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
-from cereal import car
+from openpilot.cereal import car
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.chrysler.values import DBC
 

@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 import numpy as np
 from hypothesis import given, settings, note
 
-from cereal import log
+from openpilot.cereal import log
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 import selfdrive.test.process_replay.process_replay as pr
 

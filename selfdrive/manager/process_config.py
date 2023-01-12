@@ -1,6 +1,6 @@
 import os
 
-from cereal import car
+from openpilot.cereal import car
 from openpilot.common.params import Params
 from system.hardware import PC, TICI
 from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess

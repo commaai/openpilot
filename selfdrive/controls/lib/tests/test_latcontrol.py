@@ -3,7 +3,7 @@ import unittest
 
 from parameterized import parameterized
 
-from cereal import car, log
+from openpilot.cereal import car, log
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
