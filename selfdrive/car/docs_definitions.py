@@ -160,11 +160,7 @@ class CarInfo:
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: self.harness.value,
-      # Column.VIDEO: f'<a href="{self.video_link}" target="_blank"><img height="18px" src="assets/icon-youtube-2.svg"></img></a>' if self.video_link is not None else "",
-      # Column.VIDEO: '<a href="{video_link}" target="_blank">img_tag</a>',
-      # Column.VIDEO: '<a href="{video_link}" target="_blank">img_tag</a>',
-      Column.VIDEO: self.video_link if self.video_link is not None else "",
-      # Column.VIDEO: f'<a href = "{self.video_link}' if self.video_link is not None else "",
+      Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
     # Set steering torque star from max lateral acceleration
@@ -218,9 +214,6 @@ class CarInfo:
     elif column == Column.VIDEO:
       if len(item) > 0:
         item = video_icon.format(item)
-      # if self.video_link is not None:
-      #   # item += f'<a href="{self.video_link}" target="_blank"><img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg"></a>'
-      #   item += f' <a href="{self.video_link}" target="_blank">{video_icon}</a>'
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
