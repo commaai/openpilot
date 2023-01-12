@@ -80,11 +80,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
 void MessageListModel::setFilterString(const QString &string) {
   filter_str = string;
-  bool search_id = filter_str.contains(':');
   msgs.clear();
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
-    if ((search_id ? it.key() : msgName(it.key())).contains(filter_str, Qt::CaseInsensitive))
+    if (it.key().contains(filter_str, Qt::CaseInsensitive) || msgName(it.key()).contains(filter_str, Qt::CaseInsensitive)) {
       msgs.push_back(it.key());
+    }
   }
   sortMessages();
 }
