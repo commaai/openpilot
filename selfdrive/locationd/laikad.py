@@ -29,7 +29,7 @@ from system.swaglog import cloudlog
 MAX_TIME_GAP = 10
 EPHEMERIS_CACHE = 'LaikadEphemeris'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
-CACHE_VERSION = 0.1
+CACHE_VERSION = 0.2
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
 
@@ -74,7 +74,7 @@ class Laikad:
 
     try:
       cache = json.loads(cache, object_hook=deserialize_hook)
-      if 'navs' in cache:
+      if cache['version'] == CACHE_VERSION:
         self.astro_dog.add_navs(cache['navs'])
         self.last_fetch_navs_t = cache['last_fetch_navs_t']
       else:
@@ -89,7 +89,7 @@ class Laikad:
   def cache_ephemeris(self, t: GPSTime):
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
       put_nonblocking(EPHEMERIS_CACHE, json.dumps(
-        {'version': CACHE_VERSION, 'last_fetch_navs_t': self.last_fetch_navs_t, 'navs': self.astro_dog.navs,},
+        {'version': CACHE_VERSION, 'last_fetch_navs_t': self.last_fetch_navs_t, 'navs': self.astro_dog.navs},
         cls=CacheSerializer))
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
