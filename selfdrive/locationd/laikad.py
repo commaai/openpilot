@@ -163,7 +163,6 @@ class Laikad:
     else:
       corrected_measurements = []
       instant_fix = self.get_lsq_fix(t, processed_measurements)
-      print(len(processed_measurements))
     if instant_fix is None:
       return None
     else:
