@@ -103,7 +103,6 @@ Directory Structure
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
     ├── third_party         # External libraries
-    ├── pyextra             # Extra python packages
     └── system              # Generic services
         ├── camerad         # Driver to capture images from the camera sensors
         ├── clocksd         # Broadcasts current time
