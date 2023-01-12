@@ -1,7 +1,7 @@
 from cereal import car
-from common.conversions import Conversions as CV
-from common.numpy_fast import clip
-from common.realtime import DT_CTRL
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import clip
+from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_torque_limits
 from openpilot.selfdrive.car.hyundai import hyundaicanfd, hyundaican

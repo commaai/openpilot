@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Optional
 
 from datetime import datetime, timedelta
-from common.api import api_get
-from common.params import Params
-from common.spinner import Spinner
-from common.basedir import PERSIST
+from openpilot.common.api import api_get
+from openpilot.common.params import Params
+from openpilot.common.spinner import Spinner
+from openpilot.common.basedir import PERSIST
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, PC
 from system.swaglog import cloudlog

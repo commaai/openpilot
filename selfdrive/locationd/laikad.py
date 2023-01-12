@@ -12,7 +12,7 @@ from typing import List, Optional
 import numpy as np
 
 from cereal import log, messaging
-from common.params import Params, put_nonblocking
+from openpilot.common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed

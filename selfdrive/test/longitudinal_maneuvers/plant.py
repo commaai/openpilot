@@ -4,7 +4,7 @@ import numpy as np
 
 from cereal import log
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper, DT_MDL
+from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.modeld.constants import T_IDXS
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner

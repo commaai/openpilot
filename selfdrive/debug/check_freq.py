@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict, deque
 from typing import DefaultDict, Deque, MutableSequence
 
-from common.realtime import sec_since_boot
+from openpilot.common.realtime import sec_since_boot
 import cereal.messaging as messaging
 
 

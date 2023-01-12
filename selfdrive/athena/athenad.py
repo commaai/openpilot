@@ -30,11 +30,11 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
-from common.api import Api
-from common.basedir import PERSIST
-from common.file_helpers import CallbackReader
-from common.params import Params
-from common.realtime import sec_since_boot, set_core_affinity
+from openpilot.common.api import Api
+from openpilot.common.basedir import PERSIST
+from openpilot.common.file_helpers import CallbackReader
+from openpilot.common.params import Params
+from openpilot.common.realtime import sec_since_boot, set_core_affinity
 from system.hardware import HARDWARE, PC, AGNOS
 from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.loggerd.xattr_cache import getxattr, setxattr

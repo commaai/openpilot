@@ -11,8 +11,8 @@ from pathlib import Path
 from parameterized import parameterized
 from tqdm import trange
 
-from common.params import Params
-from common.timeout import Timeout
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
 from system.hardware import TICI
 from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.manager.process_config import managed_processes

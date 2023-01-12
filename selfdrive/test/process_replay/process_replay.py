@@ -12,9 +12,9 @@ import capnp
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
-from common.params import Params
-from common.timeout import Timeout
-from common.realtime import DT_CTRL
+from openpilot.common.params import Params
+from openpilot.common.timeout import Timeout
+from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.car.car_helpers import get_car, interfaces
 from openpilot.selfdrive.test.process_replay.helpers import OpenpilotPrefix

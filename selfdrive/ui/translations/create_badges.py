@@ -4,7 +4,7 @@ import os
 import requests
 import xml.etree.ElementTree as ET
 
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.ui.tests.test_translations import UNFINISHED_TRANSLATION_TAG
 from openpilot.selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR
 

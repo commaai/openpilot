@@ -2,8 +2,8 @@
 import os
 import numpy as np
 
-from common.realtime import sec_since_boot
-from common.numpy_fast import clip
+from openpilot.common.realtime import sec_since_boot
+from openpilot.common.numpy_fast import clip
 from system.swaglog import cloudlog
 from openpilot.selfdrive.modeld.constants import index_function
 from openpilot.selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU

@@ -3,8 +3,8 @@ import gc
 
 import cereal.messaging as messaging
 from cereal import car
-from common.params import Params, put_bool_nonblocking
-from common.realtime import set_realtime_priority
+from openpilot.common.params import Params, put_bool_nonblocking
+from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.locationd.calibrationd import Calibration
 from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus

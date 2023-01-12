@@ -5,9 +5,9 @@ import textwrap
 from pathlib import Path
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
-from common.basedir import BASEDIR
-from common.spinner import Spinner
-from common.text_window import TextWindow
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.spinner import Spinner
+from openpilot.common.text_window import TextWindow
 from system.hardware import AGNOS
 from system.swaglog import cloudlog, add_file_handler
 from system.version import is_dirty

@@ -4,7 +4,7 @@ import numpy as np
 
 from casadi import SX, vertcat, sin, cos
 
-from common.realtime import sec_since_boot
+from openpilot.common.realtime import sec_since_boot
 from openpilot.selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code

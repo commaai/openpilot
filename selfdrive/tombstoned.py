@@ -9,7 +9,7 @@ import time
 import glob
 from typing import NoReturn
 
-from common.file_helpers import mkdirs_exists_ok
+from openpilot.common.file_helpers import mkdirs_exists_ok
 from openpilot.selfdrive.loggerd.config import ROOT
 import selfdrive.sentry as sentry
 from system.swaglog import cloudlog

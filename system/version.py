@@ -4,7 +4,7 @@ import subprocess
 from typing import List, Optional
 from functools import lru_cache
 
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 from system.swaglog import cloudlog
 
 RELEASE_BRANCHES = ['release3-staging', 'dashcam3-staging', 'release3', 'dashcam3']
@@ -127,7 +127,7 @@ def is_dirty() -> bool:
 
 
 if __name__ == "__main__":
-  from common.params import Params
+  from openpilot.common.params import Params
 
   params = Params()
   params.put("TermsVersion", terms_version)

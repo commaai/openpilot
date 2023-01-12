@@ -5,7 +5,7 @@ import cProfile  # pylint: disable=import-error
 import pprofile  # pylint: disable=import-error
 import pyprof2calltree  # pylint: disable=import-error
 
-from common.params import Params
+from openpilot.common.params import Params
 from tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS

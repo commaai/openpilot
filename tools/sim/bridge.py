@@ -16,10 +16,10 @@ import pyopencl.array as cl_array
 import cereal.messaging as messaging
 from cereal import log
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.basedir import BASEDIR
-from common.numpy_fast import clip
-from common.params import Params
-from common.realtime import DT_DMON, Ratekeeper
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.numpy_fast import clip
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_DMON, Ratekeeper
 from openpilot.selfdrive.car.honda.values import CruiseButtons
 from openpilot.selfdrive.test.helpers import set_params_enabled
 from tools.sim.lib.can import can_function

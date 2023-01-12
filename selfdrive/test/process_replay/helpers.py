@@ -2,7 +2,7 @@ import os
 import shutil
 import uuid
 
-from common.params import Params
+from openpilot.common.params import Params
 
 class OpenpilotPrefix(object):
   def __init__(self, prefix: str = None) -> None:

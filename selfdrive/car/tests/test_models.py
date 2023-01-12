@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
-from common.realtime import DT_CTRL
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.gm.values import CAR as GM

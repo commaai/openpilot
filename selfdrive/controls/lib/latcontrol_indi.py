@@ -2,9 +2,9 @@ import math
 import numpy as np
 
 from cereal import log
-from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 
 

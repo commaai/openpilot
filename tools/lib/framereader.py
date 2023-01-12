@@ -15,7 +15,7 @@ from lru import LRU
 import _io
 from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
-from common.file_helpers import atomic_write_in_dir
+from openpilot.common.file_helpers import atomic_write_in_dir
 
 from tools.lib.filereader import FileReader
 

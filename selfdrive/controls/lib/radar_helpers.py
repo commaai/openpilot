@@ -1,5 +1,5 @@
-from common.numpy_fast import mean
-from common.kalman.simple_kalman import KF1D
+from openpilot.common.numpy_fast import mean
+from openpilot.common.kalman.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s

@@ -1,6 +1,6 @@
 import json
 import os
-from common.file_helpers import mkdirs_exists_ok
+from openpilot.common.file_helpers import mkdirs_exists_ok
 from system.hardware import PC
 
 

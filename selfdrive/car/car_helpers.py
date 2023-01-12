@@ -2,8 +2,8 @@ import os
 from typing import Dict, List
 
 from cereal import car
-from common.params import Params
-from common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.common.basedir import BASEDIR
 from system.version import is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars

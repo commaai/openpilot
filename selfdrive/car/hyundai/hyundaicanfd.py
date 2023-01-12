@@ -1,4 +1,4 @@
-from common.numpy_fast import clip
+from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags
 
 def get_e_can_bus(CP):

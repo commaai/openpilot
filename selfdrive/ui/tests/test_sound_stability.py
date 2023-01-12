@@ -4,7 +4,7 @@ import random
 import subprocess
 import time
 from pathlib import Path
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 
 os.environ["LD_LIBRARY_PATH"] = ""
 

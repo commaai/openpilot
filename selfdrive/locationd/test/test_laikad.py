@@ -6,7 +6,7 @@ from datetime import datetime
 from unittest import mock
 from unittest.mock import Mock, patch
 
-from common.params import Params
+from openpilot.common.params import Params
 from laika.constants import SECS_IN_DAY
 from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris

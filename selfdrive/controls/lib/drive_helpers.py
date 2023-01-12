@@ -1,9 +1,9 @@
 import math
 
 from cereal import car
-from common.conversions import Conversions as CV
-from common.numpy_fast import clip, interp
-from common.realtime import DT_MDL
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import T_IDXS
 
 # WARNING: this value was determined based on the model's training distribution,

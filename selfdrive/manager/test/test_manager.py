@@ -4,7 +4,7 @@ import signal
 import time
 import unittest
 
-from common.params import Params
+from openpilot.common.params import Params
 import selfdrive.manager.manager as manager
 from openpilot.selfdrive.manager.process import DaemonProcess
 from openpilot.selfdrive.manager.process_config import managed_processes

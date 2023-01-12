@@ -5,9 +5,9 @@ from collections import defaultdict, deque
 
 import cereal.messaging as messaging
 from cereal import car
-from common.numpy_fast import interp
-from common.params import Params
-from common.realtime import Ratekeeper, Priority, config_realtime_process
+from openpilot.common.numpy_fast import interp
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper, Priority, config_realtime_process
 from openpilot.selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from system.swaglog import cloudlog
 from third_party.cluster.fastcluster_py import cluster_points_centroid

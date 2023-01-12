@@ -17,7 +17,7 @@ import os
 import sys
 from os.path import exists
 
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 from system.version import get_version
 
 sys.path.insert(0, os.path.abspath('.'))

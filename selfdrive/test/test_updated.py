@@ -9,8 +9,8 @@ import signal
 import subprocess
 import random
 
-from common.basedir import BASEDIR
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 
 
 class TestUpdated(unittest.TestCase):

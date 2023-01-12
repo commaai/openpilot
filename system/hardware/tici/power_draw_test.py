@@ -4,7 +4,7 @@ import time
 import numpy as np
 from system.hardware.tici.hardware import Tici
 from system.hardware.tici.pins import GPIO
-from common.gpio import gpio_init, gpio_set
+from openpilot.common.gpio import gpio_init, gpio_set
 
 def read_power():
   with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/in1_input") as f:

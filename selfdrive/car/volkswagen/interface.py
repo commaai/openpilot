@@ -1,6 +1,6 @@
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import STD_CARGO_KG, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter

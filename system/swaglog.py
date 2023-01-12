@@ -6,7 +6,7 @@ from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from system.hardware import PC
 
 if PC:

@@ -3,8 +3,8 @@ from cffi import FFI
 
 import sip  # pylint: disable=import-error
 
-from common.ffi_wrapper import suffix
-from common.basedir import BASEDIR
+from openpilot.common.ffi_wrapper import suffix
+from openpilot.common.basedir import BASEDIR
 
 
 def get_ffi():

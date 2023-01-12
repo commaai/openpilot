@@ -3,8 +3,8 @@ import sys
 import time
 import datetime
 
-from common.realtime import Ratekeeper
-from common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.filter_simple import FirstOrderFilter
 from tools.zookeeper import Zookeeper
 
 if __name__ == "__main__":

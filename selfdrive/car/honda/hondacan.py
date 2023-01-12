@@ -1,4 +1,4 @@
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
 
 # CAN bus layout with relay

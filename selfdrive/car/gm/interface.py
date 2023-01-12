@@ -3,7 +3,7 @@ from cereal import car
 from math import fabs
 from panda import Panda
 
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase

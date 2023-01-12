@@ -11,9 +11,9 @@ from pathlib import Path
 from cereal import car
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.basedir import BASEDIR
-from common.timeout import Timeout
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.timeout import Timeout
+from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import EVENTS, ET
 from openpilot.selfdrive.loggerd.config import ROOT
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only

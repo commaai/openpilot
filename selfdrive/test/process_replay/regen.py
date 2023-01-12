@@ -12,9 +12,9 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.params import Params
-from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
+from openpilot.common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
 from panda.python import Panda
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process import ensure_running

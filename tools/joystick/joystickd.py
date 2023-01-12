@@ -5,9 +5,9 @@ import threading
 from inputs import get_gamepad
 
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper
-from common.numpy_fast import interp, clip
-from common.params import Params
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.numpy_fast import interp, clip
+from openpilot.common.params import Params
 from tools.lib.kbhit import KBHit
 
 

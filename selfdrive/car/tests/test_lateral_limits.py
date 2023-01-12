@@ -6,7 +6,7 @@ import sys
 from typing import DefaultDict, Dict
 import unittest
 
-from common.realtime import DT_CTRL
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.interfaces import get_torque_params

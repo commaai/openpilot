@@ -2,7 +2,7 @@ import jwt
 import os
 import requests
 from datetime import datetime, timedelta
-from common.basedir import PERSIST
+from openpilot.common.basedir import PERSIST
 from system.version import get_version
 
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')

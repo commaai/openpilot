@@ -7,9 +7,9 @@ from collections import defaultdict
 
 import cereal.messaging as messaging
 from cereal import car
-from common.params import Params
-from common.spinner import Spinner
-from common.timeout import Timeout
+from openpilot.common.params import Params
+from openpilot.common.spinner import Spinner
+from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car import make_can_msg
 from system.hardware import TICI

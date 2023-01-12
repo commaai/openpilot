@@ -10,7 +10,7 @@ import tempfile
 import requests
 import argparse
 
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.test.process_replay.compare_logs import save_log
 from openpilot.selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader

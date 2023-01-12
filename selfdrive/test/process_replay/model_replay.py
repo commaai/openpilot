@@ -8,9 +8,9 @@ from itertools import zip_longest
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.spinner import Spinner
-from common.timeout import Timeout
-from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
+from openpilot.common.spinner import Spinner
+from openpilot.common.timeout import Timeout
+from openpilot.common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.openpilotci import BASE_URL, get_url

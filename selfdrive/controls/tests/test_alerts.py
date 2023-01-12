@@ -6,8 +6,8 @@ import random
 from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log, car
-from common.basedir import BASEDIR
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import Alert, EVENTS, ET
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.process_replay.process_replay import FakeSubMaster, CONFIGS

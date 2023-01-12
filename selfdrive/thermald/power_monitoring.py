@@ -1,8 +1,8 @@
 import threading
 from typing import Optional
 
-from common.params import Params, put_nonblocking
-from common.realtime import sec_since_boot
+from openpilot.common.params import Params, put_nonblocking
+from openpilot.common.realtime import sec_since_boot
 from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 from openpilot.selfdrive.statsd import statlog

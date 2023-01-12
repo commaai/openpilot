@@ -5,7 +5,7 @@ import unittest
 
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_ENABLE_MIN, IMPERIAL_INCREMENT
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 ButtonEvent = car.CarState.ButtonEvent

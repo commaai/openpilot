@@ -8,7 +8,7 @@ from system.version import training_version, terms_version
 
 
 def set_params_enabled():
-  from common.params import Params
+  from openpilot.common.params import Params
   params = Params()
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)

@@ -8,7 +8,7 @@ from functools import cached_property
 from pathlib import Path
 
 from cereal import log
-from common.gpio import gpio_set, gpio_init
+from openpilot.common.gpio import gpio_set, gpio_init
 from system.hardware.base import HardwareBase, ThermalConfig
 from system.hardware.tici import iwlist
 from system.hardware.tici.pins import GPIO

@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from cffi import FFI
-from common.ffi_wrapper import suffix
+from openpilot.common.ffi_wrapper import suffix
 
 cluster_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 cluster_fn = os.path.join(cluster_dir, "libfastcluster"+suffix())

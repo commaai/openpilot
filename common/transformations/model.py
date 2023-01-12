@@ -1,6 +1,6 @@
 import numpy as np
 
-from common.transformations.camera import (FULL_FRAME_SIZE,
+from openpilot.common.transformations.camera import (FULL_FRAME_SIZE,
                                            get_view_frame_from_calib_frame)
 
 # segnet
@@ -61,8 +61,8 @@ medmodel_frame_from_bigmodel_frame = np.dot(medmodel_intrinsics, np.linalg.inv(b
 ### This function mimics the update_calibration logic in modeld.cc
 ### Manually verified to give similar results to xx.uncommon.utils.transform_img
 def get_warp_matrix(rpy_calib, wide_cam=False, big_model=False, tici=True):
-  from common.transformations.orientation import rot_from_euler
-  from common.transformations.camera import view_frame_from_device_frame, eon_fcam_intrinsics, tici_ecam_intrinsics, tici_fcam_intrinsics
+  from openpilot.common.transformations.orientation import rot_from_euler
+  from openpilot.common.transformations.camera import view_frame_from_device_frame, eon_fcam_intrinsics, tici_ecam_intrinsics, tici_fcam_intrinsics
 
   if tici and wide_cam:
     intrinsics = tici_ecam_intrinsics
@@ -85,8 +85,8 @@ def get_warp_matrix(rpy_calib, wide_cam=False, big_model=False, tici=True):
 
 ### This is old, just for debugging
 def get_warp_matrix_old(rpy_calib, wide_cam=False, big_model=False, tici=True):
-  from common.transformations.orientation import rot_from_euler
-  from common.transformations.camera import view_frame_from_device_frame, eon_fcam_intrinsics, tici_ecam_intrinsics, tici_fcam_intrinsics
+  from openpilot.common.transformations.orientation import rot_from_euler
+  from openpilot.common.transformations.camera import view_frame_from_device_frame, eon_fcam_intrinsics, tici_ecam_intrinsics, tici_fcam_intrinsics
 
 
   def get_view_frame_from_road_frame(roll, pitch, yaw, height):

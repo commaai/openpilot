@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 
-from common.numpy_fast import interp
+from openpilot.common.numpy_fast import interp
 
 
 class InterpTest(unittest.TestCase):

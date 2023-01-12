@@ -5,7 +5,7 @@ import threading
 import unittest
 from collections import namedtuple
 
-from common.timeout import Timeout, TimeoutException
+from openpilot.common.timeout import Timeout, TimeoutException
 import selfdrive.loggerd.deleter as deleter
 from openpilot.selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 

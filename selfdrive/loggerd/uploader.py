@@ -12,9 +12,9 @@ from pathlib import Path
 
 from cereal import log
 import cereal.messaging as messaging
-from common.api import Api
-from common.params import Params
-from common.realtime import set_core_affinity
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import set_core_affinity
 from system.hardware import TICI
 from openpilot.selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.selfdrive.loggerd.config import ROOT

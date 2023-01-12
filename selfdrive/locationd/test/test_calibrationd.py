@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 
 import cereal.messaging as messaging
-from common.params import Params
+from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import Calibrator
 
 

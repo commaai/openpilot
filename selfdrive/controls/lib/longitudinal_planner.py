@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-from common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip, interp
 
 import cereal.messaging as messaging
-from common.conversions import Conversions as CV
-from common.filter_simple import FirstOrderFilter
-from common.realtime import DT_MDL
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import T_IDXS
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, MIN_ACCEL, MAX_ACCEL

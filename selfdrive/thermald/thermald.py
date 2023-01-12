@@ -12,10 +12,10 @@ import psutil
 
 import cereal.messaging as messaging
 from cereal import log
-from common.dict_helpers import strip_deprecated_keys
-from common.filter_simple import FirstOrderFilter
-from common.params import Params
-from common.realtime import DT_TRML, sec_since_boot
+from openpilot.common.dict_helpers import strip_deprecated_keys
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
+from openpilot.common.realtime import DT_TRML, sec_since_boot
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.selfdrive.loggerd.config import get_available_percent

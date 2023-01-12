@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import List, Union, Optional
 from markdown_it import MarkdownIt
 
-from common.basedir import BASEDIR
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 from system.hardware import AGNOS, HARDWARE
 from system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert

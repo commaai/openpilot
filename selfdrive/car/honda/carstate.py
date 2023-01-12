@@ -1,8 +1,8 @@
 from collections import defaultdict
 
 from cereal import car
-from common.conversions import Conversions as CV
-from common.numpy_fast import interp
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.honda.hondacan import get_pt_bus

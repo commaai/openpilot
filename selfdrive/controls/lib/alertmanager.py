@@ -5,8 +5,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 
-from common.basedir import BASEDIR
-from common.params import Params
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import Alert
 
 

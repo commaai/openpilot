@@ -1,6 +1,6 @@
 import os
 import subprocess
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 
 
 class Spinner():

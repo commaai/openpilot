@@ -5,7 +5,7 @@ from parameterized import parameterized
 
 from cereal import log, car
 import cereal.messaging as messaging
-from common.params import Params
+from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
 from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA

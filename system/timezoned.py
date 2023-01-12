@@ -8,7 +8,7 @@ from typing import NoReturn
 import requests
 from timezonefinder import TimezoneFinder
 
-from common.params import Params
+from openpilot.common.params import Params
 from system.hardware import AGNOS
 from system.swaglog import cloudlog
 

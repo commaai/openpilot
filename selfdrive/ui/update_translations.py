@@ -3,7 +3,7 @@ import argparse
 import json
 import os
 
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")

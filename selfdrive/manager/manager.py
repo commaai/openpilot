@@ -9,9 +9,9 @@ from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
 import selfdrive.sentry as sentry
-from common.basedir import BASEDIR
-from common.params import Params, ParamKeyType
-from common.text_window import TextWindow
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params, ParamKeyType
+from openpilot.common.text_window import TextWindow
 from openpilot.selfdrive.boardd.set_time import set_time
 from system.hardware import HARDWARE, PC
 from openpilot.selfdrive.manager.helpers import unblock_stdout

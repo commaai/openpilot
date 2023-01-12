@@ -3,7 +3,7 @@ import sys
 import time
 from typing import List
 
-from common.params import Params
+from openpilot.common.params import Params
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
 

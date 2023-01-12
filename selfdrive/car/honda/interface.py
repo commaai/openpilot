@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from common.conversions import Conversions as CV
-from common.numpy_fast import interp
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import interp
 from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
 from openpilot.selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, scale_tire_stiffness, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase

@@ -5,11 +5,11 @@ from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
 from cereal import car
-from common.basedir import BASEDIR
-from common.conversions import Conversions as CV
-from common.kalman.simple_kalman import KF1D
-from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.conversions import Conversions as CV
+from openpilot.common.kalman.simple_kalman import KF1D
+from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, apply_center_deadzone
 from openpilot.selfdrive.controls.lib.events import Events

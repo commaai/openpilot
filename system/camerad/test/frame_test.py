@@ -16,7 +16,7 @@ def get_frame(idx):
   return img.tostring()
 
 if __name__ == "__main__":
-  from common.realtime import Ratekeeper
+  from openpilot.common.realtime import Ratekeeper
   rk = Ratekeeper(20)
 
   pm = messaging.PubMaster(['roadCameraState'])

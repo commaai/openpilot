@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import unittest
 
-from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
+from openpilot.common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
 
 class TestParams(unittest.TestCase):
   def setUp(self):

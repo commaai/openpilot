@@ -9,10 +9,10 @@ import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
-from common.api import Api
-from common.params import Params
-from common.realtime import Ratekeeper
-from common.transformations.coordinates import ecef2geodetic
+from openpilot.common.api import Api
+from openpilot.common.params import Params
+from openpilot.common.realtime import Ratekeeper
+from openpilot.common.transformations.coordinates import ecef2geodetic
 from openpilot.selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,

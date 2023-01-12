@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
-from common.params import Params
-from common.realtime import Priority, config_realtime_process
+from openpilot.common.params import Params
+from openpilot.common.realtime import Priority, config_realtime_process
 from system.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from openpilot.selfdrive.controls.lib.lateral_planner import LateralPlanner

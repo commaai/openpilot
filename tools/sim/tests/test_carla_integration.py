@@ -6,7 +6,7 @@ import os
 from multiprocessing import Queue
 
 from cereal import messaging
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.manager.helpers import unblock_stdout
 from tools.sim import bridge
 from tools.sim.bridge import CarlaBridge

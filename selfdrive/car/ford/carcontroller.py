@@ -1,6 +1,6 @@
 import math
 from cereal import car
-from common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CANBUS, CarControllerParams

@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch
 
-from common.params import Params
+from openpilot.common.params import Params
 params = Params()
 
 # Create fake time
