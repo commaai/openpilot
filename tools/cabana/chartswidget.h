@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -111,6 +112,7 @@ private:
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
+  QTimer *align_charts_timer;
   QVBoxLayout *charts_layout;
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
