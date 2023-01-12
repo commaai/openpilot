@@ -59,12 +59,19 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
   main_layout->addLayout(form_layout);
 
   table = new QTableWidget(this);
+  table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table->setSelectionMode(QAbstractItemView::SingleSelection);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->horizontalHeader()->setStretchLastSection(true);
   main_layout->addWidget(table);
 
   setMinimumSize({700, 500});
   QObject::connect(search_btn, &QPushButton::clicked, this, &FindSimilarBitsDlg::find);
+  QObject::connect(table, &QTableWidget::doubleClicked, [this](const QModelIndex &index) {
+    if (index.isValid()) {
+      emit openMessage(bus_combo->currentText() + ":" + table->item(index.row(), 0)->text());
+    }
+  });
 }
 
 void FindSimilarBitsDlg::find() {

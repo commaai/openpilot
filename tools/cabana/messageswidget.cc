@@ -39,6 +39,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
+  QObject::connect(model, &MessageListModel::modelReset, [this]() { selectMessage(current_msg_id); });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
       if (model->msgs[current.row()] != current_msg_id) {
@@ -47,10 +48,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       }
     }
   });
-  QObject::connect(model, &MessageListModel::modelReset, [this]() {
-    if (int row = model->msgs.indexOf(current_msg_id); row != -1)
-      table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
-  });
+}
+
+void MessagesWidget::selectMessage(const QString &msg_id) {
+  if (int row = model->msgs.indexOf(msg_id); row != -1) {
+    table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+  }
 }
 
 // MessageListModel
