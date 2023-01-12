@@ -3,6 +3,7 @@ import json
 import math
 import os
 import time
+import shutil
 from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from datetime import datetime
@@ -389,20 +390,14 @@ def process_msg(laikad, gnss_msg, mono_time, block=False):
   return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
 
 
-def debug_log_cache():
-  def walk_through_files(path):
-    for (dirpath, _, filenames) in os.walk(path):
-      for filename in filenames:
-        yield os.path.join(dirpath, filename)
-
-  cloudlog.debug("CacheFolder: /tmp/comma_download_cache")
-  for fname in walk_through_files("/tmp/comma_download_cache"):
-    cloudlog.debug(fname)
+def clear_tmp_cache():
+  if os.path.exists(DOWNLOADS_CACHE_FOLDER):
+    shutil.rmtree(DOWNLOADS_CACHE_FOLDER)
+  os.mkdir(DOWNLOADS_CACHE_FOLDER)
 
 
 def main(sm=None, pm=None, qc=None):
-  # TODO: remove when not needed anymore
-  debug_log_cache()
+  clear_tmp_cache()
 
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom or (qc is not None and qc):
@@ -418,8 +413,6 @@ def main(sm=None, pm=None, qc=None):
   replay = "REPLAY" in os.environ
   use_internet = "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
-
-  log_done = False
 
   while True:
     sm.update()
@@ -438,11 +431,6 @@ def main(sm=None, pm=None, qc=None):
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
       if laikad.auto_fetch_navs:
         laikad.fetch_navs(t, block=replay)
-
-    if not log_done:
-      debug_log_cache()
-      log_done = True
-
 
 if __name__ == "__main__":
   main()
