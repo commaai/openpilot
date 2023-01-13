@@ -280,7 +280,6 @@ selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
-selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
