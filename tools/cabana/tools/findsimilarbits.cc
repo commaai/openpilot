@@ -10,8 +10,10 @@
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
-FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
+FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags() | Qt::Window) {
   setWindowTitle(tr("Find similar bits"));
+  setAttribute(Qt::WA_DeleteOnClose);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QHBoxLayout *form_layout = new QHBoxLayout();
