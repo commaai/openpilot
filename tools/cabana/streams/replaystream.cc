@@ -1,7 +1,9 @@
 #include "tools/cabana/streams/replaystream.h"
+
 #include "tools/cabana/dbcmanager.h"
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
+  QObject::connect(&settings, &Settings::changed, this, &ReplayStream::settingChanged);
 }
 
 ReplayStream::~ReplayStream() {
@@ -32,24 +34,24 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
   return false;
 }
 
+bool ReplayStream::eventFilter(const Event *event) {
+  if (event->which == cereal::Event::Which::CAN) {
+    updateEvent(event);
+  }
+  return true;
+}
+
 void ReplayStream::seekTo(double ts) {
   replay->seekTo(std::max(double(0), ts), false);
   counters_begin_sec = 0;
   emit updated();
 }
 
-void ReplayStream::pause(bool pause) { 
-  replay->pause(pause); 
-  emit (pause ? paused() : resume());
+void ReplayStream::pause(bool pause) {
+  replay->pause(pause);
+  emit(pause ? paused() : resume());
 }
 
 void ReplayStream::settingChanged() {
   replay->setSegmentCacheLimit(settings.cached_segment_limit);
-}
-
-bool ReplayStream::eventFilter(const Event *event) {
-  if (event->which == cereal::Event::Which::CAN) {
-    updateEvent(event);
-  }
-  return true;
 }

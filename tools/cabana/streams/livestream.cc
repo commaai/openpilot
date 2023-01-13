@@ -16,13 +16,8 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
 LiveStream::~LiveStream() {
   stream_thread->quit();
   stream_thread->wait();
-  for (Event *e : can_events) {
-    delete e;
-  }
-
-  for (auto m : messages) {
-    delete m;
-  }
+  for (Event *e : can_events) delete e;
+  for (Message *m : messages) delete m;
 
 #ifdef HAS_MEMORY_RESOURCE
   delete mbr;

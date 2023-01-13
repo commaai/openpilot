@@ -1,4 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
+
 #include "tools/cabana/dbcmanager.h"
 
 AbstractStream *can = nullptr;
@@ -6,12 +7,9 @@ AbstractStream *can = nullptr;
 AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
-  QObject::connect(&settings, &Settings::changed, this, &AbstractStream::settingChanged);
 }
 
-AbstractStream::~AbstractStream() {
-}
-
+AbstractStream::~AbstractStream() {}
 
 void AbstractStream::process(QHash<QString, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
@@ -59,19 +57,4 @@ bool AbstractStream::updateEvent(const Event *event) {
     }
   }
   return true;
-}
-
-// void AbstractStream::seekTo(double ts) {
-//   replay->seekTo(std::max(double(0), ts), false);
-//   counters_begin_sec = 0;
-//   emit updated();
-// }
-
-// void AbstractStream::pause(bool pause) { 
-//   replay->pause(pause); 
-//   emit (pause ? paused() : resume());
-// }
-
-void AbstractStream::settingChanged() {
-  // replay->setSegmentCacheLimit(settings.cached_segment_limit);
 }
