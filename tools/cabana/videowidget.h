@@ -9,7 +9,7 @@
 #include <QSlider>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class Slider : public QSlider {
   Q_OBJECT

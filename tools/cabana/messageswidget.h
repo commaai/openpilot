@@ -3,7 +3,7 @@
 #include <QAbstractTableModel>
 #include <QTableView>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT

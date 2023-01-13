@@ -11,7 +11,7 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/dbcmanager.h"
 
 using namespace QtCharts;

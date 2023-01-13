@@ -52,8 +52,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
-  QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
+  QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
+  QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
   QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);

@@ -3,6 +3,8 @@
 
 #include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
+#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/mainwin.h"
 
 int main(int argc, char *argv[]) {
@@ -17,29 +19,34 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"demo", "use a demo route instead of providing your own"});
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
+  cmd_parser.addOption({"stream", "read can message from live streaming"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
-  if (args.empty() && !cmd_parser.isSet("demo")) {
+  if (args.empty() && !cmd_parser.isSet("demo") && !cmd_parser.isSet("stream")) {
     cmd_parser.showHelp();
   }
 
-
-  const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  uint32_t replay_flags = REPLAY_FLAG_NONE;
-  if (cmd_parser.isSet("ecam")) {
-    replay_flags |= REPLAY_FLAG_ECAM;
-  } else if (cmd_parser.isSet("qcam")) {
-    replay_flags |= REPLAY_FLAG_QCAMERA;
-  }
-
   OpenpilotPrefix op_prefix;
-  CANMessages p(&app);
-  int ret = 0;
-  if (p.loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
-    MainWindow w;
-    w.show();
-    ret = app.exec();
+  std::unique_ptr<AbstractStream> stream;
+  if (cmd_parser.isSet("stream")) {
+    stream.reset(new LiveStream(&app));
+  } else {
+    const QString route = args.empty() ? DEMO_ROUTE : args.first();
+    uint32_t replay_flags = REPLAY_FLAG_NONE;
+    if (cmd_parser.isSet("ecam")) {
+      replay_flags |= REPLAY_FLAG_ECAM;
+    } else if (cmd_parser.isSet("qcam")) {
+      replay_flags |= REPLAY_FLAG_QCAMERA;
+    }
+    auto replay_stream = new ReplayStream(&app);
+    stream.reset(replay_stream);
+    if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
+      return 0;
+    }
   }
-  return ret;
+
+  MainWindow w;
+  w.show();
+  return app.exec();
 }

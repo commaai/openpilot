@@ -6,7 +6,7 @@
 #include <QPainter>
 #include <QToolTip>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 // BinaryView
 
