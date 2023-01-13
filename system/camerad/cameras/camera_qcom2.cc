@@ -1179,8 +1179,15 @@ void CameraState::set_camera_exposure(float grey_frac) {
     uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
     uint32_t spd_time = hcg_time + lcg_time + vs_time;
 
+    hcg_time = exposure_time;
+    lcg_time = exposure_time;
+    spd_time = 2050;
+    vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
+
     uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
-    uint32_t min_gain = 0x200; //ox03c10_analog_gains_reg[0];
+    // real_gain = 0x100;
+    uint32_t min_gain = 0x100; //ox03c10_analog_gains_reg[0];
+    min_gain = 0x100;
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
@@ -1189,7 +1196,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
       {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
       {0x3588, min_gain>>8}, {0x3589, min_gain&0xFF},
-      {0x3548, min_gain>>8}, {0x3549, min_gain&0xFF},
+      {0x3548, 0xF00>>8}, {0x3549, 0xF00&0xFF},
       {0x35c8, min_gain>>8}, {0x35c9, min_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
