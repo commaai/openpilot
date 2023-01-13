@@ -58,7 +58,6 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
-  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
@@ -119,8 +118,11 @@ void MainWindow::createDockWindows() {
   QWidget *right_container = new QWidget(this);
   r_layout = new QVBoxLayout(right_container);
   charts_widget = new ChartsWidget(this);
-  video_widget = new VideoWidget(this);
-  r_layout->addWidget(video_widget, 0, Qt::AlignTop);
+  if (!can->liveStreaming()) {
+    video_widget = new VideoWidget(this);
+    r_layout->addWidget(video_widget, 0, Qt::AlignTop);
+    QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
+  }
   r_layout->addWidget(charts_widget, 1);
   r_layout->addStretch(0);
 
