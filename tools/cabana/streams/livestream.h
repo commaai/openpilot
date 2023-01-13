@@ -15,8 +15,12 @@ public:
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
   inline const std::vector<Event *> *events() const override { return &can_events; }
 
+signals:
+  void newEvent(Event *e);
+
 protected:
   void streamThread();
+  void handleNewEvent(Event *e);
 
 #ifdef HAS_MEMORY_RESOURCE
   std::pmr::monotonic_buffer_resource *mbr = nullptr;

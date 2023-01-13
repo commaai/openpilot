@@ -7,6 +7,7 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
   mbr = new std::pmr::monotonic_buffer_resource(pool_buffer, buf_size);
 #endif
 
+  QObject::connect(this, &LiveStream::newEvent, this, &LiveStream::handleNewEvent);
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -23,6 +24,10 @@ LiveStream::~LiveStream() {
   delete mbr;
   ::operator delete(pool_buffer);
 #endif
+}
+
+void LiveStream::handleNewEvent(Event *e) {
+  can_events.push_back(e);
 }
 
 void LiveStream::streamThread() {
@@ -45,13 +50,13 @@ void LiveStream::streamThread() {
     Event *evt = new Event(words);
 #endif
     messages.push_back(msg);
-    can_events.push_back(evt);
 
     if (start_ts == 0) {
       start_ts = evt->mono_time;
       emit streamStarted();
     }
     current_ts = evt->mono_time;
+    emit newEvent(evt);
     updateEvent(evt);
   }
 }
