@@ -5,14 +5,12 @@ import os
 import threading
 
 import requests
-import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log
 from common.api import Api
 from common.params import Params
 from common.realtime import Ratekeeper
-from common.transformations.coordinates import ecef2geodetic
 from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
                                     distance_along_geometry, maxspeed_to_ms,
                                     minimum_distance,
@@ -21,7 +19,6 @@ from system.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
-VALID_POS_STD = 50.0
 REROUTE_COUNTER_MIN = 3
 
 
@@ -79,21 +76,13 @@ class RouteEngine:
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
-    laikad = self.sm['gnssMeasurements']
 
-    locationd_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
-    laikad_valid = laikad.positionECEF.valid and np.linalg.norm(laikad.positionECEF.std) < VALID_POS_STD
+    self.localizer_valid = (location.status == log.LiveLocationKalman.Status.valid) and location.positionGeodetic.valid
+    self.gps_ok = location.gpsOK
 
-    self.localizer_valid = locationd_valid or laikad_valid
-    self.gps_ok = location.gpsOK or laikad_valid
-
-    if locationd_valid:
+    if self.localizer_valid:
       self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
       self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
-    elif laikad_valid:
-      geodetic = ecef2geodetic(laikad.positionECEF.value)
-      self.last_position = Coordinate(geodetic[0], geodetic[1])
-      self.last_bearing = None
 
   def recompute_route(self):
     if self.last_position is None:
@@ -319,7 +308,7 @@ class RouteEngine:
 
 def main(sm=None, pm=None):
   if sm is None:
-    sm = messaging.SubMaster(['liveLocationKalman', 'gnssMeasurements', 'managerState'])
+    sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
   if pm is None:
     pm = messaging.PubMaster(['navInstruction', 'navRoute'])
 
