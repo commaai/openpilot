@@ -25,6 +25,7 @@ public:
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr);
+  void appendSeriesData(uint64_t last_mono_time);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
   void setPlotAreaLeftPosition(int pos);
@@ -115,6 +116,7 @@ private:
   QTimer *align_charts_timer;
   QVBoxLayout *charts_layout;
   QList<ChartView *> charts;
+  uint64_t latest_can_msg_mono_time = 0;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
   std::pair<double, double> event_range;

@@ -74,5 +74,5 @@ inline const QString &getColor(int i) {
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
 }
 
-// A global pointer referring to the unique CANMessages object
+// A global pointer referring to the unique AbstractStream object
 extern AbstractStream *can;

@@ -9,7 +9,7 @@ class LiveStream : public AbstractStream {
 public:
   LiveStream(QObject *parent);
   ~LiveStream();
-  inline QString routeName() const override { return "live streaming"; }
+  inline QString routeName() const override { return "Live Streaming Mode"; }
   inline QString carFingerprint() const override { return ""; }
   inline double routeStartTime() const override { return start_ts / (double)1e9; }
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }

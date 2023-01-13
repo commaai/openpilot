@@ -73,18 +73,30 @@ void ChartsWidget::eventsMerged() {
 }
 
 void ChartsWidget::updateDisplayRange() {
-  auto prev_range = display_range;
+  auto events = can->events();
+  event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
+  event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
   double current_sec = can->currentSec();
+  auto prev_range = display_range;
   if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
     // reached the end, or seeked to a timestamp out of range.
     display_range.first = current_sec - 5;
   }
-  display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
-  display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
-  if (prev_range != display_range) {
-    QFutureSynchronizer<void> future_synchronizer;
-    for (auto c : charts)
-      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
+  if (!can->liveStreaming()) {
+    display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
+    display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
+    if (prev_range != display_range) {
+      QFutureSynchronizer<void> future_synchronizer;
+      for (auto c : charts)
+        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
+    }
+  } else {
+    display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
+    display_range.second = display_range.first + settings.max_chart_x_range;
+    for (auto c : charts) {
+      c->appendSeriesData(latest_can_msg_mono_time);
+    }
+    latest_can_msg_mono_time = can->events()->back()->mono_time;
   }
 }
 
@@ -435,13 +447,50 @@ void ChartView::updateSeries(const Signal *sig) {
   }
 }
 
+void ChartView::appendSeriesData(uint64_t last_mono_time) {
+  auto events = can->events();
+  if (!events || sigs.isEmpty()) return;
+
+  for (auto &s : sigs) {
+    double old_min_y = s.min_y;
+    double old_max_y = s.max_y;
+    if (s.min_y == 0 && s.max_y == 0) {
+      s.min_y = std::numeric_limits<double>::max();
+      s.max_y = std::numeric_limits<double>::lowest();
+    }
+
+    double route_start_time = can->routeStartTime();
+    Event begin_event(cereal::Event::Which::INIT_DATA, last_mono_time);
+    auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+    for (auto it = begin; it != events->end(); ++it) {
+      if ((*it)->which == cereal::Event::Which::CAN) {
+        for (const auto &c : (*it)->event.getCan()) {
+          if (s.source == c.getSrc() && s.address == c.getAddress()) {
+            auto dat = c.getDat();
+            double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
+            double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
+            s.vals.push_back({ts, value});
+
+            if (value < s.min_y) s.min_y = value;
+            if (value > s.max_y) s.max_y = value;
+          }
+        }
+      }
+    }
+    s.series->replace(s.vals);
+    if (old_min_y != s.min_y || old_max_y != s.max_y) {
+      updateAxisY();
+    }
+  }
+}
+
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
   if (sigs.isEmpty()) return;
 
   double min_y = std::numeric_limits<double>::max();
   double max_y = std::numeric_limits<double>::lowest();
-  if (events_range == std::pair{axis_x->min(), axis_x->max()}) {
+  if (can->liveStreaming() || events_range == std::pair{axis_x->min(), axis_x->max()}) {
     for (auto &s : sigs) {
       if (s.min_y < min_y) min_y = s.min_y;
       if (s.max_y > max_y) max_y = s.max_y;
