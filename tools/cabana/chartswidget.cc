@@ -52,7 +52,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
+  QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::updateState);
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
   QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
@@ -64,25 +64,17 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   });
 }
 
-void ChartsWidget::eventsMerged() {
-  if (auto events = can->events(); events && !events->empty()) {
-    event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
-    event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
-    updateState();
-  }
-}
-
 void ChartsWidget::updateDisplayRange() {
   auto events = can->events();
   event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
   event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
   double current_sec = can->currentSec();
-  auto prev_range = display_range;
-  if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
-    // reached the end, or seeked to a timestamp out of range.
-    display_range.first = current_sec - 5;
-  }
   if (!can->liveStreaming()) {
+    auto prev_range = display_range;
+    if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
+      // reached the end, or seeked to a timestamp out of range.
+      display_range.first = current_sec - 5;
+    }
     display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
     display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
     if (prev_range != display_range) {
@@ -91,6 +83,9 @@ void ChartsWidget::updateDisplayRange() {
         future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
     }
   } else {
+    if (current_sec >= (display_range.second - 5)) {
+      display_range.first = std::max<double>(0, ((current_sec - settings.max_chart_x_range / 2.0) * 10.0) / 10.0);
+    }
     display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
     display_range.second = display_range.first + settings.max_chart_x_range;
     for (auto c : charts) {
