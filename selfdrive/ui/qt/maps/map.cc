@@ -8,7 +8,6 @@
 #include <QPainterPath>
 
 #include "common/swaglog.h"
-#include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
@@ -23,8 +22,6 @@ const float MIN_ZOOM = 14;
 const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
-
-const float VALID_POS_STD = 50.0; // m
 
 const QString ICON_SUFFIX = ".png";
 
@@ -125,42 +122,6 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  // TODO should check a valid/status flag
-  if (sm.updated("gnssMeasurements") && sm["gnssMeasurements"].getGnssMeasurements().getGpsWeek() > 0){
-    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos = laikad_location.getPositionECEF();
-    auto laikad_pos_ecef = laikad_pos.getValue();
-    auto laikad_pos_std = laikad_pos.getStd();
-    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
-
-    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
-
-    if (laikad_valid && !locationd_valid) {
-      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
-      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
-      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
-
-      // Compute NED velocity
-      LocalCoord converter(ecef);
-      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
-      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
-
-      float velocity = ned_vel.norm();
-      velocity_filter.update(velocity);
-
-      // Convert NED velocity to angle
-      if (velocity > 1.0) {
-        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
-        if (last_bearing) {
-          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
-          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
-        } else {
-          last_bearing = new_bearing;
-        }
-      }
-    }
-  }
-
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
@@ -183,7 +144,7 @@ void MapWindow::updateState(const UIState &s) {
 
   initLayers();
 
-  if (locationd_valid || laikad_valid) {
+  if (locationd_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -216,7 +177,7 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (locationd_valid || laikad_valid) {
+      if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
@@ -294,6 +255,9 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
   update();
+
+  m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
+  updateDestinationMarker();
 
   pan_counter = 0;
   zoom_counter = 0;
