@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, IntFlag
+import re
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -319,8 +320,44 @@ FINGERPRINTS = {
 }
 
 
-def hyundai_fuzzy_fingerprint(car_fw):
-  pass
+def get_platform_codes(fw_versions_dict):
+  codes = set()
+  key = (Ecu.fwdRadar, 0x7d0, None) if (Ecu.fwdRadar, 0x7d0, None) in fw_versions_dict else (0x7d0, None)
+  # key = if from_db else (0x7d0, None))
+  # for fw in fw_versions_dict[(Ecu.fwdRadar, 0x7d0, None)]:
+  # for fw in fw_versions_dict[(0x7d0, None)]:  # fwdRadar
+  for fw in fw_versions_dict[key]:  # fwdRadar
+    start_idx = fw.index(b'\xf1\x00')
+    fw = fw[start_idx + 2:][:4]
+
+    match = re.match(br'([A-Z]+[A-Z0-9]*)', fw)
+    if match is None:
+      return None
+
+    code = match.group(0)
+    radar_code_variant = fw[len(code):4].replace(b'_', b'').replace(b' ', b'')
+
+    codes.add((code, radar_code_variant))
+
+  return codes
+
+
+def match_fw_to_hyundai_fuzzy(fw_versions_dict):
+  platform_codes = get_platform_codes(fw_versions_dict)
+  if platform_codes is None or len(platform_codes) != 1:
+    return set()
+
+  platform_code = list(platform_codes)[0]
+
+  invalid = []
+  candidates = FW_VERSIONS
+  for candidate, fws in candidates.items():
+    candidate_platform_codes = get_platform_codes(fws)
+    print(f"{candidate:36}", platform_code, candidate_platform_codes, platform_code in candidate_platform_codes)
+    if platform_code not in candidate_platform_codes:
+      invalid.append(candidate)
+
+  return set(candidates.keys()) - set(invalid)
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -363,9 +400,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
     (Ecu.cornerRadar, 0x7b7, None),
   ],
-  match_fw_to_car_fuzzy=hyundai_fuzzy_fingerprint,
+  match_fw_to_car_fuzzy=match_fw_to_hyundai_fuzzy,
 )
-
 
 
 FW_VERSIONS = {
