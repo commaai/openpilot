@@ -223,7 +223,7 @@ if __name__ == "__main__":
     try:
       expected_msgs = 2*MAX_FRAMES
       if not NO_NAV:
-        expected_msgs += NAV_FRAMES*2
+        expected_msgs += NAV_FRAMES*3
       cmp_log = list(LogReader(BASE_URL + log_fn))[:expected_msgs]
 
       ignore = [

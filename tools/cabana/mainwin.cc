@@ -281,5 +281,6 @@ void MainWindow::setOption() {
 
 void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg dlg(this);
+  QObject::connect(&dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
   dlg.exec();
 }

@@ -21,6 +21,7 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
+  VIDEO = "Video"
 
 
 class Star(Enum):
@@ -159,6 +160,7 @@ class CarInfo:
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: self.harness.value,
+      Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
     # Set steering torque star from max lateral acceleration
@@ -202,12 +204,14 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
     elif column == Column.MODEL and len(self.years):
       item += f" {self.years}"
+    elif column == Column.VIDEO and len(item) > 0:
+      item = video_icon.format(item)
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):
