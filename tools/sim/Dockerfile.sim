@@ -17,7 +17,7 @@ COPY SConstruct $HOME/openpilot/
 COPY ./third_party $HOME/openpilot/third_party
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
-COPY ./laika $HOME/openpilot/laika
+COPY ./laika_repo $HOME/openpilot/laika_repo
 COPY ./common $HOME/openpilot/common
 COPY ./opendbc $HOME/openpilot/opendbc
 COPY ./cereal $HOME/openpilot/cereal
