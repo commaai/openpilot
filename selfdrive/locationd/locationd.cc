@@ -364,7 +364,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     this->determine_gps_mode(current_time);
     return;
   }
-  this->gps_mode = true;
 
   double sensor_time = log.getMeasTime() * 1e-9;
   if (ublox_available)
@@ -434,6 +433,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     this->orientation_reset_count = 0;
   }
 
+  this->gps_mode = true;
   this->last_gps_msg = sensor_time;
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
