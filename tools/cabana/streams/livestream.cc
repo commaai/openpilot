@@ -49,6 +49,7 @@ void LiveStream::streamThread() {
 
     if (start_ts == 0) {
       start_ts = evt->mono_time;
+      emit streamStarted();
     }
     current_ts = evt->mono_time;
     updateEvent(evt);
