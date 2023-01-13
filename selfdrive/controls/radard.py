@@ -172,11 +172,10 @@ class RadarD():
 
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
+      vision_v_ego = self.v_ego
       #check vision based ego from model
       if len(sm['modelV2'].temporalPose.trans):
         vision_v_ego = sm['modelV2'].temporalPose.trans[0]
-      else: #if no vision ego available, use wheel speed
-        vision_v_ego = self.v_ego
       radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], vision_v_ego, low_speed_override=True)
       radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], vision_v_ego, low_speed_override=False)
     return dat
