@@ -7,8 +7,13 @@
 #include <QTableWidget>
 
 class FindSimilarBitsDlg : public QDialog {
+  Q_OBJECT
+
 public:
   FindSimilarBitsDlg(QWidget *parent);
+
+signals:
+  void openMessage(const QString &msg_id);
 
 private:
   struct mismatched_struct {

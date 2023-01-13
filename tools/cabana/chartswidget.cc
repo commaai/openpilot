@@ -47,6 +47,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
                    QApplication::style()->standardPalette().color(QPalette::Background).value();
   updateToolBar();
 
+  align_charts_timer = new QTimer(this);
+  align_charts_timer->setSingleShot(true);
+  align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
+
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
@@ -159,7 +163,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
       QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
       QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
-      QObject::connect(chart, &ChartView::axisYUpdated, this, &ChartsWidget::alignCharts);
+      QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(100); });
       charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
     }
@@ -453,7 +457,7 @@ void ChartView::updateAxisY() {
     double range = max_y - min_y;
     applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
   }
-  QTimer::singleShot(0, this, &ChartView::axisYUpdated);
+  emit axisYUpdated();
 }
 
 void ChartView::applyNiceNumbers(qreal min, qreal max) {
