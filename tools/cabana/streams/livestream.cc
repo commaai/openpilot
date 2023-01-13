@@ -31,6 +31,7 @@ void LiveStream::handleNewEvent(Event *e) {
 }
 
 void LiveStream::streamThread() {
+  // TODO: add support for ZMQ
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can"));
   assert(sock != NULL);
