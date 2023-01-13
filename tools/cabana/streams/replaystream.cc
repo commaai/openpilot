@@ -1,7 +1,7 @@
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/dbcmanager.h"
 
-ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
+ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
 }
 
 ReplayStream::~ReplayStream() {

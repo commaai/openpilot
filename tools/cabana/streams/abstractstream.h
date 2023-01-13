@@ -20,8 +20,9 @@ class AbstractStream : public QObject {
   Q_OBJECT
 
 public:
-  AbstractStream(QObject *parent);
+  AbstractStream(QObject *parent, bool is_live_streaming);
   ~AbstractStream();
+  inline bool liveStreaming() const { return is_live_streaming; }
   virtual void seekTo(double ts) {}
 
   virtual inline QString routeName() const { return ""; }
@@ -57,6 +58,7 @@ protected:
   bool updateEvent(const Event *event);
   void settingChanged();
 
+  bool is_live_streaming = false;
   std::atomic<double> counters_begin_sec = 0;
   std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;

@@ -3,7 +3,7 @@
 
 AbstractStream *can = nullptr;
 
-AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
+AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
   QObject::connect(&settings, &Settings::changed, this, &AbstractStream::settingChanged);

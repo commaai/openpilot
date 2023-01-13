@@ -1,6 +1,6 @@
 #include "tools/cabana/streams/livestream.h"
 
-LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
+LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * 65000;
   pool_buffer = ::operator new(buf_size);
@@ -8,7 +8,7 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
 #endif
 
   stream_thread = new QThread(this);
-  QObject::connect(stream_thread, &QThread::started, [=]() { stream(); });
+  QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
   stream_thread->start();
 }
@@ -20,7 +20,7 @@ LiveStream::~LiveStream() {
     delete e;
   }
 
-   for (auto m : messages) {
+  for (auto m : messages) {
     delete m;
   }
 
@@ -30,7 +30,7 @@ LiveStream::~LiveStream() {
 #endif
 }
 
-void LiveStream::stream() {
+void LiveStream::streamThread() {
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can"));
   assert(sock != NULL);
@@ -51,6 +51,11 @@ void LiveStream::stream() {
 #endif
     messages.push_back(msg);
     can_events.push_back(evt);
+
+    if (start_ts == 0) {
+      start_ts = evt->mono_time;
+    }
+    current_ts = evt->mono_time;
     updateEvent(evt);
   }
 }

@@ -27,11 +27,12 @@ int main(int argc, char *argv[]) {
     cmd_parser.showHelp();
   }
 
-  OpenpilotPrefix op_prefix;
+  std::unique_ptr<OpenpilotPrefix> op_prefix;
   std::unique_ptr<AbstractStream> stream;
   if (cmd_parser.isSet("stream")) {
     stream.reset(new LiveStream(&app));
   } else {
+    op_prefix.reset(new OpenpilotPrefix());
     const QString route = args.empty() ? DEMO_ROUTE : args.first();
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {
