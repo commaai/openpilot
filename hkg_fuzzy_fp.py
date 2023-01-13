@@ -9,6 +9,9 @@ plugin_hybrid = []
 hybrid = []
 ev = []
 
+platform_codes = set()
+
+# these ecus are available on all cars (even CAN FD with no OBD fingerprinting)
 fw_keys = [(Ecu.fwdCamera, 0x7c4, None), (Ecu.fwdRadar, 0x7d0, None)]
 
 for car in FW_VERSIONS.keys():
