@@ -104,8 +104,8 @@ const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
 const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x11; // 2.5x
 const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
 const int ANALOG_GAIN_COST_DELTA_OX03C10 = -1;
-const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.05;
-const float ANALOG_GAIN_COST_HIGH_OX03C10 = 0.8;
+const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.4;
+const float ANALOG_GAIN_COST_HIGH_OX03C10 = 6.4;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
@@ -1055,7 +1055,7 @@ void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_i
     score = std::abs(desired_ev - (exp_t * exp_gain));
     float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
     score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
-    score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx);
+    score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx) * 5.0;
   }
 
   if (score < best_ev_score) {
