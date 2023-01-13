@@ -21,39 +21,41 @@ fw_keys = [(Ecu.fwdCamera, 0x7c4, None), (Ecu.fwdRadar, 0x7d0, None)]
 RADAR_REGEX = br'([A-Z]+[A-Z0-9]*)'
 
 
-def get_platform_code(car_fw):
-  codes = list()
+def get_platform_codes(car_fw):
+  codes = set()
   for fw in car_fw[(Ecu.fwdRadar, 0x7d0, None)]:
     start_idx = fw.index(b'\xf1\x00')
-    fw = fw[start_idx + 2:]
+    fw = fw[start_idx + 2:][:4]
     # fw = fw.decode('utf-8', 'ignore')
 
     # code, radar_code_variant = re.findall(RADAR_REGEX, fw)
     code = re.match(RADAR_REGEX, fw).group(0)
-    radar_code_variant = fw[len(code):len(code) + 4 - len(code)].replace(b'_', b'')
+    radar_code_variant = fw[len(code):4].replace(b'_', b'').replace(b' ', b'')
     # code, radar_code_variant = fw[:2], fw[2:4].replace(b"_", b"")
 
     print(f"{code=}, {radar_code_variant=}, {fw=}")
-    continue
-
-    # code = ''
-    # radar_code_variant = ''
-
-    end_of_platform = False
-    for idx, char in enumerate(fw):
-      if char.islower():
-        end_of_platform = True
-      elif char in ['_']:  # end of platform code
-        break
-
-      if not end_of_platform:
-        code += char
-      else:
-        if char == ' ':
-          break
-        radar_code_variant += char
-
-    print(f"{code=}, {radar_code_variant=}, {fw=}")
+    codes.add((code, radar_code_variant))
+    # continue
+    #
+    # # code = ''
+    # # radar_code_variant = ''
+    #
+    # end_of_platform = False
+    # for idx, char in enumerate(fw):
+    #   if char.islower():
+    #     end_of_platform = True
+    #   elif char in ['_']:  # end of platform code
+    #     break
+    #
+    #   if not end_of_platform:
+    #     code += char
+    #   else:
+    #     if char == ' ':
+    #       break
+    #     radar_code_variant += char
+    #
+    # print(f"{code=}, {radar_code_variant=}, {fw=}")
+  return codes
 
 
 for car, car_fw in FW_VERSIONS.items():
@@ -61,7 +63,12 @@ for car, car_fw in FW_VERSIONS.items():
   print(car)
 
   # print(car, car_fw)
-  get_platform_code(car_fw)
+  codes = get_platform_codes(car_fw)
+  print(codes)
+  if car == 'HYUNDAI PALISADE 2020':
+    print('skipping')
+    continue
+  assert len(codes) == 1
 
   continue
 
