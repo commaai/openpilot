@@ -21,7 +21,7 @@ class AbstractStream : public QObject {
 
 public:
   AbstractStream(QObject *parent, bool is_live_streaming);
-  virtual ~AbstractStream();
+  virtual ~AbstractStream() {}
   inline bool liveStreaming() const { return is_live_streaming; }
   virtual void seekTo(double ts) {}
   virtual inline QString routeName() const { return ""; }

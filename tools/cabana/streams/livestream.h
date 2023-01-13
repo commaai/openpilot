@@ -28,7 +28,7 @@ protected:
 #endif
   std::vector<Event *> can_events;
   std::vector<Message *> messages;
-  uint64_t start_ts = 0;
-  uint64_t current_ts = 0;
+  std::atomic<uint64_t> start_ts = 0;
+  std::atomic<uint64_t> current_ts = 0;
   QThread *stream_thread;
 };

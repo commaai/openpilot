@@ -9,8 +9,6 @@ AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_liv
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
 }
 
-AbstractStream::~AbstractStream() {}
-
 void AbstractStream::process(QHash<QString, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
     can_msgs[it.key()] = it.value();
