@@ -230,7 +230,7 @@ class PythonProcess(ManagerProcess):
   def prepare(self) -> None:
     if self.enabled:
       cloudlog.info(f"preimporting {self.module}")
-      importlib.import_module(self.module)
+      importlib.import_module('openpilot.'+self.module)
 
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
