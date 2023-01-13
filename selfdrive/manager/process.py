@@ -11,7 +11,7 @@ from multiprocessing import Process
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
 import openpilot.cereal.messaging as messaging
-from openpilot.selfdrive.sentry as sentry
+import openpilot.selfdrive.sentry as sentry
 from openpilot.cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params

@@ -11,7 +11,7 @@ from typing import NoReturn
 
 from openpilot.common.file_helpers import mkdirs_exists_ok
 from openpilot.selfdrive.loggerd.config import ROOT
-from openpilot.selfdrive.sentry as sentry
+import openpilot.selfdrive.sentry as sentry
 from openpilot.system.swaglog import cloudlog
 from openpilot.system.version import get_commit
 
