@@ -6,24 +6,21 @@ import numpy as np
 from selfdrive.test.helpers import with_processes
 from system.camerad.snapshot.snapshot import get_snapshots
 
-from system.hardware import TICI
-
 TEST_TIME = 45
 REPEAT = 5
 
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
+    pass
 
   def _numpy_rgb2gray(self, im):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
-  def _is_exposure_okay(self, i, med_mean=np.array([[0.2,0.4],[0.2,0.6]])):
-    h, w = i.shape[:2]
-    i = i[h//10:9*h//10,w//10:9*w//10]
+  def _is_exposure_okay(self, i, roi=None, med_mean=None):
+    xmin, xmax, ymin, ymax = roi
+    i = i[ymin:ymax,xmin:xmax]
     med_ex, mean_ex = med_mean
     i = self._numpy_rgb2gray(i)
     i_median = np.median(i) / 255.
@@ -37,13 +34,11 @@ class TestCamerad(unittest.TestCase):
     start = time.time()
     while time.time() - start < TEST_TIME and passed < REPEAT:
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
+      wpic, _ = get_snapshots(frame="wideRoadCameraState")
 
-      res = self._is_exposure_okay(rpic)
-      res = res and self._is_exposure_okay(dpic)
-
-      if TICI:
-        wpic, _ = get_snapshots(frame="wideRoadCameraState")
-        res = res and self._is_exposure_okay(wpic)
+      res = self._is_exposure_okay(rpic, roi=[96, 1832, 604, 1112], med_mean=np.array([[0.2,0.4],[0.2,0.4]]))
+      res = res and self._is_exposure_okay(dpic, roi=[642, 1284, 96, 604], med_mean=np.array([[0.3,0.5],[0.3,0.5]]))
+      res = res and self._is_exposure_okay(wpic, roi=[642, 1284, 604, 1112], med_mean=np.array([[0.4,0.7],[0.4,0.7]]))
 
       if passed > 0 and not res:
         passed = -passed # fails test if any failure after first sus
