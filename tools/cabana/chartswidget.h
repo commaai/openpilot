@@ -118,7 +118,7 @@ private:
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
-  std::pair<double, double> event_range;
+  std::pair<double, double> event_range; // not used for live streaming mode
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
