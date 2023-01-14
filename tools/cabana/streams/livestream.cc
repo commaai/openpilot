@@ -14,6 +14,7 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
 }
 
 LiveStream::~LiveStream() {
+  stream_thread->requestInterruption();
   stream_thread->quit();
   stream_thread->wait();
   for (Event *e : can_events) delete e;
@@ -26,7 +27,6 @@ LiveStream::~LiveStream() {
 }
 
 void LiveStream::streamThread() {
-  // TODO: add support for ZMQ
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can"));
   assert(sock != NULL);
@@ -34,8 +34,11 @@ void LiveStream::streamThread() {
 
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    Message *msg = sock->receive();
-    if (!msg) continue;
+    Message *msg = sock->receive(true);
+    if (!msg) {
+      QThread::msleep(50);
+      continue;
+    }
 
     kj::ArrayPtr<capnp::word> words((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word));
 #ifdef HAS_MEMORY_RESOURCE
