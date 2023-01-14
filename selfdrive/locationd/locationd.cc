@@ -657,11 +657,17 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
-  const std::initializer_list<const char *> service_list = {"gnssMeasurements", "cameraOdometry", "liveCalibration",
+  const char* gps_location_socket;
+  if (ublox_available) {
+    gps_location_socket = "gpsLocationExternal";
+  } else {
+    gps_location_socket = "gpsLocation";
+  }
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"gnssMeasurements", "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
   PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
