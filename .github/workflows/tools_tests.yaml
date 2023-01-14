@@ -38,7 +38,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Unit test
-      timeout-minutes: 6
+      timeout-minutes: 2
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
                         apt-get update && \
