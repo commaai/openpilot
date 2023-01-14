@@ -17,8 +17,8 @@ protected:
   void streamThread();
 
   mutable std::mutex lock;
-  std::deque<Event *> can_events;
   mutable std::vector<Event *> events_vector;
+  std::deque<Event *> can_events;
   std::deque<Message *> messages;
   std::atomic<uint64_t> start_ts = 0, current_ts = 0;
   std::atomic<int> cache_seconds = 0;

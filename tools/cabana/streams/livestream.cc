@@ -1,10 +1,11 @@
 #include "tools/cabana/streams/livestream.h"
 
 LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
-  cache_seconds = settings.cached_segment_limit * 60 * 1e9;
   if (!zmq_address.isEmpty()) {
     setenv("ZMQ", "1", 1);
   }
+  cache_seconds = settings.cached_segment_limit * 60 * 1e9;
+  QObject::connect(&settings, &Settings::changed, [this]() { cache_seconds = settings.cached_segment_limit * 60 * 1e9; });
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -24,7 +25,7 @@ void LiveStream::streamThread() {
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
-  sock->setTimeout(100);
+  sock->setTimeout(50);
 
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
@@ -43,8 +44,8 @@ void LiveStream::streamThread() {
       messages.push_back(msg);
       if ((evt->mono_time - can_events.front()->mono_time) > cache_seconds) {
         ::delete can_events.front();
-        can_events.pop_front();
         delete messages.front();
+        can_events.pop_front();
         messages.pop_front();
       }
     }

@@ -3,7 +3,9 @@
 #include "tools/cabana/dbcmanager.h"
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
-  QObject::connect(&settings, &Settings::changed, this, &ReplayStream::settingChanged);
+  QObject::connect(&settings, &Settings::changed, [this]() {
+    if (replay) replay->setSegmentCacheLimit(settings.cached_segment_limit);
+  });
 }
 
 ReplayStream::~ReplayStream() {
@@ -49,8 +51,4 @@ void ReplayStream::seekTo(double ts) {
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
   emit(pause ? paused() : resume());
-}
-
-void ReplayStream::settingChanged() {
-  replay->setSegmentCacheLimit(settings.cached_segment_limit);
 }
