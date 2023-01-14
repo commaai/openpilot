@@ -89,7 +89,7 @@ void ChartsWidget::updateDisplayRange() {
     display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
     display_range.second = display_range.first + settings.max_chart_x_range;
     for (auto c : charts) {
-      c->appendSeriesData(events);
+      c->updateSeries(nullptr, events, false);
     }
   }
 }
@@ -288,7 +288,6 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
-  updateAxisY();
   emit seriesAdded(msg_id, sig);
 }
 
@@ -323,7 +322,6 @@ void ChartView::signalUpdated(const Signal *sig) {
     updateTitle();
     // TODO: don't update series if only name changed.
     updateSeries(sig);
-    updateAxisY();
   }
 }
 
@@ -405,19 +403,27 @@ void ChartView::setDisplayRange(double min, double max) {
   }
 }
 
-void ChartView::updateSeries(const Signal *sig) {
-  auto events = can->events();
+void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *events, bool clear) {
+  if (!events) events = can->events();
   if (!events || sigs.isEmpty()) return;
 
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      s.vals.clear();
-      s.min_y = std::numeric_limits<double>::max();
-      s.max_y = std::numeric_limits<double>::lowest();
+      if (clear) {
+        s.vals.clear();
+        s.last_value_mono_time = 0;
+      }
+      double old_min_y = s.min_y;
+      double old_max_y = s.max_y;
+      if (s.min_y == 0 && s.max_y == 0) {
+        s.min_y = std::numeric_limits<double>::max();
+        s.max_y = std::numeric_limits<double>::lowest();
+      }
 
       double route_start_time = can->routeStartTime();
-      Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + events_range.first) * 1e9);
-      auto begin = can->liveStreaming() ? events->begin() : std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+      uint64_t begin_ts = can->liveStreaming() ? s.last_value_mono_time : (route_start_time + events_range.first) * 1e9;
+      Event begin_event(cereal::Event::Which::INIT_DATA, begin_ts);
+      auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
       uint64_t end_ns = can->liveStreaming() ? events->back()->mono_time : (route_start_time + events_range.second) * 1e9;
 
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
@@ -437,43 +443,9 @@ void ChartView::updateSeries(const Signal *sig) {
       }
       s.last_value_mono_time = events->back()->mono_time;
       s.series->replace(s.vals);
-    }
-  }
-}
-
-void ChartView::appendSeriesData(const std::vector<Event *> *events) {
-  if (!events || sigs.isEmpty()) return;
-
-  for (auto &s : sigs) {
-    double old_min_y = s.min_y;
-    double old_max_y = s.max_y;
-    if (s.min_y == 0 && s.max_y == 0) {
-      s.min_y = std::numeric_limits<double>::max();
-      s.max_y = std::numeric_limits<double>::lowest();
-    }
-
-    double route_start_time = can->routeStartTime();
-    Event begin_event(cereal::Event::Which::INIT_DATA, s.last_value_mono_time);
-    auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-    for (auto it = begin; it != events->end(); ++it) {
-      if ((*it)->which == cereal::Event::Which::CAN) {
-        for (const auto &c : (*it)->event.getCan()) {
-          if (s.source == c.getSrc() && s.address == c.getAddress()) {
-            auto dat = c.getDat();
-            double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
-            double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
-            s.vals.push_back({ts, value});
-
-            if (value < s.min_y) s.min_y = value;
-            if (value > s.max_y) s.max_y = value;
-          }
-        }
+      if (old_min_y != s.min_y || old_max_y != s.max_y) {
+        updateAxisY();
       }
-    }
-    s.last_value_mono_time = events->back()->mono_time;
-    s.series->replace(s.vals);
-    if (old_min_y != s.min_y || old_max_y != s.max_y) {
-      updateAxisY();
     }
   }
 }

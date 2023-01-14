@@ -24,8 +24,7 @@ public:
   void addSeries(const QString &msg_id, const Signal *sig);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
-  void updateSeries(const Signal *sig = nullptr);
-  void appendSeriesData(const std::vector<Event *> *events);
+  void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
   void setPlotAreaLeftPosition(int pos);
