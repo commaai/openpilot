@@ -68,4 +68,4 @@ class FwQueryConfig:
   # Ecus added for data collection, not to be fingerprinted on
   extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
   # A function that each make can provide to fuzzy fingerprint reliably on that make
-  match_fw_to_car_fuzzy: Callable = None
+  match_fw_to_car_fuzzy: Optional[Callable] = None
