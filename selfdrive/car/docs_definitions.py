@@ -150,6 +150,10 @@ class CarInfo:
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
+    harness_link = '<a href="https://comma.ai/shop/comma-three.html?make={}&model={}{}>{}</a>'.format(self.make, self.model,
+                                                                                                      (' ' + self.years) if self.years else '',
+                                                                                                      self.harness.value)
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -159,7 +163,7 @@ class CarInfo:
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
-      Column.HARNESS: self.harness.value,
+      Column.HARNESS: harness_link,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
