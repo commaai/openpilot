@@ -32,7 +32,9 @@ int main(int argc, char *argv[]) {
   if (cmd_parser.isSet("stream")) {
     stream.reset(new LiveStream(&app));
   } else {
+#ifndef __APPLE__
     op_prefix.reset(new OpenpilotPrefix());
+#endif
     const QString route = args.empty() ? DEMO_ROUTE : args.first();
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {

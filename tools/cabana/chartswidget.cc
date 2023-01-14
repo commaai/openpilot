@@ -280,7 +280,9 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QLineSeries *series = new QLineSeries(this);
+#ifndef __APPLE__
   series->setUseOpenGL(true);
+#endif
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
