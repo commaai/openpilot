@@ -1,5 +1,5 @@
+from common.numpy_fast import clip
 from selfdrive.car.hyundai.values import HyundaiFlags
-
 
 def get_e_can_bus(CP):
   # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
@@ -52,10 +52,9 @@ def create_buttons(packer, CP, cnt, btn):
 def create_acc_cancel(packer, CP, cruise_info_copy):
   values = cruise_info_copy
   values.update({
-    "CRUISE_STATUS": 0,
-    "CRUISE_INACTIVE": 1,
+    "ACCMode": 4,
   })
-  return packer.make_can_msg("CRUISE_INFO", get_e_can_bus(CP), values)
+  return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
 
 def create_lfahda_cluster(packer, CP, enabled):
   values = {
@@ -65,34 +64,55 @@ def create_lfahda_cluster(packer, CP, enabled):
   return packer.make_can_msg("LFAHDA_CLUSTER", get_e_can_bus(CP), values)
 
 
-def create_acc_control(packer, CP, enabled, accel, stopping, gas_override, set_speed):
-  cruise_status = 0 if not enabled else (4 if gas_override else 2)
+def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_override, set_speed):
+  jerk = 5
+  jn = jerk / 50
   if not enabled or gas_override:
-    accel = 0
+    a_val, a_raw = 0, 0
+  else:
+    a_raw = accel
+    a_val = clip(accel, accel_last - jn, accel_last + jn)
+
   values = {
-    "CRUISE_STATUS": cruise_status,
-    "CRUISE_INACTIVE": 0 if enabled else 1,
-    "CRUISE_MAIN": 1,
-    "CRUISE_STANDSTILL": 0,
-    "STOP_REQ": 1 if stopping else 0,
-    "ACCEL_REQ": accel,
-    "ACCEL_REQ2": accel,
-    "SET_SPEED": set_speed,
-    "DISTANCE_SETTING": 4,
+    "ACCMode": 0 if not enabled else (2 if gas_override else 1),
+    "MainMode_ACC": 1,
+    "StopReq": 1 if stopping else 0,
+    "aReqValue": a_val,
+    "aReqRaw": a_raw,
+    "VSetDis": set_speed,
+    "JerkLowerLimit": jerk if enabled else 1,
+    "JerkUpperLimit": 3.0,
 
     "ACC_ObjDist": 1,
-    "ObjValid": 1,
+    "ObjValid": 0,
     "OBJ_STATUS": 2,
-    "SET_ME_2": 0x2,
+    "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
-
-    "NEW_SIGNAL_9": 2,
-    "NEW_SIGNAL_10": 4,
+    "DISTANCE_SETTING": 4,
   }
 
-  return packer.make_can_msg("CRUISE_INFO", get_e_can_bus(CP), values)
+  return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
 
+
+def create_spas_messages(packer, frame, left_blink, right_blink):
+  ret = []
+
+  values = {
+  }
+  ret.append(packer.make_can_msg("SPAS1", 5, values))
+
+  blink = 0
+  if left_blink:
+    blink = 3
+  elif right_blink:
+    blink = 4
+  values = {
+    "BLINKER_CONTROL": blink,
+  }
+  ret.append(packer.make_can_msg("SPAS2", 5, values))
+
+  return ret
 
 
 def create_adrv_messages(packer, frame):

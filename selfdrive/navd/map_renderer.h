@@ -25,7 +25,6 @@ public:
   bool loaded();
   ~MapRenderer();
 
-
 private:
   std::unique_ptr<QOpenGLContext> ctx;
   std::unique_ptr<QOffscreenSurface> surface;
@@ -35,7 +34,8 @@ private:
   std::unique_ptr<VisionIpcServer> vipc_server;
   std::unique_ptr<PubMaster> pm;
   std::unique_ptr<SubMaster> sm;
-  void sendVipc();
+  void publish(const double render_time);
+  void sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf);
 
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
@@ -47,7 +47,6 @@ private:
   QTimer* timer;
 
 public slots:
-  void updateZoom(float zoom);
   void updatePosition(QMapbox::Coordinate position, float bearing);
   void updateRoute(QList<QGeoCoordinate> coordinates);
   void msgUpdate();

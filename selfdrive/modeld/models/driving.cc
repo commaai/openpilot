@@ -22,11 +22,6 @@ std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
 
 // #define DUMP_YUV
 
-template<class T, size_t size>
-constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
-  return kj::ArrayPtr(arr.data(), arr.size());
-}
-
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
   s->wide_frame = new ModelFrame(device_id, context);
@@ -51,10 +46,19 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #ifdef TRAFFIC_CONVENTION
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
+
+#ifdef DRIVING_STYLE
+  s->m->addDrivingStyle(s->driving_style, DRIVING_STYLE_LEN);
+#endif
+
+#ifdef NAV
+  s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
+#endif
+
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, float *driving_style, float *nav_features, bool prepare_only) {
 #ifdef DESIRE
   std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
@@ -70,6 +74,14 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
     }
   }
 LOGT("Desire enqueued");
+#endif
+
+#ifdef NAV
+  std::memcpy(s->nav_features, nav_features, sizeof(float)*NAV_FEATURE_LEN);
+#endif
+
+#ifdef DRIVING_STYLE
+  std::memcpy(s->driving_style, driving_style, sizeof(float)*DRIVING_STYLE_LEN);
 #endif
 
   int rhd_idx = is_rhd;
@@ -337,6 +349,17 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
+
+  // temporal pose
+  const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
+  const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
+  const auto &v_std = net_outputs.temporal_pose.velocity_std;
+  const auto &r_std = net_outputs.temporal_pose.rotation_std;
+  auto temporal_pose = framed.initTemporalPose();
+  temporal_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
+  temporal_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
+  temporal_pose.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,

@@ -17,6 +17,9 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
+  def __init__(self, CP):
+    pass
+
 
 class CAR:
   BODY = "COMMA BODY"
@@ -24,6 +27,12 @@ class CAR:
 
 CAR_INFO: Dict[str, CarInfo] = {
   CAR.BODY: CarInfo("comma body", package="All"),
+}
+
+FINGERPRINTS = {
+  CAR.BODY: [{
+    513: 8, 516: 8, 514: 3, 515: 4,
+  }],
 }
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -40,10 +49,13 @@ FW_VERSIONS = {
   CAR.BODY: {
     (Ecu.engine, 0x720, None): [
       b'0.0.01',
-      b'02/27/2022'
+      b'02/27/2022',
+      b'0.3.00a',
     ],
+    # git hash of the firmware used
     (Ecu.debug, 0x721, None): [
-      b'166bd860' # git hash of the firmware used
+      b'166bd860',
+      b'dc780f85',
     ],
   },
 }

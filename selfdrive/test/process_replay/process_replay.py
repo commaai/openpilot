@@ -180,7 +180,7 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
 def get_car_params(msgs, fsm, can_sock, fingerprint):
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
-    CP = CarInterface.get_params(fingerprint)
+    CP = CarInterface.get_non_essential_params(fingerprint)
   else:
     can = FakeSocket(wait=False)
     sendcan = FakeSocket(wait=False)
@@ -251,8 +251,10 @@ def ublox_rcv_callback(msg):
 def laika_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
+  elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
+    return ["gnssMeasurements"], True
   else:
-    return [], True
+    return [], False
 
 
 CONFIGS = [
@@ -329,7 +331,7 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "gnssMeasurements": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -362,22 +364,9 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="laikad",
-    subtest_name="Offline",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
-      "clocks": []
-    },
-    ignore=["logMonoTime"],
-    init_callback=get_car_params,
-    should_recv_callback=laika_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
-    environ={"LAIKAD_NO_INTERNET": "1"},
-  ),
-  ProcessConfig(
-    proc_name="laikad",
-    pub_sub={
-      "ubloxGnss": ["gnssMeasurements"],
+      "qcomGnss": ["gnssMeasurements"],
       "clocks": []
     },
     ignore=["logMonoTime"],
@@ -456,6 +445,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
       os.environ['SKIP_FW_QUERY'] = "1"
       os.environ['FINGERPRINT'] = CP.carFingerprint
 
+    if CP.openpilotLongitudinalControl:
+      params.put_bool("ExperimentalLongitudinalEnabled", True)
+
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -470,6 +462,12 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+
+  # laikad needs decision between submaster ubloxGnss and qcomGnss, prio given to ubloxGnss
+  if cfg.proc_name == "laikad":
+    args = (*args, not any(m.which() == "ubloxGnss" for m in pub_msgs))
+    service = "qcomGnss" if args[2] else "ubloxGnss"
+    pub_msgs = [m for m in pub_msgs if m.which() == service or m.which() == 'clocks']
 
   controlsState = None
   initialized = False

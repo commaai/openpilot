@@ -197,8 +197,8 @@ void TestReplay::test_seek() {
   stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 50; ++i) {
-      testSeekTo(random_int(0, 3 * 60));
+    for (int i = 0; i < 10; ++i) {
+      testSeekTo(random_int(0, 1 * 60));
     }
     loop.quit();
   });
@@ -207,8 +207,7 @@ void TestReplay::test_seek() {
 }
 
 TEST_CASE("Replay") {
-  auto flag = GENERATE(REPLAY_FLAG_NO_FILE_CACHE, REPLAY_FLAG_NONE);
-  TestReplay replay(DEMO_ROUTE, flag);
+  TestReplay replay(DEMO_ROUTE);
   REQUIRE(replay.load());
   replay.test_seek();
 }

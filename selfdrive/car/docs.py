@@ -7,14 +7,15 @@ from enum import Enum
 from natsort import natsorted
 from typing import Dict, List
 
+from cereal import car
 from common.basedir import BASEDIR
 from selfdrive.car import gen_empty_fingerprint
-from selfdrive.car.docs_definitions import CarInfo, Column
+from selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 
 
 def get_all_footnotes() -> Dict[Enum, int]:
-  all_footnotes = []
+  all_footnotes = list(CommonFootnote)
   for footnotes in get_interface_attr("Footnote", ignore_none=True).values():
     all_footnotes.extend(footnotes)
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
@@ -28,7 +29,7 @@ def get_all_car_info() -> List[CarInfo]:
   all_car_info: List[CarInfo] = []
   footnotes = get_all_footnotes()
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
-    CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(), experimental_long=True)
+    CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(), car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=False)
 
     if CP.dashcamOnly or car_info is None:
       continue
@@ -39,6 +40,7 @@ def get_all_car_info() -> List[CarInfo]:
 
     for _car_info in car_info:
       if not hasattr(_car_info, "row"):
+        _car_info.init_make(CP)
         _car_info.init(CP, footnotes)
       all_car_info.append(_car_info)
 

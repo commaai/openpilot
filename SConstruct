@@ -71,10 +71,10 @@ if arch == "aarch64" and AGNOS:
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+  "PYTHONPATH": Dir("#").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
+  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
@@ -298,12 +298,15 @@ if arch == "Darwin":
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
-  qt_env['QTDIR'] = "/usr"
+  qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
+  qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
+
+  qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
-    f"/usr/include/{real_arch}-linux-gnu/qt5",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
+    f"{qt_install_headers}",
+    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
   ]
-  qt_dirs += [f"/usr/include/{real_arch}-linux-gnu/qt5/Qt{m}" for m in qt_modules]
+  qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
@@ -406,10 +409,10 @@ if arch != "Darwin":
 
 # build submodules
 SConscript([
-  'cereal/SConscript',
   'body/board/SConscript',
-  'panda/board/SConscript',
+  'cereal/SConscript',
   'opendbc/can/SConscript',
+  'panda/SConscript',
 ])
 
 SConscript(['third_party/SConscript'])
@@ -419,7 +422,6 @@ SConscript(['common/transformations/SConscript'])
 
 SConscript(['selfdrive/modeld/SConscript'])
 
-SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
@@ -438,9 +440,6 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   opendbc = abspath([File('opendbc/can/libdbc.so')])
   Export('opendbc')
   SConscript(['tools/cabana/SConscript'])
-
-if GetOption('test'):
-  SConscript('panda/tests/safety/SConscript')
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
