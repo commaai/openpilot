@@ -53,10 +53,10 @@ class TestLocationdProc(unittest.TestCase):
       msg.gpsLocationExternal.speedAccuracy = 1.0
       msg.gpsLocationExternal.bearingAccuracyDeg = 1.0
       msg.gpsLocationExternal.vNED = [0.0, 0.0, 0.0]
-      msg.gpsLocationExternal.latitude = self.lat
-      msg.gpsLocationExternal.longitude = self.lon
+      msg.gpsLocationExternal.latitude = float(self.lat)
+      msg.gpsLocationExternal.longitude = float(self.lon)
       msg.gpsLocationExternal.unixTimestampMillis = t * 1e6
-      msg.gpsLocationExternal.altitude = self.alt
+      msg.gpsLocationExternal.altitude = float(self.alt)
     #if name == "gnssMeasurements":
     #  msg.gnssMeasurements.measTime = t
     #  msg.gnssMeasurements.positionECEF.value = [self.x , self.y, self.z]
