@@ -66,8 +66,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
 void ChartsWidget::updateDisplayRange() {
   auto events = can->events();
-  event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
-  event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
+  double min_event_sec = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
+  double max_event_sec = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
   double current_sec = can->currentSec();
   if (!can->liveStreaming()) {
     auto prev_range = display_range;
@@ -75,8 +75,8 @@ void ChartsWidget::updateDisplayRange() {
       // reached the end, or seeked to a timestamp out of range.
       display_range.first = current_sec - 5;
     }
-    display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
-    display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
+    display_range.first = std::floor(std::max(display_range.first, min_event_sec) * 10.0) / 10.0;
+    display_range.second = std::floor(std::min(display_range.first + max_chart_range, max_event_sec) * 10.0) / 10.0;
     if (prev_range != display_range) {
       QFutureSynchronizer<void> future_synchronizer;
       for (auto c : charts)
@@ -86,7 +86,7 @@ void ChartsWidget::updateDisplayRange() {
     if (current_sec >= (display_range.second - 5)) {
       display_range.first = std::max<double>(0, ((current_sec - settings.max_chart_x_range / 2.0) * 10.0) / 10.0);
     }
-    display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
+    display_range.first = std::floor(std::max(display_range.first, min_event_sec) * 10.0) / 10.0;
     display_range.second = display_range.first + settings.max_chart_x_range;
     for (auto c : charts) {
       c->updateSeries(nullptr, events, false);
