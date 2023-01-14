@@ -90,7 +90,8 @@ pipeline {
             }
           }
           steps {
-            sh "git config --global --add safe.directory ${WORKSPACE}"
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
             sh "git lfs pull"
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
@@ -189,7 +190,7 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+              ["model replay", "cd selfdrive/test/process_replay && NO_NAV=1 ./model_replay.py"],
             ])
           }
         }

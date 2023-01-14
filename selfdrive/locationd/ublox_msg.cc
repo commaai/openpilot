@@ -192,6 +192,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         eph.setAf2(subframe_1->af_2() * pow(2, -55));
         eph.setAf1(subframe_1->af_1() * pow(2, -43));
         eph.setAf0(subframe_1->af_0() * pow(2, -31));
+        eph.setSvHealth(subframe_1->sv_health());
       }
 
       // Subframe 2
