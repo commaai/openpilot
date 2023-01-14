@@ -514,7 +514,6 @@ FW_VERSIONS = {
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.02 99110-L1000         ',
-      b'\xf1\x00DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
       b'\xf1\x00DN89110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     ',  # TODO: figure this out, why does it not follow the standard format?
       b'\xf1\x8799110L0000\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
@@ -575,7 +574,6 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MFC  AT KOR LHD 1.00 1.02 99211-L1000 190422',
       b'\xf1\x00DN8 MFC  AT RUS LHD 1.00 1.03 99211-L1000 190705',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.00 99211-L0000 190716',
-      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.03 99211-L0000 210603',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.05 99211-L1000 201109',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.06 99211-L1000 210325',
@@ -1314,7 +1312,6 @@ FW_VERSIONS = {
       b"\xf1\x00JF ESC \t 11 \x18\x03' 58920-D5260",
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5001 h32',
       b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.00 95895-D5100 h32',
     ],
     (Ecu.transmission, 0x7e1, None): [
@@ -1500,7 +1497,6 @@ FW_VERSIONS = {
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT EUR LHD 1.00 1.06 99210-CV000 220328',
