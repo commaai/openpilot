@@ -17,7 +17,7 @@ LiveStream::~LiveStream() {
   stream_thread->quit();
   stream_thread->wait();
   for (Event *e : can_events) ::delete e;
-  for (Message *m : messages) delete m;
+  for (auto m : messages) delete m;
 }
 
 void LiveStream::streamThread() {
@@ -34,12 +34,14 @@ void LiveStream::streamThread() {
       QThread::msleep(50);
       continue;
     }
-    Event *evt = ::new Event({(capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)});
+    AlignedBuffer *buf = messages.emplace_back(new AlignedBuffer());
+    Event *evt = ::new Event(buf->align(msg));
+    delete msg;
+
     current_ts = evt->mono_time;
     {
       std::lock_guard lk(lock);
       can_events.push_back(evt);
-      messages.push_back(msg);
       if ((evt->mono_time - can_events.front()->mono_time) > cache_ns) {
         ::delete can_events.front();
         delete messages.front();
