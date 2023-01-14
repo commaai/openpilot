@@ -158,7 +158,8 @@ class Laikad:
     new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
     processed_measurements = process_measurements(new_meas, self.astro_dog)
     if self.last_fix_pos is not None:
-      corrected_measurements = correct_measurements(processed_measurements, self.last_fix_pos, self.astro_dog)
+      corrected_measurements = correct_measurements(processed_measurements,
+        self.last_fix_pos, self.astro_dog, allow_incomplete_delay=True)
       instant_fix = self.get_lsq_fix(t, corrected_measurements)
       #instant_fix = self.get_lsq_fix(t, processed_measurements)
     else:
