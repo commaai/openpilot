@@ -412,7 +412,7 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *event
       double route_start_time = can->routeStartTime();
       uint64_t begin_ts = can->liveStreaming() ? s.last_value_mono_time : (route_start_time + events_range.first) * 1e9;
       Event begin_event(cereal::Event::Which::INIT_DATA, begin_ts);
-      auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+      auto begin = std::upper_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
       uint64_t end_ns = can->liveStreaming() ? events->back()->mono_time : (route_start_time + events_range.second) * 1e9;
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
