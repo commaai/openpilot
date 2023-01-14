@@ -134,20 +134,14 @@ void ChartsWidget::showAllData() {
 }
 
 void ChartsWidget::updateToolBar() {
-  if (!can->liveStreaming()) {
-    int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
-    bool displaying_all = max_chart_range != min_range;
-    show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
-    show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));
-    show_all_values_btn->setVisible(!is_zoomed);
-    range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
-    reset_zoom_btn->setEnabled(is_zoomed);
-  } else {
-    show_all_values_btn->setVisible(false);
-    range_label->setVisible(false);
-    reset_zoom_btn->setVisible(false);
-  }
+  int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
+  bool displaying_all = max_chart_range != min_range;
+  show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
+  show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));
+  show_all_values_btn->setVisible(!is_zoomed && !can->liveStreaming());
   remove_all_btn->setEnabled(!charts.isEmpty());
+  reset_zoom_btn->setEnabled(is_zoomed);
+  range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));
   dock_btn->setText(docking ? "⬈" : "⬋");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));

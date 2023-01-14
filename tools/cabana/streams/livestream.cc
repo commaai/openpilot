@@ -4,8 +4,8 @@ LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address),
   if (!zmq_address.isEmpty()) {
     setenv("ZMQ", "1", 1);
   }
-  cache_seconds = settings.cached_segment_limit * 60 * 1e9;
-  QObject::connect(&settings, &Settings::changed, [this]() { cache_seconds = settings.cached_segment_limit * 60 * 1e9; });
+  updateCachedNS();
+  QObject::connect(&settings, &Settings::changed, this, &LiveStream::updateCachedNS);
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -34,15 +34,13 @@ void LiveStream::streamThread() {
       QThread::msleep(50);
       continue;
     }
-
-    kj::ArrayPtr<capnp::word> words((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word));
-    Event *evt = ::new Event(words);
-
+    Event *evt = ::new Event({(capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)});
+    current_ts = evt->mono_time;
     {
       std::lock_guard lk(lock);
       can_events.push_back(evt);
       messages.push_back(msg);
-      if ((evt->mono_time - can_events.front()->mono_time) > cache_seconds) {
+      if ((evt->mono_time - can_events.front()->mono_time) > cache_ns) {
         ::delete can_events.front();
         delete messages.front();
         can_events.pop_front();
@@ -53,7 +51,6 @@ void LiveStream::streamThread() {
       start_ts = evt->mono_time;
       emit streamStarted();
     }
-    current_ts = evt->mono_time;
     updateEvent(evt);
   }
 }

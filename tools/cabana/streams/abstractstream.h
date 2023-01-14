@@ -30,10 +30,10 @@ public:
   virtual inline double currentSec() const { return 0; }
   virtual inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
   virtual inline VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
-  virtual inline const Route* route() const { return nullptr; }
+  virtual inline const Route *route() const { return nullptr; }
   virtual inline const std::vector<Event *> *events() const = 0;
-  virtual inline void setSpeed(float speed) {  }
-  virtual  inline bool isPaused() const { return false; }
+  virtual inline void setSpeed(float speed) {}
+  virtual inline bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
   virtual inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
 
