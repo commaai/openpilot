@@ -38,7 +38,6 @@ void LiveStream::streamThread() {
     Event *evt = ::new Event(buf->align(msg));
     delete msg;
 
-    current_ts = evt->mono_time;
     {
       std::lock_guard lk(lock);
       can_events.push_back(evt);
@@ -52,6 +51,11 @@ void LiveStream::streamThread() {
     if (start_ts == 0) {
       start_ts = evt->mono_time;
       emit streamStarted();
+    }
+    current_ts = evt->mono_time;
+    if (start_ts > current_ts) {
+      qDebug() << "stream is looping back to old time stamp";
+      start_ts = current_ts.load();
     }
     updateEvent(evt);
   }

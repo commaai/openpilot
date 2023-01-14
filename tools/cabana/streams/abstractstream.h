@@ -27,7 +27,7 @@ public:
   virtual inline QString carFingerprint() const { return ""; }
   virtual inline double totalSeconds() const { return 0; }
   virtual inline double routeStartTime() const { return 0; }
-  virtual inline double currentSec() const { return 0; }
+  virtual inline double currentSec() const = 0;
   virtual inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
   virtual inline VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual inline const Route *route() const { return nullptr; }
@@ -60,13 +60,8 @@ protected:
   QHash<QString, uint32_t> counters;
 };
 
-inline QString toHex(const QByteArray &dat) {
-  return dat.toHex(' ').toUpper();
-}
-inline char toHex(uint value) {
-  return "0123456789ABCDEF"[value & 0xF];
-}
-
+inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
+inline char toHex(uint value) { return "0123456789ABCDEF"[value & 0xF]; }
 inline const QString &getColor(int i) {
   // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};

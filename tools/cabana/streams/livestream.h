@@ -23,7 +23,8 @@ protected:
   mutable std::vector<Event *> events_vector;
   std::deque<Event *> can_events;
   std::deque<AlignedBuffer *> messages;
-  std::atomic<uint64_t> start_ts = 0, current_ts = 0;
+  std::atomic<uint64_t> start_ts = 0;
+  std::atomic<uint64_t> current_ts = 0;
   std::atomic<uint64_t> cache_ns = 0;
   const QString zmq_address;
   QThread *stream_thread;
