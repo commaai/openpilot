@@ -150,9 +150,9 @@ class CarInfo:
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
-    harness_link = '<a href="https://comma.ai/shop/comma-three.html?make={}&model={}{}>{}</a>'.format(self.make, self.model,
-                                                                                                      (' ' + self.years) if self.years else '',
-                                                                                                      self.harness.value)
+    harness_link = '<a href="https://comma.ai/shop/comma-three.html?make={}&model={}{}">{}</a>'.format(self.make, self.model,
+                                                                                                       (' ' + self.years) if self.years else '',
+                                                                                                       self.harness.value)
 
     self.row = {
       Column.MAKE: self.make,
