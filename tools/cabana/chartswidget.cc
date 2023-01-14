@@ -134,7 +134,7 @@ void ChartsWidget::showAllData() {
 }
 
 void ChartsWidget::updateToolBar() {
-  if (can->liveStreaming()) {
+  if (!can->liveStreaming()) {
     int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
     bool displaying_all = max_chart_range != min_range;
     show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
