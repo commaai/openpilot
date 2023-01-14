@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
+  cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<OpenpilotPrefix> op_prefix;
   std::unique_ptr<AbstractStream> stream;
   if (cmd_parser.isSet("stream")) {
-    stream.reset(new LiveStream(&app));
+    stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
   } else {
 #ifndef __APPLE__
     op_prefix.reset(new OpenpilotPrefix());

@@ -1,12 +1,15 @@
 #include "tools/cabana/streams/livestream.h"
 
-LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
+LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * 65000;
   pool_buffer = ::operator new(buf_size);
   mbr = new std::pmr::monotonic_buffer_resource(pool_buffer, buf_size);
 #endif
   cache_seconds = settings.cached_segment_limit * 60 * 1e9;
+  if (!zmq_address.isEmpty()) {
+    setenv("ZMQ", "1", 1);
+  }
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -28,7 +31,8 @@ LiveStream::~LiveStream() {
 
 void LiveStream::streamThread() {
   std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can"));
+  std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
+  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
   sock->setTimeout(100);
 
