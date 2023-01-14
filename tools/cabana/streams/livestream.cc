@@ -1,11 +1,6 @@
 #include "tools/cabana/streams/livestream.h"
 
 LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
-#ifdef HAS_MEMORY_RESOURCE
-  const size_t buf_size = sizeof(Event) * 65000;
-  pool_buffer = ::operator new(buf_size);
-  mbr = new std::pmr::monotonic_buffer_resource(pool_buffer, buf_size);
-#endif
   cache_seconds = settings.cached_segment_limit * 60 * 1e9;
   if (!zmq_address.isEmpty()) {
     setenv("ZMQ", "1", 1);
@@ -20,13 +15,8 @@ LiveStream::~LiveStream() {
   stream_thread->requestInterruption();
   stream_thread->quit();
   stream_thread->wait();
-  for (Event *e : can_events) delete e;
+  for (Event *e : can_events) ::delete e;
   for (Message *m : messages) delete m;
-
-#ifdef HAS_MEMORY_RESOURCE
-  delete mbr;
-  ::operator delete(pool_buffer);
-#endif
 }
 
 void LiveStream::streamThread() {
@@ -45,17 +35,14 @@ void LiveStream::streamThread() {
     }
 
     kj::ArrayPtr<capnp::word> words((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word));
-#ifdef HAS_MEMORY_RESOURCE
-    Event *evt = new (mbr) Event(words);
-#else
-    Event *evt = new Event(words);
-#endif
+    Event *evt = ::new Event(words);
 
     {
       std::lock_guard lk(lock);
       can_events.push_back(evt);
       messages.push_back(msg);
       if ((evt->mono_time - can_events.front()->mono_time) > cache_seconds) {
+        ::delete can_events.front();
         can_events.pop_front();
         delete messages.front();
         messages.pop_front();

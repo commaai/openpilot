@@ -16,10 +16,6 @@ public:
 protected:
   void streamThread();
 
-#ifdef HAS_MEMORY_RESOURCE
-  std::pmr::monotonic_buffer_resource *mbr = nullptr;
-  void *pool_buffer = nullptr;
-#endif
   mutable std::mutex lock;
   std::deque<Event *> can_events;
   mutable std::vector<Event *> events_vector;
