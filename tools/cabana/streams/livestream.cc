@@ -58,6 +58,7 @@ void LiveStream::streamThread() {
       start_ts = current_ts.load();
     }
     updateEvent(evt);
+    // TODO: write stream to log file to replay it with cabana --data_dir flag.
   }
 }
 
