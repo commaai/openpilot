@@ -409,19 +409,11 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *event
         s.vals.clear();
         s.last_value_mono_time = 0;
       }
-      double old_min_y = s.min_y;
-      double old_max_y = s.max_y;
-      if (s.min_y == 0 && s.max_y == 0) {
-        s.min_y = std::numeric_limits<double>::max();
-        s.max_y = std::numeric_limits<double>::lowest();
-      }
-
       double route_start_time = can->routeStartTime();
       uint64_t begin_ts = can->liveStreaming() ? s.last_value_mono_time : (route_start_time + events_range.first) * 1e9;
       Event begin_event(cereal::Event::Which::INIT_DATA, begin_ts);
       auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
       uint64_t end_ns = can->liveStreaming() ? events->back()->mono_time : (route_start_time + events_range.second) * 1e9;
-
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
           for (const auto &c : (*it)->event.getCan()) {
@@ -430,18 +422,20 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *event
               double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
               double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
               s.vals.push_back({ts, value});
-
-              if (value < s.min_y) s.min_y = value;
-              if (value > s.max_y) s.max_y = value;
             }
           }
         }
       }
-      s.last_value_mono_time = events->back()->mono_time;
-      s.series->replace(s.vals);
-      if (old_min_y != s.min_y || old_max_y != s.max_y) {
-        updateAxisY();
+      if (!s.vals.isEmpty()) {
+        auto [min_v, max_v] = std::minmax_element(s.vals.begin(), s.vals.end(), [](auto &l, auto &r) { return l.y() < r.y(); });
+        s.min_y = min_v->y();
+        s.max_y = max_v->y();
+        s.last_value_mono_time = events->back()->mono_time;
+      } else {
+        s.min_y = s.max_y = 0;
       }
+      s.series->replace(s.vals);
+      updateAxisY();
     }
   }
 }
