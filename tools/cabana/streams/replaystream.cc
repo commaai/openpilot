@@ -9,7 +9,7 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
 }
 
 ReplayStream::~ReplayStream() {
-  replay->stop();
+  if (replay) replay->stop();
 }
 
 static bool event_filter(const Event *e, void *opaque) {

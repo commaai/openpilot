@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<OpenpilotPrefix> op_prefix;
   std::unique_ptr<AbstractStream> stream;
+
   if (cmd_parser.isSet("stream")) {
     stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
   } else {
