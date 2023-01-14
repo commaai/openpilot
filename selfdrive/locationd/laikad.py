@@ -161,9 +161,10 @@ class Laikad:
     processed_measurements = process_measurements(new_meas, self.astro_dog)
     if self.last_fix_pos is not None:
       measurements = correct_measurements(processed_measurements, self.last_fix_pos, self.astro_dog)
+      instant_fix = self.get_lsq_fix(t, measurements)
     else:
       measurements = []
-    instant_fix = self.get_lsq_fix(t,measurements)
+      instant_fix = self.get_lsq_fix(t, processed_measurements)
     if instant_fix is None:
       position_estimate, position_std, velocity_estimate, velocity_std = None, None, None, None
     else:
@@ -218,11 +219,11 @@ class Laikad:
       if position_estimate is not None:
         msg_dict["positionECEF"] = measurement_msg(value=position_estimate,
                                                    std=position_std.tolist(),
-                                                   valid=bool(self.last_fix_t == t)),
+                                                   valid=bool(self.last_fix_t == t))
       if velocity_estimate is not None:
         msg_dict["velocityECEF"] = measurement_msg(value=velocity_estimate,
                                                    std=velocity_std.tolist(),
-                                                   valid=bool(self.last_fix_t == t)),
+                                                   valid=bool(self.last_fix_t == t))
       msg.gnssMeasurements = msg_dict
       return msg
 
