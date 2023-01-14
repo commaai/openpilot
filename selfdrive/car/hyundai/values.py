@@ -1119,13 +1119,6 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.02 99210-L2000 200309',
     ],
-    (Ecu.abs, 0x7D1, None): [
-      b'\xf1\000DL ESC \006 101 \004\002 58910-L3200',
-      b'\xf1\x8758910-L3200\xf1\000DL ESC \006 101 \004\002 58910-L3200',
-      b'\xf1\x8758910-L3800\xf1\x00DL ESC \t 101 \x07\x02 58910-L3800',
-      b'\xf1\x8758910-L3600\xf1\x00DL ESC \x03 100 \x08\x02 58910-L3600',
-      b'\xf1\x00DL ESC \t 100 \x06\x02 58910-L3800',
-    ],
     (Ecu.engine, 0x7E0, None): [
       b'\xf1\x87391162JLA0',
     ],
