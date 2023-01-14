@@ -21,10 +21,10 @@ class AbstractStream : public QObject {
 
 public:
   AbstractStream(QObject *parent, bool is_live_streaming);
-  virtual ~AbstractStream() {}
+  virtual ~AbstractStream() {};
   inline bool liveStreaming() const { return is_live_streaming; }
   virtual void seekTo(double ts) {}
-  virtual inline QString routeName() const { return ""; }
+  virtual inline QString routeName() const = 0;
   virtual inline QString carFingerprint() const { return ""; }
   virtual inline double totalSeconds() const { return 0; }
   virtual inline double routeStartTime() const { return 0; }
@@ -32,7 +32,7 @@ public:
   virtual inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
   virtual inline VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual inline const Route* route() const { return nullptr; }
-  virtual inline const std::vector<Event *> *events() const { return nullptr; }
+  virtual inline const std::vector<Event *> *events() const = 0;
   virtual inline void setSpeed(float speed) {  }
   virtual  inline bool isPaused() const { return false; }
   virtual void pause(bool pause) {}

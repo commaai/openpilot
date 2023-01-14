@@ -89,9 +89,8 @@ void ChartsWidget::updateDisplayRange() {
     display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
     display_range.second = display_range.first + settings.max_chart_x_range;
     for (auto c : charts) {
-      c->appendSeriesData(latest_can_msg_mono_time);
+      c->appendSeriesData(events);
     }
-    latest_can_msg_mono_time = can->events()->back()->mono_time;
   }
 }
 
@@ -413,14 +412,13 @@ void ChartView::updateSeries(const Signal *sig) {
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
       s.vals.clear();
-      s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
       s.min_y = std::numeric_limits<double>::max();
       s.max_y = std::numeric_limits<double>::lowest();
 
       double route_start_time = can->routeStartTime();
       Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + events_range.first) * 1e9);
-      auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-      double end_ns = (route_start_time + events_range.second) * 1e9;
+      auto begin = can->liveStreaming() ? events->begin() : std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+      uint64_t end_ns = can->liveStreaming() ? events->back()->mono_time : (route_start_time + events_range.second) * 1e9;
 
       for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
@@ -437,13 +435,13 @@ void ChartView::updateSeries(const Signal *sig) {
           }
         }
       }
+      s.last_value_mono_time = events->back()->mono_time;
       s.series->replace(s.vals);
     }
   }
 }
 
-void ChartView::appendSeriesData(uint64_t last_mono_time) {
-  auto events = can->events();
+void ChartView::appendSeriesData(const std::vector<Event *> *events) {
   if (!events || sigs.isEmpty()) return;
 
   for (auto &s : sigs) {
@@ -455,7 +453,7 @@ void ChartView::appendSeriesData(uint64_t last_mono_time) {
     }
 
     double route_start_time = can->routeStartTime();
-    Event begin_event(cereal::Event::Which::INIT_DATA, last_mono_time);
+    Event begin_event(cereal::Event::Which::INIT_DATA, s.last_value_mono_time);
     auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
     for (auto it = begin; it != events->end(); ++it) {
       if ((*it)->which == cereal::Event::Which::CAN) {
@@ -472,6 +470,7 @@ void ChartView::appendSeriesData(uint64_t last_mono_time) {
         }
       }
     }
+    s.last_value_mono_time = events->back()->mono_time;
     s.series->replace(s.vals);
     if (old_min_y != s.min_y || old_max_y != s.max_y) {
       updateAxisY();
