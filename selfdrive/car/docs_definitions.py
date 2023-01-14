@@ -126,20 +126,11 @@ class CarInfo:
   harness: Enum = Harness.none
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
-    # TODO: set all the min steer speeds in carParams and remove this
-    if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
-    else:
-      self.min_steer_speed = CP.minSteerSpeed
-
-    # TODO: set all the min enable speeds in carParams correctly and remove this
-    if self.min_enable_speed is None:
-      self.min_enable_speed = CP.minEnableSpeed
-
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
 
+    # longitudinal column
     op_long = "Stock"
     if CP.openpilotLongitudinalControl and not CP.enableDsu:
       op_long = "openpilot"
@@ -150,6 +141,23 @@ class CarInfo:
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
+    # min steer & enable speed columns
+    # TODO: set all the min steer speeds in carParams and remove this
+    if self.min_steer_speed is not None:
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+    else:
+      self.min_steer_speed = CP.minSteerSpeed
+
+    # TODO: set all the min enable speeds in carParams correctly and remove this
+    if self.min_enable_speed is None:
+      self.min_enable_speed = CP.minEnableSpeed
+
+    # harness column
+    harness_col = self.harness.value
+    if self.harness is not Harness.none:
+      model_years = self.model + (' ' + self.years if self.years else '')
+      harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -159,7 +167,7 @@ class CarInfo:
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
-      Column.HARNESS: self.harness.value,
+      Column.HARNESS: harness_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
