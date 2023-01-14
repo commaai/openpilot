@@ -6,8 +6,7 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
   pool_buffer = ::operator new(buf_size);
   mbr = new std::pmr::monotonic_buffer_resource(pool_buffer, buf_size);
 #endif
-
-  QObject::connect(this, &LiveStream::newEvent, this, &LiveStream::handleNewEvent);
+  cache_seconds = settings.cached_segment_limit * 60 * 1e9;
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -26,10 +25,6 @@ LiveStream::~LiveStream() {
 #endif
 }
 
-void LiveStream::handleNewEvent(Event *e) {
-  can_events.push_back(e);
-}
-
 void LiveStream::streamThread() {
   // TODO: add support for ZMQ
   std::unique_ptr<Context> context(Context::create());
@@ -40,24 +35,38 @@ void LiveStream::streamThread() {
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
     Message *msg = sock->receive();
-    if (!msg) {
-      if (errno == EINTR) break;
-      continue;
-    }
+    if (!msg) continue;
+
     kj::ArrayPtr<capnp::word> words((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word));
 #ifdef HAS_MEMORY_RESOURCE
     Event *evt = new (mbr) Event(words);
 #else
     Event *evt = new Event(words);
 #endif
-    messages.push_back(msg);
 
+    {
+      std::lock_guard lk(lock);
+      can_events.push_back(evt);
+      messages.push_back(msg);
+      if ((evt->mono_time - can_events.front()->mono_time) > cache_seconds) {
+        can_events.pop_front();
+        delete messages.front();
+        messages.pop_front();
+      }
+    }
     if (start_ts == 0) {
       start_ts = evt->mono_time;
       emit streamStarted();
     }
     current_ts = evt->mono_time;
-    emit newEvent(evt);
     updateEvent(evt);
   }
+}
+
+const std::vector<Event *> *LiveStream::events() const {
+  std::lock_guard lk(lock);
+  events_vector.clear();
+  events_vector.reserve(can_events.size());
+  std::copy(can_events.begin(), can_events.end(), std::back_inserter(events_vector));
+  return &events_vector;
 }

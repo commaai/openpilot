@@ -13,22 +13,21 @@ public:
   inline QString carFingerprint() const override { return ""; }
   inline double routeStartTime() const override { return start_ts / (double)1e9; }
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
-  inline const std::vector<Event *> *events() const override { return &can_events; }
-
-signals:
-  void newEvent(Event *e);
+  const std::vector<Event *> *events() const override;
 
 protected:
   void streamThread();
-  void handleNewEvent(Event *e);
 
 #ifdef HAS_MEMORY_RESOURCE
   std::pmr::monotonic_buffer_resource *mbr = nullptr;
   void *pool_buffer = nullptr;
 #endif
-  std::vector<Event *> can_events;
-  std::vector<Message *> messages;
+  mutable std::mutex lock;
+  std::deque<Event *> can_events;
+  mutable std::vector<Event *> events_vector;
+  std::deque<Message *> messages;
   std::atomic<uint64_t> start_ts = 0;
   std::atomic<uint64_t> current_ts = 0;
+  std::atomic<int> cache_seconds = 0;
   QThread *stream_thread;
 };
