@@ -1,7 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
 
-#include "tools/cabana/dbcmanager.h"
-
 AbstractStream *can = nullptr;
 
 AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {

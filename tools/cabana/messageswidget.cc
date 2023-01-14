@@ -23,7 +23,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setModel(model);
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
-  table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   table_widget->setSortingEnabled(true);
   table_widget->sortByColumn(0, Qt::AscendingOrder);
   table_widget->setColumnWidth(0, 250);

@@ -2,7 +2,6 @@
 
 #include <QUndoCommand>
 
-#include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/dbcmanager.h"
 
 class EditMsgCommand : public QUndoCommand {

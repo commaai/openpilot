@@ -5,7 +5,6 @@
 #include <QColor>
 #include <QHash>
 
-#include "opendbc/can/common_dbc.h"
 #include "tools/cabana/settings.h"
 #include "tools/replay/replay.h"
 

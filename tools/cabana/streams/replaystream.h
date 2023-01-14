@@ -3,7 +3,6 @@
 #include "opendbc/can/common_dbc.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/settings.h"
-#include "tools/replay/replay.h"
 
 class ReplayStream : public AbstractStream {
   Q_OBJECT

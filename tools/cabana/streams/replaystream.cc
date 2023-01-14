@@ -11,8 +11,7 @@ ReplayStream::~ReplayStream() {
 }
 
 static bool event_filter(const Event *e, void *opaque) {
-  ReplayStream *c = (ReplayStream *)opaque;
-  return c->eventFilter(e);
+  return ((ReplayStream *)opaque)->eventFilter(e);
 }
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {

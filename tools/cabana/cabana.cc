@@ -3,9 +3,9 @@
 
 #include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
+#include "tools/cabana/mainwin.h"
 #include "tools/cabana/streams/livestream.h"
 #include "tools/cabana/streams/replaystream.h"
-#include "tools/cabana/mainwin.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Cabana");
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"demo", "use a demo route instead of providing your own"});
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
-  cmd_parser.addOption({"stream", "read can message from live streaming"});
+  cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
