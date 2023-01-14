@@ -18,7 +18,7 @@ class TestCamerad(unittest.TestCase):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
-  def _is_exposure_okay(self, i, roi=None, med_mean=np.array([[0.2,0.4],[0.2,0.6]])):
+  def _is_exposure_okay(self, i, roi=None, med_mean=None):
     xmin, xmax, ymin, ymax = roi
     i = i[ymin:ymax,xmin:xmax]
     med_ex, mean_ex = med_mean
@@ -36,9 +36,9 @@ class TestCamerad(unittest.TestCase):
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
       wpic, _ = get_snapshots(frame="wideRoadCameraState")
 
-      res = self._is_exposure_okay(rpic, roi=[96, 1832, 604, 1112])
-      res = res and self._is_exposure_okay(dpic, roi=[642, 1284, 96, 604])
-      res = res and self._is_exposure_okay(wpic, roi=[642, 1284, 604, 1112])
+      res = self._is_exposure_okay(rpic, roi=[96, 1832, 604, 1112], med_mean=np.array([[0.2,0.4],[0.2,0.4]]))
+      res = res and self._is_exposure_okay(dpic, roi=[642, 1284, 96, 604], med_mean=np.array([[0.3,0.5],[0.3,0.5]]))
+      res = res and self._is_exposure_okay(wpic, roi=[642, 1284, 604, 1112], med_mean=np.array([[0.4,0.7],[0.4,0.7]]))
 
       if passed > 0 and not res:
         passed = -passed # fails test if any failure after first sus
