@@ -126,16 +126,6 @@ class CarInfo:
   harness: Enum = Harness.none
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
-    # TODO: set all the min steer speeds in carParams and remove this
-    if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
-    else:
-      self.min_steer_speed = CP.minSteerSpeed
-
-    # TODO: set all the min enable speeds in carParams correctly and remove this
-    if self.min_enable_speed is None:
-      self.min_enable_speed = CP.minEnableSpeed
-
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
@@ -150,6 +140,17 @@ class CarInfo:
         self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
+
+    # min steer & enable speed columns
+    # TODO: set all the min steer speeds in carParams and remove this
+    if self.min_steer_speed is not None:
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+    else:
+      self.min_steer_speed = CP.minSteerSpeed
+
+    # TODO: set all the min enable speeds in carParams correctly and remove this
+    if self.min_enable_speed is None:
+      self.min_enable_speed = CP.minEnableSpeed
 
     # harness column
     harness_col = self.harness.value
