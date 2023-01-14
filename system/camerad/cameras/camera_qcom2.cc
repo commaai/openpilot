@@ -1188,6 +1188,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     // real_gain = 0x100;
     uint32_t min_gain = 0x100; //ox03c10_analog_gains_reg[0];
     min_gain = 0x100;
+
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
