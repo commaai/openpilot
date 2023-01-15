@@ -2,6 +2,7 @@
 
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QDragEnterEvent>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
@@ -58,8 +59,11 @@ private slots:
 
 private:
   QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
+  void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   void updateAxisY();
@@ -68,6 +72,7 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
+  void addSeries(const QList<QStringList> &series_list);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -76,6 +81,7 @@ private:
   QGraphicsProxyWidget *manage_btn_proxy;
   std::pair<double, double> events_range = {0, 0};
   QList<SigItem> sigs;
+  const QString mime_type = "application/x-cabanachartview";
  };
 
 class ChartsWidget : public QWidget {
