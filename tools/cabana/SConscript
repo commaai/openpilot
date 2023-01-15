@@ -6,7 +6,6 @@ base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
-
 if arch == "Darwin":
   base_frameworks.append('OpenCL')
   base_frameworks.append('QtCharts')
