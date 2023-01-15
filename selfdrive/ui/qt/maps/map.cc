@@ -127,6 +127,10 @@ void MapWindow::updateState(const UIState &s) {
 
   if (sm.updated("gnssMeasurements")) {
     auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
+    // TODO should check a valid/status flag
+    if (laikad_location.getGpsWeek() == 0) {
+      continue;
+    }
     auto laikad_pos = laikad_location.getPositionECEF();
     auto laikad_pos_ecef = laikad_pos.getValue();
     auto laikad_pos_std = laikad_pos.getStd();
