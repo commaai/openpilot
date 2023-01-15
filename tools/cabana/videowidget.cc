@@ -47,7 +47,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
 
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
-  play_btn = new QPushButton("⏸");
+  play_btn = new QPushButton();
+  play_btn->setIcon(QIcon("./images/player-play.png"));
   play_btn->setStyleSheet("font-weight:bold; height:16px");
   control_layout->addWidget(play_btn);
 
@@ -68,8 +69,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &CANMessages::paused, [this]() { play_btn->setText("▶"); });
-  QObject::connect(can, &CANMessages::resume, [this]() { play_btn->setText("⏸"); });
+  QObject::connect(can, &CANMessages::paused, [this]() { play_btn->setIcon(QIcon("./images/player-play.png")); });
+  QObject::connect(can, &CANMessages::resume, [this]() { play_btn->setIcon(QIcon("./images/player-pause.png")); });
   QObject::connect(can, &CANMessages::streamStarted, [this]() {
     end_time_label->setText(formatTime(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
