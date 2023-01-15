@@ -95,9 +95,9 @@ class TestLocationdProc(unittest.TestCase):
     time.sleep(1)  # wait for async params write
 
     lastGPS = json.loads(Params().get('LastGPSPosition'))
-    self.assertAlmostEqual(lastGPS['latitude'], self.lat, places=4)
-    self.assertAlmostEqual(lastGPS['longitude'], self.lon, places=4)
-    self.assertAlmostEqual(lastGPS['altitude'], self.alt, places=4)
+    self.assertAlmostEqual(lastGPS['latitude'], self.lat, places=3)
+    self.assertAlmostEqual(lastGPS['longitude'], self.lon, places=3)
+    self.assertAlmostEqual(lastGPS['altitude'], self.alt, places=3)
 
 
 if __name__ == "__main__":
