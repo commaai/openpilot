@@ -17,6 +17,11 @@ def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
+def pigeond(started, params, CP: car.CarParams) -> bool:
+  use_ublox = os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
+  params.put_bool("UbloxAvailable", use_ublox)
+  return started and use_ublox
+
 procs = [
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
   NativeProcess("camerad", "system/camerad", ["./camerad"], unkillable=True, callback=driverview),
@@ -50,7 +55,7 @@ procs = [
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
-  PythonProcess("pigeond", "selfdrive.sensord.pigeond", enabled=TICI),
+  PythonProcess("pigeond", "selfdrive.sensord.pigeond", enabled=TICI, callback=pigeond),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
   PythonProcess("thermald", "selfdrive.thermald.thermald", offroad=True),
