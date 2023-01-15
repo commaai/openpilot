@@ -1,3 +1,4 @@
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
@@ -27,6 +28,23 @@ struct __attribute__((packed)) spi_header {
 
 const int SPI_MAX_RETRIES = 5;
 const int SPI_ACK_TIMEOUT = 50; // milliseconds
+
+class LockEx {
+public:
+  LockEx(int fd, std::recursive_mutex &m) : fd(fd), m(m) {
+    m.lock();
+    flock(fd, LOCK_EX);
+  };
+
+  ~LockEx() {
+    m.unlock();
+    flock(fd, LOCK_UN);
+  }
+
+private:
+  int fd;
+  std::recursive_mutex &m;
+};
 
 
 PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
@@ -84,6 +102,7 @@ void PandaSpiHandle::cleanup() {
 
 
 int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout) {
+  LockEx lock(spi_fd, hw_lock);
   ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
@@ -94,6 +113,7 @@ int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t par
 }
 
 int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout) {
+  LockEx lock(spi_fd, hw_lock);
   ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
@@ -104,15 +124,15 @@ int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t para
 }
 
 int PandaSpiHandle::bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  LockEx lock(spi_fd, hw_lock);
   return bulk_transfer(endpoint, data, length, NULL, 0);
 }
 int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  LockEx lock(spi_fd, hw_lock);
   return bulk_transfer(endpoint, NULL, 0, data, length);
 }
 
 int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len) {
-  std::lock_guard lk(hw_lock);
-
   const int xfer_size = 0x40 * 15;
 
   int ret = 0;
@@ -167,7 +187,6 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
   int ret;
 
   int count = SPI_MAX_RETRIES;
-  std::lock_guard lk(hw_lock);
   do {
     // TODO: handle error
     ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len);
