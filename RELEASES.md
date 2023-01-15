@@ -4,7 +4,7 @@ Version 0.9.1 (2022-12-XX)
 * Removed driver monitoring timer resetting on interaction if face detected and distracted
 * New German translation thanks to Vrabetz and CzokNorris!
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
-* Experimental longitudinal support for Hyundai Ioniq Hybrid 2017-19 thanks to sunnyhaibin!
+* Experimental longitudinal support for Hyundai Ioniq Hybrid 2017-19, Hyundai Kona Electric 2018-21 thanks to sunnyhaibin!
 * Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support
 * Kia Sorento 2022-23 support thanks to sunnyhaibin!
