@@ -44,26 +44,29 @@ def run_lime_gps(rinex_file: str, location: str, duration: int):
   return p
 
 
-def get_random_coords(lat, lon) -> Tuple[int, int]:
+def get_random_coords(lat, lon) -> Tuple[int, int, int]:
   # jump around the world
   # max values, lat: -90 to 90, lon: -180 to 180
 
   lat_add = random.random()*20 + 10
   lon_add = random.random()*20 + 20
+  alt = random.randint(-1e4, 1e4)
 
   lat = ((lat + lat_add + 90) % 180) - 90
   lon = ((lon + lon_add + 180) % 360) - 180
-  return round(lat, 5), round(lon, 5)
+  return round(lat, 5), round(lon, 5), alt
 
-def get_continuous_coords(lat, lon) -> Tuple[int, int]:
+def get_continuous_coords(lat, lon, alt) -> Tuple[int, int, int]:
   # continuously move around the world
 
   lat_add = random.random()*0.01
   lon_add = random.random()*0.01
+  alt_add = random.randint(-100, 100)
 
   lat = ((lat + lat_add + 90) % 180) - 90
   lon = ((lon + lon_add + 180) % 360) - 180
-  return round(lat, 5), round(lon, 5)
+  alt += alt_add
+  return round(lat, 5), round(lon, 5), alt
 
 rc_p: Any = None
 def exec_remote_checker(lat, lon, duration, ip_addr):
@@ -120,11 +123,11 @@ def main():
   rinex_file = download_rinex()
 
   duration = 60*3 # max runtime in seconds
-  lat, lon = get_random_coords(47.2020, 15.7403)
+  lat, lon, alt = get_random_coords(47.2020, 15.7403)
 
   while True:
     # spoof random location
-    spoof_proc = run_lime_gps(rinex_file, f"{lat},{lon},100", duration)
+    spoof_proc = run_lime_gps(rinex_file, f"{lat},{lon},{alt}", duration)
     start_time = time.monotonic()
 
     # remote checker runs blocking
@@ -139,9 +142,9 @@ def main():
     print(f"Time to get Signal: {round(end_time - start_time - 1, 4)}")
 
     if continuous_mode:
-      lat, lon = get_continuous_coords(lat, lon)
+      lat, lon, alt = get_continuous_coords(lat, lon)
     else:
-      lat, lon = get_random_coords(lat, lon)
+      lat, lon, alt = get_random_coords(lat, lon)
 
 if __name__ == "__main__":
   main()
