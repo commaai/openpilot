@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QCompleter>
+#include <QDrag>
 #include <QLineEdit>
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
@@ -331,6 +332,17 @@ void ChartView::msgRemoved(uint32_t address) {
   }
 }
 
+void ChartView::addSeries(const QList<QStringList> &series_list) {
+  for (auto &s : series_list) {
+    if (auto m = dbc()->msg(s[0])) {
+      auto it = m->sigs.find(s[2]);
+      if (it != m->sigs.end() && !hasSeries(s[0], &(it->second))) {
+        addSeries(s[0], &(it->second));
+      }
+    }
+  }
+}
+
 void ChartView::manageSeries() {
   SeriesSelector dlg(this);
   for (auto &s : sigs) {
@@ -343,14 +355,7 @@ void ChartView::manageSeries() {
     if (series_list.isEmpty()) {
       emit remove();
     } else {
-      for (auto &s : series_list) {
-        if (auto m = dbc()->msg(s[0])) {
-          auto it = m->sigs.find(s[2]);
-          if (it != m->sigs.end() && !hasSeries(s[0], &(it->second))) {
-            addSeries(s[0], &(it->second));
-          }
-        }
-      }
+      addSeries(series_list);
       for (auto it = sigs.begin(); it != sigs.end(); /**/) {
         bool exists = std::any_of(series_list.cbegin(), series_list.cend(), [&](auto &s) {
           return s[0] == it->msg_id && s[2] == it->sig->name.c_str();
@@ -495,6 +500,23 @@ void ChartView::leaveEvent(QEvent *event) {
   QChartView::leaveEvent(event);
 }
 
+void ChartView::mousePressEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton && !chart()->plotArea().contains(event->pos()) &&
+      !manage_btn_proxy->widget()->underMouse() && !close_btn_proxy->widget()->underMouse()) {
+    QMimeData *mimeData = new QMimeData;
+    mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
+    QDrag *drag = new QDrag(this);
+    drag->setMimeData(mimeData);
+    drag->setPixmap(grab());
+    drag->setHotSpot(event->pos());
+    Qt::DropAction dropAction = drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
+    if (dropAction == Qt::MoveAction) {
+      return;
+    }
+  }
+  QChartView::mousePressEvent(event);
+}
+
 void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   auto rubber = findChild<QRubberBand *>();
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
@@ -548,6 +570,35 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     QToolTip::hideText();
   }
   QChartView::mouseMoveEvent(ev);
+}
+
+void ChartView::dragMoveEvent(QDragMoveEvent *event) {
+  if (event->mimeData()->hasFormat(mime_type)) {
+    event->setDropAction(event->source() == this ? Qt::MoveAction : Qt::CopyAction);
+    event->accept();
+  } else {
+    event->ignore();
+  }
+}
+
+void ChartView::dropEvent(QDropEvent *event) {
+  if (event->mimeData()->hasFormat(mime_type)) {
+    if (event->source() == this) {
+      event->setDropAction(Qt::MoveAction);
+      event->accept();
+    } else {
+      ChartView *source_chart = (ChartView *)event->source();
+      QList<QStringList> series;
+      for (auto &s : source_chart->sigs) {
+        series.push_back({s.msg_id, msgName(s.msg_id), QString::fromStdString(s.sig->name)});
+      }
+      addSeries(series);
+      emit source_chart->remove();
+      event->acceptProposedAction();
+    }
+  } else {
+    event->ignore();
+  }
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
