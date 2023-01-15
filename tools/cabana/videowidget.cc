@@ -48,7 +48,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
   play_btn = new QPushButton();
-  play_btn->setIcon(QIcon("./images/player-play.png"));
+  play_btn->setIcon(QIcon("./images/player-pause.png"));
   play_btn->setStyleSheet("font-weight:bold; height:16px");
   control_layout->addWidget(play_btn);
 
