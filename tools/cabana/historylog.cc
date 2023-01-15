@@ -36,9 +36,7 @@ void HistoryLogModel::setMessage(const QString &message_id) {
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     sigs = dbc_msg->getSignals();
   }
-  if (sigs.empty()) {
-    display_type = HistoryLogModel::Hex;
-  }
+  display_type = !sigs.empty() ? HistoryLogModel::Signals : HistoryLogModel::Hex;
   filter_cmp = nullptr;
   refresh();
 }
@@ -240,6 +238,7 @@ void LogsWidget::setMessage(const QString &message_id) {
       signals_cb->addItem(s->name.c_str());
     }
   }
+  display_type_cb->setCurrentIndex(has_signals ? 0 : 1);
   display_type_cb->setVisible(has_signals);
   comp_box->setVisible(has_signals);
   value_edit->setVisible(has_signals);
