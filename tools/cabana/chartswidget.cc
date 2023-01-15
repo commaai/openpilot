@@ -27,7 +27,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   toolbar->addWidget(range_label = new QLabel());
   reset_zoom_btn = toolbar->addAction(QIcon("./images/zoom-reset.png"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
-  remove_all_btn = toolbar->addAction(QIcon("./images/playlist-x.png"), "");
+  remove_all_btn = toolbar->addAction(QIcon("./images/x.png"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
