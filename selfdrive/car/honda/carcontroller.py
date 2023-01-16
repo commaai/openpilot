@@ -105,6 +105,12 @@ def rate_limit_steer(new_steer, last_steer):
   return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
 
 
+def calculate_hud_max_speed(hud_v_cruise_kph, is_metric):
+  if (is_metric):
+    return int(round(hud_v_cruise_kph))
+  cruise_mph = round(hud_v_cruise_kph * CV.KPH_TO_MPH)
+  return int(round(cruise_mph * CV.MPH_TO_KPH))
+
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
@@ -246,7 +252,8 @@ class CarController:
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
-      hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_control.leadVisible,
+      hud_set_speed = calculate_hud_max_speed(hud_v_cruise, CS.is_metric)
+      hud = HUDData(int(pcm_accel), hud_set_speed, hud_control.leadVisible,
                     hud_control.lanesVisible, fcw_display, acc_alert, steer_required)
       can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, CS.acc_hud, CS.lkas_hud))
 
