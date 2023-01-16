@@ -4,8 +4,9 @@ import rpyc
 import shutil
 
 from datetime import datetime
+from collections import defaultdict
 
-from common.params import Params
+#from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
 from laika.lib.coordinates import ecef2geodetic
@@ -41,10 +42,24 @@ def handle_laikad(msg):
   slog(f"{num_corr} {pos_geo} {pos_ecef} {pos_std} {pos_valid}")
   return pos_geo, (num_corr, pos_geo, list(pos_ecef), list(msg.positionECEF.std))
 
-
+hw_msgs = 0
+ephem_msgs = defaultdict(int)
 def handle_ublox(msg):
+  global hw_msgs, ephem_msgs
   # TODO: add some statistics, measurement count, ...
-  pass
+  
+  if hasattr(msg, 'hwStatus2'):
+    hw_msgs += 1
+
+  if hasattr(msg, 'ephemeris'):
+    ephem_msgs[msg.ephemeris.svId] += 1
+
+  num_meas = None
+  if hasattr(msg, 'measurementReport'):
+    num_meas = msg.measurementReport.numMeas
+
+  return [hw_msgs, ephem_msgs, num_meas]
+
 
 
 def start_procs(procs):
@@ -77,7 +92,8 @@ class RemoteCheckerService(rpyc.Service):
     # quectel_mod = Params().get_bool("UbloxAvailable")
 
     match_cnt = 0
-    stats_history = []
+    stats_laikad = []
+    stats_ublox = []
 
     start_procs(procs)
     sm = messaging.SubMaster(sockets)
@@ -87,7 +103,7 @@ class RemoteCheckerService(rpyc.Service):
       sm.update()
 
       if sm.updated['ubloxGnss']:
-        handle_ublox(sm['ubloxGnss'])
+        stats_ublox.append(handle_ublox(sm['ubloxGnss']))
 
       if sm.updated['gnssMeasurements']:
         pos_geo, stats = handle_laikad(sm['gnssMeasurements'])
@@ -102,7 +118,7 @@ class RemoteCheckerService(rpyc.Service):
             return True, "MATCH", f"After: {round(time.monotonic() - start_time, 4)}"
 
         # keep some stats for error reporting
-        stats_history.append(stats)
+        stats_laikad.append(stats)
 
         a, p = check_alive_procs(procs)
         if not a:
@@ -110,7 +126,11 @@ class RemoteCheckerService(rpyc.Service):
 
       if (time.monotonic() - start_time) > timeout:
         kill_procs(procs)
-        return False, "TIMEOUT", f"Last {REPORT_STATS} stats: {stats_history[-REPORT_STATS:]}"
+
+        h = stats_laikad[-REPORT_STATS:]
+        if len(h) == 0:
+          h = stats_ublox[-REPORT_STATS:]
+        return False, "TIMEOUT", f"Last {REPORT_STATS} stats: {h}"
 
 
   def exposed_run_checker(self, slat, slon, salt, timeout=180, use_laikad=True):

@@ -40,10 +40,12 @@ def run_remote_checker(lat, lon, alt, duration, ip_addr) -> bool:
   return matched
 
 
-def main(ip_addr, continuous_mode, timeout):
+def main(ip_addr, continuous_mode, timeout, pos):
   rinex_file = download_rinex()
 
-  lat, lon, alt = get_random_coords(47.2020, 15.7403)
+  lat, lon, alt = pos
+  if lat == 0 and lon == 0 and alt == 0:
+    lat, lon, alt = get_random_coords(47.2020, 15.7403)
 
   while True:
     # spoof random location
@@ -67,5 +69,10 @@ if __name__ == "__main__":
   parser.add_argument("ip_addr", type=str)
   parser.add_argument("-c", "--contin", type=bool, nargs='?', default=False, help='Continous location change')
   parser.add_argument("-t", "--timeout", type=int, nargs='?', default=180, help='Timeout to get location')
+
+  # for replaying a location
+  parser.add_argument("lat", type=float, nargs='?', default=0)
+  parser.add_argument("lon", type=float, nargs='?', default=0)
+  parser.add_argument("alt", type=float, nargs='?', default=0)
   args = parser.parse_args()
-  main(args.ip_addr, args.contin, args.timeout)
+  main(args.ip_addr, args.contin, args.timeout, (args.lat, args.lon, args.alt))
