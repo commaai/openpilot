@@ -44,6 +44,7 @@ public:
 
 protected:
   void updateState();
+  void updatePlayBtnState();
 
   CameraWidget *cam_widget;
   QLabel *end_time_label;
