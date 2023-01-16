@@ -68,10 +68,17 @@ def start_procs(procs):
     managed_processes[p].start()
   time.sleep(1)
 
-def kill_procs(procs):
+def kill_procs(procs, no_retry=False):
   for p in procs:
     managed_processes[p].stop()
-  time.sleep(3)
+  time.sleep(1)
+
+  if not no_retry:
+    for p in procs:
+      mp = managed_processes[p].proc
+      if mp is not None and mp.is_alive():
+        managed_processes[p].stop()
+    time.sleep(3)
 
 def check_alive_procs(procs):
   for p in procs:
@@ -85,7 +92,7 @@ class RemoteCheckerService(rpyc.Service):
     pass
 
   def on_disconnect(self, conn):
-    pass
+    kill_procs(self.procs, no_retry=False)
 
   def run_checker(self, slat, slon, salt, sockets, procs, timeout):
     global hw_msgs, ephem_msgs
@@ -100,6 +107,7 @@ class RemoteCheckerService(rpyc.Service):
     stats_laikad = []
     stats_ublox = []
 
+    self.procs = procs
     start_procs(procs)
     sm = messaging.SubMaster(sockets)
 
@@ -130,12 +138,10 @@ class RemoteCheckerService(rpyc.Service):
           return False, "PROC CRASH", f"{p}"
 
       if (time.monotonic() - start_time) > timeout:
-        kill_procs(procs)
-
-        h = stats_laikad[-REPORT_STATS:]
+        h = f"LAIKAD: {stats_laikad[-REPORT_STATS:]}"
         if len(h) == 0:
-          h = stats_ublox[-REPORT_STATS:]
-        return False, "TIMEOUT", f"Last {REPORT_STATS} stats: {h}"
+          h = f"UBLOX: {stats_ublox[-REPORT_STATS:]}"
+        return False, "TIMEOUT", h
 
 
   def exposed_run_checker(self, slat, slon, salt, timeout=180, use_laikad=True):
@@ -151,7 +157,9 @@ class RemoteCheckerService(rpyc.Service):
           os.remove(EPHEM_CACHE)
         shutil.rmtree(DOWNLOAD_CACHE, ignore_errors=True)
 
-      return self.run_checker(slat, slon, salt, sockets, procs, timeout)
+      ret = self.run_checker(slat, slon, salt, sockets, procs, timeout)
+      kill_procs(procs)
+      return ret
 
     except Exception as e:
       # always make sure processes get killed
@@ -159,7 +167,12 @@ class RemoteCheckerService(rpyc.Service):
       return False, "CHECKER CRASHED", f"{str(e)}"
 
 
+  def exposed_kill_procs(self):
+    kill_procs(self.procs, no_retry=True)
+
+
 if __name__ == "__main__":
   print(f"Sever Log written to: {SERVER_LOG_FILE}")
   t = ThreadedServer(RemoteCheckerService, port=18861)
   t.start()
+

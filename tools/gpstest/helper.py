@@ -34,7 +34,7 @@ def get_random_coords(lat, lon) -> Tuple[float, float, int]:
 
   lat_add = random.random()*20 + 10
   lon_add = random.random()*20 + 20
-  alt = random.randint(-10**4, 10**4)
+  alt = random.randint(-10**3, 4*10**3)
 
   lat = ((lat + lat_add + 90) % 180) - 90
   lon = ((lon + lon_add + 180) % 360) - 180
