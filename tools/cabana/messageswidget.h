@@ -31,6 +31,8 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
+  void selectMessage(const QString &message_id);
+
 signals:
   void msgSelectionChanged(const QString &message_id);
 

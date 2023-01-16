@@ -1,7 +1,7 @@
 import math
 
 from cereal import log
-from selfdrive.controls.lib.latcontrol import MIN_STEER_SPEED, STEER_ANGLE_SATURATION_THRESHOLD
+from selfdrive.controls.lib.latcontrol import STEER_ANGLE_SATURATION_THRESHOLD
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 
 
@@ -23,7 +23,7 @@ class LatControlCurvature(LatControlPID):
     angle_control_saturated = abs(angle_steer_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
     curvature_log.saturated = self._check_saturation(angle_control_saturated, CS, steer_limited)
 
-    if CS.vEgo < MIN_STEER_SPEED or not active:
+    if not active:
       output = 0.0
       curvature_log.active = False
     else:
