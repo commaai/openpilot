@@ -40,6 +40,7 @@ public:
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "0";
+    bool val_changed = false;
     QList<const Signal *> sigs;
   };
   std::vector<Item> items;

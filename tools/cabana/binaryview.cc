@@ -201,11 +201,9 @@ void BinaryViewModel::updateState() {
   }
 
   for (int i = 0; i < row_count * column_count; ++i) {
-    if (i >= prev_items.size() || prev_items[i].val != items[i].val) {
-      auto idx = index(i / column_count, i % column_count);
-      emit dataChanged(idx, idx);
-    }
+    items[i].val_changed = i >= prev_items.size() || prev_items[i].val != items[i].val;
   }
+  emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1), {Qt::DisplayRole});
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -239,7 +237,13 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     painter->fillRect(option.rect, item->bg_color);
-    painter->setPen(item->sigs.contains(bin_view->hovered_sig) ? option.palette.color(QPalette::BrightText) : Qt::black);
+    if (item->sigs.contains(bin_view->hovered_sig)) {
+      painter->setPen(option.palette.color(QPalette::BrightText));
+    } else {
+      painter->setPen(item->val_changed ? Qt::black : Qt::darkGray);
+    }
+  } else {
+    painter->setPen(option.palette.color(item->val_changed ? QPalette::Text : QPalette::PlaceholderText));
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
