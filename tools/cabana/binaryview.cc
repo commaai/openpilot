@@ -200,7 +200,7 @@ void BinaryViewModel::updateState() {
     }
   }
 
-  for (int i = 0; i < row_count * column_count; ++i) {
+  for (int i = 0; i < items.size(); ++i) {
     bool prev_val_changed = items[i].val_changed;
     items[i].val_changed = i >= prev_items.size() || prev_items[i].val != items[i].val;
     if (items[i].val_changed || prev_val_changed) {
