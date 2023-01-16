@@ -44,7 +44,7 @@ def handle_laikad(msg):
   return pos_geo, (num_corr, pos_geo, list(pos_ecef), list(msg.positionECEF.std))
 
 hw_msgs = 0
-ephem_msgs = defaultdict(int)  # pylint: disable=unsubscriptable-object
+ephem_msgs: dict = defaultdict(int)  # pylint: disable=unsubscriptable-object
 def handle_ublox(msg):
   global hw_msgs
 
