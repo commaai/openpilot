@@ -201,9 +201,13 @@ void BinaryViewModel::updateState() {
   }
 
   for (int i = 0; i < row_count * column_count; ++i) {
+    bool prev_val_changed = items[i].val_changed;
     items[i].val_changed = i >= prev_items.size() || prev_items[i].val != items[i].val;
+    if (items[i].val_changed || prev_val_changed) {
+      auto idx = index(i / column_count, i % column_count);
+      emit dataChanged(idx, idx);
+    }
   }
-  emit dataChanged(index(0, 0), index(row_count - 1, column_count - 1), {Qt::DisplayRole});
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
