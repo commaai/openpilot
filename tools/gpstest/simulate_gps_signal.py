@@ -16,7 +16,7 @@ cache_dir = '/tmp/gpstest/'
 def download_rinex():
   # TODO: check if there is a better way to get the full brdc file for LimeGPS
   gps_time = GPSTime.from_datetime(dt.datetime.utcnow())
-  utc_time = dt.datetime.utcnow() - dt.timedelta(1)
+  utc_time = dt.datetime.utcnow()# - dt.timedelta(1)
   gps_time = GPSTime.from_datetime(dt.datetime(utc_time.year, utc_time.month, utc_time.day))
   return download_nav(gps_time, cache_dir, ConstellationId.GPS)
 
@@ -36,11 +36,15 @@ def get_random_coords(lat, lon) -> Tuple[int, int]:
   # jump around the world
   return get_coords(lat, lon, 20, 20, 10, 20)
 
-def run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout):
+def run_limeSDR_loop(lat, lon, alt, contin_sim, rinex_file, timeout):
   while True:
     try:
-      print(f"starting LimeGPS, Location: {lat},{lon}")
-      cmd = ["LimeGPS/LimeGPS", "-e", rinex_file, "-l", f"{lat},{lon},100"]
+      # TODO: add starttime setting and altitude
+      # -t 2023/01/15,00:00:00 -T 2023/01/15,00:00:00
+      # this needs to match the date of the navigation file
+      print(f"starting LimeGPS, Location: {lat} {lon} {alt}")
+      cmd = ["LimeGPS/LimeGPS", "-e", rinex_file, "-l", f"{lat},{lon},{alt}"]
+      print(f"CMD: {cmd}")
       sp.check_output(cmd, stderr=sp.PIPE, timeout=timeout)
     except KeyboardInterrupt:
       print("stopping LimeGPS")
@@ -71,7 +75,7 @@ def run_hackRF_loop(lat, lon, rinex_file, timeout):
   try:
     print(f"starting gps-sdr-sim, Location: {lat},{lon}")
     # create 30second file and replay with hackrf endless
-    cmd = ["gps-sdr-sim/gps-sdr-sim", "-e", rinex_file, "-l", f"{lat},{lon},100", "-d", "30"]
+    cmd = ["gps-sdr-sim/gps-sdr-sim", "-e", rinex_file, "-l", f"{lat},{lon},-200", "-d", "30"]
     sp.check_output(cmd, stderr=sp.PIPE, timeout=timeout)
     # created in current working directory
   except Exception:
@@ -90,7 +94,7 @@ def run_hackRF_loop(lat, lon, rinex_file, timeout):
     print(f"hackrf_transfer crashed:{str(e)}")
 
 
-def main(lat, lon, jump_sim, contin_sim, hackrf_mode):
+def main(lat, lon, alt, jump_sim, contin_sim, hackrf_mode):
 
   if hackrf_mode:
     if not os.path.exists('hackrf'):
@@ -130,17 +134,18 @@ def main(lat, lon, jump_sim, contin_sim, hackrf_mode):
   if jump_sim:
     timeout = 30
 
-  if not hackrf_mode:
-    run_limeSDR_loop(lat, lon, contin_sim, rinex_file, timeout)
-  else:
+  if hackrf_mode:
     run_hackRF_loop(lat, lon, rinex_file, timeout)
+  else:
+    run_limeSDR_loop(lat, lon, alt, contin_sim, rinex_file, timeout)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Simulate static [or random jumping] GPS signal.")
   parser.add_argument("lat", type=float, nargs='?', default=0)
   parser.add_argument("lon", type=float, nargs='?', default=0)
+  parser.add_argument("alt", type=float, nargs='?', default=0)
   parser.add_argument("--jump", action="store_true", help="signal that jumps around the world")
   parser.add_argument("--contin", action="store_true", help="continuously/slowly moving around the world")
   parser.add_argument("--hackrf", action="store_true", help="hackrf mode (DEFAULT: LimeSDR)")
   args = parser.parse_args()
-  main(args.lat, args.lon, args.jump, args.contin, args.hackrf)
+  main(args.lat, args.lon, args.alt, args.jump, args.contin, args.hackrf)
