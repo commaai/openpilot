@@ -46,20 +46,20 @@ hw_msgs = 0
 ephem_msgs = defaultdict(int)
 def handle_ublox(msg):
   global hw_msgs, ephem_msgs
-  # TODO: add some statistics, measurement count, ...
-  
-  if hasattr(msg, 'hwStatus2'):
+
+  d = msg.to_dict()
+
+  if 'hwStatus2' in d:
     hw_msgs += 1
 
-  if hasattr(msg, 'ephemeris'):
+  if 'ephemeris' in d:
     ephem_msgs[msg.ephemeris.svId] += 1
 
   num_meas = None
-  if hasattr(msg, 'measurementReport'):
+  if 'measurementReport' in d:
     num_meas = msg.measurementReport.numMeas
 
   return [hw_msgs, ephem_msgs, num_meas]
-
 
 
 def start_procs(procs):
@@ -87,6 +87,10 @@ class RemoteCheckerService(rpyc.Service):
     pass
 
   def run_checker(self, slat, slon, salt, sockets, procs, timeout):
+    global hw_msgs, ephem_msgs
+    hw_msgs = 0
+    ephem_msgs = defaultdict(int)
+
     slog(f"Run test: {slat} {slon} {salt}")
 
     # quectel_mod = Params().get_bool("UbloxAvailable")
