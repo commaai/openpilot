@@ -148,6 +148,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
   beginResetModel();
   msg_id = message_id;
   items.clear();
+  prev_items.clear();
   if ((dbc_msg = dbc()->msg(msg_id))) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
@@ -176,7 +177,6 @@ void BinaryViewModel::setMessage(const QString &message_id) {
 }
 
 void BinaryViewModel::updateState() {
-  auto prev_items = items;
   const auto &binary = can->lastMessage(msg_id).dat;
   // data size may changed.
   if (binary.size() > row_count) {
@@ -208,6 +208,7 @@ void BinaryViewModel::updateState() {
       emit dataChanged(idx, idx);
     }
   }
+  prev_items = items;
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {

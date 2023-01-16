@@ -46,6 +46,7 @@ public:
   std::vector<Item> items;
 
 private:
+  std::vector<Item> prev_items;
   QString msg_id;
   const DBCMsg *dbc_msg = nullptr;
   int row_count = 0;
