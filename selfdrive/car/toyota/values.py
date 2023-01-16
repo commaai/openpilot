@@ -232,6 +232,7 @@ def match_fw_to_toyota_fuzzy(fw_versions_dict):
         invalid.append(candidate)
         break
 
+  print(set(FW_VERSIONS.keys()) - set(invalid))
   return set(FW_VERSIONS.keys()) - set(invalid)
 
 
