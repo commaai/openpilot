@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
   if (cmd_parser.isSet("stream")) {
     stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
   } else {
+    // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
     op_prefix.reset(new OpenpilotPrefix());
 #endif

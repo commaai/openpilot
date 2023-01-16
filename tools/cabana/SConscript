@@ -8,10 +8,13 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 
 if arch == "Darwin":
   base_frameworks.append('OpenCL')
+  base_frameworks.append('QtCharts')
 else:
   base_libs.append('OpenCL')
+  base_libs.append('Qt5Charts')
 
-qt_libs = ['qt_util', 'Qt5Charts'] + base_libs
+qt_libs = ['qt_util'] + base_libs
+
 cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 cabana_env = qt_env.Clone()
 
