@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
 import random
 from collections import defaultdict
-# from selfdrive.car.toyota.values import FW_VERSIONS
-# from selfdrive.car.hyundai.values import FW_VERSIONS
-from selfdrive.car.honda.values import FW_VERSIONS
-# from selfdrive.car.toyota.values import match_fw_to_toyota_fuzzy
-# from selfdrive.car.hyundai.values import match_fw_to_toyota_fuzzy
-from selfdrive.car.honda.values import match_fw_to_toyota_fuzzy
+from selfdrive.car.toyota.values import FW_VERSIONS
+from selfdrive.car.toyota.values import match_fw_to_toyota_fuzzy
 from cereal import car
 
 Ecu = car.CarParams.Ecu
@@ -45,9 +41,12 @@ prefixes = defaultdict(dict)
 for car, fw_versions in FW_VERSIONS.items():
   # print(car)  # , fw_versions)
   for ecu, fws in fw_versions.items():
+    print(car, ecu, len(get_common_prefix(fws)), get_common_prefix(fws))
     prefixes[car][ecu] = get_common_prefix(fws)
     # print((ecu[0], hex(ecu[1]), ecu[2]), get_common_prefix(fws), len(fws))
   # print()
+  print()
+exit()
 
 prefixes = dict(prefixes)
 for prefix_car, fw_prefixes in prefixes.items():
