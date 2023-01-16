@@ -95,9 +95,7 @@ def main(ip_addr, continuous_mode, timeout, pos):
       spoof_proc.terminate()
 
     if con is not None and not con.closed:
-      print("exec killing")
       con.root.exposed_kill_procs()
-      print("close connection")
       con.close()
 
     print_report()
