@@ -202,6 +202,39 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
+
+def get_common_prefix(l):
+  s1 = min(l)
+  s2 = max(l)
+  for i, c in enumerate(s1):
+    if c != s2[i]:
+      return s1[:i]
+  return s1
+
+
+def match_fw_to_toyota_fuzzy(fw_versions_dict):
+  invalid = []
+  for candidate, fw_versions in FW_VERSIONS.items():
+    for ecu_type, fws in fw_versions.items():
+      addr = (ecu_type[1], ecu_type[2])
+      found_versions = fw_versions_dict.get(addr, set())
+
+      if not len(found_versions):
+        # Some models can sometimes miss an ecu, or show on two different addresses
+        if candidate in FW_QUERY_CONFIG.non_essential_ecus.get(ecu_type, []):
+          continue
+
+      candidate_ecu_prefix = get_common_prefix(fws)
+      all_match = all(fw.startswith(candidate_ecu_prefix) for fw in found_versions)
+
+      # Invalid candidates if car is missing versions or not all versions match prefix in database
+      if not len(found_versions) or not all_match:
+        invalid.append(candidate)
+        break
+
+  return set(FW_VERSIONS.keys()) - set(invalid)
+
+
 TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
 
@@ -231,7 +264,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS, CAR.LEXUS_RC],
-  }
+  },
+  match_fw_to_car_fuzzy=match_fw_to_toyota_fuzzy,
 )
 
 FW_VERSIONS = {
