@@ -42,7 +42,7 @@ def run_remote_checker(lat, lon, alt, duration, ip_addr):
   return matched, log, info
 
 
-stats = defaultdict(int)
+stats = defaultdict(int) # type: ignore
 keys = ['success', 'failed', 'ublox_fail', 'laikad_fail', 'proc_crash', 'checker_crash']
 
 def print_report():
