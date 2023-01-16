@@ -21,16 +21,24 @@ class HistoryLogModel : public QAbstractTableModel {
   Q_OBJECT
 
 public:
+  enum DisplayType {
+    Signals,
+    Hex
+  };
+
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const QString &message_id);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
+  void setDisplayType(DisplayType type);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   void fetchMore(const QModelIndex &parent) override;
   inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override {
+    return display_type == HistoryLogModel::Hex ? 2 : std::max(1ul, sigs.size()) + 1;
+  }
   void setDynamicMode(int state);
   void segmentsMerged();
   void refresh();
@@ -55,6 +63,7 @@ public:
   std::deque<Message> messages;
   std::vector<const Signal*> sigs;
   bool dynamic_mode = false;
+  DisplayType display_type = HistoryLogModel::Signals;
 };
 
 class HistoryLog : public QTableView {
@@ -76,6 +85,7 @@ signals:
 
 private slots:
   void setFilter();
+  void displayTypeChanged();
 
 private:
   void doubleClicked(const QModelIndex &index);
@@ -84,7 +94,7 @@ private:
   HistoryLog *logs;
   HistoryLogModel *model;
   QCheckBox *dynamic_mode;
-  QComboBox *signals_cb, *comp_box;
+  QComboBox *signals_cb, *comp_box, *display_type_cb;
   QLineEdit *value_edit;
   QString cur_filter_text;
 };
