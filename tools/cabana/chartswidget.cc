@@ -268,7 +268,12 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QLineSeries *series = new QLineSeries(this);
+
+  // TODO: Due to a bug in CameraWidget the camera frames
+  // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
+#ifndef __APPLE__
   series->setUseOpenGL(true);
+#endif
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
