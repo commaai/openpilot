@@ -28,7 +28,7 @@ def exec_LimeGPS_bin(rinex_file: str, location: str, duration: int):
     print(f"LimeGPS crashed: {str(e)}")
 
 
-def get_random_coords(lat, lon) -> Tuple[int, int, int]:
+def get_random_coords(lat, lon) -> Tuple[float, float, int]:
   # jump around the world
   # max values, lat: -90 to 90, lon: -180 to 180
 
@@ -41,7 +41,7 @@ def get_random_coords(lat, lon) -> Tuple[int, int, int]:
   return round(lat, 5), round(lon, 5), alt
 
 
-def get_continuous_coords(lat, lon, alt) -> Tuple[int, int, int]:
+def get_continuous_coords(lat, lon, alt) -> Tuple[float, float, int]:
   # continuously move around the world
   lat_add = random.random()*0.01
   lon_add = random.random()*0.01

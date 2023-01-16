@@ -22,7 +22,7 @@ def run_lime_gps(rinex_file: str, location: str, timeout: int):
   return p
 
 
-def run_remote_checker(lat, lon, alt, duration, ip_addr) -> bool:
+def run_remote_checker(lat, lon, alt, duration, ip_addr):
   try:
     con = rpyc.connect(ip_addr, 18861)
     con._config['sync_request_timeout'] = duration+20
