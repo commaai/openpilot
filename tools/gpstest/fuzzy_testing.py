@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import rpyc
 import multiprocessing
+import rpyc # pylint: disable=import-error
 
 from helper import download_rinex, exec_LimeGPS_bin
 from helper import get_random_coords, get_continuous_coords

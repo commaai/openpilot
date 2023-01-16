@@ -1,10 +1,11 @@
 import os
 import time
-import rpyc
 import shutil
-
 from datetime import datetime
 from collections import defaultdict
+
+import rpyc # pylint: disable=import-error
+from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
 
 #from common.params import Params
 import cereal.messaging as messaging
@@ -45,7 +46,7 @@ def handle_laikad(msg):
 hw_msgs = 0
 ephem_msgs = defaultdict(int)
 def handle_ublox(msg):
-  global hw_msgs, ephem_msgs
+  global hw_msgs
 
   d = msg.to_dict()
 
@@ -160,7 +161,5 @@ class RemoteCheckerService(rpyc.Service):
 
 if __name__ == "__main__":
   print(f"Sever Log written to: {SERVER_LOG_FILE}")
-
-  from rpyc.utils.server import ThreadedServer
   t = ThreadedServer(RemoteCheckerService, port=18861)
   t.start()
