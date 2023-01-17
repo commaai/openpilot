@@ -104,6 +104,7 @@ class RemoteCheckerService(rpyc.Service):
     # quectel_mod = Params().get_bool("UbloxAvailable")
 
     match_cnt = 0
+    msg_cnt = 0
     stats_laikad = []
     stats_ublox = []
 
@@ -133,9 +134,11 @@ class RemoteCheckerService(rpyc.Service):
         # keep some stats for error reporting
         stats_laikad.append(stats)
 
+      if (msg_cnt % 10) == 0:
         a, p = check_alive_procs(procs)
         if not a:
           return False, "PROC CRASH", f"{p}"
+      msg_cnt += 1
 
       if (time.monotonic() - start_time) > timeout:
         h = f"LAIKAD: {stats_laikad[-REPORT_STATS:]}"
