@@ -246,7 +246,7 @@ static QHash<QString, QByteArray> load_bootstrap_icons() {
   return icons;
 }
 
-QPixmap bootStripPixmap(const QString &id) {
+QPixmap bootstrapPixmap(const QString &id) {
   static QHash<QString, QByteArray> icons = load_bootstrap_icons();
 
   QPixmap pixmap;

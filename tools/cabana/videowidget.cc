@@ -93,7 +93,7 @@ void VideoWidget::updateState() {
 }
 
 void VideoWidget::updatePlayBtnState() {
-  play_btn->setIcon(bootStripPixmap(can->isPaused() ? "play" : "pause"));
+  play_btn->setIcon(bootstrapPixmap(can->isPaused() ? "play" : "pause"));
   play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
