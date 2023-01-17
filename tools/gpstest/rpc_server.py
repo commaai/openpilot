@@ -82,7 +82,8 @@ def kill_procs(procs, no_retry=False):
 
 def check_alive_procs(procs):
   for p in procs:
-    if not managed_processes[p].proc.is_alive():
+    mp = managed_processes[p].proc
+    if mp is not None and not mp.is_alive():
       return False, p
   return True, None
 
