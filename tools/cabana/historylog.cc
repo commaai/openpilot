@@ -7,16 +7,24 @@
 
 // HistoryLogModel
 
+void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
+  if (display_type != type) {
+    display_type = type;
+    refresh();
+  }
+}
+
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
+  const bool display_signals = display_type == HistoryLogModel::Signals;
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     if (index.column() == 0) {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return !sigs.empty() ? QString::number(m.sig_values[index.column() - 1]) : m.data;
-  } else if (role == Qt::FontRole && index.column() == 1 && sigs.empty()) {
+    return display_signals ? QString::number(m.sig_values[index.column() - 1]) : m.data;
+  } else if (role == Qt::FontRole && index.column() == 1 && !display_signals) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  } else if (role == Qt::ToolTipRole && index.column() > 0 && !sigs.empty()) {
+  } else if (role == Qt::ToolTipRole && index.column() > 0 && display_signals) {
     return tr("double click to open the chart");
   }
   return {};
@@ -28,6 +36,7 @@ void HistoryLogModel::setMessage(const QString &message_id) {
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     sigs = dbc_msg->getSignals();
   }
+  display_type = !sigs.empty() ? HistoryLogModel::Signals : HistoryLogModel::Hex;
   filter_cmp = nullptr;
   refresh();
 }
@@ -41,15 +50,16 @@ void HistoryLogModel::refresh() {
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
+  const bool display_signals = display_type == HistoryLogModel::Signals && !sigs.empty();
   if (orientation == Qt::Horizontal) {
     if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
       if (section == 0) {
         return "Time";
       }
-      return !sigs.empty() ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
-    } else if (role == Qt::BackgroundRole && section > 0 && !sigs.empty()) {
+      return display_signals ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
+    } else if (role == Qt::BackgroundRole && section > 0 && display_signals) {
       return QBrush(QColor(getColor(section - 1)));
-    } else if (role == Qt::ForegroundRole && section > 0 && !sigs.empty()) {
+    } else if (role == Qt::ForegroundRole && section > 0 && display_signals) {
       return QBrush(Qt::black);
     }
   }
@@ -182,6 +192,11 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QHBoxLayout *h = new QHBoxLayout();
+
+  display_type_cb = new QComboBox();
+  display_type_cb->addItems({"Signal value", "Hex value"});
+  h->addWidget(display_type_cb);
+
   signals_cb = new QComboBox(this);
   signals_cb->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
   h->addWidget(signals_cb);
@@ -202,6 +217,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(logs);
 
   QObject::connect(logs, &QTableView::doubleClicked, this, &LogsWidget::doubleClicked);
+  QObject::connect(display_type_cb, SIGNAL(activated(int)), this, SLOT(displayTypeChanged()));
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
@@ -222,6 +238,8 @@ void LogsWidget::setMessage(const QString &message_id) {
       signals_cb->addItem(s->name.c_str());
     }
   }
+  display_type_cb->setCurrentIndex(has_signals ? 0 : 1);
+  display_type_cb->setVisible(has_signals);
   comp_box->setVisible(has_signals);
   value_edit->setVisible(has_signals);
   signals_cb->setVisible(has_signals);
@@ -245,6 +263,10 @@ void LogsWidget::setFilter() {
   cur_filter_text = value_edit->text();
 }
 
+void LogsWidget::displayTypeChanged() {
+  model->setDisplayType(display_type_cb->currentIndex() == 0 ? HistoryLogModel::Signals : HistoryLogModel::Hex);
+}
+
 void LogsWidget::showEvent(QShowEvent *event) {
   if (dynamic_mode->isChecked()) {
     model->refresh();
@@ -259,7 +281,7 @@ void LogsWidget::updateState() {
 
 void LogsWidget::doubleClicked(const QModelIndex &index) {
   if (index.isValid()) {
-    if (model->sigs.size() > 0 && index.column() > 0) {
+    if (model->display_type == HistoryLogModel::Signals && model->sigs.size() > 0 && index.column() > 0) {
       emit openChart(model->msg_id, model->sigs[index.column()-1]);
     }
     can->seekTo(model->messages[index.row()].mono_time / (double)1e9 - can->routeStartTime());
