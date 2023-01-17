@@ -274,7 +274,6 @@ class TestLaikad(unittest.TestCase):
       # Verify orbit data is not downloaded
       mock_method.assert_not_called()
 
-
   def test_low_gnss_meas(self):
     cnt = 0
     laikad = Laikad()
@@ -286,7 +285,6 @@ class TestLaikad(unittest.TestCase):
       if len(gm.correctedMeasurements) != 0 and gm.positionECEF.valid:
         cnt += 1
     self.assertEqual(cnt, 554)
-
 
   def dict_has_values(self, dct):
     self.assertGreater(len(dct), 0)
