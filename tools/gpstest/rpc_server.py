@@ -83,7 +83,7 @@ def kill_procs(procs, no_retry=False):
 def check_alive_procs(procs):
   for p in procs:
     mp = managed_processes[p].proc
-    if mp is not None and not mp.is_alive():
+    if mp is None or not mp.is_alive():
       return False, p
   return True, None
 
@@ -93,7 +93,10 @@ class RemoteCheckerService(rpyc.Service):
     pass
 
   def on_disconnect(self, conn):
-    kill_procs(self.procs, no_retry=False)
+    #kill_procs(self.procs, no_retry=False)
+    # this execution is delayed, it will kill the next run of laikad
+    # TODO: add polling to wait for everything is killed
+    pass
 
   def run_checker(self, slat, slon, salt, sockets, procs, timeout):
     global hw_msgs, ephem_msgs
