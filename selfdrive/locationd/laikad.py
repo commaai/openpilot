@@ -391,13 +391,16 @@ def process_msg(laikad, gnss_msg, mono_time, block=False):
 
 
 def clear_tmp_cache():
+  if "CI" in os.environ or "REPLAY" in os.environ:
+    return
+
   if os.path.exists(DOWNLOADS_CACHE_FOLDER):
     shutil.rmtree(DOWNLOADS_CACHE_FOLDER)
   os.mkdir(DOWNLOADS_CACHE_FOLDER)
 
 
 def main(sm=None, pm=None, qc=None):
-  #clear_tmp_cache()
+  clear_tmp_cache()
 
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom or (qc is not None and qc):
