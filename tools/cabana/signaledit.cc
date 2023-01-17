@@ -2,6 +2,7 @@
 
 #include <QDoubleValidator>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -9,50 +10,59 @@
 // SignalForm
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
-  QFormLayout *form_layout = new QFormLayout(this);
+  QGridLayout *main_layout = new QGridLayout(this);
+  auto double_validator = new QDoubleValidator(this);
 
   name = new QLineEdit();
   name->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name));
-  form_layout->addRow(tr("Name"), name);
+  main_layout->addWidget(new QLabel(tr("Name")), 0, 0, Qt::AlignRight);
+  main_layout->addWidget(name, 0, 1, 1, -1);
 
   size = new QSpinBox();
   size->setMinimum(1);
-  form_layout->addRow(tr("Size"), size);
+  main_layout->addWidget(new QLabel(tr("Size")), 1, 0, Qt::AlignRight);
+  main_layout->addWidget(size, 1, 1);
 
   endianness = new QComboBox();
-  endianness->addItems({"Little", "Big"});
-  form_layout->addRow(tr("Endianness"), endianness);
-
-  form_layout->addRow(tr("lsb"), lsb = new QLabel());
-  form_layout->addRow(tr("msb"), msb = new QLabel());
+  endianness->addItems({"Little Endianness", "Big Endianness"});
+  main_layout->addWidget(endianness, 1, 2);
 
   sign = new QComboBox();
   sign->addItems({"Signed", "Unsigned"});
-  form_layout->addRow(tr("sign"), sign);
-
-  auto double_validator = new QDoubleValidator(this);
-
-  factor = new QLineEdit();
-  factor->setValidator(double_validator);
-  form_layout->addRow(tr("Factor"), factor);
+  main_layout->addWidget(sign, 1, 3);
 
   offset = new QLineEdit();
   offset->setValidator(double_validator);
-  form_layout->addRow(tr("Offset"), offset);
+  main_layout->addWidget(new QLabel(tr("offset")), 2, 0, Qt::AlignRight);
+  main_layout->addWidget(offset, 2, 1);
+
+  factor = new QLineEdit();
+  factor->setValidator(double_validator);
+  main_layout->addWidget(new QLabel(tr("factor")), 2, 2, Qt::AlignRight);
+  main_layout->addWidget(factor, 2, 3);
+
+  expand_btn = new QToolButton(this);
+  expand_btn->setText(tr("more"));
+  main_layout->addWidget(expand_btn, 3, 0, 1, -1, Qt::AlignRight);
 
   // TODO: parse the following parameters in opendbc
+  QWidget *extra_container = new QWidget(this);
+  QFormLayout *extra_layout = new QFormLayout(extra_container);
   unit = new QLineEdit();
-  form_layout->addRow(tr("Unit"), unit);
+  extra_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
-  form_layout->addRow(tr("Comment"), comment);
+  extra_layout->addRow(tr("Comment"), comment);
   min_val = new QLineEdit();
   min_val->setValidator(double_validator);
-  form_layout->addRow(tr("Minimum value"), min_val);
+  extra_layout->addRow(tr("Minimum value"), min_val);
   max_val = new QLineEdit();
   max_val->setValidator(double_validator);
-  form_layout->addRow(tr("Maximum value"), max_val);
+  extra_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
-  form_layout->addRow(tr("Value descriptions"), val_desc);
+  extra_layout->addRow(tr("Value descriptions"), val_desc);
+
+  main_layout->addWidget(extra_container, 4, 0, 1, -1);
+  extra_container->setVisible(false);
 
   QObject::connect(name, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
   QObject::connect(factor, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
@@ -60,6 +70,10 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   QObject::connect(size, &QSpinBox::editingFinished, this, &SignalForm::changed);
   QObject::connect(sign, SIGNAL(activated(int)), SIGNAL(changed()));
   QObject::connect(endianness, SIGNAL(activated(int)), SIGNAL(changed()));
+  QObject::connect(expand_btn, &QToolButton::clicked, [=]() {
+    extra_container->setVisible(!extra_container->isVisible());
+    expand_btn->setText(extra_container->isVisible() ? tr("less") : tr("more"));
+  });
 }
 
 void SignalForm::textBoxEditingFinished() {
@@ -180,8 +194,6 @@ void SignalEdit::updateForm(bool visible) {
     form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
     form->factor->setText(QString::number(sig->factor));
     form->offset->setText(QString::number(sig->offset));
-    form->msb->setText(QString::number(sig->msb));
-    form->lsb->setText(QString::number(sig->lsb));
     form->size->setValue(sig->size);
   }
   form->setVisible(visible);
