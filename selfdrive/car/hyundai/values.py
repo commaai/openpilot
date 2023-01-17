@@ -442,7 +442,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7000         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7100         ',
-      b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.02 56310G7300\x00 4AEEC102',
