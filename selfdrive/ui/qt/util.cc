@@ -225,7 +225,7 @@ QColor interpColor(float xv, std::vector<float> xp, std::vector<QColor> fp) {
 static QHash<QString, QByteArray> load_bootstrap_icons() {
   QHash<QString, QByteArray> icons;
 
-  QFile f("../../third_party/bootstrap/bootstrap-icons.svg");
+  QFile f(":/bootstrap-icons.svg");
   if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     QDomDocument xml;
     xml.setContent(&f);

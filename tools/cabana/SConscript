@@ -1,6 +1,6 @@
 import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib',
-       'cereal', 'transformations', 'widgets', 'opendbc')
+       'cereal', 'transformations', 'widgets', 'opendbc', 'asset_obj')
 
 base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
@@ -22,7 +22,7 @@ prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
                             'canmessages.cc', 'commands.cc', 'messageswidget.cc', 'settings.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-cabana_env.Program('_cabana', ['cabana.cc', cabana_lib], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, asset_obj], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('test'):
   cabana_env.Program('tests/_test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
