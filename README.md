@@ -1,149 +1,101 @@
-![](https://i.imgur.com/b0ZyIx5.jpg)
+# zenpilot
 
-Table of Contents
-=======================
+zenpilot is my passion project, a custom fork of the open-source driver assistance system, [Openpilot](https://github.com/commaai/openpilot). My goal is to focus on sane branch management strategies and UI organization to keep the software as close to stock as possible while enhancing it when necessary.
 
-* [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-on-a-dedicated-device-in-a-car)
-* [Running on PC](#running-on-pc)
-* [Community and Contributing](#community-and-contributing)
-* [User Data and comma Account](#user-data-and-comma-account)
-* [Safety and Testing](#safety-and-testing)
-* [Directory Structure](#directory-structure)
-* [Licensing](#licensing)
+I'm currently building a community of like-minded developers who share my vision of creating a safe and user-friendly self-driving software. If you're passionate about making a difference in the world of autonomous vehicles and want to be a part of this project, I welcome you to join me.
+
+I actively welcome pull requests, issues, and feature requests on GitHub. I believe that together, we can make this software better, safer and more user-friendly. With our easy-to-use documentation, you can quickly start making a difference.
+
+Join me in this journey, and let's elevate the self-driving experience to new heights. Upgrade your ride with zenpilot today!
+
+## Table of Contents
 
 ---
 
-What is openpilot?
-------
+- [zenpilot](#zenpilot)
+  - [Table of Contents](#table-of-contents)
+  - [Community and Contributing](#community-and-contributing)
+  - [What is openpilot?](#what-is-openpilot)
+  - [Safety and Testing](#safety-and-testing)
+  - [Directory Structure](#directory-structure)
+  - [Licensing and Disclaimer](#licensing-and-disclaimer)
+  - [Other languages](#other-languages)
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
+## Community and Contributing
 
-<table>
-  <tr>
-    <td><a href="https://youtu.be/NmBfgOanCyk" title="Video By Greer Viau"><img src="https://i.imgur.com/1w8c6d2.jpg"></a></td>
-    <td><a href="https://youtu.be/VHKyqZ7t8Gw" title="Video By Logan LeGrand"><img src="https://i.imgur.com/LnBucik.jpg"></a></td>
-    <td><a href="https://youtu.be/VxiR4iyBruo" title="Video By Charlie Kim"><img src="https://i.imgur.com/4Qoy48c.jpg"></a></td>
-    <td><a href="https://youtu.be/-IkImTe1NYE" title="Video By Aragon"><img src="https://i.imgur.com/04VNzPf.jpg"></a></td>
-  </tr>
-  <tr>
-    <td><a href="https://youtu.be/iIUICQkdwFQ" title="Video By Logan LeGrand"><img src="https://i.imgur.com/b1LHQTy.jpg"></a></td>
-    <td><a href="https://youtu.be/XOsa0FsVIsg" title="Video By PinoyDrives"><img src="https://i.imgur.com/6FG0Bd8.jpg"></a></td>
-    <td><a href="https://youtu.be/bCwcJ98R_Xw" title="Video By JS"><img src="https://i.imgur.com/zO18CbW.jpg"></a></td>
-    <td><a href="https://youtu.be/BQ0tF3MTyyc" title="Video By Tsai-Fi"><img src="https://i.imgur.com/eZzelq3.jpg"></a></td>
-  </tr>
-</table>
+---
 
+zenpilot is developed by [chadgauth](https://github.com/chadgauth) and by drivers like you. We welcome both pull requests and issues on [GitHub](http://github.com/chadgauth/zenpilot). Feature requests are encouraged, and integration will be faster if you share commit hashes from other forks. Check out [the contributing docs](docs/CONTRIBUTING.md) for more information.
 
-Running on a dedicated device in a car
-------
+## What is [openpilot](https://github.com/commaai/openpilot)?
 
-To use openpilot in a car, you need four things
-* A supported device to run this software: a [comma three](https://comma.ai/shop/products/three).
-* This software. The setup procedure of the comma three allows the user to enter a URL for custom software.
-The URL, openpilot.comma.ai will install the release version of openpilot. To install openpilot master, you can use installer.comma.ai/commaai/master, and replacing commaai with another GitHub username can install a fork.
-* One of [the 200+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run openpilot.
-* A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car.
+---
 
-We have detailed instructions for [how to mount the device in a car](https://comma.ai/setup).
+openpilot is an open source driver assistance system that includes features such as Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing number of supported car makes, models, and model years. Also includes a camera-based Driver Monitoring (DM) feature that alerts drivers who may be distracted or asleep.
 
-Running on PC
-------
+## Safety and Testing
 
-All openpilot services can run as usual on a PC without requiring special hardware or a car. You can also run openpilot on recorded or simulated data to develop or experiment with openpilot.
+---
 
-With openpilot's tools, you can plot logs, replay drives, and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
+zenpilot will follow all safety/tests guidelines defined in [openpilot safety documentation](https://github.com/commaai/openpilot/docs/SAFETY.md).
 
-You can also run openpilot in simulation [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes but does require a decent GPU.
+## Directory Structure
 
-A PC running openpilot can also control your vehicle if it is connected to a [webcam](https://github.com/commaai/openpilot/tree/master/tools/webcam), a [black panda](https://comma.ai/shop/products/panda), and a [harness](https://comma.ai/shop/products/car-harness).
+---
 
-Community and Contributing
-------
-
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged. Check out [the contributing docs](docs/CONTRIBUTING.md).
-
-Documentation related to openpilot development can be found on [docs.comma.ai](https://docs.comma.ai). Information about running openpilot (e.g. FAQ, fingerprinting, troubleshooting, custom forks, community hardware) should go on the [wiki](https://github.com/commaai/openpilot/wiki).
-
-You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
-
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
-
-And [follow us on Twitter](https://twitter.com/comma_ai).
-
-User Data and comma Account
-------
-
-By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
-
-openpilot is open source software: the user is free to disable data collection if they wish to do so.
-
-openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
-
-By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
-
-Safety and Testing
-----
-
-* openpilot observes ISO26262 guidelines, see [SAFETY.md](docs/SAFETY.md) for more details.
-* openpilot has software-in-the-loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
-* The code enforcing the safety model lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
-* panda has software-in-the-loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
-* Internally, we have a hardware-in-the-loop Jenkins test suite that builds and unit tests the various processes.
-* panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
-* We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
-
-Directory Structure
-------
     .
-    ├── cereal              # The messaging spec and libs used for all logs
-    ├── common              # Library like functionality we've developed here
-    ├── docs                # Documentation
-    ├── opendbc             # Files showing how to interpret data from cars
-    ├── panda               # Code used to communicate on CAN
-    ├── third_party         # External libraries
-    ├── pyextra             # Extra python packages
-    └── system              # Generic services
-        ├── camerad         # Driver to capture images from the camera sensors
-        ├── clocksd         # Broadcasts current time
-        ├── hardware        # Hardware abstraction classes
-        ├── logcatd         # systemd journal as a service
-        └── proclogd        # Logs information from /proc
-    └── selfdrive           # Code needed to drive the car
-        ├── assets          # Fonts, images, and sounds for UI
+    ├── cereal              # The messaging spec and libraries used for logging
+    ├── common              # A collection of developed libraries and functionalities
+    ├── docs                # All documentation related to the project
+    ├── opendbc             # Files for interpreting data from cars
+    ├── panda               # Code for communicating on Controller Area Network (CAN)
+    ├── third_party         # External libraries used in the project
+    ├── pyextra             # Additional Python packages
+    └── system              # A collection of generic services
+        ├── camerad         # Daemon that captures images from camera sensors
+        ├── clocksd         # Service that broadcasts current time
+        ├── hardware        # Abstraction classes for hardware
+        ├── logcatd         # Systemd journal as a service
+        └── proclogd        # Service that logs information from /proc
+    └── selfdrive           # Code necessary for driving the car
+        ├── assets          # Assets such as fonts, images, and sounds for the UI
         ├── athena          # Allows communication with the app
-        ├── boardd          # Daemon to talk to the board
-        ├── car             # Car specific code to read states and control actuators
-        ├── controls        # Planning and controls
-        ├── debug           # Tools to help you debug and do car ports
-        ├── locationd       # Precise localization and vehicle parameter estimation
-        ├── loggerd         # Logger and uploader of car data
-        ├── manager         # Daemon that starts/stops all other daemons as needed
+        ├── boardd          # Daemon that communicates with the board
+        ├── car             # Car-specific code for reading states and controlling actuators
+        ├── controls        # Planning and control modules
+        ├── debug           # Tools for debugging and car porting
+        ├── locationd       # Service for precise localization and vehicle parameter estimation
+        ├── loggerd         # Service for logging and uploading car data
+        ├── manager         # Daemon that starts and stops all other daemons as needed
         ├── modeld          # Driving and monitoring model runners
-        ├── monitoring      # Daemon to determine driver attention
-        ├── navd            # Turn-by-turn navigation
-        ├── sensord         # IMU interface code
+        ├── monitoring      # Daemon for determining driver attention
+        ├── navd            # Service for turn-by-turn navigation
+        ├── sensord         # Interface code for Inertial Measurement Unit (IMU)
         ├── test            # Unit tests, system tests, and a car simulator
-        └── ui              # The UI
+        └── ui              # The User Interface
 
-Licensing
-------
-
-openpilot is released under the MIT license. Some parts of the software are released under other licenses as specified.
-
-Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by user.
-
-**THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
-YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
-NO WARRANTY EXPRESSED OR IMPLIED.**
+## Licensing and Disclaimer
 
 ---
 
-<img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
+zenpilot is released under the MIT license. Some parts of the software may be released under other licenses as specified.
 
-[![openpilot tests](https://github.com/commaai/openpilot/workflows/openpilot%20tests/badge.svg?event=push)](https://github.com/commaai/openpilot/actions)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/alerts/)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:python)
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:cpp)
-[![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
+By using this software, you acknowledge and agree that:
+
+1. The software is provided "as is" and "with all faults." The developers and maintainers of this software make no representations or warranties of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, accuracy, or non-infringement.
+
+2. The developers and maintainers of this software shall not be liable for any damages, including but not limited to, direct, indirect, special, incidental, or consequential damages, arising out of or in connection with the use or inability to use the software.
+
+3. You are solely responsible for complying with all applicable laws, regulations, and guidelines related to the use of this software, including but not limited to, those related to self-driving cars and vehicle safety.
+
+4. This software is intended for research and development purposes only and is not intended for use in a production environment.
+
+5. The developers and maintainers of this software are not responsible for any injuries or damage resulting from the use of this software.
+
+6. You shall indemnify and hold harmless the developers and maintainers of this software from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by you.
+
+## Other languages
+
+---
+
+- [Japanese](README.ja.md)
