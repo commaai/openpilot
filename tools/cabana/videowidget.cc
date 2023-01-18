@@ -13,6 +13,8 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+#include "selfdrive/ui/qt/util.h"
+
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
@@ -43,8 +45,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
-  play_btn = new QPushButton("⏸");
-  play_btn->setStyleSheet("font-weight:bold; height:16px");
+  play_btn = new QPushButton();
   control_layout->addWidget(play_btn);
 
   QButtonGroup *group = new QButtonGroup(this);
@@ -68,12 +69,13 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &CANMessages::paused, [this]() { play_btn->setText("▶"); });
-  QObject::connect(can, &CANMessages::resume, [this]() { play_btn->setText("⏸"); });
+  QObject::connect(can, &CANMessages::paused, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(can, &CANMessages::resume, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &CANMessages::streamStarted, [this]() {
     end_time_label->setText(formatTime(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
+  updatePlayBtnState();
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
@@ -88,6 +90,11 @@ void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
 void VideoWidget::updateState() {
   if (!slider->isSliderDown())
     slider->setValue(can->currentSec() * 1000);
+}
+
+void VideoWidget::updatePlayBtnState() {
+  play_btn->setIcon(bootstrapPixmap(can->isPaused() ? "play" : "pause"));
+  play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
 // Slider
