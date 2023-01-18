@@ -78,7 +78,7 @@ bool CANMessages::eventFilter(const Event *event) {
       }
 
       // Init colors
-      if (!colors.contains(id) || colors[id].size() != data.dat.size()) {
+      if (colors[id].size() != data.dat.size()) {
         colors[id].clear();
         for (int i = 0; i < data.dat.size(); i++){
           colors[id].append(QColor(0, 0, 0, 0));
@@ -86,7 +86,7 @@ bool CANMessages::eventFilter(const Event *event) {
       }
 
       // Init last_change_t
-      if (!last_change_t.contains(id) || last_change_t[id].size() != data.dat.size()) {
+      if (last_change_t[id].size() != data.dat.size()) {
         last_change_t[id].clear();
         for (int i = 0; i < data.dat.size(); i++){
           last_change_t[id].append(data.ts);
@@ -94,7 +94,7 @@ bool CANMessages::eventFilter(const Event *event) {
       }
 
       // Compute background color for the bytes based on changes
-      if (prev_dat.contains(id) && prev_dat[id].size() == data.dat.size()) {
+      if (prev_dat[id].size() == data.dat.size()) {
         for (int i = 0; i < data.dat.size(); i++){
           uint8_t last = prev_dat[id][i];
           uint8_t cur = data.dat[i];
