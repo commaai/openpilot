@@ -6,6 +6,8 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/qt/util.h"
+
 // SignalForm
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
@@ -104,13 +106,13 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   title_layout->addWidget(title);
 
   plot_btn = new QToolButton(this);
-  plot_btn->setText("📈");
+  plot_btn->setIcon(bootstrapPixmap("graph-up"));
   plot_btn->setCheckable(true);
   plot_btn->setAutoRaise(true);
   title_layout->addWidget(plot_btn);
   auto remove_btn = new QToolButton(this);
   remove_btn->setAutoRaise(true);
-  remove_btn->setText("x");
+  remove_btn->setIcon(bootstrapPixmap("x"));
   remove_btn->setToolTip(tr("Remove signal"));
   title_layout->addWidget(remove_btn);
   main_layout->addWidget(title_bar);

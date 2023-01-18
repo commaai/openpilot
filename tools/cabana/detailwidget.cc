@@ -36,6 +36,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   toolbar = new QToolBar(this);
+  toolbar->setIconSize({16, 16});
   toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -45,8 +46,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(name_label);
-  toolbar->addAction("🖍", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
-  remove_msg_act = toolbar->addAction("X", this, &DetailWidget::removeMsg);
+  toolbar->addAction(bootstrapPixmap("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
+  remove_msg_act = toolbar->addAction(bootstrapPixmap("x-lg"), "", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
   toolbar->setVisible(false);
   frame_layout->addWidget(toolbar);

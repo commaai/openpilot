@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QMainWindow>
 #include <QProgressBar>
+#include <QSplitter>
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
@@ -51,8 +52,9 @@ protected:
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
-  QVBoxLayout *r_layout;
+  QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
+  QSplitter *video_splitter;;
 };

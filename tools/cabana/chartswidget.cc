@@ -12,22 +12,24 @@
 #include <QToolTip>
 #include <QtConcurrent>
 
+#include "selfdrive/ui/qt/util.h"
+
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
+  toolbar->setIconSize({16, 16});
   title_label = new QLabel();
   title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(title_label);
   show_all_values_btn = toolbar->addAction("");
   toolbar->addWidget(range_label = new QLabel());
-  reset_zoom_btn = toolbar->addAction("⟲");
+  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
-  remove_all_btn = toolbar->addAction("✖");
+  remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
@@ -144,7 +146,7 @@ void ChartsWidget::updateToolBar() {
   reset_zoom_btn->setEnabled(is_zoomed);
   range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));
-  dock_btn->setText(docking ? "⬈" : "⬋");
+  dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
@@ -231,7 +233,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setMargins({20, 11, 11, 11});
 
   QToolButton *remove_btn = new QToolButton();
-  remove_btn->setText("X");
+  remove_btn->setIcon(bootstrapPixmap("x"));
   remove_btn->setAutoRaise(true);
   remove_btn->setToolTip(tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart);
@@ -239,7 +241,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
-  manage_btn->setText("🔧");
+  manage_btn->setIcon(bootstrapPixmap("gear"));
   manage_btn->setAutoRaise(true);
   manage_btn->setToolTip(tr("Manage series"));
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
