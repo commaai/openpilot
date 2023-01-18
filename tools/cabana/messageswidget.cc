@@ -96,8 +96,9 @@ void MessageListModel::sortMessages() {
   beginResetModel();
   if (sort_column == 0) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      bool ret = std::pair{msgName(l), l} < std::pair{msgName(r), r};
-      return sort_order == Qt::AscendingOrder ? ret : !ret;
+      auto ll = std::pair{msgName(l), l};
+      auto rr = std::pair{msgName(r), r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
@@ -105,13 +106,15 @@ void MessageListModel::sortMessages() {
     });
   } else if (sort_column == 2) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      bool ret = std::pair{can->lastMessage(l).freq, l} < std::pair{can->lastMessage(r).freq, r};
-      return sort_order == Qt::AscendingOrder ? ret : !ret;
+      auto ll = std::pair{can->lastMessage(l).freq, l};
+      auto rr = std::pair{can->lastMessage(r).freq, r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 3) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      bool ret = std::pair{can->lastMessage(l).count, l} < std::pair{can->lastMessage(r).count, r};
-      return sort_order == Qt::AscendingOrder ? ret : !ret;
+      auto ll = std::pair{can->lastMessage(l).count, l};
+      auto rr = std::pair{can->lastMessage(r).count, r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   }
   endResetModel();
