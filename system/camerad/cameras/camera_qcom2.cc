@@ -60,15 +60,15 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 const float DC_GAIN_AR0231 = 2.5;
 const float DC_GAIN_OX03C10 = 7.32;
 
-const float DC_GAIN_ON_GREY_AR0231= 0.2;
+const float DC_GAIN_ON_GREY_AR0231 = 0.2;
 const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
-const float DC_GAIN_ON_GREY_OX03C10= 0.25;
-const float DC_GAIN_OFF_GREY_OX03C10 = 0.35;
+const float DC_GAIN_ON_GREY_OX03C10 = 0.9;
+const float DC_GAIN_OFF_GREY_OX03C10 = 1.0;
 
 const int DC_GAIN_MIN_WEIGHT_AR0231 = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
-const int DC_GAIN_MIN_WEIGHT_OX03C10 = 16;
-const int DC_GAIN_MAX_WEIGHT_OX03C10 = 32;
+const int DC_GAIN_MIN_WEIGHT_OX03C10 = 1; // always on is fine
+const int DC_GAIN_MAX_WEIGHT_OX03C10 = 1;
 
 const float TARGET_GREY_FACTOR_AR0231 = 1.0;
 const float TARGET_GREY_FACTOR_OX03C10 = 0.02;
@@ -1172,15 +1172,16 @@ void CameraState::set_camera_exposure(float grey_frac) {
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
-    // t_HCG + t_LCG + t_VS on LPD, t_SPD on SPD
-    uint32_t hcg_time = std::max((dc_gain_weight * exposure_time / dc_gain_max_weight), 0);
-    uint32_t lcg_time = std::max(((dc_gain_max_weight - dc_gain_weight) * exposure_time / dc_gain_max_weight), 0);
-    // uint32_t spd_time = std::max(hcg_time / 16, (uint32_t)exposure_time_min);
-    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 128, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
-    uint32_t spd_time = vs_time;
+    // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
+    uint32_t hcg_time = exposure_time;
+    uint32_t lcg_time = hcg_time;
+    uint32_t spd_time = exposure_time_max + VS_TIME_MAX_OX03C10;
+    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
     uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
     uint32_t min_gain = ox03c10_analog_gains_reg[0];
+    uint32_t spd_gain = 0xF00;
+
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
@@ -1189,7 +1190,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
       {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
       {0x3588, min_gain>>8}, {0x3589, min_gain&0xFF},
-      {0x3548, min_gain>>8}, {0x3549, min_gain&0xFF},
+      {0x3548, spd_gain>>8}, {0x3549, spd_gain&0xFF},
       {0x35c8, min_gain>>8}, {0x35c9, min_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);

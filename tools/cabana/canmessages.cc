@@ -64,6 +64,8 @@ bool CANMessages::eventFilter(const Event *event) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
       CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
+      data.src = c.getSrc();
+      data.address = c.getAddress();
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {

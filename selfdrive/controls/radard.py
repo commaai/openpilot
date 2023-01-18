@@ -165,7 +165,6 @@ class RadarD():
     dat.valid = sm.all_checks() and len(rr.errors) == 0
     radarState = dat.radarState
     radarState.mdMonoTime = sm.logMonoTime['modelV2']
-    radarState.canMonoTimes = list(rr.canMonoTimes)
     radarState.radarErrors = list(rr.errors)
     radarState.carStateMonoTime = sm.logMonoTime['carState']
 

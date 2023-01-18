@@ -152,7 +152,7 @@ pipeline {
         stage('camerad-ar') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici-ar0321", [
+            phone_steps("tici-ar0231", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
