@@ -17,9 +17,9 @@ public:
   void textBoxEditingFinished();
 
   QLineEdit *name, *unit, *comment, *val_desc, *offset, *factor, *min_val, *max_val;
-  QLabel *lsb, *msb;
   QSpinBox *size;
   QComboBox *sign, *endianness;
+  QToolButton *expand_btn;
 
 signals:
   void changed();
