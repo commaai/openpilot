@@ -115,7 +115,7 @@ bool CANMessages::eventFilter(const Event *event) {
               }
             } else {
               // Periodic changes
-              colors[id][i] = blend(colors[id][i], QColor(102,86,169, start_alpha / 2)); // Greyish/Blue
+              colors[id][i] = blend(colors[id][i], QColor(102, 86, 169, start_alpha / 2)); // Greyish/Blue
             }
 
             last_change_t[id][i] = data.ts;
