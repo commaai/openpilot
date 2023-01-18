@@ -180,7 +180,7 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
 def get_car_params(msgs, fsm, can_sock, fingerprint):
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
-    CP = CarInterface.get_params(fingerprint)
+    CP = CarInterface.get_non_essential_params(fingerprint)
   else:
     can = FakeSocket(wait=False)
     sendcan = FakeSocket(wait=False)

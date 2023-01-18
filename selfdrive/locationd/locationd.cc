@@ -30,10 +30,11 @@ const double GPS_UBLOX_SENSOR_TIME_OFFSET = 0.095; // s
 const float  GPS_MUL_FACTOR = 10.0;
 const float  GPS_POS_STD_THRESHOLD = 50.0;
 const float  GPS_VEL_STD_THRESHOLD = 5.0;
-const float  GPS_POS_ERROR_RESET_THRESHOLD = 200.0;
-const float  GPS_POS_STD_RESET_THRESHOLD = 5.0;
+const float  GPS_POS_ERROR_RESET_THRESHOLD = 300.0;
+const float  GPS_POS_STD_RESET_THRESHOLD = 2.0;
 const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
-const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 5.0;
+const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 1.0;
+const int    GPS_ORIENTATION_ERROR_RESET_CNT = 3;
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -83,6 +84,8 @@ Localizer::Localizer() {
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
+
+Localizer::Localizer(bool has_ublox) : Localizer() { ublox_available = has_ublox; }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_state = this->kf->get_x();
@@ -227,7 +230,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   double sensor_time = 1e-9 * log.getTimestamp();
-  
+
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
@@ -308,7 +311,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   }
 
   if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
-    this->gps_valid = false;
+    //this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
   }
@@ -316,7 +319,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   double sensor_time = current_time - sensor_time_offset;
 
   // Process message
-  this->gps_valid = true;
+  //this->gps_valid = true;
   this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
@@ -351,18 +354,17 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
+  this->last_gps_msg = sensor_time;
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log) {
 
-  this->gps_valid = log.getPositionECEF().getValid() && log.getVelocityECEF().getValid();
-  if (!this->gps_valid) {
+  if(!log.getPositionECEF().getValid() || !log.getVelocityECEF().getValid()) {
     this->determine_gps_mode(current_time);
     return;
   }
-  this->gps_mode = true;
 
   double sensor_time = log.getMeasTime() * 1e-9;
   if (ublox_available)
@@ -406,29 +408,42 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
 
   if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
-    this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
+  }
+
+  // prevent jumping gnss measurements (covered lots, standstill...)
+  bool orientation_reset = ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD;
+  orientation_reset &= orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD;
+  orientation_reset &= !this->standstill;
+  if (orientation_reset) {
+    this->orientation_reset_count++;
+  }
+  else {
+    this->orientation_reset_count = 0;
   }
 
   if ((gps_est_error > GPS_POS_ERROR_RESET_THRESHOLD && ecef_pos_std < GPS_POS_STD_RESET_THRESHOLD) || this->last_gps_msg == 0) {
     // always reset on first gps message and if the location is off but the accuracy is high
     LOGE("Locationd vs gnssMeasurement position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
-  } else if (ecef_vel_std < GPS_VEL_STD_RESET_THRESHOLD && orientation_error.norm() > GPS_ORIENTATION_ERROR_RESET_THRESHOLD) {
+  } else if (orientation_reset_count > GPS_ORIENTATION_ERROR_RESET_CNT) {
     LOGE("Locationd vs gnssMeasurement orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
+    this->orientation_reset_count = 0;
   }
 
-  this->last_gps_msg = current_time;
+  this->gps_mode = true;
+  this->last_gps_msg = sensor_time;
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
   this->kf->predict_and_observe(sensor_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
   this->car_speed = std::abs(log.getVEgo());
-  if (log.getStandstill()) {
+  this->standstill = log.getStandstill();
+  if (this->standstill) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ACCEL, { Vector3d(0.0, 0.0, 0.0) });
   }
@@ -437,7 +452,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
 void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log) {
   VectorXd rot_device = this->device_from_calib * floatlist2vector(log.getRot());
   VectorXd trans_device = this->device_from_calib * floatlist2vector(log.getTrans());
-  
+
   if (!this->is_timestamp_valid(current_time)) {
     this->observation_timings_invalid = true;
     return;
@@ -604,7 +619,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 }
 
 bool Localizer::is_gps_ok() {
-  return this->gps_valid;
+  return (this->kf->get_filter_time() - this->last_gps_msg) < 1.0;
 }
 
 bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
@@ -616,7 +631,7 @@ bool Localizer::critical_services_valid(std::map<std::string, double> critical_s
   return true;
 }
 
-bool Localizer::is_timestamp_valid(double current_time) {  
+bool Localizer::is_timestamp_valid(double current_time) {
   double filter_time = this->kf->get_filter_time();
   if (!std::isnan(filter_time) && ((filter_time - current_time) > MAX_FILTER_REWIND_TIME)) {
     LOGE("Observation timestamp is older than the max rewind threshold of the filter");
@@ -643,19 +658,18 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
-
   const char* gps_location_socket;
   if (ublox_available) {
     gps_location_socket = "gpsLocationExternal";
   } else {
     gps_location_socket = "gpsLocation";
   }
-  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration", 
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
-  PubMaster pm({"liveLocationKalman"});
 
   // TODO: remove carParams once we're always sending at 100Hz
   SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
+  PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;

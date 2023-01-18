@@ -9,57 +9,75 @@
 // SignalForm
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
-  QFormLayout *form_layout = new QFormLayout(this);
+  auto double_validator = new QDoubleValidator(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QFormLayout *form_layout = new QFormLayout();
+  main_layout->addLayout(form_layout);
 
   name = new QLineEdit();
   name->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name));
   form_layout->addRow(tr("Name"), name);
 
+  QHBoxLayout *hl = new QHBoxLayout(this);
   size = new QSpinBox();
   size->setMinimum(1);
-  form_layout->addRow(tr("Size"), size);
-
+  hl->addWidget(size);
   endianness = new QComboBox();
-  endianness->addItems({"Little", "Big"});
-  form_layout->addRow(tr("Endianness"), endianness);
-
-  form_layout->addRow(tr("lsb"), lsb = new QLabel());
-  form_layout->addRow(tr("msb"), msb = new QLabel());
-
+  endianness->addItems({"Little Endianness", "Big Endianness"});
+  hl->addWidget(endianness);
   sign = new QComboBox();
   sign->addItems({"Signed", "Unsigned"});
-  form_layout->addRow(tr("sign"), sign);
-
-  auto double_validator = new QDoubleValidator(this);
-
-  factor = new QLineEdit();
-  factor->setValidator(double_validator);
-  form_layout->addRow(tr("Factor"), factor);
+  hl->addWidget(sign);
+  form_layout->addRow(tr("Size"), hl);
 
   offset = new QLineEdit();
   offset->setValidator(double_validator);
   form_layout->addRow(tr("Offset"), offset);
+  factor = new QLineEdit();
+  factor->setValidator(double_validator);
+  form_layout->addRow(tr("Factor"), factor);
+
+  expand_btn = new QToolButton(this);
+  expand_btn->setText(tr("more..."));
+  main_layout->addWidget(expand_btn, 0, Qt::AlignRight);
 
   // TODO: parse the following parameters in opendbc
+  QWidget *extra_container = new QWidget(this);
+  QFormLayout *extra_layout = new QFormLayout(extra_container);
   unit = new QLineEdit();
-  form_layout->addRow(tr("Unit"), unit);
+  extra_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
-  form_layout->addRow(tr("Comment"), comment);
+  extra_layout->addRow(tr("Comment"), comment);
   min_val = new QLineEdit();
   min_val->setValidator(double_validator);
-  form_layout->addRow(tr("Minimum value"), min_val);
+  extra_layout->addRow(tr("Minimum value"), min_val);
   max_val = new QLineEdit();
   max_val->setValidator(double_validator);
-  form_layout->addRow(tr("Maximum value"), max_val);
+  extra_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
-  form_layout->addRow(tr("Value descriptions"), val_desc);
+  extra_layout->addRow(tr("Value descriptions"), val_desc);
 
-  QObject::connect(name, &QLineEdit::textEdited, this, &SignalForm::changed);
-  QObject::connect(factor, &QLineEdit::textEdited, this, &SignalForm::changed);
-  QObject::connect(offset, &QLineEdit::textEdited, this, &SignalForm::changed);
+  main_layout->addWidget(extra_container);
+  extra_container->setVisible(false);
+
+  QObject::connect(name, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
+  QObject::connect(factor, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
+  QObject::connect(offset, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
+  QObject::connect(size, &QSpinBox::editingFinished, this, &SignalForm::changed);
   QObject::connect(sign, SIGNAL(activated(int)), SIGNAL(changed()));
   QObject::connect(endianness, SIGNAL(activated(int)), SIGNAL(changed()));
-  QObject::connect(size, SIGNAL(valueChanged(int)), SIGNAL(changed()));
+  QObject::connect(expand_btn, &QToolButton::clicked, [=]() {
+    extra_container->setVisible(!extra_container->isVisible());
+    expand_btn->setText(extra_container->isVisible() ? tr("less...") : tr("more..."));
+  });
+}
+
+void SignalForm::textBoxEditingFinished() {
+  QLineEdit *edit = qobject_cast<QLineEdit *>(QObject::sender());
+  if (edit && edit->isModified()) {
+    edit->setModified(false);
+    emit changed();
+  }
 }
 
 // SignalEdit
@@ -108,17 +126,12 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   hline->setFrameShadow(QFrame::Sunken);
   main_layout->addWidget(hline);
 
-  save_timer = new QTimer(this);
-  save_timer->setInterval(300);
-  save_timer->setSingleShot(true);
-  save_timer->callOnTimeout(this, &SignalEdit::saveSignal);
-
   QObject::connect(title, &ElidedLabel::clicked, [this]() { emit showFormClicked(sig); });
   QObject::connect(plot_btn, &QToolButton::clicked, [this](bool checked) {
     emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
   });
-  QObject::connect(remove_btn, &QToolButton::clicked,  [this]() { emit remove(sig); });
-  QObject::connect(form, &SignalForm::changed, [this]() { save_timer->start(); });
+  QObject::connect(remove_btn, &QToolButton::clicked, [this]() { emit remove(sig); });
+  QObject::connect(form, &SignalForm::changed, this, &SignalEdit::saveSignal);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
@@ -133,8 +146,6 @@ void SignalEdit::setSignal(const QString &message_id, const Signal *signal) {
 }
 
 void SignalEdit::saveSignal() {
-  if (!sig || !form->changed_by_user) return;
-
   Signal s = *sig;
   s.name = form->name->text().toStdString();
   s.size = form->size->text().toInt();
@@ -160,8 +171,9 @@ void SignalEdit::saveSignal() {
     s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-  if (s != *sig)
+  if (s != *sig) {
     emit save(this->sig, s);
+  }
 }
 
 void SignalEdit::setChartOpened(bool opened) {
@@ -171,7 +183,6 @@ void SignalEdit::setChartOpened(bool opened) {
 
 void SignalEdit::updateForm(bool visible) {
   if (visible && sig) {
-    form->changed_by_user = false;
     if (form->name->text() != sig->name.c_str()) {
       form->name->setText(sig->name.c_str());
     }
@@ -179,10 +190,7 @@ void SignalEdit::updateForm(bool visible) {
     form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
     form->factor->setText(QString::number(sig->factor));
     form->offset->setText(QString::number(sig->offset));
-    form->msb->setText(QString::number(sig->msb));
-    form->lsb->setText(QString::number(sig->lsb));
     form->size->setValue(sig->size);
-    form->changed_by_user = true;
   }
   form->setVisible(visible);
   icon->setText(visible ? "▼ " : "> ");
