@@ -21,6 +21,7 @@ void Settings::save() {
   s.setValue("last_dir", last_dir);
   s.setValue("window_state", window_state);
   s.setValue("geometry", geometry);
+  s.setValue("video_splitter_state", video_splitter_state);
 }
 
 void Settings::load() {
@@ -32,6 +33,7 @@ void Settings::load() {
   last_dir = s.value("last_dir", QDir::homePath()).toString();
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();
+  video_splitter_state = s.value("video_splitter_state").toByteArray();
 }
 
 // SettingsDlg
