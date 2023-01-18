@@ -35,7 +35,7 @@ private:
   QSize thumbnail_size = {};
 };
 
-class VideoWidget : public QFrame {
+class VideoWidget : public QWidget {
   Q_OBJECT
 
 public:

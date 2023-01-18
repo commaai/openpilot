@@ -116,19 +116,23 @@ void MainWindow::createDockWindows() {
   addDockWidget(Qt::LeftDockWidgetArea, dock);
 
   // right panel
-  QWidget *right_container = new QWidget(this);
-  r_layout = new QVBoxLayout(right_container);
   charts_widget = new ChartsWidget(this);
+  QWidget *charts_container = new QWidget(this);
+  charts_layout = new QVBoxLayout(charts_container);
+  charts_layout->setContentsMargins(0, 0, 0, 0);
+  charts_layout->addWidget(charts_widget);
+
   video_widget = new VideoWidget(this);
-  r_layout->addWidget(video_widget, 0, Qt::AlignTop);
-  r_layout->addWidget(charts_widget, 1);
-  r_layout->addStretch(0);
+  video_splitter = new QSplitter(Qt::Vertical,this);
+  video_splitter->addWidget(video_widget);
+  video_splitter->addWidget(charts_container);
+  video_splitter->restoreState(settings.video_splitter_state);
 
   video_dock = new QDockWidget(can->routeName(), this);
   video_dock->setObjectName(tr("VideoPanel"));
   video_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   video_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-  video_dock->setWidget(right_container);
+  video_dock->setWidget(video_splitter);
   addDockWidget(Qt::RightDockWidgetArea, video_dock);
 }
 
@@ -239,7 +243,7 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
-    r_layout->insertWidget(2, charts_widget, 1);
+    charts_layout->insertWidget(0, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
   } else if (!dock && !floating_window) {
@@ -270,6 +274,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
   settings.geometry = saveGeometry();
   settings.window_state = saveState();
+  settings.video_splitter_state = video_splitter->saveState();
   settings.save();
   QWidget::closeEvent(event);
 }
