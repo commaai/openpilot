@@ -102,7 +102,9 @@ void MessageListModel::sortMessages() {
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      return sort_order == Qt::AscendingOrder ? l < r : l > r;
+      auto ll = std::tuple{can->lastMessage(l).src, can->lastMessage(l).address, l};
+      auto rr = std::tuple{can->lastMessage(r).src, can->lastMessage(r).address, r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 2) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
