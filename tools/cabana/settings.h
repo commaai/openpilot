@@ -19,7 +19,9 @@ public:
   int chart_column_count = 1;
   int max_chart_x_range = 3 * 60; // 3 minutes
   QString last_dir;
-  QByteArray window_state, geometry;
+  QByteArray geometry;
+  QByteArray video_splitter_state;
+  QByteArray window_state;
 
 signals:
   void changed();

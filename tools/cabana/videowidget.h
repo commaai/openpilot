@@ -35,7 +35,7 @@ private:
   QSize thumbnail_size = {};
 };
 
-class VideoWidget : public QFrame {
+class VideoWidget : public QWidget {
   Q_OBJECT
 
 public:
@@ -44,6 +44,7 @@ public:
 
 protected:
   void updateState();
+  void updatePlayBtnState();
 
   CameraWidget *cam_widget;
   QLabel *end_time_label;
