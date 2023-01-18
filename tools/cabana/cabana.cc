@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
+  cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
   if (args.empty() && !cmd_parser.isSet("demo")) {
@@ -31,6 +32,8 @@ int main(int argc, char *argv[]) {
     replay_flags |= REPLAY_FLAG_ECAM;
   } else if (cmd_parser.isSet("qcam")) {
     replay_flags |= REPLAY_FLAG_QCAMERA;
+  } else if (cmd_parser.isSet("no-vipc")) {
+    replay_flags |= REPLAY_FLAG_NO_VIPC;
   }
 
   // TODO: Remove when OpenpilotPrefix supports ZMQ
