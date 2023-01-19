@@ -224,7 +224,7 @@ void MainWindow::saveDBCToFile() {
     QFile file(file_name);
     if (file.open(QIODevice::WriteOnly)) {
       file.write(dbc()->generateDBC().toUtf8());
-      Commands::instance()->clear();
+      Commands::instance()->setClean();
     }
   }
 }
