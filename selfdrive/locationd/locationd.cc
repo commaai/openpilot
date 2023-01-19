@@ -589,12 +589,12 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_sensor(t, log.getAccelerometer());
   } else if (log.isGyroscope()) {
     this->handle_sensor(t, log.getGyroscope());
-  //} else if (log.isGpsLocation()) {
-  //  this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
-  //} else if (log.isGpsLocationExternal()) {
-  //  this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
-  } else if (log.isGnssMeasurements()) {
-    this->handle_gnss(t, log.getGnssMeasurements());
+  } else if (log.isGpsLocation()) {
+    this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
+  } else if (log.isGpsLocationExternal()) {
+    this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
+  //} else if (log.isGnssMeasurements()) {
+  //  this->handle_gnss(t, log.getGnssMeasurements());
   } else if (log.isCarState()) {
     this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
@@ -658,12 +658,17 @@ void Localizer::determine_gps_mode(double current_time) {
 
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
-
-  const std::initializer_list<const char *> service_list = {"gnssMeasurements", "cameraOdometry", "liveCalibration",
+  const char* gps_location_socket;
+  if (ublox_available) {
+    gps_location_socket = "gpsLocationExternal";
+  } else {
+    gps_location_socket = "gpsLocation";
+  }
+  const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
 
   // TODO: remove carParams once we're always sending at 100Hz
-  SubMaster sm(service_list, {}, nullptr, {"gnssMeasurements", "carParams"});
+  SubMaster sm(service_list, {}, nullptr, {gps_location_socket, "carParams"});
   PubMaster pm({"liveLocationKalman"});
 
   uint64_t cnt = 0;
