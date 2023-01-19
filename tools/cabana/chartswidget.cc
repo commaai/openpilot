@@ -30,13 +30,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new QSlider(Qt::Horizontal, this);
   range_slider->setToolTip(tr("Set the chart range"));
-  range_slider->setRange(1, settings.cached_segment_limit);
+  range_slider->setRange(1, settings.cached_segment_limit * 60);
   range_slider->setSingleStep(1);
-  range_slider->setPageStep(1);
-  max_chart_range = std::min(settings.chart_range, settings.cached_segment_limit);
+  range_slider->setPageStep(60);  // 1 min
+  max_chart_range = std::min(settings.chart_range, settings.cached_segment_limit * 60);
   range_slider->setValue(max_chart_range);
   toolbar->addWidget(range_slider);
-
 
   toolbar->addWidget(zoom_range_lb = new QLabel());
   reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
@@ -94,7 +93,7 @@ void ChartsWidget::updateDisplayRange() {
     display_range.first = current_sec - 5;
   }
   display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
-  display_range.second = std::floor(std::min(display_range.first + max_chart_range * 60, event_range.second) * 10.0) / 10.0;
+  display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
   if (prev_range != display_range) {
     QFutureSynchronizer<void> future_synchronizer;
     for (auto c : charts)
@@ -140,7 +139,7 @@ void ChartsWidget::setRange(int value) {
 
 void ChartsWidget::updateToolBar() {
   remove_all_btn->setEnabled(!charts.isEmpty());
-  range_lb->setText(QString(" %1 min ").arg(max_chart_range));
+  range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   reset_zoom_btn->setEnabled(is_zoomed);
   zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));

@@ -29,7 +29,7 @@ void Settings::load() {
   fps = s.value("fps", 10).toInt();
   cached_segment_limit = s.value("cached_segment", 3).toInt();
   chart_height = s.value("chart_height", 200).toInt();
-  chart_range = s.value("chart_range", 3).toInt();
+  chart_range = s.value("chart_range", 3 * 60).toInt();
   last_dir = s.value("last_dir", QDir::homePath()).toString();
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();

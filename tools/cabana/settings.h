@@ -16,7 +16,7 @@ public:
   int fps = 10;
   int cached_segment_limit = 3;
   int chart_height = 200;
-  int chart_range = 3;
+  int chart_range = 3 * 60; // sec
   QString last_dir;
   QByteArray geometry;
   QByteArray video_splitter_state;
