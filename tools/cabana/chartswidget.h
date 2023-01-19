@@ -27,7 +27,6 @@ public:
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr);
-  void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
@@ -38,8 +37,6 @@ public:
     uint32_t address = 0;
     const Signal *sig = nullptr;
     QLineSeries *series = nullptr;
-    double min_y = 0;
-    double max_y = 0;
     QVector<QPointF> vals;
   };
 
@@ -80,7 +77,6 @@ private:
   QPointF track_pt;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  std::pair<double, double> events_range = {0, 0};
   QList<SigItem> sigs;
   const QString mime_type = "application/x-cabanachartview";
  };
@@ -108,7 +104,7 @@ private:
   void zoomReset();
   void updateToolBar();
   void removeAll();
-  void setRange(int value);
+  void setMaxChartRange(int value);
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
@@ -117,7 +113,6 @@ private:
   QLabel *range_lb;
   QSlider *range_slider;
   bool docking = true;
-  QAction *show_all_values_btn;
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
@@ -126,7 +121,6 @@ private:
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
-  std::pair<double, double> event_range;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;

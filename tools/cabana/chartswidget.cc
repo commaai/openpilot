@@ -33,7 +33,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setRange(1, settings.cached_segment_limit * 60);
   range_slider->setSingleStep(1);
   range_slider->setPageStep(60);  // 1 min
+
   max_chart_range = std::min(settings.chart_range, settings.cached_segment_limit * 60);
+  display_range  = {0, max_chart_range};
+
   range_slider->setValue(max_chart_range);
   toolbar->addWidget(range_slider);
 
@@ -67,7 +70,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
-  QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setRange);
+  QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -78,27 +81,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void ChartsWidget::eventsMerged() {
-  if (auto events = can->events(); events && !events->empty()) {
-    event_range.first = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
-    event_range.second = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
-    updateState();
-  }
-}
-
-void ChartsWidget::updateDisplayRange() {
-  auto prev_range = display_range;
-  double current_sec = can->currentSec();
-  if (current_sec < display_range.first || current_sec >= (display_range.second - 5)) {
-    // reached the end, or seeked to a timestamp out of range.
-    display_range.first = current_sec - 5;
-  }
-  display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
-  display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
-  if (prev_range != display_range) {
+  {
     QFutureSynchronizer<void> future_synchronizer;
-    for (auto c : charts)
-      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
+    for (auto c : charts) {
+      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
+    }
   }
+  updateState();
 }
 
 void ChartsWidget::zoomIn(double min, double max) {
@@ -116,9 +105,16 @@ void ChartsWidget::zoomReset() {
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
+  const double cur_sec = can->currentSec();
   if (!is_zoomed) {
-    updateDisplayRange();
-  } else if (can->currentSec() < zoomed_range.first || can->currentSec() >= zoomed_range.second) {
+    double pos = (cur_sec - display_range.first) / max_chart_range;
+    if (pos > 0.8) {
+      const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
+      display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
+    }
+    display_range.second = std::floor(display_range.first + max_chart_range);
+  } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
+    // loop in zoommed range
     can->seekTo(zoomed_range.first);
   }
 
@@ -131,7 +127,7 @@ void ChartsWidget::updateState() {
   setUpdatesEnabled(true);
 }
 
-void ChartsWidget::setRange(int value) {
+void ChartsWidget::setMaxChartRange(int value) {
   max_chart_range = settings.chart_range = value;
   updateToolBar();
   updateState();
@@ -161,9 +157,6 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     if (!chart) {
       chart = new ChartView(this);
       chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
-      chart->setEventsRange(display_range);
-      auto range = is_zoomed ? zoomed_range : display_range;
-      chart->setDisplayRange(range.first, range.second);
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
@@ -174,6 +167,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       charts.push_back(chart);
     }
     chart->addSeries(id, sig);
+    updateState();
   } else if (!show && chart) {
     chart->removeSeries(id, sig);
   }
@@ -286,7 +280,6 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
-  updateAxisY();
   emit seriesAdded(msg_id, sig);
 }
 
@@ -321,7 +314,6 @@ void ChartView::signalUpdated(const Signal *sig) {
     updateTitle();
     // TODO: don't update series if only name changed.
     updateSeries(sig);
-    updateAxisY();
   }
 }
 
@@ -393,13 +385,6 @@ void ChartView::updateFromSettings() {
   setFixedHeight(settings.chart_height);
 }
 
-void ChartView::setEventsRange(const std::pair<double, double> &range) {
-  if (range != events_range) {
-    events_range = range;
-    updateSeries();
-  }
-}
-
 void ChartView::setDisplayRange(double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
@@ -409,36 +394,28 @@ void ChartView::setDisplayRange(double min, double max) {
 
 void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
-  if (!events || sigs.isEmpty()) return;
+  if (!events || events->empty() || sigs.isEmpty()) return;
 
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
       s.vals.clear();
-      s.vals.reserve((events_range.second - events_range.first) * 1000);  // [n]seconds * 1000hz
-      s.min_y = std::numeric_limits<double>::max();
-      s.max_y = std::numeric_limits<double>::lowest();
+      s.vals.reserve(((events->back()->mono_time - events->front()->mono_time) / 1e9) * 100);  // [n]seconds * 100hz
 
       double route_start_time = can->routeStartTime();
-      Event begin_event(cereal::Event::Which::INIT_DATA, (route_start_time + events_range.first) * 1e9);
-      auto begin = std::lower_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-      double end_ns = (route_start_time + events_range.second) * 1e9;
-
-      for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
-        if ((*it)->which == cereal::Event::Which::CAN) {
-          for (const auto &c : (*it)->event.getCan()) {
+      for (const Event *e : *events) {
+        if (e->which == cereal::Event::Which::CAN) {
+          for (const auto &c : e->event.getCan()) {
             if (s.source == c.getSrc() && s.address == c.getAddress()) {
               auto dat = c.getDat();
               double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
-              double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
+              double ts = (e->mono_time / (double)1e9) - route_start_time;  // seconds
               s.vals.push_back({ts, value});
-
-              if (value < s.min_y) s.min_y = value;
-              if (value > s.max_y) s.max_y = value;
             }
           }
         }
       }
       s.series->replace(s.vals);
+      updateAxisY();
     }
   }
 }
@@ -449,18 +426,11 @@ void ChartView::updateAxisY() {
 
   double min_y = std::numeric_limits<double>::max();
   double max_y = std::numeric_limits<double>::lowest();
-  if (events_range == std::pair{axis_x->min(), axis_x->max()}) {
-    for (auto &s : sigs) {
-      if (s.min_y < min_y) min_y = s.min_y;
-      if (s.max_y > max_y) max_y = s.max_y;
-    }
-  } else {
-    for (auto &s : sigs) {
-      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-      for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
-        if (it->y() < min_y) min_y = it->y();
-        if (it->y() > max_y) max_y = it->y();
-      }
+  for (auto &s : sigs) {
+    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+    for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
+      if (it->y() < min_y) min_y = it->y();
+      if (it->y() > max_y) max_y = it->y();
     }
   }
 
