@@ -15,6 +15,8 @@
 #include <QVBoxLayout>
 #include <QWidgetAction>
 
+#include "tools/cabana/commands.h"
+
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
@@ -61,9 +63,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
-  QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
-    setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
-  });
+  QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackChanged);
 }
 
 void MainWindow::createActions() {
@@ -77,16 +77,16 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption);
 
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
-  auto undo_act = detail_widget->undo_stack->createUndoAction(this, tr("&Undo"));
+  auto undo_act = Commands::instance()->createUndoAction(this, tr("&Undo"));
   undo_act->setShortcuts(QKeySequence::Undo);
   edit_menu->addAction(undo_act);
-  auto redo_act = detail_widget->undo_stack->createRedoAction(this, tr("&Rndo"));
+  auto redo_act = Commands::instance()->createRedoAction(this, tr("&Rndo"));
   redo_act->setShortcuts(QKeySequence::Redo);
   edit_menu->addAction(redo_act);
   edit_menu->addSeparator();
 
   QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
-  auto undo_view = new QUndoView(detail_widget->undo_stack);
+  auto undo_view = new QUndoView(Commands::instance());
   undo_view->setWindowTitle(tr("Command List"));
   QWidgetAction *commands_act = new QWidgetAction(this);
   commands_act->setDefaultWidget(undo_view);
@@ -168,11 +168,15 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::undoStackChanged() {
+  setWindowModified(Commands::instance()->index() != 0);
+}
+
 void MainWindow::DBCFileChanged() {
-  detail_widget->undo_stack->clear();
+  Commands::instance()->clear();
   int index = dbc_combo->findText(QFileInfo(dbc()->name()).baseName());
   dbc_combo->setCurrentIndex(index);
-  setWindowTitle(tr("%1 - Cabana").arg(dbc()->name()));
+  setWindowTitle(tr("[*]%1 - Cabana").arg(dbc()->name()));
 }
 
 void MainWindow::loadDBCFromName(const QString &name) {
@@ -220,7 +224,7 @@ void MainWindow::saveDBCToFile() {
     QFile file(file_name);
     if (file.open(QIODevice::WriteOnly)) {
       file.write(dbc()->generateDBC().toUtf8());
-      detail_widget->undo_stack->clear();
+      Commands::instance()->clear();
     }
   }
 }
@@ -258,7 +262,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
-  if (detail_widget->undo_stack->index() > 0) {
+  if (Commands::instance()->index() > 0) {
     auto ret = QMessageBox::question(this, tr("Unsaved Changes"),
                                      tr("Are you sure you want to exit without saving?\nAny unsaved changes will be lost."),
                                      QMessageBox::Yes | QMessageBox::No);

@@ -27,7 +27,6 @@ public:
   };
 
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
   void setDisplayType(DisplayType type);
@@ -88,6 +87,7 @@ private slots:
   void displayTypeChanged();
 
 private:
+  void refresh();
   void doubleClicked(const QModelIndex &index);
   void showEvent(QShowEvent *event) override;
 

@@ -5,7 +5,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QScrollBar>
-#include <QTimer>
+#include <QToolButton>
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/canmessages.h"
@@ -15,7 +15,6 @@
 // DetailWidget
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
-  undo_stack = new QUndoStack(this);
   setMinimumWidth(500);
   QWidget *main_widget = new QWidget(this);
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
@@ -32,7 +31,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   QFrame *title_frame = new QFrame(this);
   QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
-  title_frame->setFrameShape(QFrame::StyledPanel);
+  title_frame->setFrameShape(QFrame::NoFrame);
 
   // message title
   toolbar = new QToolBar(this);
@@ -69,14 +68,16 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QWidget *msg_widget = new QWidget(this);
   QVBoxLayout *msg_layout = new QVBoxLayout(msg_widget);
   msg_layout->setContentsMargins(0, 0, 0, 0);
-  // binary view
   binary_view = new BinaryView(this);
   msg_layout->addWidget(binary_view);
-  // signals
-  signals_layout = new QVBoxLayout();
-  signals_layout->setSpacing(0);
-  msg_layout->addLayout(signals_layout);
-  msg_layout->addStretch(0);
+
+  QFrame *separator = new QFrame(this);
+  separator->setFrameShape(QFrame::HLine);
+  separator->setFrameShadow(QFrame::Sunken);
+  msg_layout->addWidget(separator);
+
+  signal_view = new SignalView(charts, this);
+  msg_layout->addWidget(signal_view);
 
   scroll = new QScrollArea(this);
   scroll->setFrameShape(QFrame::NoFrame);
@@ -95,12 +96,16 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   stacked_layout->addWidget(new WelcomeWidget(this));
   stacked_layout->addWidget(main_widget);
 
-  QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
-  QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
-  QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
+  QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
+  QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
+  QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
+  QObject::connect(binary_view, &BinaryView::signalClicked, signal_view, &SignalView::expandSignal);
+  QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
+  QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &CANMessages::msgsReceived, this, &DetailWidget::updateState);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
+  QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1 && tabbar->tabText(index) != msg_id) {
@@ -108,13 +113,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
+  QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
   QObject::connect(history_log, &LogsWidget::openChart, [this](const QString &id, const Signal *sig) {
     this->charts->showChart(id, sig, true, false);
-  });
-  QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
-    if (undo_stack->count() > 0)
-      dbcMsgChanged();
   });
 }
 
@@ -140,60 +141,36 @@ void DetailWidget::setMessage(const QString &message_id) {
     index = tabbar->addTab(message_id);
     tabbar->setTabToolTip(index, msgName(message_id));
   }
-  tabbar->setCurrentIndex(index);
-  dbcMsgChanged();
-  scroll->verticalScrollBar()->setValue(0);
-  stacked_layout->setCurrentIndex(1);
-}
 
-void DetailWidget::dbcMsgChanged(int show_form_idx) {
-  if (msg_id.isEmpty()) return;
-
-  setUpdatesEnabled(false);
-
+  signal_view->setMessage(msg_id);
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
 
-  int i = 0;
+  scroll->verticalScrollBar()->setValue(0);
+  stacked_layout->setCurrentIndex(1);
+  tabbar->setCurrentIndex(index);
+  refresh();
+}
+
+void DetailWidget::refresh() {
+  if (msg_id.isEmpty()) return;
+
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);
-  if (msg) {
-    for (auto sig : msg->getSignals()) {
-      SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
-      if (!form) {
-        form = new SignalEdit(i, this);
-        QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
-        QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
-        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
-        QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
-        QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
-        QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
-        signals_layout->addWidget(form);
-        signal_list.push_back(form);
-      }
-      form->setSignal(msg_id, sig);
-      form->setChartOpened(charts->hasSignal(msg_id, sig));
-      ++i;
-    }
-    if (msg->size != can->lastMessage(msg_id).dat.size())
-      warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
+  if (msg && msg->size != can->lastMessage(msg_id).dat.size()) {
+    warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
   }
-  for (/**/; i < signal_list.size(); ++i)
-    signal_list[i]->hide();
-
+  for (auto s : binary_view->getOverlappingSignals()) {
+    warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
+  }
+  warning_label->setText(warnings.join('\n'));
   toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
-
-  for (auto s : binary_view->getOverlappingSignals())
-    warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
-
-  warning_label->setText(warnings.join('\n'));
   warning_widget->setVisible(!warnings.isEmpty());
-  setUpdatesEnabled(true);
 }
 
-void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
+void DetailWidget::updateState(const QHash<QString, CanData> *msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
   if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
     return;
@@ -204,86 +181,18 @@ void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
     history_log->updateState();
 }
 
-void DetailWidget::showForm(const Signal *sig) {
-  setUpdatesEnabled(false);
-  for (auto f : signal_list) {
-    f->updateForm(f->sig == sig && !f->form->isVisible());
-    if (f->sig == sig && f->form->isVisible()) {
-      QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
-    }
-  }
-  setUpdatesEnabled(true);
-}
-
-void DetailWidget::updateChartState() {
-  for (auto f : signal_list)
-    f->setChartOpened(charts->hasSignal(f->msg_id, f->sig));
-}
-
 void DetailWidget::editMsg() {
   QString id = msg_id;
   auto msg = dbc()->msg(id);
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    undo_stack->push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
+    Commands::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  undo_stack->push(new RemoveMsgCommand(msg_id));
-}
-
-void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
-  auto msg = dbc()->msg(msg_id);
-  if (!msg) {
-    for (int i = 1; /**/; ++i) {
-      QString name = QString("NEW_MSG_%1").arg(i);
-      auto it = std::find_if(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; });
-      if (it == dbc()->messages().end()) {
-        undo_stack->push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
-        msg = dbc()->msg(msg_id);
-        break;
-      }
-    }
-  }
-  Signal sig = {.is_little_endian = little_endian, .factor = 1};
-  for (int i = 1; /**/; ++i) {
-    sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    if (msg->sigs.count(sig.name.c_str()) == 0) break;
-  }
-  updateSigSizeParamsFromRange(sig, start_bit, size);
-  undo_stack->push(new AddSigCommand(msg_id, sig));
-}
-
-void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
-  Signal s = *sig;
-  updateSigSizeParamsFromRange(s, start_bit, size);
-  saveSignal(sig, s);
-}
-
-void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
-  auto msg = dbc()->msg(msg_id);
-  if (new_sig.name != sig->name) {
-    auto it = msg->sigs.find(new_sig.name.c_str());
-    if (it != msg->sigs.end()) {
-      QString warning_str = tr("There is already a signal with the same name '%1'").arg(new_sig.name.c_str());
-      QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
-      return;
-    }
-  }
-  auto [start, end] = getSignalRange(&new_sig);
-  if (start < 0 || end >= msg->size * 8) {
-    QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
-    QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
-    return;
-  }
-
-  undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
-}
-
-void DetailWidget::removeSignal(const Signal *sig) {
-  undo_stack->push(new RemoveSigCommand(msg_id, sig));
+  Commands::push(new RemoveMsgCommand(msg_id));
 }
 
 // EditMessageDialog

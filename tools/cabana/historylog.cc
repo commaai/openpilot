@@ -5,6 +5,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "tools/cabana/commands.h"
+
 // HistoryLogModel
 
 void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
@@ -30,21 +32,16 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   return {};
 }
 
-void HistoryLogModel::setMessage(const QString &message_id) {
-  msg_id = message_id;
+void HistoryLogModel::refresh() {
+  beginResetModel();
+  messages.clear();
   sigs.clear();
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     sigs = dbc_msg->getSignals();
   }
   display_type = !sigs.empty() ? HistoryLogModel::Signals : HistoryLogModel::Hex;
   filter_cmp = nullptr;
-  refresh();
-}
-
-void HistoryLogModel::refresh() {
-  beginResetModel();
   last_fetch_time = 0;
-  messages.clear();
   updateState();
   endResetModel();
 }
@@ -222,12 +219,20 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
-  QObject::connect(can, &CANMessages::seekedTo, model, &HistoryLogModel::refresh);
   QObject::connect(can, &CANMessages::eventsMerged, model, &HistoryLogModel::segmentsMerged);
+  QObject::connect(can, &CANMessages::seekedTo, model, &HistoryLogModel::refresh);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
+  QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
 }
 
 void LogsWidget::setMessage(const QString &message_id) {
-  model->setMessage(message_id);
+  model->msg_id = message_id;
+  refresh();
+}
+
+void LogsWidget::refresh() {
+  if (model->msg_id.isEmpty()) return;
+
   cur_filter_text = "";
   value_edit->setText("");
   signals_cb->clear();
@@ -243,6 +248,7 @@ void LogsWidget::setMessage(const QString &message_id) {
   comp_box->setVisible(has_signals);
   value_edit->setVisible(has_signals);
   signals_cb->setVisible(has_signals);
+  model->refresh();
 }
 
 static bool not_equal(double l, double r) { return l != r; }

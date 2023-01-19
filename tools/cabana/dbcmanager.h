@@ -41,7 +41,7 @@ public:
   }
 
 signals:
-  void signalAdded(const Signal *sig);
+  void signalAdded(uint32_t address, const Signal *sig);
   void signalRemoved(const Signal *sig);
   void signalUpdated(const Signal *sig);
   void msgUpdated(uint32_t address);
