@@ -63,7 +63,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
-  QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackChanged);
+  QObject::connect(Commands::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
 }
 
 void MainWindow::createActions() {
@@ -168,8 +168,8 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
-void MainWindow::undoStackChanged() {
-  setWindowModified(Commands::instance()->index() != 0);
+void MainWindow::undoStackCleanChanged(bool clean) {
+  setWindowModified(!clean);
 }
 
 void MainWindow::DBCFileChanged() {
