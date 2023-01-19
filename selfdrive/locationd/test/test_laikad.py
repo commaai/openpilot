@@ -22,7 +22,26 @@ def get_log(segs=range(0)):
   logs = []
   for i in segs:
     logs.extend(LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", i)))
-  return [m for m in logs if m.which() == 'ubloxGnss']
+  all_logs = [m for m in logs if m.which() == 'ubloxGnss']
+
+  low_gnss = []
+  for m in all_logs:
+    if m.ubloxGnss.which() != 'measurementReport':
+      continue
+    if m.ubloxGnss.measurementReport.numMeas == 0:
+      continue
+
+    MAX_MEAS = 7
+    if m.ubloxGnss.measurementReport.numMeas > MAX_MEAS:
+      mb = m.as_builder()
+      mb.ubloxGnss.measurementReport.numMeas = MAX_MEAS
+      mb.ubloxGnss.measurementReport.measurements = list(m.ubloxGnss.measurementReport.measurements)[:MAX_MEAS]
+      mb.ubloxGnss.measurementReport.measurements[0].pseudorange += 1000
+      low_gnss.append(mb.as_reader())
+    else:
+      low_gnss.append(m)
+
+  return all_logs, low_gnss
 
 
 def verify_messages(lr, laikad, return_one_success=False):
@@ -59,8 +78,9 @@ class TestLaikad(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    logs = get_log(range(1))
+    logs, low_gnss = get_log(range(1))
     cls.logs = logs
+    cls.low_gnss = low_gnss
     first_gps_time = get_first_gps_time(logs)
     cls.first_gps_time = first_gps_time
 
@@ -253,6 +273,18 @@ class TestLaikad(unittest.TestCase):
       self.assertIsNotNone(msg)
       # Verify orbit data is not downloaded
       mock_method.assert_not_called()
+
+  def test_low_gnss_meas(self):
+    cnt = 0
+    laikad = Laikad()
+    for m in self.low_gnss:
+      msg = laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=True)
+      if msg is None:
+        continue
+      gm = msg.gnssMeasurements
+      if len(gm.correctedMeasurements) != 0 and gm.positionECEF.valid:
+        cnt += 1
+    self.assertEqual(cnt, 554)
 
   def dict_has_values(self, dct):
     self.assertGreater(len(dct), 0)
