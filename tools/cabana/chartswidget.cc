@@ -394,13 +394,10 @@ void ChartView::setDisplayRange(double min, double max) {
 
 void ChartView::updateSeries(const Signal *sig) {
   auto events = can->events();
-  if (!events || events->empty() || sigs.isEmpty()) return;
-
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
       s.vals.clear();
       s.vals.reserve(((events->back()->mono_time - events->front()->mono_time) / 1e9) * 100);  // [n]seconds * 100hz
-
       double route_start_time = can->routeStartTime();
       for (const Event *e : *events) {
         if (e->which == cereal::Event::Which::CAN) {
