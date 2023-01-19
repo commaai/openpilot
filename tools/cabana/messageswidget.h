@@ -43,8 +43,7 @@ protected:
   MessageListModel *model;
 };
 
-class MessageBytesDelegate : public QStyledItemDelegate
-{
+class MessageBytesDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     MessageBytesDelegate(QObject *parent);
