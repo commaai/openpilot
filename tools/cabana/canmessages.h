@@ -34,6 +34,7 @@ public:
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
+  inline QDateTime currentDateTime() const { return replay->currentDateTime(); }
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
   inline const Route* route() const { return replay->route(); }

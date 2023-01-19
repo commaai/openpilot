@@ -3,11 +3,11 @@
 #include <QBuffer>
 #include <QButtonGroup>
 #include <QDateTime>
-#include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QStyleOptionSlider>
+#include <QTimeEdit>
 #include <QTimer>
 #include <QToolTip>
 #include <QVBoxLayout>
@@ -31,8 +31,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   frame_layout->addWidget(cam_widget);
 
   // slider controls
-  QHBoxLayout *slider_layout = new QHBoxLayout();
-  QLabel *time_label = new QLabel("00:00");
+  slider_layout = new QHBoxLayout();
+  time_label = new ElidedLabel("00:00");
+  time_label->setToolTip(tr("Click to set current time"));
   slider_layout->addWidget(time_label);
 
   slider = new Slider(this);
@@ -64,6 +65,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
+  QObject::connect(time_label, &ElidedLabel::clicked, this, &VideoWidget::timeLabelClicked);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
@@ -76,6 +78,26 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
     slider->setRange(0, can->totalSeconds() * 1000);
   });
   updatePlayBtnState();
+}
+
+void VideoWidget::timeLabelClicked() {
+  auto time_edit = new QTimeEdit(this);
+  auto init_date_time = can->currentDateTime();
+  time_edit->setDateTime(init_date_time);
+  time_edit->setDisplayFormat("hh:mm:ss");
+  time_label->setVisible(false);
+  slider_layout->insertWidget(0, time_edit);
+  QTimer::singleShot(0, [=]() { time_edit->setFocus(); });
+
+  QObject::connect(time_edit, &QTimeEdit::editingFinished, [=]() {
+    if (time_edit->dateTime() != init_date_time) {
+      int seconds = can->route()->datetime().secsTo(time_edit->dateTime());
+      can->seekTo(seconds);
+    }
+    time_edit->setVisible(false);
+    time_label->setVisible(true);
+    time_edit->deleteLater();
+  });
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
