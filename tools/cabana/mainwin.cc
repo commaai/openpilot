@@ -130,6 +130,7 @@ void MainWindow::createDockWindows() {
     QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   }
   video_splitter->addWidget(charts_container);
+  video_splitter->restoreState(settings.video_splitter_state);
 
   video_dock = new QDockWidget(can->routeName(), this);
   video_dock->setObjectName(tr("VideoPanel"));
