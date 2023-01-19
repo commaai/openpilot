@@ -11,6 +11,8 @@
 
 struct CanData {
   double ts = 0.;
+  uint8_t src = 0;
+  uint32_t address = 0;
   uint32_t count = 0;
   uint32_t freq = 0;
   QByteArray dat;
