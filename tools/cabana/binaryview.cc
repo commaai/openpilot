@@ -8,6 +8,7 @@
 
 #include "tools/cabana/canmessages.h"
 
+
 // BinaryView
 
 const int CELL_HEIGHT = 36;

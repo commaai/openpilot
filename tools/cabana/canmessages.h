@@ -8,6 +8,7 @@
 
 #include "opendbc/can/common_dbc.h"
 #include "tools/cabana/settings.h"
+#include "tools/cabana/util.h"
 #include "tools/replay/replay.h"
 
 struct CanData {
@@ -17,7 +18,7 @@ struct CanData {
   uint32_t count = 0;
   uint32_t freq = 0;
   QByteArray dat;
-  QList<QColor> colors;
+  QVector<QColor> colors;
 };
 
 class CANMessages : public QObject {
@@ -68,19 +69,6 @@ protected:
   std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
 };
-
-inline QString toHex(const QByteArray &dat) {
-  return dat.toHex(' ').toUpper();
-}
-inline char toHex(uint value) {
-  return "0123456789ABCDEF"[value & 0xF];
-}
-
-inline const QString &getColor(int i) {
-  // TODO: add more colors
-  static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
-  return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
-}
 
 // A global pointer referring to the unique CANMessages object
 extern CANMessages *can;

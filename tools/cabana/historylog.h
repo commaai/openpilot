@@ -46,7 +46,8 @@ public:
   struct Message {
     uint64_t mono_time = 0;
     QVector<double> sig_values;
-    QString data;
+    QByteArray data;
+    QVector<QColor> colors;
   };
 
   template <class InputIt>
@@ -54,6 +55,7 @@ public:
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
   QString msg_id;
+  HexColors hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;

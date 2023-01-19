@@ -16,16 +16,16 @@ void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const bool display_signals = display_type == HistoryLogModel::Signals;
+  const auto &m = messages[index.row()];
   if (role == Qt::DisplayRole) {
-    const auto &m = messages[index.row()];
     if (index.column() == 0) {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return display_signals ? QString::number(m.sig_values[index.column() - 1]) : m.data;
-  } else if (role == Qt::FontRole && index.column() == 1 && !display_signals) {
-    return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    return display_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::ToolTipRole && index.column() > 0 && display_signals) {
     return tr("double click to open the chart");
+  } else if (role == Qt::UserRole && index.column() == 1 && !display_signals) {
+    return HexColors::toVariantList(m.colors);
   }
   return {};
 }
@@ -45,6 +45,7 @@ void HistoryLogModel::refresh() {
   beginResetModel();
   last_fetch_time = 0;
   messages.clear();
+  hex_colors.clear();
   updateState();
   endResetModel();
 }
@@ -124,7 +125,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
           if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
             auto &m = msgs.emplace_back();
             m.mono_time = (*it)->mono_time;
-            m.data = toHex(QByteArray((char *)dat.begin(), dat.size()));
+            m.data = QByteArray((char *)dat.begin(), dat.size());
             m.sig_values = values;
             if (msgs.size() >= batch_size && min_time == 0)
               return msgs;
@@ -133,8 +134,22 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
       }
     }
   }
+
+  if (display_type == HistoryLogModel::Hex) {
+    const auto freq = can->lastMessage(msg_id).freq;
+    if constexpr (std::is_same<InputIt, std::vector<const Event *>::iterator>::value) {
+      for (auto it = msgs.begin(); it != msgs.end(); ++it) {
+        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      }
+    } else {
+      for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
+        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      }
+    }
+  }
   return msgs;
 }
+
 template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::iterator first, std::vector<const Event*>::iterator last, uint64_t min_time);
 template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::reverse_iterator first, std::vector<const Event*>::reverse_iterator last, uint64_t min_time);
 
@@ -183,6 +198,7 @@ HistoryLog::HistoryLog(QWidget *parent) : QTableView(parent) {
   horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
   horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   verticalHeader()->setVisible(false);
+  setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 }
 
