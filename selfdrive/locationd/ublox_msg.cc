@@ -175,13 +175,13 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
 
       bool clear_buffer = subframe_id == 1;
       if (gps_sat_tow_count.count(sv_id) != 0) {
-        int64_t counter_diff = tow_counter - gps_sat_tow_count[sv_id].second;
+        int64_t counter_diff = tow_counter - gps_sat_tow_count[sv_id];
         clear_buffer |= counter_diff != 1 && counter_diff != -100798;
       }
       if (clear_buffer) gps_subframes[sv_id].clear();
 
       gps_subframes[sv_id][subframe_id] = subframe_data;
-      gps_sat_tow_count[sv_id] = {subframe_id, tow_counter};
+      gps_sat_tow_count[sv_id] = tow_counter;
     }
 
     if (gps_subframes[msg->sv_id()].size() == 5) {
