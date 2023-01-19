@@ -391,6 +391,7 @@ def process_msg(laikad, gnss_msg, mono_time, block=False):
 
 
 def clear_tmp_cache():
+  # TODO: remove this function once laika downloader is changed to not write to disk
   if "CI" in os.environ or "REPLAY" in os.environ:
     return
 
