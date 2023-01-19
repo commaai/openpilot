@@ -97,7 +97,24 @@ void MessageListModel::setFilterString(const QString &string) {
   filter_str = string;
   msgs.clear();
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+    bool found = false;
+
+    // Search by message id or name
     if (it.key().contains(filter_str, Qt::CaseInsensitive) || msgName(it.key()).contains(filter_str, Qt::CaseInsensitive)) {
+      found = true;
+    }
+
+    // Search by signal name
+    const DBCMsg *msg = dbc()->msg(it.key());
+    if (msg != nullptr) {
+      for (auto &signal: msg->getSignals()) {
+        if (QString::fromStdString(signal->name).contains(filter_str, Qt::CaseInsensitive)) {
+          found = true;
+        }
+      }
+    }
+
+    if (found) {
       msgs.push_back(it.key());
     }
   }
