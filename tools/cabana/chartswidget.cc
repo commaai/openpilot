@@ -22,9 +22,19 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
-  title_label = new QLabel();
-  title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(title_label);
+
+  toolbar->addWidget(title_label = new QLabel());
+  title_label->setContentsMargins(0 ,0, 12, 0);
+  columns_cb = new QComboBox(this);
+  columns_cb->addItems({"1", "2", "3", "4"});
+  columns_cb->setCurrentIndex(std::clamp(settings.chart_column_count - 1, 0, 3));
+  toolbar->addWidget(new QLabel(tr("Columns:")));
+  toolbar->addWidget(columns_cb);
+
+  QLabel *stretch_label = new QLabel(this);
+  stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(stretch_label);
+
   show_all_values_btn = toolbar->addAction("");
   toolbar->addWidget(range_label = new QLabel());
   reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
@@ -36,8 +46,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   // charts
   QWidget *charts_container = new QWidget(this);
-  charts_layout = new QVBoxLayout(charts_container);
-  charts_layout->addStretch();
+  QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
+  charts_main_layout->setContentsMargins(0, 0, 0, 0);
+  charts_layout = new QGridLayout(charts_container);
+  charts_main_layout->addLayout(charts_layout);
+  charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
   charts_scroll->setWidgetResizable(true);
@@ -53,6 +66,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   align_charts_timer = new QTimer(this);
   align_charts_timer->setSingleShot(true);
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
+  column_count = settings.chart_column_count;
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
@@ -60,6 +74,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
+  QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
+  QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
     emit dock(!docking);
     docking = !docking;
@@ -144,6 +160,14 @@ void ChartsWidget::updateToolBar() {
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
+void ChartsWidget::settingChanged() {
+  for (auto c : charts) {
+    c->setFixedHeight(settings.chart_height);
+    columns_cb->setCurrentIndex(std::clamp(settings.chart_column_count - 1, 0, columns_cb->count() - 1));
+    setColumnCount(settings.chart_column_count);
+  }
+}
+
 ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
   for (auto c : charts)
     if (c->hasSeries(id, sig)) return c;
@@ -157,6 +181,9 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     chart = merge && charts.size() > 0 ? charts.back() : nullptr;
     if (!chart) {
       chart = new ChartView(this);
+      chart->setFixedHeight(settings.chart_height);
+      chart->setMinimumWidth(CHART_MIN_WIDTH);
+      chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
       chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
       chart->setEventsRange(display_range);
       auto range = is_zoomed ? zoomed_range : display_range;
@@ -167,8 +194,8 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
       QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
       QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(100); });
-      charts_layout->insertWidget(0, chart);
       charts.push_back(chart);
+      updateLayout();
     }
     chart->addSeries(id, sig);
   } else if (!show && chart) {
@@ -176,6 +203,29 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
   }
   updateToolBar();
   setUpdatesEnabled(true);
+}
+
+void ChartsWidget::setColumnCount(int n) {
+  n = std::clamp(n + 1, 1, columns_cb->count());
+  if (column_count != n) {
+    column_count = n;
+    updateLayout();
+  }
+}
+
+void ChartsWidget::updateLayout() {
+  int n = column_count;
+  for (; n >= 1; --n) {
+    if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
+  }
+  for (int i = 0; i < charts.size(); ++i) {
+    charts_layout->addWidget(charts[i], i / n, i % n);
+  }
+}
+
+void ChartsWidget::resizeEvent(QResizeEvent *event) {
+  QWidget::resizeEvent(event);
+  updateLayout();
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
@@ -244,13 +294,11 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   setChart(chart);
   setRenderHint(QPainter::Antialiasing);
   setRubberBand(QChartView::HorizontalRubberBand);
-  updateFromSettings();
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
-  QObject::connect(&settings, &Settings::changed, this, &ChartView::updateFromSettings);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
   QObject::connect(manage_btn, &QToolButton::clicked, this, &ChartView::manageSeries);
 }
@@ -384,10 +432,6 @@ void ChartView::updateTitle() {
   for (auto &s : sigs) {
     s.series->setName(QString("<b>%1</b> <font color=\"gray\">%2 %3</font>").arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
   }
-}
-
-void ChartView::updateFromSettings() {
-  setFixedHeight(settings.chart_height);
 }
 
 void ChartView::setEventsRange(const std::pair<double, double> &range) {
