@@ -256,9 +256,6 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
   update();
 
-  m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
-  updateDestinationMarker();
-
   pan_counter = 0;
   zoom_counter = 0;
 }
