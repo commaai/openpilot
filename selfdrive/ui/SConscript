@@ -69,9 +69,11 @@ if GetOption('test'):
 # build translation files
 translation_sources = Glob("#selfdrive/ui/translations/*.ts", strings=True)
 translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
-lrelease = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
-qt_env.Command(translation_targets, translation_sources, f"{lrelease} $SOURCES")
+lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
 
+lupdate = qt_env.Command([], qt_src, "selfdrive/ui/update_translations.py")
+lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
+qt_env.Depends(lrelease, lupdate)
 
 # setup and factory resetter
 if GetOption('extras'):
