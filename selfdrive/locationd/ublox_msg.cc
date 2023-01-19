@@ -171,20 +171,17 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
       gps_t subframe(&stream);
       int subframe_id = subframe.how()->subframe_id();
       int sv_id = msg->sv_id();
-      uint64_t tow_count = subframe.how()->tow_count();
+      uint64_t tow_counter = subframe.how()->tow_count();
 
-      bool add_subframe = true;
-      if (gps_sat_tow.count(sv_id) != 0) {
-        // verify tow continuity
-        auto lm = gps_sat_tow[sv_id];
-        int tow_diff = tow_count - lm.second;
-        add_subframe &= !(tow_diff > 4 && subframe_id <= lm.first);
-        add_subframe &= (subframe_id - lm.first) == tow_diff;
+      bool clear_buffer = subframe_id == 1;
+      if (gps_sat_tow_count.count(sv_id) != 0) {
+        int64_t counter_diff = tow_counter - gps_sat_tow_count[sv_id].second;
+        clear_buffer |= counter_diff != 1 && counter_diff != -100798;
       }
-      if (subframe_id == 1 || !add_subframe) gps_subframes[sv_id].clear();
+      if (clear_buffer) gps_subframes[sv_id].clear();
 
       gps_subframes[sv_id][subframe_id] = subframe_data;
-      gps_sat_tow[sv_id] = {subframe_id, tow_count};
+      gps_sat_tow_count[sv_id] = {subframe_id, tow_counter};
     }
 
     if (gps_subframes[msg->sv_id()].size() == 5) {
