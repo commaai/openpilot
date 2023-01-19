@@ -25,8 +25,20 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label = new QLabel();
   title_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(title_label);
-  show_all_values_btn = toolbar->addAction("");
-  toolbar->addWidget(range_label = new QLabel());
+
+  toolbar->addWidget(new QLabel(tr("Range:")));
+  toolbar->addWidget(range_lb = new QLabel(this));
+  range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider->setToolTip(tr("Set the chart range"));
+  range_slider->setRange(1, settings.cached_segment_limit);
+  range_slider->setSingleStep(1);
+  range_slider->setPageStep(1);
+  max_chart_range = std::min(settings.chart_range, settings.cached_segment_limit);
+  range_slider->setValue(max_chart_range);
+  toolbar->addWidget(range_slider);
+
+
+  toolbar->addWidget(zoom_range_lb = new QLabel());
   reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
@@ -45,7 +57,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   main_layout->addWidget(charts_scroll);
 
-  max_chart_range = settings.max_chart_x_range;
   use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
                    QApplication::style()->standardPalette().color(QPalette::Background).value();
   updateToolBar();
@@ -57,7 +68,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &CANMessages::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &CANMessages::updated, this, &ChartsWidget::updateState);
-  QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
+  QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setRange);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -83,7 +94,7 @@ void ChartsWidget::updateDisplayRange() {
     display_range.first = current_sec - 5;
   }
   display_range.first = std::floor(std::max(display_range.first, event_range.first) * 10.0) / 10.0;
-  display_range.second = std::floor(std::min(display_range.first + max_chart_range, event_range.second) * 10.0) / 10.0;
+  display_range.second = std::floor(std::min(display_range.first + max_chart_range * 60, event_range.second) * 10.0) / 10.0;
   if (prev_range != display_range) {
     QFutureSynchronizer<void> future_synchronizer;
     for (auto c : charts)
@@ -121,24 +132,17 @@ void ChartsWidget::updateState() {
   setUpdatesEnabled(true);
 }
 
-void ChartsWidget::showAllData() {
-  bool switch_to_show_all = max_chart_range == settings.max_chart_x_range;
-  max_chart_range = switch_to_show_all ? settings.cached_segment_limit * 60
-                                       : settings.max_chart_x_range;
-  max_chart_range = std::min(max_chart_range, (uint32_t)can->totalSeconds());
+void ChartsWidget::setRange(int value) {
+  max_chart_range = settings.chart_range = value;
   updateToolBar();
   updateState();
 }
 
 void ChartsWidget::updateToolBar() {
-  int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
-  bool displaying_all = max_chart_range != min_range;
-  show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
-  show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));
-  show_all_values_btn->setVisible(!is_zoomed);
   remove_all_btn->setEnabled(!charts.isEmpty());
+  range_lb->setText(QString(" %1 min ").arg(max_chart_range));
   reset_zoom_btn->setEnabled(is_zoomed);
-  range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
+  zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));

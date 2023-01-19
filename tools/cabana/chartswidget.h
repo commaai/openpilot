@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
+#include <QSlider>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QtCharts/QChartView>
@@ -107,12 +108,14 @@ private:
   void zoomReset();
   void updateToolBar();
   void removeAll();
-  void showAllData();
+  void setRange(int value);
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
-  QLabel *range_label;
+  QLabel *zoom_range_lb;
+  QLabel *range_lb;
+  QSlider *range_slider;
   bool docking = true;
   QAction *show_all_values_btn;
   QAction *dock_btn;
