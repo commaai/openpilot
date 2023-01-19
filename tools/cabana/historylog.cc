@@ -237,6 +237,8 @@ void LogsWidget::refresh() {
   value_edit->setText("");
   signals_cb->clear();
   comp_box->setCurrentIndex(0);
+
+  model->refresh();
   bool has_signals = model->sigs.size() > 0;
   if (has_signals) {
     for (auto s : model->sigs) {
@@ -248,7 +250,6 @@ void LogsWidget::refresh() {
   comp_box->setVisible(has_signals);
   value_edit->setVisible(has_signals);
   signals_cb->setVisible(has_signals);
-  model->refresh();
 }
 
 static bool not_equal(double l, double r) { return l != r; }
