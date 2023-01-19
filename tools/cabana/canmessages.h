@@ -4,6 +4,7 @@
 
 #include <QColor>
 #include <QHash>
+#include <QApplication>
 
 #include "opendbc/can/common_dbc.h"
 #include "tools/cabana/settings.h"
@@ -16,6 +17,7 @@ struct CanData {
   uint32_t count = 0;
   uint32_t freq = 0;
   QByteArray dat;
+  QList<QColor> colors;
 };
 
 class CANMessages : public QObject {
@@ -34,6 +36,7 @@ public:
   inline double totalSeconds() const { return replay->totalSeconds(); }
   inline double routeStartTime() const { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const { return replay->currentSeconds(); }
+  inline QDateTime currentDateTime() const { return replay->currentDateTime(); }
   inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
 
   inline const Route* route() const { return replay->route(); }

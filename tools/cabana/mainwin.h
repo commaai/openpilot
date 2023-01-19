@@ -28,6 +28,7 @@ public slots:
   void loadDBCFromFile();
   void loadDBCFromClipboard();
   void saveDBCToFile();
+  void saveAsDBCToFile();
   void saveDBCToClipboard();
 
 signals:
@@ -58,4 +59,5 @@ protected:
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
   QSplitter *video_splitter;;
+  QString file_name = "";
 };
