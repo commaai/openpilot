@@ -12,7 +12,7 @@
 void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
   if (display_type != type) {
     display_type = type;
-    refresh();
+    clearAndRefetch();
   }
 }
 
@@ -39,25 +39,33 @@ void HistoryLogModel::refresh() {
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     sigs = dbc_msg->getSignals();
   }
-  display_type = !sigs.empty() ? HistoryLogModel::Signals : HistoryLogModel::Hex;
   filter_cmp = nullptr;
   last_fetch_time = 0;
-  updateState();
+  display_type = !sigs.empty() ? HistoryLogModel::Signals : HistoryLogModel::Hex;
+  has_more_data = true;
   endResetModel();
+  updateState();
+}
+
+void HistoryLogModel::clearAndRefetch() {
+  beginResetModel();
+  messages.clear();
+  has_more_data = true;
+  endResetModel();
+  updateState();
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  const bool display_signals = display_type == HistoryLogModel::Signals && !sigs.empty();
   if (orientation == Qt::Horizontal) {
+    const bool display_signals = display_type == HistoryLogModel::Signals && !sigs.empty();
     if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
       if (section == 0) {
         return "Time";
       }
       return display_signals ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
-    } else if (role == Qt::BackgroundRole && section > 0 && display_signals) {
-      return QBrush(QColor(getColor(section - 1)));
-    } else if (role == Qt::ForegroundRole && section > 0 && display_signals) {
-      return QBrush(Qt::black);
+    } else if (section > 0 && display_signals) {
+      if (role == Qt::BackgroundRole) return QBrush(QColor(getColor(section - 1)));
+      if (role == Qt::ForegroundRole) return QBrush(Qt::black);
     }
   }
   return {};
@@ -65,7 +73,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
 
 void HistoryLogModel::setDynamicMode(int state) {
   dynamic_mode = state != 0;
-  refresh();
+  clearAndRefetch();
 }
 
 void HistoryLogModel::segmentsMerged() {
@@ -78,7 +86,7 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
   filter_sig_idx = sig_idx;
   filter_value = value.toDouble();
   filter_cmp = value.isEmpty() ? nullptr : cmp;
-  refresh();
+  clearAndRefetch();
 }
 
 void HistoryLogModel::updateState() {
@@ -220,7 +228,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
   QObject::connect(can, &CANMessages::eventsMerged, model, &HistoryLogModel::segmentsMerged);
-  QObject::connect(can, &CANMessages::seekedTo, model, &HistoryLogModel::refresh);
+  QObject::connect(can, &CANMessages::seekedTo, model, &HistoryLogModel::clearAndRefetch);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
   QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
 }
@@ -233,6 +241,7 @@ void LogsWidget::setMessage(const QString &message_id) {
 void LogsWidget::refresh() {
   if (model->msg_id.isEmpty()) return;
 
+  // clear filters.
   cur_filter_text = "";
   value_edit->setText("");
   signals_cb->clear();
@@ -245,6 +254,7 @@ void LogsWidget::refresh() {
       signals_cb->addItem(s->name.c_str());
     }
   }
+
   display_type_cb->setCurrentIndex(has_signals ? 0 : 1);
   display_type_cb->setVisible(has_signals);
   comp_box->setVisible(has_signals);
@@ -276,7 +286,7 @@ void LogsWidget::displayTypeChanged() {
 
 void LogsWidget::showEvent(QShowEvent *event) {
   if (dynamic_mode->isChecked()) {
-    model->refresh();
+    model->clearAndRefetch();
   }
 }
 

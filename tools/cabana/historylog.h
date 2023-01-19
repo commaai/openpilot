@@ -41,6 +41,7 @@ public:
   void setDynamicMode(int state);
   void segmentsMerged();
   void refresh();
+  void clearAndRefetch();
 
   struct Message {
     uint64_t mono_time = 0;

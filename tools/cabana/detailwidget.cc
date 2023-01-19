@@ -164,7 +164,6 @@ void DetailWidget::refresh() {
     warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
   }
   warning_label->setText(warnings.join('\n'));
-  toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
   warning_widget->setVisible(!warnings.isEmpty());
