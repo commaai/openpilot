@@ -7,8 +7,8 @@
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class SignalForm : public QWidget {
   Q_OBJECT

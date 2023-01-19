@@ -1,47 +1,13 @@
-#include "tools/cabana/canmessages.h"
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
-CANMessages *can = nullptr;
+AbstractStream *can = nullptr;
 
-CANMessages::CANMessages(QObject *parent) : QObject(parent) {
+AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
-  QObject::connect(this, &CANMessages::received, this, &CANMessages::process, Qt::QueuedConnection);
-  QObject::connect(&settings, &Settings::changed, this, &CANMessages::settingChanged);
+  QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
 }
 
-CANMessages::~CANMessages() {
-  replay->stop();
-}
-
-static bool event_filter(const Event *e, void *opaque) {
-  CANMessages *c = (CANMessages *)opaque;
-  return c->eventFilter(e);
-}
-
-static QColor blend(QColor a, QColor b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
-}
-
-bool CANMessages::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
-  replay = new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this);
-  replay->setSegmentCacheLimit(settings.cached_segment_limit);
-  replay->installEventFilter(event_filter, this);
-  QObject::connect(replay, &Replay::seekedTo, this, &CANMessages::seekedTo);
-  QObject::connect(replay, &Replay::segmentsMerged, this, &CANMessages::eventsMerged);
-  QObject::connect(replay, &Replay::streamStarted, this, &CANMessages::streamStarted);
-  if (replay->load()) {
-    const auto &segments = replay->route()->segments();
-    if (std::none_of(segments.begin(), segments.end(), [](auto &s) { return s.second.rlog.length() > 0; })) {
-      qWarning() << "no rlogs in route" << route;
-      return false;
-    }
-    replay->start();
-    return true;
-  }
-  return false;
-}
-
-void CANMessages::process(QHash<QString, CanData> *messages) {
+void AbstractStream::process(QHash<QString, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
     can_msgs[it.key()] = it.value();
   }
@@ -51,7 +17,11 @@ void CANMessages::process(QHash<QString, CanData> *messages) {
   processing = false;
 }
 
-bool CANMessages::eventFilter(const Event *event) {
+static QColor blend(QColor a, QColor b) {
+  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
+}
+
+bool AbstractStream::updateEvent(const Event *event) {
   static std::unique_ptr new_msgs = std::make_unique<QHash<QString, CanData>>();
   static QHash<QString, QByteArray> prev_dat;
   static QHash<QString, QList<QColor>> colors;
@@ -59,7 +29,7 @@ bool CANMessages::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = replay->currentSeconds();
+    double current_sec = currentSec();
     if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
       new_msgs->clear();
       counters.clear();
@@ -79,7 +49,7 @@ bool CANMessages::eventFilter(const Event *event) {
         data.freq = data.count / delta;
       }
 
-      // Init colors
+       // Init colors
       if (colors[id].size() != data.dat.size()) {
         colors[id].clear();
         for (int i = 0; i < data.dat.size(); i++){
@@ -145,19 +115,4 @@ bool CANMessages::eventFilter(const Event *event) {
     }
   }
   return true;
-}
-
-void CANMessages::seekTo(double ts) {
-  replay->seekTo(std::max(double(0), ts), false);
-  counters_begin_sec = 0;
-  emit updated();
-}
-
-void CANMessages::pause(bool pause) { 
-  replay->pause(pause); 
-  emit (pause ? paused() : resume());
-}
-
-void CANMessages::settingChanged() {
-  replay->setSegmentCacheLimit(settings.cached_segment_limit);
 }
