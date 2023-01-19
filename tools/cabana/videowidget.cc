@@ -70,10 +70,10 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
-  QObject::connect(can, &CANMessages::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &CANMessages::paused, this, &VideoWidget::updatePlayBtnState);
-  QObject::connect(can, &CANMessages::resume, this, &VideoWidget::updatePlayBtnState);
-  QObject::connect(can, &CANMessages::streamStarted, [this]() {
+  QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
+  QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(can, &AbstractStream::streamStarted, [this]() {
     end_time_label->setText(formatTime(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
@@ -130,7 +130,7 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   setMouseTracking(true);
 
   QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
-  QObject::connect(can, &CANMessages::streamStarted, this, &Slider::streamStarted);
+  QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
 }
 
 void Slider::streamStarted() {

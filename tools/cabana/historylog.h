@@ -7,8 +7,8 @@
 #include <QLineEdit>
 #include <QTableView>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class HeaderView : public QHeaderView {
 public:

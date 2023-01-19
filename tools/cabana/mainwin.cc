@@ -58,8 +58,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
-  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
-  QObject::connect(can, &CANMessages::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(detail_widget->undo_stack, &QUndoStack::indexChanged, [this](int index) {
     setWindowTitle(tr("%1%2 - Cabana").arg(index > 0 ? "* " : "").arg(dbc()->name()));
@@ -123,9 +122,13 @@ void MainWindow::createDockWindows() {
   charts_layout->setContentsMargins(0, 0, 0, 0);
   charts_layout->addWidget(charts_widget);
 
-  video_widget = new VideoWidget(this);
   video_splitter = new QSplitter(Qt::Vertical,this);
-  video_splitter->addWidget(video_widget);
+
+  if (!can->liveStreaming()) {
+    video_widget = new VideoWidget(this);
+    video_splitter->addWidget(video_widget);
+    QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
+  }
   video_splitter->addWidget(charts_container);
   video_splitter->restoreState(settings.video_splitter_state);
 
