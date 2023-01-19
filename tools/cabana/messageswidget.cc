@@ -4,6 +4,8 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QVBoxLayout>
+#include <QPainter>
+#include <QApplication>
 
 #include "tools/cabana/dbcmanager.h"
 
@@ -21,6 +23,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget = new QTableView(this);
   model = new MessageListModel(this);
   table_widget->setModel(model);
+  table_widget->setItemDelegateForColumn(4, new MessageBytesDelegate(table_widget));
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSortingEnabled(true);
@@ -30,6 +33,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setColumnWidth(2, 80);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
+
   main_layout->addWidget(table_widget);
 
   // signals/slots
@@ -64,9 +68,10 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
+  const auto &id = msgs[index.row()];
+  auto &can_data = can->lastMessage(id);
+
   if (role == Qt::DisplayRole) {
-    const auto &id = msgs[index.row()];
-    auto &can_data = can->lastMessage(id);
     switch (index.column()) {
       case 0: return msgName(id);
       case 1: return id;
@@ -76,6 +81,13 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
   } else if (role == Qt::FontRole && index.column() == columnCount() - 1) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  } else if (role == Qt::UserRole && index.column() == 4) {
+
+    QList<QVariant> colors;
+    for (int i = 0; i < can_data.dat.size(); i++){
+      colors.append(can_data.colors[i]);
+    }
+    return colors;
   }
   return {};
 }
@@ -84,7 +96,24 @@ void MessageListModel::setFilterString(const QString &string) {
   filter_str = string;
   msgs.clear();
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+    bool found = false;
+
+    // Search by message id or name
     if (it.key().contains(filter_str, Qt::CaseInsensitive) || msgName(it.key()).contains(filter_str, Qt::CaseInsensitive)) {
+      found = true;
+    }
+
+    // Search by signal name
+    const DBCMsg *msg = dbc()->msg(it.key());
+    if (msg != nullptr) {
+      for (auto &signal: msg->getSignals()) {
+        if (QString::fromStdString(signal->name).contains(filter_str, Qt::CaseInsensitive)) {
+          found = true;
+        }
+      }
+    }
+
+    if (found) {
       msgs.push_back(it.key());
     }
   }
@@ -143,5 +172,42 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_column = column;
     sort_order = order;
     sortMessages();
+  }
+}
+
+
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
+}
+
+void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QList<QVariant> colors = index.data(Qt::UserRole).toList();
+
+  QStyleOptionViewItemV4 opt = option;
+  initStyleOption(&opt, index);
+
+  const QFont font = index.data(Qt::FontRole).value<QFont>();
+  painter->setFont(font);
+
+  QRect rect = opt.rect;
+  QString bytes = QString(opt.text);
+
+  QRect pos = rect;
+  QRect space = painter->boundingRect(pos, opt.displayAlignment, " ");
+  pos.setX(pos.x() + space.width());
+
+  if ((option.state & QStyle::State_Selected) && (option.state & QStyle::State_Active)) {
+    painter->setPen(option.palette.color(QPalette::HighlightedText));
+  } else {
+    painter->setPen(option.palette.color(QPalette::Text));
+  }
+
+  int i = 0;
+  for (auto &byte : bytes.split(" ")) {
+    QRect sz = painter->boundingRect(pos, opt.displayAlignment, byte);
+    const int m = space.width() / 2;
+    painter->fillRect(sz.marginsAdded(QMargins(m + 1, m, m, m)), colors[i].value<QColor>());
+    painter->drawText(pos, opt.displayAlignment, byte);
+    pos.setX(pos.x() + sz.width() + space.width());
+    i++;
   }
 }

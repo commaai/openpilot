@@ -15,6 +15,7 @@ struct CanData {
   uint32_t count = 0;
   uint32_t freq = 0;
   QByteArray dat;
+  QList<QColor> colors;
 };
 
 class AbstractStream : public QObject {
@@ -25,19 +26,20 @@ public:
   virtual ~AbstractStream() {};
   inline bool liveStreaming() const { return is_live_streaming; }
   virtual void seekTo(double ts) {}
-  virtual inline QString routeName() const = 0;
-  virtual inline QString carFingerprint() const { return ""; }
-  virtual inline double totalSeconds() const { return 0; }
-  virtual inline double routeStartTime() const { return 0; }
-  virtual inline double currentSec() const = 0;
-  virtual inline const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
-  virtual inline VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
-  virtual inline const Route *route() const { return nullptr; }
-  virtual inline const std::vector<Event *> *events() const = 0;
-  virtual inline void setSpeed(float speed) {}
-  virtual inline bool isPaused() const { return false; }
+  virtual QString routeName() const = 0;
+  virtual QString carFingerprint() const { return ""; }
+  virtual double totalSeconds() const { return 0; }
+  virtual double routeStartTime() const { return 0; }
+  virtual double currentSec() const = 0;
+  virtual QDateTime currentDateTime() const { return {}; }
+  virtual const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
+  virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
+  virtual const Route *route() const { return nullptr; }
+  virtual const std::vector<Event *> *events() const = 0;
+  virtual void setSpeed(float speed) {}
+  virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  virtual inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
+  virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
 
 signals:
   void paused();

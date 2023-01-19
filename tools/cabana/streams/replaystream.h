@@ -19,6 +19,7 @@ public:
   inline double totalSeconds() const override { return replay->totalSeconds(); }
   inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const override { return replay->currentSeconds(); }
+  inline QDateTime currentDateTime() const override { return replay->currentDateTime(); }
   inline const Route *route() const override { return replay->route(); }
   inline const std::vector<Event *> *events() const override { return replay->events(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
