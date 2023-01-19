@@ -3,11 +3,11 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDragEnterEvent>
+#include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
 #include <QTimer>
-#include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
@@ -68,7 +68,6 @@ private:
   void resizeEvent(QResizeEvent *event) override;
   void updateAxisY();
   void updateTitle();
-  void updateFromSettings();
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
@@ -92,12 +91,16 @@ public:
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
   inline bool hasSignal(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
+public slots:
+  void setColumnCount(int n);
+
 signals:
   void dock(bool floating);
   void rangeChanged(double min, double max, bool is_zommed);
   void seriesChanged();
 
 private:
+  void resizeEvent(QResizeEvent *event) override;
   void alignCharts();
   void removeChart(ChartView *chart);
   void eventsMerged();
@@ -108,6 +111,8 @@ private:
   void updateToolBar();
   void removeAll();
   void showAllData();
+  void updateLayout();
+  void settingChanged();
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
@@ -119,7 +124,7 @@ private:
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
   QTimer *align_charts_timer;
-  QVBoxLayout *charts_layout;
+  QGridLayout *charts_layout;
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
@@ -127,6 +132,9 @@ private:
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
+  QComboBox *columns_cb;
+  int column_count = 1;
+  const int CHART_MIN_WIDTH = 300;
 };
 
 class SeriesSelector : public QDialog {
