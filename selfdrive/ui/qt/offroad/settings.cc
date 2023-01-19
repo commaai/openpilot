@@ -154,10 +154,20 @@ void TogglesPanel::updateToggles() {
       e2e_toggle->setEnabled(false);
       params.remove("ExperimentalMode");
 
-      const QString no_long = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control. openpilot longitudinal control may come in a future update.");
-      const QString no_exp_long = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control. openpilot longitudinal control is available for testing in non-release branches.");
-      const QString exp_long = tr("Enable experimental longitudinal control to allow experimental mode.");
-      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
+      const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
+
+      QString long_desc;
+      if (CP.getExperimentalLongitudinalAvailable()) {
+        if (params.getBool("IsReleaseBranch")) {
+          long_desc = unavailable + " " + tr("An experimental version of openpilot longitudinal control can be tested, along with Experimental Mode, on non-release branches.");
+        } else {
+          long_desc = tr("Enable experimental longitudinal control to allow experimental mode.");
+        }
+      } else {
+        long_desc = unavailable + " " + tr("openpilot longitudinal control may come in a future update.");
+      }
+
+      e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
     e2e_toggle->refresh();
