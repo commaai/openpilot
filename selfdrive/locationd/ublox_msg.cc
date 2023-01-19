@@ -170,9 +170,21 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
       kaitai::kstream stream(subframe_data);
       gps_t subframe(&stream);
       int subframe_id = subframe.how()->subframe_id();
+      int sv_id = msg->sv_id();
+      uint64_t tow_count = subframe.how()->tow_count();
 
-      if (subframe_id == 1) gps_subframes[msg->sv_id()].clear();
-      gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
+      bool add_subframe = true;
+      if (gps_sat_tow.count(sv_id) != 0) {
+        // verify tow continuity
+        auto lm = gps_sat_tow[sv_id];
+        int tow_diff = tow_count - lm.second;
+        add_subframe &= !(tow_diff > 4 && subframe_id <= lm.first);
+        add_subframe &= (subframe_id - lm.first) == tow_diff;
+      }
+      if (subframe_id == 1 || !add_subframe) gps_subframes[sv_id].clear();
+
+      gps_subframes[sv_id][subframe_id] = subframe_data;
+      gps_sat_tow[sv_id] = {subframe_id, tow_count};
     }
 
     if (gps_subframes[msg->sv_id()].size() == 5) {
