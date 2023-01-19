@@ -19,7 +19,7 @@ const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
 const double SANE_GPS_UNCERTAINTY = 1500.0; // m
-const double INPUT_INVALID_THRESHOLD = 5.0; // same as reset tracker
+const double INPUT_INVALID_THRESHOLD = 15.0; // same as ui
 const double DECAY = 0.99995; // same as reset tracker
 const double MAX_FILTER_REWIND_TIME = 0.8; // s
 
@@ -213,12 +213,18 @@ VectorXd Localizer::get_stdev() {
   return this->kf->get_P().diagonal().array().sqrt();
 }
 
-bool Localizer::are_inputs_ok() {
-  return this->critical_services_valid(this->observation_values_invalid) && !this->observation_timings_invalid;
+bool Localizer::are_inputs_ok(std::vector<std::string> critical_input_services) {
+  for (std::string service : critical_input_services) {
+    if (this->observation_values_invalid[service].x() < INPUT_INVALID_THRESHOLD || this->observation_timings_invalid[service])
+    return false;
+  }
+  return true;
 }
 
-void Localizer::observation_timings_invalid_reset(){
-  this->observation_timings_invalid = false;
+void Localizer::observation_timings_invalid_reset(std::vector<std::string> critical_input_services){
+  for (std::string service : critical_input_services) {
+    this->observation_timings_invalid.insert({service, false});
+  }
 }
 
 Localizer::MsgHandlerStatus Localizer::handle_sensor(double current_time, const cereal::SensorEventData::Reader& log) {
@@ -230,14 +236,12 @@ Localizer::MsgHandlerStatus Localizer::handle_sensor(double current_time, const 
   }
 
   double sensor_time = 1e-9 * log.getTimestamp();
-
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
     this->observation_timings_invalid = true;
     return MSG_TIME_INVALID;
-  }
-  else if (!this->is_timestamp_valid(sensor_time)) {
+  } else if (!this->is_timestamp_valid(sensor_time)) {
     this->observation_timings_invalid = true;
     return MSG_TIME_INVALID;
   }
@@ -274,6 +278,7 @@ Localizer::MsgHandlerStatus Localizer::handle_sensor(double current_time, const 
     }
     return MSG_VALUE_INVALID;
   }
+  return MSG_IGNORE;
 }
 
 void Localizer::input_fake_gps_observations(double current_time) {
@@ -579,23 +584,26 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 
 Localizer::MsgHandlerStatus Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
+  Localizer::MsgHandlerStatus status;
   this->time_check(t);
   if (log.isAccelerometer()) {
-    this->handle_sensor(t, log.getAccelerometer());
+    status = this->handle_sensor(t, log.getAccelerometer());
   } else if (log.isGyroscope()) {
-    this->handle_sensor(t, log.getGyroscope());
+    status = this->handle_sensor(t, log.getGyroscope());
   } else if (log.isGpsLocation()) {
-    this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
+    status = this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
   } else if (log.isGpsLocationExternal()) {
-    this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
+    status = this->handle_gps(t, log.getGpsLocationExternal(), GPS_UBLOX_SENSOR_TIME_OFFSET);
   //} else if (log.isGnssMeasurements()) {
   //  this->handle_gnss(t, log.getGnssMeasurements());
   } else if (log.isCarState()) {
-    this->handle_car_state(t, log.getCarState());
+    status = this->handle_car_state(t, log.getCarState());
   } else if (log.isCameraOdometry()) {
-    this->handle_cam_odo(t, log.getCameraOdometry());
+    status = this->handle_cam_odo(t, log.getCameraOdometry());
   } else if (log.isLiveCalibration()) {
-    this->handle_live_calib(t, log.getLiveCalibration());
+    status = this->handle_live_calib(t, log.getLiveCalibration());
+  } else {
+    status = MSG_IGNORE;
   }
   this->finite_check();
   this->update_reset_tracker();
@@ -615,15 +623,6 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 
 bool Localizer::is_gps_ok() {
   return (this->kf->get_filter_time() - this->last_gps_msg) < 1.0;
-}
-
-bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {
-  for (auto &kv : critical_services){
-    if (kv.second >= INPUT_INVALID_THRESHOLD){
-      return false;
-    }
-  }
-  return true;
 }
 
 bool Localizer::is_timestamp_valid(double current_time) {
@@ -670,17 +669,25 @@ int Localizer::locationd_thread() {
   bool filterInitialized = false;
   const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
   for (std::string service : critical_input_services) {
-    this->observation_values_invalid.insert({service, 0.0});
+    this->observation_values_invalid.insert({service, FirstOrderFilter(LLD_FREQ, 10, 1. / LLD_FREQ)});
+    this->observation_timings_invalid.insert({service, false});
   }
 
   while (!do_exit) {
     sm.update();
     if (filterInitialized){
-      this->observation_timings_invalid_reset();
+      this->observation_timings_invalid_reset(critical_input_services);
       for (const char* service : service_list) {
         if (sm.updated(service) && sm.valid(service)){
           const cereal::Event::Reader log = sm[service];
-          this->handle_msg(log);
+          Localizer::MsgHandlerStatus status = this->handle_msg(log);
+          if (status == MSG_VALUE_INVALID) {
+            this->observation_values_invalid[service].update(0);
+          } else if (status == MSG_TIME_INVALID) {
+            this->observation_timings_invalid[service] = true;
+          } else if (status == MSG_VALID) {
+            this->observation_values_invalid[service].update(LLD_FREQ);
+          }
         }
       }
     } else {
@@ -690,7 +697,7 @@ int Localizer::locationd_thread() {
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
-      bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
+      bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok(critical_input_services);
       bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 

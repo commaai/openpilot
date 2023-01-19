@@ -21,6 +21,8 @@
 
 #define POSENET_STD_HIST_HALF 20
 
+const int LLD_FREQ = 20; // Hz
+
 class Localizer {
 public:
   Localizer();
@@ -42,11 +44,10 @@ public:
   void time_check(double current_time = NAN);
   void update_reset_tracker();
   bool is_gps_ok();
-  bool critical_services_valid(std::map<std::string, double> critical_services);
   bool is_timestamp_valid(double current_time);
   void determine_gps_mode(double current_time);
-  bool are_inputs_ok();
-  void observation_timings_invalid_reset();
+  bool are_inputs_ok(std::vector<std::string> critical_input_services);
+  void observation_timings_invalid_reset(std::vector<std::string> critical_input_services);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder,
     bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid);
@@ -87,8 +88,8 @@ private:
   bool gps_mode = false;
   double last_gps_msg = 0;
   bool ublox_available = true;
-  bool observation_timings_invalid = false;
-  std::map<std::string, double> observation_values_invalid;
+  std::map<std::string, bool> observation_timings_invalid;
+  std::map<std::string, FirstOrderFilter> observation_values_invalid;
   bool standstill = true;
   int32_t orientation_reset_count = 0;
 };
