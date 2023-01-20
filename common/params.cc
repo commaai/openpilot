@@ -104,7 +104,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisablePowerDown", PERSISTENT},
     {"ExperimentalMode", PERSISTENT},
     {"ExperimentalModeConfirmed", PERSISTENT},
-    {"ExperimentalLongitudinalEnabled", PERSISTENT}, // WARNING: THIS MAY DISABLE AEB
+    {"ExperimentalLongitudinalEnabled", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
     {"DongleId", PERSISTENT},
@@ -134,6 +134,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsRhdDetected", PERSISTENT},
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsTestedBranch", CLEAR_ON_MANAGER_START},
+    {"IsReleaseBranch", CLEAR_ON_MANAGER_START},
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"LaikadEphemeris", PERSISTENT | DONT_LOG},
