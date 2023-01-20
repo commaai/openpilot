@@ -96,6 +96,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void ChartsWidget::eventsMerged() {
+  assert(!can->liveStreaming());
   {
     QFutureSynchronizer<void> future_synchronizer;
     const auto events = can->events();
@@ -172,8 +173,10 @@ void ChartsWidget::updateToolBar() {
 void ChartsWidget::settingChanged() {
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
-    columns_cb->setCurrentIndex(std::clamp(settings.chart_column_count - 1, 0, columns_cb->count() - 1));
-    setColumnCount(settings.chart_column_count);
+    range_slider->setRange(1, settings.max_cached_minutes * 60);
+    int chart_columns = std::clamp(settings.chart_column_count - 1, 0, columns_cb->count() - 1);
+    columns_cb->setCurrentIndex(chart_columns);
+    setColumnCount(chart_columns);
   }
 }
 
@@ -454,12 +457,11 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *event
     if (!sig || s.sig == sig) {
       if (clear) {
         s.vals.clear();
-        s.vals.reserve(((events->back()->mono_time - events->front()->mono_time) / 1e9) * 100);  // [n]seconds * 100hz
+        s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
         s.last_value_mono_time = 0;
       }
       double route_start_time = can->routeStartTime();
-      uint64_t begin_ts = !can->liveStreaming() ? 0 : s.last_value_mono_time;
-      Event begin_event(cereal::Event::Which::INIT_DATA, begin_ts);
+      Event begin_event(cereal::Event::Which::INIT_DATA, s.last_value_mono_time);
       auto begin = std::upper_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
       for (auto it = begin; it != events->end(); ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
@@ -647,6 +649,9 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
   qreal y1 = chart()->plotArea().top() - 2;
   qreal y2 = chart()->plotArea().bottom() + 2;
+  if (x > chart()->plotArea().right()) {
+    x = chart()->plotArea().right();
+  }
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, y1}, QPointF{x, y2});
   if (!track_pt.isNull()) {
