@@ -188,7 +188,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     canmsgs = [msg for msg in msgs if msg.which() == 'can']
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan)
+    _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
   Params().put("CarParams", CP.to_bytes())
 
 
@@ -331,7 +331,7 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gnssMeasurements": [], "liveCalibration": [], "carState": [],
+      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,

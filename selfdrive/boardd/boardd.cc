@@ -48,8 +48,8 @@
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
-#define CUTOFF_IL 200
-#define SATURATE_IL 1600
+#define CUTOFF_IL 400
+#define SATURATE_IL 1000
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 using namespace std::chrono_literals;
 
@@ -540,9 +540,8 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
     if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
-      float cur_gain = event.getDriverCameraState().getGain();
 
-      cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
+      cur_integ_lines = integ_lines_filter.update(cur_integ_lines);
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
