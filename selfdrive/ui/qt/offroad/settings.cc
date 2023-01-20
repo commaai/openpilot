@@ -156,15 +156,15 @@ void TogglesPanel::updateToggles() {
 
       const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
 
-      QString long_desc;
+      QString long_desc = unavailable + " " + \
+                          tr("openpilot longitudinal control may come in a future update.");
       if (CP.getExperimentalLongitudinalAvailable()) {
         if (params.getBool("IsReleaseBranch")) {
-          long_desc = unavailable + " " + tr("An experimental version of openpilot longitudinal control can be tested, along with Experimental Mode, on non-release branches.");
+          long_desc = unavailable + " " + tr("An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
         } else {
-          long_desc = tr("Enable experimental longitudinal control to allow experimental mode.");
+          long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
         }
       } else {
-        long_desc = unavailable + " " + tr("openpilot longitudinal control may come in a future update.");
       }
 
       e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
