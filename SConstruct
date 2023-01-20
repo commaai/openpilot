@@ -311,6 +311,8 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
+    print(qt_env['ENV']['PATH'])
   elif arch != "Darwin":
     qt_libs += ["GL"]
 
