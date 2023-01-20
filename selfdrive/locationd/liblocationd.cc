@@ -15,8 +15,8 @@ extern "C" {
     memcpy(buff, arr.begin(), arr.size());
   }
 
-  void localizer_handle_msg_bytes(Localizer *localizer, const char *data, size_t size) {
-    localizer->handle_msg_bytes(data, size);
+  void localizer_handle_msg_bytes(Localizer *localizer, const char* service, const char *data, size_t size) {
+    localizer->handle_msg_bytes(service, data, size);
   }
 
   void get_filter_internals(Localizer *localizer, double *state_buff, double *std_buff){
@@ -32,6 +32,14 @@ extern "C" {
 
   bool are_inputs_ok(Localizer *localizer){
     return localizer->are_inputs_ok();
+  }
+
+  void update_critical_services(Localizer *localizer){
+    localizer->update_critical_services();
+  }
+
+  void initialize_msg_validity_filters(Localizer *localizer){
+    localizer->initialize_msg_validity_filters();
   }
 
   void observation_timings_invalid_reset(Localizer *localizer){

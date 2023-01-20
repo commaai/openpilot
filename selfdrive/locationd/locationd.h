@@ -46,8 +46,10 @@ public:
   bool is_gps_ok();
   bool is_timestamp_valid(double current_time);
   void determine_gps_mode(double current_time);
-  bool are_inputs_ok(std::vector<std::string> critical_input_services);
-  void observation_timings_invalid_reset(std::vector<std::string> critical_input_services);
+  bool are_inputs_ok();
+  void observation_timings_invalid_reset();
+  void update_critical_services();
+  void initialize_msg_validity_filters();
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder,
     bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid);
@@ -57,8 +59,8 @@ public:
   Eigen::VectorXd get_state();
   Eigen::VectorXd get_stdev();
 
-  void handle_msg_bytes(const char *data, const size_t size);
-  MsgHandlerStatus handle_msg(const cereal::Event::Reader& log);
+  void handle_msg_bytes(const char* service, const char *data, const size_t size);
+  void handle_msg(const char* service, const cereal::Event::Reader& log);
   MsgHandlerStatus handle_sensor(double current_time, const cereal::SensorEventData::Reader& log);
   MsgHandlerStatus handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset);
   MsgHandlerStatus handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log);
@@ -89,7 +91,8 @@ private:
   double last_gps_msg = 0;
   bool ublox_available = true;
   std::map<std::string, bool> observation_timings_invalid;
-  std::map<std::string, FirstOrderFilter> observation_values_invalid;
+  std::map<std::string, FirstOrderFilter*> observation_values_invalid;
   bool standstill = true;
   int32_t orientation_reset_count = 0;
+  std::vector<std::string> critical_input_services;
 };

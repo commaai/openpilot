@@ -213,15 +213,15 @@ VectorXd Localizer::get_stdev() {
   return this->kf->get_P().diagonal().array().sqrt();
 }
 
-bool Localizer::are_inputs_ok(std::vector<std::string> critical_input_services) {
+bool Localizer::are_inputs_ok() {
   for (std::string service : critical_input_services) {
-    if (this->observation_values_invalid[service].x() < INPUT_INVALID_THRESHOLD || this->observation_timings_invalid[service])
+    if (this->observation_values_invalid[service]->x() < INPUT_INVALID_THRESHOLD || this->observation_timings_invalid[service])
     return false;
   }
   return true;
 }
 
-void Localizer::observation_timings_invalid_reset(std::vector<std::string> critical_input_services){
+void Localizer::observation_timings_invalid_reset(){
   for (std::string service : critical_input_services) {
     this->observation_timings_invalid.insert({service, false});
   }
@@ -239,10 +239,8 @@ Localizer::MsgHandlerStatus Localizer::handle_sensor(double current_time, const 
   // sensor time and log time should be close
   if (std::abs(current_time - sensor_time) > 0.1) {
     LOGE("Sensor reading ignored, sensor timestamp more than 100ms off from log time");
-    this->observation_timings_invalid = true;
     return MSG_TIME_INVALID;
   } else if (!this->is_timestamp_valid(sensor_time)) {
-    this->observation_timings_invalid = true;
     return MSG_TIME_INVALID;
   }
 
@@ -573,16 +571,15 @@ void Localizer::reset_kalman(double current_time, VectorXd init_x, MatrixXdr ini
   this->reset_tracker += 1.0;
 }
 
-void Localizer::handle_msg_bytes(const char *data, const size_t size) {
+void Localizer::handle_msg_bytes(const char* service, const char *data, const size_t size) {
   AlignedBuffer aligned_buf;
 
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(data, size));
   cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-  this->handle_msg(event);
+  this->handle_msg(service, event);
 }
 
-Localizer::MsgHandlerStatus Localizer::handle_msg(const cereal::Event::Reader& log) {
+void Localizer::handle_msg(const char* service, const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
   Localizer::MsgHandlerStatus status;
   this->time_check(t);
@@ -604,6 +601,16 @@ Localizer::MsgHandlerStatus Localizer::handle_msg(const cereal::Event::Reader& l
     status = this->handle_live_calib(t, log.getLiveCalibration());
   } else {
     status = MSG_IGNORE;
+  }
+
+  if (std::find(critical_input_services.begin(), critical_input_services.end(), service) != critical_input_services.end()) {
+    if (status == MSG_VALUE_INVALID) {
+      this->observation_values_invalid[service]->update(0);
+    } else if (status == MSG_TIME_INVALID) {
+      this->observation_timings_invalid[service] = true;
+    } else if (status == MSG_VALID) {
+      this->observation_values_invalid[service]->update(LLD_FREQ);
+    }
   }
   this->finite_check();
   this->update_reset_tracker();
@@ -650,6 +657,17 @@ void Localizer::determine_gps_mode(double current_time) {
   }
 }
 
+void Localizer::update_critical_services(){
+  critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
+}
+
+void Localizer::initialize_msg_validity_filters(){
+  for (std::string service : critical_input_services) {
+    this->observation_values_invalid.insert({service, new FirstOrderFilter(LLD_FREQ, 10, 1. / LLD_FREQ)});
+    this->observation_timings_invalid.insert({service, false});
+  }
+}
+
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
   const char* gps_location_socket;
@@ -667,27 +685,17 @@ int Localizer::locationd_thread() {
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
-  const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
-  for (std::string service : critical_input_services) {
-    this->observation_values_invalid.insert({service, FirstOrderFilter(LLD_FREQ, 10, 1. / LLD_FREQ)});
-    this->observation_timings_invalid.insert({service, false});
-  }
+  update_critical_services();
+  initialize_msg_validity_filters();
 
   while (!do_exit) {
     sm.update();
     if (filterInitialized){
-      this->observation_timings_invalid_reset(critical_input_services);
+      this->observation_timings_invalid_reset();
       for (const char* service : service_list) {
         if (sm.updated(service) && sm.valid(service)){
           const cereal::Event::Reader log = sm[service];
-          Localizer::MsgHandlerStatus status = this->handle_msg(log);
-          if (status == MSG_VALUE_INVALID) {
-            this->observation_values_invalid[service].update(0);
-          } else if (status == MSG_TIME_INVALID) {
-            this->observation_timings_invalid[service] = true;
-          } else if (status == MSG_VALID) {
-            this->observation_values_invalid[service].update(LLD_FREQ);
-          }
+          this->handle_msg(service, log);
         }
       }
     } else {
@@ -697,7 +705,7 @@ int Localizer::locationd_thread() {
     // 100Hz publish for notcars, 20Hz for cars
     const char* trigger_msg = sm["carParams"].getCarParams().getNotCar() ? "accelerometer" : "cameraOdometry";
     if (sm.updated(trigger_msg)) {
-      bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok(critical_input_services);
+      bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
       bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
