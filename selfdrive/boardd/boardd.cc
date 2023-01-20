@@ -586,6 +586,11 @@ void boardd_main_thread(std::vector<std::string> serials) {
     }
   }
 
+  for (auto s : serials) {
+    LOGE("serial '%s'", s.c_str());
+  }
+  if (true) return;
+
   // connect to all provided serials
   std::vector<Panda *> pandas;
   for (int i = 0; i < serials.size() && !do_exit; /**/) {

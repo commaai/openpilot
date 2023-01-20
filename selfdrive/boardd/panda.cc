@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <iomanip>
 #include <stdexcept>
 #include <sstream>
 
@@ -46,12 +47,13 @@ std::vector<std::string> Panda::list() {
   // check SPI
   PandaSpiHandle spi_handle("/dev/spidev0.0");
 
-  uint8_t uid[12] = {0};
-  int ret = spi_handle.control_read(0xc3, 0, 0, uid, 12);
-  if (ret == 12) {
+  const int uid_len = 12;
+  uint8_t uid[uid_len] = {0};
+  int ret = spi_handle.control_read(0xc3, 0, 0, uid, uid_len);
+  if (ret == uid_len) {
     std::stringstream stream;
-    for (int i = 0; i < 12; i++) {
-      stream << std::hex << uid[i];
+    for (int i = 0; i < uid_len; i++) {
+      stream << std::hex << std::setw(2) << std::setfill('0') << int(uid[i]);
     }
     serials.push_back(stream.str());
   }
