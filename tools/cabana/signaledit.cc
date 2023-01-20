@@ -5,6 +5,7 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QColor>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -199,8 +200,9 @@ void SignalEdit::updateForm(bool visible) {
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
-  auto color = sig == s ? "white" : "black";
-  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(getColor(form_idx)));
+  auto text_color = sig == s ? "white" : "black";
+  auto bg_color = sig == s ? QColor(getColor(form_idx)).darker(125).name() : getColor(form_idx);  // 4/5x brightness
+  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(text_color).arg(bg_color));
 }
 
 void SignalEdit::enterEvent(QEvent *event) {
