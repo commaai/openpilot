@@ -100,7 +100,7 @@ void ChartsWidget::eventsMerged() {
     QFutureSynchronizer<void> future_synchronizer;
     const auto events = can->events();
     for (auto c : charts) {
-      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, events, can->liveStreaming()));
+      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, events, true));
     }
   }
   updateState();
@@ -121,12 +121,19 @@ void ChartsWidget::zoomReset() {
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
+  if (can->liveStreaming()) {
+    const auto events = can->events();
+    for (auto c : charts) {
+      c->updateSeries(nullptr, events, false);
+    }
+  }
+
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / max_chart_range;
-    if (pos > 0.8) {
+    if (pos > 0.7) {
       const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
-      display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
+      display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.1));
     }
     display_range.second = std::floor(display_range.first + max_chart_range);
   } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
@@ -448,19 +455,26 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *event
       if (clear) {
         s.vals.clear();
         s.vals.reserve(((events->back()->mono_time - events->front()->mono_time) / 1e9) * 100);  // [n]seconds * 100hz
+        s.last_value_mono_time = 0;
       }
       double route_start_time = can->routeStartTime();
-      for (const Event *e : *events) {
-        if (e->which == cereal::Event::Which::CAN) {
-          for (const auto &c : e->event.getCan()) {
+      uint64_t begin_ts = !can->liveStreaming() ? 0 : s.last_value_mono_time;
+      Event begin_event(cereal::Event::Which::INIT_DATA, begin_ts);
+      auto begin = std::upper_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
+      for (auto it = begin; it != events->end(); ++it) {
+        if ((*it)->which == cereal::Event::Which::CAN) {
+          for (const auto &c : (*it)->event.getCan()) {
             if (s.source == c.getSrc() && s.address == c.getAddress()) {
               auto dat = c.getDat();
               double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
-              double ts = (e->mono_time / (double)1e9) - route_start_time;  // seconds
+              double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
               s.vals.push_back({ts, value});
             }
           }
         }
+      }
+      if (events->size()) {
+        s.last_value_mono_time = events->back()->mono_time;
       }
       s.series->replace(s.vals);
       updateAxisY();

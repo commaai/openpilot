@@ -54,13 +54,13 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   cached_minutes->setRange(5, 60);
   cached_minutes->setSingleStep(1);
   cached_minutes->setValue(settings.max_cached_minutes);
-  form_layout->addRow(tr("Max cached minutes"), cached_minutes);
+  form_layout->addRow(tr("Max Cached Minutes"), cached_minutes);
 
   chart_height = new QSpinBox(this);
   chart_height->setRange(100, 500);
   chart_height->setSingleStep(10);
   chart_height->setValue(settings.chart_height);
-  form_layout->addRow(tr("Chart height"), chart_height);
+  form_layout->addRow(tr("Chart Height"), chart_height);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   form_layout->addRow(buttonBox);
