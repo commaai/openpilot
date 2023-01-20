@@ -27,7 +27,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label->setContentsMargins(0 ,0, 12, 0);
   columns_cb = new QComboBox(this);
   columns_cb->addItems({"1", "2", "3", "4"});
-  columns_cb->setCurrentIndex(std::clamp(settings.chart_column_count - 1, 0, 3));
   toolbar->addWidget(new QLabel(tr("Columns:")));
   toolbar->addWidget(columns_cb);
 
@@ -43,10 +42,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setSingleStep(1);
   range_slider->setPageStep(60);  // 1 min
 
-  max_chart_range = std::min(settings.chart_range, settings.max_cached_minutes * 60);
-  display_range  = {0, max_chart_range};
-
-  range_slider->setValue(max_chart_range);
   toolbar->addWidget(range_slider);
 
   toolbar->addWidget(zoom_range_lb = new QLabel());
@@ -61,8 +56,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QWidget *charts_container = new QWidget(this);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
   charts_main_layout->setContentsMargins(0, 0, 0, 0);
-  charts_layout = new QGridLayout(charts_container);
-  charts_main_layout->addLayout(charts_layout);
+  charts_main_layout->addLayout(charts_layout = new QGridLayout);
   charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
@@ -78,7 +72,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   align_charts_timer = new QTimer(this);
   align_charts_timer->setSingleShot(true);
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
-  column_count = settings.chart_column_count;
+
+  // init settings
+  column_count = std::clamp(settings.chart_column_count, 1, columns_cb->count());
+  columns_cb->setCurrentIndex(column_count);
+  max_chart_range = std::min(settings.chart_range, settings.max_cached_minutes * 60);
+  display_range = {0, max_chart_range};
+  range_slider->setValue(max_chart_range);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
@@ -165,18 +165,15 @@ void ChartsWidget::updateToolBar() {
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   reset_zoom_btn->setEnabled(is_zoomed);
   zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
-  title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));
+  title_label->setText(tr("Charts: %1").arg(charts.size()));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::settingChanged() {
+  range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
-    range_slider->setRange(1, settings.max_cached_minutes * 60);
-    int chart_columns = std::clamp(settings.chart_column_count - 1, 0, columns_cb->count() - 1);
-    columns_cb->setCurrentIndex(chart_columns);
-    setColumnCount(chart_columns);
   }
 }
 
@@ -218,7 +215,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
 void ChartsWidget::setColumnCount(int n) {
   n = std::clamp(n + 1, 1, columns_cb->count());
   if (column_count != n) {
-    column_count = n;
+    column_count = settings.chart_column_count = n;
     updateLayout();
   }
 }
