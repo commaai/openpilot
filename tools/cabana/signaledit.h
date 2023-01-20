@@ -54,5 +54,6 @@ protected:
   QLabel *color_label;
   QLabel *icon;
   int form_idx = 0;
+  QColor bg_color;
   QToolButton *plot_btn;
 };

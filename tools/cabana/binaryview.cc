@@ -242,8 +242,9 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
-    painter->fillRect(option.rect, item->bg_color);
-    painter->setPen(item->sigs.contains(bin_view->hovered_sig) ? option.palette.color(QPalette::BrightText) : Qt::black);
+    bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
+    painter->fillRect(option.rect, sig_hovered ? item->bg_color.darker(125) : item->bg_color);  // 4/5x brightness
+    painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
