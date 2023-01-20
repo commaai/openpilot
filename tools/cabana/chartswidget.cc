@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QCompleter>
+#include <QDialogButtonBox>
 #include <QDrag>
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
@@ -72,9 +73,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
                    QApplication::style()->standardPalette().color(QPalette::Background).value();
   column_count = std::clamp(settings.chart_column_count, 1, columns_cb->count());
-  columns_cb->setCurrentIndex(column_count);
-  max_chart_range = std::min(settings.chart_range, settings.max_cached_minutes * 60);
+  max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
+  columns_cb->setCurrentIndex(column_count);
   range_slider->setValue(max_chart_range);
   updateToolBar();
 
@@ -141,32 +142,34 @@ void ChartsWidget::updateState() {
     can->seekTo(zoomed_range.first);
   }
 
-  const auto &range = is_zoomed ? zoomed_range : display_range;
   setUpdatesEnabled(false);
+  const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
-    c->setDisplayRange(range.first, range.second);
-    c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+    c->updatePlot(cur_sec, range.first, range.second);
   }
   setUpdatesEnabled(true);
 }
 
 void ChartsWidget::setMaxChartRange(int value) {
   max_chart_range = settings.chart_range = value;
+  double current_sec = can->currentSec();
   const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
-  display_range.first = std::floor(std::max(min_event_sec, can->currentSec() - max_chart_range * 0.5));
+  // keep current_sec's pos
+  double pos = (current_sec - display_range.first) / (display_range.second - display_range.first);
+  display_range.first = std::floor(std::max(min_event_sec, current_sec - max_chart_range * (1.0 - pos)));
   display_range.second = std::floor(display_range.first + max_chart_range);
   updateToolBar();
   updateState();
 }
 
 void ChartsWidget::updateToolBar() {
-  remove_all_btn->setEnabled(!charts.isEmpty());
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
-  reset_zoom_btn->setEnabled(is_zoomed);
   zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
+  remove_all_btn->setEnabled(!charts.isEmpty());
+  reset_zoom_btn->setEnabled(is_zoomed);
 }
 
 void ChartsWidget::settingChanged() {
@@ -191,7 +194,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       chart = new ChartView(this);
       chart->setFixedHeight(settings.chart_height);
       chart->setMinimumWidth(CHART_MIN_WIDTH);
-      chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+      chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
       chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
@@ -441,11 +444,13 @@ void ChartView::updateTitle() {
   }
 }
 
-void ChartView::setDisplayRange(double min, double max) {
+void ChartView::updatePlot(double cur, double min, double max) {
+  cur_sec = cur;
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
   }
+  scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
 }
 
 void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *events, bool clear) {
@@ -643,7 +648,7 @@ void ChartView::dropEvent(QDropEvent *event) {
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
-  qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
+  qreal x = chart()->mapToPosition(QPointF{cur_sec, 0}).x();
   x = std::clamp(x, chart()->plotArea().left(), chart()->plotArea().right());
   qreal y1 = chart()->plotArea().top() - 2;
   qreal y2 = chart()->plotArea().bottom() + 2;

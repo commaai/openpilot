@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QComboBox>
-#include <QDialogButtonBox>
 #include <QDragEnterEvent>
 #include <QGridLayout>
 #include <QLabel>
@@ -27,7 +26,7 @@ public:
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
-  void setDisplayRange(double min, double max);
+  void updatePlot(double cur, double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
 
@@ -78,6 +77,7 @@ private:
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QList<SigItem> sigs;
+  double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
  };
 
@@ -103,7 +103,6 @@ private:
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
-  void updateDisplayRange();
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
