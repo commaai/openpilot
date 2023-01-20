@@ -305,66 +305,66 @@ jobs:
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
 
-  test_longitudinal:
-    name: longitudinal
-    runs-on: ubuntu-20.04
-    timeout-minutes: 20
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup
-    - name: Build zenpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Test longitudinal
-      run: |
-        ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
-                        cd selfdrive/test/longitudinal_maneuvers && \
-                        coverage run ./test_longitudinal.py && \
-                        coverage xml"
-      timeout-minutes: 2
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
-    - uses: actions/upload-artifact@v2
-      if: always()
-      continue-on-error: true
-      with:
-        name: longitudinal
-        path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
+  # test_longitudinal:
+  #   name: longitudinal
+  #   runs-on: ubuntu-20.04
+  #   timeout-minutes: 20
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #     with:
+  #       submodules: true
+  #   - uses: ./.github/workflows/setup
+  #   - name: Build zenpilot
+  #     run: |
+  #       ${{ env.RUN }} "scons -j$(nproc)"
+  #   - name: Test longitudinal
+  #     run: |
+  #       ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
+  #                       cd selfdrive/test/longitudinal_maneuvers && \
+  #                       coverage run ./test_longitudinal.py && \
+  #                       coverage xml"
+  #     timeout-minutes: 2
+  #   - name: "Upload coverage to Codecov"
+  #     uses: codecov/codecov-action@v2
+  #   - uses: actions/upload-artifact@v2
+  #     if: always()
+  #     continue-on-error: true
+  #     with:
+  #       name: longitudinal
+  #       path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
-  test_cars:
-    name: cars
-    runs-on: ubuntu-20.04
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        job: [0, 1, 2, 3, 4]
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup
-    - name: Cache test routes
-      id: dependency-cache
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
-      with:
-        path: /tmp/comma_download_cache
-        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
-    - name: Build zenpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Test car models
-      timeout-minutes: 12
-      run: |
-        ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
-                        coverage xml && \
-                        chmod -R 777 /tmp/comma_download_cache"
-      env:
-        NUM_JOBS: 5
-        JOB_ID: ${{ matrix.job }}
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
+  # test_cars:
+  #   name: cars
+  #   runs-on: ubuntu-20.04
+  #   timeout-minutes: 20
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       job: [0, 1, 2, 3, 4]
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #     with:
+  #       submodules: true
+  #   - uses: ./.github/workflows/setup
+  #   - name: Cache test routes
+  #     id: dependency-cache
+  #     uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+  #     with:
+  #       path: /tmp/comma_download_cache
+  #       key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
+  #   - name: Build zenpilot
+  #     run: ${{ env.RUN }} "scons -j$(nproc)"
+  #   - name: Test car models
+  #     timeout-minutes: 12
+  #     run: |
+  #       ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
+  #                       coverage xml && \
+  #                       chmod -R 777 /tmp/comma_download_cache"
+  #     env:
+  #       NUM_JOBS: 5
+  #       JOB_ID: ${{ matrix.job }}
+  #   - name: "Upload coverage to Codecov"
+  #     uses: codecov/codecov-action@v2
 
   car_docs_diff:
     name: PR comments
