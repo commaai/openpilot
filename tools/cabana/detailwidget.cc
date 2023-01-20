@@ -48,7 +48,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   toolbar->addAction(bootstrapPixmap("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
   remove_msg_act = toolbar->addAction(bootstrapPixmap("x-lg"), "", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
-  toolbar->setVisible(false);
   frame_layout->addWidget(toolbar);
 
   // warning
