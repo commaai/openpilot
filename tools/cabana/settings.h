@@ -14,10 +14,10 @@ public:
   void load();
 
   int fps = 10;
-  int cached_segment_limit = 5;
+  int max_cached_minutes = 5;
   int chart_height = 200;
   int chart_column_count = 1;
-  int max_chart_x_range = 3 * 60; // 3 minutes
+  int chart_range = 3 * 60; // e minutes
   QString last_dir;
   QByteArray geometry;
   QByteArray video_splitter_state;
@@ -34,9 +34,8 @@ public:
   SettingsDlg(QWidget *parent);
   void save();
   QSpinBox *fps;
-  QSpinBox *cached_segment;
+  QSpinBox *cached_minutes;
   QSpinBox *chart_height;
-  QSpinBox *max_chart_x_range;
 };
 
 extern Settings settings;

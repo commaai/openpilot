@@ -1037,7 +1037,7 @@ location set</source>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
@@ -1049,7 +1049,7 @@ location set</source>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
     </message>
 </context>
 <context>
