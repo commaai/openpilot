@@ -644,7 +644,7 @@ void ChartView::dropEvent(QDropEvent *event) {
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
-  x = std::clamp(chart()->plotArea().left(), chart()->plotArea.right());
+  x = std::clamp(x, chart()->plotArea().left(), chart()->plotArea().right());
   qreal y1 = chart()->plotArea().top() - 2;
   qreal y2 = chart()->plotArea().bottom() + 2;
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
