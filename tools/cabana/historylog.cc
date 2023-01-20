@@ -200,15 +200,16 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   h->addWidget(display_type_cb);
 
   signals_cb = new QComboBox(this);
-  signals_cb->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
   h->addWidget(signals_cb);
   comp_box = new QComboBox();
   comp_box->addItems({">", "=", "!=", "<"});
   h->addWidget(comp_box);
   value_edit = new QLineEdit(this);
+  value_edit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   value_edit->setClearButtonEnabled(true);
   value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
   h->addWidget(value_edit);
+  h->addStretch(0);
   dynamic_mode = new QCheckBox(tr("Dynamic"));
   h->addWidget(dynamic_mode, 0, Qt::AlignRight);
   main_layout->addLayout(h);
