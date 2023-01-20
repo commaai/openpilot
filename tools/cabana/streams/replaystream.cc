@@ -29,6 +29,20 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
       qWarning() << "no rlogs in route" << route;
       return false;
     }
+    const auto &seg = segments.begin()->second;
+    if (seg.road_cam.isEmpty() && !replay->hasFlag(REPLAY_FLAG_NO_VIPC)) {
+      if (!seg.wide_road_cam.isEmpty()) {
+        replay->addFlag(REPLAY_FLAG_ECAM);
+      } else if (!seg.qcamera.isEmpty()) {
+        replay->addFlag(REPLAY_FLAG_QCAMERA);
+      } else {
+        replay->addFlag(REPLAY_FLAG_NO_VIPC);
+      }
+    }
+    if (replay->hasFlag(REPLAY_FLAG_NO_VIPC)) {
+      qWarning() << "load " << route << "without camera stream";
+    }
+
     replay->start();
     return true;
   }
