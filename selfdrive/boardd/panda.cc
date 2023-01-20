@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <sstream>
 
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
@@ -48,11 +49,11 @@ std::vector<std::string> Panda::list() {
   uint8_t uid[12] = {0};
   int ret = spi_handle.control_read(0xc3, 0, 0, uid, 12);
   if (ret == 12) {
-    std::string spi_serial;
+    std::stringstream stream;
     for (int i = 0; i < 12; i++) {
-      // TODO: hexlify
+      stream << std::hex << uid[i];
     }
-    serials.push_back(spi_serial);
+    serials.push_back(stream.str());
   }
   return serials;
 }
