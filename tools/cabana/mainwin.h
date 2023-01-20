@@ -47,7 +47,7 @@ protected:
   void setOption();
   void findSimilarBits();
 
-  VideoWidget *video_widget;
+  VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;

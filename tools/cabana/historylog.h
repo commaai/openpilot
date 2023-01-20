@@ -7,8 +7,8 @@
 #include <QLineEdit>
 #include <QTableView>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class HeaderView : public QHeaderView {
 public:
@@ -64,7 +64,7 @@ public:
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
   std::vector<const Signal*> sigs;
-  bool dynamic_mode = false;
+  bool dynamic_mode = true;
   DisplayType display_type = HistoryLogModel::Signals;
 };
 

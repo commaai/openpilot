@@ -137,7 +137,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
 
   if (display_type == HistoryLogModel::Hex) {
     const auto freq = can->lastMessage(msg_id).freq;
-    if constexpr (std::is_same<InputIt, std::vector<const Event *>::iterator>::value) {
+    if (!dynamic_mode) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {
         it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
       }
@@ -238,8 +238,13 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
-  QObject::connect(can, &CANMessages::seekedTo, model, &HistoryLogModel::refresh);
-  QObject::connect(can, &CANMessages::eventsMerged, model, &HistoryLogModel::segmentsMerged);
+  QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::refresh);
+  QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
+
+  dynamic_mode->setChecked(true);
+  if (can->liveStreaming()) {
+    dynamic_mode->setEnabled(false);
+  }
 }
 
 void LogsWidget::setMessage(const QString &message_id) {
