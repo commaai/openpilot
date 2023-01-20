@@ -1047,11 +1047,11 @@ trabalho definido</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
+        <translation>O controle longitudinal openpilot pode vir em uma atualização futura.</translation>
     </message>
     <message>
         <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uma versão experimental do controle longitudinal openpilot pode ser testada, juntamente com o modo Experimental, em branches de desenvolvimento.</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
