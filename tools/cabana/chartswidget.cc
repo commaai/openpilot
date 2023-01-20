@@ -2,10 +2,11 @@
 
 #include <QApplication>
 #include <QCompleter>
+#include <QDialogButtonBox>
 #include <QDrag>
-#include <QLineEdit>
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
+#include <QLineEdit>
 #include <QRubberBand>
 #include <QToolBar>
 #include <QToolButton>
@@ -24,10 +25,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   toolbar->setIconSize({16, 16});
 
   toolbar->addWidget(title_label = new QLabel());
-  title_label->setContentsMargins(0 ,0, 12, 0);
+  title_label->setContentsMargins(0, 0, 12, 0);
   columns_cb = new QComboBox(this);
   columns_cb->addItems({"1", "2", "3", "4"});
-  columns_cb->setCurrentIndex(std::clamp(settings.chart_column_count - 1, 0, 3));
   toolbar->addWidget(new QLabel(tr("Columns:")));
   toolbar->addWidget(columns_cb);
 
@@ -35,8 +35,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(stretch_label);
 
-  show_all_values_btn = toolbar->addAction("");
-  toolbar->addWidget(range_label = new QLabel());
+  toolbar->addWidget(new QLabel(tr("Range:")));
+  toolbar->addWidget(range_lb = new QLabel(this));
+  range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider->setToolTip(tr("Set the chart range"));
+  range_slider->setRange(1, settings.max_cached_minutes * 60);
+  range_slider->setSingleStep(1);
+  range_slider->setPageStep(60);  // 1 min
+  toolbar->addWidget(range_slider);
+
+  toolbar->addWidget(zoom_range_lb = new QLabel());
   reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
@@ -48,8 +56,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QWidget *charts_container = new QWidget(this);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
   charts_main_layout->setContentsMargins(0, 0, 0, 0);
-  charts_layout = new QGridLayout(charts_container);
-  charts_main_layout->addLayout(charts_layout);
+  charts_main_layout->addLayout(charts_layout = new QGridLayout);
   charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
@@ -58,20 +65,24 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   main_layout->addWidget(charts_scroll);
 
-  max_chart_range = settings.max_chart_x_range;
-  use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
-                   QApplication::style()->standardPalette().color(QPalette::Background).value();
-  updateToolBar();
-
   align_charts_timer = new QTimer(this);
   align_charts_timer->setSingleShot(true);
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
-  column_count = settings.chart_column_count;
+
+  // init settings
+  use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                   QApplication::style()->standardPalette().color(QPalette::Background).value();
+  column_count = std::clamp(settings.chart_column_count, 1, columns_cb->count());
+  max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
+  display_range = {0, max_chart_range};
+  columns_cb->setCurrentIndex(column_count);
+  range_slider->setValue(max_chart_range);
+  updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
-  QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::updateState);
+  QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
-  QObject::connect(show_all_values_btn, &QAction::triggered, this, &ChartsWidget::showAllData);
+  QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
@@ -83,34 +94,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   });
 }
 
-void ChartsWidget::updateDisplayRange() {
-  auto events = can->events();
-  double min_event_sec = (events->front()->mono_time / (double)1e9) - can->routeStartTime();
-  double max_event_sec = (events->back()->mono_time / (double)1e9) - can->routeStartTime();
-  const double cur_sec = can->currentSec();
-  if (!can->liveStreaming()) {
-    auto prev_range = display_range;
-    if (cur_sec < display_range.first || cur_sec >= (display_range.second - 5)) {
-      // reached the end, or seeked to a timestamp out of range.
-      display_range.first = cur_sec - 5;
-    }
-    display_range.first = std::floor(std::max(min_event_sec, display_range.first));
-    display_range.second = std::floor(std::min(display_range.first + max_chart_range, max_event_sec));
-    if (prev_range != display_range) {
-      QFutureSynchronizer<void> future_synchronizer;
-      for (auto c : charts) {
-        future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::setEventsRange, display_range));
-      }
-    }
-  } else {
-    if (cur_sec >= (display_range.second - 5)) {
-      display_range.first = std::floor(std::max(min_event_sec, cur_sec - settings.max_chart_x_range / 2.0));
-    }
-    display_range.second = std::floor(display_range.first + settings.max_chart_x_range);
+void ChartsWidget::eventsMerged() {
+  {
+    assert(!can->liveStreaming());
+    QFutureSynchronizer<void> future_synchronizer;
+    const auto events = can->events();
     for (auto c : charts) {
-      c->updateSeries(nullptr, events, false);
+      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, events, true));
     }
   }
+  updateState();
 }
 
 void ChartsWidget::zoomIn(double min, double max) {
@@ -128,49 +121,61 @@ void ChartsWidget::zoomReset() {
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
+  if (can->liveStreaming()) {
+    // appends incoming events to the end of series
+    const auto events = can->events();
+    for (auto c : charts) {
+      c->updateSeries(nullptr, events, false);
+    }
+  }
+
+  const double cur_sec = can->currentSec();
   if (!is_zoomed) {
-    updateDisplayRange();
-  } else if (can->currentSec() < zoomed_range.first || can->currentSec() >= zoomed_range.second) {
+    double pos = (cur_sec - display_range.first) / max_chart_range;
+    if (pos > 0.8) {
+      const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
+      display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
+    }
+    display_range.second = std::floor(display_range.first + max_chart_range);
+  } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
+    // loop in zoommed range
     can->seekTo(zoomed_range.first);
   }
 
-  const auto &range = is_zoomed ? zoomed_range : display_range;
   setUpdatesEnabled(false);
+  const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
-    c->setDisplayRange(range.first, range.second);
-    c->scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+    c->updatePlot(cur_sec, range.first, range.second);
   }
   setUpdatesEnabled(true);
 }
 
-void ChartsWidget::showAllData() {
-  bool switch_to_show_all = max_chart_range == settings.max_chart_x_range;
-  max_chart_range = switch_to_show_all ? settings.cached_segment_limit * 60
-                                       : settings.max_chart_x_range;
-  max_chart_range = std::min(max_chart_range, (uint32_t)can->totalSeconds());
+void ChartsWidget::setMaxChartRange(int value) {
+  max_chart_range = settings.chart_range = value;
+  double current_sec = can->currentSec();
+  const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
+  // keep current_sec's pos
+  double pos = (current_sec - display_range.first) / (display_range.second - display_range.first);
+  display_range.first = std::floor(std::max(min_event_sec, current_sec - max_chart_range * (1.0 - pos)));
+  display_range.second = std::floor(display_range.first + max_chart_range);
   updateToolBar();
   updateState();
 }
 
 void ChartsWidget::updateToolBar() {
-  int min_range = std::min(settings.max_chart_x_range, (int)can->totalSeconds());
-  bool displaying_all = max_chart_range != min_range;
-  show_all_values_btn->setText(tr("%1 minutes").arg(max_chart_range / 60));
-  show_all_values_btn->setToolTip(tr("Click to display %1 data").arg(displaying_all ? tr("%1 minutes").arg(min_range / 60) : tr("ALL cached")));
-  show_all_values_btn->setVisible(!is_zoomed && !can->liveStreaming());
-  remove_all_btn->setEnabled(!charts.isEmpty());
-  reset_zoom_btn->setEnabled(is_zoomed);
-  range_label->setText(is_zoomed ? tr("%1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
-  title_label->setText(charts.size() > 0 ? tr("Charts (%1)").arg(charts.size()) : tr("Charts"));
+  range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
+  zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
+  title_label->setText(tr("Charts: %1").arg(charts.size()));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
+  remove_all_btn->setEnabled(!charts.isEmpty());
+  reset_zoom_btn->setEnabled(is_zoomed);
 }
 
 void ChartsWidget::settingChanged() {
+  range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
-    columns_cb->setCurrentIndex(std::clamp(settings.chart_column_count - 1, 0, columns_cb->count() - 1));
-    setColumnCount(settings.chart_column_count);
   }
 }
 
@@ -189,11 +194,8 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       chart = new ChartView(this);
       chart->setFixedHeight(settings.chart_height);
       chart->setMinimumWidth(CHART_MIN_WIDTH);
-      chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+      chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
       chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
-      chart->setEventsRange(display_range);
-      auto range = is_zoomed ? zoomed_range : display_range;
-      chart->setDisplayRange(range.first, range.second);
       QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
       QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
       QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
@@ -204,6 +206,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
       updateLayout();
     }
     chart->addSeries(id, sig);
+    updateState();
   } else if (!show && chart) {
     chart->removeSeries(id, sig);
   }
@@ -214,7 +217,7 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
 void ChartsWidget::setColumnCount(int n) {
   n = std::clamp(n + 1, 1, columns_cb->count());
   if (column_count != n) {
-    column_count = n;
+    column_count = settings.chart_column_count = n;
     updateLayout();
   }
 }
@@ -239,6 +242,7 @@ void ChartsWidget::removeChart(ChartView *chart) {
   chart->deleteLater();
   updateToolBar();
   alignCharts();
+  updateLayout();
   emit seriesChanged();
 }
 
@@ -440,36 +444,28 @@ void ChartView::updateTitle() {
   }
 }
 
-void ChartView::setEventsRange(const std::pair<double, double> &range) {
-  if (range != events_range) {
-    events_range = range;
-    updateSeries();
-  }
-}
-
-void ChartView::setDisplayRange(double min, double max) {
+void ChartView::updatePlot(double cur, double min, double max) {
+  cur_sec = cur;
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
   }
+  scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
 }
 
-void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *events, bool clear) {
-  if (!events) events = can->events();
-  if (!events || sigs.isEmpty()) return;
-
+void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *events, bool clear) {
+  events = events ? events : can->events();
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
       if (clear) {
         s.vals.clear();
+        s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
         s.last_value_mono_time = 0;
       }
       double route_start_time = can->routeStartTime();
-      uint64_t begin_ts = can->liveStreaming() ? s.last_value_mono_time : (route_start_time + events_range.first) * 1e9;
-      Event begin_event(cereal::Event::Which::INIT_DATA, begin_ts);
+      Event begin_event(cereal::Event::Which::INIT_DATA, s.last_value_mono_time);
       auto begin = std::upper_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-      uint64_t end_ns = can->liveStreaming() ? events->back()->mono_time : (route_start_time + events_range.second) * 1e9;
-      for (auto it = begin; it != events->end() && (*it)->mono_time <= end_ns; ++it) {
+      for (auto it = begin; it != events->end(); ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
           for (const auto &c : (*it)->event.getCan()) {
             if (s.source == c.getSrc() && s.address == c.getAddress()) {
@@ -481,13 +477,8 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *event
           }
         }
       }
-      if (!s.vals.isEmpty()) {
-        auto [min_v, max_v] = std::minmax_element(s.vals.begin(), s.vals.end(), [](auto &l, auto &r) { return l.y() < r.y(); });
-        s.min_y = min_v->y();
-        s.max_y = max_v->y();
+      if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
-      } else {
-        s.min_y = s.max_y = 0;
       }
       s.series->replace(s.vals);
       updateAxisY();
@@ -501,18 +492,11 @@ void ChartView::updateAxisY() {
 
   double min_y = std::numeric_limits<double>::max();
   double max_y = std::numeric_limits<double>::lowest();
-  if (can->liveStreaming() || events_range == std::pair{axis_x->min(), axis_x->max()}) {
-    for (auto &s : sigs) {
-      if (s.min_y < min_y) min_y = s.min_y;
-      if (s.max_y > max_y) max_y = s.max_y;
-    }
-  } else {
-    for (auto &s : sigs) {
-      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-      for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
-        if (it->y() < min_y) min_y = it->y();
-        if (it->y() > max_y) max_y = it->y();
-      }
+  for (auto &s : sigs) {
+    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+    for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
+      if (it->y() < min_y) min_y = it->y();
+      if (it->y() > max_y) max_y = it->y();
     }
   }
 
@@ -664,7 +648,8 @@ void ChartView::dropEvent(QDropEvent *event) {
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
-  qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
+  qreal x = chart()->mapToPosition(QPointF{cur_sec, 0}).x();
+  x = std::clamp(x, chart()->plotArea().left(), chart()->plotArea().right());
   qreal y1 = chart()->plotArea().top() - 2;
   qreal y2 = chart()->plotArea().bottom() + 2;
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
