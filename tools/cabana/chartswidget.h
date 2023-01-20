@@ -12,8 +12,8 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 using namespace QtCharts;
 
@@ -25,7 +25,7 @@ public:
   void addSeries(const QString &msg_id, const Signal *sig);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
-  void updateSeries(const Signal *sig = nullptr);
+  void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void setEventsRange(const std::pair<double, double> &range);
   void setDisplayRange(double min, double max);
   void setPlotAreaLeftPosition(int pos);
@@ -40,6 +40,7 @@ public:
     double min_y = 0;
     double max_y = 0;
     QVector<QPointF> vals;
+    uint64_t last_value_mono_time = 0;
   };
 
 signals:
@@ -128,7 +129,6 @@ private:
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
-  std::pair<double, double> event_range;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;

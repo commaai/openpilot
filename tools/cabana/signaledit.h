@@ -6,9 +6,9 @@
 #include <QStyledItemDelegate>
 #include <QTreeView>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class SignalModel : public QAbstractItemModel {
   Q_OBJECT

@@ -28,9 +28,7 @@ public:
 
   static std::pair<uint8_t, uint32_t> parseId(const QString &id);
   inline static std::vector<std::string> allDBCNames() { return get_dbc_names(); }
-  inline std::map<uint32_t, DBCMsg> &allMsgs() { return msgs; }
   inline QString name() const { return dbc ? dbc->name.c_str() : ""; }
-
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   void removeMsg(const QString &id);
   inline const std::map<uint32_t, DBCMsg> &messages() const { return msgs; }

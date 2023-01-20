@@ -227,10 +227,15 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
-  QObject::connect(can, &CANMessages::eventsMerged, model, &HistoryLogModel::segmentsMerged);
-  QObject::connect(can, &CANMessages::seekedTo, model, &HistoryLogModel::clearAndRefetch);
+  QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
+  QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::clearAndRefetch);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
   QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
+
+  dynamic_mode->setChecked(true);
+  if (can->liveStreaming()) {
+    dynamic_mode->setEnabled(false);
+  }
 }
 
 void LogsWidget::setMessage(const QString &message_id) {
