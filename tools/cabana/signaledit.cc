@@ -5,7 +5,6 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QColor>
 
 #include "selfdrive/ui/qt/util.h"
 
