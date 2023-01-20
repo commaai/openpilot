@@ -6,7 +6,7 @@ class LiveStream : public AbstractStream {
   Q_OBJECT
 
 public:
-  LiveStream(QObject *parent, QString address = {});
+  LiveStream(QObject *parent, QString address = {}, bool logging = false);
   ~LiveStream();
   inline QString routeName() const override {
     return QString("Live Streaming From %1").arg(zmq_address.isEmpty() ? "127.0.0.1" : zmq_address);
@@ -28,4 +28,5 @@ protected:
   std::atomic<uint64_t> cache_ns = 0;
   const QString zmq_address;
   QThread *stream_thread;
+  bool logging;
 };

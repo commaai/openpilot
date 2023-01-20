@@ -1,6 +1,20 @@
 #include "tools/cabana/streams/livestream.h"
 
-LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
+#include <fstream>
+#include <QDateTime>
+#include <QStandardPaths>
+
+static std::string logFilePath() {
+  // TODO: set log root in setting diloag
+  std::string path = (QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_streams/" +
+                      QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
+  bool ret = util::create_directories(path, 0755);
+  assert(ret);
+  return path + "/rlog";
+}
+
+LiveStream::LiveStream(QObject *parent, QString address, bool logging)
+  : zmq_address(address), logging(logging), AbstractStream(parent, true) {
   if (!zmq_address.isEmpty()) {
     setenv("ZMQ", "1", 1);
   }
@@ -21,11 +35,11 @@ LiveStream::~LiveStream() {
 }
 
 void LiveStream::streamThread() {
+  std::unique_ptr<std::ofstream> fs;
   std::unique_ptr<Context> context(Context::create());
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
-  sock->setTimeout(50);
 
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
@@ -50,15 +64,20 @@ void LiveStream::streamThread() {
     }
     if (start_ts == 0) {
       start_ts = evt->mono_time;
+      if (logging) {
+        fs.reset(new std::ofstream(logFilePath(), std::ios::binary | std::ios::out));
+      }
       emit streamStarted();
     }
     current_ts = evt->mono_time;
     if (start_ts > current_ts) {
-      qDebug() << "stream is looping back to old time stamp";
       start_ts = current_ts.load();
     }
     updateEvent(evt);
-    // TODO: write stream to log file to replay it with cabana --data_dir flag.
+
+    if (fs) {
+      fs->write((char *)evt->words.begin(), evt->words.size() * sizeof(capnp::word));
+    }
   }
 }
 

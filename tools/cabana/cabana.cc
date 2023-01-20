@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
+  cmd_parser.addOption({"logging", "logging live stream to file"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
   if (args.empty() && !cmd_parser.isSet("demo") && !cmd_parser.isSet("stream")) {
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<AbstractStream> stream;
 
   if (cmd_parser.isSet("stream")) {
-    stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
+    stream.reset(new LiveStream(&app, cmd_parser.value("zmq"), cmd_parser.isSet("logging")));
   } else {
     // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
