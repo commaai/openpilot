@@ -17,7 +17,7 @@ void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
 }
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
-  const bool display_signals = display_type == HistoryLogModel::Signals;
+  const bool display_signals = display_type == HistoryLogModel::Signals && !sigs.empty();
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     if (index.column() == 0) {
@@ -41,7 +41,6 @@ void HistoryLogModel::refresh() {
   }
   filter_cmp = nullptr;
   last_fetch_time = 0;
-  display_type = !sigs.empty() ? HistoryLogModel::Signals : HistoryLogModel::Hex;
   has_more_data = true;
   endResetModel();
   updateState();
@@ -199,7 +198,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *h = new QHBoxLayout();
 
   display_type_cb = new QComboBox();
-  display_type_cb->addItems({"Signal value", "Hex value"});
+  display_type_cb->addItems({"Signal Value", "Hex Value"});
   h->addWidget(display_type_cb);
 
   signals_cb = new QComboBox(this);
@@ -260,7 +259,6 @@ void LogsWidget::refresh() {
     }
   }
 
-  display_type_cb->setCurrentIndex(has_signals ? 0 : 1);
   display_type_cb->setVisible(has_signals);
   comp_box->setVisible(has_signals);
   value_edit->setVisible(has_signals);

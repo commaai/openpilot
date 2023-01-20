@@ -36,7 +36,7 @@ public:
   inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-    return display_type == HistoryLogModel::Hex ? 2 : std::max(1ul, sigs.size()) + 1;
+    return display_type == HistoryLogModel::Signals && !sigs.empty() ? std::max(1ul, sigs.size()) + 1 : 2;
   }
   void setDynamicMode(int state);
   void segmentsMerged();
