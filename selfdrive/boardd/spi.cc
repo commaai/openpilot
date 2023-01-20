@@ -29,7 +29,6 @@ struct __attribute__((packed)) spi_header {
 const int SPI_MAX_RETRIES = 5;
 const int SPI_ACK_TIMEOUT = 50; // milliseconds
 
-std::recursive_mutex spi_hw_lock;
 class LockEx {
 public:
   LockEx(int fd, std::recursive_mutex &m) : fd(fd), m(m) {
@@ -89,7 +88,7 @@ fail:
 }
 
 PandaSpiHandle::~PandaSpiHandle() {
-  std::lock_guard lk(spi_hw_lock);
+  std::lock_guard lk(hw_lock);
   cleanup();
 }
 
@@ -103,7 +102,7 @@ void PandaSpiHandle::cleanup() {
 
 
 int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout) {
-  LockEx lock(spi_fd, spi_hw_lock);
+  LockEx lock(spi_fd, hw_lock);
   ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
@@ -114,7 +113,7 @@ int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t par
 }
 
 int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout) {
-  LockEx lock(spi_fd, spi_hw_lock);
+  LockEx lock(spi_fd, hw_lock);
   ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
@@ -125,11 +124,11 @@ int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t para
 }
 
 int PandaSpiHandle::bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  LockEx lock(spi_fd, spi_hw_lock);
+  LockEx lock(spi_fd, hw_lock);
   return bulk_transfer(endpoint, data, length, NULL, 0);
 }
 int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  LockEx lock(spi_fd, spi_hw_lock);
+  LockEx lock(spi_fd, hw_lock);
   return bulk_transfer(endpoint, NULL, 0, data, length);
 }
 
