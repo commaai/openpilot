@@ -3,9 +3,9 @@
 #include <QApplication>
 #include <QCompleter>
 #include <QDrag>
-#include <QLineEdit>
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
+#include <QLineEdit>
 #include <QRubberBand>
 #include <QToolBar>
 #include <QToolButton>
@@ -24,7 +24,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   toolbar->setIconSize({16, 16});
 
   toolbar->addWidget(title_label = new QLabel());
-  title_label->setContentsMargins(0 ,0, 12, 0);
+  title_label->setContentsMargins(0, 0, 12, 0);
   columns_cb = new QComboBox(this);
   columns_cb->addItems({"1", "2", "3", "4"});
   toolbar->addWidget(new QLabel(tr("Columns:")));
@@ -41,7 +41,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
   range_slider->setPageStep(60);  // 1 min
-
   toolbar->addWidget(range_slider);
 
   toolbar->addWidget(zoom_range_lb = new QLabel());
@@ -65,20 +64,19 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   main_layout->addWidget(charts_scroll);
 
-  use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
-                   QApplication::style()->standardPalette().color(QPalette::Background).value();
-  updateToolBar();
-
   align_charts_timer = new QTimer(this);
   align_charts_timer->setSingleShot(true);
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
 
   // init settings
+  use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                   QApplication::style()->standardPalette().color(QPalette::Background).value();
   column_count = std::clamp(settings.chart_column_count, 1, columns_cb->count());
   columns_cb->setCurrentIndex(column_count);
   max_chart_range = std::min(settings.chart_range, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
   range_slider->setValue(max_chart_range);
+  updateToolBar();
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
@@ -96,8 +94,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void ChartsWidget::eventsMerged() {
-  assert(!can->liveStreaming());
   {
+    assert(!can->liveStreaming());
     QFutureSynchronizer<void> future_synchronizer;
     const auto events = can->events();
     for (auto c : charts) {
@@ -123,6 +121,7 @@ void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
   if (can->liveStreaming()) {
+    // appends incoming events to the end of series
     const auto events = can->events();
     for (auto c : charts) {
       c->updateSeries(nullptr, events, false);
@@ -132,9 +131,9 @@ void ChartsWidget::updateState() {
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / max_chart_range;
-    if (pos > 0.7) {
+    if (pos > 0.8) {
       const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
-      display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.1));
+      display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
     }
     display_range.second = std::floor(display_range.first + max_chart_range);
   } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
@@ -449,7 +448,7 @@ void ChartView::setDisplayRange(double min, double max) {
   }
 }
 
-void ChartView::updateSeries(const Signal *sig, const std::vector<Event*> *events, bool clear) {
+void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *events, bool clear) {
   events = events ? events : can->events();
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
@@ -645,11 +644,9 @@ void ChartView::dropEvent(QDropEvent *event) {
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   qreal x = chart()->mapToPosition(QPointF{can->currentSec(), 0}).x();
+  x = std::clamp(chart()->plotArea().left(), chart()->plotArea.right());
   qreal y1 = chart()->plotArea().top() - 2;
   qreal y2 = chart()->plotArea().bottom() + 2;
-  if (x > chart()->plotArea().right()) {
-    x = chart()->plotArea().right();
-  }
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, y1}, QPointF{x, y2});
   if (!track_pt.isNull()) {
