@@ -18,6 +18,7 @@ void Settings::save() {
   s.setValue("cached_segment", cached_segment_limit);
   s.setValue("chart_height", chart_height);
   s.setValue("chart_range", chart_range);
+  s.setValue("chart_column_count", chart_column_count);
   s.setValue("last_dir", last_dir);
   s.setValue("window_state", window_state);
   s.setValue("geometry", geometry);
@@ -27,9 +28,10 @@ void Settings::save() {
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  cached_segment_limit = s.value("cached_segment", 3).toInt();
+  cached_segment_limit = s.value("cached_segment", 5).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_range = s.value("chart_range", 3 * 60).toInt();
+  chart_column_count = s.value("chart_column_count", 1).toInt();
   last_dir = s.value("last_dir", QDir::homePath()).toString();
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();
@@ -49,7 +51,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   form_layout->addRow("FPS", fps);
 
   cached_segment = new QSpinBox(this);
-  cached_segment->setRange(3, 60);
+  cached_segment->setRange(5, 60);
   cached_segment->setSingleStep(1);
   cached_segment->setValue(settings.cached_segment_limit);
   form_layout->addRow(tr("Cached segments limit"), cached_segment);

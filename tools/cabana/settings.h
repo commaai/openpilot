@@ -14,9 +14,10 @@ public:
   void load();
 
   int fps = 10;
-  int cached_segment_limit = 3;
+  int cached_segment_limit = 5;
   int chart_height = 200;
-  int chart_range = 3 * 60; // sec
+  int chart_column_count = 1;
+  int chart_range = 3 * 60; // e minutes
   QString last_dir;
   QByteArray geometry;
   QByteArray video_splitter_state;
