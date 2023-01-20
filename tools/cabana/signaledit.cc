@@ -89,6 +89,8 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
 
+  bg_color = QColor(getColor(form_idx));
+
   // title bar
   auto title_bar = new QWidget(this);
   title_bar->setFixedHeight(32);
@@ -142,7 +144,7 @@ void SignalEdit::setSignal(const QString &message_id, const Signal *signal) {
   updateForm(msg_id == message_id && form->isVisible());
   msg_id = message_id;
   color_label->setText(QString::number(form_idx + 1));
-  color_label->setStyleSheet(QString("color:black; background-color:%2").arg(getColor(form_idx)));
+  color_label->setStyleSheet(QString("color:black; background-color:%2").arg(bg_color.name()));
   title->setText(sig->name.c_str());
   show();
 }
@@ -199,8 +201,9 @@ void SignalEdit::updateForm(bool visible) {
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
-  auto color = sig == s ? "white" : "black";
-  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(getColor(form_idx)));
+  auto text_color = sig == s ? "white" : "black";
+  auto _bg_color = sig == s ? bg_color.darker(125) : bg_color;  // 4/5x brightness
+  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(text_color).arg(_bg_color.name()));
 }
 
 void SignalEdit::enterEvent(QEvent *event) {
