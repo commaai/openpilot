@@ -17,16 +17,15 @@ void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
 }
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
-  const bool display_signals = display_type == HistoryLogModel::Signals && !sigs.empty();
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
     if (index.column() == 0) {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return display_signals ? QString::number(m.sig_values[index.column() - 1]) : m.data;
-  } else if (role == Qt::FontRole && index.column() == 1 && !display_signals) {
+    return displaySignals() ? QString::number(m.sig_values[index.column() - 1]) : m.data;
+  } else if (role == Qt::FontRole && index.column() == 1 && !displaySignals()) {
     return QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  } else if (role == Qt::ToolTipRole && index.column() > 0 && display_signals) {
+  } else if (role == Qt::ToolTipRole && index.column() > 0 && displaySignals()) {
     return tr("double click to open the chart");
   }
   return {};
@@ -56,13 +55,12 @@ void HistoryLogModel::clearAndRefetch() {
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal) {
-    const bool display_signals = display_type == HistoryLogModel::Signals && !sigs.empty();
     if (role == Qt::DisplayRole || role == Qt::ToolTipRole) {
       if (section == 0) {
         return "Time";
       }
-      return display_signals ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
-    } else if (section > 0 && display_signals) {
+      return displaySignals() ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
+    } else if (section > 0 && displaySignals()) {
       if (role == Qt::BackgroundRole) return QBrush(QColor(getColor(section - 1)));
       if (role == Qt::ForegroundRole) return QBrush(Qt::black);
     }
