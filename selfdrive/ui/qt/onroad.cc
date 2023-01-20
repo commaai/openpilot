@@ -235,7 +235,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   }
 }
 
-void AnnotatedCameraWidget::drawHud(QPainter &p) {
+void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   p.save();
 
   // Header gradient
@@ -391,9 +391,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
   // dm icon
   if (!hideDM) {
-    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
-    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+    // int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
+    // drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
+    //         dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+    drawDriverState(p, s);
   }
   p.restore();
 }
@@ -494,6 +495,21 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
+
+  painter.restore();
+}
+
+void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s) {
+  const UIScene &scene = s->scene;
+
+  painter.save();
+
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0), 6, Qt::SolidLine, Qt::RoundCap));
+  painter.drawLines(scene.face_kpt_segments, 16);
+
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0), 3, Qt::SolidLine, Qt::RoundCap));
+  // painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, 0.1));
+  painter.drawLines(scene.face_kpt_segments+16, 44);
 
   painter.restore();
 }
@@ -608,7 +624,7 @@ void AnnotatedCameraWidget::paintGL() {
     }
   }
 
-  drawHud(painter);
+  drawHud(painter, s);
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
