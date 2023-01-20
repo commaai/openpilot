@@ -86,9 +86,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
-  tab_widget->addTab(scroll, "&Msg");
+  tab_widget->addTab(scroll, bootstrapPixmap("file-earmark-ruled"), "&Msg");
   history_log = new LogsWidget(this);
-  tab_widget->addTab(history_log, "&Logs");
+  tab_widget->addTab(history_log, bootstrapPixmap("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
   stacked_layout = new QStackedLayout(this);
