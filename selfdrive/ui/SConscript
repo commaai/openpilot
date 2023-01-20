@@ -78,6 +78,8 @@ lupdate = qt_env.Command(translation_sources, qt_src, "selfdrive/ui/update_trans
 lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
 qt_env.Depends(lrelease, lupdate)
 qt_env.NoClean(translation_sources)
+qt_env.Precious(translation_sources)
+qt_env.NoCache(lupdate)
 
 # setup and factory resetter
 if GetOption('extras'):
