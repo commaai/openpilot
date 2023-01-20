@@ -1022,14 +1022,6 @@ trabalho definido</translation>
         <translation>Neste carro o penpilot por padrão utiliza o ACC nativo do veículo ao invés de controlar longitudinalmente. Ative isto para mudar para o controle longitudinal do openpilot. Ativar o Modo Experimental é recomendado quando em uso do controle longitudinal experimental do openpilot.</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>O Modo Experimental está atualmente indisponível para este carro, já que o ACC original do carro é usado para controle longitudinal.</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation>Ative o controle longitudinal experimental para permitir o modo experimental.</translation>
-    </message>
-    <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>openpilot por padrão funciona em &lt;b&gt;modo chill&lt;/b&gt;. modo Experimental ativa &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que não estão prontos para o modo chill. Recursos experimentais estão listados abaixo:</translation>
     </message>
@@ -1048,6 +1040,22 @@ trabalho definido</translation>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation>A visualização da direção fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será exibido no canto superior direito.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

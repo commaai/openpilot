@@ -1018,14 +1018,6 @@ location set</source>
         <translation>在本車輛中，openpilot預設將使用原車內建的ACC系統，而非openpilot縱向控制。開啟此開關來啟用openpilot縱向控制，使用此選項時建議一併啟用實驗模式。</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>因車輛使用內建ACC系統，無法在本車輛上啟動實驗模式。</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
-    </message>
-    <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>openpilot 預設以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
     </message>
@@ -1044,6 +1036,22 @@ location set</source>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation>低速行駛時，將會切換成路側廣角鏡頭，以完整顯示轉彎路徑，右上角將出現實驗模式圖案。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
