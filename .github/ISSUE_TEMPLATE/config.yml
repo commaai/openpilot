@@ -1,14 +1,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report model bugs
-    url: https://github.com/commaai/openpilot/discussions/categories/model-feedback
+    url: https://github.com/chadgauth/zenpilot/discussions/categories/model-feedback
     about: Provide feedback for the driving or driver monitoring models
   - name: Discussions
-    url: https://github.com/commaai/openpilot/discussions
+    url: https://github.com/chadgauth/zenpilot/discussions
     about: For questions and general discussion about openpilot
   - name: Community Wiki
-    url: https://github.com/commaai/openpilot/wiki
+    url: https://github.com/chadgauth/zenpilot/wiki
     about: Check out our community wiki
-  - name: Community Discord
+  - name: Community Discord (#custom-forks channel)
     url: https://discord.comma.ai
     about: Check out our community discord

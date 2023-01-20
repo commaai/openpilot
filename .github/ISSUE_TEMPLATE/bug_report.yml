@@ -1,5 +1,5 @@
 name: Bug report
-description: For issues with running openpilot on your comma device
+description: For issues with running zenpilot on your comma device
 labels: ["bug"]
 body:
 
@@ -7,14 +7,11 @@ body:
     attributes:
       value: >
         Before creating a **bug report**, please check the following:
-          * If the issue likely only affects your car model or make, go back and open a **car bug report** instead.
-          * If the issue is related to the driving or driver monitoring models, you should open a [discussion](https://github.com/commaai/openpilot/discussions/categories/model-feedback) instead.
-          * Ensure you're running the latest openpilot release.
-          * Ensure you're using officially supported hardware. Issues running on PCs have a different issue template.
-          * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
-          * Ensure you're running stock openpilot. We cannot look into bug reports from forks.
+          * The issue is directly related to one of the features this fork has added
+          * Ensure you're running the latest zenpilot release.
+          * If the issue is related to the driving or driver monitoring models, you should open a [discussion](https://github.com/commaai/openpilot/discussions/categories/model-feedback) over on openpilot.
 
-        If you're unsure whether you've hit a bug, check out the #installation-help channel in the [community Discord server](https://discord.comma.ai).
+        If you're unsure whether you've hit a bug, mention syberdelicWolf on #custom-forks channel in the [community Discord server](https://discord.comma.ai).
 
   - type: textarea
     attributes:
@@ -35,9 +32,9 @@ body:
   - type: input
     id: version
     attributes:
-      label: openpilot version
+      label: zenpilot version
       description: If you're not on release, provide the commit hash
-      placeholder: 0.8.10
+      placeholder: 0-23.JAN.18-ZP-0.9.0
     validations:
       required: true
 

@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "openpilot"
+name = "zenpilot"
 version = "0.1.0"
 description = "an open source driver assistance system"
 authors = ["Vehicle Researcher <user@comma.ai>"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/commaai/openpilot"
+repository = "https://github.com/chadgauth/zenpilot"
 documentation = "https://docs.comma.ai"
 
 

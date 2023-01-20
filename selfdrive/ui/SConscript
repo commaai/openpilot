@@ -93,20 +93,20 @@ if GetOption('extras'):
   release = "release3"
   dashcam = "dashcam3"
   installers = [
-    ("openpilot", release),
-    ("openpilot_test", f"{release}-staging"),
-    ("openpilot_nightly", "master-ci"),
-    ("openpilot_internal", "master"),
+    ("zenpilot", release),
+    ("zenpilot_test", f"{release}-staging"),
+    ("zenpilot_nightly", "experimental"),
+    ("zenpilot_internal", "develop"),
     ("dashcam", dashcam),
     ("dashcam_test", f"{dashcam}-staging"),
   ]
 
   cont = {}
-  for brand in ("openpilot", "dashcam"):
+  for brand in ("zenpilot", "dashcam"):
     cont[brand] = senv.Command(f"installer/continue_{brand}.o", f"installer/continue_{brand}.sh",
                                "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
-    brand = "dashcam" if "dashcam" in branch else "openpilot"
+    brand = "dashcam" if "dashcam" in branch else "zenpilot"
     d = {'BRANCH': f"'\"{branch}\"'", 'BRAND': f"'\"{brand}\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"

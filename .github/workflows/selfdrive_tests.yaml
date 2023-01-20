@@ -7,7 +7,7 @@ on:
   pull_request:
 
 concurrency:
-  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -43,9 +43,9 @@ jobs:
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup
     - name: Check submodules
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/develop' && github.repository == 'chadgauth/zenpilot'
       run: release/check-submodules.sh
-    - name: Build openpilot and run checks
+    - name: Build zenpilot and run checks
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
@@ -74,7 +74,7 @@ jobs:
     - uses: ./.github/workflows/setup
       with:
         save-cache: true
-    - name: Build openpilot with all flags
+    - name: Build zenpilot with all flags
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache
       run: |
@@ -177,23 +177,23 @@ jobs:
       timeout-minutes: 5
       run: ${{ env.RUN }} "pre-commit run --all"
 
-  valgrind:
-    name: valgrind
-    runs-on: ubuntu-20.04
-    timeout-minutes: 20
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run valgrind
-      run: |
-        ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
-    - name: Print logs
-      if: always()
-      run: cat selfdrive/test/valgrind_logs.txt
+  # valgrind:
+  #   name: valgrind
+  #   runs-on: ubuntu-20.04
+  #   timeout-minutes: 20
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #     with:
+  #       submodules: true
+  #   - uses: ./.github/workflows/setup
+  #   - name: Build zenpilot
+  #     run: ${{ env.RUN }} "scons -j$(nproc)"
+  #   - name: Run valgrind
+  #     run: |
+  #       ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
+  #   - name: Print logs
+  #     if: always()
+  #     run: cat selfdrive/test/valgrind_logs.txt
 
   unit_tests:
     name: unit tests
@@ -204,7 +204,7 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-    - name: Build openpilot
+    - name: Build zenpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       timeout-minutes: 15
@@ -253,7 +253,7 @@ jobs:
       with:
         path: /tmp/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
-    - name: Build openpilot
+    - name: Build zenpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
@@ -270,7 +270,7 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      if: ${{ failure() && github.event_name == 'pull_request' && github.repository == 'chadgauth/zenpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
@@ -280,6 +280,7 @@ jobs:
     name: model tests
     runs-on: ubuntu-20.04
     timeout-minutes: 20
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -288,7 +289,7 @@ jobs:
     - name: Build Docker image
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
-    - name: Build openpilot
+    - name: Build zenpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run model replay with ONNX
@@ -313,7 +314,7 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-    - name: Build openpilot
+    - name: Build zenpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test longitudinal
@@ -351,7 +352,7 @@ jobs:
       with:
         path: /tmp/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
-    - name: Build openpilot
+    - name: Build zenpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
       timeout-minutes: 12

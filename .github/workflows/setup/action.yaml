@@ -20,7 +20,7 @@ runs:
       run: echo "$CACHE_COMMIT_DATE"
     - shell: bash
       run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
-      if: github.ref != 'refs/heads/master' || inputs.save-cache == 'false'
+      if: github.ref != 'refs/heads/develop' || inputs.save-cache == 'false'
     - id: scons-cache
       # TODO: change the version to the released version
       # when https://github.com/actions/cache/pull/489 (or 571) is merged.
