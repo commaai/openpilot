@@ -61,7 +61,7 @@ jobs:
         cp .pylintrc $STRIPPED_DIR
         cp mypy.ini $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "SKIP=test_translations pre-commit run --all"
+        ${{ env.RUN }} "pre-commit run --all"
 
   build_all:
     name: build all
