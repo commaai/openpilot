@@ -240,6 +240,7 @@ void ChartsWidget::removeChart(ChartView *chart) {
   chart->deleteLater();
   updateToolBar();
   alignCharts();
+  updateLayout();
   emit seriesChanged();
 }
 
