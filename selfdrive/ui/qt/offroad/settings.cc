@@ -142,7 +142,7 @@ void TogglesPanel::updateToggles() {
     if (!CP.getExperimentalLongitudinalAvailable()) {
       params.remove("ExperimentalLongitudinalEnabled");
     }
-    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && is_release);
+    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
 
     const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
     const bool exp_long_enabled = CP.getExperimentalLongitudinalAvailable() && params.getBool("ExperimentalLongitudinalEnabled");
@@ -165,9 +165,7 @@ void TogglesPanel::updateToggles() {
         } else {
           long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
         }
-      } else {
       }
-
       e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
