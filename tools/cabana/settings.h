@@ -14,11 +14,14 @@ public:
   void load();
 
   int fps = 10;
-  int cached_segment_limit = 3;
+  int cached_segment_limit = 5;
   int chart_height = 200;
+  int chart_column_count = 1;
   int max_chart_x_range = 3 * 60; // 3 minutes
   QString last_dir;
-  QByteArray window_state, geometry;
+  QByteArray geometry;
+  QByteArray video_splitter_state;
+  QByteArray window_state;
 
 signals:
   void changed();
