@@ -1,12 +1,12 @@
 #pragma once
 
 #include <QComboBox>
-#include <QDialogButtonBox>
 #include <QDragEnterEvent>
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
+#include <QSlider>
 #include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -26,8 +26,7 @@ public:
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
-  void setEventsRange(const std::pair<double, double> &range);
-  void setDisplayRange(double min, double max);
+  void updatePlot(double cur, double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
 
@@ -37,8 +36,6 @@ public:
     uint32_t address = 0;
     const Signal *sig = nullptr;
     QLineSeries *series = nullptr;
-    double min_y = 0;
-    double max_y = 0;
     QVector<QPointF> vals;
     uint64_t last_value_mono_time = 0;
   };
@@ -79,8 +76,8 @@ private:
   QPointF track_pt;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  std::pair<double, double> events_range = {0, 0};
   QList<SigItem> sigs;
+  double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
  };
 
@@ -106,21 +103,21 @@ private:
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
-  void updateDisplayRange();
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
   void removeAll();
-  void showAllData();
+  void setMaxChartRange(int value);
   void updateLayout();
   void settingChanged();
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
-  QLabel *range_label;
+  QLabel *zoom_range_lb;
+  QLabel *range_lb;
+  QSlider *range_slider;
   bool docking = true;
-  QAction *show_all_values_btn;
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
