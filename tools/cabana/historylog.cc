@@ -92,6 +92,7 @@ void HistoryLogModel::updateState() {
     if ((has_more_data = !new_msgs.empty())) {
       beginInsertRows({}, 0, new_msgs.size() - 1);
       messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+      updateColors();
       endInsertRows();
     }
     last_fetch_time = current_time;
@@ -104,7 +105,25 @@ void HistoryLogModel::fetchMore(const QModelIndex &parent) {
     if ((has_more_data = !new_msgs.empty())) {
       beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
       messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+      if (!dynamic_mode) {
+        updateColors();
+      }
       endInsertRows();
+    }
+  }
+}
+
+void HistoryLogModel::updateColors() {
+  if (display_type == HistoryLogModel::Hex) {
+    const auto freq = can->lastMessage(msg_id).freq;
+    if (dynamic_mode) {
+      for (auto it = messages.rbegin(); it != messages.rend(); ++it) {
+        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      }
+    } else {
+      for (auto it = messages.begin(); it != messages.end(); ++it) {
+        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      }
     }
   }
 }
@@ -131,19 +150,6 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
               return msgs;
           }
         }
-      }
-    }
-  }
-
-  if (display_type == HistoryLogModel::Hex) {
-    const auto freq = can->lastMessage(msg_id).freq;
-    if (!dynamic_mode) {
-      for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
-      }
-    } else {
-      for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
       }
     }
   }

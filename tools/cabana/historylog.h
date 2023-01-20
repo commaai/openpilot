@@ -41,6 +41,7 @@ public:
   }
   void setDynamicMode(int state);
   void segmentsMerged();
+  void updateColors();
   void refresh();
 
   struct Message {
