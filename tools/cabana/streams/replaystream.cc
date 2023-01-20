@@ -4,7 +4,7 @@
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
   QObject::connect(&settings, &Settings::changed, [this]() {
-    if (replay) replay->setSegmentCacheLimit(settings.cached_segment_limit);
+    if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
 }
 
@@ -18,7 +18,7 @@ static bool event_filter(const Event *e, void *opaque) {
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   replay = new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this);
-  replay->setSegmentCacheLimit(settings.cached_segment_limit);
+  replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay, &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay, &Replay::segmentsMerged, this, &AbstractStream::eventsMerged);

@@ -15,7 +15,7 @@ Settings::Settings() {
 void Settings::save() {
   QSettings s("settings", QSettings::IniFormat);
   s.setValue("fps", fps);
-  s.setValue("cached_segment", cached_segment_limit);
+  s.setValue("max_cached_minutes", max_cached_minutes);
   s.setValue("chart_height", chart_height);
   s.setValue("chart_range", chart_range);
   s.setValue("chart_column_count", chart_column_count);
@@ -28,7 +28,7 @@ void Settings::save() {
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  cached_segment_limit = s.value("cached_segment", 5).toInt();
+  max_cached_minutes = s.value("cached_minutes", 5).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_range = s.value("chart_range", 3 * 60).toInt();
   chart_column_count = s.value("chart_column_count", 1).toInt();
@@ -50,11 +50,11 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   fps->setValue(settings.fps);
   form_layout->addRow("FPS", fps);
 
-  cached_segment = new QSpinBox(this);
-  cached_segment->setRange(5, 60);
-  cached_segment->setSingleStep(1);
-  cached_segment->setValue(settings.cached_segment_limit);
-  form_layout->addRow(tr("Cached segments limit"), cached_segment);
+  cached_minutes = new QSpinBox(this);
+  cached_minutes->setRange(5, 60);
+  cached_minutes->setSingleStep(1);
+  cached_minutes->setValue(settings.max_cached_minutes);
+  form_layout->addRow(tr("Max cached minutes"), cached_minutes);
 
   chart_height = new QSpinBox(this);
   chart_height->setRange(100, 500);
@@ -72,7 +72,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
 
 void SettingsDlg::save() {
   settings.fps = fps->value();
-  settings.cached_segment_limit = cached_segment->value();
+  settings.max_cached_minutes = cached_minutes->value();
   settings.chart_height = chart_height->value();
   settings.save();
   accept();

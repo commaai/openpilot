@@ -39,11 +39,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new QSlider(Qt::Horizontal, this);
   range_slider->setToolTip(tr("Set the chart range"));
-  range_slider->setRange(1, settings.cached_segment_limit * 60);
+  range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
   range_slider->setPageStep(60);  // 1 min
 
-  max_chart_range = std::min(settings.chart_range, settings.cached_segment_limit * 60);
+  max_chart_range = std::min(settings.chart_range, settings.max_cached_minutes * 60);
   display_range  = {0, max_chart_range};
 
   range_slider->setValue(max_chart_range);
@@ -145,6 +145,9 @@ void ChartsWidget::updateState() {
 
 void ChartsWidget::setMaxChartRange(int value) {
   max_chart_range = settings.chart_range = value;
+  const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
+  display_range.first = std::floor(std::max(min_event_sec, can->currentSec() - max_chart_range * 0.5));
+  display_range.second = std::floor(display_range.first + max_chart_range);
   updateToolBar();
   updateState();
 }
