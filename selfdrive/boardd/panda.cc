@@ -40,7 +40,21 @@ bool Panda::comms_healthy() {
 }
 
 std::vector<std::string> Panda::list() {
-  return PandaUsbHandle::list();
+  std::vector<std::string> serials = PandaUsbHandle::list();
+
+  // check SPI
+  PandaSpiHandle spi_handle("/dev/spidev0.0");
+
+  uint8_t uid[12] = {0};
+  int ret = spi_handle.control_read(0xc3, 0, 0, uid, 12);
+  if (ret == 12) {
+    std::string spi_serial;
+    for (int i = 0; i < 12; i++) {
+      // TODO: hexlify
+    }
+    serials.push_back(spi_serial);
+  }
+  return serials;
 }
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param) {
