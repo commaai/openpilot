@@ -28,8 +28,6 @@ def get_log(segs=range(0)):
   for m in all_logs:
     if m.ubloxGnss.which() != 'measurementReport':
       continue
-    if m.ubloxGnss.measurementReport.numMeas == 0:
-      continue
 
     MAX_MEAS = 7
     if m.ubloxGnss.measurementReport.numMeas > MAX_MEAS:
