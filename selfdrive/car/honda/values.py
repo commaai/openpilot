@@ -149,6 +149,40 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
 
+
+def get_common_prefix(l):
+  s1 = min(l)
+  s2 = max(l)
+  for i, c in enumerate(s1):
+    if c != s2[i]:
+      return s1[:i]
+  return s1
+
+
+def match_fw_to_toyota_fuzzy(fw_versions_dict):
+  invalid = []
+  for candidate, fw_versions in FW_VERSIONS.items():
+    for ecu_type, fws in fw_versions.items():
+      addr = (ecu_type[1], ecu_type[2])
+      found_versions = fw_versions_dict.get(addr, set())
+
+      if not len(found_versions):
+        # Some models can sometimes miss an ecu, or show on two different addresses
+        if candidate in FW_QUERY_CONFIG.non_essential_ecus.get(ecu_type, []):
+          continue
+
+      candidate_ecu_prefix = get_common_prefix(fws)
+      all_match = all(fw.startswith(candidate_ecu_prefix) for fw in found_versions)
+
+      # Invalid candidates if car is missing versions or not all versions match prefix in database
+      if not len(found_versions) or not all_match:
+        invalid.append(candidate)
+        break
+
+  # print(set(FW_VERSIONS.keys()) - set(invalid))
+  return set(FW_VERSIONS.keys()) - set(invalid)
+
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
