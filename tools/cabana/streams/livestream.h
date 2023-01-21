@@ -17,7 +17,7 @@ public:
 
 protected:
   void streamThread();
-  void updateCachedNS() { cache_ns = (settings.cached_segment_limit * 60) * 1e9; }
+  void updateCachedNS() { cache_ns = (settings.max_cached_minutes * 60) * 1e9; }
 
   mutable std::mutex lock;
   mutable std::vector<Event *> events_vector;
