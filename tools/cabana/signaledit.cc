@@ -352,8 +352,10 @@ void SignalView::rowsChanged() {
 void SignalView::expandSignal(const Signal *sig) {
   if (int row = model->signalRow(sig); row != -1) {
     auto idx = model->index(row, 0);
-    tree->setExpanded(idx, !tree->isExpanded(idx));
+    bool expand = !tree->isExpanded(idx);
+    tree->setExpanded(idx, expand);
     tree->scrollTo(idx, QAbstractItemView::PositionAtTop);
+    if (expand) tree->setCurrentIndex(idx);
   }
 }
 
