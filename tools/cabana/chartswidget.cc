@@ -260,9 +260,11 @@ void ChartsWidget::alignCharts() {
   for (auto c : charts) {
     plot_left = qMax((qreal)plot_left, c->getYAsixLabelWidth());
   }
+  setUpdateEnabled(false);
   for (auto c : charts) {
     c->setPlotAreaLeftPosition(plot_left);
   }
+  setUpdateEnabled(true);
 }
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
