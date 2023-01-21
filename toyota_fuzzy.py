@@ -3,28 +3,11 @@ import random
 from collections import defaultdict
 from selfdrive.car.toyota.values import FW_VERSIONS
 from selfdrive.car.toyota.values import match_fw_to_toyota_fuzzy
+from selfdrive.car.fw_versions import match_fw_to_car_fuzzy, match_fw_to_car
 from cereal import car
 
 Ecu = car.CarParams.Ecu
-
-issue = set()
-
-for i in range(200):
-  for car, versions in FW_VERSIONS.items():
-    versions = {(ecu[1], ecu[2]): [random.choice(fws)] for ecu, fws in versions.items()}
-    # print(versions)
-
-    ret = match_fw_to_toyota_fuzzy(versions)
-    if len(ret) != 1:
-      print(f'Not one match! {car=}: {ret=}')
-      issue.add(car)
-
-    # print(ret)
-print()
-print(issue)
-print()
-print(set(FW_VERSIONS) - issue)
-exit(0)
+ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 def get_common_prefix(l):
@@ -34,6 +17,54 @@ def get_common_prefix(l):
     if c != s2[i]:
       return s1[:i]
   return s1
+
+
+# # get all fw for each ecu to find common prefixes
+# all_fw_by_ecu = defaultdict(list)
+# for car, fw_by_ecu in FW_VERSIONS.items():
+#   for ecu, fws in fw_by_ecu.items():
+#     all_fw_by_ecu[ecu].extend(fws)
+#
+# # find common prefixes
+# for ecu, fws in all_fw_by_ecu.items():
+#   fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
+#   print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', get_common_prefix(fws_unicode), f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
+#
+# raise Exception
+
+# find common prefixes for fw for each car
+for car, fw_by_ecu in FW_VERSIONS.items():
+  print(' *', car)
+  for ecu, fws in sorted(fw_by_ecu.items(), key=lambda e: e[0]):
+    fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
+    print('  *', f'{ECU_NAME[ecu[0]] + ":":24}', get_common_prefix(fws_unicode), f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
+
+raise Exception
+
+
+issue = set()
+
+for i in range(200):
+  for car, versions in FW_VERSIONS.items():
+    versions = {(ecu[1], ecu[2]): [random.choice(fws)] for ecu, fws in versions.items()}
+    # print(versions)
+
+    ret = match_fw_to_toyota_fuzzy(versions)
+    # is_exact, ret = match_fw_to_car(versions, allow_exact=False)
+    # ret = match_fw_to_car_fuzzy(versions, config=None)
+    if len(ret) != 1:
+      print(f'Not one match! {car=}: {ret=}')
+      issue.add(car)
+    elif list(ret)[0] != car:
+      print(f'Matched to wrong car! real: {car}, match: {ret}')
+      issue.add(car)
+
+    # print(ret)
+print()
+print('bad:', issue)
+print()
+print('good:', set(FW_VERSIONS) - issue)
+raise Exception
 
 
 prefixes = defaultdict(dict)
