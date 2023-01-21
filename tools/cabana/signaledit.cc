@@ -40,12 +40,9 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Sign
 }
 
 void SignalModel::setMessage(const QString &id) {
-  bool address_changed = DBCManager::parseId(id).second != DBCManager::parseId(msg_id).second;
-  if (address_changed || !filter_str.isEmpty()) {
-    msg_id = id;
-    filter_str = "";
-    refresh();
-  }
+  msg_id = id;
+  filter_str = "";
+  refresh();
 }
 
 void SignalModel::setFilter(const QString &txt) {
