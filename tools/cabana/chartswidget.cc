@@ -228,7 +228,7 @@ void ChartsWidget::updateLayout() {
     if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
   }
   for (int i = 0; i < charts.size(); ++i) {
-    charts_layout->addWidget(charts[i], i / n, i % n);
+    charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
   }
 }
 
