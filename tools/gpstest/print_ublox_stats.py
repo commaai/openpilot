@@ -76,8 +76,8 @@ def main():
 
       meas_cnt += 1
       print_stats(start_time, ephem_stats, sat_meas, meas_cnt)
-      print(f"Total     e/min: {sum(total_ephems_per_min)/len(total_ephems_per_min)}")
-      print(f"Different e/min: {sum(diff_ephems_per_min)/len(diff_ephems_per_min)}")
+      print(f"Total     e/min: {sum(total_ephems_per_min)/meas_cnt}")
+      print(f"Different e/min: {sum(diff_ephems_per_min)/meas_cnt}")
 
       sat_meas = [0]*MAX_SATS
       last_log = time.monotonic()
