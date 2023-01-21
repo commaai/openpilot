@@ -6,7 +6,7 @@
 #include <QPainter>
 #include <QToolTip>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 // BinaryView
 
@@ -177,7 +177,9 @@ void BinaryViewModel::setMessage(const QString &message_id) {
 
 void BinaryViewModel::updateState() {
   auto prev_items = items;
-  const auto &binary = can->lastMessage(msg_id).dat;
+  const auto &last_msg = can->lastMessage(msg_id);
+  const auto &binary = last_msg.dat;
+
   // data size may changed.
   if (binary.size() > row_count) {
     beginInsertRows({}, row_count, binary.size() - 1);
@@ -193,6 +195,7 @@ void BinaryViewModel::updateState() {
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
     items[i * column_count + 8].val = hex;
+    items[i * column_count + 8].bg_color = last_msg.colors[i];
   }
   for (int i = binary.size(); i < row_count; ++i) {
     for (int j = 0; j < column_count; ++j) {
@@ -201,7 +204,7 @@ void BinaryViewModel::updateState() {
   }
 
   for (int i = 0; i < row_count * column_count; ++i) {
-    if (i >= prev_items.size() || prev_items[i].val != items[i].val) {
+    if (i >= prev_items.size() || prev_items[i].val != items[i].val || prev_items[i].bg_color != items[i].bg_color) {
       auto idx = index(i / column_count, i % column_count);
       emit dataChanged(idx, idx);
     }
@@ -234,12 +237,14 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
   if (index.column() == 8) {
     painter->setFont(hex_font);
+    painter->fillRect(option.rect, item->bg_color);
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
-    painter->fillRect(option.rect, item->bg_color);
-    painter->setPen(item->sigs.contains(bin_view->hovered_sig) ? option.palette.color(QPalette::BrightText) : Qt::black);
+    bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
+    painter->fillRect(option.rect, sig_hovered ? item->bg_color.darker(125) : item->bg_color);  // 4/5x brightness
+    painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);

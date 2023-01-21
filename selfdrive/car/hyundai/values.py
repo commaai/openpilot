@@ -125,8 +125,8 @@ class CAR:
 class Footnote(Enum):
   # footnotes which mention "red panda" will be replaced with the CAN FD panda kit on the shop page
   CANFD = CarFootnote(
-    "Requires a <a href=\"https://comma.ai/shop/panda\" target=\"_blank\">red panda</a> for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\">CAN FD</a>. " +
-    "All the hardware needed is sold in the <a href=\"https://comma.ai/shop/can-fd-panda-kit\">CAN FD kit</a>.",
+    "Requires a <a href=\"https://comma.ai/shop/panda\" target=\"_blank\">red panda</a> for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\" target=\"_blank\">CAN FD car</a>. " +
+    "All the hardware needed is sold in the <a href=\"https://comma.ai/shop/can-fd-panda-kit\" target=\"_blank\">CAN FD kit</a>.",
     Column.MODEL, shop_footnote=True)
 
 
@@ -448,11 +448,13 @@ FW_VERSIONS = {
       b'\xf1\x00AE  MDPS C 1.00 1.04 56310/G7501 4AEEC104',
       b'\xf1\x00AE  MDPS C 1.00 1.03 56310/G7300 4AEEC103',
       b'\xf1\x00AE  MDPS C 1.00 1.03 56310G7300\x00 4AEEC103',
+      b'\xf1\x00AE  MDPS C 1.00 1.04 56310/G7301 4AEEC104',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G7200 160418',
       b'\xf1\x00AEE MFC  AT USA LHD 1.00 1.00 95740-G2400 180222',
       b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2300 170703',
+      b'\xf1\x00AEE MFC  AT EUR LHD 1.00 1.00 95740-G2400 180222',
     ],
   },
   CAR.IONIQ_HEV_2022: {
@@ -516,6 +518,7 @@ FW_VERSIONS = {
       b'HM6M2_0a0_BD0',
       b'\xf1\x8739110-2S278\xf1\x82DNDVD5GMCCXXXL5B',
       b'\xf1\x8739110-2S041\xf1\x81HM6M1_0a0_M00',
+      b'\xf1\x81HM6M1_0a0_G20',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
@@ -606,6 +609,7 @@ FW_VERSIONS = {
       b'\xf1\x87SALFBA7460044GJ2gx\x87\x88Vf\x86hx\x88\x87\x88wwwwgw\x86wd?\xfa\xff\x86U_\xff\xaf\x1f\xf1\x81U913\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB2\n\xdd^\xbc',
       b'\xf1\x87SAMFBA8105254GJ2wx\x87\x88Vf\x86hx\x88\x87\x88wwwwwwww\x86O\xfa\xff\x99\x88\x7f\xffZG\xf1\x81U913\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB2\n\xdd^\xbc',
       b'\xf1\x87SANFB45889451GC7wx\x87\x88gw\x87x\x88\x88x\x88\x87wxw\x87wxw\x87\x8f\xfc\xffeU\x8f\xff+Q\xf1\x81U913\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB2\n\xdd^\xbc',
+      b'\xf1\x00T02601BL  T02900A1  VDN8T25XXX900NSA\xb9\x13\xf9p',
     ],
   },
   CAR.SONATA_LF: {
@@ -1540,6 +1544,7 @@ FW_VERSIONS = {
   CAR.GENESIS_GV60_EV_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JW1 MFC  AT USA LHD 1.00 1.02 99211-CU100 211215',
+      b'\xf1\x00JW1 MFC  AT USA LHD 1.00 1.02 99211-CU000 211215',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JW1_ RDR -----      1.00 1.00 99110-CU000         ',

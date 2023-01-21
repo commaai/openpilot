@@ -5,6 +5,7 @@
 #include <QJsonDocument>
 #include <QMainWindow>
 #include <QProgressBar>
+#include <QSplitter>
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
@@ -27,6 +28,7 @@ public slots:
   void loadDBCFromFile();
   void loadDBCFromClipboard();
   void saveDBCToFile();
+  void saveAsDBCToFile();
   void saveDBCToClipboard();
 
 signals:
@@ -45,14 +47,16 @@ protected:
   void setOption();
   void findSimilarBits();
 
-  VideoWidget *video_widget;
+  VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   MessagesWidget *messages_widget;
   DetailWidget *detail_widget;
   ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
-  QVBoxLayout *r_layout;
+  QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
+  QSplitter *video_splitter;;
+  QString file_name = "";
 };

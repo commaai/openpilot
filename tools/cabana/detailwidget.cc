@@ -8,9 +8,9 @@
 #include <QTimer>
 
 #include "selfdrive/ui/qt/util.h"
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 // DetailWidget
 
@@ -36,6 +36,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   toolbar = new QToolBar(this);
+  toolbar->setIconSize({16, 16});
   toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
@@ -45,8 +46,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(name_label);
-  toolbar->addAction("🖍", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
-  remove_msg_act = toolbar->addAction("X", this, &DetailWidget::removeMsg);
+  toolbar->addAction(bootstrapPixmap("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
+  remove_msg_act = toolbar->addAction(bootstrapPixmap("x-lg"), "", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
   toolbar->setVisible(false);
   frame_layout->addWidget(toolbar);
@@ -98,7 +99,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
-  QObject::connect(can, &CANMessages::msgsReceived, this, &DetailWidget::updateState);
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
