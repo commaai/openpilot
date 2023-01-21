@@ -34,7 +34,7 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   void fetchMore(const QModelIndex &parent) override;
   inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
-  inline bool displaySignals() const { return !sigs.empty() && HistoryLogModel::Signals; }
+  inline bool displaySignals() const { return !sigs.empty() && display_type == HistoryLogModel::Signals; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return displaySignals() ? std::max(1ul, sigs.size()) + 1 : 2;

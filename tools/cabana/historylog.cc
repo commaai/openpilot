@@ -10,10 +10,8 @@
 // HistoryLogModel
 
 void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
-  if (display_type != type) {
-    display_type = type;
-    clearAndRefetch();
-  }
+  display_type = type;
+  clearAndRefetch();
 }
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
@@ -49,8 +47,9 @@ void HistoryLogModel::clearAndRefetch() {
   beginResetModel();
   messages.clear();
   has_more_data = true;
-  endResetModel();
+  last_fetch_time = 0;
   updateState();
+  endResetModel();
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
