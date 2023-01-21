@@ -24,22 +24,45 @@ def get_common_prefix(l):
 # for car, fw_by_ecu in FW_VERSIONS.items():
 #   for ecu, fws in fw_by_ecu.items():
 #     all_fw_by_ecu[ecu].extend(fws)
-#
+
 # # find common prefixes
 # for ecu, fws in all_fw_by_ecu.items():
 #   fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
 #   print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', get_common_prefix(fws_unicode), f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
+
+# raise Exception
+
+# PREFIXES_BY_ECU = {
+#   (Ecu.abs, 0x7b0, None): "F1526",
+#   (Ecu.engine, 0x700, None): "89663",
+#   (Ecu.dsu, 0x791, None): "80",
+#   (Ecu.fwdRadar, 0x750, 0xf): "8821F",
+#   (Ecu.fwdCamera, 0x750, 0x6d): "8646F",
+#   (Ecu.eps, 0x7a1, None): "8965B",
+# }
+#
+# # find car codes (ABS only for now)
+# for car, fw_by_ecu in FW_VERSIONS.items():
+#   print()
+#   print(' *', car)
+#   for ecu, fws in sorted(fw_by_ecu.items(), key=lambda e: e[0]):
+#     fws_no_len = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in fws]
+#     if ecu in PREFIXES_BY_ECU:
+#       pfx = PREFIXES_BY_ECU[ecu]
+#       car_ecu_codes = set([fw[len(pfx):len(pfx) + 4] for fw in fws_no_len])
+#       print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', car_ecu_codes, f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
 #
 # raise Exception
 
-# find common prefixes for fw for each car
-for car, fw_by_ecu in FW_VERSIONS.items():
-  print(' *', car)
-  for ecu, fws in sorted(fw_by_ecu.items(), key=lambda e: e[0]):
-    fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
-    print('  *', f'{ECU_NAME[ecu[0]] + ":":24}', get_common_prefix(fws_unicode), f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
 
-raise Exception
+# # find common prefixes for fw for each car
+# for car, fw_by_ecu in FW_VERSIONS.items():
+#   print(' *', car)
+#   for ecu, fws in sorted(fw_by_ecu.items(), key=lambda e: e[0]):
+#     fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
+#     print('  *', f'{ECU_NAME[ecu[0]] + ":":24}', get_common_prefix(fws_unicode), f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
+#
+# raise Exception
 
 
 issue = set()
