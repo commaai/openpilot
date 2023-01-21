@@ -224,7 +224,7 @@ void ChartsWidget::setColumnCount(int n) {
 
 void ChartsWidget::updateLayout() {
   int n = column_count;
-  for (; n >= 1; --n) {
+  for (; n > 1; --n) {
     if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
   }
   for (int i = 0; i < charts.size(); ++i) {
