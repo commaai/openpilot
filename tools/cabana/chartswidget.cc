@@ -256,12 +256,14 @@ void ChartsWidget::removeAll() {
 }
 
 void ChartsWidget::alignCharts() {
-  int plot_left = 0;
-  for (auto c : charts) {
-    plot_left = qMax((qreal)plot_left, c->getYAsixLabelWidth());
-  }
-  for (auto c : charts) {
-    c->setPlotAreaLeftPosition(plot_left);
+  if (charts.size() > 1) {
+    int plot_left = 0;
+    for (auto c : charts) {
+      plot_left = qMax((qreal)plot_left, c->getYAsixLabelWidth());
+    }
+    for (auto c : charts) {
+      c->setPlotAreaLeftPosition(plot_left);
+    }
   }
 }
 
