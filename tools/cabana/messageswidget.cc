@@ -101,18 +101,15 @@ void MessageListModel::setFilterString(const QString &string) {
     // Search by message id or name
     if (it.key().contains(filter_str, Qt::CaseInsensitive) || msgName(it.key()).contains(filter_str, Qt::CaseInsensitive)) {
       found = true;
-    }
-
-    // Search by signal name
-    const DBCMsg *msg = dbc()->msg(it.key());
-    if (msg != nullptr) {
-      for (auto &signal: msg->getSignals()) {
+    } else if (auto msg = dbc()->msg(it.key())) {
+      // Search by signal name
+      for (auto &signal : msg->getSignals()) {
         if (QString::fromStdString(signal->name).contains(filter_str, Qt::CaseInsensitive)) {
           found = true;
+          break;
         }
       }
     }
-
     if (found) {
       msgs.push_back(it.key());
     }
