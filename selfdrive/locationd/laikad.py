@@ -397,7 +397,8 @@ def clear_tmp_cache():
 
 
 def main(sm=None, pm=None, qc=None):
-  #clear_tmp_cache()
+  clear_tmp_cache()
+  Params().remove(EPHEMERIS_CACHE)
 
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom or (qc is not None and qc):
@@ -411,7 +412,7 @@ def main(sm=None, pm=None, qc=None):
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   replay = "REPLAY" in os.environ
-  use_internet = "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = True # "LAIKAD_NO_INTERNET" not in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:
