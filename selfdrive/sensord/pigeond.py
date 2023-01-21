@@ -162,6 +162,7 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
 
       # UBX-CFG-RATE (0x06 0x08)
       pigeon.send_with_ack(b"\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10")
+      #pigeon.send_with_ack(b'\xb5b\x06\x08\x06\x00\xe8\x03\x01\x00\x00\x00\x007')
 
       # UBX-CFG-NAV5 (0x06 0x24)
       pigeon.send_with_ack(b"\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63")
@@ -176,6 +177,20 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x00\x00\x29\x81")
       pigeon.send_with_ack(b"\xB5\x62\x06\x1E\x00\x00\x24\x72")
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x00\x00\x3F\xC3")
+
+      # UBX-CFG-GNSS
+      def set_gnss_cfg():
+        msg  = b'\xB5\x62\x06\x3E'
+        msg += struct.pack("H", 3*8 + 4)
+        msg += b'\x00\x1c\x1c\x03'
+        msg += b'\x00\x10\x10\x00' # GPS GNSS CFG (16 slots)
+        msg += b'\x01\x00\x01\x01'
+        msg += b'\x03\x00\x01\x00' # BEIDOU GNSS CFG (disable)
+        msg += b'\x00\x01\x00\x00'
+        msg += b'\x06\x00\x08\x00' # GLONASS GNSS CFG (8 slots)
+        msg += b'\x00\x01\x00\x01'
+        return msg
+      pigeon.send_with_ack(add_ubx_checksum(set_gnss_cfg()))
 
       # UBX-CFG-MSG (set message rate)
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51")
