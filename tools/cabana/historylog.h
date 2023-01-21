@@ -29,7 +29,6 @@ public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
-  void setDisplayType(DisplayType type);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   void fetchMore(const QModelIndex &parent) override;
@@ -39,10 +38,8 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return displaySignals() ? std::max(1ul, sigs.size()) + 1 : 2;
   }
-  void setDynamicMode(int state);
   void segmentsMerged();
   void refresh();
-  void clearAndRefetch();
 
   struct Message {
     uint64_t mono_time = 0;
@@ -86,7 +83,8 @@ signals:
 
 private slots:
   void setFilter();
-  void displayTypeChanged();
+  void displayTypeChanged(int type);
+  void setDynamicMode(int state);
 
 private:
   void refresh();

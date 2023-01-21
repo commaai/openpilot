@@ -9,11 +9,6 @@
 
 // HistoryLogModel
 
-void HistoryLogModel::setDisplayType(HistoryLogModel::DisplayType type) {
-  display_type = type;
-  clearAndRefetch();
-}
-
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     const auto &m = messages[index.row()];
@@ -36,20 +31,10 @@ void HistoryLogModel::refresh() {
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     sigs = dbc_msg->getSignals();
   }
-  filter_cmp = nullptr;
   last_fetch_time = 0;
   has_more_data = true;
   endResetModel();
   updateState();
-}
-
-void HistoryLogModel::clearAndRefetch() {
-  beginResetModel();
-  messages.clear();
-  has_more_data = true;
-  last_fetch_time = 0;
-  updateState();
-  endResetModel();
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -67,11 +52,6 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
   return {};
 }
 
-void HistoryLogModel::setDynamicMode(int state) {
-  dynamic_mode = state != 0;
-  clearAndRefetch();
-}
-
 void HistoryLogModel::segmentsMerged() {
   if (!dynamic_mode) {
     has_more_data = true;
@@ -82,7 +62,6 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
   filter_sig_idx = sig_idx;
   filter_value = value.toDouble();
   filter_cmp = value.isEmpty() ? nullptr : cmp;
-  clearAndRefetch();
 }
 
 void HistoryLogModel::updateState() {
@@ -136,8 +115,8 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   }
   return msgs;
 }
-template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::iterator first, std::vector<const Event*>::iterator last, uint64_t min_time);
-template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::reverse_iterator first, std::vector<const Event*>::reverse_iterator last, uint64_t min_time);
+template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event *>::iterator first, std::vector<const Event *>::iterator last, uint64_t min_time);
+template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event *>::reverse_iterator first, std::vector<const Event *>::reverse_iterator last, uint64_t min_time);
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
   auto events = can->events();
@@ -204,7 +183,6 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   comp_box->addItems({">", "=", "!=", "<"});
   h->addWidget(comp_box);
   value_edit = new QLineEdit(this);
-  value_edit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   value_edit->setClearButtonEnabled(true);
   value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
   h->addWidget(value_edit);
@@ -219,13 +197,13 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(logs);
 
   QObject::connect(logs, &QTableView::doubleClicked, this, &LogsWidget::doubleClicked);
-  QObject::connect(display_type_cb, SIGNAL(activated(int)), this, SLOT(displayTypeChanged()));
+  QObject::connect(display_type_cb, SIGNAL(activated(int)), this, SLOT(displayTypeChanged(int)));
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
-  QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
+  QObject::connect(dynamic_mode, &QCheckBox::stateChanged, this, &LogsWidget::setDynamicMode);
   QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
-  QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::clearAndRefetch);
+  QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::refresh);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
   QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
 
@@ -249,6 +227,7 @@ void LogsWidget::refresh() {
   signals_cb->clear();
   comp_box->setCurrentIndex(0);
 
+  model->setFilter(0, "", nullptr);
   model->refresh();
   bool has_signals = model->sigs.size() > 0;
   if (has_signals) {
@@ -256,7 +235,6 @@ void LogsWidget::refresh() {
       signals_cb->addItem(s->name.c_str());
     }
   }
-
   display_type_cb->setVisible(has_signals);
   comp_box->setVisible(has_signals);
   value_edit->setVisible(has_signals);
@@ -278,16 +256,24 @@ void LogsWidget::setFilter() {
     case 3: cmp = std::less<double>{}; break;
   }
   model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
+  model->refresh();
   cur_filter_text = value_edit->text();
 }
 
-void LogsWidget::displayTypeChanged() {
-  model->setDisplayType(display_type_cb->currentIndex() == 0 ? HistoryLogModel::Signals : HistoryLogModel::Hex);
+void LogsWidget::displayTypeChanged(int type) {
+  model->display_type = type == 0 ? HistoryLogModel::Signals : HistoryLogModel::Hex;
+  model->refresh();
 }
+
+void LogsWidget::setDynamicMode(int state) {
+  model->dynamic_mode = state != 0;
+  model->refresh();
+}
+
 
 void LogsWidget::showEvent(QShowEvent *event) {
   if (dynamic_mode->isChecked()) {
-    model->clearAndRefetch();
+    model->refresh();
   }
 }
 
