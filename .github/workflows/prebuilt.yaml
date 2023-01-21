@@ -1,7 +1,5 @@
 name: prebuilt
 on:
-  schedule:
-    - cron: '0 * * * *'
   workflow_dispatch:
 
 env:
@@ -17,7 +15,7 @@ jobs:
     name: build prebuilt
     runs-on: ubuntu-20.04
     timeout-minutes: 60
-    if: github.repository == 'chadgauth/zenpilot'
+    if: github.repository == 'openpilot/commaai'
     env:
       IMAGE_NAME: openpilot-prebuilt
     steps:
