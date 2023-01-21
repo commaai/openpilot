@@ -141,6 +141,8 @@ void DetailWidget::setMessage(const QString &message_id) {
     tabbar->setTabToolTip(index, msgName(message_id));
   }
 
+  setUpdatesEnabled(false);
+
   signal_view->setMessage(msg_id);
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
@@ -149,6 +151,8 @@ void DetailWidget::setMessage(const QString &message_id) {
   stacked_layout->setCurrentIndex(1);
   tabbar->setCurrentIndex(index);
   refresh();
+
+  setUpdatesEnabled(true);
 }
 
 void DetailWidget::refresh() {
