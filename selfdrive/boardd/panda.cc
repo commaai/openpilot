@@ -3,7 +3,9 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <iomanip>
 #include <stdexcept>
+#include <sstream>
 
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
@@ -40,7 +42,26 @@ bool Panda::comms_healthy() {
 }
 
 std::vector<std::string> Panda::list() {
-  return PandaUsbHandle::list();
+  std::vector<std::string> serials = PandaUsbHandle::list();
+
+  // check SPI
+  const int uid_len = 12;
+  uint8_t uid[uid_len] = {0};
+  PandaSpiHandle spi_handle("/dev/spidev0.0");
+  int ret = spi_handle.control_read(0xc3, 0, 0, uid, uid_len);
+  if (ret == uid_len) {
+    std::stringstream stream;
+    for (int i = 0; i < uid_len; i++) {
+      stream << std::hex << std::setw(2) << std::setfill('0') << int(uid[i]);
+    }
+
+    // might be on USB too
+    if (std::find(serials.begin(), serials.end(), stream.str()) == serials.end()) {
+      serials.push_back(stream.str());
+    }
+  }
+
+  return serials;
 }
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param) {

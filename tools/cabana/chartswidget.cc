@@ -75,7 +75,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   column_count = std::clamp(settings.chart_column_count, 1, columns_cb->count());
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
-  columns_cb->setCurrentIndex(column_count);
+  columns_cb->setCurrentIndex(column_count - 1);
   range_slider->setValue(max_chart_range);
   updateToolBar();
 

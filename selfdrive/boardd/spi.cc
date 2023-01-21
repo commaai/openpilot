@@ -214,7 +214,7 @@ int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
 
     // handle timeout
     if (millis_since_boot() - start_millis > SPI_ACK_TIMEOUT) {
-      LOGE("SPI: timed out waiting for ACK");
+      LOGD("SPI: timed out waiting for ACK");
       return -1;
     }
   }
