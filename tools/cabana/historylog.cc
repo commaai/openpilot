@@ -33,8 +33,8 @@ void HistoryLogModel::refresh() {
   }
   last_fetch_time = 0;
   has_more_data = true;
-  endResetModel();
   updateState();
+  endResetModel();
 }
 
 QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, int role) const {
