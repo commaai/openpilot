@@ -159,6 +159,19 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.3
       ret.centerToFront = ret.wheelbase * 0.5
 
+    elif candidate == CAR.ESCALADE:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcmFalse
+      #ret.minSteerSpeed = -1 * CV.MPH_TO_MS
+      ret.mass = 5653. * CV.LB_TO_KG + STD_CARGO_KG  # (5552+5815)/2
+      ret.wheelbase = 2.95  # 116 inches in meters
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.5
+      #ret.steerActuatorDelay = 0.2
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+      ret.lateralTuning.pid.kf = 0.000045
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
