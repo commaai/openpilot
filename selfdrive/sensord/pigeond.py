@@ -183,12 +183,12 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
       def set_gnss_cfg():
         hdr  = b'\xB5\x62\x06\x3E'
         c    = b'\x00\x1c\x1c'
-        msg  = b'\x00\x1b\x1b\x00' # GPS GNSS CFG (27 slots)
+        msg  = b'\x00\x10\x10\x00' # GPS GNSS CFG (16 slots)
         msg += b'\x01\x00\x01\x01'
         msg += b'\x03\x00\x01\x00' # BEIDOU GNSS CFG (disable)
         msg += b'\x00\x01\x00\x00'
-        msg += b'\x06\x00\x01\x00' # GLONASS GNSS CFG (disable)
-        msg += b'\x00\x01\x00\x00'
+        msg += b'\x06\x08\x08\x00' # GLONASS GNSS CFG (disable)
+        msg += b'\x00\x01\x00\x01'
         msg += b'\x02\x00\x01\x00' # GALILEO GNSS CFG (disable)
         msg += b'\x00\x20\x00\x00'
         msg += b'\x05\x00\x01\x00' # QZSS GNSS CFG (1 slot, cause of correlation issue with GPS)
