@@ -7,11 +7,13 @@
 #include <QPushButton>
 #include <QRadioButton>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
-FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
+FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags() | Qt::Window) {
   setWindowTitle(tr("Find similar bits"));
+  setAttribute(Qt::WA_DeleteOnClose);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QHBoxLayout *form_layout = new QHBoxLayout();
@@ -59,12 +61,19 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent) {
   main_layout->addLayout(form_layout);
 
   table = new QTableWidget(this);
+  table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table->setSelectionMode(QAbstractItemView::SingleSelection);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->horizontalHeader()->setStretchLastSection(true);
   main_layout->addWidget(table);
 
   setMinimumSize({700, 500});
   QObject::connect(search_btn, &QPushButton::clicked, this, &FindSimilarBitsDlg::find);
+  QObject::connect(table, &QTableWidget::doubleClicked, [this](const QModelIndex &index) {
+    if (index.isValid()) {
+      emit openMessage(bus_combo->currentText() + ":" + table->item(index.row(), 0)->text());
+    }
+  });
 }
 
 void FindSimilarBitsDlg::find() {
@@ -91,7 +100,6 @@ QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_
   QHash<uint32_t, QVector<uint32_t>> mismatches;
   QHash<uint32_t, uint32_t> msg_count;
   auto events = can->events();
-  qDebug() << bus << selected_address << byte_idx << bit_idx;
   int bit_to_find = -1;
   for (auto e : *events) {
     if (e->which == cereal::Event::Which::CAN) {

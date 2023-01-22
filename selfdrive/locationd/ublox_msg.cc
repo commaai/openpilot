@@ -170,9 +170,18 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
       kaitai::kstream stream(subframe_data);
       gps_t subframe(&stream);
       int subframe_id = subframe.how()->subframe_id();
+      int sv_id = msg->sv_id();
+      uint64_t tow_counter = subframe.how()->tow_count();
 
-      if (subframe_id == 1) gps_subframes[msg->sv_id()].clear();
-      gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
+      bool clear_buffer = subframe_id == 1;
+      if (gps_sat_tow_count.count(sv_id) != 0) {
+        int64_t counter_diff = tow_counter - gps_sat_tow_count[sv_id];
+        clear_buffer |= counter_diff != 1 && counter_diff != -100798;
+      }
+      if (clear_buffer) gps_subframes[sv_id].clear();
+
+      gps_subframes[sv_id][subframe_id] = subframe_data;
+      gps_sat_tow_count[sv_id] = tow_counter;
     }
 
     if (gps_subframes[msg->sv_id()].size() == 5) {
@@ -192,6 +201,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
         eph.setAf2(subframe_1->af_2() * pow(2, -55));
         eph.setAf1(subframe_1->af_1() * pow(2, -43));
         eph.setAf0(subframe_1->af_0() * pow(2, -31));
+        eph.setSvHealth(subframe_1->sv_health());
       }
 
       // Subframe 2

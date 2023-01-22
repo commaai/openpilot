@@ -10,11 +10,11 @@
 #include "common/util.h"
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // TODO: support SPI here one day...
-  if (serial.find("spi") != std::string::npos) {
-    handle = std::make_unique<PandaSpiHandle>(serial);
-  } else {
+  // try USB first, then SPI
+  try {
     handle = std::make_unique<PandaUsbHandle>(serial);
+  } catch (std::exception &e) {
+    handle = std::make_unique<PandaSpiHandle>(serial);
   }
 
   hw_type = get_hw_type();
@@ -25,6 +25,8 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS) ||
             (hw_type == cereal::PandaState::PandaType::TRES);
+
+  can_reset_communications();
 
   return;
 }
@@ -37,8 +39,20 @@ bool Panda::comms_healthy() {
   return handle->comms_healthy;
 }
 
+std::string Panda::hw_serial() {
+  return handle->hw_serial;
+}
+
 std::vector<std::string> Panda::list() {
-  return PandaUsbHandle::list();
+  std::vector<std::string> serials = PandaUsbHandle::list();
+
+  for (auto s : PandaSpiHandle::list()) {
+    if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
+      serials.push_back(s);
+    }
+  }
+
+  return serials;
 }
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param) {
@@ -174,10 +188,6 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   int32_t pos = 0;
   uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
 
-  uint32_t magic = CAN_TRANSACTION_MAGIC;
-  memcpy(&send_buf[0], &magic, sizeof(uint32_t));
-  pos += sizeof(uint32_t);
-
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
@@ -194,20 +204,25 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
     header.data_len_code = data_len_code;
     header.bus = bus - bus_offset;
+    header.checksum = 0;
 
     memcpy(&send_buf[pos], (uint8_t *)&header, sizeof(can_header));
-    pos += sizeof(can_header);
-    memcpy(&send_buf[pos], (uint8_t *)can_data.begin(), can_data.size());
-    pos += can_data.size();
+    memcpy(&send_buf[pos + sizeof(can_header)], (uint8_t *)can_data.begin(), can_data.size());
+    uint32_t msg_size = sizeof(can_header) + can_data.size();
+
+    // set checksum
+    ((can_header *) &send_buf[pos])->checksum = calculate_checksum(&send_buf[pos], msg_size);
+
+    pos += msg_size;
 
     if (pos >= USB_TX_SOFT_LIMIT) {
       write_func(send_buf, pos);
-      pos = sizeof(uint32_t);
+      pos = 0;
     }
   }
 
   // send remaining packets
-  if (pos > sizeof(uint32_t)) write_func(send_buf, pos);
+  if (pos > 0) write_func(send_buf, pos);
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
@@ -217,35 +232,34 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
-  uint8_t data[RECV_SIZE];
-  int recv = handle->bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
+  int recv = handle->bulk_read(0x81, &receive_buffer[receive_buffer_size], RECV_SIZE);
   if (!comms_healthy()) {
     return false;
   }
   if (recv == RECV_SIZE) {
     LOGW("Panda receive buffer full");
   }
+  receive_buffer_size += recv;
 
-  return (recv <= 0) ? true : unpack_can_buffer(data, recv, out_vec);
+  return (recv <= 0) ? true : unpack_can_buffer(receive_buffer, receive_buffer_size, out_vec);
 }
 
-bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
-  if (size < sizeof(uint32_t)) {
-    return true;
-  }
+void Panda::can_reset_communications() {
+  handle->control_write(0xc0, 0, 0);
+}
 
-  uint32_t magic;
-  memcpy(&magic, &data[0], sizeof(uint32_t));
-  if (magic != CAN_TRANSACTION_MAGIC) {
-    LOGE("CAN recv: buffer didn't start with magic");
-    handle->comms_healthy = false;
-    return false;
-  }
+bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_frame> &out_vec) {
+  int pos = 0;
 
-  int pos = sizeof(uint32_t);
-  while (pos < size) {
+  while (pos <= size - sizeof(can_header)) {
     can_header header;
     memcpy(&header, &data[pos], sizeof(can_header));
+
+    const uint8_t data_len = dlc_to_len[header.data_len_code];
+    if (pos + sizeof(can_header) + data_len > size) {
+      // we don't have all the data for this message yet
+      break;
+    }
 
     can_frame &canData = out_vec.emplace_back();
     canData.busTime = 0;
@@ -258,10 +272,27 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
       canData.src += CAN_RETURNED_BUS_OFFSET;
     }
 
-    const uint8_t data_len = dlc_to_len[header.data_len_code];
+    if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
+      LOGE("Panda CAN checksum failed");
+      return false;
+    }
+
     canData.dat.assign((char *)&data[pos + sizeof(can_header)], data_len);
 
     pos += sizeof(can_header) + data_len;
   }
+
+  // move the overflowing data to the beginning of the buffer for the next round
+  memmove(data, &data[pos], size - pos);
+  size -= pos;
+
   return true;
+}
+
+uint8_t Panda::calculate_checksum(uint8_t *data, uint32_t len) {
+  uint8_t checksum = 0U;
+  for (uint32_t i = 0U; i < len; i++) {
+    checksum ^= data[i];
+  }
+  return checksum;
 }
