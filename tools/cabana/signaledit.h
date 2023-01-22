@@ -14,15 +14,18 @@ class SignalModel : public QAbstractItemModel {
   Q_OBJECT
 public:
   struct Item {
+    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, ExtraInfo, Unit, Comment, Min, Max, Desc };
     ~Item() { qDeleteAll(children); }
     inline int row() { return parent->children.indexOf(this); }
 
-    const Signal *sig = nullptr;
-    bool highlight = false;
-    QString title;
-    int data_id = -1;
+    Type type = Type::Root;
     Item *parent = nullptr;
     QList<Item *> children;
+
+    const Signal *sig = nullptr;
+    QString title;
+    bool highlight = false;
+    bool extra_expanded = false;
   };
 
   SignalModel(QObject *parent);
@@ -41,11 +44,13 @@ public:
   void removeSignal(const Signal *sig);
   inline Item *getItem(const QModelIndex &index) const { return index.isValid() ? (Item *)index.internalPointer() : root.get(); }
   int signalRow(const Signal *sig) const;
+  void showExtraInfo(const QModelIndex &index);
 
 private:
   void insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig);
-  void handleSignalRemoved(const Signal *sig);
   void handleSignalAdded(uint32_t address, const Signal *sig);
+  void handleSignalUpdated(const Signal *sig);
+  void handleSignalRemoved(const Signal *sig);
   void handleMsgChanged(uint32_t address);
   void refresh();
 
@@ -72,6 +77,7 @@ public:
   void signalHovered(const Signal *sig);
   void updateChartState();
   void expandSignal(const Signal *sig);
+  void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
 
 signals:

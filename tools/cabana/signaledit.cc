@@ -19,23 +19,16 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &SignalModel::handleMsgChanged);
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &SignalModel::handleMsgChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalModel::handleSignalAdded);
+  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalModel::handleSignalUpdated);
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
 }
 
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig) {
-  Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name.c_str()};
+  Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name.c_str(), .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor"};
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum", "Maximum", "Description"};
   for (int i = 0; i < std::size(titles); ++i) {
-    item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .data_id = i});
-  }
-
-  // Extra info
-  Item *extra_item = new Item({.sig = sig, .parent = item, .title = "Extra Info"});
-  item->children.push_back(extra_item);
-  QString extra_titles[]{"Unit", "Comment", "Minimum", "Maxmum", "Description"};
-  for (int i = 0; i < std::size(extra_titles); ++i) {
-    extra_item->children.push_back(new Item{.sig = sig, .parent = extra_item, .title = extra_titles[i], .data_id = i + (int)std::size(titles)});
+    item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
 }
 
@@ -64,14 +57,23 @@ void SignalModel::refresh() {
 }
 
 int SignalModel::rowCount(const QModelIndex &parent) const {
-  return (parent.column() > 0) ? 0 : getItem(parent)->children.size();
+  if (parent.column() > 0) return 0;
+
+  auto parent_item = getItem(parent);
+  int row_count = parent_item->children.size();
+  if (parent_item->type == Item::Sig && !parent_item->extra_expanded) {
+    row_count -= (Item::Desc - Item::ExtraInfo);
+  }
+  return row_count;
 }
 
 Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
   if (!index.isValid()) return Qt::NoItemFlags;
+
+  auto item = getItem(index);
   Qt::ItemFlags flags = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
-  if (auto item = getItem(index); item->data_id != -1 && index.column() == 1) {
-    flags |= (item->data_id == 2 || item->data_id == 3) ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
+  if (index.column() == 1  && item->type != Item::Sig && item->type != Item::ExtraInfo) {
+    flags |= (item->type == Item::Endian || item->type == Item::Signed) ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
   }
   return flags;
 }
@@ -100,18 +102,21 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     const Item *item = getItem(index);
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
       if (index.column() == 0) {
-        return item->parent == root.get() ? QString::fromStdString(item->sig->name) : item->title;
-      } else if (item->data_id != -1) {
-        switch (item->data_id) {
-          case 0: return QString::fromStdString(item->sig->name);
-          case 1: return item->sig->size;
-          case 4: return QString::number(item->sig->offset, 'f', 6);
-          case 5: return QString::number(item->sig->factor, 'f', 6);
+        return item->type == Item::Sig ? QString::fromStdString(item->sig->name) : item->title;
+      } else {
+        switch (item->type) {
+          case Item::Name: return QString::fromStdString(item->sig->name);
+          case Item::Size: return item->sig->size;
+          case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
+          case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          default: break;
         }
       }
     } else if (role == Qt::CheckStateRole && index.column() == 1) {
-      if (item->data_id == 2) return item->sig->is_little_endian ? Qt::Checked : Qt::Unchecked;
-      if (item->data_id == 3) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
+      if (item->type == Item::Endian) return item->sig->is_little_endian ? Qt::Checked : Qt::Unchecked;
+      if (item->type == Item::Signed) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
+    } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
+      return bootstrapPixmap(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
     }
   }
   return {};
@@ -122,17 +127,33 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
 
   Item *item = getItem(index);
   Signal s = *item->sig;
-  switch (item->data_id) {
-    case 0: s.name = value.toString().toStdString(); break;
-    case 1: s.size = value.toInt(); break;
-    case 2: s.is_little_endian = value.toBool(); break;
-    case 3: s.is_signed = value.toBool(); break;
-    case 4: s.offset = value.toDouble(); break;
-    case 5: s.factor = value.toDouble(); break;
+  switch (item->type) {
+    case Item::Name: s.name = value.toString().toStdString(); break;
+    case Item::Size: s.size = value.toInt(); break;
+    case Item::Endian: s.is_little_endian = value.toBool(); break;
+    case Item::Signed: s.is_signed = value.toBool(); break;
+    case Item::Offset: s.offset = value.toDouble(); break;
+    case Item::Factor: s.factor = value.toDouble(); break;
+    default: break;
   }
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
+}
+
+void SignalModel::showExtraInfo(const QModelIndex &index) {
+  auto item = getItem(index);
+  if (item->type == Item::ExtraInfo) {
+    if (!item->parent->extra_expanded) {
+      item->parent->extra_expanded = true;
+      beginInsertRows(index.parent(), 7, 13);
+      endInsertRows();
+    } else {
+      item->parent->extra_expanded = false;
+      beginRemoveRows(index.parent(), 7, 13);
+      endRemoveRows();
+    }
+  }
 }
 
 bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
@@ -212,14 +233,6 @@ void SignalModel::handleMsgChanged(uint32_t address) {
   }
 }
 
-void SignalModel::handleSignalRemoved(const Signal *sig) {
-  if (int row = signalRow(sig); row != -1) {
-    beginRemoveRows({}, row, row);
-    delete root->children.takeAt(row);
-    endRemoveRows();
-  }
-}
-
 void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
   if (address == DBCManager::parseId(msg_id).second) {
     int i = 0;
@@ -229,6 +242,20 @@ void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
+  }
+}
+
+void SignalModel::handleSignalUpdated(const Signal *sig) {
+  if (int row = signalRow(sig); row != -1) {
+    emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
+  }
+}
+
+void SignalModel::handleSignalRemoved(const Signal *sig) {
+  if (int row = signalRow(sig); row != -1) {
+    beginRemoveRows({}, row, row);
+    delete root->children.takeAt(row);
+    endRemoveRows();
   }
 }
 
@@ -270,12 +297,13 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 }
 
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  if (index.row() == 0 || index.row() == 4 || index.row() == 5) {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset || item->type == SignalModel::Item::Factor) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
     e->setValidator(index.row() == 0 ? name_validator : double_validator);
     return e;
-  } else if (index.row() == 1) {
+  } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);
     spin->setFrame(false);
     spin->setRange(1, 64);
@@ -318,6 +346,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
+  QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
   QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
@@ -367,6 +396,13 @@ void SignalView::rowsChanged() {
     }
   }
   updateChartState();
+}
+
+void SignalView::rowClicked(const QModelIndex &index) {
+  auto item = model->getItem(index);
+  if (item->type == SignalModel::Item::ExtraInfo) {
+    model->showExtraInfo(index);
+  }
 }
 
 void SignalView::expandSignal(const Signal *sig) {
