@@ -3,13 +3,15 @@
 #include <atomic>
 #include <mutex>
 
+#include <QHBoxLayout>
 #include <QFuture>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/canmessages.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class Slider : public QSlider {
   Q_OBJECT
@@ -45,9 +47,12 @@ public:
 protected:
   void updateState();
   void updatePlayBtnState();
+  void timeLabelClicked();
 
   CameraWidget *cam_widget;
   QLabel *end_time_label;
+  ElidedLabel *time_label;
+  QHBoxLayout *slider_layout;
   QPushButton *play_btn;
   Slider *slider;
 };

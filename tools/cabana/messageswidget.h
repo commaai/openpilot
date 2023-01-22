@@ -2,8 +2,9 @@
 
 #include <QAbstractTableModel>
 #include <QTableView>
+#include <QStyledItemDelegate>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -40,4 +41,11 @@ protected:
   QTableView *table_widget;
   QString current_msg_id;
   MessageListModel *model;
+};
+
+class MessageBytesDelegate : public QStyledItemDelegate {
+    Q_OBJECT
+public:
+    MessageBytesDelegate(QObject *parent);
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };

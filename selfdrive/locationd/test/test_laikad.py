@@ -22,13 +22,11 @@ def get_log(segs=range(0)):
   logs = []
   for i in segs:
     logs.extend(LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", i)))
-  all_logs = [m for m in logs if m.which() == 'ubloxGnss']
 
+  all_logs = [m for m in logs if m.which() == 'ubloxGnss']
   low_gnss = []
   for m in all_logs:
     if m.ubloxGnss.which() != 'measurementReport':
-      continue
-    if m.ubloxGnss.measurementReport.numMeas == 0:
       continue
 
     MAX_MEAS = 7
