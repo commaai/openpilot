@@ -10,6 +10,7 @@ struct DBCMsg {
   uint32_t size;
   // signal must be saved as value in map to make undo stack work properly.
   std::map<QString, Signal> sigs;
+  // return vector<signals>, sort by start_bits
   std::vector<const Signal*> getSignals() const;
 };
 
