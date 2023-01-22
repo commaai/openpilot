@@ -6,6 +6,9 @@
 #include <cmath>
 #include <cstring>
 
+#include <iomanip>
+#include <sstream>
+
 #include "common/util.h"
 #include "common/timing.h"
 #include "common/swaglog.h"
@@ -79,6 +82,8 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
     LOGE("failed setting SPI bits per word");
     goto fail;
   }
+
+  // try to get serial
 
   return;
 
@@ -163,8 +168,21 @@ int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t t
 }
 
 std::vector<std::string> PandaSpiHandle::list() {
-  // TODO: list all pandas available over SPI
-  return {};
+  std::vector<std::string> serials;
+
+  const int uid_len = 12;
+  uint8_t uid[uid_len] = {0};
+  PandaSpiHandle spi_handle("/dev/spidev0.0");
+  int ret = spi_handle.control_read(0xc3, 0, 0, uid, uid_len);
+  if (ret == uid_len) {
+    std::stringstream stream;
+    for (int i = 0; i < uid_len; i++) {
+      stream << std::hex << std::setw(2) << std::setfill('0') << int(uid[i]);
+    }
+    serials.push_back(stream.str());
+  }
+
+  return serials;
 }
 
 void add_checksum(uint8_t *data, int data_len) {
