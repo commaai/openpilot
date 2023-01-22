@@ -181,17 +181,25 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
 
       # UBX-CFG-GNSS
       def set_gnss_cfg():
-        msg  = b'\xB5\x62\x06\x3E'
-        msg += struct.pack("H", 3*8 + 4)
-        msg += b'\x00\x1c\x1c\x03'
-        msg += b'\x00\x10\x10\x00' # GPS GNSS CFG (16 slots)
+        hdr  = b'\xB5\x62\x06\x3E'
+        c    = b'\x00\x1c\x1c'
+        msg  = b'\x00\x1b\x1b\x00' # GPS GNSS CFG (27 slots)
         msg += b'\x01\x00\x01\x01'
         msg += b'\x03\x00\x01\x00' # BEIDOU GNSS CFG (disable)
         msg += b'\x00\x01\x00\x00'
-        msg += b'\x06\x00\x08\x00' # GLONASS GNSS CFG (8 slots)
+        msg += b'\x06\x00\x01\x00' # GLONASS GNSS CFG (disable)
+        msg += b'\x00\x01\x00\x00'
+        msg += b'\x02\x00\x01\x00' # GALILEO GNSS CFG (disable)
+        msg += b'\x00\x20\x00\x00'
+        msg += b'\x05\x00\x01\x00' # QZSS GNSS CFG (1 slot, cause of correlation issue with GPS)
         msg += b'\x00\x01\x00\x01'
-        return msg
+        return hdr + struct.pack("H", len(msg) + 4) + c + struct.pack("b", int(len(msg)/8)) + msg
+
       pigeon.send_with_ack(add_ubx_checksum(set_gnss_cfg()))
+
+      # UBX-CFG-HNR (high rate navigation)
+      #pigeon.send_with_ack(add_ubx_checksum(b"\xB5\x62\x06\x5C\x04\x00\x01\x00\x00\x00"))
+      # never returns ACK
 
       # UBX-CFG-MSG (set message rate)
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51")
