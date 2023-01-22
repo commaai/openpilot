@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
-
 #include <iomanip>
 #include <sstream>
 
@@ -31,7 +30,6 @@ struct __attribute__((packed)) spi_header {
 
 const int SPI_MAX_RETRIES = 5;
 const int SPI_ACK_TIMEOUT = 50; // milliseconds
-
 const std::string SPI_DEVICE = "/dev/spidev0.0";
 
 class LockEx {
@@ -88,7 +86,7 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
     goto fail;
   }
 
-  // try to get serial
+  // get hw UID/serial
   ret = control_read(0xc3, 0, 0, uid, uid_len);
   if (ret == uid_len) {
     std::stringstream stream;
@@ -188,15 +186,13 @@ int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t t
 }
 
 std::vector<std::string> PandaSpiHandle::list() {
-  std::vector<std::string> serials;
-
   try {
     PandaSpiHandle sh("");
-    serials.push_back(sh.hw_serial);
+    return {sh.hw_serial};
   } catch (std::exception &e) {
+    // no panda on SPI
   }
-
-  return serials;
+  return {};
 }
 
 void add_checksum(uint8_t *data, int data_len) {
