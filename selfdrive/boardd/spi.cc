@@ -5,6 +5,8 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <iomanip>
+#include <sstream>
 
 #include "common/util.h"
 #include "common/timing.h"
@@ -28,6 +30,7 @@ struct __attribute__((packed)) spi_header {
 
 const int SPI_MAX_RETRIES = 5;
 const int SPI_ACK_TIMEOUT = 50; // milliseconds
+const std::string SPI_DEVICE = "/dev/spidev0.0";
 
 class LockEx {
 public:
@@ -48,35 +51,53 @@ private:
 
 
 PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
-  LOGD("opening SPI panda: %s", serial.c_str());
+  int ret;
+  const int uid_len = 12;
+  uint8_t uid[uid_len] = {0};
 
-  int err;
   uint32_t spi_mode = SPI_MODE_0;
   uint32_t spi_speed = 30000000;
   uint8_t spi_bits_per_word = 8;
 
-  spi_fd = open(serial.c_str(), O_RDWR);
+  spi_fd = open(SPI_DEVICE.c_str(), O_RDWR);
   if (spi_fd < 0) {
-    LOGE("failed opening SPI device %d", err);
+    LOGE("failed opening SPI device %d", spi_fd);
     goto fail;
   }
 
   // SPI settings
-  err = util::safe_ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode);
-  if (err < 0) {
-    LOGE("failed setting SPI mode %d", err);
+  ret = util::safe_ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode);
+  if (ret < 0) {
+    LOGE("failed setting SPI mode %d", ret);
     goto fail;
   }
 
-  err = util::safe_ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
-  if (err < 0) {
+  ret = util::safe_ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
+  if (ret < 0) {
     LOGE("failed setting SPI speed");
     goto fail;
   }
 
-  err = util::safe_ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bits_per_word);
-  if (err < 0) {
+  ret = util::safe_ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bits_per_word);
+  if (ret < 0) {
     LOGE("failed setting SPI bits per word");
+    goto fail;
+  }
+
+  // get hw UID/serial
+  ret = control_read(0xc3, 0, 0, uid, uid_len);
+  if (ret == uid_len) {
+    std::stringstream stream;
+    for (int i = 0; i < uid_len; i++) {
+      stream << std::hex << std::setw(2) << std::setfill('0') << int(uid[i]);
+    }
+    hw_serial = stream.str();
+  } else {
+    LOGD("failed to get serial %d", ret);
+    goto fail;
+  }
+
+  if (!serial.empty() && (serial != hw_serial)) {
     goto fail;
   }
 
@@ -163,7 +184,12 @@ int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t t
 }
 
 std::vector<std::string> PandaSpiHandle::list() {
-  // TODO: list all pandas available over SPI
+  try {
+    PandaSpiHandle sh("");
+    return {sh.hw_serial};
+  } catch (std::exception &e) {
+    // no panda on SPI
+  }
   return {};
 }
 
