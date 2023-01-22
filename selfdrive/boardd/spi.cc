@@ -51,8 +51,6 @@ private:
 
 
 PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
-  LOGD("opening SPI panda: %s", serial.c_str());
-
   int ret;
   const int uid_len = 12;
   uint8_t uid[uid_len] = {0};
