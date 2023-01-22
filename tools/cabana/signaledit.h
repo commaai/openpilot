@@ -57,8 +57,10 @@ private:
 
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
-  SignalItemDelegate(QObject *parent) {}
+  SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QValidator *name_validator, *double_validator;
 };
 
 class SignalView : public QWidget {

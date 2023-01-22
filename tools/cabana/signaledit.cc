@@ -234,6 +234,11 @@ void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
 
 // SignalItemDelegate
 
+SignalItemDelegate::SignalItemDelegate(QObject *parent) {
+  name_validator = new QRegExpValidator(QRegExp("^\\w{1,50}$"), this);
+  double_validator = new QDoubleValidator(this);
+}
+
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (item && !index.parent().isValid() && index.column() == 0) {
@@ -262,6 +267,21 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else {
     QStyledItemDelegate::paint(painter, option, index);
   }
+}
+
+QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  if (index.row() == 0 || index.row() == 4 || index.row() == 5) {
+    QLineEdit *e = new QLineEdit(parent);
+    e->setFrame(false);
+    e->setValidator(index.row() == 0 ? name_validator : double_validator);
+    return e;
+  } else if (index.row() == 1) {
+    QSpinBox *spin = new QSpinBox(parent);
+    spin->setFrame(false);
+    spin->setRange(1, 64);
+    return spin;
+  }
+  return QStyledItemDelegate::createEditor(parent, option, index);
 }
 
 // SignalView
