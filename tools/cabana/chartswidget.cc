@@ -135,7 +135,7 @@ void ChartsWidget::updateState() {
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / max_chart_range;
-    if (pos > 0.8) {
+    if (pos < 0 || pos > 0.8) {
       const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
       display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
     }
