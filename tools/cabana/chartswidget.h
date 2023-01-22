@@ -23,6 +23,7 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const QString &msg_id, const Signal *sig);
+  void addSeries(const QList<QStringList> &series_list);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
@@ -69,7 +70,6 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
-  void addSeries(const QList<QStringList> &series_list);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -100,6 +100,8 @@ signals:
 private:
   void resizeEvent(QResizeEvent *event) override;
   void alignCharts();
+  void newChart();
+  ChartView * createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
