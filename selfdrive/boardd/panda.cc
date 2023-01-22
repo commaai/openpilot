@@ -10,11 +10,11 @@
 #include "common/util.h"
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // TODO: support SPI here one day...
-  if (serial.find("spi") != std::string::npos) {
-    handle = std::make_unique<PandaSpiHandle>(serial);
-  } else {
+  // try USB first, then SPI
+  try {
     handle = std::make_unique<PandaUsbHandle>(serial);
+  } catch (std::exception &e) {
+    handle = std::make_unique<PandaSpiHandle>(serial);
   }
 
   hw_type = get_hw_type();
@@ -39,8 +39,20 @@ bool Panda::comms_healthy() {
   return handle->comms_healthy;
 }
 
+std::string Panda::hw_serial() {
+  return handle->hw_serial;
+}
+
 std::vector<std::string> Panda::list() {
-  return PandaUsbHandle::list();
+  std::vector<std::string> serials = PandaUsbHandle::list();
+
+  for (auto s : PandaSpiHandle::list()) {
+    if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
+      serials.push_back(s);
+    }
+  }
+
+  return serials;
 }
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param) {

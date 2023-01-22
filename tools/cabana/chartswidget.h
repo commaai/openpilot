@@ -1,18 +1,19 @@
 #pragma once
 
 #include <QComboBox>
-#include <QDialogButtonBox>
+#include <QDragEnterEvent>
+#include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
+#include <QSlider>
 #include <QTimer>
-#include <QVBoxLayout>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 using namespace QtCharts;
 
@@ -22,11 +23,11 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const QString &msg_id, const Signal *sig);
+  void addSeries(const QList<QStringList> &series_list);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
-  void updateSeries(const Signal *sig = nullptr);
-  void setEventsRange(const std::pair<double, double> &range);
-  void setDisplayRange(double min, double max);
+  void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
+  void updatePlot(double cur, double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
 
@@ -36,9 +37,8 @@ public:
     uint32_t address = 0;
     const Signal *sig = nullptr;
     QLineSeries *series = nullptr;
-    double min_y = 0;
-    double max_y = 0;
     QVector<QPointF> vals;
+    uint64_t last_value_mono_time = 0;
   };
 
 signals:
@@ -58,13 +58,15 @@ private slots:
 
 private:
   QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
+  void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   void updateAxisY();
   void updateTitle();
-  void updateFromSettings();
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
@@ -74,8 +76,9 @@ private:
   QPointF track_pt;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  std::pair<double, double> events_range = {0, 0};
   QList<SigItem> sigs;
+  double cur_sec = 0;
+  const QString mime_type = "application/x-cabanachartview";
  };
 
 class ChartsWidget : public QWidget {
@@ -86,41 +89,51 @@ public:
   void showChart(const QString &id, const Signal *sig, bool show, bool merge);
   inline bool hasSignal(const QString &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
 
+public slots:
+  void setColumnCount(int n);
+
 signals:
   void dock(bool floating);
   void rangeChanged(double min, double max, bool is_zommed);
   void seriesChanged();
 
 private:
+  void resizeEvent(QResizeEvent *event) override;
   void alignCharts();
+  void newChart();
+  ChartView * createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
-  void updateDisplayRange();
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
   void removeAll();
-  void showAllData();
+  void setMaxChartRange(int value);
+  void updateLayout();
+  void settingChanged();
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
-  QLabel *range_label;
+  QLabel *zoom_range_lb;
+  QLabel *range_lb;
+  QSlider *range_slider;
   bool docking = true;
-  QAction *show_all_values_btn;
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
   QTimer *align_charts_timer;
-  QVBoxLayout *charts_layout;
+  QGridLayout *charts_layout;
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
-  std::pair<double, double> event_range;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
+  QComboBox *columns_cb;
+  int column_count = 1;
+  const int CHART_MIN_WIDTH = 300;
 };
 
 class SeriesSelector : public QDialog {

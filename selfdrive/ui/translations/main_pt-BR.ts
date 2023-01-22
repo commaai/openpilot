@@ -132,19 +132,19 @@
     </message>
     <message>
         <source>Driver Camera</source>
-        <translation>Câmera voltada para o Motorista</translation>
+        <translation>Câmera do Motorista</translation>
     </message>
     <message>
         <source>PREVIEW</source>
-        <translation>PREVISUAL</translation>
+        <translation>VER</translation>
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>Pré-visualizar a câmera voltada para o motorista para garantir que monitor tem uma boa visibilidade (veículo precisa estar desligado)</translation>
+        <translation>Pré-visualizar a câmera voltada para o motorista para garantir que o monitoramento do sistema tenha uma boa visibilidade (veículo precisa estar desligado)</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>Resetar Calibragem</translation>
+        <translation>Reinicializar Calibragem</translation>
     </message>
     <message>
         <source>RESET</source>
@@ -200,7 +200,7 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>o openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. o openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
+        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 8° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -388,8 +388,8 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com 
-uma assinatura prime Inscreva-se agora:  https://connect.comma.ai</translation>
+        <translation>Obtenha instruções passo a passo exibidas e muito mais com
+uma assinatura prime. Inscreva-se agora:  https://connect.comma.ai</translation>
     </message>
     <message>
         <source>No home
@@ -502,7 +502,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>Torne-se um membro comma prime em connect.comma.ai</translation>
+        <translation>Seja um membro comma prime em connect.comma.ai</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
@@ -514,11 +514,11 @@ trabalho definido</translation>
     </message>
     <message>
         <source>1 year of storage</source>
-        <translation>1 ano de armazenamento</translation>
+        <translation>1 ano na nuvem</translation>
     </message>
     <message>
         <source>Developer perks</source>
-        <translation>Benefícios para desenvolvedor</translation>
+        <translation>Benefícios para devs</translation>
     </message>
 </context>
 <context>
@@ -835,7 +835,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation>Versao Atual</translation>
+        <translation>Versão Atual</translation>
     </message>
     <message>
         <source>Download</source>
@@ -863,11 +863,11 @@ trabalho definido</translation>
     </message>
     <message>
         <source>UNINSTALL</source>
-        <translation>DESINSTAL</translation>
+        <translation>REMOVER</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation>Desintalar o %1</translation>
+        <translation>Desinstalar o %1</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
@@ -987,7 +987,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation>Desacionar Com Pedal Do Acelerador</translation>
+        <translation>Desacionar com Pedal do Acelerador</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
@@ -995,7 +995,7 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>Mostrar ETA em formato 24h</translation>
+        <translation>Mostrar ETA em Formato 24h</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
@@ -1022,14 +1022,6 @@ trabalho definido</translation>
         <translation>Neste carro o penpilot por padrão utiliza o ACC nativo do veículo ao invés de controlar longitudinalmente. Ative isto para mudar para o controle longitudinal do openpilot. Ativar o Modo Experimental é recomendado quando em uso do controle longitudinal experimental do openpilot.</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>O Modo Experimental está atualmente indisponível para este carro, já que o ACC original do carro é usado para controle longitudinal.</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation>Ative o controle longitudinal experimental para permitir o modo experimental.</translation>
-    </message>
-    <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>openpilot por padrão funciona em &lt;b&gt;modo chill&lt;/b&gt;. modo Experimental ativa &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que não estão prontos para o modo chill. Recursos experimentais estão listados abaixo:</translation>
     </message>
@@ -1048,6 +1040,22 @@ trabalho definido</translation>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation>A visualização da direção fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será exibido no canto superior direito.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>O modo Experimental está atualmente indisponível para este carro já que o ACC original do carro é usado para controle longitudinal.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>O controle longitudinal openpilot pode vir em uma atualização futura.</translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>Uma versão experimental do controle longitudinal openpilot pode ser testada, juntamente com o modo Experimental, em branches de desenvolvimento.</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
     </message>
 </context>
 <context>

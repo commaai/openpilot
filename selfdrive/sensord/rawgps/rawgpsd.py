@@ -11,7 +11,9 @@ from struct import unpack_from, calcsize, pack
 
 from cereal import log
 import cereal.messaging as messaging
+from common.gpio import gpio_init, gpio_set
 from laika.gps_time import GPSTime
+from system.hardware.tici.pins import GPIO
 from system.swaglog import cloudlog
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
 from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
@@ -182,6 +184,7 @@ def main() -> NoReturn:
 
   def cleanup(sig, frame):
     cloudlog.warning(f"caught sig {sig}, disabling quectel gps")
+    gpio_set(GPIO.UBLOX_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
     sys.exit(0)
@@ -190,6 +193,8 @@ def main() -> NoReturn:
 
   setup_quectel(diag)
   cloudlog.warning("quectel setup done")
+  gpio_init(GPIO.UBLOX_PWR_EN, True)
+  gpio_set(GPIO.UBLOX_PWR_EN, True)
 
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 
