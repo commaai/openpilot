@@ -71,9 +71,11 @@ class UnixDomainSocketHandler(logging.Handler):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
     self.pid = None
+    self.zctx = None
+    self.sock = None
 
   def connect(self):
-    self.zctx = zmq.Context()
+    self.zctx = zmq.Context.instance()
     self.sock = self.zctx.socket(zmq.PUSH)
     self.sock.setsockopt(zmq.LINGER, 10)
     self.sock.connect("ipc:///tmp/logmessage")
@@ -92,6 +94,11 @@ class UnixDomainSocketHandler(logging.Handler):
       # drop :/
       pass
 
+  def __del__(self):
+    if self.sock is not None:
+      self.sock.close()
+    if self.zctx is not None:
+      self.zctx.term()
 
 def add_file_handler(log):
   """

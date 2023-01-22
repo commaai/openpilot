@@ -151,7 +151,7 @@ class TestOnroad(unittest.TestCase):
       # make sure we get at least two full segments
       route = None
       cls.segments = []
-      with Timeout(300, "timed out waiting for logs"):
+      with Timeout(300, f"timed out waiting for logs: {route}"):
         while route is None:
           route = params.get("CurrentRoute", encoding="utf-8")
           time.sleep(0.1)
