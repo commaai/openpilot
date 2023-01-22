@@ -39,6 +39,10 @@ bool Panda::comms_healthy() {
   return handle->comms_healthy;
 }
 
+std::string Panda::hw_serial() {
+  return handle->hw_serial;
+}
+
 std::vector<std::string> Panda::list() {
   std::vector<std::string> serials = PandaUsbHandle::list();
 

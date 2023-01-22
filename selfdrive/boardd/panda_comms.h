@@ -21,6 +21,7 @@ public:
   virtual ~PandaCommsHandle() {};
   virtual void cleanup() = 0;
 
+  std::string hw_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
   static std::vector<std::string> list();
@@ -62,8 +63,6 @@ public:
   void cleanup();
 
   static std::vector<std::string> list();
-  
-  std::string hw_serial;
 
 private:
   int spi_fd = -1;
