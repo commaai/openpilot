@@ -199,7 +199,7 @@ void BinaryViewModel::updateState() {
   }
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
-    for (int j = 0; j < column_count - 1; ++j) {
+    for (int j = 0; j < 8; ++j) {
       items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
     }
     hex[0] = toHex(binary[i] >> 4);
@@ -213,7 +213,7 @@ void BinaryViewModel::updateState() {
     }
   }
 
-  for (int i = 0; i < row_count * column_count; ++i) {
+  for (int i = 0; i < items.size(); ++i) {
     if (i >= prev_items.size() || prev_items[i].val != items[i].val || prev_items[i].bg_color != items[i].bg_color) {
       auto idx = index(i / column_count, i % column_count);
       emit dataChanged(idx, idx);
