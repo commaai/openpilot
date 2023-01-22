@@ -247,18 +247,20 @@ void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
       }
     }
   }
-  Signal sig = {.is_little_endian = little_endian, .factor = 1};
+  Signal sig = {.start_bit = start_bit, .size = size, .is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
     sig.name = "NEW_SIGNAL_" + std::to_string(i);
     if (msg->sigs.count(sig.name.c_str()) == 0) break;
   }
-  updateSigSizeParamsFromRange(sig, start_bit, size);
+  updateSigSizeParamsFromRange(sig);
   undo_stack->push(new AddSigCommand(msg_id, sig));
 }
 
 void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
   Signal s = *sig;
-  updateSigSizeParamsFromRange(s, start_bit, size);
+  s.start_bit = start_bit;
+  s.size = size;
+  updateSigSizeParamsFromRange(s);
   saveSignal(sig, s);
 }
 
@@ -272,13 +274,6 @@ void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
       return;
     }
   }
-  auto [start, end] = getSignalRange(&new_sig);
-  if (start < 0 || end >= msg->size * 8) {
-    QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
-    QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
-    return;
-  }
-
   undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
 }
 

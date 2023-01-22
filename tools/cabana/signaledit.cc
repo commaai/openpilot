@@ -158,23 +158,16 @@ void SignalEdit::saveSignal() {
   s.is_signed = form->sign->currentIndex() == 0;
   bool little_endian = form->endianness->currentIndex() == 0;
   if (little_endian != s.is_little_endian) {
-    int start = std::floor(s.start_bit / 8);
-    if (little_endian) {
-      int end = std::floor((s.start_bit - s.size + 1) / 8);
-      s.start_bit = start == end ? s.start_bit - s.size + 1 : bigEndianStartBitsIndex(s.start_bit);
+    int end_bit = little_endian ? s.start_bit - s.size + 1 : s.start_bit + s.size - 1;
+    if (s.start_bit / 8 == end_bit / 8) {
+      s.start_bit = end_bit;
     } else {
-      int end = std::floor((s.start_bit + s.size - 1) / 8);
-      s.start_bit = start == end ? s.start_bit + s.size - 1 : bigEndianBitIndex(s.start_bit);
+      s.start_bit = little_endian ? bigEndianStartBitsIndex(s.start_bit) : bigEndianBitIndex(s.start_bit);
     }
     s.is_little_endian = little_endian;
   }
-  if (s.is_little_endian) {
-    s.lsb = s.start_bit;
-    s.msb = s.start_bit + s.size - 1;
-  } else {
-    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
-    s.msb = s.start_bit;
-  }
+  updateSigSizeParamsFromRange(s);
+
   if (s != *sig) {
     emit save(this->sig, s);
   }

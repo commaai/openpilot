@@ -94,6 +94,7 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   if (release_index.isValid() && anchor_index.isValid()) {
     if (selectionModel()->hasSelection()) {
       auto [start_bit, size, is_lb] = getSelection(release_index);
+      start_bit = is_lb ? start_bit : bigEndianBitIndex(start_bit);
       resize_sig ? emit resizeSignal(resize_sig, start_bit, size)
                  : emit addSignal(start_bit, size, is_lb);
     } else {
@@ -153,7 +154,8 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     items.resize(row_count * column_count);
     int i = 0;
     for (auto sig : dbc_msg->getSignals()) {
-      auto [start, end] = getSignalRange(sig);
+      int start = sig->is_little_endian ? sig->start_bit : bigEndianBitIndex(sig->start_bit);
+      int end = start + sig->size - 1;
       for (int j = start; j <= end; ++j) {
         int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
         int idx = column_count * (bit_index / 8) + bit_index % 8;

@@ -58,8 +58,7 @@ bool operator==(const Signal &l, const Signal &r);
 inline bool operator!=(const Signal &l, const Signal &r) { return !(l == r); }
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
-void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size);
-std::pair<int, int> getSignalRange(const Signal *s);
+void updateSigSizeParamsFromRange(Signal &s);
 DBCManager *dbc();
 inline QString msgName(const QString &id, const char *def = "untitled") {
   auto msg = dbc()->msg(id);
