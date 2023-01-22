@@ -62,6 +62,8 @@ public:
   void cleanup();
 
   static std::vector<std::string> list();
+  
+  std::string hw_serial;
 
 private:
   int spi_fd = -1;

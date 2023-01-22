@@ -11,11 +11,10 @@
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // try USB first, then SPI
-  handle = std::make_unique<PandaUsbHandle>(serial);
-  if (serial.find("spi") != std::string::npos) {
-    handle = std::make_unique<PandaSpiHandle>(serial);
-  } else {
+  try {
     handle = std::make_unique<PandaUsbHandle>(serial);
+  } catch (std::exception &e) {
+    handle = std::make_unique<PandaSpiHandle>(serial);
   }
 
   hw_type = get_hw_type();
