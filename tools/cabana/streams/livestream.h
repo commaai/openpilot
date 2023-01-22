@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QTimer>
 #include "tools/cabana/streams/abstractstream.h"
 
 class LiveStream : public AbstractStream {
@@ -17,7 +18,7 @@ public:
 
 protected:
   void streamThread();
-  void updateCachedNS() { cache_ns = (settings.max_cached_minutes * 60) * 1e9; }
+  void removeExpiredEvents();
 
   mutable std::mutex lock;
   mutable std::vector<Event *> events_vector;
@@ -25,7 +26,7 @@ protected:
   std::deque<AlignedBuffer *> messages;
   std::atomic<uint64_t> start_ts = 0;
   std::atomic<uint64_t> current_ts = 0;
-  std::atomic<uint64_t> cache_ns = 0;
   const QString zmq_address;
   QThread *stream_thread;
+  QTimer *timer;
 };
