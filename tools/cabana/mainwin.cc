@@ -24,7 +24,6 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
   detail_widget = new DetailWidget(charts_widget, this);
-  detail_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   setCentralWidget(detail_widget);
   createActions();
   createStatusBar();
