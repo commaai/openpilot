@@ -6,8 +6,8 @@
 #include <QToolBar>
 #include <QUndoStack>
 
+#include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/chartswidget.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signaledit.h"
 
