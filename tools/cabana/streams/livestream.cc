@@ -95,6 +95,6 @@ const std::vector<Event *> *LiveStream::events() const {
 
 
 void LiveStream::pause(bool pause) {
-  pause_ = !pause;
+  pause_ = pause;
   emit paused();
 }
