@@ -48,6 +48,7 @@ protected:
   void updateState();
   void updatePlayBtnState();
   void timeLabelClicked();
+  QWidget *createCameraWidget();
 
   CameraWidget *cam_widget;
   QLabel *end_time_label;

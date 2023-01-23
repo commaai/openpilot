@@ -126,15 +126,16 @@ void MainWindow::createDockWindows() {
 
   // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
+  video_widget = new VideoWidget(this);
+  video_splitter->addWidget(video_widget);
   if (!can->liveStreaming()) {
-    video_widget = new VideoWidget(this);
-    video_splitter->addWidget(video_widget);
     QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
   }
+
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);
   video_splitter->restoreState(settings.video_splitter_state);
-  if (!can->liveStreaming() && video_splitter->sizes()[0] == 0) {
+  if (can->liveStreaming() || video_splitter->sizes()[0] == 0) {
     // display video at minimum size.
     video_splitter->setSizes({1, 1});
   }

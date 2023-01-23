@@ -16,7 +16,7 @@ public:
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
   void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
   bool isPaused() const override { return pause_; }
-  void pause(bool pause) override { pause_ = pause; }
+  void pause(bool pause) override;
   const std::vector<Event *> *events() const override;
 
 protected:

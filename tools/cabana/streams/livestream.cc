@@ -92,3 +92,9 @@ const std::vector<Event *> *LiveStream::events() const {
   std::copy(can_events.begin(), can_events.end(), std::back_inserter(events_vector));
   return &events_vector;
 }
+
+
+void LiveStream::pause(bool pause) {
+  pause_ = !pause;
+  emit paused();
+}
