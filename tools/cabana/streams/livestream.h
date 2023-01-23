@@ -14,12 +14,13 @@ public:
   }
   inline double routeStartTime() const override { return start_ts / (double)1e9; }
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
-  void setSpeed(float speed) override { speed_ = std::max<float>(1.0, speed); }
+  void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
   bool isPaused() const override { return pause_; }
   void pause(bool pause) override { pause_ = pause; }
   const std::vector<Event *> *events() const override;
 
 protected:
+  virtual void handleEvent(Event *evt);
   virtual void streamThread();
   virtual void removeExpiredEvents();
 
@@ -31,6 +32,9 @@ protected:
   std::atomic<uint64_t> current_ts = 0;
   std::atomic<float> speed_ = 1;
   std::atomic<bool> pause_ = false;
+  uint64_t last_update_event_ts = 0;
+  uint64_t last_update_ts = 0;
+
   const QString zmq_address;
   QThread *stream_thread;
   QTimer *timer;

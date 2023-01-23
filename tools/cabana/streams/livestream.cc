@@ -1,10 +1,6 @@
 #include "tools/cabana/streams/livestream.h"
 
 LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
-  if (!zmq_address.isEmpty()) {
-    setenv("ZMQ", "1", 1);
-  }
-
   timer = new QTimer(this);
   timer->callOnTimeout(this, &LiveStream::removeExpiredEvents);
   timer->start(3 * 1000);
@@ -24,14 +20,14 @@ LiveStream::~LiveStream() {
 }
 
 void LiveStream::streamThread() {
+  if (!zmq_address.isEmpty()) {
+    setenv("ZMQ", "1", 1);
+  }
   std::unique_ptr<Context> context(Context::create());
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
   sock->setTimeout(50);
-  uint64_t last_update_event_ts = 0;
-  uint64_t last_update_ts = 0;
-
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
     Message *msg = sock->receive(true);
@@ -47,29 +43,33 @@ void LiveStream::streamThread() {
       can_events.push_back(evt);
     }
 
-    if (start_ts == 0) {
-      start_ts = evt->mono_time;
-      emit streamStarted();
-    }
-    current_ts = evt->mono_time;
-    if (current_ts < start_ts) {
-      qDebug() << "stream is looping back to old time stamp";
-      start_ts = current_ts.load();
-    }
-
-    if (!pause_) {
-      if (speed_ < 1 && last_update_event_ts > 0) {
-        auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
-        if (it != can_events.end() && ((*it)->mono_time - last_update_event_ts) / (nanos_since_boot() - last_update_ts) >= speed_) {
-          continue;
-        }
-        evt = (*it);
-      }
-      updateEvent(evt);
-      last_update_event_ts = evt->mono_time;
-      last_update_ts = nanos_since_boot();
-    }
+    handleEvent(evt);
     // TODO: write stream to log file to replay it with cabana --data_dir flag.
+  }
+}
+
+void LiveStream::handleEvent(Event *evt) {
+  if (start_ts == 0) {
+    start_ts = evt->mono_time;
+    emit streamStarted();
+  }
+  current_ts = evt->mono_time;
+  if (current_ts < start_ts) {
+    qDebug() << "stream is looping back to old time stamp";
+    start_ts = current_ts.load();
+  }
+
+  if (!pause_) {
+    if (speed_ < 1 && last_update_ts > 0) {
+      auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+      if (it != can_events.end() && (nanos_since_boot() - last_update_ts) < ((*it)->mono_time - last_update_event_ts) /  speed_) {
+        return;
+      }
+      evt = (*it);
+    }
+    updateEvent(evt);
+    last_update_event_ts = evt->mono_time;
+    last_update_ts = nanos_since_boot();
   }
 }
 
