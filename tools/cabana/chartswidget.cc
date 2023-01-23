@@ -55,18 +55,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(toolbar);
 
   // charts
-  QWidget *charts_container = new QWidget(this);
-  QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
-  charts_main_layout->setContentsMargins(0, 0, 0, 0);
-  charts_main_layout->addLayout(charts_layout = new QGridLayout);
-  charts_main_layout->addStretch(0);
+  tab = new QTabWidget(this);
+  QToolButton *new_tab_btn = new QToolButton(this);
+  new_tab_btn->setText("+");
+  tab->setCornerWidget(new_tab_btn, Qt::TopLeftCorner);
+  main_layout->addWidget(tab);
 
-  QScrollArea *charts_scroll = new QScrollArea(this);
-  charts_scroll->setWidgetResizable(true);
-  charts_scroll->setWidget(charts_container);
-  charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(charts_scroll);
-
+  newTab();
   align_charts_timer = new QTimer(this);
   align_charts_timer->setSingleShot(true);
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
@@ -86,6 +81,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
+  QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
@@ -95,6 +91,20 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
     docking = !docking;
     updateToolBar();
   });
+}
+
+void ChartsWidget::newTab() {
+  QWidget *charts_container = new QWidget(this);
+  QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
+  charts_main_layout->setContentsMargins(0, 0, 0, 0);
+  charts_main_layout->addLayout(new QGridLayout);
+  charts_main_layout->addStretch(0);
+
+  QScrollArea *charts_scroll = new QScrollArea(this);
+  charts_scroll->setWidgetResizable(true);
+  charts_scroll->setWidget(charts_container);
+  charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  tab->addTab(charts_scroll, QString("Tab %1").arg(tab->count() + 1));
 }
 
 void ChartsWidget::eventsMerged() {
@@ -189,7 +199,7 @@ ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
 }
 
 ChartView *ChartsWidget::createChart() {
-  auto chart = new ChartView(this);
+  auto chart = new ChartView(tab->currentWidget());
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -230,10 +240,14 @@ void ChartsWidget::setColumnCount(int n) {
 void ChartsWidget::updateLayout() {
   int n = column_count;
   for (; n > 1; --n) {
-    if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
+    if ((n * (CHART_MIN_WIDTH + 3)) < rect().width()) break;
   }
-  for (int i = 0; i < charts.size(); ++i) {
-    charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
+  for (int i = 0; i < tab->count(); ++i) {
+    QGridLayout *grid = tab->widget(i)->findChildren<QGridLayout*>()[0];
+    auto charts_in_tab = tab->widget(i)->findChildren<ChartView*>();
+    for (int j = 0; j < charts_in_tab.size(); ++j) {
+      grid->addWidget(charts_in_tab[charts_in_tab.size() - j - 1], j / n, j % n);
+    }
   }
 }
 

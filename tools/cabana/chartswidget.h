@@ -7,6 +7,7 @@
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
+#include <QTabWidget>
 #include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
@@ -101,6 +102,7 @@ private:
   void resizeEvent(QResizeEvent *event) override;
   void alignCharts();
   void newChart();
+  void newTab();
   ChartView * createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
@@ -124,7 +126,6 @@ private:
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
   QTimer *align_charts_timer;
-  QGridLayout *charts_layout;
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
@@ -132,6 +133,7 @@ private:
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
   QComboBox *columns_cb;
+  QTabWidget *tab;
   int column_count = 1;
   const int CHART_MIN_WIDTH = 300;
 };
