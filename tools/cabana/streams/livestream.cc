@@ -29,6 +29,8 @@ void LiveStream::streamThread() {
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
   sock->setTimeout(50);
+  uint64_t last_update_event_ts = 0;
+  uint64_t last_update_ts = 0;
 
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
@@ -54,7 +56,19 @@ void LiveStream::streamThread() {
       qDebug() << "stream is looping back to old time stamp";
       start_ts = current_ts.load();
     }
-    updateEvent(evt);
+
+    if (!pause_) {
+      if (speed_ < 1 && last_update_event_ts > 0) {
+        auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+        if (it != can_events.end() && ((*it)->mono_time - last_update_event_ts) / (nanos_since_boot() - last_update_ts) >= speed_) {
+          continue;
+        }
+        evt = (*it);
+      }
+      updateEvent(evt);
+      last_update_event_ts = evt->mono_time;
+      last_update_ts = nanos_since_boot();
+    }
     // TODO: write stream to log file to replay it with cabana --data_dir flag.
   }
 }

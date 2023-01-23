@@ -14,6 +14,9 @@ public:
   }
   inline double routeStartTime() const override { return start_ts / (double)1e9; }
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
+  void setSpeed(float speed) { speed_ = std::max<float>(1.0, speed); }
+  bool isPaused() const override { return pause_; }
+  void pause(bool pause) override { pause_ = pause; }
   const std::vector<Event *> *events() const override;
 
 protected:
@@ -26,6 +29,8 @@ protected:
   std::deque<AlignedBuffer *> messages;
   std::atomic<uint64_t> start_ts = 0;
   std::atomic<uint64_t> current_ts = 0;
+  std::atomic<float> speed_ = 1;
+  std::atomic<bool> pause_ = false;
   const QString zmq_address;
   QThread *stream_thread;
   QTimer *timer;
