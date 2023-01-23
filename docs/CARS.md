@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 223 Supported Cars
+# 229 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -28,6 +28,12 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2017-18">FCA</a>||
 |Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2019-22">FCA</a>||
 |comma|body|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
+|Ford|Bronco Sport 2021-22|Co-Pilot360 Assist+|Stock|20 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Bronco Sport 2021-22">Ford Q3</a>||
+|Ford|Escape 2020-21|Co-Pilot360 Assist+|Stock|20 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Escape 2020-21">Ford Q3</a>||
+|Ford|Explorer 2020-22|Co-Pilot360 Assist+|Stock|20 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Explorer 2020-22">Ford Q3</a>||
+|Ford|Focus EU 2019|Driver Assistance Pack|Stock|20 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Focus EU 2019">Ford Q3</a>||
+|Ford|Kuga 2020-21|Driver Assistance Pack|Stock|20 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Kuga 2020-21">Ford Q3</a>||
+|Ford|Maverick 2022|Co-Pilot360 Assist|Stock|20 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Maverick 2022">Ford Q3</a>||
 |Genesis|G70 2018-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2018-19">Hyundai F</a>||
 |Genesis|G70 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2020">Hyundai F</a>||
 |Genesis|G80 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G80 2017-19">Hyundai H</a>||
