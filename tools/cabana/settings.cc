@@ -23,10 +23,7 @@ void Settings::save() {
   s.setValue("window_state", window_state);
   s.setValue("geometry", geometry);
   s.setValue("video_splitter_state", video_splitter_state);
-  while (recent_dbc_files.size() > 15) {
-    recent_dbc_files.removeLast();
-  }
-  s.setValue("recent_dbc_files", recent_dbc_files);
+  s.setValue("recent_files", recent_files);
 }
 
 void Settings::load() {
@@ -40,7 +37,7 @@ void Settings::load() {
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();
   video_splitter_state = s.value("video_splitter_state").toByteArray();
-  recent_dbc_files = s.value("recent_dbc_files").toStringList();
+  recent_files = s.value("recent_files").toStringList();
 }
 
 // SettingsDlg
