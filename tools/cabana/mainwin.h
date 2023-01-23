@@ -23,9 +23,10 @@ public:
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
 
 public slots:
+  void openFileDialog();
   void loadDBCFromName(const QString &name);
   void loadDBCFromFingerprint();
-  void loadDBCFromFile();
+  bool loadDBCFromFile(const QString &file_name);
   void loadDBCFromClipboard();
   void saveDBCToFile();
   void saveAsDBCToFile();
@@ -58,5 +59,5 @@ protected:
   QJsonDocument fingerprint_to_dbc;
   QComboBox *dbc_combo;
   QSplitter *video_splitter;;
-  QString file_name = "";
+  QString current_file_name = "";
 };

@@ -67,8 +67,18 @@ MainWindow::MainWindow() : QMainWindow() {
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
-  file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::loadDBCFromFile)->setShortcuts(QKeySequence::Open);
+  file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFileDialog)->setShortcuts(QKeySequence::Open);
   file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
+  file_menu->addSeparator();
+
+  QMenu *recent_files = file_menu->addMenu(tr("Open Recent"));
+  QObject::connect(recent_files, &QMenu::aboutToShow, [=]() {
+    recent_files->clear();
+    for (auto &f : settings.recent_dbc_files) {
+      recent_files->addAction(f, [=]() { loadDBCFromFile(f); });
+    }
+  });
+
   file_menu->addSeparator();
   file_menu->addAction(tr("Save DBC..."), this, &MainWindow::saveDBCToFile)->setShortcuts(QKeySequence::Save);
   file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAsDBCToFile)->setShortcuts(QKeySequence::SaveAs);
@@ -192,16 +202,26 @@ void MainWindow::loadDBCFromName(const QString &name) {
   }
 }
 
-void MainWindow::loadDBCFromFile() {
-  file_name = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+void MainWindow::openFileDialog() {
+  current_file_name = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+  if (!current_file_name.isEmpty()) {
+    settings.last_dir = QFileInfo(current_file_name).absolutePath();
+    loadDBCFromFile(current_file_name);
+  }
+}
+
+bool MainWindow::loadDBCFromFile(const QString &file_name) {
   if (!file_name.isEmpty()) {
-    settings.last_dir = QFileInfo(file_name).absolutePath();
     QFile file(file_name);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(file_name).baseName();
       dbc()->open(dbc_name, file.readAll());
+      settings.recent_dbc_files.push_front(file_name);
+      settings.recent_dbc_files.removeDuplicates();
+      return true;
     }
   }
+  return false;
 }
 
 void MainWindow::loadDBCFromClipboard() {
@@ -224,20 +244,22 @@ void MainWindow::loadDBCFromFingerprint() {
 }
 
 void MainWindow::saveDBCToFile() {
-  if (file_name.isEmpty()) {
+  if (current_file_name.isEmpty()) {
     saveAsDBCToFile();
   } else {
-    settings.last_dir = QFileInfo(file_name).absolutePath();
-    QFile file(file_name);
+    settings.last_dir = QFileInfo(current_file_name).absolutePath();
+    QFile file(current_file_name);
     if (file.open(QIODevice::WriteOnly)) {
       file.write(dbc()->generateDBC().toUtf8());
+      settings.recent_dbc_files.push_front(current_file_name);
+      settings.recent_dbc_files.removeDuplicates();
     }
   }
 }
 
 void MainWindow::saveAsDBCToFile() {
-  file_name = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
-  if (!file_name.isEmpty()) {
+  current_file_name = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
+  if (!current_file_name.isEmpty()) {
     saveDBCToFile();
   }
 }

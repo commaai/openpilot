@@ -22,6 +22,7 @@ public:
   QByteArray geometry;
   QByteArray video_splitter_state;
   QByteArray window_state;
+  QStringList recent_dbc_files;
 
 signals:
   void changed();
