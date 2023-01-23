@@ -60,8 +60,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   new_tab_btn->setText("+");
   tab->setCornerWidget(new_tab_btn, Qt::TopLeftCorner);
   main_layout->addWidget(tab);
-
   newTab();
+
   align_charts_timer = new QTimer(this);
   align_charts_timer->setSingleShot(true);
   align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
@@ -243,8 +243,8 @@ void ChartsWidget::updateLayout() {
     if ((n * (CHART_MIN_WIDTH + 3)) < rect().width()) break;
   }
   for (int i = 0; i < tab->count(); ++i) {
-    QGridLayout *grid = tab->widget(i)->findChildren<QGridLayout*>()[0];
-    auto charts_in_tab = tab->widget(i)->findChildren<ChartView*>();
+    QGridLayout *grid = tab->widget(i)->findChildren<QGridLayout *>()[0];
+    auto charts_in_tab = tab->widget(i)->findChildren<ChartView *>();
     for (int j = 0; j < charts_in_tab.size(); ++j) {
       grid->addWidget(charts_in_tab[charts_in_tab.size() - j - 1], j / n, j % n);
     }
