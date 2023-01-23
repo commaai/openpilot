@@ -58,6 +58,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 QWidget *VideoWidget::createCameraWidget() {
   QWidget *w = new QWidget(this);
   QVBoxLayout *l = new QVBoxLayout(w);
+  l->setContentsMargins(0, 0, 0, 0);
   cam_widget = new CameraWidget("camerad", can->visionStreamType(), false);
   l->addWidget(cam_widget);
 
