@@ -38,22 +38,51 @@ void hexdump(uint32_t *d, int l) {
 #define PSCTL_OFFSET 0x164
 
 int main() {
-  int fd = open("/dev/mem", O_RDWR);
-  volatile uint32_t *mb = (uint32_t*)mmap(0,0x1000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0x06400000);
-  volatile uint32_t *mc = (uint32_t*)mmap(0,0x1000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0x06480000);
-  volatile uint32_t *md = (uint32_t*)mmap(0,0x1000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,0x09A20000);
-  while (1) {
-    printf("PLL MODE:%x L_VAL:%x ALPHA:%x USER_CTL:%x CONFIG_CTL:%x CONFIG_CTL_HI:%x STATUS:%x TEST_CTL_LO:%x TEST_CTL_HI:%x\n",
-        mb[C0_PLL_MODE/4], mb[C0_PLL_L_VAL/4], mb[C0_PLL_ALPHA/4],
-        mb[C0_PLL_USER_CTL/4], mb[C0_PLL_CONFIG_CTL/4], mb[C0_PLL_CONFIG_CTL_HI/4],
-        mb[C0_PLL_STATUS/4], mb[C0_PLL_TEST_CTL_LO/4], mb[C0_PLL_TEST_CTL_HI/4]);
-    printf("  MUX_OFFSET:%x CLK_CTL_OFFSET:%x APC_DIAG_OFFSET:%x MDD_DROOP_CODE:%x\n",
-        mb[MUX_OFFSET/4], mb[CLK_CTL_OFFSET/4], mb[APC_DIAG_OFFSET/4], mb[MDD_DROOP_CODE/4]);
-    printf("  PLLA MODE:%x L_VAL:%x ALPHA:%x USER_CTL:%x CONFIG_CTL:%x STATUS:%x TEST_CTL_LO:%x SSSCTL_OFFSET:%x PSCTL_OFFSET:%x\n",
-        mb[C0_PLLA_MODE/4], mb[C0_PLLA_L_VAL/4], mb[C0_PLLA_ALPHA/4], mb[C0_PLLA_USER_CTL/4],
-        mb[C0_PLLA_CONFIG_CTL/4], mb[C0_PLLA_STATUS/4], mb[C0_PLLA_TEST_CTL_LO/4],
-        mb[SSSCTL_OFFSET/4], mb[PSCTL_OFFSET/4]);
-    usleep(1000*100);
-  }
+    int fd = open("/dev/mem", O_RDWR);
+    if(fd < 0) {
+        printf("Error: Unable to open /dev/mem. Check permissions.\n");
+        return -1;
+    }
+    volatile uint32_t *mb = (uint32_t*)mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x06400000);
+    if(mb == MAP_FAILED) {
+        printf("Error: mmap failed.\n");
+        close(fd);
+        return -1;
+    }
+    volatile uint32_t *mc = (uint32_t*)mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x06480000);
+    if(mc == MAP_FAILED) {
+        printf("Error: mmap failed.\n");
+        munmap((void *)mb, 0x1000);
+        close(fd);
+        return -1;
+    }
+    volatile uint32_t *md = (uint32_t*)mmap(0, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x09A20000);
+if(md == MAP_FAILED) {
+printf("Error: mmap failed.\n");
+munmap((void *)mb, 0x1000);
+munmap((void *)mc, 0x1000);
+close(fd);
+return -1;
 }
+while (1) {
+printf("PLL MODE:%x L_VAL:%x ALPHA:%x USER_CTL:%x CONFIG_CTL:%x CONFIG_CTL_HI:%x STATUS:%x TEST_CTL_LO:%x TEST_CTL_HI:%x\n",
+mb[C0_PLL_MODE/4], mb[C0_PLL_L_VAL/4], mb[C0_PLL_ALPHA/4],
+mb[C0_PLL_USER_CTL/4], mb[C0_PLL_CONFIG_CTL/4], mb[C0_PLL_CONFIG_CTL_HI/4],
+mb[C0_PLL_STATUS/4], mb[C0_PLL_TEST_CTL_LO/4], mb[C0_PLL_TEST_CTL_HI/4]);
+printf(" MUX_OFFSET:%x CLK_CTL_OFFSET:%x APC_DIAG_OFFSET:%x MDD_DROOP_CODE:%x\n",
+mb[MUX_OFFSET/4], mb[CLK_CTL_OFFSET/4], mb[APC_DIAG_OFFSET/4], mb[MDD_DROOP_CODE/4]);
+printf(" PLLA MODE:%x L_VAL:%x ALPHA:%x USER_CTL:%x CONFIG_CTL:%x STATUS:%x TEST_CTL_LO:%x\n",
+mc[C0_PLLA_MODE/4], mc[C0_PLLA_L_VAL/4], mc[C0_PLLA_ALPHA/4],
+mc[C0_PLLA_USER_CTL/4], mc[C0_PLLA_CONFIG_CTL/4], mc[C0_PLLA_STATUS/4], mc[C0_PLLA_TEST_CTL_LO/4]);
+printf(" SSSCTL_OFFSET:%x PSCTL_OFFSET:%x\n", md[SSSCTL_OFFSET/4], md[PSCTL_OFFSET/4]);
+}
+munmap((void *)mb, 0x1000);
+munmap((void *)mc, 0x1000);
+munmap((void *)md, 0x1000);
+close(fd);
+return 0;
+}
+
+
+
 
