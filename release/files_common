@@ -321,6 +321,12 @@ selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
+selfdrive/ui/qt/setup/*.cc
+selfdrive/ui/qt/setup/*.h
+
+selfdrive/ui/installer/*.cc
+selfdrive/ui/installer/*.h
+selfdrive/ui/installer/*.cc
 
 system/camerad/SConscript
 system/camerad/main.cc
@@ -437,6 +443,7 @@ third_party/acados/larch64/**
 third_party/acados/include/**
 third_party/acados/acados_template/**
 
+third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh

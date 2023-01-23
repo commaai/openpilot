@@ -21,6 +21,7 @@ public:
   virtual ~PandaCommsHandle() {};
   virtual void cleanup() = 0;
 
+  std::string hw_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
   static std::vector<std::string> list();
@@ -30,9 +31,6 @@ public:
   virtual int control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout=TIMEOUT) = 0;
   virtual int bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT) = 0;
   virtual int bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT) = 0;
-
-protected:
-  std::recursive_mutex hw_lock;
 };
 
 class PandaUsbHandle : public PandaCommsHandle {
@@ -50,6 +48,7 @@ public:
 private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
+  std::recursive_mutex hw_lock;
   void handle_usb_issue(int err, const char func[]);
 };
 
@@ -69,6 +68,7 @@ private:
   int spi_fd = -1;
   uint8_t tx_buf[SPI_BUF_SIZE];
   uint8_t rx_buf[SPI_BUF_SIZE];
+  inline static std::recursive_mutex hw_lock;
 
   int wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack);
   int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len);

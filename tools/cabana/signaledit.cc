@@ -6,53 +6,61 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/qt/util.h"
+
 // SignalForm
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
-  QFormLayout *form_layout = new QFormLayout(this);
+  auto double_validator = new QDoubleValidator(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QFormLayout *form_layout = new QFormLayout();
+  main_layout->addLayout(form_layout);
 
   name = new QLineEdit();
   name->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name));
   form_layout->addRow(tr("Name"), name);
 
+  QHBoxLayout *hl = new QHBoxLayout(this);
   size = new QSpinBox();
   size->setMinimum(1);
-  form_layout->addRow(tr("Size"), size);
-
+  hl->addWidget(size);
   endianness = new QComboBox();
-  endianness->addItems({"Little", "Big"});
-  form_layout->addRow(tr("Endianness"), endianness);
-
-  form_layout->addRow(tr("lsb"), lsb = new QLabel());
-  form_layout->addRow(tr("msb"), msb = new QLabel());
-
+  endianness->addItems({"Little Endianness", "Big Endianness"});
+  hl->addWidget(endianness);
   sign = new QComboBox();
   sign->addItems({"Signed", "Unsigned"});
-  form_layout->addRow(tr("sign"), sign);
-
-  auto double_validator = new QDoubleValidator(this);
-
-  factor = new QLineEdit();
-  factor->setValidator(double_validator);
-  form_layout->addRow(tr("Factor"), factor);
+  hl->addWidget(sign);
+  form_layout->addRow(tr("Size"), hl);
 
   offset = new QLineEdit();
   offset->setValidator(double_validator);
   form_layout->addRow(tr("Offset"), offset);
+  factor = new QLineEdit();
+  factor->setValidator(double_validator);
+  form_layout->addRow(tr("Factor"), factor);
+
+  expand_btn = new QToolButton(this);
+  expand_btn->setText(tr("more..."));
+  main_layout->addWidget(expand_btn, 0, Qt::AlignRight);
 
   // TODO: parse the following parameters in opendbc
+  QWidget *extra_container = new QWidget(this);
+  QFormLayout *extra_layout = new QFormLayout(extra_container);
   unit = new QLineEdit();
-  form_layout->addRow(tr("Unit"), unit);
+  extra_layout->addRow(tr("Unit"), unit);
   comment = new QLineEdit();
-  form_layout->addRow(tr("Comment"), comment);
+  extra_layout->addRow(tr("Comment"), comment);
   min_val = new QLineEdit();
   min_val->setValidator(double_validator);
-  form_layout->addRow(tr("Minimum value"), min_val);
+  extra_layout->addRow(tr("Minimum value"), min_val);
   max_val = new QLineEdit();
   max_val->setValidator(double_validator);
-  form_layout->addRow(tr("Maximum value"), max_val);
+  extra_layout->addRow(tr("Maximum value"), max_val);
   val_desc = new QLineEdit();
-  form_layout->addRow(tr("Value descriptions"), val_desc);
+  extra_layout->addRow(tr("Value descriptions"), val_desc);
+
+  main_layout->addWidget(extra_container);
+  extra_container->setVisible(false);
 
   QObject::connect(name, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
   QObject::connect(factor, &QLineEdit::editingFinished, this, &SignalForm::textBoxEditingFinished);
@@ -60,6 +68,10 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   QObject::connect(size, &QSpinBox::editingFinished, this, &SignalForm::changed);
   QObject::connect(sign, SIGNAL(activated(int)), SIGNAL(changed()));
   QObject::connect(endianness, SIGNAL(activated(int)), SIGNAL(changed()));
+  QObject::connect(expand_btn, &QToolButton::clicked, [=]() {
+    extra_container->setVisible(!extra_container->isVisible());
+    expand_btn->setText(extra_container->isVisible() ? tr("less...") : tr("more..."));
+  });
 }
 
 void SignalForm::textBoxEditingFinished() {
@@ -76,6 +88,8 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
+
+  bg_color = QColor(getColor(form_idx));
 
   // title bar
   auto title_bar = new QWidget(this);
@@ -94,13 +108,13 @@ SignalEdit::SignalEdit(int index, QWidget *parent) : form_idx(index), QWidget(pa
   title_layout->addWidget(title);
 
   plot_btn = new QToolButton(this);
-  plot_btn->setText("📈");
+  plot_btn->setIcon(bootstrapPixmap("graph-up"));
   plot_btn->setCheckable(true);
   plot_btn->setAutoRaise(true);
   title_layout->addWidget(plot_btn);
   auto remove_btn = new QToolButton(this);
   remove_btn->setAutoRaise(true);
-  remove_btn->setText("x");
+  remove_btn->setIcon(bootstrapPixmap("x"));
   remove_btn->setToolTip(tr("Remove signal"));
   title_layout->addWidget(remove_btn);
   main_layout->addWidget(title_bar);
@@ -130,7 +144,7 @@ void SignalEdit::setSignal(const QString &message_id, const Signal *signal) {
   updateForm(msg_id == message_id && form->isVisible());
   msg_id = message_id;
   color_label->setText(QString::number(form_idx + 1));
-  color_label->setStyleSheet(QString("color:black; background-color:%2").arg(getColor(form_idx)));
+  color_label->setStyleSheet(QString("color:black; background-color:%2").arg(bg_color.name()));
   title->setText(sig->name.c_str());
   show();
 }
@@ -180,8 +194,6 @@ void SignalEdit::updateForm(bool visible) {
     form->sign->setCurrentIndex(sig->is_signed ? 0 : 1);
     form->factor->setText(QString::number(sig->factor));
     form->offset->setText(QString::number(sig->offset));
-    form->msb->setText(QString::number(sig->msb));
-    form->lsb->setText(QString::number(sig->lsb));
     form->size->setValue(sig->size);
   }
   form->setVisible(visible);
@@ -189,8 +201,9 @@ void SignalEdit::updateForm(bool visible) {
 }
 
 void SignalEdit::signalHovered(const Signal *s) {
-  auto color = sig == s ? "white" : "black";
-  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(color).arg(getColor(form_idx)));
+  auto text_color = sig == s ? "white" : "black";
+  auto _bg_color = sig == s ? bg_color.darker(125) : bg_color;  // 4/5x brightness
+  color_label->setStyleSheet(QString("color:%1; background-color:%2").arg(text_color).arg(_bg_color.name()));
 }
 
 void SignalEdit::enterEvent(QEvent *event) {
