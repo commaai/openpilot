@@ -38,11 +38,9 @@ void LiveStream::streamThread() {
     AlignedBuffer *buf = messages.emplace_back(new AlignedBuffer());
     Event *evt = ::new Event(buf->align(msg));
     delete msg;
-    {
-      std::lock_guard lk(lock);
-      can_events.push_back(evt);
-    }
 
+    std::lock_guard lk(lock);
+    can_events.push_back(evt);
     handleEvent(evt);
     // TODO: write stream to log file to replay it with cabana --data_dir flag.
   }
