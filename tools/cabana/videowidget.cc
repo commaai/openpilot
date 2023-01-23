@@ -30,6 +30,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   if (!can->liveStreaming()) {
     frame_layout->addWidget(createCameraWidget());
   }
+
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
   play_btn = new QPushButton();

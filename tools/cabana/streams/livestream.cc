@@ -39,28 +39,32 @@ void LiveStream::streamThread() {
     Event *evt = ::new Event(buf->align(msg));
     delete msg;
 
-    std::lock_guard lk(lock);
-    can_events.push_back(evt);
     handleEvent(evt);
     // TODO: write stream to log file to replay it with cabana --data_dir flag.
   }
 }
 
 void LiveStream::handleEvent(Event *evt) {
-  if (start_ts == 0) {
-    start_ts = evt->mono_time;
-    emit streamStarted();
-  }
+  std::lock_guard lk(lock);
+  can_events.push_back(evt);
+
   current_ts = evt->mono_time;
-  if (current_ts < start_ts) {
-    qDebug() << "stream is looping back to old time stamp";
+  if (start_ts == 0 || current_ts < start_ts) {
+    if (current_ts < start_ts) {
+      qDebug() << "stream is looping back to old time stamp";
+    }
     start_ts = current_ts.load();
+    emit streamStarted();
   }
 
   if (!pause_) {
     if (speed_ < 1 && last_update_ts > 0) {
-      auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
-      if (it != can_events.end() && (nanos_since_boot() - last_update_ts) < ((*it)->mono_time - last_update_event_ts) /  speed_) {
+      auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) {
+        return ts < e->mono_time;
+      });
+
+      if (it != can_events.end() &&
+          (nanos_since_boot() - last_update_ts) < ((*it)->mono_time - last_update_event_ts) / speed_) {
         return;
       }
       evt = (*it);
@@ -92,7 +96,6 @@ const std::vector<Event *> *LiveStream::events() const {
   std::copy(can_events.begin(), can_events.end(), std::back_inserter(events_vector));
   return &events_vector;
 }
-
 
 void LiveStream::pause(bool pause) {
   pause_ = pause;

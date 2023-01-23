@@ -128,9 +128,7 @@ void MainWindow::createDockWindows() {
   video_splitter = new QSplitter(Qt::Vertical, this);
   video_widget = new VideoWidget(this);
   video_splitter->addWidget(video_widget);
-  if (!can->liveStreaming()) {
-    QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
-  }
+  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
 
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);
