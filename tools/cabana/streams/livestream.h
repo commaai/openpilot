@@ -8,7 +8,7 @@ class LiveStream : public AbstractStream {
 
 public:
   LiveStream(QObject *parent, QString address = {});
-  ~LiveStream();
+  virtual ~LiveStream();
   inline QString routeName() const override {
     return QString("Live Streaming From %1").arg(zmq_address.isEmpty() ? "127.0.0.1" : zmq_address);
   }
@@ -20,8 +20,8 @@ public:
   const std::vector<Event *> *events() const override;
 
 protected:
-  void streamThread();
-  void removeExpiredEvents();
+  virtual void streamThread();
+  virtual void removeExpiredEvents();
 
   mutable std::mutex lock;
   mutable std::vector<Event *> events_vector;
