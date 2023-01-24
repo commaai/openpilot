@@ -177,6 +177,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
+  params = Params();
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
@@ -191,6 +192,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
 
   const auto cs = sm["controlsState"].getControlsState();
+  const auto cp = sm["carParams"].getCarParams();
 
   // Handle older routes where vCruiseCluster is not set
   float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
@@ -230,6 +232,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("engageable", cs.getEngageable() || cs.getEnabled());
+    setProperty("experimental_mode_available", cp.getExperimentalLongitudinalAvailable() ? params.getBool("ExperimentalLongitudinalEnabled") : cp.getOpenpilotLongitudinalControl());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
@@ -401,6 +404,18 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
 // Window that shows camera view and variety of
 // info drawn on top
+
+void AnnotatedCameraWidget::mousePressEvent(QMouseEvent* e) {
+  const int exp_btn_w = radius + bdr_s * 4;
+  const int exp_btn_h = radius + bdr_s * 3;
+
+  if (engageable && experimental_mode_available && e->x() > rect().right() - exp_btn_w && e->y() < exp_btn_h) {
+    params.putBool("ExperimentalMode", !params.getBool("ExperimentalMode"));
+    return;
+  }
+
+  QWidget::mousePressEvent(e);
+}
 
 void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = getTextRect(p, 0, text);

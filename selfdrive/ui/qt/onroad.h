@@ -37,6 +37,7 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool is_metric MEMBER is_metric);
 
   Q_PROPERTY(bool engageable MEMBER engageable);
+  Q_PROPERTY(bool experimental_mode_available MEMBER experimental_mode_available);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
   Q_PROPERTY(bool hideDM MEMBER hideDM);
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
@@ -47,6 +48,8 @@ public:
   void updateState(const UIState &s);
 
 private:
+  void mousePressEvent(QMouseEvent* e) override;
+
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
@@ -62,6 +65,7 @@ private:
   bool is_cruise_set = false;
   bool is_metric = false;
   bool engageable = false;
+  bool experimental_mode_available = false;
   bool dmActive = false;
   bool hideDM = false;
   bool rightHandDM = false;
@@ -70,6 +74,7 @@ private:
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
   std::unique_ptr<PubMaster> pm;
+  Params params;
 
   int skip_frame_count = 0;
   bool wide_cam_requested = false;
