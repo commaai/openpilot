@@ -588,6 +588,7 @@ tinygrad_repo/extra/utils.py
 tinygrad_repo/tinygrad/llops/ops_gpu.py
 tinygrad_repo/tinygrad/llops/ops_opencl.py
 tinygrad_repo/tinygrad/helpers.py
+tinygrad_repo/tinygrad/graph.py
 tinygrad_repo/tinygrad/mlops.py
 tinygrad_repo/tinygrad/ops.py
 tinygrad_repo/tinygrad/shape/__init__.py
