@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import random
 from collections import defaultdict
-from selfdrive.car.toyota.values import FW_VERSIONS
-from selfdrive.car.toyota.values import match_fw_to_toyota_fuzzy
+from selfdrive.car.honda.values import FW_VERSIONS
+from selfdrive.car.honda.values import match_fw_to_toyota_fuzzy
 from selfdrive.car.fw_versions import match_fw_to_car_fuzzy, match_fw_to_car
 from cereal import car
 
@@ -19,16 +19,21 @@ def get_common_prefix(l):
   return s1
 
 
-# # get all fw for each ecu to find common prefixes
-# all_fw_by_ecu = defaultdict(list)
-# for car, fw_by_ecu in FW_VERSIONS.items():
-#   for ecu, fws in fw_by_ecu.items():
-#     all_fw_by_ecu[ecu].extend(fws)
+PREFIXES_BY_ECU = {}
 
-# # find common prefixes
-# for ecu, fws in all_fw_by_ecu.items():
-#   fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
-#   print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', get_common_prefix(fws_unicode), f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
+
+# get all fw for each ecu to find common prefixes
+all_fw_by_ecu = defaultdict(list)
+for car, fw_by_ecu in FW_VERSIONS.items():
+  for ecu, fws in fw_by_ecu.items():
+    all_fw_by_ecu[ecu].extend(fws)
+
+# find common prefixes
+for ecu, fws in all_fw_by_ecu.items():
+  fws_unicode = [fw.decode('utf-8', 'ignore').translate(dict.fromkeys(range(32))) for fw in fws]
+  common_prefix = get_common_prefix(fws_unicode)
+  PREFIXES_BY_ECU[ecu] = common_prefix
+  print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', common_prefix, f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
 
 # raise Exception
 
@@ -40,18 +45,19 @@ def get_common_prefix(l):
 #   (Ecu.fwdCamera, 0x750, 0x6d): "8646F",
 #   (Ecu.eps, 0x7a1, None): "8965B",
 # }
-#
-# # find car codes (ABS only for now)
-# for car, fw_by_ecu in FW_VERSIONS.items():
-#   print()
-#   print(' *', car)
-#   for ecu, fws in sorted(fw_by_ecu.items(), key=lambda e: e[0]):
-#     fws_no_len = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in fws]
-#     if ecu in PREFIXES_BY_ECU:
-#       pfx = PREFIXES_BY_ECU[ecu]
-#       car_ecu_codes = set([fw[len(pfx):len(pfx) + 4] for fw in fws_no_len])
-#       print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', car_ecu_codes, f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
-#
+
+# find car codes (ABS only for now)
+for car, fw_by_ecu in FW_VERSIONS.items():
+  print()
+  print(' *', car)
+  for ecu, fws in sorted(fw_by_ecu.items(), key=lambda e: e[0]):
+    fws_no_len = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in fws]
+    if ecu in PREFIXES_BY_ECU:
+      pfx = PREFIXES_BY_ECU[ecu]
+      pfx = '000000'
+      car_ecu_codes = set([fw[len(pfx):len(pfx) + 3] for fw in fws_no_len])
+      print('  *', f'{str((ECU_NAME[ecu[0]], hex(ecu[1]))) + ":":24}', car_ecu_codes, f'(ONLY ONE FW)' if len(fws) == 1 else f'({len(fws)} FW)')
+
 # raise Exception
 
 
