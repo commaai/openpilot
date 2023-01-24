@@ -25,6 +25,13 @@ UBLOX_SOS_NACK = b"\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00"
 UBLOX_BACKUP_RESTORE_MSG = b"\xb5\x62\x09\x14\x08\x00\x03"
 UBLOX_ASSIST_ACK = b"\xb5\x62\x13\x60\x08\x00"
 
+GPS_RES_TRACK = 0x10
+GPS_MAX_TRACK = 0x12
+GLONASS_RES_TRACK = 0x04
+GLONASS_MAX_TRACK = 0x08
+QZSS_RES_TRACK = 0x00
+QZSS_MAX_TRACK = 0x02
+
 def set_power(enabled: bool) -> None:
   gpio_init(GPIO.UBLOX_SAFEBOOT_N, True)
   gpio_init(GPIO.UBLOX_PWR_EN, True)
@@ -136,6 +143,67 @@ class TTYPigeon():
         return True
     return False
 
+  def get_gnss_config(self):
+    # UBX-CFG-GNSS pull request
+    hdr = b'\xb5\x62\x06\x3E'
+    self.send(hdr + b'\x00\x00\x44\xD2')
+    while True:
+      recv = self.receive()
+      if hdr in recv:
+        return hdr + recv.split(hdr)[1]
+
+  def set_gnss_config(self):
+    # UBX-CFG-GNSS
+    hdr  = b'\xB5\x62\x06\x3E'
+    c    = b'\x00\x1c\x1c'
+    msg  = struct.pack("I", GPS_MAX_TRACK<<16 | GPS_RES_TRACK<<8) # GPS GNSS CFG
+    msg += b'\x01\x00\x01\x01'
+    msg += b'\x01\x00\x00\x00' # GPS SBAS (disable)
+    msg += b'\x00\x00\x01\x01'
+    msg += b'\x02\x00\x00\x00' # GALILEO (disable)
+    msg += b'\x00\x20\x00\x01'
+    msg += b'\x03\x00\x00\x00' # BEIDOU (disable)
+    msg += b'\x00\x00\x01\x01'
+    msg += b'\x04\x00\x00\x00' # IMES (disable)
+    msg += b'\x00\x00\x01\x01'
+    msg += struct.pack("I", QZSS_MAX_TRACK<<16 | QZSS_RES_TRACK<<8 | 5) # QZSS (keep enabled with GPS)
+    msg += b'\x01\x00\x01\x01'
+    msg += struct.pack("I", GLONASS_MAX_TRACK<<16 | GLONASS_RES_TRACK<<8 | 6) # GLONASS
+    msg += b'\x01\x00\x01\x01'
+    gnss_cfg = hdr + struct.pack("H", len(msg) + 4) + c + struct.pack("b", int(len(msg)/8)) + msg
+    self.send_with_ack(add_ubx_checksum(gnss_cfg))
+
+    # UBX-CFG-CFG (saveMask)
+    self.send_with_ack(b'\xB5\x62\x06\x09\x0C\x00\x00\x00\x00\x00\x1A\x00\x00\x00\x00\x00\x00\x00\x35\x5F')
+
+  def verify_gnss_config(self):
+    def check_data(data, resTrkCh, maxTrkCh, flags):
+      return data[1] == resTrkCh and data[2] == maxTrkCh and data[4:8]  == flags
+
+    def check_block_config(block):
+      if block[0] == 0: # GPS
+        return check_data(block, GPS_RES_TRACK, GPS_MAX_TRACK, b"\x01\x00\x01\x01")
+      elif block[0] in [1,2,3,4]: # SBAS, GALILEO, BEIDOU, IMES
+        return block[4] == 0 # disabled
+      elif block[0] == 5: # QZSS
+        return check_data(block, QZSS_RES_TRACK, QZSS_MAX_TRACK, b"\x01\x00\x01\x01")
+      elif block[0] == 6: # GLONASS
+        return check_data(block, GLONASS_RES_TRACK, GLONASS_MAX_TRACK, b"\x01\x00\x01\x01")
+
+    data = self.get_gnss_config()
+    length = struct.unpack("H", data[4:6])[0]
+    numConfigBlocks = data[9]
+    configs = data[10:10+length-4]
+    return all(check_block_config(configs[idx:idx+8]) for idx in range(0, numConfigBlocks*8, 8))
+
+  def apply_gnss_config(self):
+    if not self.verify_gnss_config():
+      cloudlog.warning("set GNSS config")
+      self.set_gnss_config()
+      return True
+    return False
+
+
 def init_baudrate(pigeon: TTYPigeon):
   # ublox default setting on startup is 9600 baudrate
   pigeon.set_baud(9600)
@@ -147,6 +215,8 @@ def init_baudrate(pigeon: TTYPigeon):
 
 
 def initialize_pigeon(pigeon: TTYPigeon) -> bool:
+  gnss_config_setting = False
+
   # try initializing a few times
   for _ in range(10):
     try:
@@ -160,46 +230,22 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
       pigeon.send_with_ack(b"\xb5\x62\x06\x00\x01\x00\x01\x08\x22")
       pigeon.send_with_ack(b"\xb5\x62\x06\x00\x01\x00\x03\x0A\x24")
 
-      # UBX-CFG-RATE (0x06 0x08)
+      # UBX-CFG-RATE
       pigeon.send_with_ack(b"\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10")
-      # 1Hz frequency
-      #pigeon.send_with_ack(b'\xb5b\x06\x08\x06\x00\xe8\x03\x01\x00\x00\x00\x007')
 
-      # UBX-CFG-NAV5 (0x06 0x24)
+      # UBX-CFG-NAV5
       pigeon.send_with_ack(b"\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63")
 
-      # UBX-CFG-ODO (0x06 0x1E)
+      # UBX-CFG-ODO
       pigeon.send_with_ack(b"\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37")
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x08\x00\xFF\xAD\x62\xAD\x1E\x63\x00\x00\x83\x0C")
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x28\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x56\x24")
 
-      # UBX-CFG-NAV5 (0x06 0x24)
+      # UBX-CFG-NAV5
       pigeon.send_with_ack(b"\xB5\x62\x06\x24\x00\x00\x2A\x84")
       pigeon.send_with_ack(b"\xB5\x62\x06\x23\x00\x00\x29\x81")
       pigeon.send_with_ack(b"\xB5\x62\x06\x1E\x00\x00\x24\x72")
       pigeon.send_with_ack(b"\xB5\x62\x06\x39\x00\x00\x3F\xC3")
-
-      # UBX-CFG-GNSS
-      def set_gnss_cfg():
-        hdr  = b'\xB5\x62\x06\x3E'
-        c    = b'\x00\x1c\x1c'
-        msg  = b'\x00\x10\x10\x00' # GPS GNSS CFG (16 slots)
-        msg += b'\x01\x00\x01\x01'
-        msg += b'\x03\x00\x01\x00' # BEIDOU GNSS CFG (disable)
-        msg += b'\x00\x01\x00\x00'
-        msg += b'\x06\x08\x08\x00' # GLONASS GNSS CFG (disable)
-        msg += b'\x00\x01\x00\x01'
-        msg += b'\x02\x00\x01\x00' # GALILEO GNSS CFG (disable)
-        msg += b'\x00\x20\x00\x00'
-        msg += b'\x05\x00\x01\x00' # QZSS GNSS CFG (1 slot, cause of correlation issue with GPS)
-        msg += b'\x00\x01\x00\x01'
-        return hdr + struct.pack("H", len(msg) + 4) + c + struct.pack("b", int(len(msg)/8)) + msg
-
-      pigeon.send_with_ack(add_ubx_checksum(set_gnss_cfg()))
-
-      # UBX-CFG-HNR (high rate navigation)
-      #pigeon.send_with_ack(add_ubx_checksum(b"\xB5\x62\x06\x5C\x04\x00\x01\x00\x00\x00"))
-      # never returns ACK
 
       # UBX-CFG-MSG (set message rate)
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51")
@@ -207,6 +253,19 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C")
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70")
       pigeon.send_with_ack(b"\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74")
+
+      if pigeon.apply_gnss_config():
+        if gnss_config_setting:
+          cloudlog.error("Could not set GNSS config")
+        if not gnss_config_setting:
+          gnss_config_setting = True
+
+          # GNSS config change needs a device reset, Software Reset
+          pigeon.send(b"\xB5\x62\x06\x04\x04\x00\xFF\xFF\x01\x00\x0D\x5F")
+          time.sleep(0.5)
+          init_baudrate(pigeon)
+          continue
+
       cloudlog.debug("pigeon configured")
 
       # try restoring almanac backup
