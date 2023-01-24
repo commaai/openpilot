@@ -159,34 +159,21 @@ def match_fw_to_honda_fuzzy(fw_versions_dict):
   for candidate, fw_versions in FW_VERSIONS.items():
     for ecu_type, fws in fw_versions.items():
       # only invalidate with these ecus
-      if ecu_type[1] != 0x18dab0f1:
-        continue
+      # if ecu_type[1] != 0x18dab0f1:
+      #   continue
       # if ecu_type not in PREFIXES_BY_ECU:
       #   continue
 
       addr = (ecu_type[1], ecu_type[2])
       found_versions = fw_versions_dict.get(addr, set())
-      # TODO: cleaner way
-      fws = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in fws]
-      found_versions = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in found_versions]
-
-      if not len(found_versions):
-        # Some models can sometimes miss an ecu, or show on two different addresses
-        if candidate in FW_QUERY_CONFIG.non_essential_ecus.get(ecu_type, []):
-          continue
-        else:
-          # TODO: clean up
-          invalid.append(candidate)
-          break
 
       pfx = '000000'  # PREFIXES_BY_ECU[ecu_type]
       candidate_ecu_codes = set([fw[len(pfx):len(pfx) + 3] for fw in fws])
       found_ecu_codes = set([fw[len(pfx):len(pfx) + 3] for fw in found_versions])
 
-      all_match = any([found_ecu_code in candidate_ecu_codes for found_ecu_code in found_ecu_codes])
-
       # Invalid candidates if car is missing versions or not all versions match prefix in database
-      if not len(found_versions) or not all_match:
+      all_match = any([found_ecu_code in candidate_ecu_codes for found_ecu_code in found_ecu_codes])
+      if not all_match:
         invalid.append(candidate)
         break
 
@@ -201,6 +188,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
     ),
   ],
+  match_fw_to_car_fuzzy=match_fw_to_honda_fuzzy,
 )
 
 FW_VERSIONS = {
