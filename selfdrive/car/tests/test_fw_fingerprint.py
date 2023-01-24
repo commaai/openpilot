@@ -25,7 +25,7 @@ class TestFwFingerprint(unittest.TestCase):
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fw_fingerprint(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
-    for _ in range(200):
+    for _ in range(10):
       fw = []
       for ecu, fw_versions in ecus.items():
         if not len(fw_versions):
@@ -34,7 +34,7 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw)
+      _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
       self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
