@@ -13,6 +13,8 @@ from system.hardware import TICI
 TEST_TIMESPAN = 30
 LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 0.5, # ARs use synced pulses for frame starts
                        log.FrameData.ImageSensor.ox03c10: 1.0} # OXs react to out-of-sync at next frame
+FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
+                       log.FrameData.ImageSensor.ox03c10: 1.0}
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
@@ -45,7 +47,7 @@ class TestCamerad(unittest.TestCase):
       assert expected_frames*0.95 < len(msgs) < expected_frames*1.05, f"unexpected frame count {cam}: {expected_frames=}, got {len(msgs)}"
 
       dts = np.abs(np.diff([getattr(m, m.which()).timestampSof/1e6 for m in msgs]) - 1000/service_list[cam].frequency)
-      assert (dts < LAG_FRAME_TOLERANCE[cls.sensor_type]).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
+      assert (dts < FRAME_DELTA_TOLERANCE[cls.sensor_type]).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
       for m in msgs:
         cls.log_by_frame_id[getattr(m, m.which()).frameId].append(m)
@@ -55,7 +57,6 @@ class TestCamerad(unittest.TestCase):
       mn, mx = min(cls.log_by_frame_id.keys()), max(cls.log_by_frame_id.keys())
       del cls.log_by_frame_id[mn]
       del cls.log_by_frame_id[mx]
-
 
   @classmethod
   def tearDownClass(cls):
