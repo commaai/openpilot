@@ -18,6 +18,7 @@ class Slider : public QSlider {
 
 public:
   Slider(QWidget *parent);
+  ~Slider();
 
 private:
   void mousePressEvent(QMouseEvent *e) override;

@@ -133,6 +133,11 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
 }
 
+Slider::~Slider() {
+  abort_load_thumbnail = true;
+  thumnail_future.waitForFinished();
+}
+
 void Slider::streamStarted() {
   abort_load_thumbnail = true;
   thumnail_future.waitForFinished();
