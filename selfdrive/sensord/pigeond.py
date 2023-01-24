@@ -186,7 +186,7 @@ class TTYPigeon():
       elif block[0] in [1,2,3,4]: # SBAS, GALILEO, BEIDOU, IMES
         return block[4] == 0 # disabled
       elif block[0] == 5: # QZSS
-        return check_data(block, 0x00, 0x02, b"\x01\x00\x01\x01")
+        return check_data(block, QZSS_RES_TRACK, QZSS_MAX_TRACK, b"\x01\x00\x01\x01")
       elif block[0] == 6: # GLONASS
         return check_data(block, GLONASS_RES_TRACK, GLONASS_MAX_TRACK, b"\x01\x00\x01\x01")
 
