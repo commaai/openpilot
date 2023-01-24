@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from tqdm import tqdm
 
-from selfdrive.car.fw_versions import match_fw_to_car_fuzzy
+from selfdrive.car.fw_versions import match_fw_to_car_fuzzy, match_fw_to_car
 from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
@@ -24,13 +24,14 @@ if __name__ == "__main__":
   wrong_match = 0
   confusions = defaultdict(set)
 
-  for _ in tqdm(range(1000)):
+  for _ in tqdm(range(10)):
     for candidate, fws in FWS.items():
       fw_dict = {}
       for (tp, addr, subaddr), fw_list in fws.items():
-        fw_dict[(addr, subaddr)] = random.choice(fw_list)
+        fw_dict[(addr, subaddr)] = [random.choice(fw_list)]
 
-      matches = match_fw_to_car_fuzzy(fw_dict, log=False, exclude=candidate)
+      # matches = match_fw_to_car_fuzzy(fw_dict, log=False, exclude=candidate)
+      ex, matches = match_fw_to_car(fw_dict, allow_exact=False)
 
       total += 1
       if len(matches) == 1:
