@@ -1325,12 +1325,10 @@ FW_VERSIONS = {
       b'\xf1\x00CN7_ SCC FNCUP      1.00 1.01 99110-AA000         ',
       b'\xf1\x8799110AA000\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         ',
       b'\xf1\x8799110AA000\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
-      b'\xf1\x8799110AA000\xf1\x00CN7_ SCC FNCUP      1.00 1.01 99110-AA000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00CN7 MDPS C 1.00 1.06 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4CNDC106',
       b'\xf1\x8756310/AA070\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
-      b'\xf1\x8756310AA050\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106',
       b'\xf1\x8756310AA050\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106\xf1\xa01.06',
       b'\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106',
     ],
@@ -1344,7 +1342,6 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
       b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
-      b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
       b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 105 \x10\x03 58910-AA800',
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800\xf1\xa01.01',
     ],
@@ -1356,7 +1353,6 @@ FW_VERSIONS = {
       b'\xf1\x87CXLQF40189012JL2f\x88\x86\x88\x88vUex\xb8\x88\x88\x88\x87\x88\x89fh?\xffz\xff\xff\xff\x08z\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87CXMQFM2728305JB2E\x97\x87xw\x87vwgw\x84x\x88\x88w\x89EI\xbf\xff{\xff\xff\xff\xe6\x0e\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87CXMQFM3806705JB2\x89\x87wwx\x88g\x86\x99\x87\x86xwwv\x88yv\x7f\xffz\xff\xff\xffV\x15\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x87CXNQFM5466335JB2fv\x95i\x89\x86ffxwuwVvuxgw\x9f\xffj\xff\xff\xff\xf8p\xf1\x81HT6VA640A1\xf1\x00HT6WA280BLHT6VA640A1CCN0N20NS5\x00\x00\x00\x00\x00\x00\xe8\xba\xce\xfa',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x82CNCWD0AMFCXCSFFA',
