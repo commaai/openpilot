@@ -2,7 +2,7 @@
 import random
 from collections import defaultdict
 from selfdrive.car.honda.values import FW_VERSIONS
-from selfdrive.car.honda.values import match_fw_to_toyota_fuzzy
+from selfdrive.car.honda.values import match_fw_to_honda_fuzzy
 from selfdrive.car.fw_versions import match_fw_to_car_fuzzy, match_fw_to_car, match_fw_to_car_exact
 from cereal import car
 
@@ -78,7 +78,7 @@ for i in range(200):
     versions = {(ecu[1], ecu[2]): [random.choice(fws)] for ecu, fws in versions.items()}
     # print(versions)
 
-    ret = match_fw_to_toyota_fuzzy(versions)
+    ret = match_fw_to_honda_fuzzy(versions)
     # ret = match_fw_to_car_exact(versions)
     # is_exact, ret = match_fw_to_car(versions, allow_exact=False)
     # ret = match_fw_to_car_fuzzy(versions, config=None)

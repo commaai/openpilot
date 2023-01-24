@@ -154,13 +154,13 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
 PREFIXES_BY_ECU = [(Ecu.eps, 0x18da30f1, None), (Ecu.srs, 0x18da53f1, None), (Ecu.fwdRadar, 0x18dab0f1, None)]
 
 
-def match_fw_to_toyota_fuzzy(fw_versions_dict):
+def match_fw_to_honda_fuzzy(fw_versions_dict):
   invalid = []
   for candidate, fw_versions in FW_VERSIONS.items():
     for ecu_type, fws in fw_versions.items():
       # only invalidate with these ecus
-      if ecu_type not in PREFIXES_BY_ECU:
-        continue
+      # if ecu_type not in PREFIXES_BY_ECU:
+      #   continue
 
       addr = (ecu_type[1], ecu_type[2])
       found_versions = fw_versions_dict.get(addr, set())
