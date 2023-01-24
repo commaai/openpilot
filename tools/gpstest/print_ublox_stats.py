@@ -5,7 +5,7 @@ import cereal.messaging as messaging
 
 MAX_SATS = 150
 
-def print_stats(start_time, ephem_stats, sat_meas, meas_cnt):
+def print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat):
   print(f"----- {datetime.now().strftime('%H:%M:%S.%f')}, Runtime: {datetime.now() - start_time}")
   for sat in range(len(ephem_stats)):
     if ephem_stats[sat] != 0:
@@ -15,6 +15,10 @@ def print_stats(start_time, ephem_stats, sat_meas, meas_cnt):
   for sat in range(len(sat_meas)):
     if sat_meas[sat] != 0:
       print(f"{sat}: {sat_meas[sat]}")
+
+  print("Locktime per sat (in last minute):")
+  for sat in locktime_per_sat:
+    print(f"  {sat}: {locktime_per_sat[sat]}")
 
 
 def print_data(ephem_data):
@@ -36,8 +40,7 @@ def main():
   total_ephems_per_min = []
   diff_ephems_per_min = []
 
-  # TODO: add locktime check, to alert for when we are expecting a ephemeris
-  #       but dont get one
+  locktime_per_sat = {}
 
   sm = messaging.SubMaster(["ubloxGnss", "ubloxRaw"])
   while True:
@@ -60,6 +63,8 @@ def main():
         svId = m.svId + 100 if m.gnssId == 6 else m.svId
         sat_meas[svId] += 1
 
+        locktime_per_sat[svId] = m.locktime
+
     if msg.which() == "ephemeris":
       ephem_data[msg.ephemeris.svId] += 1
 
@@ -75,11 +80,12 @@ def main():
       ephem_data = defaultdict(int)
 
       meas_cnt += 1
-      print_stats(start_time, ephem_stats, sat_meas, meas_cnt)
+      print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat)
       print(f"Total     e/min: {sum(total_ephems_per_min)/meas_cnt}")
       print(f"Different e/min: {sum(diff_ephems_per_min)/meas_cnt}")
 
       sat_meas = [0]*MAX_SATS
+      locktime_per_sat = {}
       last_log = time.monotonic()
 
 if __name__ == "__main__":
