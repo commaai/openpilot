@@ -12,9 +12,13 @@ def print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat):
       print(f"{sat}: {round(ephem_stats[sat]/meas_cnt, 2)} ephem/min")
 
   print("Measurements (in last minute):")
-  for sat in range(len(sat_meas)):
-    if sat_meas[sat] != 0:
+  m6 = []
+  for sat in sat_meas:
+    if sat_meas[sat] in [60, 61, 600, 601]:
+      m6.append(sat)
+    else:
       print(f"{sat}: {sat_meas[sat]}")
+  print(f"60club msgs sats: {m6}")
 
   print("Locktime per sat (in last minute):")
   for sat in locktime_per_sat:
@@ -29,7 +33,7 @@ def print_data(ephem_data):
 
 def main():
   ephem_stats = [0]*MAX_SATS
-  sat_meas = [0]*MAX_SATS
+  sat_meas = defaultdict(int)
   meas_cnt = 0
 
   last_log = time.monotonic()
@@ -62,7 +66,6 @@ def main():
 
         svId = m.svId + 100 if m.gnssId == 6 else m.svId
         sat_meas[svId] += 1
-
         locktime_per_sat[svId] = m.locktime
 
     if msg.which() == "ephemeris":
@@ -84,7 +87,7 @@ def main():
       print(f"Total     e/min: {sum(total_ephems_per_min)/meas_cnt}")
       print(f"Different e/min: {sum(diff_ephems_per_min)/meas_cnt}")
 
-      sat_meas = [0]*MAX_SATS
+      sat_meas = defaultdict(int)
       locktime_per_sat = {}
       last_log = time.monotonic()
 
