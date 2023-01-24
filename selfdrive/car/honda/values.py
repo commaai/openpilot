@@ -159,6 +159,8 @@ def match_fw_to_honda_fuzzy(fw_versions_dict):
   for candidate, fw_versions in FW_VERSIONS.items():
     for ecu_type, fws in fw_versions.items():
       # only invalidate with these ecus
+      if ecu_type[1] != 0x18dab0f1:
+        continue
       # if ecu_type not in PREFIXES_BY_ECU:
       #   continue
 
