@@ -1059,7 +1059,6 @@ FW_VERSIONS = {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TG7-A520\x00\x00',
       b'54008-TG7-A530\x00\x00',
-      b'54008-TG7-A530\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5EY-A050\x00\x00',
@@ -1090,15 +1089,12 @@ FW_VERSIONS = {
       b'38897-TG7-A040\x00\x00',
       b'38897-TG7-A110\x00\x00',
       b'38897-TG7-A210\x00\x00',
-      b'38897-TG7-A040\x00\x00',
-      b'38897-TG7-A030\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TG7-A030\x00\x00',
       b'39990-TG7-A040\x00\x00',
       b'39990-TG7-A060\x00\x00',
       b'39990-TG7-A070\x00\x00',
-      b'39990-TGS-A230\x00\x00',
       b'39990-TGS-A230\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
@@ -1120,14 +1116,12 @@ FW_VERSIONS = {
       b'36161-TGT-A030\x00\x00',
       b'36161-TGT-A130\x00\x00',
       b'36161-TGS-A030\x00\x00',
-      b'36161-TGS-A130\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A020\x00\x00',
       b'77959-TG7-A110\x00\x00',
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
-      b'77959-TGS-A010\x00\x00',
       b'77959-TGS-A010\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
@@ -1176,7 +1170,6 @@ FW_VERSIONS = {
       b'57114-TG8-A730\x00\x00',
       b'57114-TGS-A530\x00\x00',
       b'57114-TGT-A530\x00\x00',
-      b'57114-TGS-A530\x00\x00',
     ],
   },
   CAR.ACURA_RDX: {
