@@ -590,7 +590,8 @@ tinygrad_repo/tinygrad/llops/ops_opencl.py
 tinygrad_repo/tinygrad/helpers.py
 tinygrad_repo/tinygrad/mlops.py
 tinygrad_repo/tinygrad/ops.py
-tinygrad_repo/tinygrad/shapetracker.py
+tinygrad_repo/tinygrad/shape/__init__.py
+tinygrad_repo/tinygrad/shape/symbolic.py
 tinygrad_repo/tinygrad/tensor.py
 tinygrad_repo/tinygrad/nn/__init__.py
 tinygrad_repo/tinygrad/nn/optim.py
