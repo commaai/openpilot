@@ -1059,6 +1059,7 @@ FW_VERSIONS = {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TG7-A520\x00\x00',
       b'54008-TG7-A530\x00\x00',
+      b'54008-TG7-A530\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5EY-A050\x00\x00',
@@ -1067,6 +1068,8 @@ FW_VERSIONS = {
       b'28101-5EZ-A060\x00\x00',
       b'28101-5EZ-A100\x00\x00',
       b'28101-5EZ-A210\x00\x00',
+      b'28101-5EZ-A600\x00\x00',
+      b'28101-5EZ-A430\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-RLV-4060\x00\x00',
@@ -1078,18 +1081,24 @@ FW_VERSIONS = {
       b'37805-RLV-C520\x00\x00',
       b'37805-RLV-C530\x00\x00',
       b'37805-RLV-C910\x00\x00',
+      b'37805-RLV-B220\x00\x00',
+      b'37805-RLV-B210\x00\x00',
+      b'37805-RLV-L160\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TG7-A030\x00\x00',
       b'38897-TG7-A040\x00\x00',
       b'38897-TG7-A110\x00\x00',
       b'38897-TG7-A210\x00\x00',
+      b'38897-TG7-A040\x00\x00',
+      b'38897-TG7-A030\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TG7-A030\x00\x00',
       b'39990-TG7-A040\x00\x00',
       b'39990-TG7-A060\x00\x00',
       b'39990-TG7-A070\x00\x00',
+      b'39990-TGS-A230\x00\x00',
       b'39990-TGS-A230\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
@@ -1110,12 +1119,15 @@ FW_VERSIONS = {
       b'36161-TGS-A130\x00\x00',
       b'36161-TGT-A030\x00\x00',
       b'36161-TGT-A130\x00\x00',
+      b'36161-TGS-A030\x00\x00',
+      b'36161-TGS-A130\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A020\x00\x00',
       b'77959-TG7-A110\x00\x00',
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
+      b'77959-TGS-A010\x00\x00',
       b'77959-TGS-A010\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
@@ -1147,6 +1159,9 @@ FW_VERSIONS = {
       b'78109-TGS-AP20\x00\x00',
       b'78109-TGT-AJ20\x00\x00',
       b'78109-TGT-AK30\x00\x00',
+      b'78109-TGS-AT20\x00\x00',
+      b'78109-TGS-AX20\x00\x00',
+      b'78109-TGS-AJ20\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TG7-A130\x00\x00',
@@ -1161,41 +1176,6 @@ FW_VERSIONS = {
       b'57114-TG8-A730\x00\x00',
       b'57114-TGS-A530\x00\x00',
       b'57114-TGT-A530\x00\x00',
-    ],
-  },
-  CAR.PASSPORT: {
-    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
-      b'37805-RLV-B220\x00\x00',
-      b'37805-RLV-B210\x00\x00',
-      b'37805-RLV-L160\x00\x00',
-    ],
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TGS-A230\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36161-TGS-A030\x00\x00',
-      b'36161-TGS-A130\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TG7-A040\x00\x00',
-      b'38897-TG7-A030\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TGS-A010\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x18da0bf1, None): [
-      b'54008-TG7-A530\x00\x00',
-    ],
-    (Ecu.transmission, 0x18da1ef1, None): [
-      b'28101-5EZ-A600\x00\x00',
-      b'28101-5EZ-A430\x00\x00',
-    ],
-    (Ecu.combinationMeter, 0x18da60f1, None): [
-      b'78109-TGS-AT20\x00\x00',
-      b'78109-TGS-AX20\x00\x00',
-      b'78109-TGS-AJ20\x00\x00',
-    ],
-    (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TGS-A530\x00\x00',
     ],
   },
