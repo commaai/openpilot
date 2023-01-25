@@ -222,6 +222,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("is_cruise_set", cruise_set);
   setProperty("is_metric", s.scene.is_metric);
   setProperty("speed", cur_speed);
+  setProperty("isStandstill", sm["carState"].getCarState().getStandstill());
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
@@ -392,9 +393,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   // dm icon
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
-    // drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-    //         dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
-    drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2);
+    if (!isStandstill) {
+      drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
+            dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+    } else {
+      drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2);
+    }
   }
   p.restore();
 }
