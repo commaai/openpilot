@@ -79,15 +79,8 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case 3: return can_data.count;
       case 4: return toHex(can_data.dat);
     }
-  } else if (role == Qt::FontRole && index.column() == columnCount() - 1) {
-    return QFontDatabase::systemFont(QFontDatabase::FixedFont);
   } else if (role == Qt::UserRole && index.column() == 4) {
-
-    QList<QVariant> colors;
-    for (int i = 0; i < can_data.dat.size(); i++){
-      colors.append(can_data.colors[i]);
-    }
-    return colors;
+    return HexColors::toVariantList(can_data.colors);
   }
   return {};
 }
@@ -172,42 +165,5 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_column = column;
     sort_order = order;
     sortMessages();
-  }
-}
-
-
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
-}
-
-void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QList<QVariant> colors = index.data(Qt::UserRole).toList();
-
-  QStyleOptionViewItemV4 opt = option;
-  initStyleOption(&opt, index);
-
-  const QFont font = index.data(Qt::FontRole).value<QFont>();
-  painter->setFont(font);
-
-  QRect rect = opt.rect;
-  QString bytes = QString(opt.text);
-
-  QRect pos = rect;
-  QRect space = painter->boundingRect(pos, opt.displayAlignment, " ");
-  pos.setX(pos.x() + space.width());
-
-  if ((option.state & QStyle::State_Selected) && (option.state & QStyle::State_Active)) {
-    painter->setPen(option.palette.color(QPalette::HighlightedText));
-  } else {
-    painter->setPen(option.palette.color(QPalette::Text));
-  }
-
-  int i = 0;
-  for (auto &byte : bytes.split(" ")) {
-    QRect sz = painter->boundingRect(pos, opt.displayAlignment, byte);
-    const int m = space.width() / 2;
-    painter->fillRect(sz.marginsAdded(QMargins(m + 1, m, m, m)), colors[i].value<QColor>());
-    painter->drawText(pos, opt.displayAlignment, byte);
-    pos.setX(pos.x() + sz.width() + space.width());
-    i++;
   }
 }
