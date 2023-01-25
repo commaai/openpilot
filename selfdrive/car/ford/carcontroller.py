@@ -1,3 +1,4 @@
+import math
 from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
@@ -49,18 +50,18 @@ class CarController:
     if (self.frame % self.CCP.STEER_STEP) == 0:
       if CC.latActive:
         # apply limits to curvature
-        apply_curvature = apply_std_curvature_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo,
-                                                     self.CCP)
+        apply_curvature = -self.VM.calc_curvature(math.radians(actuators.steeringAngleDeg), CS.out.vEgo, 0.0)
+        apply_curvature = apply_std_curvature_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgo, self.CCP)
         # clip to signal range
         apply_curvature = clip(apply_curvature, -self.CCP.CURVATURE_MAX, self.CCP.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
-      angle_steer_des = -self.VM.get_steer_from_curvature(apply_curvature, CS.out.vEgo, 0.0)
-
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      steer_change = abs(CS.out.steeringAngleDeg - angle_steer_des)
+      steer_error = CS.out.steeringAngleDeg - actuators.steeringAngleDeg
+      steer_change = abs(steer_error)
+      curvature_rate = 0  # self.VM.calc_curvature(steer_error, CS.out.vEgo, 0.0)
       if steer_change < 2.5:
         ramp_type = 0
       elif steer_change < 5.0:
@@ -73,7 +74,7 @@ class CarController:
 
       lca_rq = 1 if CC.latActive else 0
       can_sends.append(create_lka_msg(self.packer))
-      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., -apply_curvature, 0.))
+      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., -apply_curvature, -curvature_rate))
 
       self.apply_curvature_last = apply_curvature
 
