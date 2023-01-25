@@ -24,7 +24,6 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
   detail_widget = new DetailWidget(charts_widget, this);
-  detail_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   setCentralWidget(detail_widget);
   createActions();
   createStatusBar();
@@ -126,15 +125,14 @@ void MainWindow::createDockWindows() {
 
   // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
-  if (!can->liveStreaming()) {
-    video_widget = new VideoWidget(this);
-    video_splitter->addWidget(video_widget);
-    QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
-  }
+  video_widget = new VideoWidget(this);
+  video_splitter->addWidget(video_widget);
+  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
+
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);
   video_splitter->restoreState(settings.video_splitter_state);
-  if (!can->liveStreaming() && video_splitter->sizes()[0] == 0) {
+  if (can->liveStreaming() || video_splitter->sizes()[0] == 0) {
     // display video at minimum size.
     video_splitter->setSizes({1, 1});
   }

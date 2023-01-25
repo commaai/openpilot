@@ -31,6 +31,7 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const QString &message_id);
   void dbcMsgChanged(int show_form_idx = -1);
+  QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
   QUndoStack *undo_stack = nullptr;
 
 private:

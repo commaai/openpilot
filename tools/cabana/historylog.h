@@ -41,12 +41,14 @@ public:
   }
   void setDynamicMode(int state);
   void segmentsMerged();
+  void updateColors();
   void refresh();
 
   struct Message {
     uint64_t mono_time = 0;
     QVector<double> sig_values;
-    QString data;
+    QByteArray data;
+    QVector<QColor> colors;
   };
 
   template <class InputIt>
@@ -54,6 +56,7 @@ public:
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
   QString msg_id;
+  HexColors hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
@@ -62,7 +65,7 @@ public:
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
   std::vector<const Signal*> sigs;
-  bool dynamic_mode = false;
+  bool dynamic_mode = true;
   DisplayType display_type = HistoryLogModel::Signals;
 };
 
