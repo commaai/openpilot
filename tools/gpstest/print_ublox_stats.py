@@ -1,5 +1,6 @@
 import time
 import argparse
+import struct
 from datetime import datetime
 from collections import defaultdict
 
@@ -18,6 +19,9 @@ UBX_MON_HW2 = b'\x0a\x0b'
 RAW_EPHEM_TYPE = 1
 RAW_NAV_ORB_TYPE = 2
 RAW_NAV_PVT_TYPE = 3
+
+GNSS_GPS = 0
+GNSS_GLONASS = 6
 
 def print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat, raw_ephem):
   print(f"----- {datetime.now().strftime('%H:%M:%S.%f')}, Runtime: {datetime.now() - start_time}")
@@ -82,13 +86,30 @@ def check_raw_ephemeris(raw_data):
       raw_data = em[4:] # skip length
       gnss_id = raw_data[0]
       sv_id = raw_data[1]
+      num_words = raw_data[4]
       chn = raw_data[5]
       version = raw_data[6]
-      #print(f"RAW Ephem: {sv_id} {gnss_id} {chn} {version} {raw_data}")
-      if gnss_id == 0:
-        # return only GPS ephemeris for now
-        #print(f"RAW_EPHEM_TYPE: {[sv_id, gnss_id, chn, version, raw_data]}")
-        results[RAW_EPHEM_TYPE].append([sv_id, gnss_id, chn, version, raw_data])
+      ephem_raw = raw_data[8:8+num_words*4]
+      #print(f"RAW Ephem: {sv_id} {gnss_id} {chn} {version} {num_words} {ephem_raw}")
+
+      if gnss_id == GNSS_GPS:
+        # tow counter is in word 2
+        #print(f"ephem tow counter: {tow_counter}")
+        '''
+        For parsing ephemeris data
+        ephem_raw = raw_data[8:8+num_words*4]
+        for i in range(10):
+          print(hex(struct.unpack("I", data[i*4:i*4+4])[0]>>6))
+        # check ublox_msg.cc for proper parsing
+        '''
+        i = 1
+        tow_counter = ((struct.unpack("I", ephem_raw[i*4:i*4+4])[0]>>6) >> 7) & 0x1FFFF
+        subframe_id = ((struct.unpack("I", ephem_raw[i*4:i*4+4])[0]>>6) >> 2) & 0x7
+
+        results[RAW_EPHEM_TYPE].append([sv_id, gnss_id, chn, version, tow_counter, subframe_id, ephem_raw])
+      elif gnss_id == GNSS_GLONASS:
+        print(f"Glonass ephemeris: {[sv_id, gnss_id, chn, version, ephem_raw]}")
+
 
     if em[:2] == UBX_NAV_ORB:
       orb_db = {}
@@ -126,8 +147,8 @@ def drain_raw_sock(ublox_raw, raw_ephem, orb_dbs):
 
     if len(results[RAW_EPHEM_TYPE]) > 0:
       for r in results[RAW_EPHEM_TYPE]:
-        sv_id, _, chn, version, raw_data = r # [sv_id, gnss_id, chn, version, raw_data]
-        raw_ephem[sv_id].append([chn, version, raw_data])
+        sv_id, _, chn, version, tow_counter, subframe_id, ephem_raw = r # [sv_id, gnss_id, chn, version, raw_data]
+        raw_ephem[sv_id].append([chn, version, tow_counter, subframe_id, ephem_raw])
 
     if len(results[RAW_NAV_ORB_TYPE]) > 0:
       for r in results[RAW_NAV_ORB_TYPE]:
@@ -141,8 +162,8 @@ def drain_raw_sock(ublox_raw, raw_ephem, orb_dbs):
 
 def drain_gnss_sock(ublox_gnss, sat_meas, locktime_per_sat, ephem_data):
   for msg in messaging.drain_sock(ublox_gnss):
-    if msg.which() == "measurementReport":
-      for m in msg.measurementReport.measurements:
+    if msg.ubloxGnss.which() == "measurementReport":
+      for m in msg.ubloxGnss.measurementReport.measurements:
         if m.gnssId == 6 and m.svId == 255:
           continue
 
@@ -150,9 +171,8 @@ def drain_gnss_sock(ublox_gnss, sat_meas, locktime_per_sat, ephem_data):
         sat_meas[svId] += 1
         locktime_per_sat[svId] = m.locktime
 
-    if msg.which() == "ephemeris":
-      print("******************* GOT EPHEMERIS: {msg.ephemeris.svId}")
-      ephem_data[msg.ephemeris.svId] += 1
+    if msg.ubloxGnss.which() == "ephemeris":
+      ephem_data[msg.ubloxGnss.ephemeris.svId] += 1
 
 
 def update_stats(ephem_data, ephem_stats, diff_ephems_per_min, total_ephems_per_min):
