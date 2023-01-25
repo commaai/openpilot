@@ -14,6 +14,8 @@ Ecu = car.CarParams.Ecu
 class CarControllerParams:
   # Messages: Lane_Assist_Data1, LateralMotionControl
   STEER_STEP = 5
+  # Message: ACCDATA
+  ACC_CONTROL_STEP = 2
   # Message: IPMA_Data
   LKAS_UI_STEP = 100
   # Message: ACCDATA_3
@@ -28,6 +30,9 @@ class CarControllerParams:
   # TODO: unify field names used by curvature and angle control cars
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.005, 0.00056, 0.0002])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.008, 0.00089, 0.00032])
+
+  ACCEL_MAX = 2.0               # m/s^s max acceleration
+  ACCEL_MIN = -3.5              # m/s^s max deceleration
 
   def __init__(self, CP):
     pass
