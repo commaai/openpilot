@@ -113,31 +113,26 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 
   // update driver
   const auto driver_orient = (*s->sm)["driverStateV2"].getDriverStateV2().getLeftDriverData().getFaceOrientation();
-  float p_this = driver_orient[0];
-  float y_this = driver_orient[1];
-  float r_this = driver_orient[2];
-  p_this = 0.33 * p_this + 0.66 * scene.driver_pose_pitch;
-  y_this = 0.33 * y_this + 0.66 * scene.driver_pose_yaw;
-  r_this = 0.33 * r_this + 0.66 * scene.driver_pose_roll;
-  scene.driver_pose_pitch = p_this;
-  scene.driver_pose_yaw = y_this;
-  scene.driver_pose_roll = r_this;
+  for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
+    float v_this = driver_orient[i];
+    scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
+  }
 
   const mat3 rx = (mat3){{
     1, 0, 0,
-    0, cosf(scene.driver_pose_pitch), -sinf(scene.driver_pose_pitch),
-    0, sinf(scene.driver_pose_pitch), cosf(scene.driver_pose_pitch),
+    0, cosf(scene.driver_pose_vals[0]), -sinf(scene.driver_pose_vals[0]),
+    0, sinf(scene.driver_pose_vals[0]), cosf(scene.driver_pose_vals[0]),
   }};
 
   const mat3 ry = (mat3){{
-    cosf(-scene.driver_pose_yaw), 0, sinf(-scene.driver_pose_yaw),
+    cosf(-scene.driver_pose_vals[1]), 0, sinf(-scene.driver_pose_vals[1]),
     0, 1, 0,
-    -sinf(-scene.driver_pose_yaw), 0, cosf(-scene.driver_pose_yaw),
+    -sinf(-scene.driver_pose_vals[1]), 0, cosf(-scene.driver_pose_vals[1]),
   }};
 
   const mat3 rz = (mat3){{
-    cosf(-scene.driver_pose_roll), -sinf(-scene.driver_pose_roll), 0,
-    sinf(-scene.driver_pose_roll), cosf(-scene.driver_pose_roll), 0,
+    cosf(-scene.driver_pose_vals[2]), -sinf(-scene.driver_pose_vals[2]), 0,
+    sinf(-scene.driver_pose_vals[2]), cosf(-scene.driver_pose_vals[2]), 0,
     0, 0, 1,
   }};
 

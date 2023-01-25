@@ -177,9 +177,7 @@ typedef struct UIScene {
   QPointF lead_vertices[2];
 
   // driverStateV2
-  float driver_pose_pitch;
-  float driver_pose_yaw;
-  float driver_pose_roll;
+  float driver_pose_vals[3];
   QPointF face_kpts_draw[68];
   float face_kpts_draw_d[68];
 
