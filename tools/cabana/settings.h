@@ -22,6 +22,7 @@ public:
   QByteArray geometry;
   QByteArray video_splitter_state;
   QByteArray window_state;
+  QByteArray message_header_state;
 
 signals:
   void changed();
