@@ -10,8 +10,8 @@ HONDA_FW_VERSION_RE = br"\d{5}-[A-Z0-9]{3}(-|,)[A-Z0-9]{4}(\x00){2}$"
 class TestHondaFingerprint(unittest.TestCase):
   def test_fw_version_format(self):
     # Asserts all FW versions follow an expected format
-    for _, fw_by_ecu in FW_VERSIONS.items():
-      for ecu_type, fws in fw_by_ecu.items():
+    for fw_by_ecu in FW_VERSIONS.values():
+      for fws in fw_by_ecu.values():
         for fw in fws:
           self.assertTrue(re.match(HONDA_FW_VERSION_RE, fw) is not None, fw)
 
