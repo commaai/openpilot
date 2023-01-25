@@ -4,7 +4,8 @@ import unittest
 from cereal import car
 from selfdrive.car.hyundai.values import CANFD_CAR, FW_QUERY_CONFIG, FW_VERSIONS
 
-ECU_NAME = {v: k for k, v in car.CarParams.Ecu.schema.enumerants.items()}
+Ecu = car.CarParams.Ecu
+ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
