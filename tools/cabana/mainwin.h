@@ -23,6 +23,7 @@ public:
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
 
 public slots:
+  void newFile();
   void openFile();
   void openRecentFile();
   void loadDBCFromName(const QString &name);
@@ -37,6 +38,7 @@ signals:
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
+  void remindSaveChanges();
   void saveFile(const QString &fn);
   void loadFile(const QString &fn);
   void setCurrentFile(const QString &fn);

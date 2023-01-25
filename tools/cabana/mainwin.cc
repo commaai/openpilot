@@ -64,6 +64,7 @@ MainWindow::MainWindow() : QMainWindow() {
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
   file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
   open_recent_menu = file_menu->addMenu(tr("Open &Recent"));
@@ -131,7 +132,7 @@ void MainWindow::createDockWindows() {
   charts_layout->setContentsMargins(0, 0, 0, 0);
   charts_layout->addWidget(charts_widget);
 
-  video_splitter = new QSplitter(Qt::Vertical,this);
+  video_splitter = new QSplitter(Qt::Vertical, this);
 
   // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
@@ -191,16 +192,16 @@ void MainWindow::DBCFileChanged() {
   detail_widget->undo_stack->clear();
   int index = dbc_combo->findText(QFileInfo(dbc()->name()).baseName());
   dbc_combo->setCurrentIndex(index);
-  setWindowFilePath(QString("[*]%1").arg(dbc()->name()));
+  setWindowFilePath(QString("%1").arg(dbc()->name()));
 }
 
-void MainWindow::loadDBCFromName(const QString &name) {
-  if (name != dbc()->name()) {
-    dbc()->open(name);
-  }
+void MainWindow::newFile() {
+  remindSaveChanges();
+  dbc()->open("untitled.dbc", "");
 }
 
 void MainWindow::openFile() {
+  remindSaveChanges();
   QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
   if (!fn.isEmpty()) {
     loadFile(fn);
@@ -221,17 +222,27 @@ void MainWindow::loadFile(const QString &fn) {
 
 void MainWindow::openRecentFile() {
   if (auto action = qobject_cast<QAction *>(sender())) {
+    remindSaveChanges();
     loadFile(action->data().toString());
   }
 }
 
+void MainWindow::loadDBCFromName(const QString &name) {
+  if (name != dbc()->name()) {
+    remindSaveChanges();
+    dbc()->open(name);
+  }
+}
+
 void MainWindow::loadDBCFromClipboard() {
+  remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
-  dbc()->open("From Clipboard", dbc_str);
+  dbc()->open("from_clipboard.dbc", dbc_str);
   QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
 }
 
 void MainWindow::loadDBCFromFingerprint() {
+  remindSaveChanges();
   auto fingerprint = can->carFingerprint();
   video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
   if (!fingerprint.isEmpty()) {
@@ -241,7 +252,7 @@ void MainWindow::loadDBCFromFingerprint() {
       return;
     }
   }
-  dbc()->open("New_DBC", "");
+  newFile();
 }
 
 void MainWindow::save() {
@@ -276,7 +287,7 @@ void MainWindow::saveDBCToClipboard() {
 
 void MainWindow::setCurrentFile(const QString &fn) {
   current_file = fn;
-  setWindowFilePath(QString("[*]%1").arg(fn));
+  setWindowFilePath(QString("%1").arg(fn));
   settings.recent_files.removeAll(fn);
   settings.recent_files.prepend(fn);
   while (settings.recent_files.size() > MAX_RECENT_FILES) {
@@ -299,6 +310,22 @@ void MainWindow::updateRecentFileActions() {
     recent_files_acts[i]->setVisible(false);
   }
   open_recent_menu->setEnabled(num_recent_files > 0);
+}
+
+void MainWindow::remindSaveChanges() {
+  bool discard_changes = false;
+  while (!detail_widget->undo_stack->isClean() && !discard_changes) {
+    int ret = (QMessageBox::question(this, tr("Unsaved Changes"),
+                                     tr("You have unsaved changes. Press ok to save them, cancel to discard."),
+                                     QMessageBox::Ok | QMessageBox::Cancel));
+    if (ret == QMessageBox::Ok) {
+      save();
+    } else {
+      discard_changes = true;
+    }
+  }
+  detail_widget->undo_stack->clear();
+  current_file = "";
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {
@@ -329,15 +356,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
-  if (!detail_widget->undo_stack->isClean()) {
-    auto ret = QMessageBox::question(this, tr("Unsaved Changes"),
-                                     tr("Are you sure you want to exit without saving?\nAny unsaved changes will be lost."),
-                                     QMessageBox::Yes | QMessageBox::No);
-    if (ret == QMessageBox::No) {
-      event->ignore();
-      return;
-    }
-  }
+  remindSaveChanges();
 
   main_win = nullptr;
   if (floating_window)
