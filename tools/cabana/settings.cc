@@ -28,7 +28,7 @@ void Settings::save() {
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  max_cached_minutes = s.value("cached_minutes", 5).toInt();
+  max_cached_minutes = s.value("max_cached_minutes", 5).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_range = s.value("chart_range", 3 * 60).toInt();
   chart_column_count = s.value("chart_column_count", 1).toInt();
