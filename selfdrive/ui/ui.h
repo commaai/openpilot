@@ -105,8 +105,8 @@ typedef struct UIScene {
 
   // driverStateV2
   float driver_pose_vals[3];
-  QPointF face_kpts_draw[68];
-  float face_kpts_draw_d[68];
+  QPointF face_kpts_draw[FACE_KPTS_SIZE];
+  float face_kpts_draw_d[FACE_KPTS_SIZE];
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
