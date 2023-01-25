@@ -504,12 +504,19 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
 
   painter.save();
 
-  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0), 6, Qt::SolidLine, Qt::RoundCap));
-  painter.drawLines(scene.face_kpt_segments, 16);
+  QLinearGradient linearGrad;
 
-  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0), 3, Qt::SolidLine, Qt::RoundCap));
-  // painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, 0.1));
-  painter.drawLines(scene.face_kpt_segments+16, 44);
+  for (int i = 0; i < 60; ++i) {
+    linearGrad.setStart(scene.face_kpt_segments[i].p1());
+    linearGrad.setFinalStop(scene.face_kpt_segments[i].p2());
+    float b0 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i] + 80)/130, 1.0), 0.0);
+    float b1 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i+1] + 80)/130, 1.0), 0.0);
+    linearGrad.setColorAt(0, QColor::fromRgbF(b0, b0, b0, 1.0));
+    linearGrad.setColorAt(1, QColor::fromRgbF(b1, b1, b1, 1.0));
+
+    painter.setPen(QPen(linearGrad, i<16 ? 5 : 2, Qt::SolidLine, Qt::RoundCap));
+    painter.drawLine(scene.face_kpt_segments[i]);
+  }
 
   painter.restore();
 }

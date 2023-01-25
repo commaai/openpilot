@@ -162,6 +162,10 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
                                                                                                 kpt_this.v[1]+900,
                                                                                                 kpt_next.v[0]+115,
                                                                                                 kpt_next.v[1]+900);
+    scene.face_kpt_segments_d[kpi-face_vertices_idx] = kpt_this.v[2];
+    if (kpi - face_vertices_idx == 59) {
+      scene.face_kpt_segments_d[60] = kpt_next.v[2];
+    }
   }
 }
 
