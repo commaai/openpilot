@@ -152,9 +152,10 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
 }
 
 HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xF181) + \
   p16(0xF112)
 HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(0xF112)
+  p16(0xF181)
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
