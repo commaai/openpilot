@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/livestream.h"
 
+#include <fstream>
 #include <QDateTime>
 #include <QStandardPaths>
 
@@ -36,6 +37,7 @@ void LiveStream::streamThread() {
     setenv("ZMQ", "1", 1);
   }
 
+  std::unique_ptr<std::ofstream> fs;
   std::unique_ptr<Context> context(Context::create());
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
@@ -54,7 +56,11 @@ void LiveStream::streamThread() {
     delete msg;
 
     handleEvent(evt);
-    // TODO: write stream to log file to replay it with cabana --data_dir flag.
+
+    if (logging) {
+      if (!fs) fs.reset(new std::ofstream(logFilePath(), std::ios::binary | std::ios::out));
+      fs->write((char *)evt->words.begin(), evt->words.size() * sizeof(capnp::word));
+    }
   }
 }
 
@@ -69,9 +75,6 @@ void LiveStream::handleEvent(Event *evt) {
     }
     start_ts = current_ts.load();
     emit streamStarted();
-    if (logging) {
-      fs.reset(new std::ofstream(logFilePath(), std::ios::binary | std::ios::out));
-    }
   }
 
   if (!pause_) {
@@ -89,10 +92,6 @@ void LiveStream::handleEvent(Event *evt) {
     updateEvent(evt);
     last_update_event_ts = evt->mono_time;
     last_update_ts = nanos_since_boot();
-  }
-
-  if (fs) {
-    fs->write((char *)evt->words.begin(), evt->words.size() * sizeof(capnp::word));
   }
 }
 

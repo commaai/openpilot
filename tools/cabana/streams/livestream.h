@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fstream>
 #include <QTimer>
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -40,5 +39,4 @@ protected:
   QThread *stream_thread;
   QTimer *timer;
   bool logging;
-  std::unique_ptr<std::ofstream> fs;
 };
