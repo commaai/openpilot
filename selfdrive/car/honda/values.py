@@ -4,9 +4,10 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
+from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -150,11 +151,25 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
 
+HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xF112)
+HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xF112)
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # Currently used to fingerprint
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
+      bus=1,
+    ),
+
+    # Data collection requests:
+    # Log extra identifiers for current ECUs
+    Request(
+      [HONDA_VERSION_REQUEST],
+      [HONDA_VERSION_RESPONSE],
       bus=1,
     ),
     # Query Nidec PT bus from camera for data collection
@@ -163,6 +178,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
     ),
+  ],
+  extra_ecus=[
+    # The only other ECU on PT bus accessible by camera on radarless Civic
+    (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
 
@@ -1440,6 +1459,12 @@ FW_VERSIONS = {
       b'78108-T23-A110\x00\x00',
       b'78108-T21-A230\x00\x00',
       b'78108-T22-A020\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T20-A070\x00\x00',
+      b'36161-T20-A080\x00\x00',
+      b'36161-T20-A060\x00\x00',
+      b'36161-T47-A070\x00\x00',
     ],
     (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-T20-AB40\x00\x00',
