@@ -16,7 +16,6 @@
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   undo_stack = new QUndoStack(this);
-  setMinimumWidth(500);
   QWidget *main_widget = new QWidget(this);
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   main_layout->setContentsMargins(0, 0, 0, 0);

@@ -11,6 +11,7 @@
 // BinaryView
 
 const int CELL_HEIGHT = 36;
+const int VERTICAL_HEADER_WIDTH = 30;
 
 inline int get_bit_index(const QModelIndex &index, bool little_endian) {
   return index.row() * 8 + (little_endian ? 7 - index.column() : index.column());
@@ -31,6 +32,10 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setMouseTracking(true);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+}
+
+QSize BinaryView::minimumSizeHint() const {
+  return {horizontalHeader()->minimumSectionSize() * 9 + VERTICAL_HEADER_WIDTH + 2, 0};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -215,7 +220,7 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
   if (orientation == Qt::Vertical) {
     switch (role) {
       case Qt::DisplayRole: return section;
-      case Qt::SizeHintRole: return QSize(30, 0);
+      case Qt::SizeHintRole: return QSize(VERTICAL_HEADER_WIDTH, 0);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
     }
   }
