@@ -66,17 +66,16 @@ void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
   file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
-  file_menu->addSeparator();
-
+  open_recent_menu = file_menu->addMenu(tr("Open &Recent"));
   for (int i = 0; i < MAX_RECENT_FILES; ++i) {
     recent_files_acts[i] = new QAction(this);
     recent_files_acts[i]->setVisible(false);
     QObject::connect(recent_files_acts[i], &QAction::triggered, this, &MainWindow::openRecentFile);
-    file_menu->addAction(recent_files_acts[i]);
+    open_recent_menu->addAction(recent_files_acts[i]);
   }
-  separator_act = file_menu->addSeparator();
   updateRecentFileActions();
 
+  file_menu->addSeparator();
   file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save)->setShortcuts(QKeySequence::Save);
   file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs)->setShortcuts(QKeySequence::SaveAs);
   file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
@@ -299,7 +298,7 @@ void MainWindow::updateRecentFileActions() {
   for (int i = num_recent_files; i < MAX_RECENT_FILES; ++i) {
     recent_files_acts[i]->setVisible(false);
   }
-  separator_act->setVisible(num_recent_files > 0);
+  open_recent_menu->setEnabled(num_recent_files > 0);
 }
 
 void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool success) {

@@ -64,7 +64,7 @@ protected:
   QComboBox *dbc_combo;
   QSplitter *video_splitter;;
   QString current_file = "";
-  enum { MAX_RECENT_FILES = 10 };
+  enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
-  QAction *separator_act = nullptr;
+  QMenu *open_recent_menu = nullptr;
 };
