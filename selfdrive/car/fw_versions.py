@@ -95,7 +95,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=False, exclude=None, brand=None)
     return set()
 
 
-# def match_fw_to_car_exact(fw_versions_dict, config=None, candidates=None):
 def match_fw_to_car_exact(fw_versions_dict, brand=None):
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
