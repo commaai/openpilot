@@ -44,9 +44,9 @@ def get_brand_addrs():
   return brand_addrs
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
+def match_fw_to_car_fuzzy(fw_versions_dict, log=False, exclude=None, **kwargs):
   # If make specifies a fuzzy matching function, use that instead
-  if config is not None and config.match_fw_to_car_fuzzy is not None:
+  if 'config' in kwargs and kwargs['config'].match_fw_to_car_fuzzy is not None:
     return config.match_fw_to_car_fuzzy(fw_versions_dict)
 
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
@@ -87,14 +87,15 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
           return set()
 
   if match_count >= 2:
-    # if log:
-    #   cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+    if log:
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
     return {candidate}
   else:
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict, config):
+# def match_fw_to_car_exact(fw_versions_dict, config=None, candidates=None):
+def match_fw_to_car_exact(fw_versions_dict, **kwargs):
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -104,7 +105,7 @@ def match_fw_to_car_exact(fw_versions_dict, config):
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
-      # config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
+      config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
       ecu_type = ecu[0]
       addr = ecu[1:]
 
