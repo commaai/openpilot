@@ -151,12 +151,10 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
 
-
 HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xF112)
 HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(0xF112)
-
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
