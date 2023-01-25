@@ -391,10 +391,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
 
   // dm icon
   if (!hideDM) {
-    // int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
+    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
     // drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
     //         dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
-    drawDriverState(p, s);
+    drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2);
   }
   p.restore();
 }
@@ -499,18 +499,23 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s) {
+void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s, int x, int y) {
   const UIScene &scene = s->scene;
 
   painter.save();
+
+  painter.setOpacity(1.0);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(blackColor(70));
+  painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   QLinearGradient linearGrad;
 
   for (int i = 0; i < 60; ++i) {
     linearGrad.setStart(scene.face_kpt_segments[i].p1());
     linearGrad.setFinalStop(scene.face_kpt_segments[i].p2());
-    float b0 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i] + 80)/130, 1.0), 0.0);
-    float b1 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i+1] + 80)/130, 1.0), 0.0);
+    float b0 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i] + 70)/120, 1.0), 0.0);
+    float b1 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i+1] + 70)/120, 1.0), 0.0);
     linearGrad.setColorAt(0, QColor::fromRgbF(b0, b0, b0, 1.0));
     linearGrad.setColorAt(1, QColor::fromRgbF(b1, b1, b1, 1.0));
 

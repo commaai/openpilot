@@ -158,10 +158,10 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     vec3 kpt_next = default_face_kpts_3d[kpi+1];
     kpt_this = matvecmul3(rz, matvecmul3(ry, matvecmul3(rx, kpt_this)));
     kpt_next = matvecmul3(rz, matvecmul3(ry, matvecmul3(rx, kpt_next)));
-    scene.face_kpt_segments[kpi-face_vertices_idx] = QLineF(kpt_this.v[0]+115,
-                                                                                                kpt_this.v[1]+900,
-                                                                                                kpt_next.v[0]+115,
-                                                                                                kpt_next.v[1]+900);
+    scene.face_kpt_segments[kpi-face_vertices_idx] = QLineF(kpt_this.v[0]+156,
+                                                                                                kpt_this.v[1]+879,
+                                                                                                kpt_next.v[0]+156,
+                                                                                                kpt_next.v[1]+879);
     scene.face_kpt_segments_d[kpi-face_vertices_idx] = kpt_this.v[2];
     if (kpi - face_vertices_idx == 59) {
       scene.face_kpt_segments_d[60] = kpt_next.v[2];
