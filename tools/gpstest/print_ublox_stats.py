@@ -1,11 +1,25 @@
 import time
+import argparse
 from datetime import datetime
 from collections import defaultdict
+
 import cereal.messaging as messaging
+from selfdrive.manager.process_config import managed_processes
 
 MAX_SATS = 150
 
-def print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat):
+UBX_HEADER = b'\xb5\x62'
+UBX_RXM_SFRBX = b'\x02\x13'
+UBX_NAV_ORB = b'\x01\x34'
+UBX_NAV_PVT = b'\x01\x07'
+UBX_RAW_MEAS = b'\x02\x15'
+UBX_MON_HW2 = b'\x0a\x0b'
+
+RAW_EPHEM_TYPE = 1
+RAW_NAV_ORB_TYPE = 2
+RAW_NAV_PVT_TYPE = 3
+
+def print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat, raw_ephem):
   print(f"----- {datetime.now().strftime('%H:%M:%S.%f')}, Runtime: {datetime.now() - start_time}")
   for sat in range(len(ephem_stats)):
     if ephem_stats[sat] != 0:
@@ -18,11 +32,17 @@ def print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat):
       m6.append(sat)
     else:
       print(f"{sat}: {sat_meas[sat]}")
-  print(f"60club msgs sats: {m6}")
+  print(f"6club msgs sats: {m6}")
 
   print("Locktime per sat (in last minute):")
   for sat in locktime_per_sat:
     print(f"  {sat}: {locktime_per_sat[sat]}")
+
+  print("Raw ephemeris per sat (total):")
+  for sat in raw_ephem:
+    print(f"  Sat {sat}:")
+    for e in raw_ephem[sat]:
+      print(f"    {e}")
 
 
 def print_data(ephem_data):
@@ -31,34 +51,96 @@ def print_data(ephem_data):
     print(f"{sat}: {ephem_data[sat]}")
 
 
-def main():
-  ephem_stats = [0]*MAX_SATS
-  sat_meas = defaultdict(int)
-  meas_cnt = 0
+def log_test_summary(num_sv, orb_db, ephem_data):
+  print(f"UbloxGnss received Ephemeris: {len(ephem_data)}")
+  for sat in ephem_data:
+    print(f"{sat}: {ephem_data[sat]}")
 
-  last_log = time.monotonic()
-  last_log_10s = time.monotonic()
-  start_time = datetime.now()
+  print(f"Num SV for fix: {num_sv}")
+  print(f"Ublox sat db:")
+  for sat in orb_db:
+    gid = orb_db[sat][0]
+    svFlags = orb_db[sat][1]
+    eph = orb_db[sat][2]
+    print(f"  {sat}: g: {gid} h:{svFlags&0x3} v:{svFlags>>2} u:{eph&0x1f} s:{eph>>5}")
 
-  ephem_data = defaultdict(int)
-  total_ephems_per_min = []
-  diff_ephems_per_min = []
 
-  locktime_per_sat = {}
+def check_raw_ephemeris(raw_data):
 
-  sm = messaging.SubMaster(["ubloxGnss", "ubloxRaw"])
-  while True:
-    sm.update()
+  results = {
+    RAW_EPHEM_TYPE: [],
+    RAW_NAV_ORB_TYPE: [],
+    RAW_NAV_PVT_TYPE: 0,
+  }
 
-    #if sm.updated["ubloxRaw"]:
-    #  continue
-
-    if not sm.updated["ubloxGnss"]:
+  for em in raw_data.ubloxRaw.split(UBX_HEADER):
+    if len(em) == 0 or em[:2] == UBX_RAW_MEAS or em[:2] == UBX_MON_HW2:
       continue
 
-    # check ubluxGnss message
-    msg = sm['ubloxGnss']
+    if em[:2] == UBX_RXM_SFRBX:
+      # parse easy to use data
+      raw_data = em[4:] # skip length
+      gnss_id = raw_data[0]
+      sv_id = raw_data[1]
+      chn = raw_data[5]
+      version = raw_data[6]
+      #print(f"RAW Ephem: {sv_id} {gnss_id} {chn} {version} {raw_data}")
+      if gnss_id == 0:
+        # return only GPS ephemeris for now
+        #print(f"RAW_EPHEM_TYPE: {[sv_id, gnss_id, chn, version, raw_data]}")
+        results[RAW_EPHEM_TYPE].append([sv_id, gnss_id, chn, version, raw_data])
 
+    if em[:2] == UBX_NAV_ORB:
+      orb_db = {}
+      #print(f"NAV-ORB Database:")
+      # parse orbit database
+      orb_data = em[4:]
+      num_sv = orb_data[5]
+      for i in range(num_sv):
+        sv_data = orb_data[8+i*6:8+i*6+6]
+        gnssId = sv_data[0]
+        svId = sv_data[1]
+        svFlag = sv_data[2] # visibility and health
+        eph = sv_data[3]    # ephemeris usability and source
+        #alm = sv_data[4]    # almanac usabilite and source
+        #orb = sv_data[5]    # not needed
+        orb_db[svId] = [gnssId, svFlag, eph]
+        #print(f"  {svId} {gnssId} h:{svFlag&0x3} v:{svFlag>>2} u:{eph&0x1f} s:{eph>>5}")
+      results[RAW_NAV_ORB_TYPE].append(orb_db)
+
+    if em[:2] == UBX_NAV_PVT:
+      #print(f"NAV-PVT message: {em[4:]}")
+      data = em[4:]
+      flags = data[21]
+      num_sv = data[23]
+      #print(f"has_fix: {flags&1} num_sv: {num_sv}")
+      if (flags&1) == 1:
+        results[RAW_NAV_PVT_TYPE] = num_sv
+
+  return results
+
+
+def drain_raw_sock(ublox_raw, raw_ephem, orb_dbs):
+  for rm in messaging.drain_sock(ublox_raw):
+    results = check_raw_ephemeris(rm)
+
+    if len(results[RAW_EPHEM_TYPE]) > 0:
+      for r in results[RAW_EPHEM_TYPE]:
+        sv_id, _, chn, version, raw_data = r # [sv_id, gnss_id, chn, version, raw_data]
+        raw_ephem[sv_id].append([chn, version, raw_data])
+
+    if len(results[RAW_NAV_ORB_TYPE]) > 0:
+      for r in results[RAW_NAV_ORB_TYPE]:
+        orb_dbs.append(r)
+
+    if results[RAW_NAV_PVT_TYPE] > 0:
+      return results[RAW_NAV_PVT_TYPE] # num_sv
+
+  return 0
+
+
+def drain_gnss_sock(ublox_gnss, sat_meas, locktime_per_sat, ephem_data):
+  for msg in messaging.drain_sock(ublox_gnss):
     if msg.which() == "measurementReport":
       for m in msg.measurementReport.measurements:
         if m.gnssId == 6 and m.svId == 255:
@@ -69,28 +151,93 @@ def main():
         locktime_per_sat[svId] = m.locktime
 
     if msg.which() == "ephemeris":
+      print("******************* GOT EPHEMERIS: {msg.ephemeris.svId}")
       ephem_data[msg.ephemeris.svId] += 1
 
-    if (time.monotonic() - last_log_10s) > 10:
-      print_data(ephem_data)
-      last_log_10s = time.monotonic()
+
+def update_stats(ephem_data, ephem_stats, diff_ephems_per_min, total_ephems_per_min):
+  for sat in ephem_data:
+    ephem_stats[sat] += ephem_data[sat]
+  diff_ephems_per_min.append(len(ephem_data))
+  total_ephems_per_min.append(sum(n for n in ephem_data.values()))
+
+
+def log_loop(stop_at_fix=False):
+  ephem_stats = [0]*MAX_SATS
+  sat_meas = defaultdict(int)
+  meas_cnt = 0
+
+  last_log = time.monotonic()
+  start_time = datetime.now()
+  orb_dbs = []
+
+  ephem_data = defaultdict(int)
+  total_ephems_per_min = []
+  diff_ephems_per_min = []
+  locktime_per_sat = {}
+  raw_ephem = defaultdict(list)
+  ublox_gnss = messaging.sub_sock("ubloxGnss")
+  ublox_raw = messaging.sub_sock("ubloxRaw")
+
+  while True:
+    num_sv = drain_raw_sock(ublox_raw, raw_ephem, orb_dbs)
+    drain_gnss_sock(ublox_gnss, sat_meas, locktime_per_sat, ephem_data)
+
+    if stop_at_fix and num_sv != 0:
+      # stop process time for summary
+      update_stats(ephem_data, ephem_stats, diff_ephems_per_min, total_ephems_per_min)
+      meas_cnt += 1
+      print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat, raw_ephem)
+      #print(f"Total     e/min: {sum(total_ephems_per_min)/meas_cnt}")
+      #print(f"Different e/min: {sum(diff_ephems_per_min)/meas_cnt}")
+      log_test_summary(num_sv, orb_dbs[-1], ephem_data)
+      break
+
+
+    ###########################################################################
+    if (int(time.monotonic() - last_log) % 10) == 0:
+      if not stop_at_fix:
+        print_data(ephem_data)
 
     if (time.monotonic() - last_log) > 60:
-      for sat in ephem_data:
-        ephem_stats[sat] += ephem_data[sat]
-      diff_ephems_per_min.append(len(ephem_data))
-      total_ephems_per_min.append(sum(n for n in ephem_data.values()))
-      ephem_data = defaultdict(int)
-
       meas_cnt += 1
-      print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat)
-      print(f"Total     e/min: {sum(total_ephems_per_min)/meas_cnt}")
-      print(f"Different e/min: {sum(diff_ephems_per_min)/meas_cnt}")
+      update_stats(ephem_data, ephem_stats, diff_ephems_per_min, total_ephems_per_min)
+      if not stop_at_fix:
+        print_stats(start_time, ephem_stats, sat_meas, meas_cnt, locktime_per_sat, raw_ephem)
+        #print(f"Total     e/min: {sum(total_ephems_per_min)/meas_cnt}")
+        #print(f"Different e/min: {sum(diff_ephems_per_min)/meas_cnt}")
 
+      # clear minute data
+      #ephem_data = defaultdict(int)
       sat_meas = defaultdict(int)
       locktime_per_sat = {}
       last_log = time.monotonic()
 
-if __name__ == "__main__":
-  main()
 
+def main(run_test=False):
+  print(f"RUN TEST: {run_test}")
+
+  if not run_test:
+    # runs endless as listener
+    log_loop()
+
+  # test mode
+  while True:
+    procs = ['pigeond', 'ubloxd']
+    for p in procs:
+      managed_processes[p].start()
+    time.sleep(5)
+
+    print("************************************ START TESTRUN")
+    log_loop(True)
+
+    for p in procs:
+      managed_processes[p].stop()
+    break
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Log ublox output in all the greatness.")
+  parser.add_argument("-t", "--run_test", action='store_true', default=False, help='Start processes by script')
+  args = parser.parse_args()
+  main(args.run_test)
