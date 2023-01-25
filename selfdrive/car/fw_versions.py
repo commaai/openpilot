@@ -44,9 +44,10 @@ def get_brand_addrs():
   return brand_addrs
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict, log=False, exclude=None, **kwargs):
-  # If make specifies a fuzzy matching function, use that instead
-  if 'config' in kwargs and kwargs['config'].match_fw_to_car_fuzzy is not None:
+def match_fw_to_car_fuzzy(fw_versions_dict, log=False, exclude=None, brand=None):
+  # If brand specifies a fuzzy matching function, use that instead
+  config = FW_QUERY_CONFIGS.get(brand, None)
+  if config is not None and config.match_fw_to_car_fuzzy is not None:
     return config.match_fw_to_car_fuzzy(fw_versions_dict)
 
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
@@ -95,13 +96,15 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=False, exclude=None, **kwargs):
 
 
 # def match_fw_to_car_exact(fw_versions_dict, config=None, candidates=None):
-def match_fw_to_car_exact(fw_versions_dict, **kwargs):
+def match_fw_to_car_exact(fw_versions_dict, brand=None):
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
   invalid = []
   candidates = FW_VERSIONS
+  if brand is not None:
+    candidates = VERSIONS[brand]
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
@@ -142,9 +145,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
     # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
     for brand in VERSIONS.keys():
-      # fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      config = FW_QUERY_CONFIGS[brand]
-      matches |= match_func(fw_versions, config)
+      fw_versions_dict = fw_versions  # build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict, brand=brand)
 
     if len(matches):
       return exact_match, matches
