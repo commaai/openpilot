@@ -118,28 +118,24 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
   }
 
-  const mat3 rx = (mat3){{
-    1, 0, 0,
-    0, cosf(scene.driver_pose_vals[0]), -sinf(scene.driver_pose_vals[0]),
-    0, sinf(scene.driver_pose_vals[0]), cosf(scene.driver_pose_vals[0]),
-  }};
+  const mat3 r_xyz = (mat3){{
+    cosf(scene.driver_pose_vals[1])*cosf(scene.driver_pose_vals[2]),
+    cosf(scene.driver_pose_vals[1])*sinf(scene.driver_pose_vals[2]),
+    -sinf(scene.driver_pose_vals[1]),
 
-  const mat3 ry = (mat3){{
-    cosf(-scene.driver_pose_vals[1]), 0, sinf(-scene.driver_pose_vals[1]),
-    0, 1, 0,
-    -sinf(-scene.driver_pose_vals[1]), 0, cosf(-scene.driver_pose_vals[1]),
-  }};
+    -sinf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*cosf(scene.driver_pose_vals[2]) - cosf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[2]),
+    -sinf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*sinf(scene.driver_pose_vals[2]) + cosf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[2]),
+    -sinf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[1]),
 
-  const mat3 rz = (mat3){{
-    cosf(-scene.driver_pose_vals[2]), -sinf(-scene.driver_pose_vals[2]), 0,
-    sinf(-scene.driver_pose_vals[2]), cosf(-scene.driver_pose_vals[2]), 0,
-    0, 0, 1,
+    cosf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*cosf(scene.driver_pose_vals[2]) - sinf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[2]),
+    cosf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*sinf(scene.driver_pose_vals[2]) + sinf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[2]),
+    cosf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[1]),
   }};
 
   // transform vertices
   for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
     vec3 kpt_this = default_face_kpts_3d[kpi];
-    kpt_this = matvecmul3(rz, matvecmul3(ry, matvecmul3(rx, kpt_this)));
+    kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = QPointF(kpt_this.v[0], kpt_this.v[1]);
     scene.face_kpts_draw_d[kpi] = kpt_this.v[2];
   }
