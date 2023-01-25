@@ -332,6 +332,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 }
 
 qreal ChartView::getYAsixLabelWidth() const {
+  if (axis_y->max() <= axis_y->min() || axis_y->tickCount() <= 1) {
+    return 0;
+  }
   QFontMetrics fm(axis_y->labelsFont());
   int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
   return qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;
