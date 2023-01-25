@@ -165,7 +165,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    # Only other ECU on PT bus accessible by camera on radarless Civic
+    # The only other ECU on PT bus accessible by camera on radarless Civic
     (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
