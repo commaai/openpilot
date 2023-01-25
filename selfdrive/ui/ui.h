@@ -180,8 +180,8 @@ typedef struct UIScene {
   float driver_pose_pitch;
   float driver_pose_yaw;
   float driver_pose_roll;
-  QLineF face_kpt_segments[60];
-  float face_kpt_segments_d[61];
+  QPointF face_kpts_draw[68];
+  float face_kpts_draw_d[68];
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;

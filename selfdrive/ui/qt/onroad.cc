@@ -510,17 +510,32 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   QLinearGradient linearGrad;
+  int face_segment_idx = 0;
+  bool in_end_idxs;
+  for (int i = 0; i < std::size(scene.face_kpts_draw); ++i) {
+    in_end_idxs = false;
+    for (int ei = face_segment_idx; ei < std::size(face_end_idxs); ei++) {
+      if (i == face_end_idxs[ei]) {
+        in_end_idxs = true;
+        break;
+      }
+    }
 
-  for (int i = 0; i < std::size(scene.face_kpt_segments); ++i) {
-    linearGrad.setStart(scene.face_kpt_segments[i].p1());
-    linearGrad.setFinalStop(scene.face_kpt_segments[i].p2());
-    float b0 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i] + 20)/120, 1.0), 0.0);
-    float b1 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpt_segments_d[i+1] + 20)/120, 1.0), 0.0);
+    if (in_end_idxs) {
+      face_segment_idx +=1;
+      continue;
+    }
+
+    linearGrad.setStart(scene.face_kpts_draw[i]);
+    linearGrad.setFinalStop(scene.face_kpts_draw[i+1]);
+    float b0 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpts_draw_d[i] + 20)/120, 1.0), 0.0);
+    float b1 = std::fmax(std::fmin(0.6 + 0.4*(scene.face_kpts_draw_d[i+1] + 20)/120, 1.0), 0.0);
     linearGrad.setColorAt(0, QColor::fromRgbF(b0, b0, b0, 1.0));
     linearGrad.setColorAt(1, QColor::fromRgbF(b1, b1, b1, 1.0));
 
     painter.setPen(QPen(linearGrad, i<16 ? 5 : 2, Qt::SolidLine, Qt::RoundCap));
-    painter.drawLine(scene.face_kpt_segments[i]);
+    painter.drawLine(scene.face_kpts_draw[i].x() + x, scene.face_kpts_draw[i].y() + y,
+                            scene.face_kpts_draw[i+1].x() + x, scene.face_kpts_draw[i+1].y() + y);
   }
 
   painter.restore();
