@@ -24,6 +24,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
 
+  QAction *new_plot_btn = toolbar->addAction(bootstrapPixmap("file-plus"), "");
+  new_plot_btn->setToolTip(tr("New Plot"));
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, 12, 0);
   columns_cb = new QComboBox(this);
@@ -83,6 +85,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
+  QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
@@ -132,7 +135,7 @@ void ChartsWidget::updateState() {
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / max_chart_range;
-    if (pos > 0.8) {
+    if (pos < 0 || pos > 0.8) {
       const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
       display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
     }
@@ -185,26 +188,28 @@ ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
   return nullptr;
 }
 
+ChartView *ChartsWidget::createChart() {
+  auto chart = new ChartView(this);
+  chart->setFixedHeight(settings.chart_height);
+  chart->setMinimumWidth(CHART_MIN_WIDTH);
+  chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
+  QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
+  QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
+  QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
+  QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
+  QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
+  QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(100); });
+  charts.push_back(chart);
+  updateLayout();
+  return chart;
+}
+
 void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
   setUpdatesEnabled(false);
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
-    chart = merge && charts.size() > 0 ? charts.back() : nullptr;
-    if (!chart) {
-      chart = new ChartView(this);
-      chart->setFixedHeight(settings.chart_height);
-      chart->setMinimumWidth(CHART_MIN_WIDTH);
-      chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-      chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
-      QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
-      QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
-      QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
-      QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
-      QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
-      QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(100); });
-      charts.push_back(chart);
-      updateLayout();
-    }
+    chart = merge && charts.size() > 0 ? charts.back() : createChart();
     chart->addSeries(id, sig);
     updateState();
   } else if (!show && chart) {
@@ -224,17 +229,28 @@ void ChartsWidget::setColumnCount(int n) {
 
 void ChartsWidget::updateLayout() {
   int n = column_count;
-  for (; n >= 1; --n) {
+  for (; n > 1; --n) {
     if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
   }
   for (int i = 0; i < charts.size(); ++i) {
-    charts_layout->addWidget(charts[i], i / n, i % n);
+    charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
   }
 }
 
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();
+}
+
+void ChartsWidget::newChart() {
+  SeriesSelector dlg(this);
+  if (dlg.exec() == QDialog::Accepted) {
+    QList<QStringList> series_list = dlg.series();
+    if (!series_list.isEmpty()) {
+      auto c = createChart();
+      c->addSeries(series_list);
+    }
+  }
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
