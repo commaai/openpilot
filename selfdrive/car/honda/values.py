@@ -155,6 +155,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
+      bus=1,
+    ),
+    # Query Nidec PT bus from camera for data collection
+    Request(
+      [StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.UDS_VERSION_RESPONSE],
+      bus=0,
     ),
   ],
 )
