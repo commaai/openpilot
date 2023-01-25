@@ -160,11 +160,15 @@ HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # Currently used to fingerprint
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=1,
     ),
+
+    # Data collection requests:
+    # Log extra identifiers for current ECUs
     Request(
       [HONDA_VERSION_REQUEST],
       [HONDA_VERSION_RESPONSE],
