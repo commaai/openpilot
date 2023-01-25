@@ -4,6 +4,8 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QVBoxLayout>
+#include <QPainter>
+#include <QApplication>
 
 #include "tools/cabana/dbcmanager.h"
 
@@ -21,9 +23,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget = new QTableView(this);
   model = new MessageListModel(this);
   table_widget->setModel(model);
+  table_widget->setItemDelegateForColumn(4, new MessageBytesDelegate(table_widget));
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
-  table_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   table_widget->setSortingEnabled(true);
   table_widget->sortByColumn(0, Qt::AscendingOrder);
   table_widget->setColumnWidth(0, 250);
@@ -31,11 +33,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setColumnWidth(2, 80);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
+
   main_layout->addWidget(table_widget);
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
-  QObject::connect(can, &CANMessages::msgsReceived, model, &MessageListModel::msgsReceived);
+  QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
@@ -65,9 +68,10 @@ QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, 
 }
 
 QVariant MessageListModel::data(const QModelIndex &index, int role) const {
+  const auto &id = msgs[index.row()];
+  auto &can_data = can->lastMessage(id);
+
   if (role == Qt::DisplayRole) {
-    const auto &id = msgs[index.row()];
-    auto &can_data = can->lastMessage(id);
     switch (index.column()) {
       case 0: return msgName(id);
       case 1: return id;
@@ -75,8 +79,8 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case 3: return can_data.count;
       case 4: return toHex(can_data.dat);
     }
-  } else if (role == Qt::FontRole && index.column() == columnCount() - 1) {
-    return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  } else if (role == Qt::UserRole && index.column() == 4) {
+    return HexColors::toVariantList(can_data.colors);
   }
   return {};
 }
@@ -85,7 +89,24 @@ void MessageListModel::setFilterString(const QString &string) {
   filter_str = string;
   msgs.clear();
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+    bool found = false;
+
+    // Search by message id or name
     if (it.key().contains(filter_str, Qt::CaseInsensitive) || msgName(it.key()).contains(filter_str, Qt::CaseInsensitive)) {
+      found = true;
+    }
+
+    // Search by signal name
+    const DBCMsg *msg = dbc()->msg(it.key());
+    if (msg != nullptr) {
+      for (auto &signal: msg->getSignals()) {
+        if (QString::fromStdString(signal->name).contains(filter_str, Qt::CaseInsensitive)) {
+          found = true;
+        }
+      }
+    }
+
+    if (found) {
       msgs.push_back(it.key());
     }
   }

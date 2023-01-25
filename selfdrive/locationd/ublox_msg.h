@@ -103,6 +103,7 @@ class UbloxMsgParser {
     inline bool valid_so_far();
 
     std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
+    std::unordered_map<int, uint64_t> gps_sat_tow_count;
 
     size_t bytes_in_parse_buf = 0;
     uint8_t msg_parse_buf[ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_MAX_MSG_SIZE];
