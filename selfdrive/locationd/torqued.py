@@ -22,7 +22,9 @@ FIT_POINTS_TOTAL_QLOG = 600
 MIN_VEL = 15  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
 FACTOR_SANITY = 0.3
+FACTOR_SANITY_QLOG = 0.5
 FRICTION_SANITY = 0.5
+FRICTION_SANITY_QLOG = 0.8
 STEER_MIN_THRESHOLD = 0.02
 MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
@@ -35,6 +37,7 @@ MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
 ALLOWED_CARS = ['toyota', 'hyundai']
+ALLOWED_PLATFORMS = ['RAM 1500 5TH GEN']  # for adding individual platforms from a brand without torqued
 
 
 def slope2rot(slope):
@@ -100,15 +103,20 @@ class TorqueEstimator:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
       self.fit_points = FIT_POINTS_TOTAL_QLOG
+      self.factor_sanity = FACTOR_SANITY_QLOG
+      self.friction_sanity = FRICTION_SANITY_QLOG
+
     else:
       self.min_bucket_points = MIN_BUCKET_POINTS
       self.min_points_total = MIN_POINTS_TOTAL
       self.fit_points = FIT_POINTS_TOTAL
+      self.factor_sanity = FACTOR_SANITY
+      self.friction_sanity = FRICTION_SANITY
 
     self.offline_friction = 0.0
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
-    self.use_params = CP.carName in ALLOWED_CARS
+    self.use_params = (CP.carName in ALLOWED_CARS) or (CP.carFingerprint in ALLOWED_PLATFORMS)
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = CP.lateralTuning.torque.friction
@@ -123,10 +131,10 @@ class TorqueEstimator:
       'points': []
     }
     self.decay = MIN_FILTER_DECAY
-    self.min_lataccel_factor = (1.0 - FACTOR_SANITY) * self.offline_latAccelFactor
-    self.max_lataccel_factor = (1.0 + FACTOR_SANITY) * self.offline_latAccelFactor
-    self.min_friction = (1.0 - FRICTION_SANITY) * self.offline_friction
-    self.max_friction = (1.0 + FRICTION_SANITY) * self.offline_friction
+    self.min_lataccel_factor = (1.0 - self.factor_sanity) * self.offline_latAccelFactor
+    self.max_lataccel_factor = (1.0 + self.factor_sanity) * self.offline_latAccelFactor
+    self.min_friction = (1.0 - self.friction_sanity) * self.offline_friction
+    self.max_friction = (1.0 + self.friction_sanity) * self.offline_friction
 
     # try to restore cached params
     params = Params()
