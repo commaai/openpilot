@@ -22,7 +22,7 @@ def create_lka_msg(packer):
     "LdwActvStats_D_Req": 0,            # LDW status [0|7]
     "LdwActvIntns_D_Req": 0,            # LDW intensity [0|3], shake alert strength
   }
-  return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, values)
+  return packer.make_can_msg("Lane_Assist_Data1", CANBUS.powertrain, values)
 
 
 def create_lat_ctl_msg(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float,
@@ -60,7 +60,7 @@ def create_lat_ctl_msg(packer, lca_rq: int, ramp_type: int, precision: int, path
     "LatCtlCurv_NoRate_Actl": curvature_rate,   # Curvature rate [-0.001024|0.00102375] 1/meter^2
     "LatCtlCurv_No_Actl": curvature,            # Curvature [-0.02|0.02094] 1/meter
   }
-  return packer.make_can_msg("LateralMotionControl", CANBUS.main, values)
+  return packer.make_can_msg("LateralMotionControl", CANBUS.powertrain, values)
 
 
 def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, hud_control, stock_values: dict):
@@ -112,7 +112,7 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
     "LaActvStats_D_Dsply": lines,                 # LKAS status (lines) [0|31]
     "LaHandsOff_D_Dsply": hands_on_wheel_dsply,   # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
   }
-  return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
+  return packer.make_can_msg("IPMA_Data", CANBUS.powertrain, values)
 
 
 def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
@@ -146,7 +146,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
     **stock_values,
     "Tja_D_Stat": status,
   }
-  return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
+  return packer.make_can_msg("ACCDATA_3", CANBUS.powertrain, values)
 
 
 def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tja_toggle=False,
