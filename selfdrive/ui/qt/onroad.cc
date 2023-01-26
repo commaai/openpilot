@@ -226,7 +226,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
-  setProperty("dm_fade_state", fmax(-1.0, fmin(1.0, dm_fade_state+0.1*(0.5-(float)isStandstill))));
+  setProperty("dm_fade_state", fmax(-1.0, fmin(1.0, dm_fade_state+0.2*(0.5-(float)isStandstill))));
   setProperty("status", s.status);
 
   // update engageability and DM icons at 2Hz
