@@ -13,10 +13,11 @@
 class glonass_t : public kaitai::kstruct {
 
 public:
+    class string_4_t;
+    class string_non_immediate_t;
     class string_1_t;
     class string_2_t;
     class string_3_t;
-    class string_4_t;
 
     glonass_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent = 0, glonass_t* p__root = 0);
 
@@ -26,6 +27,72 @@ private:
 
 public:
     ~glonass_t();
+
+    class string_4_t : public kaitai::kstruct {
+
+    public:
+
+        string_4_t(kaitai::kstream* p__io, glonass_t* p__parent = 0, glonass_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~string_4_t();
+
+    private:
+        uint64_t m_tau_n;
+        uint64_t m_delta_tau_n;
+        uint64_t m_e_n;
+        uint64_t m_not_used_1;
+        bool m_p4;
+        uint64_t m_f_t;
+        uint64_t m_not_used_2;
+        uint64_t m_n_t;
+        uint64_t m_n;
+        uint64_t m_m;
+        glonass_t* m__root;
+        glonass_t* m__parent;
+
+    public:
+        uint64_t tau_n() const { return m_tau_n; }
+        uint64_t delta_tau_n() const { return m_delta_tau_n; }
+        uint64_t e_n() const { return m_e_n; }
+        uint64_t not_used_1() const { return m_not_used_1; }
+        bool p4() const { return m_p4; }
+        uint64_t f_t() const { return m_f_t; }
+        uint64_t not_used_2() const { return m_not_used_2; }
+        uint64_t n_t() const { return m_n_t; }
+        uint64_t n() const { return m_n; }
+        uint64_t m() const { return m_m; }
+        glonass_t* _root() const { return m__root; }
+        glonass_t* _parent() const { return m__parent; }
+    };
+
+    class string_non_immediate_t : public kaitai::kstruct {
+
+    public:
+
+        string_non_immediate_t(kaitai::kstream* p__io, glonass_t* p__parent = 0, glonass_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~string_non_immediate_t();
+
+    private:
+        uint64_t m_data;
+        glonass_t* m__root;
+        glonass_t* m__parent;
+
+    public:
+        uint64_t data() const { return m_data; }
+        glonass_t* _root() const { return m__root; }
+        glonass_t* _parent() const { return m__parent; }
+    };
 
     class string_1_t : public kaitai::kstruct {
 
@@ -135,58 +202,10 @@ public:
         glonass_t* _parent() const { return m__parent; }
     };
 
-    class string_4_t : public kaitai::kstruct {
-
-    public:
-
-        string_4_t(kaitai::kstream* p__io, glonass_t* p__parent = 0, glonass_t* p__root = 0);
-
-    private:
-        void _read();
-        void _clean_up();
-
-    public:
-        ~string_4_t();
-
-    private:
-        uint64_t m_tau_n;
-        uint64_t m_delta_tau_n;
-        uint64_t m_e_n;
-        uint64_t m_not_used_1;
-        bool m_p4;
-        uint64_t m_f_t;
-        uint64_t m_not_used_2;
-        uint64_t m_n_t;
-        uint64_t m_n;
-        uint64_t m_m;
-        glonass_t* m__root;
-        glonass_t* m__parent;
-
-    public:
-        uint64_t tau_n() const { return m_tau_n; }
-        uint64_t delta_tau_n() const { return m_delta_tau_n; }
-        uint64_t e_n() const { return m_e_n; }
-        uint64_t not_used_1() const { return m_not_used_1; }
-        bool p4() const { return m_p4; }
-        uint64_t f_t() const { return m_f_t; }
-        uint64_t not_used_2() const { return m_not_used_2; }
-        uint64_t n_t() const { return m_n_t; }
-        uint64_t n() const { return m_n; }
-        uint64_t m() const { return m_m; }
-        glonass_t* _root() const { return m__root; }
-        glonass_t* _parent() const { return m__parent; }
-    };
-
 private:
     bool m_idle_chip;
     uint64_t m_string_number;
     kaitai::kstruct* m_data;
-    bool n_data;
-
-public:
-    bool _is_null_data() { data(); return n_data; };
-
-private:
     uint64_t m_hamming_code;
     uint64_t m_pad_1;
     uint64_t m_superframe_number;

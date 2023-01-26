@@ -18,6 +18,7 @@ seq:
         2: string_2
         3: string_3
         4: string_4
+        _: string_non_immediate
   - id: hamming_code
     type: b8
   - id: pad_1
@@ -100,3 +101,7 @@ types:
         type: b5
       - id: m
         type: b2
+  string_non_immediate:
+    seq:
+      - id: data
+        type: b72
