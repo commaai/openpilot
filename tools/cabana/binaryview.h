@@ -60,6 +60,7 @@ public:
   void highlight(const Signal *sig);
   QSet<const Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
+  QSize minimumSizeHint() const override;
 
 signals:
   void signalClicked(const Signal *sig);
