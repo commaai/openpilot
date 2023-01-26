@@ -91,5 +91,5 @@ private:
   QTreeView *tree;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
-  QLabel *signal_count_lb, *tip_lb;
+  QLabel *signal_count_lb;
 };

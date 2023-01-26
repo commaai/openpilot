@@ -4,6 +4,7 @@
 #include <QHeaderView>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QScrollBar>
 #include <QToolTip>
 
 #include "tools/cabana/commands.h"
@@ -31,7 +32,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setFrameShape(QFrame::NoFrame);
   setShowGrid(false);
   setMouseTracking(true);
-  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
@@ -39,7 +40,8 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
 }
 
 QSize BinaryView::minimumSizeHint() const {
-  return {horizontalHeader()->minimumSectionSize() * 9 + VERTICAL_HEADER_WIDTH + 2, 0};
+  return {horizontalHeader()->minimumSectionSize() * 9 + VERTICAL_HEADER_WIDTH + 2,
+          CELL_HEIGHT * std::min(model->rowCount(), 10)};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -129,6 +131,7 @@ void BinaryView::setMessage(const QString &message_id) {
 void BinaryView::refresh() {
   if (model->msg_id.isEmpty()) return;
 
+  verticalScrollBar()->setValue(0);
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;

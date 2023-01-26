@@ -316,7 +316,12 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
 
 SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   // title bar
-  QHBoxLayout *hl = new QHBoxLayout();
+  QFrame *title_bar = new QFrame(this);
+  QPalette p(palette());
+  p.setColor(QPalette::Base, Qt::lightGray);
+  title_bar->setPalette(p);
+  title_bar->setAutoFillBackground(true);
+  QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
   filter_edit->setClearButtonEnabled(true);
@@ -334,15 +339,18 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree = new QTreeView(this);
   tree->setModel(model = new SignalModel(this));
   tree->setItemDelegate(new SignalItemDelegate(this));
+  tree->setFrameShape(QFrame::NoFrame);
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
   tree->setExpandsOnDoubleClick(false);
   tree->header()->setSectionResizeMode(QHeaderView::Stretch);
+  tree->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+  tree->setMinimumHeight(300);
   tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addWidget(tip_lb = new QLabel(tr("Drag-Select in binary view to create new signal.")));
-  main_layout->addLayout(hl);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->addWidget(title_bar);
   main_layout->addWidget(tree);
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
@@ -372,7 +380,6 @@ void SignalView::rowsChanged() {
   };
 
   signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
-  tip_lb->setVisible(model->rowCount() == 0);
 
   for (int i = 0; i < model->rowCount(); ++i) {
     auto index = model->index(i, 1);
