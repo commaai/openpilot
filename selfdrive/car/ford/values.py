@@ -9,7 +9,7 @@ from selfdrive.car.docs_definitions import CarInfo, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
-AngleRateLimit = namedtuple('AngleRateLimit', ['speed_points', 'max_angle_diff_points'])
+CurvatureLimit = namedtuple('CurvatureLimit', ['speed_points', 'max_angle_diff_points'])
 
 
 class CarControllerParams:
@@ -22,12 +22,13 @@ class CarControllerParams:
   # Message: Steering_Data_FD1, but send twice as fast
   BUTTONS_STEP = 10 / 2
 
-  LKAS_STEER_RATIO = 2.75       # Approximate ratio between LatCtlPath_An_Actl and steering angle in radians
-                                # TODO: remove this once we understand how the EPS calculates the steering angle better
-  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold in Nm
+  CURVATURE_MAX = 0.02  # Max curvature for steering command, m^-1
+  STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold, Nm
 
-  RATE_LIMIT_UP = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., .8, .15])
-  RATE_LIMIT_DOWN = AngleRateLimit(speed_points=[0., 5., 15.], max_angle_diff_points=[5., 3.5, 0.4])
+  # Curvature rate limits
+  # TODO: unify field names used by curvature and angle control cars
+  ANGLE_RATE_LIMIT_UP = CurvatureLimit(speed_points=[5, 15, 25], max_angle_diff_points=[0.005, 0.00056, 0.0002])
+  ANGLE_RATE_LIMIT_DOWN = CurvatureLimit(speed_points=[5, 15, 25], max_angle_diff_points=[0.008, 0.00089, 0.00032])
 
   def __init__(self, CP):
     pass
