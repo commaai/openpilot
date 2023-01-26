@@ -4,9 +4,9 @@ from selfdrive.car.ford.values import CANBUS
 HUDControl = car.CarControl.HUDControl
 
 
-def create_lka_command(packer, angle_deg: float, curvature: float):
+def create_lka_msg(packer, angle_deg: float, curvature: float):
   """
-  Creates a CAN message for the Ford LKAS Command.
+  Creates a CAN message for the Ford LKA Command.
 
   This command can apply "Lane Keeping Aid" manoeuvres, which are subject to the PSCM lockout.
 
@@ -25,7 +25,7 @@ def create_lka_command(packer, angle_deg: float, curvature: float):
   return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, values)
 
 
-def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float, curvature_rate: float, curvature: float):
+def create_lat_ctl_msg(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float, curvature_rate: float, curvature: float):
   """
   Creates a CAN message for the Ford TJA/LCA Command.
 
@@ -34,9 +34,9 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
 
   Ford lane centering command uses a third order polynomial to describe the road centerline. The
   polynomial is defined by the following coefficients:
-    c0: lateral offset between the vehicle and the centerline
-    c1: heading angle between the vehicle and the centerline
-    c2: curvature of the centerline
+    c0: lateral offset between the vehicle and the centerline (positive is right)
+    c1: heading angle between the vehicle and the centerline (positive is right)
+    c2: curvature of the centerline (positive is left)
     c3: rate of change of curvature of the centerline
   As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and
   speed, the steering angle cannot be easily controlled.
@@ -48,20 +48,21 @@ def create_tja_command(packer, lca_rq: int, ramp_type: int, precision: int, path
   """
 
   values = {
-    "LatCtlRng_L_Max": 0,                                   # Unknown [0|126] meter
-    "HandsOffCnfm_B_Rq": 0,                                 # Unknown: 0=Inactive, 1=Active [0|1]
-    "LatCtl_D_Rq": lca_rq,                                  # Mode: 0=None, 1=ContinuousPathFollowing, 2=InterventionLeft, 3=InterventionRight, 4-7=NotUsed [0|7]
-    "LatCtlRampType_D_Rq": ramp_type,                       # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
-    "LatCtlPrecision_D_Rq": precision,                      # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
-    "LatCtlPathOffst_L_Actl": path_offset,                  # Path offset [-5.12|5.11] meter
-    "LatCtlPath_An_Actl": path_angle,                       # Path angle [-0.5|0.5235] radians
-    "LatCtlCurv_NoRate_Actl": curvature_rate,               # Curvature rate [-0.001024|0.00102375] 1/meter^2
-    "LatCtlCurv_No_Actl": curvature,                        # Curvature [-0.02|0.02094] 1/meter
+    "LatCtlRng_L_Max": 0,                       # Unknown [0|126] meter
+    "HandsOffCnfm_B_Rq": 0,                     # Unknown: 0=Inactive, 1=Active [0|1]
+    "LatCtl_D_Rq": lca_rq,                      # Mode: 0=None, 1=ContinuousPathFollowing, 2=InterventionLeft,
+                                                #       3=InterventionRight, 4-7=NotUsed [0|7]
+    "LatCtlRampType_D_Rq": ramp_type,           # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
+    "LatCtlPrecision_D_Rq": precision,          # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
+    "LatCtlPathOffst_L_Actl": path_offset,      # Path offset [-5.12|5.11] meter
+    "LatCtlPath_An_Actl": path_angle,           # Path angle [-0.5|0.5235] radians
+    "LatCtlCurv_NoRate_Actl": curvature_rate,   # Curvature rate [-0.001024|0.00102375] 1/meter^2
+    "LatCtlCurv_No_Actl": curvature,            # Curvature [-0.02|0.02094] 1/meter
   }
   return packer.make_can_msg("LateralMotionControl", CANBUS.main, values)
 
 
-def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bool, hud_control, stock_values: dict):
+def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, hud_control, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC IPMA/LKAS status.
 
@@ -113,7 +114,7 @@ def create_lkas_ui_command(packer, main_on: bool, enabled: bool, steer_alert: bo
   return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
 
 
-def create_acc_ui_command(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
+def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
   assist status.
@@ -148,7 +149,7 @@ def create_acc_ui_command(packer, main_on: bool, enabled: bool, hud_control, sto
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
-def create_button_command(packer, stock_values: dict, cancel = False, resume = False, tja_toggle = False, bus: int = CANBUS.camera):
+def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tja_toggle=False, bus: int = CANBUS.camera):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
