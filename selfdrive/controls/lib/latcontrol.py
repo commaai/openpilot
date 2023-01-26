@@ -3,8 +3,7 @@ from abc import abstractmethod, ABC
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 
-MIN_LATERAL_CONTROL_SPEED = 0.3         # m/s
-STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # deg
+MIN_LATERAL_CONTROL_SPEED = 0.3  # m/s
 
 
 class LatControl(ABC):
@@ -18,7 +17,7 @@ class LatControl(ABC):
     self.steer_max = 1.0
 
   @abstractmethod
-  def update(self, active, CS, VM, params, actuators, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     pass
 
   def reset(self):

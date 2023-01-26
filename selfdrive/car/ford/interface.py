@@ -15,13 +15,9 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = True
 
     # curvature steering
-    # ret.steerControlType = CarParams.SteerControlType.curvature
     ret.steerControlType = CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
-    # ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[0.], [0.]]
-    # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.008], [0.]]
-    # ret.lateralTuning.pid.kf = 1.
 
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67

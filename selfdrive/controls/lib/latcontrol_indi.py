@@ -63,7 +63,7 @@ class LatControlINDI(LatControl):
     self.steer_filter.x = 0.
     self.speed = 0.
 
-  def update(self, active, CS, VM, params, actuators, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     self.speed = CS.vEgo
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
@@ -117,5 +117,4 @@ class LatControlINDI(LatControl):
       indi_log.output = float(output_steer)
       indi_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS, steer_limited)
 
-    actuators.steer = float(output_steer)
-    return indi_log
+    return float(output_steer), float(steers_des), indi_log

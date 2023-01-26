@@ -1,7 +1,9 @@
 import math
 
 from cereal import log
-from selfdrive.controls.lib.latcontrol import STEER_ANGLE_SATURATION_THRESHOLD, LatControl
+from selfdrive.controls.lib.latcontrol import LatControl
+
+STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlAngle(LatControl):
@@ -9,7 +11,7 @@ class LatControlAngle(LatControl):
     super().__init__(CP, CI)
     self.sat_check_min_speed = 5.
 
-  def update(self, active, CS, VM, params, actuators, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
+  def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk):
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
     if not active:
@@ -24,6 +26,4 @@ class LatControlAngle(LatControl):
     angle_log.saturated = self._check_saturation(angle_control_saturated, CS, False)
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
-
-    actuators.steeringAngleDeg = float(angle_steers_des)
-    return angle_log
+    return 0, float(angle_steers_des), angle_log

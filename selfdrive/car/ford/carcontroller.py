@@ -59,9 +59,7 @@ class CarController:
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      steer_error = CS.out.steeringAngleDeg - actuators.steeringAngleDeg
-      steer_change = abs(steer_error)
-      curvature_rate = 0  # self.VM.calc_curvature(math.degrees(steer_error), CS.out.vEgo, 0.0)
+      steer_change = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
       if steer_change < 2.5:
         ramp_type = 0
       elif steer_change < 5.0:
@@ -74,7 +72,7 @@ class CarController:
 
       lca_rq = 1 if CC.latActive else 0
       can_sends.append(create_lka_msg(self.packer))
-      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., -apply_curvature, -curvature_rate))
+      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., -apply_curvature, 0.))
 
       self.apply_curvature_last = apply_curvature
 
