@@ -4,12 +4,11 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
-CurvatureLimit = namedtuple('CurvatureLimit', ['speed_points', 'max_angle_diff_points'])
 
 
 class CarControllerParams:
@@ -27,8 +26,8 @@ class CarControllerParams:
 
   # Curvature rate limits
   # TODO: unify field names used by curvature and angle control cars
-  ANGLE_RATE_LIMIT_UP = CurvatureLimit(speed_points=[5, 15, 25], max_angle_diff_points=[0.005, 0.00056, 0.0002])
-  ANGLE_RATE_LIMIT_DOWN = CurvatureLimit(speed_points=[5, 15, 25], max_angle_diff_points=[0.008, 0.00089, 0.00032])
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.005, 0.00056, 0.0002])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.008, 0.00089, 0.00032])
 
   def __init__(self, CP):
     pass
