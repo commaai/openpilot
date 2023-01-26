@@ -509,6 +509,8 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.save();
 
+  painter.setCompositionMode(QPainter::CompositionMode_Source);
+
   painter.setOpacity(1.0);
   painter.setPen(Qt::NoPen);
   painter.setBrush(blackColor(70));
