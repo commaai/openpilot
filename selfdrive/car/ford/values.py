@@ -1,4 +1,4 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
