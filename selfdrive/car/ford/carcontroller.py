@@ -83,7 +83,7 @@ class CarController:
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
       self.apply_angle_last = apply_angle
-      can_sends.append(create_lka_msg(self.packer, 0, 0))
+      can_sends.append(create_lka_msg(self.packer))
       can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0, path_angle, 0, 0))
 
     ### ui ###
