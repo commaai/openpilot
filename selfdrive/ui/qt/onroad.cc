@@ -394,11 +394,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   // dm icon
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
-    if (dm_fade_state>0 || !dmActive) {
+    if (dm_fade_state>0) {
       drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
             dm_img, blackColor(70), dmActive ? fmax(0.0, dm_fade_state) : 0.2);
     } else {
-      drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2, fmax(0.0, -dm_fade_state));
+      drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2, (dmActive ? 1.0 : 0.2)*fmax(0.0, -dm_fade_state));
     }
   }
   p.restore();
