@@ -34,7 +34,7 @@ class CarControllerParams:
 
 
 class CANBUS:
-  powertrain = 0
+  main = 0
   radar = 1
   camera = 2
 
