@@ -9,6 +9,9 @@ if GetOption('kaitai'):
   env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
   env.Command(['generated/glonass.cpp', 'generated/glonass.h'], 'glonass.ksy', cmd)
 
+  # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
+  env.Execute('git apply glonass_fix.patch')
+
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
 
 ekf_sym_cc = env.SharedObject("#rednose/helpers/ekf_sym.cc")

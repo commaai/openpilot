@@ -17,7 +17,7 @@ glonass_t::glonass_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, glonass
 void glonass_t::_read() {
     m_idle_chip = m__io->read_bits_int_be(1);
     m_string_number = m__io->read_bits_int_be(4);
-    m__io->align_to_byte();
+    //m__io->align_to_byte();
     switch (string_number()) {
     case 4: {
         m_data = new string_4_t(m__io, this, m__root);
