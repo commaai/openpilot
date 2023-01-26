@@ -116,20 +116,22 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
     float v_this = driver_orient[i];
     scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
+    scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]);
+    scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]);
   }
 
   const mat3 r_xyz = (mat3){{
-    cosf(scene.driver_pose_vals[1])*cosf(scene.driver_pose_vals[2]),
-    cosf(scene.driver_pose_vals[1])*sinf(scene.driver_pose_vals[2]),
-    -sinf(scene.driver_pose_vals[1]),
+    scene.driver_pose_coss[1]*scene.driver_pose_coss[2],
+    scene.driver_pose_coss[1]*scene.driver_pose_sins[2],
+    -scene.driver_pose_sins[1],
 
-    -sinf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*cosf(scene.driver_pose_vals[2]) - cosf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[2]),
-    -sinf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*sinf(scene.driver_pose_vals[2]) + cosf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[2]),
-    -sinf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[1]),
+    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_coss[0]*scene.driver_pose_sins[2],
+    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_coss[0]*scene.driver_pose_coss[2],
+    -scene.driver_pose_sins[0]*scene.driver_pose_coss[1],
 
-    cosf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*cosf(scene.driver_pose_vals[2]) - sinf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[2]),
-    cosf(scene.driver_pose_vals[0])*sinf(scene.driver_pose_vals[1])*sinf(scene.driver_pose_vals[2]) + sinf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[2]),
-    cosf(scene.driver_pose_vals[0])*cosf(scene.driver_pose_vals[1]),
+    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_sins[0]*scene.driver_pose_sins[2],
+    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_sins[0]*scene.driver_pose_coss[2],
+    scene.driver_pose_coss[0]*scene.driver_pose_coss[1],
   }};
 
   // transform vertices
