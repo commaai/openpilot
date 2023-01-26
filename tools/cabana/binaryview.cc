@@ -40,8 +40,14 @@ QSize BinaryView::minimumSizeHint() const {
 
 void BinaryView::highlight(const Signal *sig) {
   if (sig != hovered_sig) {
+    for (int i = 0; i < model->items.size(); ++i) {
+      auto &item_sigs = model->items[i].sigs;
+      if ((sig && item_sigs.contains(sig)) || (hovered_sig && item_sigs.contains(hovered_sig))) {
+        auto index = model->index(i / model->columnCount(), i % model->columnCount());
+        emit model->dataChanged(index, index, {Qt::DisplayRole});
+      }
+    }
     hovered_sig = sig;
-    model->dataChanged(model->index(0, 0), model->index(model->rowCount() - 1, model->columnCount() - 1));
     emit signalHovered(hovered_sig);
   }
 }
