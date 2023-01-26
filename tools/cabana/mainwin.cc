@@ -24,17 +24,18 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
   detail_widget = new DetailWidget(charts_widget, this);
-  detail_widget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
   setCentralWidget(detail_widget);
   createActions();
   createStatusBar();
   createShortcuts();
 
+  // restore states
   restoreGeometry(settings.geometry);
   if (isMaximized()) {
     setGeometry(QApplication::desktop()->availableGeometry(this));
   }
   restoreState(settings.window_state);
+  messages_widget->restoreHeaderState(settings.message_header_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
@@ -122,19 +123,16 @@ void MainWindow::createDockWindows() {
   charts_layout->setContentsMargins(0, 0, 0, 0);
   charts_layout->addWidget(charts_widget);
 
-  video_splitter = new QSplitter(Qt::Vertical,this);
-
   // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
-  if (!can->liveStreaming()) {
-    video_widget = new VideoWidget(this);
-    video_splitter->addWidget(video_widget);
-    QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
-  }
+  video_widget = new VideoWidget(this);
+  video_splitter->addWidget(video_widget);
+  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::rangeChanged);
+
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);
   video_splitter->restoreState(settings.video_splitter_state);
-  if (!can->liveStreaming() && video_splitter->sizes()[0] == 0) {
+  if (can->liveStreaming() || video_splitter->sizes()[0] == 0) {
     // display video at minimum size.
     video_splitter->setSizes({1, 1});
   }
@@ -289,11 +287,13 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
+  // save states
   settings.geometry = saveGeometry();
   settings.window_state = saveState();
   if (!can->liveStreaming()) {
     settings.video_splitter_state = video_splitter->saveState();
   }
+  settings.message_header_state = messages_widget->saveHeaderState();
   settings.save();
   QWidget::closeEvent(event);
 }

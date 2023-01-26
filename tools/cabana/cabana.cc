@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
+  cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
   if (args.empty() && !cmd_parser.isSet("demo") && !cmd_parser.isSet("stream")) {
@@ -44,6 +45,8 @@ int main(int argc, char *argv[]) {
       replay_flags |= REPLAY_FLAG_ECAM;
     } else if (cmd_parser.isSet("qcam")) {
       replay_flags |= REPLAY_FLAG_QCAMERA;
+    } else if (cmd_parser.isSet("no-vipc")) {
+      replay_flags |= REPLAY_FLAG_NO_VIPC;
     }
     auto replay_stream = new ReplayStream(&app);
     stream.reset(replay_stream);
