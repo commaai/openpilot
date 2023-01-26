@@ -1,26 +1,12 @@
 import math
 from cereal import car
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
+from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.ford.fordcan import create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-
-
-def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
-  # rate limit
-  steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
-  rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
-  max_angle_diff = interp(vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
-  apply_angle = clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
-
-  # absolute limit (LatCtlPath_An_Actl)
-  apply_path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
-  apply_path_angle = clip(apply_path_angle, -0.5, 0.5235)
-  apply_angle = math.degrees(apply_path_angle) * CarControllerParams.LKAS_STEER_RATIO
-
-  return apply_angle
 
 
 class CarController:
@@ -30,7 +16,7 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.frame = 0
 
-    self.apply_angle_last = 0
+    self.apply_curvature_last = 0
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
@@ -57,17 +43,16 @@ class CarController:
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, tja_toggle=True))
 
     ### lateral control ###
-    if CC.latActive:
-      lca_rq = 1
-      apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
-    else:
-      lca_rq = 0
-      apply_angle = 0.
-
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
-      # use LatCtlPath_An_Actl to actuate steering
-      path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
+      if CC.latActive:
+        # apply limits to curvature
+        apply_curvature = -self.VM.calc_curvature(math.radians(actuators.steeringAngleDeg), CS.out.vEgo, 0.0)
+        apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
+        # clip to signal range
+        apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
+      else:
+        apply_curvature = 0.
 
       # set slower ramp type when small steering angle change
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
@@ -82,9 +67,11 @@ class CarController:
         ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
-      self.apply_angle_last = apply_angle
+      lca_rq = 1 if CC.latActive else 0
       can_sends.append(create_lka_msg(self.packer))
-      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0, path_angle, 0, 0))
+      can_sends.append(create_lat_ctl_msg(self.packer, lca_rq, ramp_type, precision, 0., 0., -apply_curvature, 0.))
+
+      self.apply_curvature_last = apply_curvature
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
@@ -102,7 +89,7 @@ class CarController:
     self.steer_alert_last = steer_alert
 
     new_actuators = actuators.copy()
-    new_actuators.steeringAngleDeg = self.apply_angle_last
+    new_actuators.curvature = self.apply_curvature_last
 
     self.frame += 1
     return new_actuators, can_sends
