@@ -1495,9 +1495,6 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7d1, None): [
       b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
-    ],
-    (Ecu.eps, 0x7d1, None): [
-      b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
       b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106'
     ],
     (Ecu.cornerRadar, 0x7b7, None): [
