@@ -4,13 +4,11 @@ meta:
   endian: be
   bit-endian: be
 seq:
-  # word 1
   - id: idle_chip
     type: b1
   - id: string_number
     type: b4
   - id: data
-    #type: b72
     type:
       switch-on: string_number
       cases:
@@ -103,5 +101,7 @@ types:
         type: b2
   string_non_immediate:
     seq:
-      - id: data
-        type: b72
+      - id: data_1
+        type: b64
+      - id: data_2
+        type: b8

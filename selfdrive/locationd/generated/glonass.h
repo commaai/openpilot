@@ -84,12 +84,14 @@ public:
         ~string_non_immediate_t();
 
     private:
-        uint64_t m_data;
+        uint64_t m_data_1;
+        uint64_t m_data_2;
         glonass_t* m__root;
         glonass_t* m__parent;
 
     public:
-        uint64_t data() const { return m_data; }
+        uint64_t data_1() const { return m_data_1; }
+        uint64_t data_2() const { return m_data_2; }
         glonass_t* _root() const { return m__root; }
         glonass_t* _parent() const { return m__parent; }
     };
