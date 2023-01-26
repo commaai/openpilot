@@ -20,11 +20,11 @@ seq:
         4: string_4
   - id: hamming_code
     type: b8
-  - id: pad
+  - id: pad_1
     type: b11
   - id: superframe_number
     type: b16
-  - id: pad
+  - id: pad_2
     type: b8
   - id: frame_number
     type: b8
@@ -34,7 +34,7 @@ types:
     seq:
       - id: not_used
         type: b2
-      - id: P1
+      - id: p1
         type: b2
       - id: t_k
         type: b12
@@ -46,9 +46,9 @@ types:
         type: b27
   string_2:
     seq:
-      - id: B_n
+      - id: b_n
         type: b3
-      - id: P2
+      - id: p2
         type: b1
       - id: t_b
         type: b7
@@ -62,7 +62,7 @@ types:
         type: b27
   string_3:
     seq:
-      - id: P3
+      - id: p3
         type: b1
       - id: gamma_n
         type: b11
@@ -84,19 +84,19 @@ types:
         type: b22
       - id: delta_tau_n
         type: b5
-      - id: E_n
+      - id: e_n
         type: b5
-      - id: not_used
+      - id: not_used_1
         type: b14
-      - id: P4
+      - id: p4
         type: b1
-      - id: F_t
+      - id: f_t
         type: b4
-      - id: not_used
+      - id: not_used_2
         type: b3
-      - id: N_t
+      - id: n_t
         type: b11
       - id: n
         type: b5
-      - id: M
+      - id: m
         type: b2
