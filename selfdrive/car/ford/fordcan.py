@@ -4,7 +4,7 @@ from selfdrive.car.ford.values import CANBUS
 HUDControl = car.CarControl.HUDControl
 
 
-def create_lka_msg(packer, angle_deg: float, curvature: float):
+def create_lka_msg(packer):
   """
   Creates a CAN message for the Ford LKA Command.
 
@@ -16,9 +16,9 @@ def create_lka_msg(packer, angle_deg: float, curvature: float):
   values = {
     "LkaDrvOvrrd_D_Rq": 0,              # driver override level? [0|3]
     "LkaActvStats_D2_Req": 0,           # action [0|7]
-    "LaRefAng_No_Req": angle_deg,       # angle [-102.4|102.3] degrees
+    "LaRefAng_No_Req": 0,               # angle [-102.4|102.3] degrees
     "LaRampType_B_Req": 0,              # Ramp speed: 0=Smooth, 1=Quick
-    "LaCurvature_No_Calc": curvature,   # curvature [-0.01024|0.01023] 1/meter
+    "LaCurvature_No_Calc": 0,           # curvature [-0.01024|0.01023] 1/meter
     "LdwActvStats_D_Req": 0,            # LDW status [0|7]
     "LdwActvIntns_D_Req": 0,            # LDW intensity [0|3], shake alert strength
   }
