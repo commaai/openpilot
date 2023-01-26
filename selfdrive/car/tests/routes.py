@@ -18,6 +18,7 @@ from selfdrive.car.body.values import CAR as COMMA
 non_tested_cars = [
   FORD.ESCAPE_MK4,
   FORD.FOCUS_MK4,
+  FORD.MAVERICK_MK1,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
