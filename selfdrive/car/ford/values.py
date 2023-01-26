@@ -26,7 +26,7 @@ class CarControllerParams:
   STEER_DRIVER_ALLOWANCE = 0.8  # Driver intervention threshold, Nm
 
   # Curvature rate limits
-  # TODO: unify field names used by curvature and angle control cars.
+  # TODO: unify field names used by curvature and angle control cars
   RATE_LIMIT_UP = CurvatureLimit(speed_points=[5, 15, 25], max_angle_diff_points=[0.005, 0.00056, 0.0002])
   RATE_LIMIT_DOWN = CurvatureLimit(speed_points=[5, 15, 25], max_angle_diff_points=[0.008, 0.00089, 0.00032])
 
