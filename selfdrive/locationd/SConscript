@@ -7,6 +7,7 @@ if GetOption('kaitai'):
   cmd = f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES"
   env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', cmd)
   env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
+  env.Command(['generated/glonass.cpp', 'generated/glonass.h'], 'glonass.ksy', cmd)
 
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
 
