@@ -767,12 +767,10 @@ FW_VERSIONS = {
   CAR.SANTA_FE_HEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
-      b'\xf1\x8799110CL500\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
       b'\xf1\x00TM  MDPS R 1.00 1.05 57700-CL000 4TSHP105',
-      b'\xf1\x8757700-CL000\xf1\x00TM  MDPS R 1.00 1.05 57700-CL000 4TSHP105',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMH MFC  AT EUR LHD 1.00 1.06 99211-S1500 220727',
@@ -780,7 +778,6 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2H16UA3I\x94\xac\x8f',
-      b'\xf1\x8795441-3D110\x00\xf1\x81E16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TTM2H16UA3I\x94\xac\x8f',
       b'\xf1\x87959102T250\x00\x00\x00\x00\x00\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2333  E14\x00\x00\x00\x00\x00\x00\x00TTM2H16SA2\x80\xd7l\xb2',
     ],
     (Ecu.engine, 0x7e0, None): [
