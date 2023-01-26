@@ -336,6 +336,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->setItemDelegate(new SignalItemDelegate(this));
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
+  tree->setExpandsOnDoubleClick(false);
   tree->header()->setSectionResizeMode(QHeaderView::Stretch);
   tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
 
@@ -401,7 +402,9 @@ void SignalView::rowsChanged() {
 
 void SignalView::rowClicked(const QModelIndex &index) {
   auto item = model->getItem(index);
-  if (item->type == SignalModel::Item::ExtraInfo) {
+  if (item->type == SignalModel::Item::Sig) {
+    tree->setExpanded(index, !tree->isExpanded(index));
+  } else if (item->type == SignalModel::Item::ExtraInfo) {
     model->showExtraInfo(index);
   }
 }
