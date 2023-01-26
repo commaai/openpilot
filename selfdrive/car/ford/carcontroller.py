@@ -61,7 +61,7 @@ class CarController:
       # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
       steer_error = CS.out.steeringAngleDeg - actuators.steeringAngleDeg
       steer_change = abs(steer_error)
-      curvature_rate = 0  # self.VM.calc_curvature(steer_error, CS.out.vEgo, 0.0)
+      curvature_rate = 0  # self.VM.calc_curvature(math.degrees(steer_error), CS.out.vEgo, 0.0)
       if steer_change < 2.5:
         ramp_type = 0
       elif steer_change < 5.0:
