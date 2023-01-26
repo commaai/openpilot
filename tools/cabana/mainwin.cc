@@ -29,11 +29,13 @@ MainWindow::MainWindow() : QMainWindow() {
   createStatusBar();
   createShortcuts();
 
+  // restore states
   restoreGeometry(settings.geometry);
   if (isMaximized()) {
     setGeometry(QApplication::desktop()->availableGeometry(this));
   }
   restoreState(settings.window_state);
+  messages_widget->restoreHeaderState(settings.message_header_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
@@ -285,11 +287,13 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (floating_window)
     floating_window->deleteLater();
 
+  // save states
   settings.geometry = saveGeometry();
   settings.window_state = saveState();
   if (!can->liveStreaming()) {
     settings.video_splitter_state = video_splitter->saveState();
   }
+  settings.message_header_state = messages_widget->saveHeaderState();
   settings.save();
   QWidget::closeEvent(event);
 }
