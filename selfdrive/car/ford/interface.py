@@ -13,15 +13,21 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "ford"
-    ret.dashcamOnly = True
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
-    # Angle-based steering
+    # These cars are dashcam only until the port is finished
+    ret.dashcamOnly = True
+
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
 
-    if candidate == CAR.ESCAPE_MK4:
+    if candidate == CAR.BRONCO_SPORT_MK1:
+      ret.wheelbase = 2.67
+      ret.steerRatio = 17.7  # learned
+      ret.mass = 1625 + STD_CARGO_KG
+
+    elif candidate == CAR.ESCAPE_MK4:
       ret.wheelbase = 2.71
       ret.steerRatio = 14.3  # Copied from Focus
       ret.mass = 1750 + STD_CARGO_KG

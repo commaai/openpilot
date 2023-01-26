@@ -40,6 +40,7 @@ class CANBUS:
 
 
 class CAR:
+  BRONCO_SPORT_MK1 = "FORD BRONCO SPORT 1ST GEN"
   ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
   EXPLORER_MK6 = "FORD EXPLORER 6TH GEN"
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
@@ -60,6 +61,7 @@ class FordCarInfo(CarInfo):
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
+  CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-21"),
     FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
@@ -85,6 +87,30 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
+  CAR.BRONCO_SPORT_MK1: {
+    (Ecu.eps, 0x730, None): [
+      b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6C-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'LX6C-2D053-RD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LX6C-2D053-RE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'M1PT-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'M1PA-14C204-GF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'N1PA-14C204-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x732, None): [
+      b'LX6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PZ1P-14G395-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.ESCAPE_MK4: {
     (Ecu.eps, 0x730, None): [
       b'LX6C-14D003-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
