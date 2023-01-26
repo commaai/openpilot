@@ -25,24 +25,25 @@ def create_lka_msg(packer, angle_deg: float, curvature: float):
   return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, values)
 
 
-def create_lat_ctl_msg(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float, curvature_rate: float, curvature: float):
+def create_lat_ctl_msg(packer, lca_rq: int, ramp_type: int, precision: int, path_offset: float, path_angle: float,
+                       curvature: float, curvature_rate: float):
   """
   Creates a CAN message for the Ford TJA/LCA Command.
 
-  This command can apply "Lane Centering" manoeuvres: continuous lane centering for traffic jam
-  assist and highway driving. It is not subject to the PSCM lockout.
+  This command can apply "Lane Centering" manoeuvres: continuous lane centering for traffic jam assist and highway
+  driving. It is not subject to the PSCM lockout.
 
-  Ford lane centering command uses a third order polynomial to describe the road centerline. The
-  polynomial is defined by the following coefficients:
+  Ford lane centering command uses a third order polynomial to describe the road centerline. The polynomial is defined
+  by the following coefficients:
     c0: lateral offset between the vehicle and the centerline (positive is right)
     c1: heading angle between the vehicle and the centerline (positive is right)
     c2: curvature of the centerline (positive is left)
     c3: rate of change of curvature of the centerline
-  As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and
-  speed, the steering angle cannot be easily controlled.
+  As the PSCM combines this information with other sensor data, such as the vehicle's yaw rate and speed, the steering
+  angle cannot be easily controlled.
 
-  The PSCM should be configured to accept TJA/LCA commands before these commands will be processed.
-  This can be done using tools such as Forscan.
+  The PSCM should be configured to accept TJA/LCA commands before these commands will be processed. This can be done
+  using tools such as Forscan.
 
   Frequency is 20Hz.
   """
@@ -108,16 +109,15 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
 
   values = {
     **stock_values,
-    "LaActvStats_D_Dsply": lines,                           # LKAS status (lines) [0|31]
-    "LaHandsOff_D_Dsply": hands_on_wheel_dsply,             # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
+    "LaActvStats_D_Dsply": lines,                 # LKAS status (lines) [0|31]
+    "LaHandsOff_D_Dsply": hands_on_wheel_dsply,   # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
   }
   return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
 
 
 def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
   """
-  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
-  assist status.
+  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam assist status.
 
   Stock functionality is maintained by passing through unmodified signals.
 
@@ -149,7 +149,8 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
-def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tja_toggle=False, bus: int = CANBUS.camera):
+def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tja_toggle=False,
+                      bus: int = CANBUS.camera):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
