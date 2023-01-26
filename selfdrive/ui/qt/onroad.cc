@@ -226,6 +226,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  setProperty("dm_fade_state", fmax(-1.0, fmin(1.0, dm_fade_state+0.1*(0.5-(float)isStandstill))));
   setProperty("status", s.status);
 
   // update engageability and DM icons at 2Hz
@@ -393,11 +394,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   // dm icon
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
-    if (!isStandstill) {
+    if (dm_fade_state>0) {
       drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-            dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+            dm_img, blackColor(70), (dmActive ? 1.0 : 0.2) * fmax(0.0, dm_fade_state));
     } else {
-      drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2);
+      drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2, fmax(0.0, -dm_fade_state));
     }
   }
   p.restore();
@@ -503,7 +504,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s, int x, int y) {
+void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s, int x, int y, float opacity) {
   const UIScene &scene = s->scene;
 
   painter.save();
@@ -537,11 +538,11 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
     linearGrad.setStart(start_p);
     float start_shade = std::fmax(std::fmin(0.3 + 0.7*(scene.face_kpts_draw_d[i] + 60)/100, 1.0), 0.0);
-    linearGrad.setColorAt(0, QColor::fromRgbF(start_shade, start_shade, start_shade, 1.0));
+    linearGrad.setColorAt(0, QColor::fromRgbF(start_shade, start_shade, start_shade, opacity));
 
     linearGrad.setFinalStop(end_p);
     float end_shade = std::fmax(std::fmin(0.3 + 0.7*(scene.face_kpts_draw_d[i+1] + 60)/100, 1.0), 0.0);
-    linearGrad.setColorAt(1, QColor::fromRgbF(end_shade, end_shade, end_shade, 1.0));
+    linearGrad.setColorAt(1, QColor::fromRgbF(end_shade, end_shade, end_shade, opacity));
 
     painter.setPen(QPen(linearGrad, i<16 ? 7 : 3, Qt::SolidLine, Qt::RoundCap));
     painter.drawLine(start_p, end_p);
