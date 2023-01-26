@@ -274,7 +274,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
-    if self.CP.carFingerprint in (CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE):
+    if self.CP.carFingerprint in (CAR.PILOT, CAR.RIDGELINE):
       if ret.brake > 0.1:
         ret.brakePressed = True
 

@@ -12,16 +12,17 @@ TESLA AP1 MODEL S: [.nan, 2.5, .nan]
 TESLA AP2 MODEL S: [.nan, 2.5, .nan]
 
 # Guess
+FORD BRONCO SPORT 1ST GEN: [.nan, 1.5, .nan]
 FORD ESCAPE 4TH GEN: [.nan, 1.5, .nan]
 FORD EXPLORER 6TH GEN: [.nan, 1.5, .nan]
 FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
+FORD MAVERICK 1ST GEN: [.nan, 1.5, .nan]
 ###
 
 # No steering wheel
 COMMA BODY: [.nan, 1000, .nan]
 
 # Totally new cars
-RAM 1500 5TH GEN: [2.0, 2.0, 0.0]
 RAM HD 5TH GEN: [1.4, 1.4, 0.0]
 SUBARU OUTBACK 6TH GEN: [2.3, 2.3, 0.11]
 CHEVROLET BOLT EV 2022: [2.0, 2.0, 0.05]
