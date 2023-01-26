@@ -2,10 +2,11 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.ford.values import CAR, Ecu, TransmissionType, GearShifter
+from selfdrive.car.ford.values import CAR, Ecu
 from selfdrive.car.interfaces import CarInterfaceBase
 
-CarParams = car.CarParams
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 
 class CarInterface(CarInterfaceBase):
@@ -13,10 +14,10 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "ford"
     ret.dashcamOnly = True
-    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.ford)]
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
     # Angle-based steering
-    ret.steerControlType = CarParams.SteerControlType.angle
+    ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.4
     ret.steerLimitTimer = 1.0
 
