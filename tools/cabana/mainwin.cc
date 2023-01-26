@@ -121,8 +121,6 @@ void MainWindow::createDockWindows() {
   charts_layout->setContentsMargins(0, 0, 0, 0);
   charts_layout->addWidget(charts_widget);
 
-  video_splitter = new QSplitter(Qt::Vertical,this);
-
   // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
   video_widget = new VideoWidget(this);
