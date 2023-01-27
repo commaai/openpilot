@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationDisplayName("Cabana");
   app.setWindowIcon(QIcon("./images/cabana.png"));
+  app.setWindowIcon(QIcon(CABANA_ASSET_PATH + "cabana.png"));
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
