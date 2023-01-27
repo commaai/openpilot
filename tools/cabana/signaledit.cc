@@ -134,7 +134,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
     case Item::Factor: s.factor = value.toDouble(); break;
-    default: break;
+    default: return false;
   }
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
