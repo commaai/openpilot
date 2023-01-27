@@ -229,6 +229,8 @@ selfdrive/locationd/generated/ubx.cpp
 selfdrive/locationd/generated/ubx.h
 selfdrive/locationd/generated/gps.cpp
 selfdrive/locationd/generated/gps.h
+selfdrive/locationd/generated/glonass.cpp
+selfdrive/locationd/generated/glonass.h
 
 selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h
