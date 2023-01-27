@@ -282,7 +282,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -311,6 +311,7 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
 

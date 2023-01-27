@@ -231,11 +231,11 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
 
-    elif candidate in (CAR.PILOT, CAR.PASSPORT):
-      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
-      ret.wheelbase = 2.82
+    elif candidate == CAR.PILOT:
+      ret.mass = 4278. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
+      ret.wheelbase = 2.86
       ret.centerToFront = ret.wheelbase * 0.428
-      ret.steerRatio = 17.25  # as spec
+      ret.steerRatio = 16.0  # as spec
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]

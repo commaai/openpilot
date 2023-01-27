@@ -188,7 +188,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     canmsgs = [msg for msg in msgs if msg.which() == 'can']
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan)
+    _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
   Params().put("CarParams", CP.to_bytes())
 
 
@@ -568,7 +568,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
         resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
         for s in resp_sockets:
-          response = messaging.recv_one(sockets[s])
+          response = messaging.recv_one_retry(sockets[s])
 
           if response is None:
             print(f"Warning, no response received {i}")
