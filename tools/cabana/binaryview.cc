@@ -36,7 +36,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
-  QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
 }
 
 QSize BinaryView::minimumSizeHint() const {

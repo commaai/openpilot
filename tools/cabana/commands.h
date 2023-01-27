@@ -62,7 +62,7 @@ private:
   Signal new_signal = {};
 };
 
-namespace Commands {
+namespace UndoStack {
   QUndoStack *instance();
   inline void push(QUndoCommand *cmd) { instance()->push(cmd); }
 };

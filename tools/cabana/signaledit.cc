@@ -157,16 +157,11 @@ void SignalModel::showExtraInfo(const QModelIndex &index) {
 }
 
 bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
-  if (s.name.empty()) {
-    return false;
-  }
   auto msg = dbc()->msg(msg_id);
-  if (s.name != origin_s->name) {
-    if (msg->sigs.count(QString::fromStdString(s.name)) != 0) {
-      QMessageBox::warning(nullptr, tr("Failed to save signal"),
-                           tr("There is already a signal with the same name '%1'").arg(s.name.c_str()));
-      return false;
-    }
+  if (s.name != origin_s->name && msg->sigs.count(s.name.c_str()) != 0) {
+    QString text = tr("There is already a signal with the same name '%1'").arg(s.name.c_str());
+    QMessageBox::warning(nullptr, tr("Failed to save signal"), text);
+    return false;
   }
 
   if (s.is_little_endian != origin_s->is_little_endian) {
@@ -187,14 +182,7 @@ bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
     s.msb = s.start_bit;
   }
 
-  auto [start, end] = getSignalRange(&s);
-  if (start < 0 || end >= msg->size * 8) {
-    QString warning_str = tr("Signal size [%1] exceed msg boundary").arg(s.size);
-    QMessageBox::warning(nullptr, tr("Failed to save signal"), warning_str);
-    return false;
-  }
-
-  Commands::push(new EditSignalCommand(msg_id, origin_s, s));
+  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s));
   return true;
 }
 
@@ -203,7 +191,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   for (int i = 1; !msg; ++i) {
     QString name = QString("NEW_MSG_%1").arg(i);
     if (std::none_of(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; })) {
-      Commands::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+      UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
       msg = dbc()->msg(msg_id);
     }
   }
@@ -214,7 +202,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     if (msg->sigs.count(sig.name.c_str()) == 0) break;
   }
   updateSigSizeParamsFromRange(sig, start_bit, size);
-  Commands::push(new AddSigCommand(msg_id, sig));
+  UndoStack::push(new AddSigCommand(msg_id, sig));
 }
 
 void SignalModel::resizeSignal(const Signal *sig, int start_bit, int size) {
@@ -224,7 +212,7 @@ void SignalModel::resizeSignal(const Signal *sig, int start_bit, int size) {
 }
 
 void SignalModel::removeSignal(const Signal *sig) {
-  Commands::push(new RemoveSigCommand(msg_id, sig));
+  UndoStack::push(new RemoveSigCommand(msg_id, sig));
 }
 
 void SignalModel::handleMsgChanged(uint32_t address) {
@@ -264,6 +252,7 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
   name_validator = new QRegExpValidator(QRegExp("^\\w{1,50}$"), this);
   double_validator = new QDoubleValidator(this);
+  double_validator->setLocale(QLocale::C);
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -321,6 +310,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   p.setColor(QPalette::Base, Qt::lightGray);
   title_bar->setPalette(p);
   title_bar->setAutoFillBackground(true);
+
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
@@ -387,7 +377,6 @@ void SignalView::rowsChanged() {
       QWidget *w = new QWidget(this);
       QHBoxLayout *h = new QHBoxLayout(w);
       h->setContentsMargins(0, 2, 0, 2);
-      h->setSpacing(3);
       h->addStretch(1);
 
       auto remove_btn = create_btn("x", tr("Remove signal"));

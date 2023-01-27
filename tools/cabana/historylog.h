@@ -76,9 +76,6 @@ public:
   void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
   void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
 
-signals:
-  void openChart(const QString &msg_id, const Signal *sig);
-
 private slots:
   void setFilter();
 

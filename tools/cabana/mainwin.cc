@@ -63,7 +63,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
-  QObject::connect(Commands::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
+  QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
 }
 
 void MainWindow::createActions() {
@@ -91,16 +91,16 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows)->setShortcuts(QKeySequence::Quit);
 
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
-  auto undo_act = Commands::instance()->createUndoAction(this, tr("&Undo"));
+  auto undo_act = UndoStack::instance()->createUndoAction(this, tr("&Undo"));
   undo_act->setShortcuts(QKeySequence::Undo);
   edit_menu->addAction(undo_act);
-  auto redo_act = Commands::instance()->createRedoAction(this, tr("&Rndo"));
+  auto redo_act = UndoStack::instance()->createRedoAction(this, tr("&Rndo"));
   redo_act->setShortcuts(QKeySequence::Redo);
   edit_menu->addAction(redo_act);
   edit_menu->addSeparator();
 
   QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
-  auto undo_view = new QUndoView(Commands::instance());
+  auto undo_view = new QUndoView(UndoStack::instance());
   undo_view->setWindowTitle(tr("Command List"));
   QWidgetAction *commands_act = new QWidgetAction(this);
   commands_act->setDefaultWidget(undo_view);
@@ -195,7 +195,7 @@ void MainWindow::undoStackCleanChanged(bool clean) {
 }
 
 void MainWindow::DBCFileChanged() {
-  Commands::instance()->clear();
+  UndoStack::instance()->clear();
   int index = dbc_combo->findText(QFileInfo(dbc()->name()).baseName());
   dbc_combo->setCurrentIndex(index);
   setWindowFilePath(QString("%1").arg(dbc()->name()));
@@ -273,7 +273,7 @@ void MainWindow::saveFile(const QString &fn) {
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
     file.write(dbc()->generateDBC().toUtf8());
-    Commands::instance()->setClean();
+    UndoStack::instance()->setClean();
     setCurrentFile(fn);
     statusBar()->showMessage(tr("File saved"), 2000);
   }
@@ -320,7 +320,7 @@ void MainWindow::updateRecentFileActions() {
 
 void MainWindow::remindSaveChanges() {
   bool discard_changes = false;
-  while (!Commands::instance()->isClean() && !discard_changes) {
+  while (!UndoStack::instance()->isClean() && !discard_changes) {
     int ret = (QMessageBox::question(this, tr("Unsaved Changes"),
                                      tr("You have unsaved changes. Press ok to save them, cancel to discard."),
                                      QMessageBox::Ok | QMessageBox::Cancel));
@@ -330,7 +330,7 @@ void MainWindow::remindSaveChanges() {
       discard_changes = true;
     }
   }
-  Commands::instance()->clear();
+  UndoStack::instance()->clear();
   current_file = "";
 }
 

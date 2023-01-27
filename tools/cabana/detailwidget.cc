@@ -28,7 +28,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(tabbar);
 
   // message title
-  toolbar = new QToolBar(this);
+  QToolBar *toolbar = new QToolBar(this);
   toolbar->setIconSize({16, 16});
   toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
@@ -54,17 +54,14 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // msg widget
   QSplitter *splitter = new QSplitter(Qt::Vertical, this);
-  binary_view = new BinaryView(this);
-  splitter->addWidget(binary_view);
-  signal_view = new SignalView(charts, this);
-  splitter->addWidget(signal_view);
+  splitter->addWidget(binary_view = new BinaryView(this));
+  splitter->addWidget(signal_view = new SignalView(charts, this));
   splitter->setStretchFactor(1, 1);
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
   tab_widget->addTab(splitter, bootstrapPixmap("file-earmark-ruled"), "&Msg");
-  history_log = new LogsWidget(this);
-  tab_widget->addTab(history_log, bootstrapPixmap("stopwatch"), "&Logs");
+  tab_widget->addTab(history_log = new LogsWidget(this), bootstrapPixmap("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
   stacked_layout = new QStackedLayout(this);
@@ -80,7 +77,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
-  QObject::connect(Commands::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1 && tabbar->tabText(index) != msg_id) {
@@ -89,9 +86,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
-  QObject::connect(history_log, &LogsWidget::openChart, [this](const QString &id, const Signal *sig) {
-    this->charts->showChart(id, sig, true, false);
-  });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -145,7 +139,6 @@ void DetailWidget::refresh() {
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
-  toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
@@ -173,12 +166,12 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    Commands::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  Commands::push(new RemoveMsgCommand(msg_id));
+  UndoStack::push(new RemoveMsgCommand(msg_id));
 }
 
 // EditMessageDialog
