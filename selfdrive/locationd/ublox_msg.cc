@@ -311,9 +311,6 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
       return kj::Array<capnp::word>();
     }
 
-    // append to storage
-    printf("GLONASS ephem: %d %lu %lu\n", msg->sv_id(), gl_string.superframe_number(), gl_string.string_number());
-
     // immediate data is the same within one superframe
     if (glonass_superframes[msg->sv_id()] != gl_string.superframe_number()) {
       glonass_strings[msg->sv_id()].clear();
