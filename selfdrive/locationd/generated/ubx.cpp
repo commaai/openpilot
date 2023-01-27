@@ -89,13 +89,10 @@ void ubx_t::rxm_rawx_t::_read() {
     m_num_meas = m__io->read_u1();
     m_rec_stat = m__io->read_u1();
     m_reserved1 = m__io->read_bytes(3);
-    int l_measurements = num_meas();
     m__raw_measurements = new std::vector<std::string>();
-    m__raw_measurements->reserve(l_measurements);
     m__io__raw_measurements = new std::vector<kaitai::kstream*>();
-    m__io__raw_measurements->reserve(l_measurements);
     m_measurements = new std::vector<meas_t*>();
-    m_measurements->reserve(l_measurements);
+    const int l_measurements = num_meas();
     for (int i = 0; i < l_measurements; i++) {
         m__raw_measurements->push_back(m__io->read_bytes(32));
         kaitai::kstream* io__raw_measurements = new kaitai::kstream(m__raw_measurements->at(m__raw_measurements->size() - 1));
@@ -184,9 +181,8 @@ void ubx_t::rxm_sfrbx_t::_read() {
     m_reserved2 = m__io->read_bytes(1);
     m_version = m__io->read_u1();
     m_reserved3 = m__io->read_bytes(1);
-    int l_body = num_words();
     m_body = new std::vector<uint32_t>();
-    m_body->reserve(l_body);
+    const int l_body = num_words();
     for (int i = 0; i < l_body; i++) {
         m_body->push_back(m__io->read_u4le());
     }
