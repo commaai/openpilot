@@ -131,7 +131,7 @@ glonass_t::string_5_t::string_5_t(kaitai::kstream* p__io, glonass_t* p__parent, 
 
 void glonass_t::string_5_t::_read() {
     m_n_a = m__io->read_bits_int_be(11);
-    m_taue = m__io->read_bits_int_be(32);
+    m_tau_e = m__io->read_bits_int_be(32);
     m_not_used_1 = m__io->read_bits_int_be(1);
     m_n_4 = m__io->read_bits_int_be(5);
     m_tau_gps = m__io->read_bits_int_be(22);

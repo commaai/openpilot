@@ -106,7 +106,7 @@ types:
     seq:
       - id: n_a
         type: b11
-      - id: taue
+      - id: tau_e
         type: b32
       - id: not_used_1
         type: b1
