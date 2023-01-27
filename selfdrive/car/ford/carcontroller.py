@@ -1,4 +1,3 @@
-import math
 from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
