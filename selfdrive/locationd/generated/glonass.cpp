@@ -31,6 +31,10 @@ void glonass_t::_read() {
         m_data = new string_3_t(m__io, this, m__root);
         break;
     }
+    case 5: {
+        m_data = new string_5_t(m__io, this, m__root);
+        break;
+    }
     case 2: {
         m_data = new string_2_t(m__io, this, m__root);
         break;
@@ -111,6 +115,34 @@ glonass_t::string_non_immediate_t::~string_non_immediate_t() {
 }
 
 void glonass_t::string_non_immediate_t::_clean_up() {
+}
+
+glonass_t::string_5_t::string_5_t(kaitai::kstream* p__io, glonass_t* p__parent, glonass_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+
+    try {
+        _read();
+    } catch(...) {
+        _clean_up();
+        throw;
+    }
+}
+
+void glonass_t::string_5_t::_read() {
+    m_n_a = m__io->read_bits_int_be(11);
+    m_tau_e = m__io->read_bits_int_be(32);
+    m_not_used_1 = m__io->read_bits_int_be(1);
+    m_n_4 = m__io->read_bits_int_be(5);
+    m_tau_gps = m__io->read_bits_int_be(22);
+    m_l_n = m__io->read_bits_int_be(1);
+}
+
+glonass_t::string_5_t::~string_5_t() {
+    _clean_up();
+}
+
+void glonass_t::string_5_t::_clean_up() {
 }
 
 glonass_t::string_1_t::string_1_t(kaitai::kstream* p__io, glonass_t* p__parent, glonass_t* p__root) : kaitai::kstruct(p__io) {

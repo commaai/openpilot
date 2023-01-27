@@ -1,4 +1,6 @@
 # http://gauss.gge.unb.ca/GLONASS.ICD.pdf
+# some variables are misprinted but good in the old doc
+# https://www.unavco.org/help/glossary/docs/ICD_GLONASS_4.0_(1998)_en.pdf
 meta:
   id: glonass
   endian: be
@@ -16,6 +18,7 @@ seq:
         2: string_2
         3: string_3
         4: string_4
+        5: string_5
         _: string_non_immediate
   - id: hamming_code
     type: b8
@@ -99,7 +102,21 @@ types:
         type: b5
       - id: m
         type: b2
-  string_non_immediate:
+  string_5:
+    seq:
+      - id: n_a
+        type: b11
+      - id: taue
+        type: b32
+      - id: not_used_1
+        type: b1
+      - id: n_4
+        type: b5
+      - id: tau_gps
+        type: b22
+      - id: l_n
+        type: b1
+  string_non_immediate:_
     seq:
       - id: data_1
         type: b64
