@@ -436,8 +436,6 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
 
   # Regen or python process
   if CP is not None:
-    params.put_bool("DashcamOverride", not CP.dashcamOnly)
-
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
       params.put_bool("DisengageOnAccelerator", False)
 
@@ -449,6 +447,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
 
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
+
+    # controlsd process configuration assume all routes are out of dashcam
+    params.put_bool("DashcamOverride", True)
 
 
 def python_replay_process(cfg, lr, fingerprint=None):
