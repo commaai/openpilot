@@ -37,6 +37,7 @@ void SignalModel::setMessage(const QString &id) {
   msg_id = id;
   filter_str = "";
   refresh();
+  updateState(nullptr);
 }
 
 void SignalModel::setFilter(const QString &txt) {
@@ -58,8 +59,8 @@ void SignalModel::refresh() {
 }
 
 void SignalModel::updateState(const QHash<QString, CanData> *msgs) {
-  if (msgs && msgs->contains(msg_id)) {
-    auto &dat = (*msgs)[msg_id].dat;
+  if (!msgs || (msgs->contains(msg_id))) {
+    auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
       double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig);
