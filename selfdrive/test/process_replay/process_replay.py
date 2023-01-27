@@ -568,7 +568,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
         resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
         for s in resp_sockets:
-          response = messaging.recv_one(sockets[s])
+          response = messaging.recv_one_retry(sockets[s])
 
           if response is None:
             print(f"Warning, no response received {i}")
