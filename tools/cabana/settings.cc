@@ -23,12 +23,13 @@ void Settings::save() {
   s.setValue("window_state", window_state);
   s.setValue("geometry", geometry);
   s.setValue("video_splitter_state", video_splitter_state);
+  s.setValue("message_header_state", message_header_state);
 }
 
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  max_cached_minutes = s.value("cached_minutes", 5).toInt();
+  max_cached_minutes = s.value("max_cached_minutes", 5).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_range = s.value("chart_range", 3 * 60).toInt();
   chart_column_count = s.value("chart_column_count", 1).toInt();
@@ -36,6 +37,7 @@ void Settings::load() {
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();
   video_splitter_state = s.value("video_splitter_state").toByteArray();
+  message_header_state = s.value("message_header_state").toByteArray();
 }
 
 // SettingsDlg
