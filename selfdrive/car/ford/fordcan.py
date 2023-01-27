@@ -16,8 +16,7 @@ def create_lka_msg(packer):
   return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, {})
 
 
-def create_lat_ctl_msg(packer, lat_active: bool, ramp_type: int, precision: int, path_offset: float, path_angle: float,
-                       curvature: float, curvature_rate: float):
+def create_lat_ctl_msg(packer, lat_active: bool, path_offset: float, path_angle: float, curvature: float, curvature_rate: float):
   """
   Creates a CAN message for the Ford TJA/LCA Command.
 
@@ -44,8 +43,10 @@ def create_lat_ctl_msg(packer, lat_active: bool, ramp_type: int, precision: int,
     "HandsOffCnfm_B_Rq": 0,                     # Unknown: 0=Inactive, 1=Active [0|1]
     "LatCtl_D_Rq": 1 if lat_active else 0,      # Mode: 0=None, 1=ContinuousPathFollowing, 2=InterventionLeft,
                                                 #       3=InterventionRight, 4-7=NotUsed [0|7]
-    "LatCtlRampType_D_Rq": ramp_type,           # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
-    "LatCtlPrecision_D_Rq": precision,          # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
+    "LatCtlRampType_D_Rq": 0,                   # Ramp speed: 0=Slow, 1=Medium, 2=Fast, 3=Immediate [0|3]
+                                                #             Makes no difference with curvature control
+    "LatCtlPrecision_D_Rq": 1,                  # Precision: 0=Comfortable, 1=Precise, 2/3=NotUsed [0|3]
+                                                #            The stock system always uses comfortable
     "LatCtlPathOffst_L_Actl": path_offset,      # Path offset [-5.12|5.11] meter
     "LatCtlPath_An_Actl": path_angle,           # Path angle [-0.5|0.5235] radians
     "LatCtlCurv_NoRate_Actl": curvature_rate,   # Curvature rate [-0.001024|0.00102375] 1/meter^2
