@@ -132,9 +132,6 @@ std::pair<std::string, kj::Array<capnp::word>> UbloxMsgParser::gen_msg() {
     return {"ubloxGnss", gen_mon_hw(static_cast<ubx_t::mon_hw_t*>(body))};
   case 0x0a0b:
     return {"ubloxGnss", gen_mon_hw2(static_cast<ubx_t::mon_hw2_t*>(body))};
-  case 0x0134:
-    // ignore NAV-ORB messages
-    return {"ubloxGnss", kj::Array<capnp::word>()};
   default:
     LOGE("Unknown message type %x", ubx_message.msg_type());
     return {"ubloxGnss", kj::Array<capnp::word>()};
@@ -160,15 +157,6 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_pvt(ubx_t::nav_pvt_t *msg) {
   timeinfo.tm_hour = msg->hour();
   timeinfo.tm_min = msg->min();
   timeinfo.tm_sec = msg->sec();
-
-  // extra debugging for position fixes
-  /*
-  uint8_t num_sv = msg->num_sv();
-  uint8_t fix_type = msg->fix_type();
-  uint8_t flags = msg->flags();
-  uint8_t flags2 = msg->flags2();
-  float   pDOP = msg->p_dop()*0.01;*/
-  //printf("POS: %d 0x%x 0x%x 0x%x %f\n", num_sv, fix_type, flags, flags2, pDOP);
 
   std::time_t utc_tt = timegm(&timeinfo);
   gpsLoc.setUnixTimestampMillis(utc_tt * 1e+03 + msg->nano() * 1e-06);
