@@ -102,14 +102,30 @@ def check_raw_ephemeris(raw_data):
           print(hex(struct.unpack("I", data[i*4:i*4+4])[0]>>6))
         # check ublox_msg.cc for proper parsing
         '''
+
+        #print(f"GPS TLM: {hex(struct.unpack('I', ephem_raw[:4])[0]>>6)}")
+
         i = 1
         tow_counter = ((struct.unpack("I", ephem_raw[i*4:i*4+4])[0]>>6) >> 7) & 0x1FFFF
         subframe_id = ((struct.unpack("I", ephem_raw[i*4:i*4+4])[0]>>6) >> 2) & 0x7
 
         results[RAW_EPHEM_TYPE].append([sv_id, gnss_id, chn, version, tow_counter, subframe_id, ephem_raw])
       elif gnss_id == GNSS_GLONASS:
-        print(f"Glonass ephemeris: {[sv_id, gnss_id, chn, version, ephem_raw]}")
+        if sv_id == 255:
+          # data can be decoded before identifying the SV number, in this case 255
+          # is returned, which means "unknown"  (ublox p32)
+          continue
 
+        words = struct.unpack("IIII", ephem_raw)
+        string_number = (words[0]>>27)&0xF
+        data80_54 = (words[0])&0x3ffffff
+        data53_22 = (words[1])
+        data21_9 = (words[2]>>19)
+        superframe_number = (words[3]>>16)
+        frame_number = (words[3]&0xFF)
+
+        print(f"Glonass ephemeris: {[sv_id, gnss_id, chn, version, num_words, ephem_raw]}")
+        print(f"  {[string_number, data80_54, data53_22, data21_9, superframe_number, frame_number]}")
 
     if em[:2] == UBX_NAV_ORB:
       orb_db = {}
@@ -131,12 +147,15 @@ def check_raw_ephemeris(raw_data):
 
     if em[:2] == UBX_NAV_PVT:
       #print(f"NAV-PVT message: {em[4:]}")
-      data = em[4:]
-      flags = data[21]
-      num_sv = data[23]
-      #print(f"has_fix: {flags&1} num_sv: {num_sv}")
-      if (flags&1) == 1:
-        results[RAW_NAV_PVT_TYPE] = num_sv
+      try:
+        data = em[4:]
+        flags = data[21]
+        num_sv = data[23]
+        #print(f"has_fix: {flags&1} num_sv: {num_sv}")
+        if (flags&1) == 1:
+          results[RAW_NAV_PVT_TYPE] = num_sv
+      except:
+        print(f"NAV-PVT crashed: {em}")
 
   return results
 
@@ -154,8 +173,8 @@ def drain_raw_sock(ublox_raw, raw_ephem, orb_dbs):
       for r in results[RAW_NAV_ORB_TYPE]:
         orb_dbs.append(r)
 
-    if results[RAW_NAV_PVT_TYPE] > 0:
-      return results[RAW_NAV_PVT_TYPE] # num_sv
+    #if results[RAW_NAV_PVT_TYPE] > 0:
+    #  return results[RAW_NAV_PVT_TYPE] # num_sv
 
   return 0
 
