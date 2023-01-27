@@ -1,7 +1,6 @@
 #include "tools/cabana/messageswidget.h"
 
 #include <QFontDatabase>
-#include <QHeaderView>
 #include <QLineEdit>
 #include <QVBoxLayout>
 #include <QPainter>

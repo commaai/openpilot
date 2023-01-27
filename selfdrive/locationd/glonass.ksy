@@ -116,7 +116,7 @@ types:
         type: b22
       - id: l_n
         type: b1
-  string_non_immediate:_
+  string_non_immediate:
     seq:
       - id: data_1
         type: b64

@@ -12,6 +12,7 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   initApp(argc, argv);
   QApplication app(argc, argv);
+  app.setApplicationDisplayName("Cabana");
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();

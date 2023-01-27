@@ -112,7 +112,7 @@ public:
 
     private:
         uint64_t m_n_a;
-        uint64_t m_tau_e;
+        uint64_t m_taue;
         bool m_not_used_1;
         uint64_t m_n_4;
         uint64_t m_tau_gps;
@@ -122,7 +122,7 @@ public:
 
     public:
         uint64_t n_a() const { return m_n_a; }
-        uint64_t tau_e() const { return m_tau_e; }
+        uint64_t taue() const { return m_taue; }
         bool not_used_1() const { return m_not_used_1; }
         uint64_t n_4() const { return m_n_4; }
         uint64_t tau_gps() const { return m_tau_gps; }

@@ -19,7 +19,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QWidget *main_widget = new QWidget(this);
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
 
   // tabbar
   tabbar = new QTabBar(this);
@@ -28,10 +27,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
   main_layout->addWidget(tabbar);
-
-  QFrame *title_frame = new QFrame(this);
-  QVBoxLayout *frame_layout = new QVBoxLayout(title_frame);
-  title_frame->setFrameShape(QFrame::StyledPanel);
 
   // message title
   toolbar = new QToolBar(this);
@@ -48,21 +43,15 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   toolbar->addAction(bootstrapPixmap("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
   remove_msg_act = toolbar->addAction(bootstrapPixmap("x-lg"), "", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
-  toolbar->setVisible(false);
-  frame_layout->addWidget(toolbar);
+  main_layout->addWidget(toolbar);
 
   // warning
   warning_widget = new QWidget(this);
   QHBoxLayout *warning_hlayout = new QHBoxLayout(warning_widget);
-  warning_hlayout->setContentsMargins(0, 0, 0, 0);
-  QLabel *warning_icon = new QLabel(this);
-  warning_icon->setPixmap(style()->standardPixmap(QStyle::SP_MessageBoxWarning).scaledToWidth(24, Qt::SmoothTransformation));
-  warning_hlayout->addWidget(warning_icon, 0, Qt::AlignTop);
-  warning_label = new QLabel(this);
-  warning_hlayout->addWidget(warning_label, 1, Qt::AlignLeft);
+  warning_hlayout->addWidget(warning_icon = new QLabel(this), 0, Qt::AlignTop);
+  warning_hlayout->addWidget(warning_label = new QLabel(this), 1, Qt::AlignLeft);
   warning_widget->hide();
-  frame_layout->addWidget(warning_widget);
-  main_layout->addWidget(title_frame);
+  main_layout->addWidget(warning_widget);
 
   // msg widget
   QWidget *msg_widget = new QWidget(this);
@@ -85,9 +74,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
-  tab_widget->addTab(scroll, "&Msg");
+  tab_widget->addTab(scroll, bootstrapPixmap("file-earmark-ruled"), "&Msg");
   history_log = new LogsWidget(this);
-  tab_widget->addTab(history_log, "&Logs");
+  tab_widget->addTab(history_log, bootstrapPixmap("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
   stacked_layout = new QStackedLayout(this);
@@ -174,8 +163,14 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
       form->setChartOpened(charts->hasSignal(msg_id, sig));
       ++i;
     }
-    if (msg->size != can->lastMessage(msg_id).dat.size())
+    if (msg->size != can->lastMessage(msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
+    }
+    for (auto s : binary_view->getOverlappingSignals()) {
+      warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
+    }
+  } else {
+    warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
   for (/**/; i < signal_list.size(); ++i)
     signal_list[i]->hide();
@@ -184,10 +179,10 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
-  for (auto s : binary_view->getOverlappingSignals())
-    warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
-
-  warning_label->setText(warnings.join('\n'));
+  if (!warnings.isEmpty()) {
+    warning_label->setText(warnings.join('\n'));
+    warning_icon->setPixmap(bootstrapPixmap(msg ? "exclamation-triangle" : "info-circle"));
+  }
   warning_widget->setVisible(!warnings.isEmpty());
   setUpdatesEnabled(true);
 }
