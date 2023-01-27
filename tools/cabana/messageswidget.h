@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QHeaderView>
 #include <QTableView>
 #include <QStyledItemDelegate>
 
@@ -33,6 +34,8 @@ class MessagesWidget : public QWidget {
 public:
   MessagesWidget(QWidget *parent);
   void selectMessage(const QString &message_id);
+  QByteArray saveHeaderState() const { return table_widget->horizontalHeader()->saveState(); }
+  bool restoreHeaderState(const QByteArray &state) const { return table_widget->horizontalHeader()->restoreState(state); }
 
 signals:
   void msgSelectionChanged(const QString &message_id);

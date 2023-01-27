@@ -47,7 +47,7 @@ private:
   void updateState(const QHash<QString, CanData> * msgs = nullptr);
 
   QString msg_id;
-  QLabel *name_label, *time_label, *warning_label;
+  QLabel *name_label, *time_label, *warning_icon, *warning_label;
   QWidget *warning_widget;
   QVBoxLayout *signals_layout;
   QTabBar *tabbar;
