@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
   initApp(argc, argv);
   QApplication app(argc, argv);
   app.setApplicationDisplayName("Cabana");
+  app.setWindowIcon(QIcon("./images/cabana-logo-bigger.png"));
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
