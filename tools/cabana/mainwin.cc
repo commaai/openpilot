@@ -68,6 +68,7 @@ void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
   file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
+  file_menu->addAction(tr("Load DBC From commaai/opendbc"), this, &MainWindow::loadDBCFromClipboard);
   file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
   open_recent_menu = file_menu->addMenu(tr("Open &Recent"));
   for (int i = 0; i < MAX_RECENT_FILES; ++i) {
