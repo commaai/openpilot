@@ -1213,7 +1213,7 @@ FW_VERSIONS = {
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',
--      b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
+      b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.01 95740-G5010 170424',
