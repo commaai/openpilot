@@ -293,7 +293,7 @@ void Replay::startStream(const Segment *cur_segment) {
 
   // get route start time from initData
   auto it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
-  route_start_ts_ = it != events.end() ? (*it)->mono_time : events[0]->mono_time;
+  route_start_ts_ = it != events.end() ? (*it)->mono_time : route_->datetime().toMSecsSinceEpoch() * 1e6;
   cur_mono_time_ += route_start_ts_;
 
   // write CarParams
