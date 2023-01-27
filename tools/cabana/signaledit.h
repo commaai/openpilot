@@ -26,6 +26,7 @@ public:
     QString title;
     bool highlight = false;
     bool extra_expanded = false;
+    QString sig_val = "-";
   };
 
   SignalModel(QObject *parent);
@@ -53,6 +54,7 @@ private:
   void handleSignalRemoved(const Signal *sig);
   void handleMsgChanged(uint32_t address);
   void refresh();
+  void updateState(const QHash<QString, CanData> *msgs);
 
   QString msg_id;
   QString filter_str;

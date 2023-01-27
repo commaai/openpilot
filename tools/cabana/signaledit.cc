@@ -21,6 +21,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
   QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalModel::handleSignalAdded);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalModel::handleSignalUpdated);
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalModel::updateState);
 }
 
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig) {
@@ -54,6 +55,19 @@ void SignalModel::refresh() {
     }
   }
   endResetModel();
+}
+
+void SignalModel::updateState(const QHash<QString, CanData> *msgs) {
+  if (msgs && msgs->contains(msg_id)) {
+    auto &dat = (*msgs)[msg_id].dat;
+    int row = 0;
+    for (auto item : root->children) {
+      double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig);
+      item->sig_val = QString::number(value);
+      emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
+      ++row;
+    }
+  }
 }
 
 int SignalModel::rowCount(const QModelIndex &parent) const {
@@ -105,6 +119,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
         return item->type == Item::Sig ? QString::fromStdString(item->sig->name) : item->title;
       } else {
         switch (item->type) {
+          case Item::Sig: return item->sig_val;
           case Item::Name: return QString::fromStdString(item->sig->name);
           case Item::Size: return item->sig->size;
           case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
