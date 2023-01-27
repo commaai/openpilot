@@ -9,8 +9,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <unordered_map>
-#include <iostream>
-#include <sstream>
 
 #include "common/swaglog.h"
 
