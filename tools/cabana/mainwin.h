@@ -14,8 +14,6 @@
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
 
-const QString CABANA_ASSET_PATH = ":/";
-
 class MainWindow : public QMainWindow {
   Q_OBJECT
 

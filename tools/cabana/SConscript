@@ -18,18 +18,11 @@ qt_libs = ['qt_util'] + base_libs
 cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 cabana_env = qt_env.Clone()
 
-# build images
-cabana_assets = "#tools/cabana/images/images.cc"
-cabana_assets_src = "#tools/cabana/images/images.qrc"
-qt_env.Command(cabana_assets, cabana_assets_src, f"rcc $SOURCES -o $TARGET")
-qt_env.Depends(cabana_assets, Glob('#tools/cabana/images/*', exclude=[cabana_assets, cabana_assets_src, "#tools/cabana/images/images.o"]))
-cabana_assets_obj = qt_env.Object("cabana_assets", cabana_assets)
-
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
                                                'commands.cc', 'messageswidget.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, asset_obj, cabana_assets_obj], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, asset_obj], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('test'):
   cabana_env.Program('tests/_test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
