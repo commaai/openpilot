@@ -102,6 +102,8 @@ class UbloxMsgParser {
     inline bool valid();
     inline bool valid_so_far();
 
+    kj::Array<capnp::word> parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *msg);
+
     std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
     std::unordered_map<int, uint64_t> gps_sat_tow_count;
 
