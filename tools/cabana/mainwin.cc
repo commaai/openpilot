@@ -238,7 +238,11 @@ void MainWindow::loadDBCFromClipboard() {
   remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
   dbc()->open("from_clipboard.dbc", dbc_str);
-  QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
+  if (dbc()->messages().size() > 0) {
+    QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
+  } else {
+    QMessageBox::warning(this, tr("Load From Clipboard"), tr("Failed to parse dbc from clipboard!\nMake sure that you paste the text with correct format."));
+  }
 }
 
 void MainWindow::loadDBCFromFingerprint() {
