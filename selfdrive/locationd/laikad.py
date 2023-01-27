@@ -17,7 +17,7 @@ from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
-from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse_qcom_ephem
+from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_gps_ephem, convert_ublox_glonass_ephem, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
@@ -136,10 +136,11 @@ class Laikad:
     return week, tow, new_meas
 
   def is_ephemeris(self, gnss_msg):
+    mwhich = gnss_msg.which()
     if self.use_qcom:
-      return gnss_msg.which() == 'drSvPoly'
+      return mwhich == 'drSvPoly'
     else:
-      return gnss_msg.which() == 'ephemeris'
+      return mwhich == 'ephemeris' or mwhich == 'glonassEphemeris'
 
   def read_ephemeris(self, gnss_msg):
     # TODO this only works on GLONASS
@@ -149,7 +150,10 @@ class Laikad:
         return
       ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
     else:
-      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
+      if gnss_msg.which() == 'ephemeris':
+        ephem = convert_ublox_gps_ephem(gnss_msg.ephemeris)
+      else:
+        ephem = convert_ublox_glonass_ephem(gnss_msg.glonassEphemeris)
     self.astro_dog.add_navs({ephem.prn: [ephem]})
     self.cache_ephemeris(t=ephem.epoch)
 
