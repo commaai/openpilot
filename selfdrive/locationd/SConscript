@@ -10,7 +10,8 @@ if GetOption('kaitai'):
   env.Command(['generated/glonass.cpp', 'generated/glonass.h'], 'glonass.ksy', cmd)
 
   # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
-  env.Execute('git apply glonass_fix.patch')
+  kaitai_patch = env.Command(None, 'glonass_fix.patch', 'git apply $SOURCES')
+  env.Depends(kaitai_patch, 'generated/glonass.cpp')
 
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
 
