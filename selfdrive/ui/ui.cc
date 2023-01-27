@@ -110,14 +110,16 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
   max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+}
 
-  // update driver
-  const auto driver_orient = (*s->sm)["driverStateV2"].getDriverStateV2().getLeftDriverData().getFaceOrientation();
+void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state) {
+  UIScene &scene = s->scene;
+  const auto driver_orient = driverstate.getLeftDriverData().getFaceOrientation();
   for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
     float v_this = driver_orient[i];
     scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
-    scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]);
-    scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]);
+    scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
+    scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
   }
 
   const mat3 r_xyz = (mat3){{
@@ -139,7 +141,7 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     vec3 kpt_this = default_face_kpts_3d[kpi];
     kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = QPointF(kpt_this.v[0], kpt_this.v[1]);
-    scene.face_kpts_draw_d[kpi] = kpt_this.v[2];
+    scene.face_kpts_draw_d[kpi] = kpt_this.v[2] * (1.0-dm_fade_state) + 80 * dm_fade_state;
   }
 }
 
