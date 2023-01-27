@@ -410,7 +410,8 @@ void SignalView::rowsChanged() {
 void SignalView::rowClicked(const QModelIndex &index) {
   auto item = model->getItem(index);
   if (item->type == SignalModel::Item::Sig) {
-    tree->setExpanded(index, !tree->isExpanded(index));
+    auto sig_index = model->index(index.row(), 0, index.parent());
+    tree->setExpanded(sig_index, !tree->isExpanded(sig_index));
   } else if (item->type == SignalModel::Item::ExtraInfo) {
     model->showExtraInfo(index);
   }

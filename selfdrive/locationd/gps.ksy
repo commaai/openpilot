@@ -19,7 +19,7 @@ seq:
 types:
   tlm:
    seq:
-     - id: magic
+     - id: preamble
        contents: [0x8b]
      - id: tlm
        type: b14
