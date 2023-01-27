@@ -22,45 +22,35 @@ void order_nodes(const int N, const int * const merge, const t_index * const nod
 
      Runtime: Θ(N)
   */
-  auto_array_ptr<pos_node> queue(N/2);
+  std::stack<std::pair<int, int>> queue;
+  queue.push({N-2, 0});
 
   int parent;
   int child;
-  t_index pos = 0;
+  t_index pos;
 
-  queue[0].pos = 0;
-  queue[0].node = N-2;
-  t_index idx = 1;
+  while (!queue.empty()) {
+      std::tie(parent, pos) = queue.top();
+      queue.pop();
 
-  do {
-    --idx;
-    pos = queue[idx].pos;
-    parent = queue[idx].node;
+      // First child
+      child = merge[parent];
+      if (child < 0) {
+          order[pos] = -child;
+          ++pos;
+      } else {
+          queue.push({child-1, pos});
+          pos += node_size[child-1];
+      }
 
-    // First child
-    child = merge[parent];
-    if (child<0) { // singleton node, write this into the 'order' array.
-      order[pos] = -child;
-      ++pos;
+      // Second child
+      child = merge[parent+N-1];
+      if (child < 0) {
+          order[pos] = -child;
+      } else {
+          queue.push({child-1, pos});
+      }
     }
-    else { /* compound node: put it on top of the queue and decompose it
-              in a later iteration. */
-      queue[idx].pos = pos;
-      queue[idx].node = child-1; // convert index-1 based to index-0 based
-      ++idx;
-      pos += node_size[child-1];
-    }
-    // Second child
-    child = merge[parent+N-1];
-    if (child<0) {
-      order[pos] = -child;
-    }
-    else {
-      queue[idx].pos = pos;
-      queue[idx].node = child-1;
-      ++idx;
-    }
-  } while (idx>0);
 }
 
 #define size_(r_) ( ((r_<N) ? 1 : node_size[r_-N]) )
