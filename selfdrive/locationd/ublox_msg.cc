@@ -399,7 +399,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setDeltaTauN(data->delta_tau_n() * pow(2, -30));
     eph.setAge(data->e_n());
     eph.setP4(data->p4());
-    eph.setSvURA(glonass_URA_lookup[data->f_t()]);
+    eph.setSvURA(glonass_URA_lookup.at(data->f_t()));
     assert(msg->sv_id() == data->n()); // slot number is the same as sv_id
     eph.setSvType(data->m());
   }
