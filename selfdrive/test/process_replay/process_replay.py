@@ -554,7 +554,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].start()
 
   try:
-    with Timeout(TIMEOUT):
+    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
       while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
