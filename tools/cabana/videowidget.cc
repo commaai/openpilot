@@ -21,7 +21,6 @@ inline QString formatTime(int seconds) {
 
 VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
   QFrame *frame = new QFrame(this);
   frame->setFrameShape(QFrame::StyledPanel);
   frame->setFrameShadow(QFrame::Sunken);
