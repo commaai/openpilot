@@ -44,7 +44,10 @@ class CarController:
     ### lateral control ###
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
-      if CC.latActive:
+      lat_active = CC.latActive and not CS.out.steeringPressed
+      # if CC.latActive and CS.out.steeringPressed:
+      #   lat_active = self.frame % 50 == 0
+      if lat_active:
         # apply limits to curvature and clip to signal range
         apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
         apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
@@ -53,7 +56,7 @@ class CarController:
 
       self.apply_curvature_last = apply_curvature
       can_sends.append(create_lka_msg(self.packer))
-      can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, 0., 0., -apply_curvature, 0.))
+      can_sends.append(create_lat_ctl_msg(self.packer, lat_active, 0., 0., -apply_curvature, 0.))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
