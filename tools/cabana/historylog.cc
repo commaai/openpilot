@@ -170,11 +170,16 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
 // HeaderView
 
 QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
-  int default_size = qMax(100, rect().width() / model()->columnCount());
-  const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
-  const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
-  QSize size = rect.size() + QSize{10, 6};
-  return {qMax(size.width(), default_size), size.height()};
+  static QSize time_col_size = fontMetrics().boundingRect({0, 0, 200, 200}, defaultAlignment(), "000000.000").size() + QSize(10, 6);
+  if (logicalIndex == 0) {
+    return time_col_size;
+  } else {
+    int default_size = qMax(100, (rect().width() - time_col_size.width()) / (model()->columnCount() - 1));
+    const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
+    QSize size = rect.size() + QSize{10, 6};
+    return QSize{qMax(size.width(), default_size), size.height()};
+  }
 }
 
 void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const {

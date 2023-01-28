@@ -1,4 +1,3 @@
-import math
 from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
@@ -46,10 +45,8 @@ class CarController:
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
-        # apply limits to curvature
-        apply_curvature = -self.VM.calc_curvature(math.radians(actuators.steeringAngleDeg), CS.out.vEgo, 0.0)
-        apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
-        # clip to signal range
+        # apply limits to curvature and clip to signal range
+        apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
         apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
