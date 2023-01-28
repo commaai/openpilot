@@ -321,12 +321,8 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
 
 SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
   // title bar
-  QFrame *title_bar = new QFrame(this);
-  QPalette p(palette());
-  p.setColor(QPalette::Base, Qt::lightGray);
-  title_bar->setPalette(p);
+  QWidget *title_bar = new QWidget(this);
   title_bar->setAutoFillBackground(true);
-
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
