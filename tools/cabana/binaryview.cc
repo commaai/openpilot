@@ -33,7 +33,6 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setShowGrid(false);
   setMouseTracking(true);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
@@ -131,13 +130,13 @@ void BinaryView::leaveEvent(QEvent *event) {
 
 void BinaryView::setMessage(const QString &message_id) {
   model->msg_id = message_id;
+  verticalScrollBar()->setValue(0);
   refresh();
 }
 
 void BinaryView::refresh() {
   if (model->msg_id.isEmpty()) return;
 
-  verticalScrollBar()->setValue(0);
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;

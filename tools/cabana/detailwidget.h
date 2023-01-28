@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QSplitter>
 #include <QStackedLayout>
 #include <QTabWidget>
 #include <QToolBar>
@@ -47,5 +48,6 @@ private:
   BinaryView *binary_view;
   SignalView *signal_view;
   ChartsWidget *charts;
+  QSplitter *splitter;
   QStackedLayout *stacked_layout;
 };

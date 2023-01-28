@@ -4,7 +4,6 @@
 #include <QFormLayout>
 #include <QMenu>
 #include <QMessageBox>
-#include <QSplitter>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/util.h"
@@ -53,9 +52,12 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(warning_widget);
 
   // msg widget
-  QSplitter *splitter = new QSplitter(Qt::Vertical, this);
+  splitter = new QSplitter(Qt::Vertical, this);
   splitter->addWidget(binary_view = new BinaryView(this));
   splitter->addWidget(signal_view = new SignalView(charts, this));
+  binary_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  signal_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+  splitter->setStretchFactor(0, 0);
   splitter->setStretchFactor(1, 1);
 
   tab_widget = new QTabWidget(this);
@@ -120,6 +122,7 @@ void DetailWidget::setMessage(const QString &message_id) {
   stacked_layout->setCurrentIndex(1);
   tabbar->setCurrentIndex(index);
   refresh();
+  splitter->setSizes({1, 2});
 
   setUpdatesEnabled(true);
 }

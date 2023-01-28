@@ -350,7 +350,6 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->setMouseTracking(true);
   tree->setExpandsOnDoubleClick(false);
   tree->header()->setSectionResizeMode(QHeaderView::Stretch);
-  tree->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
   tree->setMinimumHeight(300);
   tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
 
