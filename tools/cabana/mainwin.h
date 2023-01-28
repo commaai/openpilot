@@ -20,6 +20,7 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
+  void loadFile(const QString &fn);
 
 public slots:
   void newFile();
@@ -40,7 +41,6 @@ signals:
 protected:
   void remindSaveChanges();
   void saveFile(const QString &fn);
-  void loadFile(const QString &fn);
   void setCurrentFile(const QString &fn);
   void updateRecentFileActions();
   void createActions();
