@@ -13,10 +13,11 @@ if GetOption('kaitai'):
   patch = env.Command(None, 'glonass_fix.patch', 'git apply $SOURCES')
   env.Depends(patch, glonass)
 
+glonass_obj = env.Object('generated/glonass.cpp')
 if GetOption('test'):
-  env.Program("test/test_runner", ['test/test_runner.cc', "generated/glonass.cpp", 'test/test_glonass_kaitai.cc'], LIBS=[loc_libs])
+  env.Program("test/test_runner", ['test/test_runner.cc', 'test/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])
 
-env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp",  "generated/glonass.cpp"], LIBS=loc_libs)
+env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp",  glonass_obj], LIBS=loc_libs)
 
 ekf_sym_cc = env.SharedObject("#rednose/helpers/ekf_sym.cc")
 locationd_sources = ["locationd.cc", "models/live_kf.cc", ekf_sym_cc]

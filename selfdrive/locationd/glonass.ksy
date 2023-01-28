@@ -160,7 +160,7 @@ types:
         type: b11
       - id: tau_e
         type: b32
-      - id: not_used_1
+      - id: not_used
         type: b1
       - id: n_4
         type: b5
