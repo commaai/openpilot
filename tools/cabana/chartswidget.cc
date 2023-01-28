@@ -578,8 +578,9 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     if (dropAction == Qt::MoveAction) {
       return;
     }
+  } else {
+    QChartView::mousePressEvent(event);
   }
-  QChartView::mousePressEvent(event);
 }
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event) {
