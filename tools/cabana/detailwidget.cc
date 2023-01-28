@@ -288,7 +288,7 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   form_layout->addRow("ID", new QLabel(msg_id));
 
   name_edit = new QLineEdit(title, this);
-  name_edit->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name_edit));
+  name_edit->setValidator(new NameValidator(name_edit));
   form_layout->addRow(tr("Name"), name_edit);
 
   size_spin = new QSpinBox(this);
