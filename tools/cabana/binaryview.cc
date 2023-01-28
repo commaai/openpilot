@@ -39,7 +39,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
 }
 
 QSize BinaryView::minimumSizeHint() const {
-  return {horizontalHeader()->minimumSectionSize() * 9 + VERTICAL_HEADER_WIDTH + 2,
+  return {(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH,
           CELL_HEIGHT * std::min(model->rowCount(), 10)};
 }
 

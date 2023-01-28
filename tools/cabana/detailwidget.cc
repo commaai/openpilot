@@ -55,7 +55,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   splitter = new QSplitter(Qt::Vertical, this);
   splitter->addWidget(binary_view = new BinaryView(this));
   splitter->addWidget(signal_view = new SignalView(charts, this));
-  binary_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  binary_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
   signal_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
   splitter->setStretchFactor(0, 0);
   splitter->setStretchFactor(1, 1);
