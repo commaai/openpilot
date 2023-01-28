@@ -12,6 +12,8 @@
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   auto double_validator = new QDoubleValidator(this);
+  double_validator->setLocale(QLocale::C); // Match locale of QString::toDouble() instead of system
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QFormLayout *form_layout = new QFormLayout();
   main_layout->addLayout(form_layout);
