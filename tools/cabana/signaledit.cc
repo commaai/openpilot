@@ -351,6 +351,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
   main_layout->addWidget(title_bar);
   main_layout->addWidget(tree);
 
