@@ -17,7 +17,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     }
     return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::UserRole && index.column() == 1 && !show_signals) {
-    return HexColors::toVariantList(m.colors);
+    return ChangeTracker::toVariantList(m.colors);
   }
   return {};
 }
@@ -142,7 +142,8 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events->rend(), min_time);
     if (update_colors && min_time > 0) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        it->colors = hex_colors.colors;
       }
     }
     return msgs;
@@ -152,7 +153,8 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events->end(), 0);
     if (update_colors) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        it->colors = hex_colors.colors;
       }
     }
     return msgs;
