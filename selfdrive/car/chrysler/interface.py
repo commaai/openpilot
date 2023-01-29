@@ -58,9 +58,9 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.minSteerSpeed = 14.5
-      for fw in car_fw:
-        if fw.ecu == 'eps' and fw.fwVersion.startswith((b"68312176", b"68273275")):
-          ret.minSteerSpeed = 0.
+      # Older EPS FW allow steer to zero
+      if any(fw.ecu == 'eps' and fw.fwVersion[:4] <= b"6831" for fw in car_fw):
+        ret.minSteerSpeed = 0.
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2

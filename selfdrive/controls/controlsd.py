@@ -99,7 +99,8 @@ class Controls:
       get_one_can(self.can_sock)
 
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
-      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], num_pandas)
+      experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled") and not is_release_branch()
+      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
 
@@ -132,9 +133,6 @@ class Controls:
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
-    if is_release_branch():
-      self.CP.experimentalLongitudinalAvailable = False
-
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
     self.params.put("CarParams", cp_bytes)
@@ -142,7 +140,7 @@ class Controls:
     put_nonblocking("CarParamsPersistent", cp_bytes)
 
     # cleanup old params
-    if not self.CP.experimentalLongitudinalAvailable:
+    if not self.CP.experimentalLongitudinalAvailable or is_release_branch():
       self.params.remove("ExperimentalLongitudinalEnabled")
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
@@ -608,6 +606,7 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])
+      actuators.curvature = self.desired_curvature
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0:
@@ -757,7 +756,6 @@ class Controls:
       controlsState.alertType = current_alert.alert_type
       controlsState.alertSound = current_alert.audible_alert
 
-    controlsState.canMonoTimes = list(CS.canMonoTimes)
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
