@@ -592,7 +592,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     double max = std::floor(chart()->mapToValue(rect.bottomRight()).x() * 10.0) / 10.0;
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
-      can->seekTo(min);
+      can->seekTo(chart()->mapToValue(rect.topLeft()).x());
     } else if ((max - min) >= 0.5) {
       // zoom in if selected range is greater than 0.5s
       emit zoomIn(min, max);
