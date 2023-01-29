@@ -165,9 +165,9 @@ void ChartsWidget::setMaxChartRange(int value) {
 }
 
 void ChartsWidget::updateToolBar() {
-  if (docking) setColumnCount(0);
-  columns_lb_action->setVisible(!docking);
-  columns_cb_action->setVisible(!docking);
+  bool show_column_cb = rect().width() > CHART_MIN_WIDTH * 2;
+  columns_lb_action->setVisible(show_column_cb);
+  columns_cb_action->setVisible(show_column_cb);
 
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   title_label->setText(tr("Charts: %1").arg(charts.size()));
@@ -223,12 +223,6 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
 
 void ChartsWidget::setColumnCount(int n) {
   n = std::clamp(n + 1, 1, columns_cb->count());
-
-  // Update combobox if not called from combobox signal
-  if (columns_cb->currentIndex() != n - 1) {
-    columns_cb->setCurrentIndex(n - 1);
-  }
-
   if (column_count != n) {
     column_count = settings.chart_column_count = n;
     updateLayout();
@@ -238,7 +232,7 @@ void ChartsWidget::setColumnCount(int n) {
 void ChartsWidget::updateLayout() {
   int n = column_count;
   for (; n > 1; --n) {
-    if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
+    if ((n * CHART_MIN_WIDTH) < rect().width()) break;
   }
   for (int i = 0; i < charts.size(); ++i) {
     charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
@@ -248,6 +242,7 @@ void ChartsWidget::updateLayout() {
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();
+  updateToolBar();
 }
 
 void ChartsWidget::newChart() {
