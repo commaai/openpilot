@@ -1497,9 +1497,6 @@ FW_VERSIONS = {
       b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
       b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106'
     ],
-    (Ecu.cornerRadar, 0x7b7, None): [
-      b'\xf1\x00NE  BCW RR 1.00 , 1.01 (v\x12U!\x02W\x00 '
-    ],
   },
   CAR.TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
