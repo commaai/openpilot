@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QComboBox>
 #include <QDockWidget>
 #include <QJsonDocument>
 #include <QMainWindow>
@@ -26,7 +25,8 @@ public slots:
   void newFile();
   void openFile();
   void openRecentFile();
-  void loadDBCFromName(const QString &name);
+  void openOpendbcFile();
+  void loadDBCFromOpendbc(const QString &name);
   void loadDBCFromFingerprint();
   void loadDBCFromClipboard();
   void save();
@@ -45,7 +45,6 @@ protected:
   void updateRecentFileActions();
   void createActions();
   void createDockWindows();
-  QComboBox *createDBCSelector();
   void createStatusBar();
   void createShortcuts();
   void closeEvent(QCloseEvent *event) override;
@@ -63,7 +62,6 @@ protected:
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QJsonDocument fingerprint_to_dbc;
-  QComboBox *dbc_combo;
   QSplitter *video_splitter;;
   QString current_file = "";
   enum { MAX_RECENT_FILES = 15 };
