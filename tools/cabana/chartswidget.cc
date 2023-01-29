@@ -30,8 +30,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label->setContentsMargins(0, 0, 12, 0);
   columns_cb = new QComboBox(this);
   columns_cb->addItems({"1", "2", "3", "4"});
-  toolbar->addWidget(new QLabel(tr("Columns:")));
-  toolbar->addWidget(columns_cb);
+  columns_lb_action = toolbar->addWidget(new QLabel(tr("Columns:")));
+  columns_cb_action = toolbar->addWidget(columns_cb);
 
   QLabel *stretch_label = new QLabel(this);
   stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -46,8 +46,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setPageStep(60);  // 1 min
   toolbar->addWidget(range_slider);
 
-  toolbar->addWidget(zoom_range_lb = new QLabel());
-  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
+  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("zoom-out"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
@@ -166,8 +165,11 @@ void ChartsWidget::setMaxChartRange(int value) {
 }
 
 void ChartsWidget::updateToolBar() {
+  if (docking) setColumnCount(0);
+  columns_lb_action->setVisible(!docking);
+  columns_cb_action->setVisible(!docking);
+
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
-  zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
@@ -221,6 +223,12 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
 
 void ChartsWidget::setColumnCount(int n) {
   n = std::clamp(n + 1, 1, columns_cb->count());
+
+  // Update combobox if not called from combobox signal
+  if (columns_cb->currentIndex() != n - 1) {
+    columns_cb->setCurrentIndex(n - 1);
+  }
+
   if (column_count != n) {
     column_count = settings.chart_column_count = n;
     updateLayout();
