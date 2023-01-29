@@ -168,10 +168,6 @@ void ChartsWidget::setMaxChartRange(int value) {
 }
 
 void ChartsWidget::updateToolBar() {
-  bool show_column_cb = rect().width() > (CHART_MIN_WIDTH + charts_layout->spacing()) * 2;
-  columns_lb_action->setVisible(show_column_cb);
-  columns_cb_action->setVisible(show_column_cb);
-
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
@@ -235,8 +231,13 @@ void ChartsWidget::setColumnCount(int n) {
 void ChartsWidget::updateLayout() {
   int n = column_count;
   for (; n > 1; --n) {
-    if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->spacing()) < charts_layout->geometry().width()) break;
   }
+
+  bool show_column_cb = n > 1;
+  columns_lb_action->setVisible(show_column_cb);
+  columns_cb_action->setVisible(show_column_cb);
+
   for (int i = 0; i < charts.size(); ++i) {
     charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
   }
