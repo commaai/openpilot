@@ -521,8 +521,8 @@ void ChartView::updateAxisY() {
 
   if (min_y == std::numeric_limits<double>::max()) min_y = 0;
   if (max_y == std::numeric_limits<double>::lowest()) max_y = 0;
-  if (max_y == min_y) {
-    axis_y->setRange(min_y - 1, max_y + 1);
+  if (std::abs(max_y - min_y) < 1e-3) {
+    applyNiceNumbers(min_y - 1, max_y + 1);
   } else {
     double range = max_y - min_y;
     applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
@@ -539,6 +539,7 @@ void ChartView::applyNiceNumbers(qreal min, qreal max) {
   tick_count = int(max - min) + 1;
   axis_y->setRange(min * step, max * step);
   axis_y->setTickCount(tick_count);
+  axis_y->setLabelFormat("%.1f");
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
