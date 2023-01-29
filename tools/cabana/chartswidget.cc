@@ -54,10 +54,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(toolbar);
 
   // charts
+  charts_layout = new QGridLayout();
+  charts_layout->setSpacing(10);
+
   QWidget *charts_container = new QWidget(this);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
   charts_main_layout->setContentsMargins(0, 0, 0, 0);
-  charts_main_layout->addLayout(charts_layout = new QGridLayout);
+  charts_main_layout->addLayout(charts_layout);
   charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
@@ -165,7 +168,7 @@ void ChartsWidget::setMaxChartRange(int value) {
 }
 
 void ChartsWidget::updateToolBar() {
-  bool show_column_cb = rect().width() > CHART_MIN_WIDTH * 2;
+  bool show_column_cb = rect().width() > (CHART_MIN_WIDTH + charts_layout->spacing()) * 2;
   columns_lb_action->setVisible(show_column_cb);
   columns_cb_action->setVisible(show_column_cb);
 
@@ -232,7 +235,7 @@ void ChartsWidget::setColumnCount(int n) {
 void ChartsWidget::updateLayout() {
   int n = column_count;
   for (; n > 1; --n) {
-    if ((n * CHART_MIN_WIDTH) < rect().width()) break;
+    if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
   }
   for (int i = 0; i < charts.size(); ++i) {
     charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
