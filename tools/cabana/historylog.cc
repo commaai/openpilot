@@ -195,8 +195,13 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
 
 LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
 
-  QHBoxLayout *h = new QHBoxLayout();
+  QWidget *toolbar = new QWidget(this);
+  toolbar->setAutoFillBackground(true);
+  QHBoxLayout *h = new QHBoxLayout(toolbar);
+
   filters_widget = new QWidget(this);
   QHBoxLayout *filter_layout = new QHBoxLayout(filters_widget);
   filter_layout->setContentsMargins(0, 0, 0, 0);
@@ -215,7 +220,11 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   dynamic_mode->setChecked(true);
   dynamic_mode->setEnabled(!can->liveStreaming());
 
-  main_layout->addLayout(h);
+  main_layout->addWidget(toolbar);
+  QFrame *line = new QFrame(this);
+  line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
+  main_layout->addWidget(line);;
+
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
@@ -223,6 +232,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   logs->verticalHeader()->setVisible(false);
+  logs->setFrameShape(QFrame::NoFrame);
 
   QObject::connect(display_type_cb, SIGNAL(activated(int)), model, SLOT(setDisplayType(int)));
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
