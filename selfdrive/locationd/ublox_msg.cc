@@ -351,7 +351,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setP1(data->p1());
     eph.setTk(data->t_k());
     eph.setXVel(data->x_vel() * pow(2, -20));
-    eph.setXAccel(data->x_speedup() * pow(2, -30));
+    eph.setXAccel(data->x_accel() * pow(2, -30));
     eph.setX(data->x() * pow(2, -11));
   }
 
@@ -365,7 +365,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setP2(data->p2());
     eph.setTb(data->t_b());
     eph.setYVel(data->y_vel() * pow(2, -20));
-    eph.setYAccel(data->y_speedup() * pow(2, -30));
+    eph.setYAccel(data->y_accel() * pow(2, -30));
     eph.setY(data->y() * pow(2, -11));
   }
 
@@ -379,7 +379,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setGammaN(data->gamma_n() * pow(2, -40));
     eph.setSvHealth(eph.getSvHealth() | data->l_n());
     eph.setZVel(data->z_vel() * pow(2, -20));
-    eph.setZAccel(data->z_speedup() * pow(2, -30));
+    eph.setZAccel(data->z_accel() * pow(2, -30));
     eph.setZ(data->z() * pow(2, -11));
   }
 
