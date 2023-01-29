@@ -246,7 +246,6 @@ void ChartsWidget::updateLayout() {
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();
-  updateToolBar();
 }
 
 void ChartsWidget::newChart() {
