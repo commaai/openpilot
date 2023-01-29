@@ -97,3 +97,10 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     i++;
   }
 }
+
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+
+QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  input.replace(' ', '_');
+  return QRegExpValidator::validate(input, pos);
+}

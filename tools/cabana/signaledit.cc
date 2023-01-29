@@ -19,7 +19,7 @@ SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(form_layout);
 
   name = new QLineEdit();
-  name->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name));
+  name->setValidator(new NameValidator(name));
   form_layout->addRow(tr("Name"), name);
 
   QHBoxLayout *hl = new QHBoxLayout(this);
