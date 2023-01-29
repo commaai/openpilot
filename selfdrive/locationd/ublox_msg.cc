@@ -429,8 +429,8 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
   switch (msg->gnss_id()) {
     case ubx_t::gnss_type_t::GNSS_TYPE_GPS:
       return parse_gps_ephemeris(msg);
-    //case ubx_t::gnss_type_t::GNSS_TYPE_GLONASS:
-    //  return parse_glonass_ephemeris(msg);
+    case ubx_t::gnss_type_t::GNSS_TYPE_GLONASS:
+      return parse_glonass_ephemeris(msg);
     default:
       return kj::Array<capnp::word>();
   }
