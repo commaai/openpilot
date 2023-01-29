@@ -116,7 +116,6 @@ private:
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
-  QLabel *zoom_range_lb;
   QLabel *range_lb;
   QSlider *range_slider;
   bool docking = true;
@@ -131,6 +130,8 @@ private:
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
+  QAction *columns_lb_action;
+  QAction *columns_cb_action;
   QComboBox *columns_cb;
   int column_count = 1;
   const int CHART_MIN_WIDTH = 300;
