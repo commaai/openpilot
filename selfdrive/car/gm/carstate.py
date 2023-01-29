@@ -20,6 +20,7 @@ class CarState(CarStateBase):
     self.loopback_lka_steering_cmd_updated = False
     self.camera_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
+    self.prev_brake_pressed = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -53,13 +54,16 @@ class CarState(CarStateBase):
 
     ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      ret.brakePressed = pt_cp.vl["ECMEngineStatus"]["BrakePressed"] != 0
+      brake_pressed = pt_cp.vl["ECMEngineStatus"]["BrakePressed"] != 0
     else:
       # Some Volt 2016-17 have loose brake pedal push rod retainers which causes the ECM to believe
       # that the brake is being intermittently pressed without user interaction.
       # To avoid a cruise fault we need to use a conservative brake position threshold
       # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
-      ret.brakePressed = ret.brake >= 8
+      brake_pressed = ret.brake >= 8
+
+    ret.brakePressed = brake_pressed or self.prev_brake_pressed
+    self.prev_brake_pressed = brake_pressed
 
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
