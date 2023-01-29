@@ -14,7 +14,9 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   try {
     handle = std::make_unique<PandaUsbHandle>(serial);
   } catch (std::exception &e) {
+#ifndef __APPLE__
     handle = std::make_unique<PandaSpiHandle>(serial);
+#endif
   }
 
   hw_type = get_hw_type();
@@ -46,11 +48,13 @@ std::string Panda::hw_serial() {
 std::vector<std::string> Panda::list() {
   std::vector<std::string> serials = PandaUsbHandle::list();
 
+#ifndef __APPLE__
   for (auto s : PandaSpiHandle::list()) {
     if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
       serials.push_back(s);
     }
   }
+#endif
 
   return serials;
 }
