@@ -475,7 +475,9 @@ void ChartView::updatePlot(double cur, double min, double max) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
 
-    int pixels_per_point = width() / (end - begin);
+    int num_points = std::max<int>(end - begin, 1);
+    int pixels_per_point = width() / num_points;
+
     s.series->setPointsVisible(pixels_per_point > 20);
   }
 
