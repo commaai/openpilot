@@ -52,6 +52,7 @@ protected:
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
   void findSimilarBits();
+  void undoStackCleanChanged(bool clean);
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;

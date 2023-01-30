@@ -4,6 +4,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "tools/cabana/commands.h"
+
 // HistoryLogModel
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
@@ -22,17 +24,16 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
 
 void HistoryLogModel::setMessage(const QString &message_id) {
   msg_id = message_id;
-  sigs.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id)) {
-    sigs = dbc_msg->getSignals();
-  }
-  filter_cmp = nullptr;
-  refresh();
 }
 
 void HistoryLogModel::refresh() {
   beginResetModel();
+  sigs.clear();
+  if (auto dbc_msg = dbc()->msg(msg_id)) {
+    sigs = dbc_msg->getSignals();
+  }
   last_fetch_time = 0;
+  has_more_data = true;
   messages.clear();
   hex_colors.clear();
   updateState();
@@ -74,7 +75,6 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
   filter_sig_idx = sig_idx;
   filter_value = value.toDouble();
   filter_cmp = value.isEmpty() ? nullptr : cmp;
-  refresh();
 }
 
 void HistoryLogModel::updateState() {
@@ -232,11 +232,21 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(value_edit, &QLineEdit::textChanged, this, &LogsWidget::setFilter);
   QObject::connect(can, &AbstractStream::seekedTo, model, &HistoryLogModel::refresh);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &LogsWidget::refresh);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &LogsWidget::refresh);
   QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
 }
 
 void LogsWidget::setMessage(const QString &message_id) {
   model->setMessage(message_id);
+  refresh();
+}
+
+void LogsWidget::refresh() {
+  if (model->msg_id.isEmpty()) return;
+
+  model->setFilter(0, "", nullptr);
+  model->refresh();
   bool has_signal = model->sigs.size();
   if (has_signal) {
     signals_cb->clear();
@@ -260,4 +270,5 @@ void LogsWidget::setFilter() {
     case 3: cmp = std::less<double>{}; break;
   }
   model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
+  model->refresh();
 }

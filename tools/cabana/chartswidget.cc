@@ -374,7 +374,7 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
 void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
   auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
   if (it != sigs.end()) {
-    it = removeSeries(it);
+    it = removeItem(it);
   }
 }
 
@@ -382,7 +382,7 @@ bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
   return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
-QList<ChartView::SigItem>::iterator ChartView::removeSeries(const QList<ChartView::SigItem>::iterator &it) {
+QList<ChartView::SigItem>::iterator ChartView::removeItem(const QList<ChartView::SigItem>::iterator &it) {
   chart()->removeSeries(it->series);
   it->series->deleteLater();
   QString msg_id = it->msg_id;
@@ -407,7 +407,7 @@ void ChartView::signalUpdated(const Signal *sig) {
 
 void ChartView::signalRemoved(const Signal *sig) {
   for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-    it = (it->sig == sig) ? removeSeries(it) : ++it;
+    it = (it->sig == sig) ? removeItem(it) : ++it;
   }
 }
 
@@ -418,7 +418,7 @@ void ChartView::msgUpdated(uint32_t address) {
 
 void ChartView::msgRemoved(uint32_t address) {
   for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-    it = (it->address == address) ? removeSeries(it) : ++it;
+    it = (it->address == address) ? removeItem(it) : ++it;
   }
 }
 
@@ -450,7 +450,7 @@ void ChartView::manageSeries() {
         bool exists = std::any_of(series_list.cbegin(), series_list.cend(), [&](auto &s) {
           return s[0] == it->msg_id && s[2] == it->sig->name.c_str();
         });
-        it = exists ? ++it : removeSeries(it);
+        it = exists ? ++it : removeItem(it);
       }
     }
   }
