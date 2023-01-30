@@ -30,8 +30,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   title_label->setContentsMargins(0, 0, 12, 0);
   columns_cb = new QComboBox(this);
   columns_cb->addItems({"1", "2", "3", "4"});
-  toolbar->addWidget(new QLabel(tr("Columns:")));
-  toolbar->addWidget(columns_cb);
+  columns_lb_action = toolbar->addWidget(new QLabel(tr("Columns:")));
+  columns_cb_action = toolbar->addWidget(columns_cb);
 
   QLabel *stretch_label = new QLabel(this);
   stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -46,8 +46,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setPageStep(60);  // 1 min
   toolbar->addWidget(range_slider);
 
-  toolbar->addWidget(zoom_range_lb = new QLabel());
-  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("arrow-counterclockwise"), "");
+  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("zoom-out"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
   remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
@@ -55,10 +54,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(toolbar);
 
   // charts
+  charts_layout = new QGridLayout();
+  charts_layout->setSpacing(10);
+
   QWidget *charts_container = new QWidget(this);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
   charts_main_layout->setContentsMargins(0, 0, 0, 0);
-  charts_main_layout->addLayout(charts_layout = new QGridLayout);
+  charts_main_layout->addLayout(charts_layout);
   charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
@@ -135,7 +137,7 @@ void ChartsWidget::updateState() {
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / max_chart_range;
-    if (pos > 0.8) {
+    if (pos < 0 || pos > 0.8) {
       const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
       display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
     }
@@ -167,7 +169,6 @@ void ChartsWidget::setMaxChartRange(int value) {
 
 void ChartsWidget::updateToolBar() {
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
-  zoom_range_lb->setText(is_zoomed ? tr("Zooming: %1 - %2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
@@ -230,8 +231,13 @@ void ChartsWidget::setColumnCount(int n) {
 void ChartsWidget::updateLayout() {
   int n = column_count;
   for (; n > 1; --n) {
-    if ((n * (CHART_MIN_WIDTH + charts_layout->spacing())) < rect().width()) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->spacing()) < charts_layout->geometry().width()) break;
   }
+
+  bool show_column_cb = n > 1;
+  columns_lb_action->setVisible(show_column_cb);
+  columns_cb_action->setVisible(show_column_cb);
+
   for (int i = 0; i < charts.size(); ++i) {
     charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
   }
@@ -332,6 +338,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 }
 
 qreal ChartView::getYAsixLabelWidth() const {
+  if (axis_y->max() <= axis_y->min() || axis_y->tickCount() <= 1) {
+    return 0;
+  }
   QFontMetrics fm(axis_y->labelsFont());
   int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
   return qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;
@@ -466,6 +475,18 @@ void ChartView::updatePlot(double cur, double min, double max) {
     axis_x->setRange(min, max);
     updateAxisY();
   }
+
+  // Show points when zoomed in enough
+  for (auto &s : sigs) {
+    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+    auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+
+    int num_points = std::max<int>(end - begin, 1);
+    int pixels_per_point = width() / num_points;
+
+    s.series->setPointsVisible(pixels_per_point > 20);
+  }
+
   scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
 }
 
@@ -518,8 +539,8 @@ void ChartView::updateAxisY() {
 
   if (min_y == std::numeric_limits<double>::max()) min_y = 0;
   if (max_y == std::numeric_limits<double>::lowest()) max_y = 0;
-  if (max_y == min_y) {
-    axis_y->setRange(min_y - 1, max_y + 1);
+  if (std::abs(max_y - min_y) < 1e-3) {
+    applyNiceNumbers(min_y - 1, max_y + 1);
   } else {
     double range = max_y - min_y;
     applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
@@ -536,6 +557,7 @@ void ChartView::applyNiceNumbers(qreal min, qreal max) {
   tick_count = int(max - min) + 1;
   axis_y->setRange(min * step, max * step);
   axis_y->setTickCount(tick_count);
+  axis_y->setLabelFormat("%.1f");
 }
 
 // nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
@@ -575,8 +597,9 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     if (dropAction == Qt::MoveAction) {
       return;
     }
+  } else {
+    QChartView::mousePressEvent(event);
   }
-  QChartView::mousePressEvent(event);
 }
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event) {

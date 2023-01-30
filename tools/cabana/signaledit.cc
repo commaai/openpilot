@@ -12,12 +12,14 @@
 
 SignalForm::SignalForm(QWidget *parent) : QWidget(parent) {
   auto double_validator = new QDoubleValidator(this);
+  double_validator->setLocale(QLocale::C); // Match locale of QString::toDouble() instead of system
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QFormLayout *form_layout = new QFormLayout();
   main_layout->addLayout(form_layout);
 
   name = new QLineEdit();
-  name->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name));
+  name->setValidator(new NameValidator(name));
   form_layout->addRow(tr("Name"), name);
 
   QHBoxLayout *hl = new QHBoxLayout(this);

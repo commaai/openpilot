@@ -83,6 +83,7 @@ pipeline {
 
       parallel {
 
+        /*
         stage('simulator') {
           agent {
             dockerfile {
@@ -110,6 +111,7 @@ pipeline {
             }
           }
         }
+        */
 
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
