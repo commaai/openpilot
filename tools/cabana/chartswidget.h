@@ -57,7 +57,7 @@ private slots:
   void manageSeries();
 
 private:
-  QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
+  QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
