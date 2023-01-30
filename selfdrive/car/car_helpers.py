@@ -113,7 +113,10 @@ def fingerprint(logcan, sendcan, num_pandas):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
     vin = VIN_UNKNOWN
   cloudlog.warning("VIN %s", vin)
-  Params().put("CarVin", vin)
+
+  params = Params()
+  params.put("CarVin", vin)
+  params.put_bool("FirmwareObdQueryDone", True)
 
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
