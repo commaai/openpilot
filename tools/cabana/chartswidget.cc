@@ -229,7 +229,7 @@ void ChartsWidget::setColumnCount(int n) {
 }
 
 void ChartsWidget::updateLayout() {
-  int n = column_count;
+  int n = columns_cb->count();
   for (; n > 1; --n) {
     if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->spacing()) < charts_layout->geometry().width()) break;
   }
@@ -238,6 +238,7 @@ void ChartsWidget::updateLayout() {
   columns_lb_action->setVisible(show_column_cb);
   columns_cb_action->setVisible(show_column_cb);
 
+  n = std::min(column_count, n);
   for (int i = 0; i < charts.size(); ++i) {
     charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
   }
