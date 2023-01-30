@@ -85,7 +85,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   pos.moveLeft(pos.x() + space.width());
 
   int m = space.width() / 2;
-  const QMargins margins(m + 1, m, m, m);
+  const QMargins margins(m, m, m, m);
 
   int i = 0;
   for (auto &byte : opt.text.split(" ")) {
@@ -96,4 +96,11 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     pos.moveLeft(pos.right() + space.width());
     i++;
   }
+}
+
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+
+QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  input.replace(' ', '_');
+  return QRegExpValidator::validate(input, pos);
 }

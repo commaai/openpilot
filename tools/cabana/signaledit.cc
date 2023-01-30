@@ -266,7 +266,7 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 // SignalItemDelegate
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
-  name_validator = new QRegExpValidator(QRegExp("^\\w{1,50}$"), this);
+  name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
 }

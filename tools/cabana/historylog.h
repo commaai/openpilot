@@ -33,7 +33,6 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
   }
-  void updateColors();
   void refresh();
 
 public slots:

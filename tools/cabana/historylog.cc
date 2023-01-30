@@ -84,7 +84,6 @@ void HistoryLogModel::updateState() {
     if ((has_more_data = !new_msgs.empty())) {
       beginInsertRows({}, 0, new_msgs.size() - 1);
       messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
-      updateColors();
       endInsertRows();
     }
     last_fetch_time = current_time;
@@ -97,25 +96,7 @@ void HistoryLogModel::fetchMore(const QModelIndex &parent) {
     if ((has_more_data = !new_msgs.empty())) {
       beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
       messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
-      if (!dynamic_mode) {
-        updateColors();
-      }
       endInsertRows();
-    }
-  }
-}
-
-void HistoryLogModel::updateColors() {
-  if (!display_signals_mode || sigs.empty()) {
-    const auto freq = can->lastMessage(msg_id).freq;
-    if (dynamic_mode) {
-      for (auto it = messages.rbegin(); it != messages.rend(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
-      }
-    } else {
-      for (auto it = messages.begin(); it != messages.end(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
-      }
     }
   }
 }
@@ -153,17 +134,28 @@ template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
   auto events = can->events();
+  const auto freq = can->lastMessage(msg_id).freq;
+  const bool update_colors = !display_signals_mode || sigs.empty();
+
   if (dynamic_mode) {
-    auto it = std::upper_bound(events->rbegin(), events->rend(), from_time, [=](uint64_t ts, auto &e) {
-      return e->mono_time < ts;
-    });
-    return fetchData(it, events->rend(), min_time);
+    auto first = std::upper_bound(events->rbegin(), events->rend(), from_time, [=](uint64_t ts, auto &e) { return e->mono_time < ts; });
+    auto msgs = fetchData(first, events->rend(), min_time);
+    if (update_colors && min_time > 0) {
+      for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
+        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      }
+    }
+    return msgs;
   } else {
     assert(min_time == 0);
-    auto it = std::upper_bound(events->begin(), events->end(), from_time, [=](uint64_t ts, auto &e) {
-      return ts < e->mono_time;
-    });
-    return fetchData(it, events->end(), 0);
+    auto first = std::upper_bound(events->begin(), events->end(), from_time, [=](uint64_t ts, auto &e) { return ts < e->mono_time; });
+    auto msgs = fetchData(first, events->end(), 0);
+    if (update_colors) {
+      for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
+        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      }
+    }
+    return msgs;
   }
 }
 
