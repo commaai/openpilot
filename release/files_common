@@ -280,7 +280,6 @@ selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
-selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
@@ -321,6 +320,12 @@ selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
+selfdrive/ui/qt/setup/*.cc
+selfdrive/ui/qt/setup/*.h
+
+selfdrive/ui/installer/*.cc
+selfdrive/ui/installer/*.h
+selfdrive/ui/installer/*.cc
 
 system/camerad/SConscript
 system/camerad/main.cc
@@ -437,6 +442,7 @@ third_party/acados/larch64/**
 third_party/acados/include/**
 third_party/acados/acados_template/**
 
+third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
@@ -574,17 +580,13 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/openpilot/compile.py
 tinygrad_repo/accel/opencl/*
+tinygrad_repo/tinygrad/llops/ops_opencl.py
+tinygrad_repo/openpilot/compile.py
 tinygrad_repo/extra/onnx.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
 tinygrad_repo/tinygrad/llops/ops_gpu.py
-tinygrad_repo/tinygrad/llops/ops_opencl.py
-tinygrad_repo/tinygrad/helpers.py
-tinygrad_repo/tinygrad/mlops.py
-tinygrad_repo/tinygrad/ops.py
-tinygrad_repo/tinygrad/shapetracker.py
-tinygrad_repo/tinygrad/tensor.py
-tinygrad_repo/tinygrad/nn/__init__.py
-tinygrad_repo/tinygrad/nn/optim.py
+tinygrad_repo/tinygrad/shape/*
+tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/*.py

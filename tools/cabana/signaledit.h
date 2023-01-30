@@ -4,24 +4,24 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QSpinBox>
-#include <QTimer>
 #include <QToolButton>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class SignalForm : public QWidget {
   Q_OBJECT
 public:
   SignalForm(QWidget *parent);
+  void textBoxEditingFinished();
+
   QLineEdit *name, *unit, *comment, *val_desc, *offset, *factor, *min_val, *max_val;
-  QLabel *lsb, *msb;
   QSpinBox *size;
   QComboBox *sign, *endianness;
-  bool changed_by_user = false;
+  QToolButton *expand_btn;
 
- signals:
+signals:
   void changed();
 };
 
@@ -54,6 +54,6 @@ protected:
   QLabel *color_label;
   QLabel *icon;
   int form_idx = 0;
+  QColor bg_color;
   QToolButton *plot_btn;
-  QTimer *save_timer;
 };

@@ -10,10 +10,12 @@ common_libs = [
   'statlog.cc',
   'swaglog.cc',
   'util.cc',
-  'gpio.cc',
   'i2c.cc',
   'watchdog.cc',
 ]
+
+if arch != "Darwin":
+  common_libs.append('gpio.cc')
 
 _common = fxn('common', common_libs, LIBS="json11")
 
