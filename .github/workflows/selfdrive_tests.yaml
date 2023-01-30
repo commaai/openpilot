@@ -177,7 +177,7 @@ jobs:
       run: eval "$BUILD"
     - name: pre-commit
       timeout-minutes: 5
-      run: ${{ env.RUN }} "pre-commit run --all"
+      run: ${{ env.RUN }} "PYTHONWARNINGS=default pre-commit run --all"
 
   valgrind:
     name: valgrind
