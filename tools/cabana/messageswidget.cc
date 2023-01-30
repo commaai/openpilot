@@ -84,27 +84,22 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 }
 
 void MessageListModel::setFilterString(const QString &string) {
+  auto contains = [](const QString &id, const QString &txt) {
+    auto cs = Qt::CaseInsensitive;
+    if (id.contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
+    // Search by signal name
+    if (const auto msg = dbc()->msg(id)) {
+      for (auto &signal : msg->getSignals()) {
+        if (QString::fromStdString(signal->name).contains(txt, cs)) return true;
+      }
+    }
+    return false;
+  };
+
   filter_str = string;
   msgs.clear();
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
-    bool found = false;
-
-    // Search by message id or name
-    if (it.key().contains(filter_str, Qt::CaseInsensitive) || msgName(it.key()).contains(filter_str, Qt::CaseInsensitive)) {
-      found = true;
-    }
-
-    // Search by signal name
-    const DBCMsg *msg = dbc()->msg(it.key());
-    if (msg != nullptr) {
-      for (auto &signal: msg->getSignals()) {
-        if (QString::fromStdString(signal->name).contains(filter_str, Qt::CaseInsensitive)) {
-          found = true;
-        }
-      }
-    }
-
-    if (found) {
+    if (filter_str.isEmpty() || contains(it.key(), filter_str)) {
       msgs.push_back(it.key());
     }
   }
