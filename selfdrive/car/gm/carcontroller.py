@@ -48,11 +48,12 @@ class CarController:
     # Send CAN commands.
     can_sends = []
 
-    # Steering (Active: 50Hz, inactive: 10Hz)
+    # Steering (50Hz: active, syncing with camera, 10Hz: inactive)
     # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
     init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
+    out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
     steer_step = self.params.INACTIVE_STEER_STEP
-    if CC.latActive or init_lka_counter:
+    if CC.latActive or init_lka_counter or out_of_sync:
       steer_step = self.params.STEER_STEP
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
