@@ -18,6 +18,7 @@ from selfdrive.car.body.values import CAR as COMMA
 non_tested_cars = [
   FORD.ESCAPE_MK4,
   FORD.FOCUS_MK4,
+  FORD.MAVERICK_MK1,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
@@ -25,6 +26,7 @@ non_tested_cars = [
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
+  VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
@@ -42,6 +44,7 @@ routes = [
   CarTestRoute("221c253375af4ee9|2022-06-15--18-38-24", CHRYSLER.RAM_1500),
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
 
+  CarTestRoute("54827bf84c38b14f|2023-01-25--14-14-11", FORD.BRONCO_SPORT_MK1),
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
@@ -72,7 +75,7 @@ routes = [
   CarTestRoute("d83f36766f8012a5|2020-02-05--18-42-21", HONDA.CIVIC_BOSCH_DIESEL),
   CarTestRoute("f0890d16a07a236b|2021-05-25--17-27-22", HONDA.INSIGHT),
   CarTestRoute("07d37d27996096b6|2020-03-04--21-57-27", HONDA.PILOT),
-  CarTestRoute("684e8f96bd491a0e|2021-11-03--11-08-42", HONDA.PASSPORT),
+  CarTestRoute("684e8f96bd491a0e|2021-11-03--11-08-42", HONDA.PILOT),  # Passport
   CarTestRoute("0a78dfbacc8504ef|2020-03-04--13-29-55", HONDA.CIVIC_BOSCH),
   CarTestRoute("f34a60d68d83b1e5|2020-10-06--14-35-55", HONDA.ACURA_RDX),
   CarTestRoute("54fd8451b3974762|2021-04-01--14-50-10", HONDA.RIDGELINE),
