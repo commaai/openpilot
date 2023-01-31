@@ -483,6 +483,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
 
     s.series->setPointsVisible(pixels_per_point > 20);
 
+    // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
 #ifndef __APPLE
     // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
     bool use_opengl = pixels_per_point < 1;
