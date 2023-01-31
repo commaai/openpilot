@@ -320,6 +320,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
+  manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  manage_btn->setIcon(bootstrapPixmap("gear"));
+  manage_btn->setAutoRaise(true);
   QMenu *menu = new QMenu(this);
   menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
   menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
@@ -327,8 +330,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
   manage_btn->setMenu(menu);
   manage_btn->setPopupMode(QToolButton::InstantPopup);
-  manage_btn->setIcon(bootstrapPixmap("gear"));
-  manage_btn->setAutoRaise(true);
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart->zValue() + 11);
@@ -744,6 +745,7 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
       series->replace(s.vals);
       s.series = series;
     }
+    updateTitle();
   }
 }
 
