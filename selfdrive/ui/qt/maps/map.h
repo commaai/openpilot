@@ -79,6 +79,7 @@ private:
 
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
+  QMapbox::AnnotationID marker_id = -1;
 
   void initLayers();
 
@@ -111,6 +112,7 @@ private:
   MapETA* map_eta;
 
   void clearRoute();
+  void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;
 
 private slots:
