@@ -324,8 +324,11 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   manage_btn->setIcon(bootstrapPixmap("gear"));
   manage_btn->setAutoRaise(true);
   QMenu *menu = new QMenu(this);
-  menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
-  menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
+  line_series_action->setCheckable(true);
+  line_series_action->setChecked(true);
+  scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  scatter_series_action->setCheckable(true);
   menu->addSeparator();
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
   manage_btn->setMenu(menu);
@@ -736,6 +739,9 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
 void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
   if (type != series_type) {
     series_type = type;
+    line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
+    scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
+
     for (auto &s : sigs) {
       chart()->removeSeries(s.series);
       s.series->deleteLater();

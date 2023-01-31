@@ -83,7 +83,8 @@ private:
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
   QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
-  // TODO: update 
+  QAction *line_series_action;
+  QAction *scatter_series_action;
   const int SCATTER_MARKER_SIZE = 8;
  };
 
