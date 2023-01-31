@@ -151,7 +151,6 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
   // GPS subframes are packed into 10x 4 bytes, each containing 3 actual bytes
   // We will first need to separate the data from the padding and parity
   auto body = *msg->body();
-  int sv_id = msg->sv_id();
   assert(body.size() == 10);
 
   std::string subframe_data;
@@ -173,14 +172,14 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       // dont parse almanac subframes
       return kj::Array<capnp::word>();
     }
-    gps_subframes[sv_id][subframe_id] = subframe_data;
+    gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
   }
 
   // publish if subframes 1-3 have been collected
   if (gps_subframes[msg->sv_id()].size() == 3) {
     MessageBuilder msg_builder;
     auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
-    eph.setSvId(sv_id);
+    eph.setSvId(msg->sv_id());
 
     int iode_s2 = 0;
     int iode_s3 = 0;
@@ -188,7 +187,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
 
     // Subframe 1
     {
-      kaitai::kstream stream(gps_subframes[sv_id][1]);
+      kaitai::kstream stream(gps_subframes[msg->sv_id()][1]);
       gps_t subframe(&stream);
       gps_t::subframe_1_t* subframe_1 = static_cast<gps_t::subframe_1_t*>(subframe.body());
 
@@ -204,7 +203,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
 
     // Subframe 2
     {
-      kaitai::kstream stream(gps_subframes[sv_id][2]);
+      kaitai::kstream stream(gps_subframes[msg->sv_id()][2]);
       gps_t subframe(&stream);
       gps_t::subframe_2_t* subframe_2 = static_cast<gps_t::subframe_2_t*>(subframe.body());
 
@@ -221,7 +220,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
 
     // Subframe 3
     {
-      kaitai::kstream stream(gps_subframes[sv_id][3]);
+      kaitai::kstream stream(gps_subframes[msg->sv_id()][3]);
       gps_t subframe(&stream);
       gps_t::subframe_3_t* subframe_3 = static_cast<gps_t::subframe_3_t*>(subframe.body());
 
@@ -237,7 +236,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       iode_s3 = subframe_3->iode();
     }
 
-    gps_subframes[sv_id].clear();
+    gps_subframes[msg->sv_id()].clear();
     if (iodc_lsb != iode_s2 || iodc_lsb != iode_s3) {
       // data set cutover, reject ephemeris
       return kj::Array<capnp::word>();
