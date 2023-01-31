@@ -83,7 +83,7 @@ private:
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
   QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
-  const int SCATTER_MARKER_SIZE = 10;
+  const int SCATTER_MARKER_SIZE = 8;
  };
 
 class ChartsWidget : public QWidget {

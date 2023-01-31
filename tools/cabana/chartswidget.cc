@@ -363,12 +363,6 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QXYSeries *series = createSeries(series_type);
-
-  // TODO: Due to a bug in CameraWidget the camera frames
-  // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
-#ifndef __APPLE__
-  series->setUseOpenGL(true);
-#endif
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -719,13 +713,20 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
 }
 
 QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
+  QXYSeries *series = nullptr;
   if (type == QAbstractSeries::SeriesTypeLine) {
-    return new QLineSeries(this);
+    series = new QLineSeries(this);
   } else {
-    QScatterSeries *series = new QScatterSeries();
-    series->setMarkerSize(SCATTER_MARKER_SIZE);
-    return series;
+    QScatterSeries *scatter = new QScatterSeries();
+    scatter->setMarkerSize(SCATTER_MARKER_SIZE);
+    series = scatter;
   }
+  // TODO: Due to a bug in CameraWidget the camera frames
+  // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
+#ifndef __APPLE__
+  series->setUseOpenGL(true);
+#endif
+  return series;
 }
 
 void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
@@ -734,6 +735,8 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
     for (auto &s : sigs) {
       chart()->removeSeries(s.series);
       s.series->deleteLater();
+    }
+    for (auto &s : sigs) {
       auto series = createSeries(series_type);
       chart()->addSeries(series);
       series->attachAxis(axis_x);
