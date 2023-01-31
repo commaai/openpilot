@@ -2,7 +2,8 @@ from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.ford.fordcan import create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, create_lka_msg, create_lkas_ui_msg
+from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
+  create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -54,6 +55,22 @@ class CarController:
       self.apply_curvature_last = apply_curvature
       can_sends.append(create_lka_msg(self.packer))
       can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, 0., 0., -apply_curvature, 0.))
+
+    ### longitudinal control ###
+    # send acc command at 50Hz
+    if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
+      accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+
+      precharge_brake = accel < -0.1
+      if accel > -0.5:
+        gas = accel
+        decel = False
+      else:
+        gas = -5.0
+        decel = True
+
+      can_sends.append(create_acc_command(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
+
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
