@@ -54,11 +54,11 @@ types:
         type: b26
     instances:
       x_vel:
-        value: 'x_vel_sign ? (x_vel_value - (1 << 23)) : x_vel_value'
+        value: 'x_vel_sign ? (x_vel_value * (-1)) : x_vel_value'
       x_accel:
-        value: 'x_accel_sign ? (x_accel_value - (1 << 4)) : x_accel_value'
+        value: 'x_accel_sign ? (x_accel_value * (-1)) : x_accel_value'
       x:
-        value: 'x_sign ? (x_value - (1 << 26)) : x_value'
+        value: 'x_sign ? (x_value * (-1)) : x_value'
   string_2:
     seq:
       - id: b_n
@@ -83,11 +83,11 @@ types:
         type: b26
     instances:
       y_vel:
-        value: 'y_vel_sign ? (y_vel_value - (1 << 23)) : y_vel_value'
+        value: 'y_vel_sign ? (y_vel_value * (-1)) : y_vel_value'
       y_accel:
-        value: 'y_accel_sign ? (y_accel_value - (1 << 4)) : y_accel_value'
+        value: 'y_accel_sign ? (y_accel_value * (-1)) : y_accel_value'
       y:
-        value: 'y_sign ? (y_value - (1 << 26)) : y_value'
+        value: 'y_sign ? (y_value * (-1)) : y_value'
   string_3:
     seq:
       - id: p3
@@ -116,13 +116,13 @@ types:
         type: b26
     instances:
       gamma_n:
-        value: 'gamma_n_sign ? (gamma_n_value - (1 << 10)) : gamma_n_value'
+        value: 'gamma_n_sign ? (gamma_n_value * (-1)) : gamma_n_value'
       z_vel:
-        value: 'z_vel_sign ? (z_vel_value - (1 << 23)) : z_vel_value'
+        value: 'z_vel_sign ? (z_vel_value * (-1)) : z_vel_value'
       z_accel:
-        value: 'z_accel_sign ? (z_accel_value - (1 << 4)) : z_accel_value'
+        value: 'z_accel_sign ? (z_accel_value * (-1)) : z_accel_value'
       z:
-        value: 'z_sign ? (z_value - (1 << 26)) : z_value'
+        value: 'z_sign ? (z_value * (-1)) : z_value'
   string_4:
     seq:
       - id: tau_n_sign
@@ -151,16 +151,16 @@ types:
         type: b2
     instances:
       tau_n:
-        value: 'tau_n_sign ? (tau_n_value - (1 << 21)) : tau_n_value'
+        value: 'tau_n_sign ? (tau_n_value * (-1)) : tau_n_value'
       delta_tau_n:
-        value: 'delta_tau_n_sign ? (delta_tau_n_value - (1 << 4)) : delta_tau_n_value'
+        value: 'delta_tau_n_sign ? (delta_tau_n_value * (-1)) : delta_tau_n_value'
   string_5:
     seq:
       - id: n_a
         type: b11
-      - id: tau_e
+      - id: tau_c
         type: b32
-      - id: not_used_1
+      - id: not_used
         type: b1
       - id: n_4
         type: b5

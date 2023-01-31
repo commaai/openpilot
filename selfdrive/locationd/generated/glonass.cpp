@@ -100,7 +100,7 @@ void glonass_t::string_4_t::_clean_up() {
 int32_t glonass_t::string_4_t::tau_n() {
     if (f_tau_n)
         return m_tau_n;
-    m_tau_n = ((tau_n_sign()) ? ((tau_n_value() - (1 << 21))) : (tau_n_value()));
+    m_tau_n = ((tau_n_sign()) ? ((tau_n_value() * -1)) : (tau_n_value()));
     f_tau_n = true;
     return m_tau_n;
 }
@@ -108,7 +108,7 @@ int32_t glonass_t::string_4_t::tau_n() {
 int32_t glonass_t::string_4_t::delta_tau_n() {
     if (f_delta_tau_n)
         return m_delta_tau_n;
-    m_delta_tau_n = ((delta_tau_n_sign()) ? ((delta_tau_n_value() - (1 << 4))) : (delta_tau_n_value()));
+    m_delta_tau_n = ((delta_tau_n_sign()) ? ((delta_tau_n_value() * -1)) : (delta_tau_n_value()));
     f_delta_tau_n = true;
     return m_delta_tau_n;
 }
@@ -151,8 +151,8 @@ glonass_t::string_5_t::string_5_t(kaitai::kstream* p__io, glonass_t* p__parent, 
 
 void glonass_t::string_5_t::_read() {
     m_n_a = m__io->read_bits_int_be(11);
-    m_tau_e = m__io->read_bits_int_be(32);
-    m_not_used_1 = m__io->read_bits_int_be(1);
+    m_tau_c = m__io->read_bits_int_be(32);
+    m_not_used = m__io->read_bits_int_be(1);
     m_n_4 = m__io->read_bits_int_be(5);
     m_tau_gps = m__io->read_bits_int_be(22);
     m_l_n = m__io->read_bits_int_be(1);
@@ -202,7 +202,7 @@ void glonass_t::string_1_t::_clean_up() {
 int32_t glonass_t::string_1_t::x_vel() {
     if (f_x_vel)
         return m_x_vel;
-    m_x_vel = ((x_vel_sign()) ? ((x_vel_value() - (1 << 23))) : (x_vel_value()));
+    m_x_vel = ((x_vel_sign()) ? ((x_vel_value() * -1)) : (x_vel_value()));
     f_x_vel = true;
     return m_x_vel;
 }
@@ -210,7 +210,7 @@ int32_t glonass_t::string_1_t::x_vel() {
 int32_t glonass_t::string_1_t::x_accel() {
     if (f_x_accel)
         return m_x_accel;
-    m_x_accel = ((x_accel_sign()) ? ((x_accel_value() - (1 << 4))) : (x_accel_value()));
+    m_x_accel = ((x_accel_sign()) ? ((x_accel_value() * -1)) : (x_accel_value()));
     f_x_accel = true;
     return m_x_accel;
 }
@@ -218,7 +218,7 @@ int32_t glonass_t::string_1_t::x_accel() {
 int32_t glonass_t::string_1_t::x() {
     if (f_x)
         return m_x;
-    m_x = ((x_sign()) ? ((x_value() - (1 << 26))) : (x_value()));
+    m_x = ((x_sign()) ? ((x_value() * -1)) : (x_value()));
     f_x = true;
     return m_x;
 }
@@ -261,7 +261,7 @@ void glonass_t::string_2_t::_clean_up() {
 int32_t glonass_t::string_2_t::y_vel() {
     if (f_y_vel)
         return m_y_vel;
-    m_y_vel = ((y_vel_sign()) ? ((y_vel_value() - (1 << 23))) : (y_vel_value()));
+    m_y_vel = ((y_vel_sign()) ? ((y_vel_value() * -1)) : (y_vel_value()));
     f_y_vel = true;
     return m_y_vel;
 }
@@ -269,7 +269,7 @@ int32_t glonass_t::string_2_t::y_vel() {
 int32_t glonass_t::string_2_t::y_accel() {
     if (f_y_accel)
         return m_y_accel;
-    m_y_accel = ((y_accel_sign()) ? ((y_accel_value() - (1 << 4))) : (y_accel_value()));
+    m_y_accel = ((y_accel_sign()) ? ((y_accel_value() * -1)) : (y_accel_value()));
     f_y_accel = true;
     return m_y_accel;
 }
@@ -277,7 +277,7 @@ int32_t glonass_t::string_2_t::y_accel() {
 int32_t glonass_t::string_2_t::y() {
     if (f_y)
         return m_y;
-    m_y = ((y_sign()) ? ((y_value() - (1 << 26))) : (y_value()));
+    m_y = ((y_sign()) ? ((y_value() * -1)) : (y_value()));
     f_y = true;
     return m_y;
 }
@@ -323,7 +323,7 @@ void glonass_t::string_3_t::_clean_up() {
 int32_t glonass_t::string_3_t::gamma_n() {
     if (f_gamma_n)
         return m_gamma_n;
-    m_gamma_n = ((gamma_n_sign()) ? ((gamma_n_value() - (1 << 10))) : (gamma_n_value()));
+    m_gamma_n = ((gamma_n_sign()) ? ((gamma_n_value() * -1)) : (gamma_n_value()));
     f_gamma_n = true;
     return m_gamma_n;
 }
@@ -331,7 +331,7 @@ int32_t glonass_t::string_3_t::gamma_n() {
 int32_t glonass_t::string_3_t::z_vel() {
     if (f_z_vel)
         return m_z_vel;
-    m_z_vel = ((z_vel_sign()) ? ((z_vel_value() - (1 << 23))) : (z_vel_value()));
+    m_z_vel = ((z_vel_sign()) ? ((z_vel_value() * -1)) : (z_vel_value()));
     f_z_vel = true;
     return m_z_vel;
 }
@@ -339,7 +339,7 @@ int32_t glonass_t::string_3_t::z_vel() {
 int32_t glonass_t::string_3_t::z_accel() {
     if (f_z_accel)
         return m_z_accel;
-    m_z_accel = ((z_accel_sign()) ? ((z_accel_value() - (1 << 4))) : (z_accel_value()));
+    m_z_accel = ((z_accel_sign()) ? ((z_accel_value() * -1)) : (z_accel_value()));
     f_z_accel = true;
     return m_z_accel;
 }
@@ -347,7 +347,7 @@ int32_t glonass_t::string_3_t::z_accel() {
 int32_t glonass_t::string_3_t::z() {
     if (f_z)
         return m_z;
-    m_z = ((z_sign()) ? ((z_value() - (1 << 26))) : (z_value()));
+    m_z = ((z_sign()) ? ((z_value() * -1)) : (z_value()));
     f_z = true;
     return m_z;
 }

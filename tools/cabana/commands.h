@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QUndoCommand>
+#include <QUndoStack>
 
 #include "tools/cabana/dbcmanager.h"
 
@@ -59,4 +60,9 @@ private:
   const QString id;
   Signal old_signal = {};
   Signal new_signal = {};
+};
+
+namespace UndoStack {
+  QUndoStack *instance();
+  inline void push(QUndoCommand *cmd) { instance()->push(cmd); }
 };
