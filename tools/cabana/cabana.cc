@@ -12,6 +12,7 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   initApp(argc, argv);
   QApplication app(argc, argv);
+  app.setApplicationDisplayName("Cabana");
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
+  cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
   cmd_parser.process(app);
   const QStringList args = cmd_parser.positionalArguments();
   if (args.empty() && !cmd_parser.isSet("demo") && !cmd_parser.isSet("stream")) {
@@ -56,6 +58,12 @@ int main(int argc, char *argv[]) {
   }
 
   MainWindow w;
+
+  // Load DBC
+  if (cmd_parser.isSet("dbc")) {
+    w.loadFile(cmd_parser.value("dbc"));
+  }
+
   w.show();
   return app.exec();
 }

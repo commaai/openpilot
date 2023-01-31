@@ -65,11 +65,6 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegat
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QList<QVariant> colors = index.data(Qt::UserRole).toList();
-  if (colors.empty()) {
-    QStyledItemDelegate::paint(painter, option, index);
-    return;
-  }
   QStyleOptionViewItemV4 opt = option;
   initStyleOption(&opt, index);
 
@@ -85,8 +80,9 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   pos.moveLeft(pos.x() + space.width());
 
   int m = space.width() / 2;
-  const QMargins margins(m + 1, m, m, m);
+  const QMargins margins(m, m, m, m);
 
+  QList<QVariant> colors = index.data(Qt::UserRole).toList();
   int i = 0;
   for (auto &byte : opt.text.split(" ")) {
     if (i < colors.size()) {
@@ -96,4 +92,11 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     pos.moveLeft(pos.right() + space.width());
     i++;
   }
+}
+
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+
+QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  input.replace(' ', '_');
+  return QRegExpValidator::validate(input, pos);
 }
