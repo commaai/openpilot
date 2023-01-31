@@ -6,11 +6,9 @@
 #include <ctime>
 
 #include "catch2/catch.hpp"
-#include "../generated/glonass.h"
+#include "selfdrive/locationd/generated/glonass.h"
 
-using namespace std;
-
-typedef vector<pair<int, int64_t>> string_data;
+typedef std::vector<std::pair<int, int64_t>> string_data;
 
 #define IDLE_CHIP_IDX 0
 #define STRING_NUMBER_IDX 1
@@ -91,19 +89,19 @@ typedef vector<pair<int, int64_t>> string_data;
 #define ST6_HC_OFF 4
 
 
-string generate_inp_data(string_data& data) {
-  string inp_data = "";
+std::string generate_inp_data(string_data& data) {
+  std::string inp_data = "";
   for (auto& [b, v] : data) {
-    string tmp = bitset<64>(v).to_string();
+    std::string tmp = std::bitset<64>(v).to_string();
     inp_data += tmp.substr(64-b, b);
   }
   assert(inp_data.size() == 128);
 
-  string string_data;
+  std::string string_data;
   string_data.reserve(16);
   for (int i = 0; i < 128; i+=8) {
-    string substr = inp_data.substr(i, 8);
-    string_data.push_back( (uint8_t)stoi(substr.c_str(), 0, 2));
+    std::string substr = inp_data.substr(i, 8);
+    string_data.push_back( (uint8_t)std::stoi(substr.c_str(), 0, 2));
   }
 
   return string_data;
@@ -112,7 +110,7 @@ string generate_inp_data(string_data& data) {
 string_data generate_string_data(uint8_t string_number) {
 
   srand((unsigned)time(0));
-  vector<pair<int, int64_t>> data; //<bit length, value>
+  string_data data; //<bit length, value>
   data.push_back({1, 0}); // idle chip
   data.push_back({4, string_number}); // string number
 
@@ -126,8 +124,7 @@ string_data generate_string_data(uint8_t string_number) {
     data.push_back({4, 3}); // x_accel_value
     data.push_back({1, rand() & 1}); // x_sign
     data.push_back({26, 33554431}); // x_value
-  }
-  else if (string_number == 2) {
+  } else if (string_number == 2) {
     data.push_back({3, 3}); // b_n
     data.push_back({1, 1}); // p2
     data.push_back({7, 123}); // t_b
@@ -138,8 +135,7 @@ string_data generate_string_data(uint8_t string_number) {
     data.push_back({4, 3}); // y_accel_value
     data.push_back({1, rand() & 1}); // y_sign
     data.push_back({26, 67108863}); // y_value
-  }
-  else if (string_number == 3) {
+  } else if (string_number == 3) {
     data.push_back({1, 0}); // p3
     data.push_back({1, 1}); // gamma_n_sign
     data.push_back({10, 123}); // gamma_n_value
@@ -152,8 +148,7 @@ string_data generate_string_data(uint8_t string_number) {
     data.push_back({4, 9}); // z_accel_value
     data.push_back({1, rand() & 1}); // z_sign
     data.push_back({26, 100023}); // z_value
-  }
-  else if (string_number == 4) {
+  } else if (string_number == 4) {
     data.push_back({1, rand() & 1}); // tau_n_sign
     data.push_back({21, 197152}); // tau_n_value
     data.push_back({1, rand() & 1}); // delta_tau_n_sign
@@ -166,16 +161,14 @@ string_data generate_string_data(uint8_t string_number) {
     data.push_back({11, 2047}); // n_t
     data.push_back({5, 2}); // n
     data.push_back({2, 1}); // m
-  }
-  else if (string_number == 5) {
+  } else if (string_number == 5) {
     data.push_back({11, 2047}); // n_a
     data.push_back({32, 4294767295}); // tau_c
     data.push_back({1, 0}); // not_used_1
     data.push_back({5, 2}); // n_4
     data.push_back({22, 4114304}); // tau_gps
     data.push_back({1, 0}); // l_n
-  }
-  else { // non-immediate data is not parsed
+  } else { // non-immediate data is not parsed
     data.push_back({64, rand()}); // data_1
     data.push_back({8, 6}); // data_2
   }
@@ -190,7 +183,7 @@ string_data generate_string_data(uint8_t string_number) {
 
 TEST_CASE("parse_string_number_1"){
   string_data data = generate_string_data(1);
-  string inp_data = generate_inp_data(data);
+  std::string inp_data = generate_inp_data(data);
 
   kaitai::kstream stream(inp_data);
   glonass_t gl_string(&stream);
@@ -221,7 +214,7 @@ TEST_CASE("parse_string_number_1"){
 
 TEST_CASE("parse_string_number_2"){
   string_data data = generate_string_data(2);
-  string inp_data = generate_inp_data(data);
+  std::string inp_data = generate_inp_data(data);
 
   kaitai::kstream stream(inp_data);
   glonass_t gl_string(&stream);
@@ -252,7 +245,7 @@ TEST_CASE("parse_string_number_2"){
 
 TEST_CASE("parse_string_number_3"){
   string_data data = generate_string_data(3);
-  string inp_data = generate_inp_data(data);
+  std::string inp_data = generate_inp_data(data);
 
   kaitai::kstream stream(inp_data);
   glonass_t gl_string(&stream);
@@ -285,7 +278,7 @@ TEST_CASE("parse_string_number_3"){
 
 TEST_CASE("parse_string_number_4"){
   string_data data = generate_string_data(4);
-  string inp_data = generate_inp_data(data);
+  std::string inp_data = generate_inp_data(data);
 
   kaitai::kstream stream(inp_data);
   glonass_t gl_string(&stream);
@@ -318,7 +311,7 @@ TEST_CASE("parse_string_number_4"){
 
 TEST_CASE("parse_string_number_5"){
   string_data data = generate_string_data(5);
-  string inp_data = generate_inp_data(data);
+  std::string inp_data = generate_inp_data(data);
 
   kaitai::kstream stream(inp_data);
   glonass_t gl_string(&stream);
@@ -345,7 +338,7 @@ TEST_CASE("parse_string_number_5"){
 
 TEST_CASE("parse_string_number_NI"){
   string_data data = generate_string_data((rand() % 10) +  6);
-  string inp_data = generate_inp_data(data);
+  std::string inp_data = generate_inp_data(data);
 
   kaitai::kstream stream(inp_data);
   glonass_t gl_string(&stream);
