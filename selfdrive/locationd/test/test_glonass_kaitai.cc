@@ -353,8 +353,7 @@ TEST_CASE("parse_string_number_NI"){
 
   kaitai::kstream strni(inp_data);
   glonass_t strni_data(&strni);
-  glonass_t::string_non_immediate_t* sni =
-    static_cast<glonass_t::string_non_immediate_t*>(strni_data.data());
+  glonass_t::string_non_immediate_t* sni = static_cast<glonass_t::string_non_immediate_t*>(strni_data.data());
 
   REQUIRE(sni->data_1() == data[ST6_DATA_1_IDX].second);
   REQUIRE(sni->data_2() == data[ST6_DATA_2_IDX].second);
