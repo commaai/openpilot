@@ -178,74 +178,74 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
 
   // publish if subframes 1-3 have been collected
   if (gps_subframes[msg->sv_id()].size() != 3) {
+    MessageBuilder msg_builder;
+    auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
+    eph.setSvId(sv_id);
+
+    int iode_s2 = 0;
+    int iode_s3 = 0;
+    int iodc_lsb = 0;
+
+    // Subframe 1
+    {
+      kaitai::kstream stream(gps_subframes[sv_id][1]);
+      gps_t subframe(&stream);
+      gps_t::subframe_1_t* subframe_1 = static_cast<gps_t::subframe_1_t*>(subframe.body());
+
+      eph.setGpsWeek(subframe_1->week_no());
+      eph.setTgd(subframe_1->t_gd() * pow(2, -31));
+      eph.setToc(subframe_1->t_oc() * pow(2, 4));
+      eph.setAf2(subframe_1->af_2() * pow(2, -55));
+      eph.setAf1(subframe_1->af_1() * pow(2, -43));
+      eph.setAf0(subframe_1->af_0() * pow(2, -31));
+      eph.setSvHealth(subframe_1->sv_health());
+      iodc_lsb = subframe_1->iodc_lsb();
+    }
+
+    // Subframe 2
+    {
+      kaitai::kstream stream(gps_subframes[sv_id][2]);
+      gps_t subframe(&stream);
+      gps_t::subframe_2_t* subframe_2 = static_cast<gps_t::subframe_2_t*>(subframe.body());
+
+      eph.setCrs(subframe_2->c_rs() * pow(2, -5));
+      eph.setDeltaN(subframe_2->delta_n() * pow(2, -43) * gpsPi);
+      eph.setM0(subframe_2->m_0() * pow(2, -31) * gpsPi);
+      eph.setCuc(subframe_2->c_uc() * pow(2, -29));
+      eph.setEcc(subframe_2->e() * pow(2, -33));
+      eph.setCus(subframe_2->c_us() * pow(2, -29));
+      eph.setA(pow(subframe_2->sqrt_a() * pow(2, -19), 2.0));
+      eph.setToe(subframe_2->t_oe() * pow(2, 4));
+      iode_s2 = subframe_2->iode();
+    }
+
+    // Subframe 3
+    {
+      kaitai::kstream stream(gps_subframes[sv_id][3]);
+      gps_t subframe(&stream);
+      gps_t::subframe_3_t* subframe_3 = static_cast<gps_t::subframe_3_t*>(subframe.body());
+
+      eph.setCic(subframe_3->c_ic() * pow(2, -29));
+      eph.setOmega0(subframe_3->omega_0() * pow(2, -31) * gpsPi);
+      eph.setCis(subframe_3->c_is() * pow(2, -29));
+      eph.setI0(subframe_3->i_0() * pow(2, -31) * gpsPi);
+      eph.setCrc(subframe_3->c_rc() * pow(2, -5));
+      eph.setOmega(subframe_3->omega() * pow(2, -31) * gpsPi);
+      eph.setOmegaDot(subframe_3->omega_dot() * pow(2, -43) * gpsPi);
+      eph.setIode(subframe_3->iode());
+      eph.setIDot(subframe_3->idot() * pow(2, -43) * gpsPi);
+      iode_s3 = subframe_3->iode();
+    }
+
+    gps_subframes[sv_id].clear();
+    if (iodc_lsb != iode_s2 || iodc_lsb != iode_s3) {
+      // data set cutover, reject ephemeris
+      return kj::Array<capnp::word>();
+    }
+    return capnp::messageToFlatArray(msg_builder);
+
     return kj::Array<capnp::word>();
   }
-
-  MessageBuilder msg_builder;
-  auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
-  eph.setSvId(sv_id);
-
-  int iode_s2 = 0;
-  int iode_s3 = 0;
-  int iodc_lsb = 0;
-
-  // Subframe 1
-  {
-    kaitai::kstream stream(gps_subframes[sv_id][1]);
-    gps_t subframe(&stream);
-    gps_t::subframe_1_t* subframe_1 = static_cast<gps_t::subframe_1_t*>(subframe.body());
-
-    eph.setGpsWeek(subframe_1->week_no());
-    eph.setTgd(subframe_1->t_gd() * pow(2, -31));
-    eph.setToc(subframe_1->t_oc() * pow(2, 4));
-    eph.setAf2(subframe_1->af_2() * pow(2, -55));
-    eph.setAf1(subframe_1->af_1() * pow(2, -43));
-    eph.setAf0(subframe_1->af_0() * pow(2, -31));
-    eph.setSvHealth(subframe_1->sv_health());
-    iodc_lsb = subframe_1->iodc_lsb();
-  }
-
-  // Subframe 2
-  {
-    kaitai::kstream stream(gps_subframes[sv_id][2]);
-    gps_t subframe(&stream);
-    gps_t::subframe_2_t* subframe_2 = static_cast<gps_t::subframe_2_t*>(subframe.body());
-
-    eph.setCrs(subframe_2->c_rs() * pow(2, -5));
-    eph.setDeltaN(subframe_2->delta_n() * pow(2, -43) * gpsPi);
-    eph.setM0(subframe_2->m_0() * pow(2, -31) * gpsPi);
-    eph.setCuc(subframe_2->c_uc() * pow(2, -29));
-    eph.setEcc(subframe_2->e() * pow(2, -33));
-    eph.setCus(subframe_2->c_us() * pow(2, -29));
-    eph.setA(pow(subframe_2->sqrt_a() * pow(2, -19), 2.0));
-    eph.setToe(subframe_2->t_oe() * pow(2, 4));
-    iode_s2 = subframe_2->iode();
-  }
-
-  // Subframe 3
-  {
-    kaitai::kstream stream(gps_subframes[sv_id][3]);
-    gps_t subframe(&stream);
-    gps_t::subframe_3_t* subframe_3 = static_cast<gps_t::subframe_3_t*>(subframe.body());
-
-    eph.setCic(subframe_3->c_ic() * pow(2, -29));
-    eph.setOmega0(subframe_3->omega_0() * pow(2, -31) * gpsPi);
-    eph.setCis(subframe_3->c_is() * pow(2, -29));
-    eph.setI0(subframe_3->i_0() * pow(2, -31) * gpsPi);
-    eph.setCrc(subframe_3->c_rc() * pow(2, -5));
-    eph.setOmega(subframe_3->omega() * pow(2, -31) * gpsPi);
-    eph.setOmegaDot(subframe_3->omega_dot() * pow(2, -43) * gpsPi);
-    eph.setIode(subframe_3->iode());
-    eph.setIDot(subframe_3->idot() * pow(2, -43) * gpsPi);
-    iode_s3 = subframe_3->iode();
-  }
-
-  gps_subframes[sv_id].clear();
-  if (iodc_lsb != iode_s2 || iodc_lsb != iode_s3) {
-    // data set cutover, reject ephemeris
-    return kj::Array<capnp::word>();
-  }
-  return capnp::messageToFlatArray(msg_builder);
 }
 
 
