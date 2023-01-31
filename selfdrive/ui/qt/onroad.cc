@@ -504,9 +504,15 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.save();
 
+  // circle background
   painter.setOpacity(1.0);
   painter.setPen(Qt::NoPen);
   painter.setBrush(blackColor(70));
+  painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+
+  // circle border (status)
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 8, Qt::SolidLine, Qt::RoundCap));
+  painter.setBrush(Qt::NoBrush);
   painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   painter.setCompositionMode(QPainter::CompositionMode_Source);
