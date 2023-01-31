@@ -177,7 +177,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
   }
 
   // publish if subframes 1-3 have been collected
-  if (gps_subframes[msg->sv_id()].size() != 3) {
+  if (gps_subframes[msg->sv_id()].size() == 3) {
     MessageBuilder msg_builder;
     auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
     eph.setSvId(sv_id);
