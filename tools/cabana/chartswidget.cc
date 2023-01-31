@@ -7,6 +7,7 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QLineEdit>
+#include <QMenu>
 #include <QRubberBand>
 #include <QToolBar>
 #include <QToolButton>
@@ -319,9 +320,15 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
+  QMenu *menu = new QMenu(this);
+  menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
+  menu->addAction(tr("Scater"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  menu->addSeparator();
+  menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
+  manage_btn->setMenu(menu);
+  manage_btn->setPopupMode(QToolButton::InstantPopup);
   manage_btn->setIcon(bootstrapPixmap("gear"));
   manage_btn->setAutoRaise(true);
-  manage_btn->setToolTip(tr("Manage series"));
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart->zValue() + 11);
@@ -336,7 +343,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
-  QObject::connect(manage_btn, &QToolButton::clicked, this, &ChartView::manageSeries);
 }
 
 qreal ChartView::getYAsixLabelWidth() const {
@@ -356,7 +362,7 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
-  QLineSeries *series = new QLineSeries(this);
+  QXYSeries *series = createSeries(series_type);
 
   // TODO: Due to a bug in CameraWidget the camera frames
   // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
@@ -709,6 +715,32 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
     painter->drawLine(QPointF{track_pt.x(), y1}, QPointF{track_pt.x(), y2});
     painter->setBrush(Qt::darkGray);
     painter->drawEllipse(track_pt, 5, 5);
+  }
+}
+
+QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
+  if (type == QAbstractSeries::SeriesTypeLine) {
+    return new QLineSeries(this);
+  } else {
+    QScatterSeries *series = new QScatterSeries();
+    series->setMarkerSize(SCATTER_MARKER_SIZE);
+    return series;
+  }
+}
+
+void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
+  if (type != series_type) {
+    series_type = type;
+    for (auto &s : sigs) {
+      chart()->removeSeries(s.series);
+      s.series->deleteLater();
+      auto series = createSeries(series_type);
+      chart()->addSeries(series);
+      series->attachAxis(axis_x);
+      series->attachAxis(axis_y);
+      series->replace(s.vals);
+      s.series = series;
+    }
   }
 }
 
