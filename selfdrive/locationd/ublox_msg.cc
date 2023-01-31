@@ -84,7 +84,6 @@ inline uint16_t UbloxMsgParser::get_glonass_year(uint8_t N4, uint16_t Nt) {
   return year;
 }
 
-
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
   int needed = needed_bytes();
   if(needed > 0) {
@@ -380,12 +379,143 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
   return kj::Array<capnp::word>();
 }
 
+kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg) {
+  if (msg->sv_id() == 255) {
+    // data can be decoded before identifying the SV number, in this case 255
+    // is returned, which means "unknown"  (ublox p32)
+    return kj::Array<capnp::word>();
+  }
+
+  auto body = *msg->body();
+  assert(body.size() == 4);
+  {
+    std::string string_data;
+    string_data.reserve(16);
+    for (uint32_t word : body) {
+      for (int i = 3; i >= 0; i--)
+        string_data.push_back(word >> 8*i);
+    }
+
+    kaitai::kstream stream(string_data);
+    glonass_t gl_string(&stream);
+
+    int string_number = gl_string.string_number();
+    if (string_number > 5 || gl_string.idle_chip()) {
+      // dont parse non immediate data, idle_chip == 0
+      return kj::Array<capnp::word>();
+    }
+
+    // immediate data is the same within one superframe
+    if (glonass_superframes[msg->sv_id()] != gl_string.superframe_number()) {
+      glonass_strings[msg->sv_id()].clear();
+      glonass_superframes[msg->sv_id()] = gl_string.superframe_number();
+    }
+    glonass_strings[msg->sv_id()][string_number] = string_data;
+  }
+
+  // publish if strings 1-5 have been collected
+  if (glonass_strings[msg->sv_id()].size() != 5) {
+    return kj::Array<capnp::word>();
+  }
+
+  MessageBuilder msg_builder;
+  auto eph = msg_builder.initEvent().initUbloxGnss().initGlonassEphemeris();
+  eph.setSvId(msg->sv_id());
+  uint16_t current_day = 0;
+
+  // string number 1
+  {
+    kaitai::kstream stream(glonass_strings[msg->sv_id()][1]);
+    glonass_t gl_stream(&stream);
+    glonass_t::string_1_t* data = static_cast<glonass_t::string_1_t*>(gl_stream.data());
+
+    eph.setP1(data->p1());
+    eph.setTk(data->t_k());
+    eph.setXVel(data->x_vel() * pow(2, -20));
+    eph.setXAccel(data->x_accel() * pow(2, -30));
+    eph.setX(data->x() * pow(2, -11));
+  }
+
+  // string number 2
+  {
+    kaitai::kstream stream(glonass_strings[msg->sv_id()][2]);
+    glonass_t gl_stream(&stream);
+    glonass_t::string_2_t* data = static_cast<glonass_t::string_2_t*>(gl_stream.data());
+
+    eph.setSvHealth(data->b_n()>>2); // MSB indicates health
+    eph.setP2(data->p2());
+    eph.setTb(data->t_b());
+    eph.setYVel(data->y_vel() * pow(2, -20));
+    eph.setYAccel(data->y_accel() * pow(2, -30));
+    eph.setY(data->y() * pow(2, -11));
+  }
+
+  // string number 3
+  {
+    kaitai::kstream stream(glonass_strings[msg->sv_id()][3]);
+    glonass_t gl_stream(&stream);
+    glonass_t::string_3_t* data = static_cast<glonass_t::string_3_t*>(gl_stream.data());
+
+    eph.setP3(data->p3());
+    eph.setGammaN(data->gamma_n() * pow(2, -40));
+    eph.setSvHealth(eph.getSvHealth() | data->l_n());
+    eph.setZVel(data->z_vel() * pow(2, -20));
+    eph.setZAccel(data->z_accel() * pow(2, -30));
+    eph.setZ(data->z() * pow(2, -11));
+  }
+
+  // string number 4
+  {
+    kaitai::kstream stream(glonass_strings[msg->sv_id()][4]);
+    glonass_t gl_stream(&stream);
+    glonass_t::string_4_t* data = static_cast<glonass_t::string_4_t*>(gl_stream.data());
+
+    current_day = data->n_t();
+    eph.setTauN(data->tau_n() * pow(2, -30));
+    eph.setDeltaTauN(data->delta_tau_n() * pow(2, -30));
+    eph.setAge(data->e_n());
+    eph.setP4(data->p4());
+    eph.setSvURA(glonass_URA_lookup.at(data->f_t()));
+    if (msg->sv_id() != data->n()) {
+      LOGE("SV_ID != SLOT_NUMBER: %d %d", msg->sv_id(), data->n())
+    }
+    eph.setSvType(data->m());
+  }
+
+  // string number 5
+  {
+    kaitai::kstream stream(glonass_strings[msg->sv_id()][5]);
+    glonass_t gl_stream(&stream);
+    glonass_t::string_5_t* data = static_cast<glonass_t::string_5_t*>(gl_stream.data());
+
+    // TODO: remove parsing string5, its only needed for the year
+    uint8_t n_4 = data->n_4();
+    uint16_t year = get_glonass_year(n_4, current_day);
+
+    uint16_t last_leap_year = 1996 + 4*(n_4-1);
+    uint16_t days_till_this_year = (year - last_leap_year)*365;
+    if (days_till_this_year != 0) {
+      days_till_this_year++;
+    }
+
+    eph.setYear(year);
+    eph.setDayInYear(current_day - days_till_this_year);
+    eph.setHour((eph.getTk()>>7) & 0x1F);
+    eph.setMinute((eph.getTk()>>1) & 0x3F);
+    eph.setSecond((eph.getTk() & 0x1) * 30);
+  }
+
+  glonass_strings[msg->sv_id()].clear();
+  return capnp::messageToFlatArray(msg_builder);
+}
+
+
 kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
   switch (msg->gnss_id()) {
     case ubx_t::gnss_type_t::GNSS_TYPE_GPS:
       return parse_gps_ephemeris(msg);
-    //case ubx_t::gnss_type_t::GNSS_TYPE_GLONASS:
-    //  return parse_glonass_ephemeris(msg);
+    case ubx_t::gnss_type_t::GNSS_TYPE_GLONASS:
+      return parse_glonass_ephemeris(msg);
     default:
       return kj::Array<capnp::word>();
   }
