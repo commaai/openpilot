@@ -1,7 +1,10 @@
 #include "tools/cabana/util.h"
 
+#include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+
+#include "selfdrive/ui/qt/util.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
@@ -100,3 +103,17 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
 }
+
+namespace utils {
+QPixmap icon(const QString &id) {
+  static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                           QApplication::style()->standardPalette().color(QPalette::Background).value();
+  QPixmap pm = bootstrapPixmap(id);
+  if (dark_theme) {
+    QPainter p(&pm);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(pm.rect(), Qt::lightGray);
+  }
+  return pm;
+}
+}  // namespace utils
