@@ -41,7 +41,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout->addWidget(title_label);
 
   // value next to control button
-  value = new QLabel();
+  value = new ElidedLabel();
   value->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
   value->setStyleSheet("color: #aaaaaa");
   hlayout->addWidget(value);
@@ -70,7 +70,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 }
 
 void AbstractControl::hideEvent(QHideEvent *e) {
-  if(description != nullptr) {
+  if (description != nullptr) {
     description->hide();
   }
 }

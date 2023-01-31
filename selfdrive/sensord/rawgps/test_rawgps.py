@@ -40,7 +40,7 @@ class TestRawgpsd(unittest.TestCase):
       time.sleep(s)
       managed_processes['rawgpsd'].stop()
 
-      ls = subprocess.check_output("mmcli -m 0 --location-status --output-json", shell=True, encoding='utf-8')
+      ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
       loc_status = json.loads(ls)
       assert set(loc_status['modem']['location']['enabled']) <= {'3gpp-lac-ci'}
 

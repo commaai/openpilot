@@ -9,8 +9,9 @@ if [ ! -d LimeSuite ]; then
   cd LimeSuite
   # checkout latest version which has firmware updates available
   git checkout v20.10.0
+  git apply ../patches/limeSuite/*
   mkdir builddir && cd builddir
-  cmake ..
+  cmake -DCMAKE_BUILD_TYPE=Release ..
   make -j4
   cd ../..
 fi
@@ -18,8 +19,7 @@ fi
 if [ ! -d LimeGPS ]; then
   git clone https://github.com/osqzss/LimeGPS.git
   cd LimeGPS
-  sed -i 's/LimeSuite/LimeSuite -I..\/LimeSuite\/src -L..\/LimeSuite\/builddir\/src/' makefile
+  git apply ../patches/limeGPS/*
   make
   cd ..
 fi
-

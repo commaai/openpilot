@@ -6,6 +6,7 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
+ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 
@@ -26,19 +27,20 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "volkswagen"
     ret.radarOffCan = True
 
+    use_off_car_defaults = len(fingerprint[0]) == 0  # Pick sensible carParams during offline doc generation/CI jobs
+
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
-      if 0x440 in fingerprint[0]:  # Getriebe_1
+      if 0x440 in fingerprint[0] or use_off_car_defaults:  # Getriebe_1
         ret.transmissionType = TransmissionType.automatic
       else:
         ret.transmissionType = TransmissionType.manual
 
       if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
         ret.networkLocation = NetworkLocation.gateway
-        ret.experimentalLongitudinalAvailable = True
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
@@ -55,7 +57,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
-      if 0xAD in fingerprint[0]:  # Getriebe_11
+      if 0xAD in fingerprint[0] or use_off_car_defaults:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
@@ -81,7 +83,8 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    if experimental_long and candidate in PQ_CARS:
+    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or use_off_car_defaults
+    if experimental_long:
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONG_CONTROL
@@ -89,7 +92,11 @@ class CarInterface(CarInterfaceBase):
         ret.minEnableSpeed = 4.5
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
-    ret.longitudinalActuatorDelayUpperBound = 0.5  # s
+    ret.stoppingControl = True
+    ret.startingState = True
+    ret.startAccel = 1.0
+    ret.vEgoStarting = 1.0
+    ret.vEgoStopping = 1.0
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 
@@ -131,6 +138,13 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.POLO_MK6:
       ret.mass = 1230 + STD_CARGO_KG
       ret.wheelbase = 2.55
+
+    elif candidate == CAR.SHARAN_MK2:
+      ret.mass = 1639 + STD_CARGO_KG
+      ret.wheelbase = 2.92
+      ret.minEnableSpeed = 30 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
+      ret.steerActuatorDelay = 0.2
 
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
@@ -216,7 +230,8 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl)
+                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl,
+                                       enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):

@@ -60,6 +60,7 @@ find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -
 git reset --hard $GIT_COMMIT
 git checkout $GIT_COMMIT
 git clean -xdff
+git submodule sync
 git submodule update --init --recursive
 git submodule foreach --recursive "git reset --hard && git clean -xdff"
 

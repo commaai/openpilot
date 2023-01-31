@@ -46,7 +46,7 @@ public:
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);
   void handle_sensor(double current_time, const cereal::SensorEventData::Reader& log);
-  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log);
+  void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset);
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
@@ -68,8 +68,9 @@ private:
   std::unique_ptr<LocalCoord> converter;
 
   int64_t unix_timestamp_millis = 0;
-  double last_gps_fix = 0;
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
+  bool gps_valid = false;
+  bool ublox_available = true;
 };

@@ -60,11 +60,34 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>데이터 요금제</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>데이터 요금제 연결 시 대용량 데이터 업로드 방지</translation>
+    </message>
+</context>
+<context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>MAX</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>SPEED</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -214,6 +237,14 @@
     <message>
         <source>Disengage to Power Off</source>
         <translation>전원을 종료하려면 해제하세요</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>리셋</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation>다시보기</translation>
     </message>
 </context>
 <context>
@@ -407,29 +438,6 @@ location set</source>
     </message>
 </context>
 <context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
-    </message>
-</context>
-<context>
     <name>OffroadHome</name>
     <message>
         <source>UPDATE</source>
@@ -461,6 +469,17 @@ location set</source>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>connect.comma.ai을 앱처럼 사용하려면 홈 화면에 바로가기를 만드십시오</translation>
+    </message>
+</context>
+<context>
+    <name>ParamControl</name>
+    <message>
+        <source>Ok</source>
+        <translation>확인</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
     </message>
 </context>
 <context>
@@ -583,13 +602,6 @@ location set</source>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>데이터 파티션을 마운트할 수 없습니다. 확인 버튼을 눌러 장치를 리셋합니다.</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>확인</translation>
     </message>
 </context>
 <context>
@@ -850,6 +862,10 @@ location set</source>
         <source>CHECK</source>
         <translation>확인</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation>삭제</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1051,6 +1067,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>저장안함</translation>
     </message>
 </context>
 </TS>

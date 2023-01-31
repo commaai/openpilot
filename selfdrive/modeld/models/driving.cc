@@ -62,9 +62,9 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
       if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN-1)+i] = desire_in[i];
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = desire_in[i];
       } else {
-        s->pulse_desire[DESIRE_LEN*(HISTORY_BUFFER_LEN-1)+i] = 0.0;
+        s->pulse_desire[DESIRE_LEN*HISTORY_BUFFER_LEN+i] = 0.0;
       }
       s->prev_desire[i] = desire_in[i];
     }
@@ -337,6 +337,17 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
     fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
+
+  // temporal pose
+  const auto &v_mean = net_outputs.temporal_pose.velocity_mean;
+  const auto &r_mean = net_outputs.temporal_pose.rotation_mean;
+  const auto &v_std = net_outputs.temporal_pose.velocity_std;
+  const auto &r_std = net_outputs.temporal_pose.rotation_std;
+  auto temporal_pose = framed.initTemporalPose();
+  temporal_pose.setTrans({v_mean.x, v_mean.y, v_mean.z});
+  temporal_pose.setRot({r_mean.x, r_mean.y, r_mean.z});
+  temporal_pose.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
@@ -363,14 +374,19 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   const auto &v_mean = net_outputs.pose.velocity_mean;
   const auto &r_mean = net_outputs.pose.rotation_mean;
+  const auto &t_mean = net_outputs.wide_from_device_euler.mean;
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
+  const auto &t_std = net_outputs.wide_from_device_euler.std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+  posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
   posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+  posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

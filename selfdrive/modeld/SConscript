@@ -83,6 +83,7 @@ if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
     "#tinygrad_repo/accel/opencl/ops_opencl.py",
     "#tinygrad_repo/accel/opencl/preprocessing.py",
     "#tinygrad_repo/extra/onnx.py",
+    "#tinygrad_repo/extra/thneed.py",
     "#tinygrad_repo/extra/utils.py",
     "#tinygrad_repo/tinygrad/llops/ops_gpu.py",
     "#tinygrad_repo/tinygrad/llops/ops_opencl.py",

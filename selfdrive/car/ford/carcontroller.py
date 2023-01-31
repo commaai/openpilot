@@ -3,7 +3,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from selfdrive.car.ford import fordcan
-from selfdrive.car.ford.values import CarControllerParams
+from selfdrive.car.ford.values import CANBUS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -16,9 +16,9 @@ def apply_ford_steer_angle_limits(apply_angle, apply_angle_last, vEgo):
   apply_angle = clip(apply_angle, (apply_angle_last - max_angle_diff), (apply_angle_last + max_angle_diff))
 
   # absolute limit (LatCtlPath_An_Actl)
-  apply_path_angle = math.radians(apply_angle) / CarControllerParams.STEER_RATIO
-  apply_path_angle = clip(apply_path_angle, -0.4995, 0.5240)
-  apply_angle = math.degrees(apply_path_angle) * CarControllerParams.STEER_RATIO
+  apply_path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
+  apply_path_angle = clip(apply_path_angle, -0.5, 0.5235)
+  apply_angle = math.degrees(apply_path_angle) * CarControllerParams.LKAS_STEER_RATIO
 
   return apply_angle
 
@@ -47,40 +47,46 @@ class CarController:
     ### acc buttons ###
     if CC.cruiseControl.cancel:
       can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, cancel=True))
-    elif CC.cruiseControl.resume:
+      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, cancel=True, bus=CANBUS.main))
+    elif CC.cruiseControl.resume and (self.frame % CarControllerParams.BUTTONS_STEP) == 0:
       can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True))
-
-    # if stock lane centering is active or in standby, toggle it off
+      can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, resume=True, bus=CANBUS.main))
+    # if stock lane centering isn't off, send a button press to toggle it off
     # the stock system checks for steering pressed, and eventually disengages cruise control
-    if (self.frame % 200) == 0 and CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0:
+    elif CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0 and (self.frame % CarControllerParams.ACC_UI_STEP) == 0:
       can_sends.append(fordcan.create_button_command(self.packer, CS.buttons_stock_values, tja_toggle=True))
 
 
     ### lateral control ###
     if CC.latActive:
+      lca_rq = 1
       apply_angle = apply_ford_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo)
     else:
-      apply_angle = CS.out.steeringAngleDeg
+      lca_rq = 0
+      apply_angle = 0.
 
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.LKAS_STEER_STEP) == 0:
-      lca_rq = 1 if CC.latActive else 0
-
       # use LatCtlPath_An_Actl to actuate steering
-      # path angle is the car wheel angle, not the steering wheel angle
-      path_angle = math.radians(apply_angle) / CarControllerParams.STEER_RATIO
+      path_angle = math.radians(apply_angle) / CarControllerParams.LKAS_STEER_RATIO
 
-      # ramp rate: 0=Slow, 1=Medium, 2=Fast, 3=Immediately
-      # TODO: try slower ramp speed when driver torque detected
-      ramp_type = 3
+      # set slower ramp type when small steering angle change
+      # 0=Slow, 1=Medium, 2=Fast, 3=Immediately
+      steer_change = abs(CS.out.steeringAngleDeg - actuators.steeringAngleDeg)
+      if steer_change < 2.0:
+        ramp_type = 0
+      elif steer_change < 4.0:
+        ramp_type = 1
+      elif steer_change < 6.0:
+        ramp_type = 2
+      else:
+        ramp_type = 3
       precision = 1  # 0=Comfortable, 1=Precise (the stock system always uses comfortable)
 
-      offset_roll_compensation_curvature = clip(self.VM.calc_curvature(0, CS.out.vEgo, -CS.yaw_data["VehYaw_W_Actl"]), -0.02, 0.02094)
-
       self.apply_angle_last = apply_angle
-      can_sends.append(fordcan.create_lka_command(self.packer, apply_angle, 0))
+      can_sends.append(fordcan.create_lka_command(self.packer, 0, 0))
       can_sends.append(fordcan.create_tja_command(self.packer, lca_rq, ramp_type, precision,
-                                                  0, path_angle, 0, offset_roll_compensation_curvature))
+                                                  0, path_angle, 0, 0))
 
 
     ### ui ###
@@ -99,7 +105,7 @@ class CarController:
     self.steer_alert_last = steer_alert
 
     new_actuators = actuators.copy()
-    new_actuators.steeringAngleDeg = apply_angle
+    new_actuators.steeringAngleDeg = self.apply_angle_last
 
     self.frame += 1
     return new_actuators, can_sends

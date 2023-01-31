@@ -4,12 +4,14 @@ import unittest
 from collections import defaultdict
 
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import TICI
 
 TEST_TIMESPAN = 30
-LAG_FRAME_TOLERANCE = 0.5 # ms
+LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0321: 0.5, # ARs use synced pulses for frame starts
+                                              log.FrameData.ImageSensor.ox03c10: 1.0} # OXs react to out-of-sync at next frame
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
@@ -62,6 +64,7 @@ class TestCamerad(unittest.TestCase):
     assert len(skips) == 0, f"Found frame skips, missing cameras for the following frames: {skips}"
 
   def test_frame_sync(self):
+    sensor_type = [getattr(msgs[0], msgs[0].which()).sensor for frame_id, msgs in self.log_by_frame_id.items()][0].raw
     frame_times = {frame_id: [getattr(m, m.which()).timestampSof for m in msgs] for frame_id, msgs in self.log_by_frame_id.items()}
     diffs = {frame_id: (max(ts) - min(ts))/1e6 for frame_id, ts in frame_times.items()}
 
@@ -69,7 +72,7 @@ class TestCamerad(unittest.TestCase):
     def get_desc(fid, diff):
       cam_times = [(m.which(), getattr(m, m.which()).timestampSof/1e6) for m in self.log_by_frame_id[fid]]
       return f"{diff=} {cam_times=}"
-    laggy_frames = {k: get_desc(k, v) for k, v in diffs.items() if v > LAG_FRAME_TOLERANCE}
+    laggy_frames = {k: get_desc(k, v) for k, v in diffs.items() if v > LAG_FRAME_TOLERANCE[sensor_type]}
     assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
 
 if __name__ == "__main__":

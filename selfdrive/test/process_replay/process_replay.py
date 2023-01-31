@@ -456,6 +456,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
       os.environ['SKIP_FW_QUERY'] = "1"
       os.environ['FINGERPRINT'] = CP.carFingerprint
 
+    if CP.openpilotLongitudinalControl:
+      params.put_bool("ExperimentalLongitudinalEnabled", True)
+
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]

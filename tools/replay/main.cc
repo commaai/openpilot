@@ -4,8 +4,6 @@
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
 
-const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-
 int main(int argc, char *argv[]) {
   QCoreApplication app(argc, argv);
 

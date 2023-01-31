@@ -368,7 +368,7 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
       changes = true;
     }
 
-    int meteredInt = metered ? NM_METERED_NO : NM_METERED_UNKNOWN;
+    int meteredInt = metered ? NM_METERED_UNKNOWN : NM_METERED_NO;
     if (settings.value("connection").value("metered").toInt() != meteredInt) {
       qWarning() << "Changing connection.metered to" << meteredInt;
       settings["connection"]["metered"] = meteredInt;

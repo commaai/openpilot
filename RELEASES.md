@@ -2,9 +2,11 @@ Version 0.8.17 (2022-XX-XX)
 ========================
 * New driving model
   * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
+* New driver monitoring model
+  * New end-to-end distracted trigger
 * Self-tuning torque lateral controller parameters
   * Parameters learned live for each car
-  * Enabled only on Toyota Corolla for now
+* Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
 * UI updates
   * Multi-language in navigation
   * Matched speeds shown on car's dash
@@ -12,6 +14,11 @@ Version 0.8.17 (2022-XX-XX)
   * Border turns grey while overriding steering
   * Added button to bookmark events while driving; view them later in comma connect
 * AGNOS 6
+* tools: new and improved cabana thanks to deanlee!
+* Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
+* Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
+* Kia Sportage 2023 support thanks to sunnyhaibin!
+* Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
 
 Version 0.8.16 (2022-08-26)
 ========================

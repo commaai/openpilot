@@ -90,6 +90,8 @@ selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/can_list_to_can_capnp.cc
 selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
+selfdrive/boardd/panda_comms.h
+selfdrive/boardd/panda_comms.cc
 selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 
@@ -565,6 +567,7 @@ opendbc/tesla_powertrain.dbc
 tinygrad_repo/openpilot/compile.py
 tinygrad_repo/accel/opencl/*
 tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
 tinygrad_repo/tinygrad/llops/ops_gpu.py
 tinygrad_repo/tinygrad/llops/ops_opencl.py

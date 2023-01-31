@@ -5,10 +5,14 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR
+from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
+LongCtrlState = car.CarControl.Actuators.LongControlState
+
+# Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
+CAMERA_CANCEL_DELAY_FRAMES = 10
 
 
 class CarController:
@@ -19,12 +23,15 @@ class CarController:
     self.apply_gas = 0
     self.apply_brake = 0
     self.frame = 0
+    self.last_steer_frame = 0
     self.last_button_frame = 0
+    self.cancel_counter = 0
 
-    self.lka_steering_cmd_counter_last = -1
+    self.lka_steering_cmd_counter = 0
+    self.sent_lka_steering_cmd = False
     self.lka_icon_status_last = (False, False)
 
-    self.params = CarControllerParams()
+    self.params = CarControllerParams(self.CP)
 
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
@@ -41,47 +48,59 @@ class CarController:
     # Send CAN commands.
     can_sends = []
 
-    # Steering (50Hz)
+    # Steering (Active: 50Hz, inactive: 10Hz)
+    # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
+    init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
+    steer_step = self.params.INACTIVE_STEER_STEP
+    if CC.latActive or init_lka_counter:
+      steer_step = self.params.ACTIVE_STEER_STEP
+
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
-    if CS.lka_steering_cmd_counter != self.lka_steering_cmd_counter_last:
-      self.lka_steering_cmd_counter_last = CS.lka_steering_cmd_counter
-    elif (self.frame % self.params.STEER_STEP) == 0:
+    if CS.loopback_lka_steering_cmd_updated:
+      self.lka_steering_cmd_counter += 1
+      self.sent_lka_steering_cmd = True
+    elif (self.frame - self.last_steer_frame) >= steer_step:
+      # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
+      if init_lka_counter:
+        self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
+
       if CC.latActive:
         new_steer = int(round(actuators.steer * self.params.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
       else:
         apply_steer = 0
 
+      self.last_steer_frame = self.frame
       self.apply_steer_last = apply_steer
-      # GM EPS faults on any gap in received message counters. To handle transient OP/Panda safety sync issues at the
-      # moment of disengaging, increment the counter based on the last message known to pass Panda safety checks.
-      idx = (CS.lka_steering_cmd_counter + 1) % 4
-
+      idx = self.lka_steering_cmd_counter % 4
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
 
     if self.CP.openpilotLongitudinalControl:
       # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
         if not CC.longActive:
-          # Stock ECU sends max regen when not enabled
-          self.apply_gas = self.params.MAX_ACC_REGEN
+          # ASCM sends max regen when not enabled
+          self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          if self.CP.carFingerprint in EV_CAR:
-            self.apply_gas = int(round(interp(actuators.accel, self.params.EV_GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.EV_BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
-          else:
-            self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
+          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
 
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        friction_brake_bus = CanBus.CHASSIS
+        # GM Camera exceptions
+        # TODO: can we always check the longControlState?
+        if self.CP.networkLocation == NetworkLocation.fwdCamera:
+          at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
+          friction_brake_bus = CanBus.POWERTRAIN
+
         # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
         can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)
         send_fcw = hud_alert == VisualAlert.fcw
@@ -108,11 +127,20 @@ class CarController:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
     else:
+      # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
+      # A delayed cancellation allows camera to cancel and avoids a fault when user depresses brake quickly
+      self.cancel_counter = self.cancel_counter + 1 if CC.cruiseControl.cancel else 0
+
       # Stock longitudinal, integrated at camera
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
-        if CC.cruiseControl.cancel:
+        if self.cancel_counter > CAMERA_CANCEL_DELAY_FRAMES:
           self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
+
+    if self.CP.networkLocation == NetworkLocation.fwdCamera:
+      # Silence "Take Steering" alert sent by camera, forward PSCMStatus with HandsOffSWlDetectionStatus=1
+      if self.frame % 10 == 0:
+        can_sends.append(gmcan.create_pscm_status(self.packer_pt, CanBus.CAMERA, CS.pscm_status))
 
     # Show green icon when LKA torque is applied, and
     # alarming orange icon when approaching torque limit.

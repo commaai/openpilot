@@ -68,6 +68,29 @@
     </message>
 </context>
 <context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>最高定速</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>SPEED</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>LIMIT</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -214,6 +237,14 @@
     <message>
         <source>Disengage to Power Off</source>
         <translation>取消openpilot以关机</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -405,29 +436,6 @@ location set</source>
     </message>
 </context>
 <context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>最高定速</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
-    </message>
-</context>
-<context>
     <name>OffroadHome</name>
     <message>
         <source>UPDATE</source>
@@ -459,6 +467,17 @@ location set</source>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>将 connect.comma.ai 收藏到您的主屏幕，以便像应用程序一样使用它</translation>
+    </message>
+</context>
+<context>
+    <name>ParamControl</name>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">好的</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">取消</translation>
     </message>
 </context>
 <context>
@@ -581,13 +600,6 @@ location set</source>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>无法挂载数据分区。 确认以重置您的设备。</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>好的</translation>
     </message>
 </context>
 <context>
@@ -848,6 +860,10 @@ location set</source>
         <source>CHECK</source>
         <translation>查看</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1049,6 +1065,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>忘记WiFi网络 &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

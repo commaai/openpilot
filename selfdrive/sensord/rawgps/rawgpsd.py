@@ -14,12 +14,13 @@ import cereal.messaging as messaging
 from laika.gps_time import GPSTime
 from system.swaglog import cloudlog
 from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report,
+from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
-                                              oemdre_measurement_report, oemdre_measurement_report_sv,
+                                              oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
                                               LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT)
+                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+                                              LOG_GNSS_OEMDRE_SVPOLY_REPORT)
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 
@@ -28,6 +29,7 @@ LOG_TYPES = [
   LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
   LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
   LOG_GNSS_POSITION_REPORT,
+  LOG_GNSS_OEMDRE_SVPOLY_REPORT,
 ]
 
 
@@ -85,15 +87,23 @@ def try_setup_logs(diag, log_types):
   else:
     raise Exception(f"setup logs failed, {log_types=}")
 
-def mmcli(cmd: str) -> None:
+def at_cmd(cmd: str) -> None:
   for _ in range(5):
     try:
-      subprocess.check_call(f"mmcli -m 0 {cmd}", shell=True)
+      subprocess.check_call(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True)
       break
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
   else:
     raise Exception(f"failed to execute mmcli command {cmd=}")
+
+
+def gps_enabled() -> bool:
+  try:
+    p = subprocess.check_output("mmcli -m any --command=\"AT+QGPS?\"", shell=True)
+    return b"QGPS: 1" in p
+  except subprocess.CalledProcessError as exc:
+    raise Exception("failed to execute QGPS mmcli command") from exc
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
@@ -106,11 +116,17 @@ def setup_quectel(diag: ModemDiag):
 
   setup_logs(diag, LOG_TYPES)
 
+  if gps_enabled():
+    at_cmd("AT+QGPSEND")
+
   # disable DPO power savings for more accuracy
-  mmcli("--command='AT+QGPSCFG=\"dpoenable\",0'")
+  at_cmd("AT+QGPSCFG=\"dpoenable\",0")
   # don't automatically turn on GNSS on powerup
-  mmcli("--command='AT+QGPSCFG=\"autogps\",0'")
-  mmcli("--location-enable-gps-raw --location-enable-gps-nmea")
+  at_cmd("AT+QGPSCFG=\"autogps\",0")
+
+  at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7275\"")
+  at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
+  at_cmd("AT+QGPS=1")
 
   # enable OEMDRE mode
   DIAG_SUBSYS_CMD_F = 75
@@ -132,7 +148,9 @@ def setup_quectel(diag: ModemDiag):
   ))
 
 def teardown_quectel(diag):
-  mmcli("--location-disable-gps-raw --location-disable-gps-nmea")
+  at_cmd("AT+QGPSCFG=\"outport\",\"none\"")
+  if gps_enabled():
+    at_cmd("AT+QGPSEND")
   try_setup_logs(diag, [])
 
 
@@ -146,12 +164,15 @@ def main() -> NoReturn:
   unpack_oemdre_meas, size_oemdre_meas = dict_unpacker(oemdre_measurement_report, True)
   unpack_oemdre_meas_sv, size_oemdre_meas_sv = dict_unpacker(oemdre_measurement_report_sv, True)
 
+  unpack_svpoly, _ = dict_unpacker(oemdre_svpoly_report, True)
+  unpack_position, _ = dict_unpacker(position_report)
+
   unpack_position, _ = dict_unpacker(position_report)
 
   # wait for ModemManager to come up
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call("mmcli -m 0 --location-status", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     if ret == 0:
       break
     time.sleep(0.1)
@@ -174,7 +195,9 @@ def main() -> NoReturn:
 
   while 1:
     opcode, payload = diag.recv()
-    assert opcode == DIAG_LOG_F
+    if opcode != DIAG_LOG_F:
+      cloudlog.error(f"Unhandled opcode: {opcode}")
+      continue
 
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
     if pending_msgs > 0:
@@ -258,7 +281,24 @@ def main() -> NoReturn:
 
       pm.send('gpsLocation', msg)
 
-    if log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
+    elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
+      msg = messaging.new_message('qcomGnss')
+      dat = unpack_svpoly(log_payload)
+      dat = relist(dat)
+      gnss = msg.qcomGnss
+      gnss.logTs = log_time
+      gnss.init('drSvPoly')
+      poly = gnss.drSvPoly
+      for k,v in dat.items():
+        if k == "version":
+          assert v == 2
+        elif k == "flags":
+          pass
+        else:
+          setattr(poly, k, v)
+      pm.send('qcomGnss', msg)
+
+    elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')
 
       gnss = msg.qcomGnss
