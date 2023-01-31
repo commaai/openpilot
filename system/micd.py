@@ -84,7 +84,7 @@ class Mic:
 
       self.measurements = self.measurements[FFT_SAMPLES:]
 
-  def micd_thread(self, device=None):
+  def micd_thread(self):
     with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}")
       while True:
