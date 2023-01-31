@@ -367,6 +367,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
+  CAR.HYUNDAI_GENESIS: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00DH LKAS 1.4 -140110',
+      b'\xf1\x00DH LKAS 1.5 -140425',
+    ],
+  },
   CAR.IONIQ: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
@@ -1029,6 +1036,25 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81640H0051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.GENESIS_G80: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DH__ SCC F-CUP      1.00 1.01 96400-B1120         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.03 95895-B1500 180713',
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.02 95895-B1500 170810',
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.01 95895-B1500 161014',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  E21\x00\x00\x00\x00\x00\x00\x00SDH0T33NH4\xd7O\x9e\xc9',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00TDH0G38NH3:-\xa9n',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0G38NH2j\x9dA\x1c',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0T33NH3\x97\xe6\xbc\xb8',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.GENESIS_G90: {
