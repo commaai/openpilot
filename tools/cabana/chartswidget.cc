@@ -724,12 +724,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
   if (type == QAbstractSeries::SeriesTypeLine) {
     series = new QLineSeries(this);
   } else {
-    QScatterSeries *scatter = new QScatterSeries();
-    scatter->setMarkerSize(SCATTER_MARKER_SIZE);
-    series = scatter;
+    series = new QScatterSeries(this);
   }
-  // TODO: Due to a bug in CameraWidget the camera frames
-  // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
+    // TODO: Due to a bug in CameraWidget the camera frames
+    // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
 #ifndef __APPLE__
   series->setUseOpenGL(true);
 #endif

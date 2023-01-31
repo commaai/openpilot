@@ -85,7 +85,6 @@ private:
   QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
   QAction *line_series_action;
   QAction *scatter_series_action;
-  const int SCATTER_MARKER_SIZE = 8;
  };
 
 class ChartsWidget : public QWidget {
