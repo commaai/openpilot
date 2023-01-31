@@ -13,8 +13,6 @@
 #include <QToolTip>
 #include <QtConcurrent>
 
-#include "selfdrive/ui/qt/util.h"
-
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
@@ -24,7 +22,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
 
-  QAction *new_plot_btn = toolbar->addAction(bootstrapPixmap("file-plus"), "");
+  QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), "");
   new_plot_btn->setToolTip(tr("New Plot"));
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, 12, 0);
@@ -46,9 +44,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setPageStep(60);  // 1 min
   toolbar->addWidget(range_slider);
 
-  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("zoom-out"), "");
+  reset_zoom_btn = toolbar->addAction(utils::icon("zoom-out"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
-  remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
+  remove_all_btn = toolbar->addAction(utils::icon("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
@@ -170,7 +168,7 @@ void ChartsWidget::setMaxChartRange(int value) {
 void ChartsWidget::updateToolBar() {
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   title_label->setText(tr("Charts: %1").arg(charts.size()));
-  dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
+  dock_btn->setIcon(utils::icon(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
   remove_all_btn->setEnabled(!charts.isEmpty());
   reset_zoom_btn->setEnabled(is_zoomed);
@@ -311,7 +309,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setMargins({20, 11, 11, 11});
 
   QToolButton *remove_btn = new QToolButton();
-  remove_btn->setIcon(bootstrapPixmap("x"));
+  remove_btn->setIcon(utils::icon("x"));
   remove_btn->setAutoRaise(true);
   remove_btn->setToolTip(tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart);
@@ -319,7 +317,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
-  manage_btn->setIcon(bootstrapPixmap("gear"));
+  manage_btn->setIcon(utils::icon("gear"));
   manage_btn->setAutoRaise(true);
   manage_btn->setToolTip(tr("Manage series"));
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
