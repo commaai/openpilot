@@ -38,6 +38,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.8
       ret.mass = 2050 + STD_CARGO_KG
 
+    elif candidate == CAR.F_150_MK14:
+      # required trim only on SuperCrew
+      ret.wheelbase = 3.69
+      ret.steerRatio = 17.0
+      ret.mass = 2000 + STD_CARGO_KG
+
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7
       ret.steerRatio = 15.0
