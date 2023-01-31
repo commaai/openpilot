@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 230 Supported Cars
+# 231 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -184,6 +184,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|Corolla Cross Hybrid (Non-US only) 2020-22|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Corolla Cross Hybrid (Non-US only) 2020-22">Toyota</a>||
 |Toyota|Corolla Hatchback 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Corolla Hatchback 2019-22">Toyota</a>|<a href="https://www.youtube.com/watch?v=_66pXk0CBYA" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Toyota|Corolla Hybrid 2020-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Corolla Hybrid 2020-22">Toyota</a>||
+|Toyota|Corolla Hybrid (Non-US only) 2020-23|All|openpilot|17 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Corolla Hybrid (Non-US only) 2020-23">Toyota</a>||
 |Toyota|Highlander 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Highlander 2017-19">Toyota</a>|<a href="https://www.youtube.com/watch?v=0wS0wXSLzoo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Toyota|Highlander 2020-23|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Highlander 2020-23">Toyota</a>||
 |Toyota|Highlander Hybrid 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Highlander Hybrid 2017-19">Toyota</a>||
