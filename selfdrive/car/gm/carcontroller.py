@@ -51,6 +51,7 @@ class CarController:
     # Steering (50Hz: active, syncing with camera, 10Hz: inactive)
     # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
     init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
+    # Send at 50Hz until we're sending right before camera sends LKAS message
     out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
     steer_step = self.params.INACTIVE_STEER_STEP
     if CC.latActive or init_lka_counter or out_of_sync:
