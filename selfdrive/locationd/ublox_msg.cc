@@ -243,9 +243,8 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       return kj::Array<capnp::word>();
     }
     return capnp::messageToFlatArray(msg_builder);
-
-    return kj::Array<capnp::word>();
   }
+  return kj::Array<capnp::word>();
 }
 
 
