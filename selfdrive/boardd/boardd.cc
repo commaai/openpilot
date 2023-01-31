@@ -462,14 +462,20 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   std::future<bool> safety_future;
 
   LOGD("start panda state thread");
+  int i = 0;
+  int on_t = 15;
+  int off_t = 5;
 
   // run at 2hz
   while (!do_exit && check_all_connected(pandas)) {
+    i += 1;
     uint64_t start_time = nanos_since_boot();
+
+    bool _spoofing_started = i % ((on_t + off_t) * 2) >= off_t * 2
 
     // send out peripheralState
     send_peripheral_state(pm, peripheral_panda);
-    auto ignition_opt = send_panda_states(pm, pandas, spoofing_started);
+    auto ignition_opt = send_panda_states(pm, pandas, _spoofing_started);
 
     if (!ignition_opt) {
       continue;
