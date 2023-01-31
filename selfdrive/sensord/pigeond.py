@@ -303,8 +303,7 @@ def main():
 
   pigeon, pm = create_pigeon()
   init_baudrate(pigeon)
-  r = initialize_pigeon(pigeon)
-  Params().put_bool("UbloxAvailable", r)
+  initialize_pigeon(pigeon)
 
   # start receiving data
   run_receiving(pigeon, pm)

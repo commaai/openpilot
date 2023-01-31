@@ -4,13 +4,16 @@
 #include <QHeaderView>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QScrollBar>
 #include <QToolTip>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/commands.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 // BinaryView
 
 const int CELL_HEIGHT = 36;
+const int VERTICAL_HEADER_WIDTH = 30;
 
 inline int get_bit_index(const QModelIndex &index, bool little_endian) {
   return index.row() * 8 + (little_endian ? 7 - index.column() : index.column());
@@ -29,14 +32,27 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setFrameShape(QFrame::NoFrame);
   setShowGrid(false);
   setMouseTracking(true);
-  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
+}
+
+QSize BinaryView::minimumSizeHint() const {
+  return {(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH,
+          CELL_HEIGHT * std::min(model->rowCount(), 10)};
 }
 
 void BinaryView::highlight(const Signal *sig) {
   if (sig != hovered_sig) {
+    for (int i = 0; i < model->items.size(); ++i) {
+      auto &item_sigs = model->items[i].sigs;
+      if ((sig && item_sigs.contains(sig)) || (hovered_sig && item_sigs.contains(hovered_sig))) {
+        auto index = model->index(i / model->columnCount(), i % model->columnCount());
+        emit model->dataChanged(index, index, {Qt::DisplayRole});
+      }
+    }
     hovered_sig = sig;
-    model->dataChanged(model->index(0, 0), model->index(model->rowCount() - 1, model->columnCount() - 1));
     emit signalHovered(hovered_sig);
   }
 }
@@ -113,13 +129,20 @@ void BinaryView::leaveEvent(QEvent *event) {
 }
 
 void BinaryView::setMessage(const QString &message_id) {
-  model->setMessage(message_id);
+  model->msg_id = message_id;
+  verticalScrollBar()->setValue(0);
+  refresh();
+}
+
+void BinaryView::refresh() {
+  if (model->msg_id.isEmpty()) return;
+
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;
   hovered_sig = nullptr;
   highlightPosition(QCursor::pos());
-  updateState();
+  model->refresh();
 }
 
 QSet<const Signal *> BinaryView::getOverlappingSignals() const {
@@ -144,9 +167,8 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 
 // BinaryViewModel
 
-void BinaryViewModel::setMessage(const QString &message_id) {
+void BinaryViewModel::refresh() {
   beginResetModel();
-  msg_id = message_id;
   items.clear();
   if ((dbc_msg = dbc()->msg(msg_id))) {
     row_count = dbc_msg->size;
@@ -173,11 +195,14 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     items.resize(row_count * column_count);
   }
   endResetModel();
+  updateState();
 }
 
 void BinaryViewModel::updateState() {
   auto prev_items = items;
-  const auto &binary = can->lastMessage(msg_id).dat;
+  const auto &last_msg = can->lastMessage(msg_id);
+  const auto &binary = last_msg.dat;
+
   // data size may changed.
   if (binary.size() > row_count) {
     beginInsertRows({}, row_count, binary.size() - 1);
@@ -187,12 +212,13 @@ void BinaryViewModel::updateState() {
   }
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
-    for (int j = 0; j < column_count - 1; ++j) {
+    for (int j = 0; j < 8; ++j) {
       items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
     }
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
     items[i * column_count + 8].val = hex;
+    items[i * column_count + 8].bg_color = last_msg.colors[i];
   }
   for (int i = binary.size(); i < row_count; ++i) {
     for (int j = 0; j < column_count; ++j) {
@@ -200,8 +226,8 @@ void BinaryViewModel::updateState() {
     }
   }
 
-  for (int i = 0; i < row_count * column_count; ++i) {
-    if (i >= prev_items.size() || prev_items[i].val != items[i].val) {
+  for (int i = 0; i < items.size(); ++i) {
+    if (i >= prev_items.size() || prev_items[i].val != items[i].val || prev_items[i].bg_color != items[i].bg_color) {
       auto idx = index(i / column_count, i % column_count);
       emit dataChanged(idx, idx);
     }
@@ -212,7 +238,7 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
   if (orientation == Qt::Vertical) {
     switch (role) {
       case Qt::DisplayRole: return section;
-      case Qt::SizeHintRole: return QSize(30, 0);
+      case Qt::SizeHintRole: return QSize(VERTICAL_HEADER_WIDTH, 0);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
     }
   }
@@ -234,12 +260,14 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
   if (index.column() == 8) {
     painter->setFont(hex_font);
+    painter->fillRect(option.rect, item->bg_color);
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
-    painter->fillRect(option.rect, item->bg_color);
-    painter->setPen(item->sigs.contains(bin_view->hovered_sig) ? option.palette.color(QPalette::BrightText) : Qt::black);
+    bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
+    painter->fillRect(option.rect, sig_hovered ? item->bg_color.darker(125) : item->bg_color);  // 4/5x brightness
+    painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
