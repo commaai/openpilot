@@ -31,6 +31,7 @@ public:
   void updatePlot(double cur, double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
+  void setSeriesType(QAbstractSeries::SeriesType type);
 
   struct SigItem {
     QString msg_id;
@@ -56,7 +57,6 @@ private slots:
   void signalUpdated(const Signal *sig);
   void signalRemoved(const Signal *sig);
   void manageSeries();
-  void setSeriesType(QAbstractSeries::SeriesType type);
 
 private:
   QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);

@@ -181,6 +181,7 @@ void ChartsWidget::settingChanged() {
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
+    c->setSeriesType(settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter);
   }
 }
 
@@ -300,6 +301,8 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 // ChartView
 
 ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
+  series_type = settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter;
+
   QChart *chart = new QChart();
   chart->setBackgroundRoundness(0);
   axis_x = new QValueAxis(this);
@@ -326,9 +329,10 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QMenu *menu = new QMenu(this);
   line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
   line_series_action->setCheckable(true);
-  line_series_action->setChecked(true);
+  line_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeLine);
   scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
   scatter_series_action->setCheckable(true);
+  scatter_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeScatter);
   menu->addSeparator();
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
   manage_btn->setMenu(menu);
@@ -490,7 +494,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     int num_points = std::max<int>(end - begin, 1);
     int pixels_per_point = width() / num_points;
     if (series_type == QAbstractSeries::SeriesTypeScatter) {
-      ((QScatterSeries *)s.series)->setMarkerSize(std::max<int>(1, 16 * (pixels_per_point / 64.0)));
+      ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3 , 1, 8));
     } else {
       s.series->setPointsVisible(pixels_per_point > 20);
     }
