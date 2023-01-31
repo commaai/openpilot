@@ -116,8 +116,8 @@ class UbloxMsgParser {
     // user range accuracy in meters
     const std::unordered_map<uint8_t, float> glonass_URA_lookup =
       {{ 0,  1}, { 1,   2}, { 2, 2.5}, { 3,   4}, { 4,  5}, {5, 7},
-        { 6, 10}, { 7,  12}, { 8,  14}, { 9,  16}, {10, 32},
-        {11, 64}, {12, 128}, {13, 256}, {14, 512}, {15, 1024}};
+       { 6, 10}, { 7,  12}, { 8,  14}, { 9,  16}, {10, 32},
+       {11, 64}, {12, 128}, {13, 256}, {14, 512}, {15, 1024}};
 
     std::unordered_map<int, std::unordered_map<int, std::string>> glonass_strings;
     std::unordered_map<int, int> glonass_superframes;

@@ -33,7 +33,6 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
   }
-  void updateColors();
   void refresh();
 
 public slots:
@@ -76,13 +75,12 @@ public:
   void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
   void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
 
-signals:
-  void openChart(const QString &msg_id, const Signal *sig);
-
 private slots:
   void setFilter();
 
 private:
+  void refresh();
+
   QTableView *logs;
   HistoryLogModel *model;
   QCheckBox *dynamic_mode;

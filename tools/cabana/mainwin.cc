@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <QClipboard>
-#include <QCompleter>
 #include <QDesktopWidget>
 #include <QFile>
 #include <QFileDialog>
@@ -14,6 +13,8 @@
 #include <QUndoView>
 #include <QVBoxLayout>
 #include <QWidgetAction>
+
+#include "tools/cabana/commands.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
@@ -54,21 +55,20 @@ MainWindow::MainWindow() : QMainWindow() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
 
-  QObject::connect(dbc_combo, SIGNAL(activated(const QString &)), SLOT(loadDBCFromName(const QString &)));
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
-  QObject::connect(detail_widget->undo_stack, &QUndoStack::cleanChanged, [this](bool clean) { setWindowModified(!clean); });
+  QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
 }
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
   file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
-  file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
+
   open_recent_menu = file_menu->addMenu(tr("Open &Recent"));
   for (int i = 0; i < MAX_RECENT_FILES; ++i) {
     recent_files_acts[i] = new QAction(this);
@@ -77,6 +77,17 @@ void MainWindow::createActions() {
     open_recent_menu->addAction(recent_files_acts[i]);
   }
   updateRecentFileActions();
+
+  file_menu->addSeparator();
+  QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
+  // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
+  auto dbc_names = dbc()->allDBCNames();
+  std::sort(dbc_names.begin(), dbc_names.end());
+  for (const auto &name : dbc_names) {
+    load_opendbc_menu->addAction(QString::fromStdString(name), this, &MainWindow::openOpendbcFile);
+  }
+
+  file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
 
   file_menu->addSeparator();
   file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save)->setShortcuts(QKeySequence::Save);
@@ -89,16 +100,16 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows)->setShortcuts(QKeySequence::Quit);
 
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
-  auto undo_act = detail_widget->undo_stack->createUndoAction(this, tr("&Undo"));
+  auto undo_act = UndoStack::instance()->createUndoAction(this, tr("&Undo"));
   undo_act->setShortcuts(QKeySequence::Undo);
   edit_menu->addAction(undo_act);
-  auto redo_act = detail_widget->undo_stack->createRedoAction(this, tr("&Rndo"));
+  auto redo_act = UndoStack::instance()->createRedoAction(this, tr("&Rndo"));
   redo_act->setShortcuts(QKeySequence::Redo);
   edit_menu->addAction(redo_act);
   edit_menu->addSeparator();
 
   QMenu *commands_menu = edit_menu->addMenu(tr("Command &List"));
-  auto undo_view = new QUndoView(detail_widget->undo_stack);
+  auto undo_view = new QUndoView(UndoStack::instance());
   undo_view->setWindowTitle(tr("Command List"));
   QWidgetAction *commands_act = new QWidgetAction(this);
   commands_act->setDefaultWidget(undo_view);
@@ -113,18 +124,12 @@ void MainWindow::createActions() {
 
 void MainWindow::createDockWindows() {
   // left panel
-  QWidget *messages_container = new QWidget(this);
-  QVBoxLayout *messages_layout = new QVBoxLayout(messages_container);
-  dbc_combo = createDBCSelector();
-  messages_layout->addWidget(dbc_combo);
   messages_widget = new MessagesWidget(this);
-  messages_layout->addWidget(messages_widget);
-
   QDockWidget *dock = new QDockWidget(tr("MESSAGES"), this);
   dock->setObjectName("MessagesPanel");
   dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
   dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-  dock->setWidget(messages_container);
+  dock->setWidget(messages_widget);
   addDockWidget(Qt::LeftDockWidgetArea, dock);
 
   // right panel
@@ -156,23 +161,6 @@ void MainWindow::createDockWindows() {
   addDockWidget(Qt::RightDockWidgetArea, video_dock);
 }
 
-QComboBox *MainWindow::createDBCSelector() {
-  QComboBox *c = new QComboBox(this);
-  c->setEditable(true);
-  c->lineEdit()->setPlaceholderText(tr("Select from an existing DBC file"));
-  c->setInsertPolicy(QComboBox::NoInsert);
-  c->completer()->setCompletionMode(QCompleter::PopupCompletion);
-  c->completer()->setFilterMode(Qt::MatchContains);
-
-  auto dbc_names = dbc()->allDBCNames();
-  std::sort(dbc_names.begin(), dbc_names.end());
-  for (const auto &name : dbc_names) {
-    c->addItem(QString::fromStdString(name));
-  }
-  c->setCurrentIndex(-1);
-  return c;
-}
-
 void MainWindow::createStatusBar() {
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
@@ -188,10 +176,12 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::undoStackCleanChanged(bool clean) {
+  setWindowModified(!clean);
+}
+
 void MainWindow::DBCFileChanged() {
-  detail_widget->undo_stack->clear();
-  int index = dbc_combo->findText(QFileInfo(dbc()->name()).baseName());
-  dbc_combo->setCurrentIndex(index);
+  UndoStack::instance()->clear();
   setWindowFilePath(QString("%1").arg(dbc()->name()));
 }
 
@@ -220,6 +210,13 @@ void MainWindow::loadFile(const QString &fn) {
   }
 }
 
+void MainWindow::openOpendbcFile() {
+  if (auto action = qobject_cast<QAction *>(sender())) {
+    remindSaveChanges();
+    loadDBCFromOpendbc(action->text());
+  }
+}
+
 void MainWindow::openRecentFile() {
   if (auto action = qobject_cast<QAction *>(sender())) {
     remindSaveChanges();
@@ -227,7 +224,7 @@ void MainWindow::openRecentFile() {
   }
 }
 
-void MainWindow::loadDBCFromName(const QString &name) {
+void MainWindow::loadDBCFromOpendbc(const QString &name) {
   if (name != dbc()->name()) {
     remindSaveChanges();
     dbc()->open(name);
@@ -252,7 +249,7 @@ void MainWindow::loadDBCFromFingerprint() {
   if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
-      loadDBCFromName(dbc_name.toString());
+      loadDBCFromOpendbc(dbc_name.toString());
       return;
     }
   }
@@ -271,7 +268,7 @@ void MainWindow::saveFile(const QString &fn) {
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
     file.write(dbc()->generateDBC().toUtf8());
-    detail_widget->undo_stack->setClean();
+    UndoStack::instance()->setClean();
     setCurrentFile(fn);
     statusBar()->showMessage(tr("File saved"), 2000);
   }
@@ -318,7 +315,7 @@ void MainWindow::updateRecentFileActions() {
 
 void MainWindow::remindSaveChanges() {
   bool discard_changes = false;
-  while (!detail_widget->undo_stack->isClean() && !discard_changes) {
+  while (!UndoStack::instance()->isClean() && !discard_changes) {
     int ret = (QMessageBox::question(this, tr("Unsaved Changes"),
                                      tr("You have unsaved changes. Press ok to save them, cancel to discard."),
                                      QMessageBox::Ok | QMessageBox::Cancel));
@@ -328,7 +325,7 @@ void MainWindow::remindSaveChanges() {
       discard_changes = true;
     }
   }
-  detail_widget->undo_stack->clear();
+  UndoStack::instance()->clear();
   current_file = "";
 }
 

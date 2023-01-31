@@ -84,7 +84,6 @@ inline uint16_t UbloxMsgParser::get_glonass_year(uint8_t N4, uint16_t Nt) {
   return year;
 }
 
-
 bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
   int needed = needed_bytes();
   if(needed > 0) {
@@ -166,11 +165,9 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_pvt(ubx_t::nav_pvt_t *msg) {
   return capnp::messageToFlatArray(msg_builder);
 }
 
-
 kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *msg) {
   // GPS subframes are packed into 10x 4 bytes, each containing 3 actual bytes
   // We will first need to separate the data from the padding and parity
-
   auto body = *msg->body();
   assert(body.size() == 10);
 
@@ -302,7 +299,6 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   auto body = *msg->body();
   assert(body.size() == 4);
-
   {
     std::string string_data;
     string_data.reserve(16);
@@ -320,9 +316,6 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
       return kj::Array<capnp::word>();
     }
 
-    // append to storage
-    printf("GLONASS ephem: %d %lu %lu\n", msg->sv_id(), gl_string.superframe_number(), gl_string.string_number());
-
     // immediate data is the same within one superframe
     if (glonass_superframes[msg->sv_id()] != gl_string.superframe_number()) {
       glonass_strings[msg->sv_id()].clear();
@@ -339,7 +332,6 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
   MessageBuilder msg_builder;
   auto eph = msg_builder.initEvent().initUbloxGnss().initGlonassEphemeris();
   eph.setSvId(msg->sv_id());
-
   uint16_t current_day = 0;
 
   // string number 1
@@ -395,7 +387,9 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setAge(data->e_n());
     eph.setP4(data->p4());
     eph.setSvURA(glonass_URA_lookup.at(data->f_t()));
-    assert(msg->sv_id() == data->n()); // slot number is the same as sv_id
+    if (msg->sv_id() != data->n()) {
+      LOGE("SV_ID != SLOT_NUMBER: %d %d", msg->sv_id(), data->n())
+    }
     eph.setSvType(data->m());
   }
 
@@ -421,9 +415,11 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setMinute((eph.getTk()>>1) & 0x3F);
     eph.setSecond((eph.getTk() & 0x1) * 30);
   }
+
   glonass_strings[msg->sv_id()].clear();
   return capnp::messageToFlatArray(msg_builder);
 }
+
 
 kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
   switch (msg->gnss_id()) {
