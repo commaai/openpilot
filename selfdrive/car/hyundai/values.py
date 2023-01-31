@@ -367,6 +367,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
+  CAR.HYUNDAI_GENESIS: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00DH LKAS 1.4 -140110',
+      b'\xf1\x00DH LKAS 1.5 -140425',
+    ],
+  },
   CAR.IONIQ: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
@@ -1029,13 +1036,6 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81640J0051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81640H0051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
-  CAR.HYUNDAI_GENESIS: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00DH LKAS 1.1 -150210',
-      b'\xf1\x00DH LKAS 1.4 -140110',
-      b'\xf1\x00DH LKAS 1.5 -140425',
     ],
   },
   CAR.GENESIS_G80: {
