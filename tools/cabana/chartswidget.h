@@ -23,6 +23,7 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const QString &msg_id, const Signal *sig);
+  void addSeries(const QList<QStringList> &series_list);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
@@ -56,7 +57,7 @@ private slots:
   void manageSeries();
 
 private:
-  QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
+  QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
@@ -69,7 +70,6 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
-  void addSeries(const QList<QStringList> &series_list);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -100,6 +100,8 @@ signals:
 private:
   void resizeEvent(QResizeEvent *event) override;
   void alignCharts();
+  void newChart();
+  ChartView * createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
@@ -114,7 +116,6 @@ private:
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
-  QLabel *zoom_range_lb;
   QLabel *range_lb;
   QSlider *range_slider;
   bool docking = true;
@@ -129,6 +130,8 @@ private:
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
+  QAction *columns_lb_action;
+  QAction *columns_cb_action;
   QComboBox *columns_cb;
   int column_count = 1;
   const int CHART_MIN_WIDTH = 300;

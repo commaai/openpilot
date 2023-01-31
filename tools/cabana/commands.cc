@@ -1,3 +1,5 @@
+#include <QApplication>
+
 #include "tools/cabana/commands.h"
 
 // EditMsgCommand
@@ -73,3 +75,12 @@ EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const
 
 void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name.c_str(), old_signal); }
 void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name.c_str(), new_signal); }
+
+namespace UndoStack {
+
+QUndoStack *instance() {
+  static QUndoStack *undo_stack = new QUndoStack(qApp);
+  return undo_stack;
+}
+
+}  // namespace UndoStack
