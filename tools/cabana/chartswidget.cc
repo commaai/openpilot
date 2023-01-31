@@ -322,7 +322,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QToolButton *manage_btn = new QToolButton();
   QMenu *menu = new QMenu(this);
   menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
-  menu->addAction(tr("Scater"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
   menu->addSeparator();
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
   manage_btn->setMenu(menu);
