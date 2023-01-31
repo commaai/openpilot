@@ -1480,7 +1480,6 @@ FW_VERSIONS = {
   CAR.IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
-      b'\xf1\x8799110GI000\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
@@ -1488,14 +1487,6 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.05 99211-GI010 220614',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.01 99211-GI010 211007',
-    ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00NE1 IEB \x07 105!\x07\x01 58520-GI000',
-      b'\xf1\x8758520GI000\xf1\x00NE1 IEB \x07 105!\x07\x01 58520-GI000'
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
-      b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106'
     ],
   },
   CAR.TUCSON_4TH_GEN: {
