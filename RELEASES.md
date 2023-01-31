@@ -19,6 +19,7 @@ Version 0.8.17 (2022-XX-XX)
 * Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
 * Kia Sportage 2023 support thanks to sunnyhaibin!
 * Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
+* Volkswagen Crafter and MAN TGE 2017-23 support thanks to jyoung8607!
 
 Version 0.8.16 (2022-08-26)
 ========================
