@@ -7,7 +7,7 @@ on:
   pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
+  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -61,7 +61,7 @@ jobs:
         cp .pylintrc $STRIPPED_DIR
         cp mypy.ini $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "SKIP=test_translations pre-commit run --all"
+        ${{ env.RUN }} "pre-commit run --all"
 
   build_all:
     name: build all
@@ -219,6 +219,7 @@ jobs:
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
+                        ./selfdrive/locationd/test/test_glonass_runner && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \
@@ -294,7 +295,7 @@ jobs:
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 5

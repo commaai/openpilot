@@ -6,8 +6,6 @@
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/boardd/panda.h"
 
-const unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
-
 int random_int(int min, int max) {
   std::random_device dev;
   std::mt19937 rng(dev());
@@ -18,7 +16,8 @@ int random_int(int min, int max) {
 struct PandaTest : public Panda {
   PandaTest(uint32_t bus_offset, int can_list_size, cereal::PandaState::PandaType hw_type);
   void test_can_send();
-  void test_can_recv();
+  void test_can_recv(uint32_t chunk_size = 0);
+  void test_chunked_can_recv();
 
   std::map<int, std::string> test_data;
   int can_list_size = 0;
@@ -50,7 +49,7 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
     can.setAddress(i);
     can.setSrc(random_int(0, 3) + bus_offset);
     can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
-    total_pakets_size += CANPACKET_HEAD_SIZE + dat.size();
+    total_pakets_size += sizeof(can_header) + dat.size();
   }
 
   can_data_list = can_list.asReader();
@@ -60,14 +59,7 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
 void PandaTest::test_can_send() {
   std::vector<uint8_t> unpacked_data;
   this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
-    int size_left = size;
-    for (int i = 0, counter = 0; i < size; i += USBPACKET_MAX_SIZE, counter++) {
-      REQUIRE(chunk[i] == counter);
-
-      const int len = std::min(USBPACKET_MAX_SIZE, size_left);
-      unpacked_data.insert(unpacked_data.end(), &chunk[i + 1], &chunk[i + len]);
-      size_left -= len;
-    }
+    unpacked_data.insert(unpacked_data.end(), chunk, &chunk[size]);
   });
   REQUIRE(unpacked_data.size() == total_pakets_size);
 
@@ -75,23 +67,37 @@ void PandaTest::test_can_send() {
   INFO("test can message integrity");
   for (int pos = 0, pckt_len = 0; pos < unpacked_data.size(); pos += pckt_len) {
     can_header header;
-    memcpy(&header, &unpacked_data[pos], CANPACKET_HEAD_SIZE);
+    memcpy(&header, &unpacked_data[pos], sizeof(can_header));
     const uint8_t data_len = dlc_to_len[header.data_len_code];
-    pckt_len = CANPACKET_HEAD_SIZE + data_len;
+    pckt_len = sizeof(can_header) + data_len;
 
     REQUIRE(header.addr == cnt);
     REQUIRE(test_data.find(data_len) != test_data.end());
     const std::string &dat = test_data[data_len];
-    REQUIRE(memcmp(dat.data(), &unpacked_data[pos + 5], dat.size()) == 0);
+    REQUIRE(memcmp(dat.data(), &unpacked_data[pos + sizeof(can_header)], dat.size()) == 0);
     ++cnt;
   }
   REQUIRE(cnt == can_list_size);
 }
 
-void PandaTest::test_can_recv() {
+void PandaTest::test_can_recv(uint32_t rx_chunk_size) {
   std::vector<can_frame> frames;
-  this->pack_can_buffer(can_data_list, [&](uint8_t *data, size_t size) {
-    this->unpack_can_buffer(data, size, frames);
+  this->pack_can_buffer(can_data_list, [&](uint8_t *data, uint32_t size) {
+    if (rx_chunk_size == 0) {
+      REQUIRE(this->unpack_can_buffer(data, size, frames));
+    } else {
+      this->receive_buffer_size = 0;
+      uint32_t pos = 0;
+
+      while(pos < size) {
+        uint32_t chunk_size = std::min(rx_chunk_size, size - pos);
+        memcpy(&this->receive_buffer[this->receive_buffer_size], &data[pos], chunk_size);
+        this->receive_buffer_size += chunk_size;
+        pos += chunk_size;
+
+        REQUIRE(this->unpack_can_buffer(this->receive_buffer, this->receive_buffer_size, frames));
+      }
+    }
   });
 
   REQUIRE(frames.size() == can_list_size);
@@ -114,6 +120,9 @@ TEST_CASE("send/recv CAN 2.0 packets") {
   SECTION("can_receive") {
     test.test_can_recv();
   }
+  SECTION("chunked_can_receive") {
+    test.test_can_recv(0x40);
+  }
 }
 
 TEST_CASE("send/recv CAN FD packets") {
@@ -126,5 +135,8 @@ TEST_CASE("send/recv CAN FD packets") {
   }
   SECTION("can_receive") {
     test.test_can_recv();
+  }
+  SECTION("chunked_can_receive") {
+    test.test_can_recv(0x40);
   }
 }

@@ -1,7 +1,9 @@
 #pragma once
 
-#include <QScrollArea>
-#include <QTabBar>
+#include <QSplitter>
+#include <QStackedLayout>
+#include <QTabWidget>
+#include <QToolBar>
 
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chartswidget.h"
@@ -9,13 +11,16 @@
 #include "tools/cabana/signaledit.h"
 
 class EditMessageDialog : public QDialog {
-  Q_OBJECT
-
 public:
   EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
 
   QLineEdit *name_edit;
   QSpinBox *size_spin;
+};
+
+class WelcomeWidget : public QWidget {
+public:
+  WelcomeWidget(QWidget *parent);
 };
 
 class DetailWidget : public QWidget {
@@ -24,28 +29,25 @@ class DetailWidget : public QWidget {
 public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const QString &message_id);
-  void dbcMsgChanged(int show_form_idx = -1);
+  void refresh();
+  QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
 
 private:
-  void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
-  void addSignal(int start_bit, int to);
-  void resizeSignal(const Signal *sig, int from, int to);
-  void saveSignal(const Signal *sig, const Signal &new_sig);
-  void removeSignal(const Signal *sig);
   void editMsg();
-  void showForm();
-  void updateState();
+  void removeMsg();
+  void updateState(const QHash<QString, CanData> * msgs = nullptr);
 
   QString msg_id;
-  QLabel *name_label, *time_label, *warning_label;
+  QLabel *name_label, *time_label, *warning_icon, *warning_label;
   QWidget *warning_widget;
-  QPushButton *edit_btn;
-  QWidget *signals_container;
   QTabBar *tabbar;
-  HistoryLog *history_log;
+  QTabWidget *tab_widget;
+  QAction *remove_msg_act;
+  LogsWidget *history_log;
   BinaryView *binary_view;
-  QScrollArea *scroll;
+  SignalView *signal_view;
   ChartsWidget *charts;
-  QList<SignalEdit *> signal_list;
+  QSplitter *splitter;
+  QStackedLayout *stacked_layout;
 };

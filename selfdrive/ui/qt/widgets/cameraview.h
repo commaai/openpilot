@@ -35,6 +35,7 @@ public:
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
+  void stopVipcThread();
 
 signals:
   void clicked();

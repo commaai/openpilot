@@ -2,9 +2,9 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 
@@ -18,13 +18,7 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
-
-  @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[], experimental_long=False):  # pylint: disable=dangerous-default-value
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "hyundai"
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
@@ -120,8 +114,8 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.67
       ret.steerRatio = 14.00 * 1.15
       tire_stiffness_factor = 0.385
-    elif candidate == CAR.TUCSON_HYBRID_4TH_GEN:
-      ret.mass = 1680. + STD_CARGO_KG  # average of all 3 trims
+    elif candidate in (CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN):
+      ret.mass = 1630. + STD_CARGO_KG  # average
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
       tire_stiffness_factor = 0.385
@@ -158,7 +152,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       if candidate == CAR.KIA_OPTIMA_G4:
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
-    elif candidate == CAR.KIA_STINGER:
+    elif candidate in (CAR.KIA_STINGER, CAR.KIA_STINGER_2022):
       ret.mass = 1825. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
@@ -191,8 +185,19 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1767. + STD_CARGO_KG  # SX Prestige trim support only
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6
+    elif candidate in (CAR.KIA_SORENTO_4TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN):
+      ret.wheelbase = 2.81
+      ret.steerRatio = 13.5  # average of the platforms
+      if candidate == CAR.KIA_SORENTO_4TH_GEN:
+        ret.mass = 3957 * CV.LB_TO_KG + STD_CARGO_KG
+      else:
+        ret.mass = 4537 * CV.LB_TO_KG + STD_CARGO_KG
 
     # Genesis
+    elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
+      ret.mass = 2205 + STD_CARGO_KG
+      ret.wheelbase = 2.9
+      ret.steerRatio = 12.6 # https://www.motor1.com/reviews/586376/2023-genesis-gv60-first-drive/#:~:text=Relative%20to%20the%20related%20Ioniq,5%2FEV6%27s%2014.3%3A1.
     elif candidate == CAR.GENESIS_G70:
       ret.steerActuatorDelay = 0.1
       ret.mass = 1640.0 + STD_CARGO_KG
@@ -219,7 +224,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = bool(ret.flags & HyundaiFlags.CANFD_HDA2)
+      ret.experimentalLongitudinalAvailable = candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
@@ -230,7 +235,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.vEgoStarting = 0.1
-    ret.startAccel = 2.0
+    ret.startAccel = 1.0
     ret.longitudinalActuatorDelayLowerBound = 0.5
     ret.longitudinalActuatorDelayUpperBound = 0.5
 
@@ -269,11 +274,11 @@ class CarInterface(CarInterfaceBase):
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
-    ret.centerToFront = ret.wheelbase * 0.4
+    if candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
+      ret.flags |= HyundaiFlags.ALT_LIMITS.value
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ALT_LIMITS
 
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
+    ret.centerToFront = ret.wheelbase * 0.4
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
@@ -283,11 +288,15 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if CP.openpilotLongitudinalControl:
+    if CP.openpilotLongitudinalControl and not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value):
       addr, bus = 0x7d0, 0
       if CP.flags & HyundaiFlags.CANFD_HDA2.value:
         addr, bus = 0x730, 5
       disable_ecu(logcan, sendcan, bus=bus, addr=addr, com_cont_req=b'\x28\x83\x01')
+
+    # for blinkers
+    if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
+      disable_ecu(logcan, sendcan, bus=5, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
 
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
@@ -305,9 +314,6 @@ class CarInterface(CarInterfaceBase):
     # Main button also can trigger an engagement on these cars
     allow_enable = any(btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons) or any(self.CS.main_buttons)
     events = self.create_common_events(ret, pcm_enable=self.CS.CP.pcmCruise, allow_enable=allow_enable)
-
-    if self.CS.brake_error:
-      events.add(EventName.brakeUnavailable)
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:

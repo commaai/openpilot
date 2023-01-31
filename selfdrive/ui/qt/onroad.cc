@@ -31,6 +31,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     split->insertWidget(0, arCam);
   }
 
+  if (getenv("MAP_RENDER_VIEW")) {
+    CameraWidget *map_render = new CameraWidget("navd", VISION_STREAM_MAP, false, this);
+    split->insertWidget(0, map_render);
+  }
+
   stacked_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
@@ -174,6 +179,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
 
@@ -203,7 +209,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     v_ego_cluster_seen = true;
   }
   float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
-  cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
+  cur_speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
   float speed_limit = nav_alive ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
@@ -378,8 +384,9 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
   // engage-ability icon
   if (engageable) {
+    SubMaster &sm = *(uiState()->sm);
     drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             engage_img, bg_colors[status], 1.0);
+             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0);
   }
 
   // dm icon
@@ -409,7 +416,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setBrush(bg);
   p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
-  p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
+  p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
 
 
@@ -446,6 +453,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.save();
 
   const UIScene &scene = s->scene;
+  SubMaster &sm = *(s->sm);
+
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
     painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
@@ -461,8 +470,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
   float start_hue, end_hue;
-  if (scene.end_to_end_long) {
-    const auto &acceleration = (*s->sm)["modelV2"].getModelV2().getAcceleration();
+  if (sm["controlsState"].getControlsState().getExperimentalMode()) {
+    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
     float acceleration_future = 0;
     if (acceleration.getZ().size() > 16) {
       acceleration_future = acceleration.getX()[16];  // 2.5 seconds
@@ -478,21 +487,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
     bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
-    const auto &orientation = (*s->sm)["modelV2"].getModelV2().getOrientation();
-    float orientation_future = 0;
-    if (orientation.getZ().size() > 16) {
-      orientation_future = std::abs(orientation.getZ()[16]);  // 2.5 seconds
-    }
-    start_hue = 148;
-    // straight: 112, in turns: 70
-    end_hue = fmax(70, 112 - (orientation_future * 420));
-
-    // FIXME: painter.drawPolygon can be slow if hue is not rounded
-    end_hue = int(end_hue * 100 + 0.5) / 100;
-
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
   }
 
   painter.setBrush(bg);
@@ -501,13 +498,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
+void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
   painter.save();
 
   const float speedBuff = 10.;
   const float leadBuff = 40.;
-  const float d_rel = lead_data.getX()[0];
-  const float v_rel = lead_data.getV()[0];
+  const float d_rel = lead_data.getDRel();
+  const float v_rel = lead_data.getVRel();
 
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
@@ -542,6 +539,7 @@ void AnnotatedCameraWidget::paintGL() {
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
+  const cereal::RadarState::Reader &radar_state = sm["radarState"].getRadarState();
 
   // draw camera frame
   {
@@ -567,6 +565,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else if (v_ego > 15) {
       wide_cam_requested = false;
     }
+    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
@@ -591,19 +590,20 @@ void AnnotatedCameraWidget::paintGL() {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_model(s, sm["modelV2"].getModelV2());
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
-        update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
+        update_leads(s, radar_state, sm["modelV2"].getModelV2().getPosition());
       }
     }
 
     drawLaneLines(painter, s);
 
     if (s->scene.longitudinal_control) {
-      const auto leads = model.getLeadsV3();
-      if (leads[0].getProb() > .5) {
-        drawLead(painter, leads[0], s->scene.lead_vertices[0]);
+      auto lead_one = radar_state.getLeadOne();
+      auto lead_two = radar_state.getLeadTwo();
+      if (lead_one.getStatus()) {
+        drawLead(painter, lead_one, s->scene.lead_vertices[0]);
       }
-      if (leads[1].getProb() > .5 && (std::abs(leads[1].getX()[0] - leads[0].getX()[0]) > 3.0)) {
-        drawLead(painter, leads[1], s->scene.lead_vertices[1]);
+      if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
+        drawLead(painter, lead_two, s->scene.lead_vertices[1]);
       }
     }
   }
