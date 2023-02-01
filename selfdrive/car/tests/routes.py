@@ -26,6 +26,7 @@ non_tested_cars = [
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
+  VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
