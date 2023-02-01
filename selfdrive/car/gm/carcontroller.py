@@ -63,7 +63,7 @@ class CarController:
     elif (self.frame - self.last_steer_frame) >= steer_step:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
       if init_lka_counter:
-        self.lka_steering_cmd_counter = CS.camera_lka_steering_cmd_counter + 1
+        self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
 
       if CC.latActive:
         new_steer = int(round(actuators.steer * self.params.STEER_MAX))
