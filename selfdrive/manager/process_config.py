@@ -15,7 +15,7 @@ def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
 
 def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
-  return True  #  started and run
+  return started and run
 
 def ublox(started, params, CP: car.CarParams) -> bool:
   use_ublox = os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
