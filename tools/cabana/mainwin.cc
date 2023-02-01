@@ -243,6 +243,11 @@ void MainWindow::loadDBCFromClipboard() {
 }
 
 void MainWindow::loadDBCFromFingerprint() {
+  // Don't overwrite already loaded DBC
+  if (!dbc()->name().isEmpty()) {
+    return;
+  }
+
   remindSaveChanges();
   auto fingerprint = can->carFingerprint();
   video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
