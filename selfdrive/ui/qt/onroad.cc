@@ -549,17 +549,18 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
+  const int eff_r = radius - 20;
   // tracking arcs
-  float delta_x = -scene.driver_pose_sins[1] * radius / 2;
-  float delta_y = -scene.driver_pose_sins[0] * radius / 2;
-  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, 0.275*(1.0-dm_fade_state)), 2, Qt::SolidLine, Qt::RoundCap));
-  painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - radius / 2 + 4, fabs(delta_x), radius - 8), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
-  painter.drawArc(QRectF(x - radius / 2 + 4, std::fmin(y + delta_y, y), radius - 8, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
+  float delta_x = -scene.driver_pose_sins[1] * eff_r / 2;
+  float delta_y = -scene.driver_pose_sins[0] * eff_r / 2;
+  painter.setPen(QPen(QColor::fromRgbF(0.1, 0.95, 0.1, 0.275*(1.0-dm_fade_state)), 2, Qt::SolidLine, Qt::RoundCap));
+  painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - eff_r / 2, fabs(delta_x), eff_r), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
+  painter.drawArc(QRectF(x - eff_r / 2, std::fmin(y + delta_y, y), eff_r, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
   // circle border (status)
-  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 8, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 5, Qt::SolidLine, Qt::RoundCap));
   painter.setBrush(Qt::NoBrush);
-  painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  painter.drawEllipse(x - eff_r / 2, y - eff_r / 2, eff_r, eff_r);
 
   painter.restore();
 }
