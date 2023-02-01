@@ -23,6 +23,7 @@ void Settings::save() {
   s.setValue("window_state", window_state);
   s.setValue("geometry", geometry);
   s.setValue("video_splitter_state", video_splitter_state);
+  s.setValue("recent_files", recent_files);
   s.setValue("message_header_state", message_header_state);
 }
 
@@ -37,6 +38,7 @@ void Settings::load() {
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();
   video_splitter_state = s.value("video_splitter_state").toByteArray();
+  recent_files = s.value("recent_files").toStringList();
   message_header_state = s.value("message_header_state").toByteArray();
 }
 
