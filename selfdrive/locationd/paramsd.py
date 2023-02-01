@@ -156,6 +156,7 @@ def main(sm=None, pm=None):
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
+  roll = 0.0
 
   while True:
     sm.update()
@@ -175,6 +176,8 @@ def main(sm=None, pm=None):
 
       angle_offset_average = clip(math.degrees(x[States.ANGLE_OFFSET]), angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
       angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET] + x[States.ANGLE_OFFSET_FAST]), angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
+      roll = clip(x[States.ROAD_ROLL], roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA)
+      roll_std = P[States.ROAD_ROLL]
       # Account for the opposite signs of the yaw rates
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
 
@@ -185,12 +188,14 @@ def main(sm=None, pm=None):
       liveParameters.sensorValid = sensors_valid
       liveParameters.steerRatio = float(x[States.STEER_RATIO])
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      liveParameters.roll = float(x[States.ROAD_ROLL])
+      liveParameters.roll = roll
       liveParameters.angleOffsetAverageDeg = angle_offset_average
       liveParameters.angleOffsetDeg = angle_offset
       liveParameters.valid = all((
         abs(liveParameters.angleOffsetAverageDeg) < 10.0,
         abs(liveParameters.angleOffsetDeg) < 10.0,
+        abs(liveParameters.roll) < ROLL_MAX,
+        roll_std < ROLL_STD_MAX,
         0.2 <= liveParameters.stiffnessFactor <= 5.0,
         min_sr <= liveParameters.steerRatio <= max_sr,
       ))
