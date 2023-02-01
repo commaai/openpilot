@@ -543,7 +543,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
     // float end_shade = std::fmax(std::fmin(0.4 + 0.6*(scene.face_kpts_draw_d[i+1] + 20)/100, 1.0), 0.0);
     // linearGrad.setColorAt(1, QColor::fromRgbF(end_shade, end_shade, end_shade, opacity));
 
-    painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 10, Qt::SolidLine, Qt::RoundCap));
+    painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 8, Qt::SolidLine, Qt::RoundCap));
     painter.drawLine(start_p, end_p);
   }
 
