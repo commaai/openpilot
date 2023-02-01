@@ -23,11 +23,12 @@ class CarController:
     self.apply_gas = 0
     self.apply_brake = 0
     self.frame = 0
-    self.last_steer_frame = -CarControllerParams.INACTIVE_STEER_STEP
+    self.last_steer_frame = 0
     self.last_button_frame = 0
     self.cancel_counter = 0
 
     self.lka_steering_cmd_counter = 0
+    self.sent_lka_steering_cmd = False
     self.lka_icon_status_last = (False, False)
 
     self.params = CarControllerParams(self.CP)
@@ -49,7 +50,7 @@ class CarController:
 
     # Steering (Active: 50Hz, inactive: 10Hz)
     # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
-    init_lka_counter = self.last_steer_frame < 0
+    init_lka_counter = not self.sent_lka_steering_cmd
     # Also send at 50Hz until we're in sync with camera so counters align when relay closes, preventing a fault
     # openpilot can subtly drift, so this is activated throughout a drive to stay synced
     out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
@@ -59,13 +60,12 @@ class CarController:
     if CC.latActive or sync_steer:
       steer_step = self.params.STEER_STEP
 
-    if CS.loopback_lka_steering_cmd_updated:
-      self.last_steer_frame = self.frame
-      self.lka_steering_cmd_counter += 1
-
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
-    if (self.frame - self.last_steer_frame) >= steer_step:
+    if CS.loopback_lka_steering_cmd_updated:
+      self.lka_steering_cmd_counter += 1
+      self.sent_lka_steering_cmd = True
+    elif (self.frame - self.last_steer_frame) >= steer_step:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
       if init_lka_counter:
         self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
@@ -76,6 +76,7 @@ class CarController:
       else:
         apply_steer = 0
 
+      self.last_steer_frame = self.frame
       self.apply_steer_last = apply_steer
       idx = self.lka_steering_cmd_counter % 4
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
