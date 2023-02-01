@@ -16,7 +16,7 @@ from system.swaglog import cloudlog
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
-ROLL_STD_MAX = math.radians(1)
+ROLL_STD_MAX = math.radians(1.5)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
 
 
@@ -193,7 +193,6 @@ def main(sm=None, pm=None):
         abs(liveParameters.angleOffsetDeg) < 10.0,
         0.2 <= liveParameters.stiffnessFactor <= 5.0,
         min_sr <= liveParameters.steerRatio <= max_sr,
-        learner.roll_valid
       ))
       liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
