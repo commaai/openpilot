@@ -13,8 +13,6 @@
 #include <QToolTip>
 #include <QtConcurrent>
 
-#include "selfdrive/ui/qt/util.h"
-
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
@@ -24,7 +22,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
 
-  QAction *new_plot_btn = toolbar->addAction(bootstrapPixmap("file-plus"), "");
+  QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), "");
   new_plot_btn->setToolTip(tr("New Plot"));
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, 12, 0);
@@ -46,9 +44,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setPageStep(60);  // 1 min
   toolbar->addWidget(range_slider);
 
-  reset_zoom_btn = toolbar->addAction(bootstrapPixmap("zoom-out"), "");
+  reset_zoom_btn = toolbar->addAction(utils::icon("zoom-out"), "");
   reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
-  remove_all_btn = toolbar->addAction(bootstrapPixmap("x"), "");
+  remove_all_btn = toolbar->addAction(utils::icon("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
@@ -170,7 +168,7 @@ void ChartsWidget::setMaxChartRange(int value) {
 void ChartsWidget::updateToolBar() {
   range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   title_label->setText(tr("Charts: %1").arg(charts.size()));
-  dock_btn->setIcon(bootstrapPixmap(docking ? "arrow-up-right" : "arrow-down-left"));
+  dock_btn->setIcon(utils::icon(docking ? "arrow-up-right" : "arrow-down-left"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
   remove_all_btn->setEnabled(!charts.isEmpty());
   reset_zoom_btn->setEnabled(is_zoomed);
@@ -311,7 +309,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setMargins({20, 11, 11, 11});
 
   QToolButton *remove_btn = new QToolButton();
-  remove_btn->setIcon(bootstrapPixmap("x"));
+  remove_btn->setIcon(utils::icon("x"));
   remove_btn->setAutoRaise(true);
   remove_btn->setToolTip(tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart);
@@ -319,7 +317,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
-  manage_btn->setIcon(bootstrapPixmap("gear"));
+  manage_btn->setIcon(utils::icon("gear"));
   manage_btn->setAutoRaise(true);
   manage_btn->setToolTip(tr("Manage series"));
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
@@ -358,11 +356,6 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   QLineSeries *series = new QLineSeries(this);
 
-  // TODO: Due to a bug in CameraWidget the camera frames
-  // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
-#ifndef __APPLE__
-  series->setUseOpenGL(true);
-#endif
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -476,17 +469,32 @@ void ChartView::updatePlot(double cur, double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
-  }
 
-  // Show points when zoomed in enough
-  for (auto &s : sigs) {
-    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    // Show points when zoomed in enough
+    for (auto &s : sigs) {
+      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+      auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
 
-    int num_points = std::max<int>(end - begin, 1);
-    int pixels_per_point = width() / num_points;
+      int num_points = std::max<int>(end - begin, 1);
+      int pixels_per_point = width() / num_points;
 
-    s.series->setPointsVisible(pixels_per_point > 20);
+      s.series->setPointsVisible(pixels_per_point > 20);
+
+      // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
+#ifndef __APPLE
+      // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
+      bool use_opengl = pixels_per_point < 1;
+      s.series->setUseOpenGL(use_opengl);
+
+      // Qt doesn't properly apply device pixel ratio in OpenGL mode
+      QApplication* application = static_cast<QApplication *>(QApplication::instance());
+      float scale = use_opengl ? application->devicePixelRatio() : 1.0;
+
+      QPen pen = s.series->pen();
+      pen.setWidth(2.0 * scale);
+      s.series->setPen(pen);
+#endif
+    }
   }
 
   scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
