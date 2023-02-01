@@ -326,6 +326,8 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
     pandaCanStates.push_back(can_health);
 
+    health.ignition_line_pkt = 0;
+    health.ignition_can_pkt = 0;
     if (spoofing_started) {
       health.ignition_line_pkt = 1;
     }
@@ -475,7 +477,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     // send out peripheralState
     send_peripheral_state(pm, peripheral_panda);
-    auto ignition_opt = send_panda_states(pm, pandas, _spoofing_started);
+    auto ignition_opt = send_panda_states(pm, pandas, _spoofing_started && spoofing_started);
 
     if (!ignition_opt) {
       continue;
