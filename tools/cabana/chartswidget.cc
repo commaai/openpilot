@@ -492,7 +492,6 @@ void ChartView::updatePlot(double cur, double min, double max) {
       int pixels_per_point = width() / num_points;
 
       if (series_type == QAbstractSeries::SeriesTypeScatter) {
-        qDebug() << pixels_per_point << std::clamp(pixels_per_point / 3, 1, 8);
         ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
       } else {
         s.series->setPointsVisible(pixels_per_point > 20);
