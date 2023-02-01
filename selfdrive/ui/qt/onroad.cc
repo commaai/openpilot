@@ -226,7 +226,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
-  setProperty("dm_fade_state", fmax(0.0, fmin(1.0, dm_fade_state+0.2*(0.5-(float)(isStandstill*dmActive)))));
+  setProperty("dm_fade_state", fmax(0.0, fmin(1.0, dm_fade_state+0.2*(0.5-(float)(dmActive)))));
   setProperty("status", s.status);
 
   // update engageability and DM icons at 2Hz
@@ -543,7 +543,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
     // float end_shade = std::fmax(std::fmin(0.4 + 0.6*(scene.face_kpts_draw_d[i+1] + 20)/100, 1.0), 0.0);
     // linearGrad.setColorAt(1, QColor::fromRgbF(end_shade, end_shade, end_shade, opacity));
 
-    painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 10, Qt::SolidLine, Qt::RoundCap));
+    painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 10, Qt::SolidLine, Qt::RoundCap));
     painter.drawLine(start_p, end_p);
   }
 
@@ -558,7 +558,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   painter.drawArc(QRectF(x - eff_r / 2, std::fmin(y + delta_y, y), eff_r, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
   // circle border (status)
-  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 5, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 5, Qt::SolidLine, Qt::RoundCap));
   painter.setBrush(Qt::NoBrush);
   painter.drawEllipse(x - eff_r / 2, y - eff_r / 2, eff_r, eff_r);
 

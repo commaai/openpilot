@@ -116,7 +116,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
   UIScene &scene = s->scene;
   const auto driver_orient = driverstate.getLeftDriverData().getFaceOrientation();
   for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
-    float v_this = driver_orient[i];
+    float v_this = 0.5 * driver_orient[i];
     scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
     scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
     scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
