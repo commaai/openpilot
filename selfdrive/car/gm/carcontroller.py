@@ -51,7 +51,7 @@ class CarController:
     # Steering (Active: 50Hz, inactive: 10Hz)
     # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
     init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
-    # Also send at 50Hz until we're in sync with camera so counters align when relay closes, preventing fault
+    # Also send at 50Hz until we're in sync with camera so counters align when relay closes, preventing a fault
     # openpilot can subtly drift, so this is activated throughout a drive to stay synced
     out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
 
