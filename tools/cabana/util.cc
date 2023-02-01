@@ -1,7 +1,10 @@
 #include "tools/cabana/util.h"
 
+#include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+
+#include "selfdrive/ui/qt/util.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
@@ -65,11 +68,6 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegat
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QList<QVariant> colors = index.data(Qt::UserRole).toList();
-  if (colors.empty()) {
-    QStyledItemDelegate::paint(painter, option, index);
-    return;
-  }
   QStyleOptionViewItemV4 opt = option;
   initStyleOption(&opt, index);
 
@@ -85,8 +83,9 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   pos.moveLeft(pos.x() + space.width());
 
   int m = space.width() / 2;
-  const QMargins margins(m + 1, m, m, m);
+  const QMargins margins(m, m, m, m);
 
+  QList<QVariant> colors = index.data(Qt::UserRole).toList();
   int i = 0;
   for (auto &byte : opt.text.split(" ")) {
     if (i < colors.size()) {
@@ -97,3 +96,24 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     i++;
   }
 }
+
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+
+QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  input.replace(' ', '_');
+  return QRegExpValidator::validate(input, pos);
+}
+
+namespace utils {
+QPixmap icon(const QString &id) {
+  static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                           QApplication::style()->standardPalette().color(QPalette::Background).value();
+  QPixmap pm = bootstrapPixmap(id);
+  if (dark_theme) {
+    QPainter p(&pm);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(pm.rect(), Qt::lightGray);
+  }
+  return pm;
+}
+}  // namespace utils

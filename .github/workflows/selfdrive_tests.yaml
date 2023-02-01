@@ -219,6 +219,7 @@ jobs:
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
+                        ./selfdrive/locationd/test/test_glonass_runner && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \
