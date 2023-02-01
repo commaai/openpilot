@@ -48,11 +48,13 @@ class CarController:
     # Send CAN commands.
     can_sends = []
 
-    # Steering (50Hz: active, syncing with camera, 10Hz: inactive)
+    # Steering (Active: 50Hz, inactive: 10Hz)
     # Attempt to sync with camera on startup at 50Hz, first few msgs are blocked
     init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
-    # Send at 50Hz until we're sending right before camera sends LKAS message
+    # Also send at 50Hz until we're in sync with camera so counters align when relay closes, preventing fault
+    # openpilot can subtly drift, so this is activated throughout a drive to stay synced
     out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
+
     steer_step = self.params.INACTIVE_STEER_STEP
     if CC.latActive or init_lka_counter or out_of_sync:
       steer_step = self.params.STEER_STEP
