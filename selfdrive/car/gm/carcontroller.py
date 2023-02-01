@@ -26,6 +26,7 @@ class CarController:
     self.last_steer_frame = 0
     self.last_button_frame = 0
     self.cancel_counter = 0
+    self.send_on_frame = 0
 
     self.lka_steering_cmd_counter = 0
     self.sent_lka_steering_cmd = False
@@ -53,8 +54,11 @@ class CarController:
     init_lka_counter = not self.sent_lka_steering_cmd and self.CP.networkLocation == NetworkLocation.fwdCamera
     # Send at 50Hz until we're sending right before camera sends LKAS message
     out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
+    cam_updated = CS.camera_lka_steering_cmd_updated
+    if cam_updated:
+      self.send_on_frame = self.frame + 9  # this allows for 2x more restarts (~60) without faulting
     steer_step = self.params.INACTIVE_STEER_STEP
-    if CC.latActive or init_lka_counter or out_of_sync:
+    if CC.latActive or init_lka_counter or out_of_sync or self.send_on_frame == self.frame:
       steer_step = self.params.STEER_STEP
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
