@@ -73,7 +73,7 @@ private:
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
-  QPointF track_pt;
+  QVector<QPointF> track_pts;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QList<SigItem> sigs;
