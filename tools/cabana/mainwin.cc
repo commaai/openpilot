@@ -193,7 +193,7 @@ void MainWindow::DBCFileChanged() {
 
 void MainWindow::openRoute() {
   OpenRouteDialog dlg(this);
-  if (!dlg.exec()) {
+  if (!dlg.exec() && !dlg.success) {
     close();
   }
 }

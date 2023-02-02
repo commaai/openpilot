@@ -17,9 +17,6 @@ static bool event_filter(const Event *e, void *opaque) {
 }
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir) {
-  if (replay) {
-    replay->stop();
-  }
   replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);

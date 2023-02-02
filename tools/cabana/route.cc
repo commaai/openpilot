@@ -12,6 +12,7 @@
 // OpenRouteDialog
 
 OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
+  // TODO: get route list from api.comma.ai
   QHBoxLayout *edit_layout = new QHBoxLayout;
   edit_layout->addWidget(new QLabel(tr("Route:")));
   route_edit = new QLineEdit(this);
@@ -21,6 +22,7 @@ OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   edit_layout->addWidget(file_btn);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
+  btn_box->button(QDialogButtonBox::Open)->setEnabled(false);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addStretch(0);
@@ -29,8 +31,8 @@ OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   main_layout->addWidget(btn_box);
   setMinimumSize({550, 120});
 
-  QObject::connect(btn_box, &QDialogButtonBox::rejected, [this]() { success ? accept() : reject(); });
   QObject::connect(btn_box, &QDialogButtonBox::accepted, this, &OpenRouteDialog::loadRoute);
+  QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
   QObject::connect(route_edit, &QLineEdit::textChanged, [this]() {
     btn_box->button(QDialogButtonBox::Open)->setEnabled(!route_edit->text().isEmpty());
   });
@@ -54,14 +56,11 @@ void OpenRouteDialog::loadRoute() {
       route = basename.mid(0, pos);
     }
   }
-
-  ReplayStream *replay_stream = dynamic_cast<ReplayStream *>(can);
-  success = replay_stream->loadRoute(route, data_dir);
+  success = dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
+  btn_box->setEnabled(true);
   if (success) {
     accept();
   } else {
-    QString text = tr("Failed to load route: '%1'").arg(route);
-    QMessageBox::warning(nullptr, tr("Warning"), text);
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
   }
-  btn_box->setEnabled(true);
 }
