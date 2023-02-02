@@ -215,12 +215,9 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
       matched_brand = brand
       break
 
-  # Don't run non-OBD queries when:
-  # - [ ] fingerprinted to another brand without any
-
+  # Do non-OBD queries for matched brand, or all if no match is found
   Params().put_bool("FirmwareObdQueryDone", True)
 
-  # Do non-OBD queries for matched brand, or all if no match is found
   for brand, config in FW_QUERY_CONFIGS.items():
     if brand == matched_brand or matched_brand is None:
       car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexing=False, debug=debug, progress=progress)
