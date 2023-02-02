@@ -220,13 +220,13 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
   for brand, config in FW_QUERY_CONFIGS.items():
     if brand == matched_brand or matched_brand is None:
-      car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexing=False, debug=debug, progress=progress)
+      car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexed=False, debug=debug, progress=progress)
       all_car_fw.extend(car_fw)
 
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, obd_multiplexing=True, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, obd_multiplexed=True, debug=False, progress=False):
   versions = VERSIONS.copy()
 
   # Each brand can define extra ECUs to query for data collection
@@ -271,7 +271,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         if r.bus > num_pandas * 4 - 1:
           continue
         # Or if request is not designated for current multiplexing mode
-        elif r.non_obd == obd_multiplexing:
+        elif r.non_obd == obd_multiplexed:
           continue
 
         try:
