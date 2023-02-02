@@ -10,8 +10,10 @@ class OpenRouteDialog : public QDialog {
 public:
   OpenRouteDialog(QWidget *parent);
   void loadRoute();
+  inline bool failedToLoad() const { return failed_to_load; }
 
+private:
   QLineEdit *route_edit;
   QDialogButtonBox *btn_box;
-  bool success = true;
+  bool failed_to_load = false;
 };

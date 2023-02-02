@@ -56,11 +56,11 @@ void OpenRouteDialog::loadRoute() {
       route = basename.mid(0, pos);
     }
   }
-  success = dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
+  failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
   btn_box->setEnabled(true);
-  if (success) {
-    accept();
-  } else {
+  if (failed_to_load) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
+  } else {
+    accept();
   }
 }
