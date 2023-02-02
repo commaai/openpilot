@@ -175,13 +175,65 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
+ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
+  setCheckable(true);
+  setFixedSize(144, 144);
+
+  params = Params();
+  engage_img = loadPixmap("../assets/img_chffr_wheel.png", size());
+  experimental_img = loadPixmap("../assets/img_experimental.svg", size());
+
+  QObject::connect(this, &QPushButton::toggled, [=](bool checked) {
+    params.putBool("ExperimentalMode", checked);
+  });
+}
+
+void ExperimentalButton::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+
+  // button is "checked" if experimental mode is enabled
+  setChecked(sm["controlsState"].getControlsState().getExperimentalMode());
+
+  // engageable status, shown when unchecked
+  const auto cs = sm["controlsState"].getControlsState();
+  setProperty("engageable", cs.getEngageable() || cs.getEnabled());
+
+  // disable button when experimental mode is not available, or has not been confirmed for the first time
+  const auto cp = sm["carParams"].getCarParams();
+  const bool experimental_mode_available = cp.getExperimentalLongitudinalAvailable() ? params.getBool("ExperimentalLongitudinalEnabled") : cp.getOpenpilotLongitudinalControl();
+  setEnabled(params.getBool("ExperimentalModeConfirmed") && experimental_mode_available);
+}
+
+void ExperimentalButton::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  QPoint center(width() / 2, height() / 2);
+
+  QPixmap img = isChecked() ? experimental_img : engage_img;
+  QBrush bg = QColor(0, 0, 0, 166);
+  float opacity = 1.0;
+
+  p.setOpacity(1.0);
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  p.drawEllipse(center, radius, radius);
+  p.setOpacity(opacity);
+  p.drawPixmap(center, img);
+}
+
+
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
-  params = Params();
 
-  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
-  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
-  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
+  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+  main_layout->setMargin(0);
+  main_layout->setSpacing(0);
+
+  experimental_btn = new ExperimentalButton(this);
+  main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
+
+  dm_img = loadPixmap("../assets/img_driver_face.png", {144, 144});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -192,7 +244,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
 
   const auto cs = sm["controlsState"].getControlsState();
-  const auto cp = sm["carParams"].getCarParams();
 
   // Handle older routes where vCruiseCluster is not set
   float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
@@ -229,10 +280,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
-  // update engageability and DM icons at 2Hz
+  // update engageability/experimental mode button and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
-    setProperty("engageable", cs.getEngageable() || cs.getEnabled());
-    setProperty("experimental_mode_available", cp.getExperimentalLongitudinalAvailable() ? params.getBool("ExperimentalLongitudinalEnabled") : cp.getOpenpilotLongitudinalControl());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
@@ -385,13 +434,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // engage-ability icon
-  if (engageable) {
-    SubMaster &sm = *(uiState()->sm);
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0);
-  }
-
   // dm icon
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
@@ -404,18 +446,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
 // Window that shows camera view and variety of
 // info drawn on top
-
-void AnnotatedCameraWidget::mousePressEvent(QMouseEvent* e) {
-  const int exp_btn_w = radius + bdr_s * 4;
-  const int exp_btn_h = radius + bdr_s * 3;
-
-  if (engageable && experimental_mode_available && e->x() > rect().right() - exp_btn_w && e->y() < exp_btn_h) {
-    params.putBool("ExperimentalMode", !params.getBool("ExperimentalMode"));
-    return;
-  }
-
-  QWidget::mousePressEvent(e);
-}
 
 void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = getTextRect(p, 0, text);

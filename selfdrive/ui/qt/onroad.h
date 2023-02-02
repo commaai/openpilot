@@ -1,11 +1,15 @@
 #pragma once
 
+#include <QPushButton>
 #include <QStackedLayout>
 #include <QWidget>
 
 #include "common/util.h"
-#include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/widgets/cameraview.h"
+
+
+const int radius = 192;
 
 
 // ***** onroad widgets *****
@@ -24,6 +28,24 @@ private:
   Alert alert = {};
 };
 
+class ExperimentalButton : public QPushButton {
+  Q_OBJECT
+  Q_PROPERTY(bool engageable MEMBER engageable);
+
+public:
+  explicit ExperimentalButton(QWidget *parent = 0);
+  void updateState(const UIState &s);
+
+private:
+  void paintEvent(QPaintEvent *event) override;
+
+  Params params;
+  QPixmap engage_img;
+  QPixmap experimental_img;
+
+  bool engageable = false;
+};
+
 // container window for the NVG UI
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
@@ -36,8 +58,6 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool has_us_speed_limit MEMBER has_us_speed_limit);
   Q_PROPERTY(bool is_metric MEMBER is_metric);
 
-  Q_PROPERTY(bool engageable MEMBER engageable);
-  Q_PROPERTY(bool experimental_mode_available MEMBER experimental_mode_available);
   Q_PROPERTY(bool dmActive MEMBER dmActive);
   Q_PROPERTY(bool hideDM MEMBER hideDM);
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
@@ -48,24 +68,17 @@ public:
   void updateState(const UIState &s);
 
 private:
-  void mousePressEvent(QMouseEvent* e) override;
-
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
-  QPixmap engage_img;
-  QPixmap experimental_img;
+  ExperimentalButton *experimental_btn;
   QPixmap dm_img;
-  const int radius = 192;
-  const int img_size = (radius / 2) * 1.5;
   float speed;
   QString speedUnit;
   float setSpeed;
   float speedLimit;
   bool is_cruise_set = false;
   bool is_metric = false;
-  bool engageable = false;
-  bool experimental_mode_available = false;
   bool dmActive = false;
   bool hideDM = false;
   bool rightHandDM = false;
@@ -74,7 +87,6 @@ private:
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
   std::unique_ptr<PubMaster> pm;
-  Params params;
 
   int skip_frame_count = 0;
   bool wide_cam_requested = false;
