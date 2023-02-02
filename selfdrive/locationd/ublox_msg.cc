@@ -166,25 +166,24 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
   {
     kaitai::kstream stream(subframe_data);
     gps_t subframe(&stream);
+
     int subframe_id = subframe.how()->subframe_id();
-    int sv_id = msg->sv_id();
-    uint64_t tow_counter = subframe.how()->tow_count();
-
-    bool clear_buffer = subframe_id == 1;
-    if (gps_sat_tow_count.count(sv_id) != 0) {
-      int64_t counter_diff = tow_counter - gps_sat_tow_count[sv_id];
-      clear_buffer |= counter_diff != 1 && counter_diff != -100798;
+    if (subframe_id > 3) {
+      // dont parse almanac subframes
+      return kj::Array<capnp::word>();
     }
-    if (clear_buffer) gps_subframes[sv_id].clear();
-
-    gps_subframes[sv_id][subframe_id] = subframe_data;
-    gps_sat_tow_count[sv_id] = tow_counter;
+    gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
   }
 
-  if (gps_subframes[msg->sv_id()].size() == 5) {
+  // publish if subframes 1-3 have been collected
+  if (gps_subframes[msg->sv_id()].size() == 3) {
     MessageBuilder msg_builder;
     auto eph = msg_builder.initEvent().initUbloxGnss().initEphemeris();
     eph.setSvId(msg->sv_id());
+
+    int iode_s2 = 0;
+    int iode_s3 = 0;
+    int iodc_lsb = 0;
 
     // Subframe 1
     {
@@ -199,6 +198,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       eph.setAf1(subframe_1->af_1() * pow(2, -43));
       eph.setAf0(subframe_1->af_0() * pow(2, -31));
       eph.setSvHealth(subframe_1->sv_health());
+      iodc_lsb = subframe_1->iodc_lsb();
     }
 
     // Subframe 2
@@ -215,6 +215,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       eph.setCus(subframe_2->c_us() * pow(2, -29));
       eph.setA(pow(subframe_2->sqrt_a() * pow(2, -19), 2.0));
       eph.setToe(subframe_2->t_oe() * pow(2, 4));
+      iode_s2 = subframe_2->iode();
     }
 
     // Subframe 3
@@ -232,31 +233,14 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       eph.setOmegaDot(subframe_3->omega_dot() * pow(2, -43) * gpsPi);
       eph.setIode(subframe_3->iode());
       eph.setIDot(subframe_3->idot() * pow(2, -43) * gpsPi);
+      iode_s3 = subframe_3->iode();
     }
 
-    // Subframe 4
-    {
-      kaitai::kstream stream(gps_subframes[msg->sv_id()][4]);
-      gps_t subframe(&stream);
-      gps_t::subframe_4_t* subframe_4 = static_cast<gps_t::subframe_4_t*>(subframe.body());
-
-      // This is page 18, why is the page id 56?
-      if (subframe_4->data_id() == 1 && subframe_4->page_id() == 56) {
-        auto iono = static_cast<gps_t::subframe_4_t::ionosphere_data_t*>(subframe_4->body());
-        double a0 = iono->a0() * pow(2, -30);
-        double a1 = iono->a1() * pow(2, -27);
-        double a2 = iono->a2() * pow(2, -24);
-        double a3 = iono->a3() * pow(2, -24);
-        eph.setIonoAlpha({a0, a1, a2, a3});
-
-        double b0 = iono->b0() * pow(2, 11);
-        double b1 = iono->b1() * pow(2, 14);
-        double b2 = iono->b2() * pow(2, 16);
-        double b3 = iono->b3() * pow(2, 16);
-        eph.setIonoBeta({b0, b1, b2, b3});
-      }
+    gps_subframes[msg->sv_id()].clear();
+    if (iodc_lsb != iode_s2 || iodc_lsb != iode_s3) {
+      // data set cutover, reject ephemeris
+      return kj::Array<capnp::word>();
     }
-
     return capnp::messageToFlatArray(msg_builder);
   }
   return kj::Array<capnp::word>();
