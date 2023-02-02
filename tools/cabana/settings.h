@@ -19,6 +19,7 @@ public:
   int chart_column_count = 1;
   int chart_range = 3 * 60; // e minutes
   QString last_dir;
+  QString last_route_dir;
   QByteArray geometry;
   QByteArray video_splitter_state;
   QByteArray window_state;

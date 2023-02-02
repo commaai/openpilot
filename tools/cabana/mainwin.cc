@@ -15,6 +15,7 @@
 #include <QWidgetAction>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/route.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
@@ -66,6 +67,11 @@ MainWindow::MainWindow() : QMainWindow() {
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  if (!can->liveStreaming()) {
+    file_menu->addAction(tr("Open Route..."), this, &MainWindow::openRoute);
+    file_menu->addSeparator();
+  }
+
   file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
 
@@ -183,6 +189,13 @@ void MainWindow::undoStackCleanChanged(bool clean) {
 void MainWindow::DBCFileChanged() {
   UndoStack::instance()->clear();
   setWindowFilePath(QString("%1").arg(dbc()->name()));
+}
+
+void MainWindow::openRoute() {
+  OpenRouteDialog dlg(this);
+  if (!dlg.exec()) {
+    close();
+  }
 }
 
 void MainWindow::newFile() {
