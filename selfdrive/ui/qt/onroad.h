@@ -9,10 +9,8 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 
-const int img_size = 144;
-const int diameter = (img_size * 4) / 3;
-const int radius = diameter / 2;
-
+const int btn_size = 192;
+const int img_size = (btn_size / 4) * 3;
 
 
 // ***** onroad widgets *****
@@ -38,15 +36,12 @@ public:
   explicit ExperimentalButton(QWidget *parent = 0);
   void updateState(const UIState &s);
 
-  void setBackgroundColor(const QColor &color) { bg = color; }
-
 private:
   void paintEvent(QPaintEvent *event) override;
 
   Params params;
   QPixmap engage_img;
   QPixmap experimental_img;
-  QColor bg;
 };
 
 // container window for the NVG UI

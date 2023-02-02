@@ -177,7 +177,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
   setVisible(false);
-  setFixedSize(diameter, diameter);
+  setFixedSize(btn_size, btn_size);
   setCheckable(true);
 
   params = Params();
@@ -209,15 +209,15 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  QPoint center(radius, radius);
+  QPoint center(btn_size / 2, btn_size / 2);
   QPixmap img = isChecked() ? experimental_img : engage_img;
 
   p.setOpacity(1.0);
   p.setPen(Qt::NoPen);
   p.setBrush(QColor(0, 0, 0, 166));
-  p.drawEllipse(center, radius, radius);
+  p.drawEllipse(center, btn_size / 2, btn_size / 2);
   p.setOpacity(isDown() ? 0.8 : 1.0);
-  p.drawPixmap((width() - img_size) / 2, (height() - img_size) / 2, img);
+  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
 }
 
 
@@ -437,7 +437,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
   // dm icon
   if (!hideDM) {
-    int dm_icon_x = rightHandDM ? rect().right() - radius - (bdr_s * 2) : radius + (bdr_s * 2);
+    int dm_icon_x = rightHandDM ? rect().right() - btn_size / 2 - (bdr_s * 2) : btn_size / 2 + (bdr_s * 2);
     drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
@@ -460,7 +460,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.drawEllipse(x - radius, y - radius, diameter, diameter);
+  p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
