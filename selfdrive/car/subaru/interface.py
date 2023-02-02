@@ -11,7 +11,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "subaru"
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
     ret.autoResumeSng = False
 
