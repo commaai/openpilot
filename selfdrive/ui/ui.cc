@@ -116,7 +116,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
   UIScene &scene = s->scene;
   const auto driver_orient = driverstate.getLeftDriverData().getFaceOrientation();
   for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
-    float v_this = 0.5 * driver_orient[i];
+    float v_this = 0.3 * driver_orient[i];
     scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
     scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
     scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
@@ -141,7 +141,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
     vec3 kpt_this = default_face_kpts_3d[kpi];
     kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = QPointF(kpt_this.v[0], kpt_this.v[1]);
-    scene.face_kpts_draw_d[kpi] = kpt_this.v[2] * (1.0-dm_fade_state) + 80 * dm_fade_state;
+    scene.face_kpts_draw_d[kpi] = kpt_this.v[2] * (1.0-dm_fade_state) + 30 * dm_fade_state;
   }
 }
 
