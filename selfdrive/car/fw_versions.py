@@ -146,7 +146,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, num_pandas=1):
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
   queries = list()
   parallel_queries = list()
   responses = set()
@@ -175,7 +175,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1):
 
   queries.insert(0, parallel_queries)
 
-  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  ecu_responses = set()
   for query in queries:
     ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
