@@ -19,7 +19,7 @@ void AbstractStream::process(QHash<QString, CanData> *messages) {
 
 bool AbstractStream::updateEvent(const Event *event) {
   static std::unique_ptr new_msgs = std::make_unique<QHash<QString, CanData>>();
-  static QHash<QString, HexColors> hex_colors;
+  static QHash<QString, ChangeTracker> change_trackers;
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
@@ -42,7 +42,9 @@ bool AbstractStream::updateEvent(const Event *event) {
       if (double delta = (current_sec - counters_begin_sec); delta > 0) {
         data.freq = data.count / delta;
       }
-      data.colors = hex_colors[id].compute(data.dat, data.ts, data.freq);
+      change_trackers[id].compute(data.dat, data.ts, data.freq);
+      data.colors = change_trackers[id].colors;
+      data.last_change_t = change_trackers[id].last_change_t;
     }
 
     double ts = millis_since_boot();

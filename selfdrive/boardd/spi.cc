@@ -1,3 +1,4 @@
+#ifndef __APPLE__
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
@@ -339,3 +340,4 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
 transfer_fail:
   return ret;
 }
+#endif

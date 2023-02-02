@@ -18,6 +18,7 @@ from selfdrive.car.body.values import CAR as COMMA
 non_tested_cars = [
   FORD.ESCAPE_MK4,
   FORD.FOCUS_MK4,
+  FORD.MAVERICK_MK1,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
@@ -25,6 +26,7 @@ non_tested_cars = [
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
+  VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
@@ -42,6 +44,7 @@ routes = [
   CarTestRoute("221c253375af4ee9|2022-06-15--18-38-24", CHRYSLER.RAM_1500),
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
 
+  CarTestRoute("54827bf84c38b14f|2023-01-25--14-14-11", FORD.BRONCO_SPORT_MK1),
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
