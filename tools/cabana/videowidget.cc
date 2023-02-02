@@ -13,8 +13,6 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
-#include "selfdrive/ui/qt/util.h"
-
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
@@ -27,8 +25,41 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(frame);
 
   QVBoxLayout *frame_layout = new QVBoxLayout(frame);
+  if (!can->liveStreaming()) {
+    frame_layout->addWidget(createCameraWidget());
+  }
+
+  // btn controls
+  QHBoxLayout *control_layout = new QHBoxLayout();
+  play_btn = new QPushButton();
+  control_layout->addWidget(play_btn);
+
+  QButtonGroup *group = new QButtonGroup(this);
+  group->setExclusive(true);
+  for (float speed : {0.1, 0.5, 1., 2.}) {
+    if (can->liveStreaming() && speed > 1) continue;
+
+    QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
+    btn->setCheckable(true);
+    QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
+    control_layout->addWidget(btn);
+    group->addButton(btn);
+    if (speed == 1.0) btn->setChecked(true);
+  }
+  frame_layout->addLayout(control_layout);
+
+  QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
+  QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
+  updatePlayBtnState();
+}
+
+QWidget *VideoWidget::createCameraWidget() {
+  QWidget *w = new QWidget(this);
+  QVBoxLayout *l = new QVBoxLayout(w);
+  l->setContentsMargins(0, 0, 0, 0);
   cam_widget = new CameraWidget("camerad", can->visionStreamType(), false);
-  frame_layout->addWidget(cam_widget);
+  l->addWidget(cam_widget);
 
   // slider controls
   slider_layout = new QHBoxLayout();
@@ -42,24 +73,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
 
   end_time_label = new QLabel(this);
   slider_layout->addWidget(end_time_label);
-  frame_layout->addLayout(slider_layout);
-
-  // btn controls
-  QHBoxLayout *control_layout = new QHBoxLayout();
-  play_btn = new QPushButton();
-  control_layout->addWidget(play_btn);
-
-  QButtonGroup *group = new QButtonGroup(this);
-  group->setExclusive(true);
-  for (float speed : {0.1, 0.5, 1., 2.}) {
-    QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
-    btn->setCheckable(true);
-    QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
-    control_layout->addWidget(btn);
-    group->addButton(btn);
-    if (speed == 1.0) btn->setChecked(true);
-  }
-  frame_layout->addLayout(control_layout);
+  l->addLayout(slider_layout);
 
   cam_widget->setMinimumHeight(100);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
@@ -69,15 +83,12 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
-  QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
-  QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::streamStarted, [this]() {
     end_time_label->setText(formatTime(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
-  updatePlayBtnState();
+  return w;
 }
 
 void VideoWidget::timeLabelClicked() {
@@ -101,6 +112,8 @@ void VideoWidget::timeLabelClicked() {
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+  if (can->liveStreaming()) return;
+
   if (!is_zoomed) {
     min = 0;
     max = can->totalSeconds();
@@ -115,7 +128,7 @@ void VideoWidget::updateState() {
 }
 
 void VideoWidget::updatePlayBtnState() {
-  play_btn->setIcon(bootstrapPixmap(can->isPaused() ? "play" : "pause"));
+  play_btn->setIcon(utils::icon(can->isPaused() ? "play" : "pause"));
   play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
@@ -131,6 +144,11 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
 
   QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
   QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
+}
+
+Slider::~Slider() {
+  abort_load_thumbnail = true;
+  thumnail_future.waitForFinished();
 }
 
 void Slider::streamStarted() {

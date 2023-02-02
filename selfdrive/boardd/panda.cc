@@ -3,20 +3,20 @@
 #include <unistd.h>
 
 #include <cassert>
-#include <iomanip>
 #include <stdexcept>
-#include <sstream>
 
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // TODO: support SPI here one day...
-  if (serial.find("spi") != std::string::npos) {
-    handle = std::make_unique<PandaSpiHandle>(serial);
-  } else {
+  // try USB first, then SPI
+  try {
     handle = std::make_unique<PandaUsbHandle>(serial);
+  } catch (std::exception &e) {
+#ifndef __APPLE__
+    handle = std::make_unique<PandaSpiHandle>(serial);
+#endif
   }
 
   hw_type = get_hw_type();
@@ -41,25 +41,20 @@ bool Panda::comms_healthy() {
   return handle->comms_healthy;
 }
 
+std::string Panda::hw_serial() {
+  return handle->hw_serial;
+}
+
 std::vector<std::string> Panda::list() {
   std::vector<std::string> serials = PandaUsbHandle::list();
 
-  // check SPI
-  const int uid_len = 12;
-  uint8_t uid[uid_len] = {0};
-  PandaSpiHandle spi_handle("/dev/spidev0.0");
-  int ret = spi_handle.control_read(0xc3, 0, 0, uid, uid_len);
-  if (ret == uid_len) {
-    std::stringstream stream;
-    for (int i = 0; i < uid_len; i++) {
-      stream << std::hex << std::setw(2) << std::setfill('0') << int(uid[i]);
-    }
-
-    // might be on USB too
-    if (std::find(serials.begin(), serials.end(), stream.str()) == serials.end()) {
-      serials.push_back(stream.str());
+#ifndef __APPLE__
+  for (auto s : PandaSpiHandle::list()) {
+    if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
+      serials.push_back(s);
     }
   }
+#endif
 
   return serials;
 }
@@ -241,6 +236,9 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
+  // Check if enough space left in buffer to store RECV_SIZE data
+  assert(receive_buffer_size + RECV_SIZE <= sizeof(receive_buffer));
+
   int recv = handle->bulk_read(0x81, &receive_buffer[receive_buffer_size], RECV_SIZE);
   if (!comms_healthy()) {
     return false;
@@ -283,6 +281,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
 
     if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
       LOGE("Panda CAN checksum failed");
+      size = 0;
       return false;
     }
 
