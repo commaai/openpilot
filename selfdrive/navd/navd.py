@@ -226,7 +226,11 @@ class RouteEngine:
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
     total_distance = step['distance'] * remaining
     total_time = step['duration'] * remaining
-    total_time_typical = step['duration_typical'] * remaining
+
+    if step['duration_typical'] is None:
+      total_time_typical = total_time
+    else:
+      total_time_typical = step['duration_typical'] * remaining
 
     # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
