@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "chrysler"
     ret.dashcamOnly = candidate in RAM_HD
 
-    ret.radarOffCan = DBC[candidate]['radar'] is None
+    ret.radarUnavailable = DBC[candidate]['radar'] is None
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 
