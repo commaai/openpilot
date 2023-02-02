@@ -95,12 +95,11 @@ class TestLaikad(unittest.TestCase):
     for lm in laikad_msgs:
       pos_meas = (pos_meas + 1) if 'positionECEF' in lm.gnssMeasurements.to_dict() else 0
       if pos_meas > 5:
-        duration = lm.logMonoTime - laikad_msgs[0].logMonoTime
+        duration = (lm.logMonoTime - laikad_msgs[0].logMonoTime)*1e-9
         break
 
-    print(f"duration till position: {duration}")
     assert pos_meas > 5, "NOT enough positions at end of read!"
-
+    assert duration < 120, "Laikad took too long to get a Position!"
 
 if __name__ == "__main__":
   unittest.main()
