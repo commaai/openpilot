@@ -109,7 +109,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        if (src == c.getSrc() && address == c.getAddress()) {
+        if (address == c.getAddress() && src == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
             values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *(sigs[i]));

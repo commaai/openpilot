@@ -4,7 +4,9 @@ AbstractStream *can = nullptr;
 
 AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
+  new_msgs = std::make_unique<QHash<QString, CanData>>();
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
+  QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
 }
 
 void AbstractStream::process(QHash<QString, CanData> *messages) {
@@ -18,18 +20,10 @@ void AbstractStream::process(QHash<QString, CanData> *messages) {
 }
 
 bool AbstractStream::updateEvent(const Event *event) {
-  static std::unique_ptr new_msgs = std::make_unique<QHash<QString, CanData>>();
-  static QHash<QString, HexColors> hex_colors;
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = currentSec();
-    if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
-      new_msgs->clear();
-      counters.clear();
-      counters_begin_sec = current_sec;
-    }
-
+    double current_sec = event->mono_time / 1e9 - routeStartTime();
     auto can_events = event->event.getCan();
     for (const auto &c : can_events) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
@@ -39,9 +33,7 @@ bool AbstractStream::updateEvent(const Event *event) {
       data.address = c.getAddress();
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
-      if (double delta = (current_sec - counters_begin_sec); delta > 0) {
-        data.freq = data.count / delta;
-      }
+      data.freq = data.count / std::max(1.0, current_sec);
       data.colors = hex_colors[id].compute(data.dat, data.ts, data.freq);
     }
 
@@ -57,4 +49,47 @@ bool AbstractStream::updateEvent(const Event *event) {
     }
   }
   return true;
+}
+
+const CanData &AbstractStream::lastMessage(const QString &id) {
+  static CanData empty_data;
+  auto it = can_msgs.find(id);
+  return it != can_msgs.end() ? it.value() : empty_data;
+}
+
+void AbstractStream::updateLastMsgsTo(double sec) {
+  QHash<std::pair<uint8_t, uint32_t>, CanData> last_msgs;
+  last_msgs.reserve(can_msgs.size());
+  double route_start_time = routeStartTime();
+  uint64_t last_ts = (sec + route_start_time) * 1e9;
+  auto last = std::upper_bound(events()->rbegin(), events()->rend(), last_ts, [](uint64_t ts, auto &e) { return e->mono_time < ts; });
+  for (auto it = last; it != events()->rend(); ++it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*it)->event.getCan()) {
+        auto &m = last_msgs[{c.getSrc(), c.getAddress()}];
+        if (++m.count == 1) {
+          m.src = c.getSrc();
+          m.address = c.getAddress();
+          m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
+          m.ts = ((*it)->mono_time / 1e9) - route_start_time;
+        } else {
+          m.freq = m.count / std::max(1.0, m.ts);
+        }
+      }
+    }
+  }
+
+  // it is thread safe to update data here.
+  // updateEvent will not be called before replayStream::seekedTo return.
+  new_msgs->clear();
+  hex_colors.clear();
+  counters.clear();
+  can_msgs.clear();
+  for (auto &can_data : last_msgs) {
+    QString msg_id = QString("%1:%2").arg(can_data.src).arg(can_data.address, 1, 16);
+    can_msgs[msg_id] = can_data;
+    counters[msg_id] = can_data.count;
+  }
+  emit updated();
+  emit msgsReceived(&can_msgs);
 }
