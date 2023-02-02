@@ -31,10 +31,10 @@ void rotate_if_needed(LoggerdState *s) {
   bool timed_out = false;
   double tms = millis_since_boot();
   double seg_length_secs = (tms - s->last_rotate_tms) / 1000.;
-  if (seg_length_secs > SEGMENT_LENGTH) {
+  if ((seg_length_secs > SEGMENT_LENGTH) && !LOGGERD_TEST) {
     if ((tms - s->last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
       timed_out = true;
-      LOGE("no camera packet seen. auto rotating");
+      LOGE("no camera packets seen. auto rotating");
     } else if (seg_length_secs > SEGMENT_LENGTH*1.2) {
       timed_out = true;
       LOGE("segment too long. auto rotating");
