@@ -171,7 +171,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
-    {"UpdateAvailable", CLEAR_ON_MANAGER_START},
+    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
     {"UpdaterState", CLEAR_ON_MANAGER_START},
     {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
