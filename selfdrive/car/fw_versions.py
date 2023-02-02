@@ -146,12 +146,16 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan):
+def get_present_ecus(logcan, sendcan, num_pandas=1):
   queries = list()
   parallel_queries = list()
   responses = set()
 
   for brand, r in REQUESTS:
+    # Skip query if no panda available
+    if r.bus > num_pandas * 4 - 1:
+      continue
+
     for brand_versions in VERSIONS[brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
