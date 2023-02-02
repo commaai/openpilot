@@ -204,7 +204,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
   all_car_fw = []
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
-  matches: Set[str] = set()
   matched_brand: Optional[str] = None
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
@@ -223,7 +222,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
   # Do non-OBD queries for matched brand, or all if no match is found
   for brand, config in FW_QUERY_CONFIGS.items():
-    if matched_brand is None or (len(matches) == 1 and brand == matched_brand):
+    if brand == matched_brand or matched_brand is None:
       car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexing=False, debug=debug, progress=progress)
       all_car_fw.extend(car_fw)
 
