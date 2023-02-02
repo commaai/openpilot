@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QColor>
 #include <QFont>
+#include <QRegExpValidator>
 #include <QStyledItemDelegate>
 #include <QVector>
 
@@ -35,4 +36,16 @@ inline const QString &getColor(int i) {
   // TODO: add more colors
   static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
   return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
+}
+
+class NameValidator : public QRegExpValidator {
+  Q_OBJECT
+
+public:
+  NameValidator(QObject *parent=nullptr);
+  QValidator::State validate(QString &input, int &pos) const override;
+};
+
+namespace utils {
+QPixmap icon(const QString &id);
 }

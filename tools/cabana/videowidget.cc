@@ -13,8 +13,6 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
-#include "selfdrive/ui/qt/util.h"
-
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
@@ -130,7 +128,7 @@ void VideoWidget::updateState() {
 }
 
 void VideoWidget::updatePlayBtnState() {
-  play_btn->setIcon(bootstrapPixmap(can->isPaused() ? "play" : "pause"));
+  play_btn->setIcon(utils::icon(can->isPaused() ? "play" : "pause"));
   play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
