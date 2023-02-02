@@ -24,8 +24,7 @@ bool AbstractStream::updateEvent(const Event *event) {
 
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = event->mono_time / 1e9 - routeStartTime();
-    auto can_events = event->event.getCan();
-    for (const auto &c : can_events) {
+    for (const auto &c : event->event.getCan()) {
       QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
       CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
