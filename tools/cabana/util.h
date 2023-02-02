@@ -45,3 +45,7 @@ public:
   NameValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
 };
+
+namespace utils {
+QPixmap icon(const QString &id);
+}
