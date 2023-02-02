@@ -617,14 +617,21 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
     QRectF rect = rubber->geometry().normalized();
-    double min = std::floor(chart()->mapToValue(rect.topLeft()).x() * 10.0) / 10.0;
-    double max = std::floor(chart()->mapToValue(rect.bottomRight()).x() * 10.0) / 10.0;
+    double min = chart()->mapToValue(rect.topLeft()).x();
+    double max = chart()->mapToValue(rect.bottomRight()).x();
+
+    // Prevent zooming/seeking past the end of the route
+    min = std::clamp(min, can->routeStartTime(), can->routeStartTime() + can->totalSeconds());
+    max = std::clamp(max, can->routeStartTime(), can->routeStartTime() + can->totalSeconds());
+
+    double min_rounded = std::floor(min * 10.0) / 10.0;
+    double max_rounded = std::floor(max * 10.0) / 10.0;
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if ((max - min) >= 0.5) {
+    } else if ((max_rounded - min_rounded) >= 0.5) {
       // zoom in if selected range is greater than 0.5s
-      emit zoomIn(min, max);
+      emit zoomIn(min_rounded, max_rounded);
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
