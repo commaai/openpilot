@@ -57,6 +57,8 @@ class Request:
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
+  # These requests are done once OBD multiplexing is disabled, after all others
+  non_obd: bool = False
 
 
 @dataclass
