@@ -589,7 +589,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  track_pt = {0, 0};
+  track_pts.clear();
   scene()->update();
   QChartView::leaveEvent(event);
 }
@@ -639,27 +639,26 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
-  track_pt = {0, 0};
+  track_pts.clear();
   if (!is_zooming && plot_area.contains(ev->pos())) {
+    track_pts.resize(sigs.size());
     QStringList text_list;
     const double sec = chart()->mapToValue(ev->pos()).x();
-    for (auto &s : sigs) {
+    for (int i = 0; i < sigs.size(); ++i) {
       QString value = "--";
       // use reverse iterator to find last item <= sec.
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+      auto it = std::lower_bound(sigs[i].vals.rbegin(), sigs[i].vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != sigs[i].vals.rend() && it->x() >= axis_x->min()) {
         value = QString::number(it->y());
-        auto value_pos = chart()->mapToPosition(*it);
-        if (value_pos.x() > track_pt.x()) track_pt = value_pos;
+        track_pts[i] = chart()->mapToPosition(*it);
       }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: %3").arg(s.series->color().name(), s.sig->name.c_str(), value));
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name.c_str(), value));
     }
-    if (track_pt.x() == 0) track_pt = ev->pos();
-    QString text = QString("%1 <br/> %2")
-                       .arg(chart()->mapToValue(track_pt).x(), 0, 'f', 3)
-                       .arg(text_list.join("<br />"));
-    QPoint pt((int)track_pt.x() + 20, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(pt), text, this, plot_area.toRect());
+    auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
+    auto pt = (max == track_pts.end()) ? ev->pos() : *max;
+    text_list.push_front(QString::number(chart()->mapToValue(pt).x(), 'f', 3));
+    QPointF tooltip_pt(pt.x() + 12, plot_area.top() - 20);
+    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), pt.isNull() ? "" : text_list.join("<br />"), this, plot_area.toRect());
     scene()->update();
   } else {
     QToolTip::hideText();
@@ -712,11 +711,18 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   qreal y2 = chart()->plotArea().bottom() + 2;
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, y1}, QPointF{x, y2});
-  if (!track_pt.isNull()) {
+
+  auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
+  if (max != track_pts.end() && !max->isNull()) {
     painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
-    painter->drawLine(QPointF{track_pt.x(), y1}, QPointF{track_pt.x(), y2});
-    painter->setBrush(Qt::darkGray);
-    painter->drawEllipse(track_pt, 5, 5);
+    painter->drawLine(QPointF{max->x(), y1}, QPointF{max->x(), y2});
+    painter->setPen(Qt::NoPen);
+    for (int i = 0; i < track_pts.size(); ++i) {
+      if (!track_pts[i].isNull() && i < sigs.size()) {
+        painter->setBrush(sigs[i].series->color().darker(125));
+        painter->drawEllipse(track_pts[i], 5.5, 5.5);
+      }
+    }
   }
 }
 
