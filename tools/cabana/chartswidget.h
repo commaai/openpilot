@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
 #include "tools/cabana/dbcmanager.h"
@@ -30,13 +31,14 @@ public:
   void updatePlot(double cur, double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
+  void setSeriesType(QAbstractSeries::SeriesType type);
 
   struct SigItem {
     QString msg_id;
     uint8_t source = 0;
     uint32_t address = 0;
     const Signal *sig = nullptr;
-    QLineSeries *series = nullptr;
+    QXYSeries *series = nullptr;
     QVector<QPointF> vals;
     uint64_t last_value_mono_time = 0;
   };
@@ -70,6 +72,7 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
+  QXYSeries *createSeries(QAbstractSeries::SeriesType type);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -79,6 +82,9 @@ private:
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
+  QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
+  QAction *line_series_action;
+  QAction *scatter_series_action;
  };
 
 class ChartsWidget : public QWidget {
