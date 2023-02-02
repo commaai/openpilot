@@ -7,6 +7,7 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QLineEdit>
+#include <QMenu>
 #include <QRubberBand>
 #include <QToolBar>
 #include <QToolButton>
@@ -178,6 +179,7 @@ void ChartsWidget::settingChanged() {
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
+    c->setSeriesType(settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter);
   }
 }
 
@@ -297,6 +299,8 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 // ChartView
 
 ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
+  series_type = settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter;
+
   QChart *chart = new QChart();
   chart->setBackgroundRoundness(0);
   axis_x = new QValueAxis(this);
@@ -317,9 +321,20 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
+  manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   manage_btn->setIcon(utils::icon("gear"));
   manage_btn->setAutoRaise(true);
-  manage_btn->setToolTip(tr("Manage series"));
+  QMenu *menu = new QMenu(this);
+  line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
+  line_series_action->setCheckable(true);
+  line_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeLine);
+  scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  scatter_series_action->setCheckable(true);
+  scatter_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeScatter);
+  menu->addSeparator();
+  menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
+  manage_btn->setMenu(menu);
+  manage_btn->setPopupMode(QToolButton::InstantPopup);
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart->zValue() + 11);
@@ -334,7 +349,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
-  QObject::connect(manage_btn, &QToolButton::clicked, this, &ChartView::manageSeries);
 }
 
 qreal ChartView::getYAsixLabelWidth() const {
@@ -354,8 +368,7 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
-  QLineSeries *series = new QLineSeries(this);
-
+  QXYSeries *series = createSeries(series_type);
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -478,22 +491,26 @@ void ChartView::updatePlot(double cur, double min, double max) {
       int num_points = std::max<int>(end - begin, 1);
       int pixels_per_point = width() / num_points;
 
-      s.series->setPointsVisible(pixels_per_point > 20);
+      if (series_type == QAbstractSeries::SeriesTypeScatter) {
+        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
+      } else {
+        s.series->setPointsVisible(pixels_per_point > 20);
 
-      // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
+        // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
 #ifndef __APPLE
-      // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
-      bool use_opengl = pixels_per_point < 1;
-      s.series->setUseOpenGL(use_opengl);
+        // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
+        bool use_opengl = pixels_per_point < 1;
+        s.series->setUseOpenGL(use_opengl);
 
-      // Qt doesn't properly apply device pixel ratio in OpenGL mode
-      QApplication* application = static_cast<QApplication *>(QApplication::instance());
-      float scale = use_opengl ? application->devicePixelRatio() : 1.0;
+        // Qt doesn't properly apply device pixel ratio in OpenGL mode
+        QApplication *application = static_cast<QApplication *>(QApplication::instance());
+        float scale = use_opengl ? application->devicePixelRatio() : 1.0;
 
-      QPen pen = s.series->pen();
-      pen.setWidth(2.0 * scale);
-      s.series->setPen(pen);
+        QPen pen = s.series->pen();
+        pen.setWidth(2.0 * scale);
+        s.series->setPen(pen);
 #endif
+      }
     }
   }
 
@@ -730,6 +747,43 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
         painter->drawEllipse(track_pts[i], 5.5, 5.5);
       }
     }
+  }
+}
+
+QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
+  QXYSeries *series = nullptr;
+  if (type == QAbstractSeries::SeriesTypeLine) {
+    series = new QLineSeries(this);
+  } else {
+    series = new QScatterSeries(this);
+  }
+    // TODO: Due to a bug in CameraWidget the camera frames
+    // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
+#ifndef __APPLE__
+  series->setUseOpenGL(true);
+#endif
+  return series;
+}
+
+void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
+  if (type != series_type) {
+    series_type = type;
+    line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
+    scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
+
+    for (auto &s : sigs) {
+      chart()->removeSeries(s.series);
+      s.series->deleteLater();
+    }
+    for (auto &s : sigs) {
+      auto series = createSeries(series_type);
+      chart()->addSeries(series);
+      series->attachAxis(axis_x);
+      series->attachAxis(axis_y);
+      series->replace(s.vals);
+      s.series = series;
+    }
+    updateTitle();
   }
 }
 
