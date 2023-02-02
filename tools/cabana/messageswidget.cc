@@ -26,9 +26,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSortingEnabled(true);
   table_widget->sortByColumn(0, Qt::AscendingOrder);
-  table_widget->setColumnWidth(0, 250);
-  table_widget->setColumnWidth(1, 80);
-  table_widget->setColumnWidth(2, 80);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
 
