@@ -1,10 +1,12 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <QFontDatabase>
-#include <QLineEdit>
-#include <QVBoxLayout>
-#include <QPainter>
 #include <QApplication>
+#include <QFontDatabase>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QPainter>
+#include <QPushButton>
+#include <QVBoxLayout>
 
 #include "tools/cabana/dbcmanager.h"
 
@@ -28,8 +30,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget->sortByColumn(0, Qt::AscendingOrder);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
-
   main_layout->addWidget(table_widget);
+
+  // suppress
+  QHBoxLayout *suppress_layout = new QHBoxLayout();
+  suppress_add = new QPushButton("Suppress Highlighted");
+  suppress_clear = new QPushButton();
+  suppress_layout->addWidget(suppress_add);
+  suppress_layout->addWidget(suppress_clear);
+  main_layout->addLayout(suppress_layout);
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
@@ -46,6 +55,16 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       }
     }
   });
+  QObject::connect(suppress_add, &QPushButton::clicked, [=]() {
+    model->suppress();
+    updateSuppressedButtons();
+  });
+  QObject::connect(suppress_clear, &QPushButton::clicked, [=]() {
+    model->clearSuppress();
+    updateSuppressedButtons();
+  });
+
+  updateSuppressedButtons();
 }
 
 void MessagesWidget::selectMessage(const QString &msg_id) {
@@ -53,6 +72,17 @@ void MessagesWidget::selectMessage(const QString &msg_id) {
     table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   }
 }
+
+void MessagesWidget::updateSuppressedButtons() {
+  if (model->suppressed_bytes.empty()) {
+    suppress_clear->setEnabled(false);
+    suppress_clear->setText("Clear Suppressed");
+  } else {
+    suppress_clear->setEnabled(true);
+    suppress_clear->setText(QString("Clear Suppressed (%1)").arg(model->suppressed_bytes.size()));
+  }
+}
+
 
 // MessageListModel
 
@@ -75,7 +105,16 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case 4: return toHex(can_data.dat);
     }
   } else if (role == Qt::UserRole && index.column() == 4) {
-    return HexColors::toVariantList(can_data.colors);
+    QList<QVariant> colors;
+    for (int i = 0; i < can_data.dat.size(); i++){
+      if (suppressed_bytes.contains({id, i})) {
+        colors.append(QColor(255, 255, 255, 0));
+      } else {
+        colors.append(can_data.colors[i]);
+      }
+    }
+    return colors;
+
   }
   return {};
 }
@@ -156,4 +195,22 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
     sort_order = order;
     sortMessages();
   }
+}
+
+void MessageListModel::suppress() {
+  const double cur_ts = can->currentSec();
+
+  for (auto &id : msgs) {
+    auto &can_data = can->lastMessage(id);
+    for (int i = 0; i < can_data.dat.size(); i++) {
+      const double dt = cur_ts - can_data.last_change_t[i];
+      if (dt < 2.0) {
+        suppressed_bytes.insert({id, i});
+      }
+    }
+  }
+}
+
+void MessageListModel::clearSuppress() {
+  suppressed_bytes.clear();
 }
