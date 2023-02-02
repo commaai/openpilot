@@ -176,12 +176,13 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 
 ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
+  setVisible(false);
+  setFixedSize(diameter, diameter);
   setCheckable(true);
-  setFixedSize(144, 144);
 
   params = Params();
-  engage_img = loadPixmap("../assets/img_chffr_wheel.png", size());
-  experimental_img = loadPixmap("../assets/img_experimental.svg", size());
+  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
 
   QObject::connect(this, &QPushButton::toggled, [=](bool checked) {
     params.putBool("ExperimentalMode", checked);
@@ -191,12 +192,12 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
 void ExperimentalButton::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 
+  // button is "visible" if engageable or enabled
+  const auto cs = sm["controlsState"].getControlsState();
+  setVisible(cs.getEngageable() || cs.getEnabled());
+
   // button is "checked" if experimental mode is enabled
   setChecked(sm["controlsState"].getControlsState().getExperimentalMode());
-
-  // engageable status, shown when unchecked
-  const auto cs = sm["controlsState"].getControlsState();
-  setProperty("engageable", cs.getEngageable() || cs.getEnabled());
 
   // disable button when experimental mode is not available, or has not been confirmed for the first time
   const auto cp = sm["carParams"].getCarParams();
@@ -208,18 +209,15 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  QPoint center(width() / 2, height() / 2);
-
+  QPoint center(radius, radius);
   QPixmap img = isChecked() ? experimental_img : engage_img;
-  QBrush bg = QColor(0, 0, 0, 166);
-  float opacity = 1.0;
 
   p.setOpacity(1.0);
   p.setPen(Qt::NoPen);
-  p.setBrush(bg);
+  p.setBrush(QColor(0, 0, 0, 166));
   p.drawEllipse(center, radius, radius);
-  p.setOpacity(opacity);
-  p.drawPixmap(center, img);
+  p.setOpacity(isDown() ? 0.8 : 1.0);
+  p.drawPixmap((width() - img_size) / 2, (height() - img_size) / 2, img);
 }
 
 
@@ -227,13 +225,13 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
-  main_layout->setMargin(0);
+  main_layout->setMargin(bdr_s);
   main_layout->setSpacing(0);
 
   experimental_btn = new ExperimentalButton(this);
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
 
-  dm_img = loadPixmap("../assets/img_driver_face.png", {144, 144});
+  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -280,7 +278,10 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   setProperty("status", s.status);
 
-  // update engageability/experimental mode button and DM icons at 2Hz
+  // update engageability/experimental mode button
+  experimental_btn->updateState(s);
+
+  // update DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
@@ -436,7 +437,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
   // dm icon
   if (!hideDM) {
-    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
+    int dm_icon_x = rightHandDM ? rect().right() - radius - (bdr_s * 2) : radius + (bdr_s * 2);
     drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
              dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
@@ -459,7 +460,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  p.drawEllipse(x - radius, y - radius, diameter, diameter);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
