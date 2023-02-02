@@ -270,6 +270,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
           continue
+        # Or if request is not designated for current multiplexing mode
         elif r.non_obd == obd_multiplexing:
           continue
 
