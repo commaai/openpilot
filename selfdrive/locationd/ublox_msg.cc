@@ -70,14 +70,11 @@ inline uint16_t UbloxMsgParser::get_glonass_year(uint8_t N4, uint16_t Nt) {
   int J = 0;
   if (1 <= Nt && Nt <= 366) {
     J = 1;
-  }
-  else if (367 <= Nt && Nt <= 731) {
+  } else if (367 <= Nt && Nt <= 731) {
     J = 2;
-  }
-  else if (732 <= Nt && Nt <= 1096) {
+  } else if (732 <= Nt && Nt <= 1096) {
     J = 3;
-  }
-  else if (1097 <= Nt && Nt <= 1461) {
+  } else if (1097 <= Nt && Nt <= 1461) {
     J = 4;
   }
   uint16_t year = 1996 + 4*(N4 -1) + (J - 1);
