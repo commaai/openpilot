@@ -35,7 +35,7 @@ class CarControllerParams:
 
     # To determine the limit for your car, find the maximum value that the stock LKAS will request.
     # If the max stock LKAS request is <384, add your car to this list.
-    elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.HYUNDAI_GENESIS, CAR.IONIQ,
+    elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.IONIQ,
                                CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
                                CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
       self.STEER_MAX = 255
@@ -147,7 +147,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.ELANTRA_2021: HyundaiCarInfo("Hyundai Elantra 2021-23", video_link="https://youtu.be/_EdYQtV52-c", harness=Harness.hyundai_k),
   CAR.ELANTRA_HEV_2021: HyundaiCarInfo("Hyundai Elantra Hybrid 2021-23", video_link="https://youtu.be/_EdYQtV52-c", harness=Harness.hyundai_k),
-  CAR.HYUNDAI_GENESIS: HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_j),  # TODO: check 2015 packages
+  CAR.HYUNDAI_GENESIS: [
+    HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_j),  # TODO: check 2015 packages
+    HyundaiCarInfo("Genesis G80 2017", "All", min_enable_speed=19 * CV.MPH_TO_MS, harness=Harness.hyundai_j),
+  ],
   CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", harness=Harness.hyundai_c),
   CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", harness=Harness.hyundai_h),  # TODO: confirm 2020-21 harness
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", harness=Harness.hyundai_c),
@@ -195,7 +198,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro EV 2021", "All", "https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_c),
     HyundaiCarInfo("Kia Niro EV 2022", "All", "https://www.youtube.com/watch?v=lT7zcG6ZpGo", harness=Harness.hyundai_h),
   ],
-  CAR.KIA_NIRO_PHEV: HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
+  CAR.KIA_NIRO_PHEV: [
+    HyundaiCarInfo("Kia Niro Plug-in Hybrid 2018-19", "All", min_enable_speed=10. * CV.MPH_TO_MS, harness=Harness.hyundai_c),
+    HyundaiCarInfo("Kia Niro Plug-in Hybrid 2020", "All", harness=Harness.hyundai_d),
+  ],
   CAR.KIA_NIRO_HEV_2021: [
     HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
     HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
@@ -232,7 +238,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_GV70_1ST_GEN: HyundaiCarInfo("Genesis GV70 2022-23", "All", harness=Harness.hyundai_l),
-  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2017-19", "All", harness=Harness.hyundai_h),
+  CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018-19", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
 }
 
@@ -364,6 +370,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
+  CAR.HYUNDAI_GENESIS: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00DH LKAS 1.4 -140110',
+      b'\xf1\x00DH LKAS 1.5 -140425',
+    ],
+  },
   CAR.IONIQ: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
@@ -1028,6 +1041,25 @@ FW_VERSIONS = {
       b'\xf1\x81640H0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.GENESIS_G80: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DH__ SCC F-CUP      1.00 1.01 96400-B1120         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.03 95895-B1500 180713',
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.02 95895-B1500 170810',
+      b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.01 95895-B1500 161014',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  E21\x00\x00\x00\x00\x00\x00\x00SDH0T33NH4\xd7O\x9e\xc9',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00TDH0G38NH3:-\xa9n',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0G38NH2j\x9dA\x1c',
+      b'\xf1\x00bcsh8p54  E18\x00\x00\x00\x00\x00\x00\x00SDH0T33NH3\x97\xe6\xbc\xb8',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.GENESIS_G90: {
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x87VDGMD15866192DD3x\x88x\x89wuFvvfUf\x88vWwgwwwvfVgx\x87o\xff\xbc^\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7'],
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00HI__ SCC F-CUP      1.00 1.01 96400-D2100         '],
@@ -1202,22 +1234,27 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F4051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6D1051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b"\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00PDE0G16NS2\xf4'\\\x91",
       b'\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00PDE0G16NS2\x00\x00\x00\x00',
       b'\xf1\x816U3H3051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H3051\x00\x00PDE0G16NS1\x00\x00\x00\x00',
       b'\xf1\x816U3H3051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H3051\x00\x00PDE0G16NS1\x13\xcd\x88\x92',
+      b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PDE0G16NL2&[\xc3\x01',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.09 56310G5301\x00 4DEHC109',
+      b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.01 95740-G5010 170424',
       b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.00 95740-G5010 170117',
+      b'\xf1\x00DEP MFC  AT USA LHD 1.00 1.05 99211-G5000 190826',
     ],
     (Ecu.fwdRadar, 0x7D0, None): [
       b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',
+      b'\xf1\x00DEhe SCC F-CUP      1.00 1.02 99110-G5100         ',
     ],
   },
   CAR.KIA_NIRO_HEV_2021: {
@@ -1493,6 +1530,7 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.06 99211-GI000 210813',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.05 99211-GI010 220614',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.01 99211-GI010 211007',
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.01 99211-GI010 211007',
     ],
   },
   CAR.TUCSON_4TH_GEN: {

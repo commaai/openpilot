@@ -125,6 +125,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.COROLLAH_TSS2: [
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+    ToyotaCarInfo("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
     ToyotaCarInfo("Lexus UX Hybrid 2019-22"),
   ],
@@ -841,6 +842,7 @@ FW_VERSIONS = {
       b'\x02896630A07000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630A21000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZJ5000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x02896630ZK8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZN8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZQ3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZR2000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',

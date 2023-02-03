@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
@@ -14,6 +14,8 @@ Ecu = car.CarParams.Ecu
 class CarControllerParams:
   # Messages: Lane_Assist_Data1, LateralMotionControl
   STEER_STEP = 5
+  # Message: ACCDATA
+  ACC_CONTROL_STEP = 2
   # Message: IPMA_Data
   LKAS_UI_STEP = 100
   # Message: ACCDATA_3
@@ -28,6 +30,9 @@ class CarControllerParams:
   # TODO: unify field names used by curvature and angle control cars
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.005, 0.00056, 0.0002])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.008, 0.00089, 0.00032])
+
+  ACCEL_MAX = 2.0               # m/s^s max acceleration
+  ACCEL_MIN = -3.5              # m/s^s max deceleration
 
   def __init__(self, CP):
     pass
@@ -47,12 +52,15 @@ class CAR:
   MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
 
 
+CANFD_CARS: Set[str] = set()
+
+
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
   DELPHI_MRR = 'FORD_CADS'
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", None))
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
 
 @dataclass

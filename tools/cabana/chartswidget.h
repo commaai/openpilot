@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
+#include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
 #include "tools/cabana/dbcmanager.h"
@@ -30,13 +31,14 @@ public:
   void updatePlot(double cur, double min, double max);
   void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
+  void setSeriesType(QAbstractSeries::SeriesType type);
 
   struct SigItem {
     QString msg_id;
     uint8_t source = 0;
     uint32_t address = 0;
     const Signal *sig = nullptr;
-    QLineSeries *series = nullptr;
+    QXYSeries *series = nullptr;
     QVector<QPointF> vals;
     uint64_t last_value_mono_time = 0;
   };
@@ -57,7 +59,7 @@ private slots:
   void manageSeries();
 
 private:
-  QList<ChartView::SigItem>::iterator removeSeries(const QList<ChartView::SigItem>::iterator &it);
+  QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
@@ -70,15 +72,19 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
+  QXYSeries *createSeries(QAbstractSeries::SeriesType type);
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
-  QPointF track_pt;
+  QVector<QPointF> track_pts;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
+  QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
+  QAction *line_series_action;
+  QAction *scatter_series_action;
  };
 
 class ChartsWidget : public QWidget {
@@ -116,7 +122,6 @@ private:
   ChartView *findChart(const QString &id, const Signal *sig);
 
   QLabel *title_label;
-  QLabel *zoom_range_lb;
   QLabel *range_lb;
   QSlider *range_slider;
   bool docking = true;
@@ -131,6 +136,8 @@ private:
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
+  QAction *columns_lb_action;
+  QAction *columns_cb_action;
   QComboBox *columns_cb;
   int column_count = 1;
   const int CHART_MIN_WIDTH = 300;

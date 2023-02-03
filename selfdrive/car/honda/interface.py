@@ -34,7 +34,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
-      ret.radarOffCan = True
+      ret.radarUnavailable = True
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
       # If Bosch radarless, this blocks ACC messages from the camera
