@@ -31,7 +31,9 @@ bool AbstractStream::updateEvent(const Event *event) {
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       data.freq = data.count / std::max(1.0, current_sec);
-      data.colors = hex_colors[id].compute(data.dat, data.ts, data.freq);
+      change_trackers[id].compute(data.dat, data.ts, data.freq);
+      data.colors = change_trackers[id].colors;
+      data.last_change_t = change_trackers[id].last_change_t;
     }
 
     double ts = millis_since_boot();
@@ -77,7 +79,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   // it is thread safe to update data here.
   // updateEvent will not be called before replayStream::seekedTo return.
   new_msgs->clear();
-  hex_colors.clear();
+  change_trackers.clear();
   counters.clear();
   can_msgs.clear();
   for (auto it = last_msgs.cbegin(); it != last_msgs.cend(); ++it) {

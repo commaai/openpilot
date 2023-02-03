@@ -15,6 +15,7 @@ struct CanData {
   uint32_t freq = 0;
   QByteArray dat;
   QVector<QColor> colors;
+  QVector<double> last_change_t;
 };
 
 class AbstractStream : public QObject {
@@ -62,7 +63,7 @@ protected:
   std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
   std::unique_ptr<QHash<QString, CanData>> new_msgs;
-  QHash<QString, HexColors> hex_colors;
+  QHash<QString, ChangeTracker> change_trackers;
 };
 
 // A global pointer referring to the unique AbstractStream object

@@ -7,6 +7,7 @@
 #include <QFutureSynchronizer>
 #include <QGraphicsLayout>
 #include <QLineEdit>
+#include <QMenu>
 #include <QRubberBand>
 #include <QToolBar>
 #include <QToolButton>
@@ -178,6 +179,7 @@ void ChartsWidget::settingChanged() {
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
+    c->setSeriesType(settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter);
   }
 }
 
@@ -297,6 +299,8 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 // ChartView
 
 ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
+  series_type = settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter;
+
   QChart *chart = new QChart();
   chart->setBackgroundRoundness(0);
   axis_x = new QValueAxis(this);
@@ -317,9 +321,20 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
   QToolButton *manage_btn = new QToolButton();
+  manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   manage_btn->setIcon(utils::icon("gear"));
   manage_btn->setAutoRaise(true);
-  manage_btn->setToolTip(tr("Manage series"));
+  QMenu *menu = new QMenu(this);
+  line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
+  line_series_action->setCheckable(true);
+  line_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeLine);
+  scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  scatter_series_action->setCheckable(true);
+  scatter_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeScatter);
+  menu->addSeparator();
+  menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
+  manage_btn->setMenu(menu);
+  manage_btn->setPopupMode(QToolButton::InstantPopup);
   manage_btn_proxy = new QGraphicsProxyWidget(chart);
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart->zValue() + 11);
@@ -334,7 +349,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
-  QObject::connect(manage_btn, &QToolButton::clicked, this, &ChartView::manageSeries);
 }
 
 qreal ChartView::getYAsixLabelWidth() const {
@@ -354,8 +368,7 @@ void ChartView::setPlotAreaLeftPosition(int pos) {
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
-  QLineSeries *series = new QLineSeries(this);
-
+  QXYSeries *series = createSeries(series_type);
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -478,22 +491,26 @@ void ChartView::updatePlot(double cur, double min, double max) {
       int num_points = std::max<int>(end - begin, 1);
       int pixels_per_point = width() / num_points;
 
-      s.series->setPointsVisible(pixels_per_point > 20);
+      if (series_type == QAbstractSeries::SeriesTypeScatter) {
+        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
+      } else {
+        s.series->setPointsVisible(pixels_per_point > 20);
 
-      // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
+        // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
 #ifndef __APPLE
-      // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
-      bool use_opengl = pixels_per_point < 1;
-      s.series->setUseOpenGL(use_opengl);
+        // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
+        bool use_opengl = pixels_per_point < 1;
+        s.series->setUseOpenGL(use_opengl);
 
-      // Qt doesn't properly apply device pixel ratio in OpenGL mode
-      QApplication* application = static_cast<QApplication *>(QApplication::instance());
-      float scale = use_opengl ? application->devicePixelRatio() : 1.0;
+        // Qt doesn't properly apply device pixel ratio in OpenGL mode
+        QApplication *application = static_cast<QApplication *>(QApplication::instance());
+        float scale = use_opengl ? application->devicePixelRatio() : 1.0;
 
-      QPen pen = s.series->pen();
-      pen.setWidth(2.0 * scale);
-      s.series->setPen(pen);
+        QPen pen = s.series->pen();
+        pen.setWidth(2.0 * scale);
+        s.series->setPen(pen);
 #endif
+      }
     }
   }
 
@@ -589,7 +606,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  track_pt = {0, 0};
+  track_pts.clear();
   scene()->update();
   QChartView::leaveEvent(event);
 }
@@ -617,14 +634,21 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && rubber && rubber->isVisible()) {
     rubber->hide();
     QRectF rect = rubber->geometry().normalized();
-    double min = std::floor(chart()->mapToValue(rect.topLeft()).x() * 10.0) / 10.0;
-    double max = std::floor(chart()->mapToValue(rect.bottomRight()).x() * 10.0) / 10.0;
+    double min = chart()->mapToValue(rect.topLeft()).x();
+    double max = chart()->mapToValue(rect.bottomRight()).x();
+
+    // Prevent zooming/seeking past the end of the route
+    min = std::clamp(min, can->routeStartTime(), can->routeStartTime() + can->totalSeconds());
+    max = std::clamp(max, can->routeStartTime(), can->routeStartTime() + can->totalSeconds());
+
+    double min_rounded = std::floor(min * 10.0) / 10.0;
+    double max_rounded = std::floor(max * 10.0) / 10.0;
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if ((max - min) >= 0.5) {
+    } else if ((max_rounded - min_rounded) >= 0.5) {
       // zoom in if selected range is greater than 0.5s
-      emit zoomIn(min, max);
+      emit zoomIn(min_rounded, max_rounded);
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
@@ -639,27 +663,26 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
-  track_pt = {0, 0};
+  track_pts.clear();
   if (!is_zooming && plot_area.contains(ev->pos())) {
+    track_pts.resize(sigs.size());
     QStringList text_list;
     const double sec = chart()->mapToValue(ev->pos()).x();
-    for (auto &s : sigs) {
+    for (int i = 0; i < sigs.size(); ++i) {
       QString value = "--";
       // use reverse iterator to find last item <= sec.
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+      auto it = std::lower_bound(sigs[i].vals.rbegin(), sigs[i].vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != sigs[i].vals.rend() && it->x() >= axis_x->min()) {
         value = QString::number(it->y());
-        auto value_pos = chart()->mapToPosition(*it);
-        if (value_pos.x() > track_pt.x()) track_pt = value_pos;
+        track_pts[i] = chart()->mapToPosition(*it);
       }
-      text_list.push_back(QString("&nbsp;%1 : %2&nbsp;").arg(sigs.size() > 1 ? s.sig->name.c_str() : "Value").arg(value));
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name.c_str(), value));
     }
-    if (track_pt.x() == 0) track_pt = ev->pos();
-    QString text = QString("<div style=\"background-color: darkGray;color: white;\">&nbsp;Time: %1 &nbsp;<br />%2</div>")
-                       .arg(chart()->mapToValue(track_pt).x(), 0, 'f', 3)
-                       .arg(text_list.join("<br />"));
-    QPoint pt((int)track_pt.x() + 20, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(pt), text, this, plot_area.toRect());
+    auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
+    auto pt = (max == track_pts.end()) ? ev->pos() : *max;
+    text_list.push_front(QString::number(chart()->mapToValue(pt).x(), 'f', 3));
+    QPointF tooltip_pt(pt.x() + 12, plot_area.top() - 20);
+    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), pt.isNull() ? "" : text_list.join("<br />"), this, plot_area.toRect());
     scene()->update();
   } else {
     QToolTip::hideText();
@@ -712,11 +735,55 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   qreal y2 = chart()->plotArea().bottom() + 2;
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, y1}, QPointF{x, y2});
-  if (!track_pt.isNull()) {
+
+  auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
+  if (max != track_pts.end() && !max->isNull()) {
     painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
-    painter->drawLine(QPointF{track_pt.x(), y1}, QPointF{track_pt.x(), y2});
-    painter->setBrush(Qt::darkGray);
-    painter->drawEllipse(track_pt, 5, 5);
+    painter->drawLine(QPointF{max->x(), y1}, QPointF{max->x(), y2});
+    painter->setPen(Qt::NoPen);
+    for (int i = 0; i < track_pts.size(); ++i) {
+      if (!track_pts[i].isNull() && i < sigs.size()) {
+        painter->setBrush(sigs[i].series->color().darker(125));
+        painter->drawEllipse(track_pts[i], 5.5, 5.5);
+      }
+    }
+  }
+}
+
+QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
+  QXYSeries *series = nullptr;
+  if (type == QAbstractSeries::SeriesTypeLine) {
+    series = new QLineSeries(this);
+  } else {
+    series = new QScatterSeries(this);
+  }
+    // TODO: Due to a bug in CameraWidget the camera frames
+    // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
+#ifndef __APPLE__
+  series->setUseOpenGL(true);
+#endif
+  return series;
+}
+
+void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
+  if (type != series_type) {
+    series_type = type;
+    line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
+    scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
+
+    for (auto &s : sigs) {
+      chart()->removeSeries(s.series);
+      s.series->deleteLater();
+    }
+    for (auto &s : sigs) {
+      auto series = createSeries(series_type);
+      chart()->addSeries(series);
+      series->attachAxis(axis_x);
+      series->attachAxis(axis_y);
+      series->replace(s.vals);
+      s.series = series;
+    }
+    updateTitle();
   }
 }
 
