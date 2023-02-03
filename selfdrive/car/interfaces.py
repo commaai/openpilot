@@ -407,7 +407,7 @@ class CarStateBase(ABC):
       'E': GearShifter.eco, 'ECO': GearShifter.eco,
       'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
       'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
-      'S': GearShifter.sport, 'SPORT': GearShifter.sport, 'SPORT_DRIVESPORT': GearShifter.sport,
+      'S': GearShifter.sport, 'SPORT': GearShifter.sport,
       'L': GearShifter.low, 'LOW': GearShifter.low,
       'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
     }
