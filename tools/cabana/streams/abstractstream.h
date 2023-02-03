@@ -11,8 +11,6 @@
 
 struct CanData {
   double ts = 0.;
-  uint8_t src = 0;
-  uint32_t address = 0;
   uint32_t count = 0;
   uint32_t freq = 0;
   QByteArray dat;
@@ -34,7 +32,7 @@ public:
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
   virtual QDateTime currentDateTime() const { return {}; }
-  virtual const CanData &lastMessage(const QString &id) { return can_msgs[id]; }
+  virtual const CanData &lastMessage(const QString &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
   virtual const std::vector<Event *> *events() const = 0;
@@ -54,16 +52,18 @@ signals:
   void received(QHash<QString, CanData> *);
 
 public:
-  QMap<QString, CanData> can_msgs;
+  QHash<QString, CanData> can_msgs;
 
 protected:
   void process(QHash<QString, CanData> *);
   bool updateEvent(const Event *event);
+  void updateLastMsgsTo(double sec);
 
   bool is_live_streaming = false;
-  std::atomic<double> counters_begin_sec = 0;
   std::atomic<bool> processing = false;
   QHash<QString, uint32_t> counters;
+  std::unique_ptr<QHash<QString, CanData>> new_msgs;
+  QHash<QString, ChangeTracker> change_trackers;
 };
 
 // A global pointer referring to the unique AbstractStream object
