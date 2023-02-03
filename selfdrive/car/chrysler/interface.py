@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
+from selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "chrysler"
     ret.dashcamOnly = candidate in RAM_HD
 
-    ret.radarOffCan = DBC[candidate]['radar'] is None
+    ret.radarUnavailable = True # DBC[candidate]['radar'] is None
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 
@@ -58,9 +58,9 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2493. + STD_CARGO_KG
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
       ret.minSteerSpeed = 14.5
-      for fw in car_fw:
-        if fw.ecu == 'eps' and fw.fwVersion.startswith((b"68312176", b"68273275")):
-          ret.minSteerSpeed = 0.
+      # Older EPS FW allow steer to zero
+      if any(fw.ecu == 'eps' and fw.fwVersion[:4] <= b"6831" for fw in car_fw):
+        ret.minSteerSpeed = 0.
 
     elif candidate == CAR.RAM_HD:
       ret.steerActuatorDelay = 0.2

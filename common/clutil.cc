@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "common/util.h"
+#include "common/swaglog.h"
 
 namespace {  // helper functions
 
@@ -31,14 +32,14 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
     case CL_DEVICE_TYPE_ACCELERATOR: type_str = "CL_DEVICE_TYPE_ACCELERATOR"; break;
   }
 
-  std::cout << "vendor: " << get_platform_info(platform, CL_PLATFORM_VENDOR) << std::endl
-            << "platform version: " << get_platform_info(platform, CL_PLATFORM_VERSION) << std::endl
-            << "profile: " << get_platform_info(platform, CL_PLATFORM_PROFILE) << std::endl
-            << "extensions: " << get_platform_info(platform, CL_PLATFORM_EXTENSIONS) << std::endl
-            << "name :" << get_device_info(device, CL_DEVICE_NAME) << std::endl
-            << "device version :" << get_device_info(device, CL_DEVICE_VERSION) << std::endl
-            << "max work group size :" << work_group_size << std::endl
-            << "type = " << device_type << " = " << type_str << std::endl;
+  LOGD("vendor: %s", get_platform_info(platform, CL_PLATFORM_VENDOR).c_str());
+  LOGD("platform version: %s", get_platform_info(platform, CL_PLATFORM_VERSION).c_str());
+  LOGD("profile: %s", get_platform_info(platform, CL_PLATFORM_PROFILE).c_str());
+  LOGD("extensions: %s", get_platform_info(platform, CL_PLATFORM_EXTENSIONS).c_str());
+  LOGD("name: %s", get_device_info(device, CL_DEVICE_NAME).c_str());
+  LOGD("device version: %s", get_device_info(device, CL_DEVICE_VERSION).c_str());
+  LOGD("max work group size: %d", work_group_size);
+  LOGD("type = %d = ", device_type, type_str);
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
@@ -49,7 +50,7 @@ void cl_print_build_errors(cl_program program, cl_device_id device) {
   std::string log(log_size, '\0');
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, &log[0], NULL);
 
-  std::cout << "build failed; status=" << status << ", log:" << std::endl << log << std::endl;
+  LOGE("build failed; status=%d, log: %s", status, log.c_str());
 }
 
 }  // namespace
@@ -61,14 +62,15 @@ cl_device_id cl_get_device_id(cl_device_type device_type) {
   CL_CHECK(clGetPlatformIDs(num_platforms, &platform_ids[0], NULL));
 
   for (size_t i = 0; i < num_platforms; ++i) {
-    std::cout << "platform[" << i << "] CL_PLATFORM_NAME: " << get_platform_info(platform_ids[i], CL_PLATFORM_NAME) << std::endl;
+    LOGD("platform[%d] CL_PLATFORM_NAME: %s", i, get_platform_info(platform_ids[i], CL_PLATFORM_NAME).c_str());
+
     // Get first device
     if (cl_device_id device_id = NULL; clGetDeviceIDs(platform_ids[i], device_type, 1, &device_id, NULL) == 0 && device_id) {
       cl_print_info(platform_ids[i], device_id);
       return device_id;
     }
   }
-  std::cout << "No valid openCL platform found" << std::endl;
+  LOGE("No valid openCL platform found");
   assert(0);
   return nullptr;
 }

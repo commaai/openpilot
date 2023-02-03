@@ -35,7 +35,7 @@ class KalmanParams():
     self.K = [[interp(dt, dts, K0)], [interp(dt, dts, K1)]]
 
 
-def laplacian_cdf(x, mu, b):
+def laplacian_pdf(x, mu, b):
   b = max(b, 1e-4)
   return math.exp(-abs(x-mu)/b)
 
@@ -45,9 +45,9 @@ def match_vision_to_cluster(v_ego, lead, clusters):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
-    prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.xStd[0])
-    prob_y = laplacian_cdf(c.yRel, -lead.y[0], lead.yStd[0])
-    prob_v = laplacian_cdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
+    prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
+    prob_y = laplacian_pdf(c.yRel, -lead.y[0], lead.yStd[0])
+    prob_v = laplacian_pdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
 
     # This is isn't exactly right, but good heuristic
     return prob_d * prob_y * prob_v
@@ -165,7 +165,6 @@ class RadarD():
     dat.valid = sm.all_checks() and len(rr.errors) == 0
     radarState = dat.radarState
     radarState.mdMonoTime = sm.logMonoTime['modelV2']
-    radarState.canMonoTimes = list(rr.canMonoTimes)
     radarState.radarErrors = list(rr.errors)
     radarState.carStateMonoTime = sm.logMonoTime['carState']
 
