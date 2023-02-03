@@ -376,6 +376,7 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
+  updateSeriesPoints();
   emit seriesAdded(msg_id, sig);
 }
 
@@ -482,39 +483,42 @@ void ChartView::updatePlot(double cur, double min, double max) {
   if (min != axis_x->min() || max != axis_x->max()) {
     axis_x->setRange(min, max);
     updateAxisY();
-
-    // Show points when zoomed in enough
-    for (auto &s : sigs) {
-      auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-      auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
-
-      int num_points = std::max<int>(end - begin, 1);
-      int pixels_per_point = width() / num_points;
-
-      if (series_type == QAbstractSeries::SeriesTypeScatter) {
-        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
-      } else {
-        s.series->setPointsVisible(pixels_per_point > 20);
-
-        // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
-#ifndef __APPLE
-        // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
-        bool use_opengl = pixels_per_point < 1;
-        s.series->setUseOpenGL(use_opengl);
-
-        // Qt doesn't properly apply device pixel ratio in OpenGL mode
-        QApplication *application = static_cast<QApplication *>(QApplication::instance());
-        float scale = use_opengl ? application->devicePixelRatio() : 1.0;
-
-        QPen pen = s.series->pen();
-        pen.setWidth(2.0 * scale);
-        s.series->setPen(pen);
-#endif
-      }
-    }
+    updateSeriesPoints();
   }
 
   scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+}
+
+void ChartView::updateSeriesPoints() {
+  // Show points when zoomed in enough
+  for (auto &s : sigs) {
+    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+    auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+
+    int num_points = std::max<int>(end - begin, 1);
+    int pixels_per_point = width() / num_points;
+
+    if (series_type == QAbstractSeries::SeriesTypeScatter) {
+      ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
+    } else {
+      s.series->setPointsVisible(pixels_per_point > 20);
+
+      // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
+#ifndef __APPLE
+      // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
+      bool use_opengl = pixels_per_point < 1;
+      s.series->setUseOpenGL(use_opengl);
+
+      // Qt doesn't properly apply device pixel ratio in OpenGL mode
+      QApplication *application = static_cast<QApplication *>(QApplication::instance());
+      float scale = use_opengl ? application->devicePixelRatio() : 1.0;
+
+      QPen pen = s.series->pen();
+      pen.setWidth(2.0 * scale);
+      s.series->setPen(pen);
+#endif
+    }
+  }
 }
 
 void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *events, bool clear) {
@@ -783,6 +787,7 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
       series->replace(s.vals);
       s.series = series;
     }
+    updateSeriesPoints();
     updateTitle();
   }
 }
