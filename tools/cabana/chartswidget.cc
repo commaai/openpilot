@@ -766,7 +766,6 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
 #ifndef __APPLE__
   series->setUseOpenGL(true);
 #endif
-  // updateSeriesPoints();
   return series;
 }
 
