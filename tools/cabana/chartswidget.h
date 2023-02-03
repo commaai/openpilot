@@ -73,6 +73,7 @@ private:
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
+  void updateSeriesPoints();
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -97,6 +98,7 @@ public:
 
 public slots:
   void setColumnCount(int n);
+  void removeAll();
 
 signals:
   void dock(bool floating);
@@ -114,7 +116,6 @@ private:
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
-  void removeAll();
   void setMaxChartRange(int value);
   void updateLayout();
   void settingChanged();

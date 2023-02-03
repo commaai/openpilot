@@ -23,6 +23,7 @@ public:
   void loadFile(const QString &fn);
 
 public slots:
+  void openRoute();
   void newFile();
   void openFile();
   void openRecentFile();

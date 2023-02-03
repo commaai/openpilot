@@ -20,6 +20,7 @@ public:
   int chart_range = 3 * 60; // e minutes
   int chart_series_type = 0;
   QString last_dir;
+  QString last_route_dir;
   QByteArray geometry;
   QByteArray video_splitter_state;
   QByteArray window_state;
