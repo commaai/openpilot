@@ -42,12 +42,6 @@ bool ReplayStream::eventFilter(const Event *event) {
   return true;
 }
 
-void ReplayStream::seekTo(double ts) {
-  replay->seekTo(std::max(double(0), ts), false);
-  counters_begin_sec = 0;
-  emit updated();
-}
-
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
   emit(pause ? paused() : resume());
