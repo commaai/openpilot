@@ -30,6 +30,7 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const QString &message_id);
   void refresh();
+  void removeAll();
   QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
 
 private:

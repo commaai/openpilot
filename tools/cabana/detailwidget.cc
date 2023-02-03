@@ -104,6 +104,16 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
   }
 }
 
+void DetailWidget::removeAll() {
+  msg_id = "";
+  tabbar->blockSignals(true);
+  while (tabbar->count() > 0) {
+    tabbar->removeTab(0);
+  }
+  tabbar->blockSignals(false);
+  stacked_layout->setCurrentIndex(0);
+}
+
 void DetailWidget::setMessage(const QString &message_id) {
   msg_id = message_id;
   int index = tabbar->count() - 1;

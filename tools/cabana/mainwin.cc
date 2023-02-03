@@ -194,6 +194,8 @@ void MainWindow::DBCFileChanged() {
 void MainWindow::openRoute() {
   OpenRouteDialog dlg(this);
   if (dlg.exec()) {
+    detail_widget->removeAll();
+    charts_widget->removeAll();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
   } else if (dlg.failedToLoad()) {
     close();
