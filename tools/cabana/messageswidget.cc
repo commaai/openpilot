@@ -106,11 +106,12 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
   } else if (role == Qt::UserRole && index.column() == 4) {
     QList<QVariant> colors;
+    colors.reserve(can_data.dat.size());
     for (int i = 0; i < can_data.dat.size(); i++){
       if (suppressed_bytes.contains({id, i})) {
         colors.append(QColor(255, 255, 255, 0));
       } else {
-        colors.append(can_data.colors[i]);
+        colors.append(i < can_data.colors.size() ? can_data.colors[i] : QColor(255, 255, 255, 0));
       }
     }
     return colors;
@@ -152,8 +153,8 @@ void MessageListModel::sortMessages() {
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::tuple{can->lastMessage(l).src, can->lastMessage(l).address, l};
-      auto rr = std::tuple{can->lastMessage(r).src, can->lastMessage(r).address, r};
+      auto ll = DBCManager::parseId(l);
+      auto rr = DBCManager::parseId(r);
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 2) {
