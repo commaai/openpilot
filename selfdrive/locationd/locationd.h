@@ -24,6 +24,7 @@
 class Localizer {
 public:
   Localizer();
+  Localizer(bool has_ublox);
 
   int locationd_thread();
 
@@ -52,6 +53,7 @@ public:
   void handle_msg(const cereal::Event::Reader& log);
   void handle_sensor(double current_time, const cereal::SensorEventData::Reader& log);
   void handle_gps(double current_time, const cereal::GpsLocationData::Reader& log, const double sensor_time_offset);
+  void handle_gnss(double current_time, const cereal::GnssMeasurements::Reader& log);
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
@@ -76,8 +78,10 @@ private:
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
-  bool gps_valid = false;
+  double last_gps_msg = 0;
   bool ublox_available = true;
   bool observation_timings_invalid = false;
-  std::map<std::string, double> observation_values_invalid;  
+  std::map<std::string, double> observation_values_invalid;
+  bool standstill = true;
+  int32_t orientation_reset_count = 0;
 };

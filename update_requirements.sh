@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -22,8 +22,13 @@ if [ -z "\$PYENV_ROOT" ]; then
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
+
+  # setup now without restarting shell
+  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+  export PYENV_ROOT="$HOME/.pyenv"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
 fi
-source $RC_FILE
 
 export MAKEFLAGS="-j$(nproc)"
 
@@ -40,7 +45,7 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==22.3
+pip install pip==22.3.1
 pip install poetry==1.2.2
 
 poetry config virtualenvs.prefer-active-python true --local
@@ -64,11 +69,13 @@ else
   RUN="poetry run"
 fi
 
-echo "pre-commit hooks install..."
-shopt -s nullglob
-for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-  cd $DIR/$(dirname $f)
-  if [ -e ".git" ]; then
-    $RUN pre-commit install
-  fi
-done
+if [ "$(uname)" != "Darwin" ]; then
+  echo "pre-commit hooks install..."
+  shopt -s nullglob
+  for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
+    cd $DIR/$(dirname $f)
+    if [ -e ".git" ]; then
+      $RUN pre-commit install
+    fi
+  done
+fi

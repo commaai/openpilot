@@ -12,9 +12,11 @@ TESLA AP1 MODEL S: [.nan, 2.5, .nan]
 TESLA AP2 MODEL S: [.nan, 2.5, .nan]
 
 # Guess
+FORD BRONCO SPORT 1ST GEN: [.nan, 1.5, .nan]
 FORD ESCAPE 4TH GEN: [.nan, 1.5, .nan]
 FORD EXPLORER 6TH GEN: [.nan, 1.5, .nan]
 FORD FOCUS 4TH GEN: [.nan, 1.5, .nan]
+FORD MAVERICK 1ST GEN: [.nan, 1.5, .nan]
 ###
 
 # No steering wheel
@@ -34,6 +36,9 @@ HYUNDAI SANTA CRUZ 1ST GEN: [2.7, 2.7, 0.1]
 KIA SPORTAGE 5TH GEN: [2.7, 2.7, 0.1]
 KIA SPORTAGE HYBRID 5TH GEN: [2.5, 2.5, 0.1]
 GENESIS GV70 1ST GEN: [2.42, 2.42, 0.1]
+KIA SORENTO PLUG-IN HYBRID 4TH GEN: [2.5, 2.5, 0.1]
+GENESIS GV60 ELECTRIC 1ST GEN: [2.5, 2.5, 0.1]
+KIA SORENTO 4TH GEN: [2.5, 2.5, 0.1]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

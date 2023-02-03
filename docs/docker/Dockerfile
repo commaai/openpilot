@@ -11,7 +11,6 @@ WORKDIR ${OPENPILOT_PATH}
 
 COPY SConstruct ${OPENPILOT_PATH}
 
-COPY ./pyextra ${OPENPILOT_PATH}/pyextra
 COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
 COPY ./laika ${OPENPILOT_PATH}/laika

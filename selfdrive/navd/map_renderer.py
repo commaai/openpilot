@@ -4,6 +4,7 @@
 import os
 import time
 import numpy as np
+import polyline
 from cffi import FFI
 
 from common.ffi_wrapper import suffix
@@ -48,6 +49,22 @@ def get_image(lib, renderer):
   # Convert to numpy
   r = np.asarray(r)
   return r.reshape((WIDTH, HEIGHT))
+
+
+def navRoute_to_polyline(nr):
+  coords = [(m.latitude, m.longitude) for m in nr.navRoute.coordinates]
+  return coords_to_polyline(coords)
+
+
+def coords_to_polyline(coords):
+  # TODO: where does this factor of 10 come from?
+  return polyline.encode([(lat * 10., lon * 10.) for lat, lon in coords])
+
+
+def polyline_to_coords(p):
+  coords = polyline.decode(p)
+  return [(lat / 10., lon / 10.) for lat, lon in coords]
+
 
 
 if __name__ == "__main__":

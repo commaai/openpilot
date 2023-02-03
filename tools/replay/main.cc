@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
+#include "common/prefix.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
 
@@ -23,9 +24,11 @@ int main(int argc, char *argv[]) {
   parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai");
   parser.addOption({{"a", "allow"}, "whitelist of services to send", "allow"});
   parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
+  parser.addOption({{"c", "cache"}, "cache <n> segments in memory. default is 5", "n"});
   parser.addOption({{"s", "start"}, "start from <seconds>", "seconds"});
   parser.addOption({"demo", "use a demo route instead of providing your own"});
   parser.addOption({"data_dir", "local directory with routes", "data_dir"});
+  parser.addOption({"prefix", "set OPENPILOT_PREFIX", "prefix"});
   for (auto &[name, _, desc] : flags) {
     parser.addOption({name, desc});
   }
@@ -46,7 +49,17 @@ int main(int argc, char *argv[]) {
       replay_flags |= flag;
     }
   }
+
+  std::unique_ptr<OpenpilotPrefix> op_prefix;
+  auto prefix = parser.value("prefix");
+  if (!prefix.isEmpty()) {
+    op_prefix.reset(new OpenpilotPrefix(prefix.toStdString()));
+  }
+
   Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
+  if (!parser.value("c").isEmpty()) {
+    replay->setSegmentCacheLimit(parser.value("c").toInt());
+  }
   if (!replay->load()) {
     return 0;
   }

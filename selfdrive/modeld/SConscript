@@ -70,30 +70,14 @@ lenv.Program('_dmonitoringmodeld', [
 if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
 
-  if GetOption('pc_thneed'):
-    cmd = f"cd {Dir('#').abspath}/tinygrad_repo && GPU=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
-  else:
-    cmd = f"cd {Dir('#').abspath}/tinygrad_repo && FLOAT16=1 MATMUL=1 PYOPENCL_NO_CACHE=1 NATIVE_EXPLOG=1 OPTWG=1 UNSAFE_FLOAT4=1 DEBUGCL=1 python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
+  tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTWG=1", "IMAGE=2", "GPU=1", "CLCACHE=0"]
+  if not GetOption('pc_thneed'):
+    # use FLOAT16 on device for speed + don't cache the CL kernels for space
+    tinygrad_opts += ["FLOAT16=1", "PYOPENCL_NO_CACHE=1"]
+  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile.py {fn}.onnx {fn}.thneed"
 
-  # is there a better way then listing all of tinygrad?
-  lenv.Command(fn + ".thneed", [fn + ".onnx",
-    "#tinygrad_repo/openpilot/compile.py",
-    "#tinygrad_repo/accel/opencl/conv.cl",
-    "#tinygrad_repo/accel/opencl/matmul.cl",
-    "#tinygrad_repo/accel/opencl/ops_opencl.py",
-    "#tinygrad_repo/accel/opencl/preprocessing.py",
-    "#tinygrad_repo/extra/onnx.py",
-    "#tinygrad_repo/extra/thneed.py",
-    "#tinygrad_repo/extra/utils.py",
-    "#tinygrad_repo/tinygrad/llops/ops_gpu.py",
-    "#tinygrad_repo/tinygrad/llops/ops_opencl.py",
-    "#tinygrad_repo/tinygrad/helpers.py",
-    "#tinygrad_repo/tinygrad/mlops.py",
-    "#tinygrad_repo/tinygrad/ops.py",
-    "#tinygrad_repo/tinygrad/shapetracker.py",
-    "#tinygrad_repo/tinygrad/tensor.py",
-    "#tinygrad_repo/tinygrad/nn/__init__.py"
-  ], cmd)
+  tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
+  lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
 
 llenv = lenv.Clone()
 if GetOption('pc_thneed'):
@@ -111,4 +95,9 @@ if GetOption('pc_thneed'):
 llenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
+  ]+common_model, LIBS=libs + transformations)
+
+lenv.Program('_navmodeld', [
+    "navmodeld.cc",
+    "models/nav.cc",
   ]+common_model, LIBS=libs + transformations)

@@ -32,8 +32,6 @@ void DBCManager::initMsgMap() {
 }
 
 QString DBCManager::generateDBC() {
-  if (!dbc) return {};
-
   QString dbc_string;
   for (auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
@@ -70,7 +68,7 @@ void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto &s = m->sigs[sig.name.c_str()];
     s = sig;
-    emit signalAdded(&s);
+    emit signalAdded(parseId(id).second, &s);
   }
 }
 
@@ -99,6 +97,7 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
 
 std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
   const auto list = id.split(':');
+  if (list.size() != 2) return {0, 0};
   return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 
@@ -111,7 +110,8 @@ DBCManager *dbc() {
 
 std::vector<const Signal*> DBCMsg::getSignals() const {
   std::vector<const Signal*> ret;
-  for (auto &[name, sig] : sigs) ret.push_back(&sig);
+  ret.reserve(sigs.size());
+  for (auto &[_, sig] : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
   return ret;
 }

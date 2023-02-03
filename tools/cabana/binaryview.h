@@ -9,25 +9,19 @@
 #include "tools/cabana/dbcmanager.h"
 
 class BinaryItemDelegate : public QStyledItemDelegate {
-  Q_OBJECT
-
 public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
 
-private:
   QFont small_font, hex_font;
   QColor selection_color;
 };
 
 class BinaryViewModel : public QAbstractTableModel {
-  Q_OBJECT
-
 public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
+  void refresh();
   void updateState();
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
@@ -45,14 +39,13 @@ public:
     QColor bg_color = QApplication::style()->standardPalette().color(QPalette::Base);
     bool is_msb = false;
     bool is_lsb = false;
-    QString val = "0";
+    QString val = "-";
     QList<const Signal *> sigs;
   };
   std::vector<Item> items;
 
-private:
   QString msg_id;
-  const DBCMsg *dbc_msg;
+  const DBCMsg *dbc_msg = nullptr;
   int row_count = 0;
   const int column_count = 9;
 };
@@ -66,6 +59,7 @@ public:
   void highlight(const Signal *sig);
   QSet<const Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
+  QSize minimumSizeHint() const override;
 
 signals:
   void signalClicked(const Signal *sig);
@@ -74,6 +68,7 @@ signals:
   void resizeSignal(const Signal *sig, int from, int size);
 
 private:
+  void refresh();
   std::tuple<int, int, bool> getSelection(QModelIndex index);
   void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
   void mousePressEvent(QMouseEvent *event) override;

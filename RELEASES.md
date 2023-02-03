@@ -1,7 +1,14 @@
 Version 0.9.1 (2022-12-XX)
 ========================
-* New driving model
-
+* Adjust alert volume using ambient noise level
+* Removed driver monitoring timer resetting on interaction if face detected and distracted
+* New German translation thanks to Vrabetz and CzokNorris!
+* Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
+* Genesis GV60 2023 support thanks to sunnyhaibin!
+* Hyundai Tucson 2022-23 support
+* Kia Sorento 2022-23 support thanks to sunnyhaibin!
+* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Volkswagen Crafter and MAN TGE 2017-23 support thanks to jyoung8607!
 
 Version 0.9.0 (2022-11-21)
 ========================

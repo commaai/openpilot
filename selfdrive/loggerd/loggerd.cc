@@ -24,15 +24,25 @@ void logger_rotate(LoggerdState *s) {
 }
 
 void rotate_if_needed(LoggerdState *s) {
-  if (s->ready_to_rotate == s->max_waiting) {
-    logger_rotate(s);
+  // all encoders ready, trigger rotation
+  bool all_ready = s->ready_to_rotate == s->max_waiting;
+
+  // fallback logic to prevent extremely long segments in the case of camera, encoder, etc. malfunctions
+  bool timed_out = false;
+  double tms = millis_since_boot();
+  double seg_length_secs = (tms - s->last_rotate_tms) / 1000.;
+  if ((seg_length_secs > SEGMENT_LENGTH) && !LOGGERD_TEST) {
+    // TODO: might be nice to put these reasons in the sentinel
+    if ((tms - s->last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+      timed_out = true;
+      LOGE("no camera packets seen. auto rotating");
+    } else if (seg_length_secs > SEGMENT_LENGTH*1.2) {
+      timed_out = true;
+      LOGE("segment too long. auto rotating");
+    }
   }
 
-  double tms = millis_since_boot();
-  if ((tms - s->last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-      (tms - s->last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
-      !LOGGERD_TEST) {
-    LOGW("no camera packet seen. auto rotating");
+  if (all_ready || timed_out) {
     logger_rotate(s);
   }
 }
