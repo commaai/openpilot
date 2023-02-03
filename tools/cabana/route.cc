@@ -9,15 +9,12 @@
 
 #include "tools/cabana/streams/replaystream.h"
 
-// OpenRouteDialog
-
 OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   // TODO: get route list from api.comma.ai
   QHBoxLayout *edit_layout = new QHBoxLayout;
   edit_layout->addWidget(new QLabel(tr("Route:")));
-  route_edit = new QLineEdit(this);
+  edit_layout->addWidget(route_edit = new QLineEdit(this));
   route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
-  edit_layout->addWidget(route_edit);
   auto file_btn = new QPushButton(tr("Browse..."), this);
   edit_layout->addWidget(file_btn);
 
@@ -47,26 +44,25 @@ OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
 
 void OpenRouteDialog::loadRoute() {
   btn_box->setEnabled(false);
+
   QString route = route_edit->text();
   QString data_dir;
   if (int idx = route.lastIndexOf('/'); idx != -1) {
-    QString basename = route.mid(idx + 1);
-    if (int pos = basename.lastIndexOf("--"); pos != -1) {
-      data_dir = route.mid(0, idx);
-      route = basename.mid(0, pos);
-    }
+    data_dir = route.mid(0, idx + 1);
+    route = route.mid(idx + 1);
   }
 
   bool is_valid_format = Route::parseRoute(route).str.size() > 0;
-  if (is_valid_format) {
+  if (!is_valid_format) {
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
+  } else {
     failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
     if (failed_to_load) {
       QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
     } else {
       accept();
     }
-  } else {
-    QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   }
+
   btn_box->setEnabled(true);
 }
