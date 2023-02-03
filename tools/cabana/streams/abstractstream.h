@@ -17,6 +17,7 @@ struct CanData {
   uint32_t freq = 0;
   QByteArray dat;
   QVector<QColor> colors;
+  QVector<double> last_change_t;
 };
 
 class AbstractStream : public QObject {

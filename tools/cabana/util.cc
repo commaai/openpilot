@@ -10,7 +10,7 @@ static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint32_t freq) {
+void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
   if (prev_dat.size() != dat.size()) {
     colors.resize(dat.size());
     last_change_t.resize(dat.size());
@@ -45,16 +45,15 @@ const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint
   }
 
   prev_dat = dat;
-  return colors;
 }
 
-void HexColors::clear() {
+void ChangeTracker::clear() {
   prev_dat.clear();
   last_change_t.clear();
   colors.clear();
 }
 
-QList<QVariant> HexColors::toVariantList(const QVector<QColor> &colors) {
+QList<QVariant> ChangeTracker::toVariantList(const QVector<QColor> &colors) {
   QList<QVariant> ret;
   ret.reserve(colors.size());
   for (auto &c : colors) ret.append(c);

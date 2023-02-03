@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 231 Supported Cars
+# 232 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -107,6 +107,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Niro Hybrid 2021|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2021">Hyundai F</a>||
 |Kia|Niro Hybrid 2022|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2022">Hyundai H</a>||
 |Kia|Niro Plug-in Hybrid 2018-19|All|openpilot available[<sup>1</sup>](#footnotes)|10 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Plug-in Hybrid 2018-19">Hyundai C</a>||
+|Kia|Niro Plug-in Hybrid 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Plug-in Hybrid 2020">Hyundai D</a>||
 |Kia|Optima 2017|Advanced Smart Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Optima 2017">Hyundai B</a>||
 |Kia|Optima 2019-20|Smart Cruise Control (SCC)|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Optima 2019-20">Hyundai G</a>||
 |Kia|Seltos 2021|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Seltos 2021">Hyundai A</a>||
