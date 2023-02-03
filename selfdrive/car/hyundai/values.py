@@ -686,14 +686,13 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00TM ESC \r 100\x18\x031 58910-S2650',
       b'\xf1\x00TM ESC \r 103\x18\x11\x08 58910-S2650',
-      b'\xf1\x00TM ESC \r 104\x19\a\b 58910-S2650',
+      b'\xf1\x00TM ESC \r 104\x19\x07\x08 58910-S2650',
       b'\xf1\x00TM ESC \x02 100\x18\x030 58910-S2600',
       b'\xf1\x00TM ESC \x02 102\x18\x07\x01 58910-S2600',
       b'\xf1\x00TM ESC \x02 103\x18\x11\x07 58910-S2600',
       b'\xf1\x00TM ESC \x02 104\x19\x07\x07 58910-S2600',
       b'\xf1\x00TM ESC \x03 103\x18\x11\x07 58910-S2600',
       b'\xf1\x00TM ESC \x0c 103\x18\x11\x08 58910-S2650',
-      b'\xf1\x00TM ESC \r 104\x19\x07\x08 58910-S2650',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',
