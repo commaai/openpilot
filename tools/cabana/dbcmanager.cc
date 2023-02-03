@@ -146,10 +146,10 @@ void DBCManager::removeMsg(const QString &id) {
   emit msgRemoved(address);
 }
 
-void DBCManager::addSignal(const QString &id, const Signal &sig) {
+void DBCManager::addSignal(const QString &id, const Signal &sig, const SignalExtraInfo &extra) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto &s = m->sigs[sig.name.c_str()];
-    m->sig_extra_info[&s] = {};
+    m->sig_extra_info[&s] = extra;
     s = sig;
     emit signalAdded(parseId(id).second, &s);
   }

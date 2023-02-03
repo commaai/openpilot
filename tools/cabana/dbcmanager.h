@@ -39,7 +39,7 @@ public:
   void open(const QString &dbc_file_name);
   void open(const QString &name, const QString &content);
   QString generateDBC();
-  void addSignal(const QString &id, const Signal &sig);
+  void addSignal(const QString &id, const Signal &sig, const SignalExtraInfo &extra);
   void updateSignal(const QString &id, const QString &sig_name, const Signal &sig, const SignalExtraInfo &extra);
   void removeSignal(const QString &id, const QString &sig_name);
 

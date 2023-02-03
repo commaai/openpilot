@@ -48,6 +48,7 @@ public:
 private:
   const QString id;
   Signal signal = {};
+  SignalExtraInfo extra_info = {};
 };
 
 class EditSignalCommand : public QUndoCommand {

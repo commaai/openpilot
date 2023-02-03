@@ -37,7 +37,7 @@ void RemoveMsgCommand::undo() {
   if (!message.name.isEmpty()) {
     dbc()->updateMsg(id, message.name, message.size);
     for (auto &[name, s] : message.sigs)
-      dbc()->addSignal(id, s);
+      dbc()->addSignal(id, s, message.extraInfo(&s));
   }
 }
 
@@ -54,16 +54,19 @@ AddSigCommand::AddSigCommand(const QString &id, const Signal &sig, QUndoCommand 
 }
 
 void AddSigCommand::undo() { dbc()->removeSignal(id, signal.name.c_str()); }
-void AddSigCommand::redo() { dbc()->addSignal(id, signal); }
+void AddSigCommand::redo() { dbc()->addSignal(id, signal, {}); }
 
 // RemoveSigCommand
 
 RemoveSigCommand::RemoveSigCommand(const QString &id, const Signal *sig, QUndoCommand *parent)
     : id(id), signal(*sig), QUndoCommand(parent) {
+  if (auto msg = dbc()->msg(id)) {
+    extra_info = msg->extraInfo(sig);
+  }
   setText(QObject::tr("Remove signal %1 from %2").arg(signal.name.c_str()).arg(DBCManager::parseId(id).second));
 }
 
-void RemoveSigCommand::undo() { dbc()->addSignal(id, signal); }
+void RemoveSigCommand::undo() { dbc()->addSignal(id, signal, extra_info); }
 void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name.c_str()); }
 
 // EditSignalCommand
