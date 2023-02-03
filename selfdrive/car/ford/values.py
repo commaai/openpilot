@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
@@ -14,6 +14,8 @@ Ecu = car.CarParams.Ecu
 class CarControllerParams:
   # Messages: Lane_Assist_Data1, LateralMotionControl
   STEER_STEP = 5
+  # Message: ACCDATA
+  ACC_CONTROL_STEP = 2
   # Message: IPMA_Data
   LKAS_UI_STEP = 100
   # Message: ACCDATA_3
@@ -28,6 +30,9 @@ class CarControllerParams:
   # TODO: unify field names used by curvature and angle control cars
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.005, 0.00056, 0.0002])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.008, 0.00089, 0.00032])
+
+  ACCEL_MAX = 2.0               # m/s^s max acceleration
+  ACCEL_MIN = -3.5              # m/s^s max deceleration
 
   def __init__(self, CP):
     pass
@@ -47,12 +52,15 @@ class CAR:
   MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
 
 
+CANFD_CARS: Set[str] = set()
+
+
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
   DELPHI_MRR = 'FORD_CADS'
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", None))
+DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
 
 @dataclass
@@ -67,7 +75,10 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Ford Escape 2020-21"),
     FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
   ],
-  CAR.EXPLORER_MK6: FordCarInfo("Ford Explorer 2020-22"),
+  CAR.EXPLORER_MK6: [
+    FordCarInfo("Ford Explorer 2020-22"),
+    FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
+  ],
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022", "Co-Pilot360 Assist"),
 }
@@ -157,13 +168,16 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'MB5A-14C204-RC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NB5A-14C204-HB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.shiftByWire, 0x732, None): [
+      b'L1MP-14C561-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-JB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',

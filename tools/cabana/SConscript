@@ -24,6 +24,9 @@ cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream
                                                'commands.cc', 'messageswidget.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, asset_obj], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
+if arch == "Darwin":
+  cabana_env.Execute('install_name_tool -change opendbc/can/libdbc.dylib @loader_path/../../opendbc/can/libdbc.dylib ./_cabana')
+
 if GetOption('test'):
   cabana_env.Program('tests/_test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
