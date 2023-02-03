@@ -395,6 +395,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  168 / 2 - (bdr_s * 2) : 168 / 2 + (bdr_s * 2);
     drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2, dmActive ? 1.0 : 0.2);
+    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
+             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
   }
   p.restore();
 }
@@ -415,7 +417,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  // p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
@@ -504,14 +506,20 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.save();
 
-  const int ww = 168;
-  const int hh = radius;
+  const int ww = 115;
+  const int hh = 115;
 
   // circle background
+  /*
   painter.setOpacity(1.0);
   painter.setPen(Qt::NoPen);
   painter.setBrush(blackColor(70));
   painter.drawEllipse(x - ww / 2, y - hh / 2, ww, hh);
+  */
+  painter.setOpacity(1.0);  // bg dictates opacity of ellipse
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(blackColor(70));
+  painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
 
   painter.setCompositionMode(QPainter::CompositionMode_Source);
   painter.setRenderHint(QPainter::Antialiasing);
@@ -520,6 +528,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   QPointF start_p;
   QPointF end_p;
   int face_segment_idx = 0;
+  float draw_shade = opacity > 0.9 ? 1.0 : 0.28;
   bool in_end_idxs;
   float kp1;
   float kp2;
@@ -537,8 +546,8 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
       continue;
     }
 
-    kp1 = (scene.face_kpts_draw_d[i] - 35) / 100 + 1.0;
-    kp2 = (scene.face_kpts_draw_d[i+1] - 35) / 100 + 1.0;
+    kp1 = (scene.face_kpts_draw_d[i] - 8) / 120 + 1.0;
+    kp2 = (scene.face_kpts_draw_d[i+1] - 8) / 120 + 1.0;
     start_p = QPointF(scene.face_kpts_draw[i].x()*kp1 + x, scene.face_kpts_draw[i].y()*kp1 + y);
     end_p = QPointF(scene.face_kpts_draw[i+1].x()*kp2 + x, scene.face_kpts_draw[i+1].y()*kp2 + y);
 
@@ -550,7 +559,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
     // float end_shade = std::fmax(std::fmin(0.4 + 0.6*(scene.face_kpts_draw_d[i+1] + 20)/100, 1.0), 0.0);
     // linearGrad.setColorAt(1, QColor::fromRgbF(end_shade, end_shade, end_shade, opacity));
 
-    painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 8, Qt::SolidLine, Qt::RoundCap));
+    painter.setPen(QPen(QColor::fromRgbF(draw_shade, draw_shade, draw_shade, 1.0), 6, Qt::SolidLine, Qt::RoundCap));
     painter.drawLine(start_p, end_p);
   }
 
@@ -561,14 +570,16 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   // tracking arcs
   float delta_x = -scene.driver_pose_sins[1] * eff_ww / 2;
   float delta_y = -scene.driver_pose_sins[0] * eff_hh / 2;
-  painter.setPen(QPen(QColor::fromRgbF(0.2, 0.9, 0.2, 0.275*(1.0-dm_fade_state)), 2, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.53, 0.26, 0.945*(1.0-dm_fade_state)), 1.3, Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - eff_hh / 2, fabs(delta_x), eff_hh), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
   painter.drawArc(QRectF(x - eff_ww / 2, std::fmin(y + delta_y, y), eff_ww, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
+  /*
   // circle border (status)
   painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 4, Qt::SolidLine, Qt::RoundCap));
   painter.setBrush(Qt::NoBrush);
   painter.drawEllipse(x - eff_ww / 2, y - eff_hh / 2, eff_ww, eff_hh);
+  */
 
   painter.restore();
 }
