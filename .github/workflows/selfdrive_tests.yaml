@@ -61,7 +61,7 @@ jobs:
         cp .pylintrc $STRIPPED_DIR
         cp mypy.ini $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "SKIP=test_translations pre-commit run --all"
+        ${{ env.RUN }} "pre-commit run --all"
 
   build_all:
     name: build all
@@ -219,6 +219,7 @@ jobs:
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
+                        ./selfdrive/locationd/test/test_glonass_runner && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \

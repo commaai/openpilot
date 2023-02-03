@@ -88,13 +88,14 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Optional[Dict[int, Dict[int, int]]] = None, car_fw: Optional[List[car.CarParams.CarFw]] = None, experimental_long: bool = False):
-    if fingerprint is None:
-      fingerprint = gen_empty_fingerprint()
+  def get_non_essential_params(cls, candidate: str):
+    """
+    Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
+    """
+    return cls.get_params(candidate, gen_empty_fingerprint(), list(), False)
 
-    if car_fw is None:
-      car_fw = list()
-
+  @classmethod
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long)
 
@@ -400,15 +401,15 @@ class CarStateBase(ABC):
       return GearShifter.unknown
 
     d: Dict[str, car.CarState.GearShifter] = {
-        'P': GearShifter.park, 'PARK': GearShifter.park,
-        'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
-        'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
-        'E': GearShifter.eco, 'ECO': GearShifter.eco,
-        'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
-        'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
-        'S': GearShifter.sport, 'SPORT': GearShifter.sport,
-        'L': GearShifter.low, 'LOW': GearShifter.low,
-        'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
+      'P': GearShifter.park, 'PARK': GearShifter.park,
+      'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
+      'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
+      'E': GearShifter.eco, 'ECO': GearShifter.eco,
+      'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
+      'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
+      'S': GearShifter.sport, 'SPORT': GearShifter.sport,
+      'L': GearShifter.low, 'LOW': GearShifter.low,
+      'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
     }
     return d.get(gear.upper(), GearShifter.unknown)
 

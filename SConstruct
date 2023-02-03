@@ -71,10 +71,10 @@ if arch == "aarch64" and AGNOS:
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+  "PYTHONPATH": Dir("#").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
+  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
@@ -282,7 +282,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -311,6 +311,7 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
 
@@ -387,10 +388,10 @@ rednose_config = {
 if arch != "larch64":
   rednose_config['to_build'].update({
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
+    'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, [], rednose_deps),
   })
 
 Export('rednose_config')
@@ -422,7 +423,6 @@ SConscript(['common/transformations/SConscript'])
 
 SConscript(['selfdrive/modeld/SConscript'])
 
-SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
