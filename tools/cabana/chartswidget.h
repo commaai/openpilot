@@ -97,6 +97,7 @@ public:
 
 public slots:
   void setColumnCount(int n);
+  void removeAll();
 
 signals:
   void dock(bool floating);
@@ -114,7 +115,6 @@ private:
   void zoomIn(double min, double max);
   void zoomReset();
   void updateToolBar();
-  void removeAll();
   void setMaxChartRange(int value);
   void updateLayout();
   void settingChanged();
