@@ -75,7 +75,10 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Ford Escape 2020-21"),
     FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
   ],
-  CAR.EXPLORER_MK6: FordCarInfo("Ford Explorer 2020-22"),
+  CAR.EXPLORER_MK6: [
+    FordCarInfo("Ford Explorer 2020-22"),
+    FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
+  ],
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022", "Co-Pilot360 Assist"),
 }
@@ -165,13 +168,16 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'MB5A-14C204-RC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NB5A-14C204-HB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.shiftByWire, 0x732, None): [
+      b'L1MP-14C561-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MP-14G395-JB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',

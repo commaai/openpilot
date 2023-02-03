@@ -137,7 +137,7 @@ void ChartsWidget::updateState() {
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / max_chart_range;
     if (pos < 0 || pos > 0.8) {
-      const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
+      const double min_event_sec = can->events()->empty() ? 0 : (can->events()->front()->mono_time / (double)1e9 - can->routeStartTime());
       display_range.first = std::floor(std::max(min_event_sec, cur_sec - max_chart_range * 0.2));
     }
     display_range.second = std::floor(display_range.first + max_chart_range);
@@ -157,7 +157,7 @@ void ChartsWidget::updateState() {
 void ChartsWidget::setMaxChartRange(int value) {
   max_chart_range = settings.chart_range = value;
   double current_sec = can->currentSec();
-  const double min_event_sec = (can->events()->front()->mono_time / (double)1e9) - can->routeStartTime();
+  const double min_event_sec = can->events()->empty() ? 0 : (can->events()->front()->mono_time / (double)1e9 - can->routeStartTime());
   // keep current_sec's pos
   double pos = (current_sec - display_range.first) / (display_range.second - display_range.first);
   display_range.first = std::floor(std::max(min_event_sec, current_sec - max_chart_range * (1.0 - pos)));
@@ -322,7 +322,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 
   QToolButton *manage_btn = new QToolButton();
   manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  manage_btn->setIcon(utils::icon("gear"));
+  manage_btn->setIcon(utils::icon("list"));
   manage_btn->setAutoRaise(true);
   QMenu *menu = new QMenu(this);
   line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
@@ -617,7 +617,7 @@ void ChartView::leaveEvent(QEvent *event) {
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && !chart()->plotArea().contains(event->pos()) &&
-      !manage_btn_proxy->widget()->underMouse() && !close_btn_proxy->widget()->underMouse()) {
+      !manage_btn_proxy->geometry().contains(event->pos()) && !close_btn_proxy->geometry().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
     QDrag *drag = new QDrag(this);
